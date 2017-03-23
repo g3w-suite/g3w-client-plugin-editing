@@ -11,6 +11,8 @@ var _Plugin = function(){
   this.name = 'editing';
   this.project = PluginRegistry.getCurrentProject();
   this.layers = this.project.getLayers();
+  this.layersConfig;
+  var pluginLayers = [];
   this.init = function() {
     //setto il servizio
     this.setService(Service);
@@ -27,10 +29,16 @@ var _Plugin = function(){
       //inizializzo il servizio.
       // Il servizio è l'istanza della classe servizio
       this.service.init(this.config);
-      //creo la struttura dei layer
+      //vado a prelevare i layer name del plugin
       _.forEach(this.config.layers, function(value, name) {
-
-      })
+        pluginLayers.push(name);
+      });
+      // filtro i layers del progetto con quelli del plugin
+      this.layers = _.filter(this.layers, function(layer) {
+        return pluginLayers.indexOf(layer.name) > -1;
+      });
+      // vado a creare la struttura dei layers per poter costruire il pannello di editing
+      this.layersConfig =  this.service.createLayersConfig(this.layers);
     }
   };
   //metto su l'interfaccia del plugin
@@ -48,7 +56,9 @@ var _Plugin = function(){
   };
   
   this.showEditingPanel = function() {
-    var panel = new EditingPanel();
+    var panel = new EditingPanel({
+      layersConfig: this.layersConfig
+    });
     GUI.showPanel(panel);
     //inizializzo il servizio del pannello editing.
     //Il servizio è l'istanza della classe servizio
