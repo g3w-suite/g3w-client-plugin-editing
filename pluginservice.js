@@ -3,14 +3,28 @@ var base =  g3wsdk.core.utils.base;
 //prendo il plugin service di core
 var PluginService = g3wsdk.core.PluginService;
 var Editor = g3wsdk.core.Editor;
+var PluginRegistry = g3wsdk.core.ProjectsRegistry;
 var PluginConfig = require('./pluginconfig');
 
 function EditingService() {
+
   var options = {};
   base(this, options);
+  this.project = PluginRegistry.getCurrentProject();
+  this.layers = this.project.getLayers();
   // funzione che crea la configurazione necessaria all'editing dei layers
-  this.createLayersConfig = function(layers) {
+  this.createLayersConfig = function() {
     var self = this;
+    var pluginLayers = [];
+    //vado a prelevare i layer name del plugin
+    _.forEach(this.config.layers, function(value, name) {
+      pluginLayers.push(name);
+    });
+    // filtro i layers del progetto con quelli del plugin
+    this.layers = _.filter(this.layers, function(layer) {
+      return pluginLayers.indexOf(layer.state.origname) > -1;
+    });
+    // creo la struttura per poter inzializzare il pannello dell'editing
     var layersConfig = {
       layerCodes: {},
       layers: {},
@@ -18,7 +32,7 @@ function EditingService() {
       editorClass : {}
     };
     var layerConfig;
-    _.forEach(layers, function(layer) {
+    _.forEach(this.layers, function(layer) {
       layerConfig = self.createLayerConfig(layer);
       layersConfig.layerCodes[layer.state.origname] = layer.state.origname;
       layersConfig.layers[layer.state.origname] = layerConfig.layer;
@@ -26,6 +40,13 @@ function EditingService() {
       layersConfig.editorClass[layer.state.origname] = Editor;
     });
     return layersConfig;
+  };
+
+  this.init = function(config) {
+    // vado a settare l'url di editing aggiungendo l'id del
+    // progetto essendo editng api generale
+    config.baseurl = config.baseurl + this.project.getId() + '/';
+    this.config = config;
   };
 
   //crea la configurazione del singolo layer
@@ -179,7 +200,7 @@ function EditingService() {
         break;
     }
     return layerConfig;
-  }
+  };
 }  
 
 inherit(EditingService, PluginService);

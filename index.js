@@ -4,15 +4,12 @@ var Plugin = g3wsdk.core.Plugin;
 var GUI = g3wsdk.gui.GUI;
 var Service = require('./pluginservice');
 var EditingPanel = require('./panel');
-var PluginRegistry = g3wsdk.core.ProjectsRegistry;
+
 
 var _Plugin = function(){
   base(this);
   this.name = 'editing';
-  this.project = PluginRegistry.getCurrentProject();
-  this.layers = this.project.getLayers();
   this.layersConfig;
-  var pluginLayers = [];
   this.init = function() {
     //setto il servizio
     this.setService(Service);
@@ -29,16 +26,8 @@ var _Plugin = function(){
       //inizializzo il servizio.
       // Il servizio è l'istanza della classe servizio
       this.service.init(this.config);
-      //vado a prelevare i layer name del plugin
-      _.forEach(this.config.layers, function(value, name) {
-        pluginLayers.push(name);
-      });
-      // filtro i layers del progetto con quelli del plugin
-      this.layers = _.filter(this.layers, function(layer) {
-        return pluginLayers.indexOf(layer.state.origname) > -1;
-      });;
       // vado a creare la struttura dei layers per poter costruire il pannello di editing
-      this.layersConfig =  this.service.createLayersConfig(this.layers);
+      this.layersConfig =  this.service.createLayersConfig();
     }
   };
   //metto su l'interfaccia del plugin
