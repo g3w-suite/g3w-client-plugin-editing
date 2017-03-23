@@ -8,9 +8,11 @@ function EditingPluginComponent(options) {
   // editortoolsbars
   options.id = "editing-panel";
   options.name = "Gestione dati EDITING";
+  options.editorsToolBars = layerConfig.editorsToolBars;
   options.serviceOptions = {
     layerCodes: layerConfig.layerCodes,
-    layers: layerConfig.layers
+    layers: layerConfig.layers,
+    editorClass: layerConfig.editorClass
   };
   base(this, options)
 }

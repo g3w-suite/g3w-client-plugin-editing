@@ -35,8 +35,8 @@ var _Plugin = function(){
       });
       // filtro i layers del progetto con quelli del plugin
       this.layers = _.filter(this.layers, function(layer) {
-        return pluginLayers.indexOf(layer.name) > -1;
-      });
+        return pluginLayers.indexOf(layer.state.origname) > -1;
+      });;
       // vado a creare la struttura dei layers per poter costruire il pannello di editing
       this.layersConfig =  this.service.createLayersConfig(this.layers);
     }

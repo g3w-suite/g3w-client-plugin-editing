@@ -2,6 +2,8 @@ var inherit = g3wsdk.core.utils.inherit;
 var base =  g3wsdk.core.utils.base;
 //prendo il plugin service di core
 var PluginService = g3wsdk.core.PluginService;
+var Editor = g3wsdk.core.Editor;
+var PluginConfig = require('./pluginconfig');
 
 function EditingService() {
   var options = {};
@@ -10,12 +12,18 @@ function EditingService() {
   this.createLayersConfig = function(layers) {
     var self = this;
     var layersConfig = {
-      layersCode: {},
-      layers: {}
+      layerCodes: {},
+      layers: {},
+      editorsToolBars: {},
+      editorClass : {}
     };
+    var layerConfig;
     _.forEach(layers, function(layer) {
-      layersConfig.layersCode[layer.name] = layer.name;
-      self.createLayerConfig(layer);
+      layerConfig = self.createLayerConfig(layer);
+      layersConfig.layerCodes[layer.state.origname] = layer.state.origname;
+      layersConfig.layers[layer.state.origname] = layerConfig.layer;
+      layersConfig.editorsToolBars[layer.state.origname] = layerConfig.editor;
+      layersConfig.editorClass[layer.state.origname] = Editor;
     });
     return layersConfig;
   };
@@ -23,25 +31,25 @@ function EditingService() {
   //crea la configurazione del singolo layer
   this.createLayerConfig = function(options) {
     options = options || {};
-    var name = setOptions.name || 'Layer';
-    var geometryType = options.geometrytype;
+    var origname = options.state.origname;
+    var name = options.state.name;
+    var geometryType = options.state.geometrytype;
     var layerConfig;
     switch (geometryType) {
       case 'Point' || 'MultiPoint':
         layerConfig = {
           layer: {
-            layerCode: name,
+            layerCode: origname,
             vector: null,
             editor: null,
             //definisco lo stile
             style: function () {
-              var color = '#d9b581';
               return [
                 new ol.style.Style({
                   image: new ol.style.Circle({
                     radius: 5,
                     fill: new ol.style.Fill({
-                      color: color
+                      color: PluginConfig.Point[0]
                     })
                   })
                 })
@@ -49,8 +57,8 @@ function EditingService() {
             }
           },
           editor: {
-            name: null,
-            layercode: name,
+            name: "Edita " + name,
+            layercode: origname,
             tools:[
               {
                 title: "Aggiungi elemento",
@@ -75,22 +83,23 @@ function EditingService() {
             ]
           }
         };
+        PluginConfig.Point.splice(0,1);
         break;
       case 'Line' || 'MultiLine':
         layerConfig = {
           layer: {
-            layerCode: null,
+            layerCode: origname,
             vector: null,
             editor: null,
             style: new ol.style.Style({
               stroke: new ol.style.Stroke({
                 width: 3,
-                color: '#ff7d2d'
+                color: PluginConfig.Line[0]
               })
             })
           },
           editor: {
-            name: "Elementi " + name,
+            name: "Edita " + name,
             layercode: name,
             tools:[
               {
@@ -116,26 +125,27 @@ function EditingService() {
             ]
           }
         };
+        PluginConfig.Line.splice(0,1);
         break;
       case 'Polygon' || 'MultiPolygon':
         layerConfig = {
           layer: {
-            layerCode: null,
+            layerCode: origname,
             vector: null,
             editor: null,
             style: new ol.style.Style({
               stroke: new ol.style.Stroke({
-                color: 'blue',
+                color:  PluginConfig.Polygon[0].stroke,
                 width: 3
               }),
               fill: new ol.style.Fill({
-                color: 'rgba(0, 0, 255, 0.1)'
+                color: PluginConfig.Polygon[0].fill
               })
             })
           },
           editor: {
-            name: name,
-            layercode: name,
+            name: "Edita " + name,
+            layercode: origname,
             tools: [
               {
                 title: "Aggiungi elemento",
@@ -165,6 +175,7 @@ function EditingService() {
             ]
           }
         };
+        PluginConfig.Polygon.splice(0,1);
         break;
     }
     return layerConfig;
