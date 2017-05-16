@@ -22,7 +22,7 @@ function EditingService() {
     });
     // filtro i layers del progetto con quelli del plugin
     this.layers = _.filter(this.layers, function(layer) {
-      return pluginLayers.indexOf(layer.state.origname) > -1;
+      return pluginLayers.indexOf(layer.state.id) > -1;
     });
     // creo la struttura per poter inzializzare il pannello dell'editing
     var layersConfig = {
@@ -34,10 +34,10 @@ function EditingService() {
     var layerConfig;
     _.forEach(this.layers, function(layer) {
       layerConfig = self.createLayerConfig(layer);
-      layersConfig.layerCodes[layer.state.origname] = layer.state.origname;
-      layersConfig.layers[layer.state.origname] = layerConfig.layer;
-      layersConfig.editorsToolBars[layer.state.origname] = layerConfig.editor;
-      layersConfig.editorClass[layer.state.origname] = Editor;
+      layersConfig.layerCodes[layer.state.id] = layer.state.id;
+      layersConfig.layers[layer.state.id] = layerConfig.layer;
+      layersConfig.editorsToolBars[layer.state.id] = layerConfig.editor;
+      layersConfig.editorClass[layer.state.id] = Editor;
     });
     return layersConfig;
   };
@@ -52,6 +52,7 @@ function EditingService() {
   //crea la configurazione del singolo layer
   this.createLayerConfig = function(options) {
     options = options || {};
+    var id = options.state.id;
     var origname = options.state.origname;
     var name = options.state.name;
     var geometryType = options.state.geometrytype;
@@ -60,7 +61,7 @@ function EditingService() {
       case 'Point' || 'MultiPoint':
         layerConfig = {
           layer: {
-            layerCode: origname,
+            layerCode: id,
             vector: null,
             editor: null,
             //definisco lo stile
@@ -79,7 +80,7 @@ function EditingService() {
           },
           editor: {
             name: "Edita " + name,
-            layercode: origname,
+            layercode: id,
             tools:[
               {
                 title: "Aggiungi elemento",
@@ -109,7 +110,7 @@ function EditingService() {
       case 'Line' || 'MultiLine':
         layerConfig = {
           layer: {
-            layerCode: origname,
+            layerCode: id,
             vector: null,
             editor: null,
             style: new ol.style.Style({
@@ -121,7 +122,7 @@ function EditingService() {
           },
           editor: {
             name: "Edita " + name,
-            layercode: name,
+            layercode: id,
             tools:[
               {
                 title: "Aggiungi elemento",
@@ -151,7 +152,7 @@ function EditingService() {
       case 'Polygon' || 'MultiPolygon':
         layerConfig = {
           layer: {
-            layerCode: origname,
+            layerCode: id,
             vector: null,
             editor: null,
             style: new ol.style.Style({
@@ -166,7 +167,7 @@ function EditingService() {
           },
           editor: {
             name: "Edita " + name,
-            layercode: origname,
+            layercode: id,
             tools: [
               {
                 title: "Aggiungi elemento",
