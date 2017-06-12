@@ -10,7 +10,9 @@ function EditingService() {
 
   var options = {};
   base(this, options);
+  // vado a prendere il current project
   this.project = PluginRegistry.getCurrentProject();
+  // prendo tutti i layers del progetto corrente
   this.layers = this.project.getLayers();
   // funzione che crea la configurazione necessaria all'editing dei layers
   this.createLayersConfig = function() {
@@ -53,7 +55,6 @@ function EditingService() {
   this.createLayerConfig = function(options) {
     options = options || {};
     var id = options.state.id;
-    var origname = options.state.origname;
     var name = options.state.name;
     var geometryType = options.state.geometrytype;
     var layerConfig;

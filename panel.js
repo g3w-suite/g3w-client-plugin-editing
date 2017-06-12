@@ -4,11 +4,14 @@ var EditingComponent = g3wsdk.gui.vue.EditingComponent;
 
 function EditingPluginComponent(options) {
   var options = options || {};
+  //configurazione dei layer che mi serve per poter creare la configurazione
+  // del panello generla editing
   var layerConfig = options.layersConfig;
   // editortoolsbars
   options.id = "editing-panel";
   options.name = "Gestione dati EDITING";
   options.editorsToolBars = layerConfig.editorsToolBars;
+  // oggetto ozioni che deve essere passato al service dell'editing component
   options.serviceOptions = {
     layerCodes: layerConfig.layerCodes,
     layers: layerConfig.layers,
