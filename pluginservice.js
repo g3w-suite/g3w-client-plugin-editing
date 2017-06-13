@@ -25,7 +25,7 @@ function EditingService() {
     });
     // filtro i layers del progetto con quelli del plugin
     this.layers = _.filter(this.layers, function(layer) {
-      return pluginLayers.indexOf(layer.state.id) > -1;
+      return pluginLayers.indexOf(layer.getId()) > -1;
     });
     // creo la struttura per poter inzializzare il pannello dell'editing
     var layersConfig = {
@@ -36,11 +36,12 @@ function EditingService() {
     };
     var layerConfig;
     _.forEach(this.layers, function(layer) {
+      var layerId = layer.getId();
       layerConfig = self.createLayerConfig(layer);
-      layersConfig.layerCodes[layer.state.id] = layer.state.id;
-      layersConfig.layers[layer.state.id] = layerConfig.layer;
-      layersConfig.editorsToolBars[layer.state.id] = layerConfig.editor;
-      layersConfig.editorClass[layer.state.id] = Editor;
+      layersConfig.layerCodes[layerId] = layerId ;
+      layersConfig.layers[layerId] = layerConfig.layer;
+      layersConfig.editorsToolBars[layerId] = layerConfig.editor;
+      layersConfig.editorClass[layerId] = Editor;
     });
     return layersConfig;
   };
@@ -53,11 +54,11 @@ function EditingService() {
   };
 
   //crea la configurazione del singolo layer
-  this.createLayerConfig = function(options) {
-    options = options || {};
-    var id = options.state.id;
-    var name = options.state.name;
-    var geometryType = options.state.geometrytype;
+  this.createLayerConfig = function(layer) {
+    var layer = layer || {};
+    var id = layer.getId();
+    var name = layer.getName();
+    var geometryType = layer.config.geometrytype;
     var layerConfig;
     switch (geometryType) {
       case 'Point' || 'MultiPoint':
