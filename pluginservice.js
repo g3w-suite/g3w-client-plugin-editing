@@ -3,8 +3,8 @@ var base =  g3wsdk.core.utils.base;
 //prendo il plugin service di core
 var PluginService = g3wsdk.core.PluginService;
 var Editor = g3wsdk.core.Editor;
-var PluginRegistry = g3wsdk.core.ProjectsRegistry;
-var LayersRegistry = g3wsdk.core.LayersRegistry;
+var ProjectsStore = g3wsdk.core.ProjectsStore;
+var LayersStore = g3wsdk.core.LayersStore;
 var PluginConfig = require('./pluginconfig');
 
 function EditingService() {
@@ -12,9 +12,9 @@ function EditingService() {
   var options = {};
   base(this, options);
   // vado a prendere il current project
-  this.project = PluginRegistry.getCurrentProject();
+  this.project = ProjectsStore.getCurrentProject();
   // prendo tutti i layers del progetto corrente
-  this.layers = LayersRegistry.getLayers();
+  this.layers = LayersStore.getLayers();
   // funzione che crea la configurazione necessaria all'editing dei layers
   this.createLayersConfig = function() {
     var self = this;
