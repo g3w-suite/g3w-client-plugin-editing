@@ -1,10 +1,10 @@
 var inherit = g3wsdk.core.utils.inherit;
 var base =  g3wsdk.core.utils.base;
 //prendo il plugin service di core
-var PluginService = g3wsdk.core.PluginService;
-var Editor = g3wsdk.core.Editor;
-var ProjectsRegistry = g3wsdk.core.ProjectsRegistry;
-var LayersStoreRegistry = g3wsdk.core.LayersStoreRegistry;
+var PluginService = g3wsdk.core.plugin.PluginService;
+var Editor = g3wsdk.core.editor.Editor;
+var ProjectsRegistry = g3wsdk.core.project.ProjectsRegistry;
+var LayersStoreRegistry = g3wsdk.core.layer.LayersStoreRegistry;
 var PluginConfig = require('./pluginconfig');
 
 function EditingService() {
