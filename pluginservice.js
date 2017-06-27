@@ -16,13 +16,17 @@ function EditingService() {
   this.project = ProjectsRegistry.getCurrentProject();
   // prendo tutti i layers del progetto corrente
   this.layers = [];
-  _.forEach(LayersStoreRegistry.getLayersStores(), function(layerStore) {
-    _.merge(self.layers, layerStore.getLayers())
-  });
+  this.initLayers = function() {
+    this.layers = [];
+    _.forEach(LayersStoreRegistry.getLayersStores(), function(layerStore) {
+      _.merge(self.layers, layerStore.getLayers())
+    });
+  };
   // funzione che crea la configurazione necessaria all'editing dei layers
   this.createLayersConfig = function() {
     var self = this;
     var pluginLayers = [];
+    this.initLayers();
     //vado a prelevare i layer name del plugin
     _.forEach(this.config.layers, function(value, name) {
       pluginLayers.push(name);
