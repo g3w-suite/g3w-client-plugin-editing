@@ -4,7 +4,7 @@ var base =  g3wsdk.core.utils.base;
 var PluginService = g3wsdk.core.plugin.PluginService;
 var Editor = g3wsdk.core.editor.Editor;
 var ProjectsRegistry = g3wsdk.core.project.ProjectsRegistry;
-var LayersStoreRegistry = g3wsdk.core.layer.LayersStoreRegistry;
+var MapLayersStoreRegistry = g3wsdk.core.map.MapLayersStoreRegistry;
 var PluginConfig = require('./pluginconfig');
 
 function EditingService() {
@@ -18,7 +18,7 @@ function EditingService() {
   this.layers = [];
   this.initLayers = function() {
     this.layers = [];
-    _.forEach(LayersStoreRegistry.getLayersStores(), function(layerStore) {
+    _.forEach(MapLayersStoreRegistry.getLayersStores(), function(layerStore) {
       _.merge(self.layers, layerStore.getLayers())
     });
   };
