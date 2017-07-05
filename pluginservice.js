@@ -4,7 +4,7 @@ var base =  g3wsdk.core.utils.base;
 var PluginService = g3wsdk.core.plugin.PluginService;
 var Editor = g3wsdk.core.editor.Editor;
 var ProjectsRegistry = g3wsdk.core.project.ProjectsRegistry;
-var LayersStoreRegistry = g3wsdk.core.layer.LayersStoreRegistry;
+var CatalogLayersStoresRegistry = g3wsdk.core.catalog.CatalogLayersStoresRegistry;
 var PluginConfig = require('./pluginconfig');
 
 function EditingService() {
@@ -12,11 +12,10 @@ function EditingService() {
   var self = this;
   var options = {};
   base(this, options);
-  // vado a prendere il current project
-  this.project = ProjectsRegistry.getCurrentProject();
+
   // prendo tutti i layers del progetto corrente
   this.layers = [];
-  _.forEach(LayersStoreRegistry.getLayersStores(), function(layerStore) {
+  _.forEach(CatalogLayersStoresRegistry.getLayersStores(), function(layerStore) {
     _.merge(self.layers, layerStore.getLayers())
   });
   // funzione che crea la configurazione necessaria all'editing dei layers
@@ -53,7 +52,7 @@ function EditingService() {
   this.init = function(config) {
     // vado a settare l'url di editing aggiungendo l'id del
     // progetto essendo editng api generale
-    config.baseurl = config.baseurl + this.project.getId() + '/';
+    //config.baseurl = config.baseurl + this.project.getId() + '/';
     this.config = config;
   };
 
