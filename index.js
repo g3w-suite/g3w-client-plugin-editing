@@ -53,6 +53,10 @@ var _Plugin = function(){
     //inizializzo il servizio del pannello editing.
     //Il servizio è l'istanza della classe servizio
     panel.getService().init(this.config);
+  };
+
+  this.load = function() {
+    this.init()
   }
 };
 
