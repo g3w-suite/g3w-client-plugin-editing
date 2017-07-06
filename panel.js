@@ -1,9 +1,9 @@
 var base = g3wsdk.core.utils.base;
 var inherit = g3wsdk.core.utils.inherit;
-var EditingComponent = g3wsdk.gui.vue.EditingComponent;
+var EditingComponent = require('./vue/editing');
 
 function EditingPluginComponent(options) {
-  var options = options || {};
+  options = options || {};
   //configurazione dei layer che mi serve per poter creare la configurazione
   // del panello generla editing
   var layerConfig = options.layersConfig;

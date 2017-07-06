@@ -27,7 +27,7 @@ var _Plugin = function(){
       // Il servizio è l'istanza della classe servizio
       this.service.init(this.config);
       // vado a creare la struttura dei layers per poter costruire il pannello di editing
-      this.layersConfig =  this.service.createLayersConfig();
+      //this.layersConfig =  this.service.createLayersConfig();
     }
   };
   //metto su l'interfaccia del plugin

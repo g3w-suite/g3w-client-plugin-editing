@@ -1,6 +1,6 @@
 var inherit = g3wsdk.core.utils.inherit;
 var base =  g3wsdk.core.utils.base;
-var DeleteInteraction = g3wsdk.ol3.interactions.DeleteInteraction;
+var DeleteInteraction = g3wsdk.ol3.interactions.DeleteFeatureInteraction;
 var EditingTool = require('./editingtool');
 
 function DeleteFeatureTool(editor) {

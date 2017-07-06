@@ -3,7 +3,7 @@ var base =  g3wsdk.core.utils.base;
 //prendo il plugin service di core
 var PluginService = g3wsdk.core.plugin.PluginService;
 var CatalogLayersStoresRegistry = g3wsdk.core.catalog.CatalogLayersStoresRegistry;
-var Editor = g3wsdk.core.editor.Editor;
+var Editor = g3wsdk.core.editing.Editor;
 var ProjectsRegistry = g3wsdk.core.project.ProjectsRegistry;
 var PluginConfig = require('./pluginconfig');
 
