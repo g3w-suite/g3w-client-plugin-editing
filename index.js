@@ -2,7 +2,7 @@ var inherit = g3wsdk.core.utils.inherit;
 var base = g3wsdk.core.utils.base;
 var Plugin = g3wsdk.core.plugin.Plugin;
 var GUI = g3wsdk.gui.GUI;
-var Service = require('./pluginservice');
+var Service = require('./editingservice');
 var EditingPanel = require('./panel');
 
 
