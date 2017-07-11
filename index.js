@@ -5,16 +5,20 @@ var GUI = g3wsdk.gui.GUI;
 var Service = require('./editingservice');
 var EditingPanel = require('./panel');
 
-
 var _Plugin = function(){
   base(this);
   this.name = 'editing';
-  this.layersConfig;
+  this._layersConfig = null;
   this.init = function() {
     //setto il servizio
     this.setService(Service);
     //recupero configurazione del plugin
     this.config = this.getConfig();
+    //inizializzo il servizio.
+    // Il servizio è l'istanza della classe servizio
+    this.service.init(this.config);
+    // vado a creare la struttura dei layers per poter costruire il pannello di editing
+    this._layersConfig =  this.service.createLayersConfig();
     //regitro il plugin
     if (this.registerPlugin(this.config.gid)) {
       if (!GUI.ready) {
@@ -23,11 +27,6 @@ var _Plugin = function(){
       else {
         this.setupGui();
       }
-      //inizializzo il servizio.
-      // Il servizio è l'istanza della classe servizio
-      this.service.init(this.config);
-      // vado a creare la struttura dei layers per poter costruire il pannello di editing
-      //this.layersConfig =  this.service.createLayersConfig();
     }
   };
   //metto su l'interfaccia del plugin
@@ -47,7 +46,7 @@ var _Plugin = function(){
   //funzione che mostra il pannello dell'editing
   this.showEditingPanel = function() {
     var panel = new EditingPanel({
-      layersConfig: this.layersConfig
+      layersConfig: this._layersConfig
     });
     GUI.showPanel(panel);
     //inizializzo il servizio del pannello editing.

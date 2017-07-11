@@ -3,11 +3,11 @@ var base =  g3wsdk.core.utils.base;
 var Workflow = g3wsdk.core.workflow.Workflow;
 var Step = g3wsdk.core.workflow.Step;
 
-function GeometryAddWorflow(){
+function GeometryAddWorflow() {
   base(this);
-
   this._steps = []
 }
+
 inherit(GeometryAddWorflow, Workflow);
 
 var proto = GeometryAddWorflow.prototype;

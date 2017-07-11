@@ -65,7 +65,6 @@ var vueComponentOptions = {
   }
 };
 
-
 function PanelComponent(options) {
   var self = this;
   // proprietà necessarie. In futuro le mettermo in una classe Panel
@@ -93,7 +92,7 @@ function PanelComponent(options) {
   this._resourcesUrl = options.resourcesUrl || GUI.getResourcesUrl();
   // settor il service del component settando le relative opzioni
   var serviceOptions = options.serviceOptions || {};
-  this._service = options.service || new EditingService(serviceOptions);
+  this._service = options.service || EditingService;//new EditingService(serviceOptions);
   // setto il componente interno
   this.setInternalComponent = function () {
     var InternalComponent = Vue.extend(this.vueComponent);
