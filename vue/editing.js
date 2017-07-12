@@ -6,6 +6,7 @@ var Component = g3wsdk.gui.vue.Component;
 var EditingService = require('../editingservice');
 var EditingTemplate = require('./editing.html');
 
+//il bus events per la gestione del pannello di editing
 var events = new Vue();
 
 var vueComponentOptions = {
@@ -16,10 +17,10 @@ var vueComponentOptions = {
     toggleEditing: function(control) {
       //this.$options.service.toggleEditing();
       if (control.editing.on) {
-        events.emit("control:stop", control);
+        events.$emit("control:stop", control);
       }
       else {
-        events.emit("control:start", control);
+        events.$emit("control:start", control);
       }
     },
     saveEdits: function(control) {
@@ -28,14 +29,14 @@ var vueComponentOptions = {
     },
     toggletool: function(tool) {
       if (tool.started) {
-        events.emit("tool:stop", tool);
+        events.$emit("tool:stop", tool);
       }
       else {
-        events.emit("tool:start", control);
+        events.$emit("tool:start", control);
       }
     },
     onClose: function() {
-      events.emit("close");
+      events.$emit("close");
     }
   },
   computed: {
@@ -80,8 +81,8 @@ function PanelComponent(options) {
   //template from component
   this._template = options.template || EditingTemplate;
   // edittoolbar
-  this._editorsControls = options.editorsControls || [];
-  // save buttons
+  this._editorsControls = options._editorsControls || [];
+   // save buttons
   this._labels = {
     start: "Avvia modifica",
     stop: "Disattiva modifica",
@@ -110,7 +111,6 @@ function PanelComponent(options) {
     });
     return this.internalComponent;
   };
-
   // sovrascrivo richiamando il padre in append
   this.mount = function(parent) {
     return base(this, 'mount', parent, true)
@@ -123,27 +123,27 @@ function PanelComponent(options) {
     return base(this, 'unmount');
   };
 
-  events.on("close",function(){
+  events.$on("close",function(){
     self.unmount();
   });
 
-  events.on("control:start", function(control){
+  events.$on("control:start", function(control) {
     // inizia editing layer
   });
 
-  events.on("control:stop", function(control){
+  events.$on("control:stop", function(control) {
     // termina editing layer
   });
 
-  events.on("control:save", function(control){
+  events.$on("control:save", function(control) {
     // salva editing layer
   });
 
-  events.on("tool:start", function(tool){
+  events.$on("tool:start", function(tool) {
     // inizia operazione di editing
   });
 
-  events.on("tool:stop", function(tool){
+  events.$on("tool:stop", function(tool) {
     // termina operazione di editing
   });
 }
