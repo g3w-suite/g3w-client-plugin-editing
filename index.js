@@ -17,8 +17,6 @@ var _Plugin = function(){
     //inizializzo il servizio.
     // Il servizio è l'istanza della classe servizio
     this.service.init(this.config);
-    // vado a creare la struttura dei layers per poter costruire il pannello di editing
-    this._layersConfig =  this.service.createLayersConfig();
     //regitro il plugin
     if (this.registerPlugin(this.config.gid)) {
       if (!GUI.ready) {
@@ -34,7 +32,7 @@ var _Plugin = function(){
     var self = this;
     var toolsComponent = GUI.getComponent('tools');
     var toolsService = toolsComponent.getService();
-    //add Tools (ordine, Nome gruppo, tools)
+    //add Tools (ordine, Nome gruppo, tasks)
     toolsService.addTools(0, 'EDITING', [
       {
         name: "Editing dati",
@@ -46,7 +44,7 @@ var _Plugin = function(){
   //funzione che mostra il pannello dell'editing
   this.showEditingPanel = function() {
     var panel = new EditingPanel({
-      layersConfig: this._layersConfig
+      editorsControls: this.service.getEditorsControls()
     });
     GUI.showPanel(panel);
     //inizializzo il servizio del pannello editing.

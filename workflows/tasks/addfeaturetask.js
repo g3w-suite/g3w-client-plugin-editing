@@ -1,6 +1,6 @@
 var inherit = g3wsdk.core.utils.inherit;
 var base =  g3wsdk.core.utils.base;
-var EditingTool = require('./editingtool');
+var EditingTool = require('./editingtask');
 
 // classe  per l'aggiuntadi feature
 // eridita dalla classe padre EditingTool

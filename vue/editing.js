@@ -80,7 +80,8 @@ function PanelComponent(options) {
   this.internalComponent = null;
   //template from component
   this._template = options.template || EditingTemplate;
-  // edittoolbar
+  // contiene tuti gli editor Controls che a loro volta contengono i tasks per l'editing
+  // di quello specifico layer
   this._editorsControls = options._editorsControls || [];
    // save buttons
   this._labels = {
@@ -91,8 +92,6 @@ function PanelComponent(options) {
   this._saveBtnLabel = options.saveBtnLabel || "Salva";
   // resource urls
   this._resourcesUrl = options.resourcesUrl || GUI.getResourcesUrl();
-  // settor il service del component settando le relative opzioni
-  var serviceOptions = options.serviceOptions || {};
   this._service = options.service || EditingService;//new EditingService(serviceOptions);
   // setto il componente interno
   this.setInternalComponent = function () {

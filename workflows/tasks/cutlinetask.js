@@ -4,7 +4,7 @@ var geom = g3wsdk.core.geometry.geom;
 var PickFeatureInteraction = g3wsdk.ol3.interactions.PickFeatureInteraction;
 var PickCoordinatesInteraction = g3wsdk.ol3.interactions.PickCoordsInteraction;
 
-var EditingTool = require('./editingtool');
+var EditingTool = require('./editingtask');
 
 function CutLineTool(editor, options){
   this.setters = {

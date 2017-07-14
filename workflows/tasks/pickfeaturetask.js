@@ -3,7 +3,7 @@ var base =  g3wsdk.core.utils.base;
 var noop = g3wsdk.core.utils.noop;
 var PickFeatureInteraction = g3wsdk.ol3.interactions.PickFeatureInteraction;
 
-var EditingTool = require('./editingtool');
+var EditingTool = require('./editingtask');
 
 function PickFeatureTool(editor){
   var self = this;

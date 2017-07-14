@@ -1,23 +1,28 @@
 var Layer = g3wsdk.core.layer.Layer;
 var Geometry = g3wsdk.core.geometry.Geometry;
 var Tool = require('./tool');
-var EditingControl = require('./control');
+var ToolBox = require('./toolbox');
 
-var GeometryAddWorkflow = require('./workflows/geometryadd');
-var GeometryModifyWorkflow = require('./workflows/geometrymodify');
-var GeometryModifyVertexWorkflow = require('./workflows/geometrymodifyvertex');
-var GeometryMoveWorkflow = require('./workflows/geometrymove');
-var GeometryDeleteWorkflow = require('./workflows/geometrydelete');
-var EditFeatureAttributesWorkflow = require('./workflows/editfeatureattributes');
+var GeometryAddWorkflow = require('../workflows/geometryadd');
+var GeometryModifyWorkflow = require('../workflows/geometrymodify');
+var GeometryModifyVertexWorkflow = require('../workflows/geometrymodifyvertex');
+var GeometryMoveWorkflow = require('../workflows/geometrymove');
+var GeometryDeleteWorkflow = require('../workflows/geometrydelete');
+var EditFeatureAttributesWorkflow = require('../workflows/editfeatureattributes');
 
-
-function EditorControlFactory() {
+// classe costruttrice di EditorControls
+function EditorToolBoxesControlFactory() {
+  // metodo adibito alla costruzione dell'Editor Control
+  // e dei tasks associati
   this.build = function(editor) {
+    // estraggo il layer dell'editor
     var layer = editor.getLayer();
+    // estraggo il tipo di layer
     var layerType = layer.getLayerType();
-
+    // array contenete tutti i tasks dell'editor control
     var tools = [];
     switch (layerType) {
+      // caso layer vettoriale
       case Layer.LayerTypes.VECTOR:
         var geometryType = layer.getGeometryType();
         switch (geometryType) {
@@ -129,6 +134,7 @@ function EditorControlFactory() {
             break;
         }
         break;
+      // caso layer tabellare
       case Layer.LayerTypes.TABLE:
         tools = [];
         break;
@@ -137,7 +143,7 @@ function EditorControlFactory() {
         break;
     }
 
-    return new EditingControl({
+    return new ToolBox({
       editor: editor,
       tools: tools
     })
@@ -146,4 +152,4 @@ function EditorControlFactory() {
 
 
 
-module.exports = new EditorControlFactory;
+module.exports = new EditorToolBoxesControlFactory;
