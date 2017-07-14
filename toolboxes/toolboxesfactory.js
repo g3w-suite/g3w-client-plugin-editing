@@ -10,8 +10,8 @@ var GeometryMoveWorkflow = require('../workflows/geometrymove');
 var GeometryDeleteWorkflow = require('../workflows/geometrydelete');
 var EditFeatureAttributesWorkflow = require('../workflows/editfeatureattributes');
 
-// classe costruttrice di EditorControls
-function EditorToolBoxesControlFactory() {
+// classe costruttrice di ToolBoxes
+function EditorToolBoxesFactory() {
   // metodo adibito alla costruzione dell'Editor Control
   // e dei tasks associati
   this.build = function(editor) {
@@ -152,4 +152,4 @@ function EditorToolBoxesControlFactory() {
 
 
 
-module.exports = new EditorToolBoxesControlFactory;
+module.exports = new EditorToolBoxesFactory;
