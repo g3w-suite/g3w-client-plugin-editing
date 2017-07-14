@@ -150,6 +150,4 @@ function EditorToolBoxesFactory() {
   };
 }
 
-
-
 module.exports = new EditorToolBoxesFactory;
