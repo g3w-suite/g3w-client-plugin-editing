@@ -11,12 +11,14 @@ function Tool(options){
   // gli veine passato l'editor
   this._editor = options.editor;
   // gli viene passata la sessione
+  //ma serve????
   this._session = options.session;
   // gli viene passato l'operatore
   // l'oggeto che si occuperà materialmente di gestire l'editazione del layer
   // verosimilmente sarà un oggetto workflow
   this._op = options.op;
-
+  //stato dell'oggetto tool
+  // reattivo
   this.state = {
     id: options.id,
     name: options.name,

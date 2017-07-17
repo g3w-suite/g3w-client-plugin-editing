@@ -45,12 +45,18 @@ proto.isDirty = function() {
   return this.state.editing.dirty;
 };
 
+proto.setDirty = function(bool) {
+  this.state.editing.dirty = _.isBoolean(bool) ? bool : false;
+  return this.state.editing.dirty;
+};
+
 // funzione che fa in modo di attivare tutti i tasks associati
 // al controllo. Questo verrà eventualmente chiamato o dalla pennina di start editing
 // o quando schiacchio il bottone generale Avvia editing
 // inoltre farà uno start e stop dell'editor
-proto.start = function() {
-  
+proto.start = function(options) {
+  //come si interfaccia con la sessione?????
+  this._editor.start(options);
 };
 
 // funzione che disabiliterà
