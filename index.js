@@ -44,7 +44,7 @@ var _Plugin = function(){
   //funzione che mostra il pannello dell'editing
   this.showEditingPanel = function() {
     var panel = new EditingPanel({
-      editorsControls: this.service.getEditorsControls()
+      toolboxes: this.service.getToolBoxes()
     });
     GUI.showPanel(panel);
     //inizializzo il servizio del pannello editing.

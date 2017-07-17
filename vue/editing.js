@@ -82,7 +82,7 @@ function PanelComponent(options) {
   this._template = options.template || EditingTemplate;
   // contiene tuti gli editor Controls che a loro volta contengono i tasks per l'editing
   // di quello specifico layer
-  this._editorsControls = options._editorsControls || [];
+  this._toolboxes = options.toolboxes || [];
    // save buttons
   this._labels = {
     start: "Avvia modifica",
@@ -102,8 +102,8 @@ function PanelComponent(options) {
         return {
           //lo state è quello del servizio in quanto è lui che va a modificare operare sui dati
           state: self._service.state,
-          editorscontrols: self._editorsControls,
-          resourcesurl: self._resourcesUrl,
+          toolboxes: self._tool,
+          resourcesurl: self.toolboxes,
           labels: self._labels
         }
       }

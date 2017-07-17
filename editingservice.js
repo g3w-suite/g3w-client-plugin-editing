@@ -5,7 +5,7 @@ var PluginService = g3wsdk.core.plugin.PluginService;
 var CatalogLayersStoresRegistry = g3wsdk.core.catalog.CatalogLayersStoresRegistry;
 var PluginConfig = require('./pluginconfig');
 var Session = g3wsdk.core.editing.Session;
-var EditingControlFacory = require('./toolboxes/toolboxesfactory');
+var ToolBoxesFactory = require('./toolboxes/toolboxesfactory');
 
 function EditingService() {
 
@@ -16,7 +16,7 @@ function EditingService() {
   // prprietà che contiene i layer vettoriali
   this._vectorLayers = [];
   // proprietà che contiene i controlli per l'editing
-  this._editorControls = [];
+  this._toolboxes = [];
   // prendo tutti i layers del progetto corrente che si trovano sul
   // CATALOGO quelli naturalmente editabili
   this.layers = CatalogLayersStoresRegistry.getLayers({
@@ -58,12 +58,12 @@ proto.init = function(config) {
 
 //funzione che server per aggiungere un editor
 proto.addEditorControl = function(editor) {
-  var editorControl = EditorControlFactory.build(editor);
-  this._editorsControls.push(editorControl);
+  var editorControl = ToolBoxesFactory.build(editor);
+  this._toolboxes.push(editorControl);
 };
 
-proto.getEditorsControls = function() {
-  return this._editorControls;
+proto.getToolBoxes = function() {
+  return this._toolboxes;
 };
 
 proto.getVectorLayers = function() {
