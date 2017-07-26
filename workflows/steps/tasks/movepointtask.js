@@ -3,7 +3,7 @@ var base =  g3wsdk.core.utils.base;
 
 var EditingTool = require('./editingtask');
 
-function MoveFeatureTool(editor){
+function MoveFeatureTask(options){
   var self = this;
   this.editor = editor;
   this.isPausable = true;
@@ -12,17 +12,17 @@ function MoveFeatureTool(editor){
 
   this.setters = {
     moveFeature: {
-      fnc: MoveFeatureTool.prototype._moveFeature,
-      fallback: MoveFeatureTool.prototype._fallBack
+      fnc: MoveFeatureTask.prototype._moveFeature,
+      fallback: MoveFeatureTask.prototype._fallBack
     }
   };
   
-  base(this,editor);
+  base(this, options);
 }
-inherit(MoveFeatureTool,EditingTool);
-module.exports = MoveFeatureTool;
+inherit(MoveFeatureTask, EditingTask);
 
-var proto = MoveFeatureTool.prototype;
+
+var proto = MoveFeatureTask.prototype;
 
 proto.run = function(){
   var self = this;
@@ -98,3 +98,5 @@ proto._fallBack = function(feature){
   this._busy = false;
   this.pause(false);
 };
+
+module.exports = MoveFeatureTask;

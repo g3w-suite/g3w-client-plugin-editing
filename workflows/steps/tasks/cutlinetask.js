@@ -4,15 +4,16 @@ var geom = g3wsdk.core.geometry.geom;
 var PickFeatureInteraction = g3wsdk.ol3.interactions.PickFeatureInteraction;
 var PickCoordinatesInteraction = g3wsdk.ol3.interactions.PickCoordsInteraction;
 
-var EditingTool = require('./editingtask');
+var EditingTask = require('./editingtask');
 
-function CutLineTool(editor, options){
+function CutLineTask(editor){
   this.setters = {
-    cutLine: CutLineTool.prototype._cutLine
+    cutLine: CutLineTask.prototype._cutLine
   };
 
-  base(this,editor,options);
-  this.steps = new EditingTool.Steps(CutLineTool.steps);
+  base(this,options);
+  
+  //this.steps = new EditingTool.Steps(CutLineTool.steps);
   this._origFeature = null;
   this._origGeometry = null;
   this._newFeatures = [];
@@ -38,11 +39,11 @@ function CutLineTool(editor, options){
   });
 }
 
-inherit(CutLineTool, EditingTool);
+inherit(CutLineTask, EditingTask);
 
-module.exports = CutLineTool;
+module.exports = CutLineTask;
 
-var proto = CutLineTool.prototype;
+var proto = CutLineTask.prototype;
 // funzione che viene chiamata quando viene eseguita il setTool dell'editor
 proto.run = function() {
   var self = this;
@@ -365,7 +366,7 @@ proto._isNew = function(feature){
   return (!_.isNil(this.editingLayer.getSource().getFeatureById(feature.getId())));
 };
 
-CutLineTool.steps = [
+CutLineTask.steps = [
   {
     type: "selectline"
   },

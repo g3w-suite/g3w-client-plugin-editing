@@ -8,21 +8,18 @@ var EditingPanel = require('./panel');
 var _Plugin = function(){
   base(this);
   this.name = 'editing';
-  this._layersConfig = null;
   this.init = function() {
     //setto il servizio
     this.setService(Service);
     //recupero configurazione del plugin
     this.config = this.getConfig();
-    //inizializzo il servizio.
-    // Il servizio è l'istanza della classe servizio
+    // inizializzo l'editing
     this.service.init(this.config);
     //regitro il plugin
     if (this.registerPlugin(this.config.gid)) {
       if (!GUI.ready) {
         GUI.on('ready',_.bind(this.setupGui, this));
-      }
-      else {
+      } else {
         this.setupGui();
       }
     }
@@ -47,13 +44,10 @@ var _Plugin = function(){
       toolboxes: this.service.getToolBoxes()
     });
     GUI.showPanel(panel);
-    //inizializzo il servizio del pannello editing.
-    //Il servizio è l'istanza della classe servizio
-    panel.getService().init(this.config);
   };
 
   this.load = function() {
-    this.init()
+    this.init();
   }
 };
 

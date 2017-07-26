@@ -10,57 +10,92 @@ var EditingTemplate = require('./editing.html');
 var events = new Vue();
 
 var vueComponentOptions = {
-  template: null,
-  data: null,
+  template: EditingTemplate,
+  data: function() {
+    return {
+      state: this.$options.state
+    }
+  },
   transitions: {'addremovetransition': 'showhide'},
   methods: {
-    toggleEditing: function(control) {
-      //this.$options.service.toggleEditing();
-      if (control.editing.on) {
-        events.$emit("control:stop", control);
+    toggleEditing: function(toolbox) {
+      if (toolbox.state.editing.on) {
+        events.$emit("toolbox:stop", toolbox);
+        toolbox.stop();
       }
       else {
-        events.$emit("control:start", control);
+        events.$emit("toolbox:start", toolbox);
+        toolbox.start();
+        if (!toolbox.isSelected()) {
+          _.forEach(this.state.toolboxes, function (tlbox) {
+            tlbox.setSelected(false);
+          });
+          toolbox.setSelected(true);
+          this.state.tooboxSelected = toolbox;
+        }
       }
     },
-    saveEdits: function(control) {
-      //chaiamata quando si preme su salva edits
-      events.emit("control:save", control);
+    saveEdits: function(toolbox) {
+      events.$emit("toolbox:save", toolbox);
+      toolbox.save();
     },
     toggletool: function(tool) {
-      if (tool.started) {
-        events.$emit("tool:stop", tool);
+      if (!tool.state.started) {
+        events.$emit("tool:start", tool);
+        _.forEach(this.state.tooboxSelected.getTools(), function(t) {
+          if (t.isStarted()) {
+            t.stop().
+              then(function() {
+                t.state.started = false;
+            })
+          }
+        });
+        tool.start();
+        tool.state.started = true;
       }
       else {
-        events.$emit("tool:start", control);
+        events.$emit("tool:stop", tool);
+        tool.state.started = false;
       }
     },
     onClose: function() {
       events.$emit("close");
+    },
+    select: function(toolbox) {
+      if (!toolbox.isSelected()) {
+        _.forEach(this.state.toolboxes, function(toolbox) {
+          toolbox.setSelected(false);
+        });
+        toolbox.setSelected(true);
+        this.state.tooboxSelected = toolbox;
+      } else {
+        toolbox.setSelected(false);
+        this.state.tooboxSelected = null;
+      }
     }
   },
   computed: {
-    editingbtnlabel: function() {
-      return this.state.editing.on ? "Termina editing" : "Avvia editing";
-    },
-    toolEnabled: function() {
-      return (!this.state.editing.error && (this.state.editing.enabled || this.state.editing.on)) ? "" : "disabled";
-    },
-    startorstop: function(control) {
-      return this.service
-    },
+    // editingbtnlabel: function() {
+    //   return this.state.editing.on ? "Termina editing" : "Avvia editing";
+    // },
+    // toolEnabled: function() {
+    //   return (!this.state.editing.error && (this.state.editing.enabled || this.state.editing.on)) ? "" : "disabled";
+    // },
+    // startorstop: function(control) {
+    //   return this.service
+    // },
     message: function() {
       var message = "";
-      if (!this.state.editing.enabled) {
-        message = '<span style="color: red">Aumentare il livello di zoom per abilitare l\'editing';
-      }
-      else if (this.state.editing.toolstep.message) {
-        var n = this.state.editing.toolstep.n;
-        var total = this.state.editing.toolstep.total;
-        var stepmessage = this.state.editing.toolstep.message;
-        message = '<div style="margin-top:20px">GUIDA STRUMENTO:</div>' +
-          '<div><span>['+n+'/'+total+'] </span><span style="color: yellow">'+stepmessage+'</span></div>';
-      }
+      // if (!this.state.editing.enabled) {
+      //   message = '<span style="color: red">Aumentare il livello di zoom per abilitare l\'editing';
+      // }
+      // else if (this.state.editing.toolstep.message) {
+      //   var n = this.state.editing.toolstep.n;
+      //   var total = this.state.editing.toolstep.total;
+      //   var stepmessage = this.state.editing.toolstep.message;
+      //   message = '<div style="margin-top:20px">GUIDA STRUMENTO:</div>' +
+      //     '<div><span>['+n+'/'+total+'] </span><span style="color: yellow">'+stepmessage+'</span></div>';
+      // }
       return message;
     }
   }
@@ -78,8 +113,6 @@ function PanelComponent(options) {
   merge(this, options);
   // dichiaro l'internal Component
   this.internalComponent = null;
-  //template from component
-  this._template = options.template || EditingTemplate;
   // contiene tuti gli editor Controls che a loro volta contengono i tasks per l'editing
   // di quello specifico layer
   this._toolboxes = options.toolboxes || [];
@@ -92,24 +125,18 @@ function PanelComponent(options) {
   this._saveBtnLabel = options.saveBtnLabel || "Salva";
   // resource urls
   this._resourcesUrl = options.resourcesUrl || GUI.getResourcesUrl();
-  this._service = options.service || EditingService;//new EditingService(serviceOptions);
+  this._service = options.service || EditingService;
   // setto il componente interno
-  this.setInternalComponent = function () {
-    var InternalComponent = Vue.extend(this.vueComponent);
-    this.internalComponent = new InternalComponent({
-      template: this._template,
-      data: function() {
-        return {
-          //lo state è quello del servizio in quanto è lui che va a modificare operare sui dati
-          state: self._service.state,
-          toolboxes: self._tool,
-          resourcesurl: self.toolboxes,
-          labels: self._labels
-        }
-      }
-    });
-    return this.internalComponent;
-  };
+  var InternalComponent = Vue.extend(this.vueComponent);
+  this.internalComponent = new InternalComponent({
+    service: this._service,
+    state: {
+      toolboxes: self._toolboxes,
+      labels: self._labels,
+      tooboxSelected: null
+    }
+  });
+
   // sovrascrivo richiamando il padre in append
   this.mount = function(parent) {
     return base(this, 'mount', parent, true)
@@ -126,15 +153,15 @@ function PanelComponent(options) {
     self.unmount();
   });
 
-  events.$on("control:start", function(control) {
+  events.$on("toolbox:start", function(toolbox) {
     // inizia editing layer
   });
 
-  events.$on("control:stop", function(control) {
+  events.$on("toolbox:stop", function(toolbox) {
     // termina editing layer
   });
 
-  events.$on("control:save", function(control) {
+  events.$on("toolbox:save", function(toolbox) {
     // salva editing layer
   });
 

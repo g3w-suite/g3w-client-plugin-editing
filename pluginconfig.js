@@ -59,7 +59,29 @@ POLYGONCOLORS = [
     stroke: '#000033',
     fill: 'rgba(0, 0, 255, 0.1)'
   }
-  
+];
+
+TABLECOLORS = [
+  '#234d20',
+  '#36802d',
+  '#77ab59',
+  '#c9df8a',
+  '#f0f7da'
+];
+
+COLORS = [
+  '#ff0000',
+ 	'#ffbf00',
+ 	'#ffff00',
+ 	'#00ff40',
+ 	'#00ffbf',
+ 	'#00bfff',
+ 	'#0040ff',
+ 	'#8000ff',
+ 	'#ff00ff',
+  '#331909',
+  '#234d20',
+  '#7f3e16'
 ];
 
 module.exports = {
@@ -68,5 +90,7 @@ module.exports = {
   Line: LINECOLORS,
   MultiLine: LINECOLORS,
   Polygon: POLYGONCOLORS,
-  MultiPolygon: POLYGONCOLORS
+  MultiPolygon: POLYGONCOLORS,
+  Table: TABLECOLORS,
+  Colors: COLORS
 };

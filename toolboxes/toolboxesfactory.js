@@ -1,26 +1,33 @@
 var Layer = g3wsdk.core.layer.Layer;
 var Geometry = g3wsdk.core.geometry.Geometry;
+
 var Tool = require('./tool');
 var ToolBox = require('./toolbox');
 
-var GeometryAddWorkflow = require('../workflows/geometryadd');
-var GeometryModifyWorkflow = require('../workflows/geometrymodify');
-var GeometryModifyVertexWorkflow = require('../workflows/geometrymodifyvertex');
-var GeometryMoveWorkflow = require('../workflows/geometrymove');
-var GeometryDeleteWorkflow = require('../workflows/geometrydelete');
-var EditFeatureAttributesWorkflow = require('../workflows/editfeatureattributes');
+var GUI = g3wsdk.gui.GUI;
+
+var AddFeatureWorkflow = require('../workflows/addfeatureworkflow');
+var ModifyGeometryWorkflow = require('../workflows/modifygeometryworkflow');
+var ModifyGeometryVertexWorkflow = require('../workflows/modifygeometryvertexworkflow');
+var MoveGeometryWorkflow = require('../workflows/movegeometryworkflow');
+var DeleteFeatureWorkflow = require('../workflows/deletefeatureworkflow');
+var EditFeatureAttributesWorkflow = require('../workflows/editfeatureattributesworkflow');
 
 // classe costruttrice di ToolBoxes
 function EditorToolBoxesFactory() {
+  this._mapService = GUI.getComponent('map').getService();
   // metodo adibito alla costruzione dell'Editor Control
   // e dei tasks associati
   this.build = function(editor) {
     // estraggo il layer dell'editor
     var layer = editor.getLayer();
     // estraggo il tipo di layer
-    var layerType = layer.getLayerType();
+    var layerType = layer.getType();
+    var layerId = layer.getId();
+    var olLayer = this._mapService.getLayerById(layerId);
     // array contenete tutti i tasks dell'editor control
     var tools = [];
+    var color;
     switch (layerType) {
       // caso layer vettoriale
       case Layer.LayerTypes.VECTOR:
@@ -31,30 +38,30 @@ function EditorToolBoxesFactory() {
             tools = [
               new Tool({
                 id: 'point_addfeature',
-                name: "Inserisci punto",
+                name: "Inserisci feature",
                 icon: "addPoint.png",
-                editor: editor,
-                op: GeometryAddWorkflow
+                layer: olLayer,
+                op: AddFeatureWorkflow
               }),
               new Tool({
                 id: 'point_movefeature',
-                name: "Modifica punto",
+                name: "Sposta feature",
                 icon: "movePoint.png",
-                editor: editor,
-                op: GeometryModifyWorkflow
+                layer: olLayer,
+                op: MoveGeometryWorkflow
               }),
               new Tool({
                 id: 'point_deletefeature',
-                name: "Elimina punto",
+                name: "Elimina feature",
                 icon: "deletePoint.png",
-                editor: editor,
-                op: GeometryDeleteWorkflow
+                layer: olLayer,
+                op: DeleteFeatureWorkflow
               }),
               new Tool({
                 id: 'point_editattributes',
                 name: "Modifica attributi",
                 icon: "editAttributes.png",
-                editor: editor,
+                layer: olLayer,
                 op: EditFeatureAttributesWorkflow
               })
             ];
@@ -64,30 +71,30 @@ function EditorToolBoxesFactory() {
             tools = [
               new Tool({
                 id: 'line_addfeature',
-                name: "Inserisci linea",
+                name: "Inserisci feature",
                 icon: "addLine.png",
-                editor: editor,
-                op: GeometryAddWorkflow
+                layer: olLayer,
+                op: AddFeatureWorkflow
               }),
               new Tool({
                 id: 'line_movevertex',
                 name: "Modifica vertice",
                 icon: "moveVertex.png",
-                editor: editor,
-                op: GeometryModifyVertexWorkflow
+                layer: olLayer,
+                op: ModifyGeometryVertexWorkflow
               }),
               new Tool({
                 id: 'line_deletefeature',
-                name: "Elimina linea",
+                name: "Elimina feature",
                 icon: "deleteLine.png",
-                editor: editor,
-                op: GeometryDeleteWorkflow
+                layer: olLayer,
+                op: DeleteFeatureWorkflow
               }),
               new Tool({
                 id: 'line_editattributes',
                 name: "Modifica attributi",
                 icon: "editAttributes.png",
-                editor: editor,
+                layer: olLayer,
                 op: EditFeatureAttributesWorkflow
               })
             ];
@@ -97,37 +104,37 @@ function EditorToolBoxesFactory() {
             tools = [
               new Tool({
                 id: 'polygon_addfeature',
-                name: "Inserisci linea",
+                name: "Inserisci feature",
                 icon: "AddPolygon.png",
-                editor: editor,
-                op: GeometryAddWorkflow
+                layer: olLayer,
+                op: AddFeatureWorkflow
               }),
               new Tool({
                 id: 'polygon_movefeature',
-                name: "Inserisci linea",
+                name: "Muovi feature",
                 icon: "MovePolygon.png",
-                editor: editor,
-                op: GeometryMoveWorkflow
+                layer: olLayer,
+                op: MoveGeometryWorkflow
               }),
               new Tool({
                 id: 'polygon_movevertex',
                 name: "Modifica vertice",
                 icon: "moveVertex.png",
-                editor: editor,
-                op: GeometryModifyVertexWorkflow
+                layer: olLayer,
+                op: ModifyGeometryVertexWorkflow
               }),
               new Tool({
                 id: 'polygon_deletefeature',
-                name: "Elimina linea",
+                name: "Elimina feature",
                 icon: "deleteLine.png",
-                editor: editor,
-                op: GeometryDeleteWorkflow
+                layer: olLayer,
+                op: DeleteFeatureWorkflow
               }),
               new Tool({
                 id: 'polygon_editattributes',
                 name: "Modifica attributi",
                 icon: "editAttributes.png",
-                editor: editor,
+                layer: olLayer,
                 op: EditFeatureAttributesWorkflow
               })
             ];
@@ -136,6 +143,7 @@ function EditorToolBoxesFactory() {
         break;
       // caso layer tabellare
       case Layer.LayerTypes.TABLE:
+        color = 'blue';
         tools = [];
         break;
       default:
@@ -144,8 +152,10 @@ function EditorToolBoxesFactory() {
     }
 
     return new ToolBox({
+      id: layer.getId(),
       editor: editor,
-      tools: tools
+      tools: tools,
+      title: "Edit " + layer.getName()
     })
   };
 }

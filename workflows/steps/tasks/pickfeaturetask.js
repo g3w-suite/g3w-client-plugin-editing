@@ -3,37 +3,26 @@ var base =  g3wsdk.core.utils.base;
 var noop = g3wsdk.core.utils.noop;
 var PickFeatureInteraction = g3wsdk.ol3.interactions.PickFeatureInteraction;
 
-var EditingTool = require('./editingtask');
+var EditingTask = require('./editingtask');
 
-function PickFeatureTool(editor){
+function PickFeatureTask(options) {
   var self = this;
   this.isPausable = true;
   this.pickFeatureInteraction = null;
   this._running = false;
   this._busy = false;
   this._originalFeatureStyle = null;
-  // qui si definiscono i metodi che vogliamo poter intercettare, ed eventualmente bloccare (vedi API G3WObject)
-  this.setters = {
-    pickFeature: {
-      fnc: PickFeatureTool.prototype._pickFeature,
-      fallback: PickFeatureTool.prototype._fallBack
-    }
-  };
-  base(this, editor);
+  base(this, options);
 }
-inherit(PickFeatureTool, EditingTool);
 
-module.exports = PickFeatureTool;
+inherit(PickFeatureTask, EditingTask);
 
-var proto = PickFeatureTool.prototype;
-
-proto._pickFeature = function(feature) {
-  this.editor.pickFeature(feature);
-};
+var proto = PickFeatureTask.prototype;
 
 // metodo eseguito all'avvio del tool
 proto.run = function() {
   var self = this;
+  var d = $.Deferred();
   var defaultStyle = new ol.style.Style({
     image: new ol.style.Circle({
       radius: 5,
@@ -84,3 +73,5 @@ proto._fallBack = function(feature){
   this._busy = false;
   this.pause(false);
 };
+
+module.exports = PickFeatureTask;

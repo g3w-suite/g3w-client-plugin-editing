@@ -2,9 +2,9 @@ var inherit = g3wsdk.core.utils.inherit;
 var base =  g3wsdk.core.utils.base;
 var PickFeatureInteraction = g3wsdk.ol3.interactions.PickFeatureInteraction;
 
-var EditingTool = require('./editingtask');
+var EditingTask = require('./editingtask');
 
-function ModifyFeatureTool(editor,options){
+function ModifyFeatureTask(options){
   var self = this;
   options = options || {};
   this.editor = editor;
@@ -15,22 +15,21 @@ function ModifyFeatureTool(editor,options){
   this._snapInteraction = null; 
 
   this.setters = {
-    modifyFeature: ModifyFeatureTool.prototype._modifyFeature
+    modifyFeature: ModifyFeatureTask.prototype._modifyFeature
   };
   
   base(this,editor);
 }
-inherit(ModifyFeatureTool,EditingTool);
-module.exports = ModifyFeatureTool;
+inherit(ModifyFeatureTask, EditingTask);
 
-var proto = ModifyFeatureTool.prototype;
+
+var proto = ModifyFeatureTask.prototype;
 
 proto.run = function() {
   var self = this;
   this.pickedFeatures = new ol.Collection;
-  var layers = [this.editor.getVectorLayer().getMapLayer(),this.editor.getEditVectorLayer().getMapLayer()];
   this._pickInteraction = new PickFeatureInteraction({
-    layers: layers
+    layers: [this.layer]
   });
 
   this.addInteraction(this._pickInteraction);
@@ -137,3 +136,5 @@ proto._fallBack = function(feature){
 proto._isNew = function(feature){
   return (!_.isNil(this.editingLayer.getSource().getFeatureById(feature.getId())));
 };
+
+module.exports = ModifyFeatureTask;

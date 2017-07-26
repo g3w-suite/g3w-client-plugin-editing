@@ -1,22 +1,26 @@
 <div class="g3w-editing-panel">
-  <template v-for="toolbox in toolboxes">
-    <div class="panel panel-primary">
-      <div class="panel-heading">
-        <h3 class="panel-title">{{ toolbox.name }}</h3>
+  <template v-for="toolbox in state.toolboxes">
+    <div  class="panel panel-primary">
+      <div @click="select(toolbox)" class="panel-heading" :class="{ 'toolboxselected': toolbox.state.selected }" :style="{ background: toolbox.state.color}" >
+        <h3 class="panel-title" >{{ toolbox.state.title }}</h3>
+        <!--<span class="editbtn" :class="{'enabled' : toolbox.isDirty() }" >-->
+          <!--<img height="20px" width="20px"  @click="saveEdits(toolbox)" src="https://cdn4.iconfinder.com/data/icons/pretty-office-part-7-simple-style/128/Save-as.png"/>-->
+        <!--</span>-->
       </div>
       <div class="panel-body">
-        <button class="btn btn-default" @click="toggleEditing(control)" :alt="labels.save" :title="labels.save" :class="{'enabled': (toolbox.enabled)}">
-          <span class="glyphicon glyphicon-pencil" style="vertical-align:middle"></span> Centered
-        </button>
-        <button class="btn btn-default" v-disabled="!toolbox.editing.dirty" @click="saveEdits" :alt="startorstop" :title="startorstop" :class="{'enabled': (toolbox.editing.on)}">
-          <span class="glyphicon glyphicon glyphicon-floppy-save" style="vertical-align:middle"></span> Centered
-        </button>
-        <template v-for="tool in toolbox.tools">
-          <div class="editbtn" :class="{'enabled' : (control.editing.on && tool.enabled), 'toggled' : tool.started}">
-            <img height="30px" width="30px" @click="toggletool(tool)" :alt="tool.name" :title="tool.name" :src="resourcesurl+'images/'+tool.icon"/>
+        <!--<button class="btn btn-default" v-disabled="!toolbox.editing.dirty" @click="saveEdits" :alt="startorstop" :title="startorstop" :class="{'enabled': (toolbox.editing.on)}">-->
+          <!--<span class="glyphicon glyphicon glyphicon-floppy-save" style="vertical-align:middle"></span> Centered-->
+        <!--</button>-->
+        <template v-for="tool in toolbox.getTools()">
+          <div class="editbtn" :class="{'enabled' : (toolbox.state.editing.on), 'toggled' : tool.state.started}">
+            <img height="30px" width="30px" @click="toggletool(tool)" :alt="tool.state.name" :title="tool.state.name" :src="'../dist/client/images/'+ tool.state.icon"/>
+                 <!--:src="resourcesurl+'images/'+tool.icon"/>-->
           </div>
         </template>
-        <img v-show="toolbox.loading" :src="resourcesurl +'images/loader.svg'">
+        <div class="editbtn pull-right" :class="{'enabled' : true,  toggled : toolbox.state.editing.on}" >
+          <img height="30px" width="30px"  @click="toggleEditing(toolbox)" src="http://iconizer.net/files/Bright/thumb/128/pen_write_edit.png"/>
+        </div>
+        <!--<img v-show="toolbox.loading" :src="resourcesurl +'images/loader.svg'">-->
       </div>
     </div>
   </template>

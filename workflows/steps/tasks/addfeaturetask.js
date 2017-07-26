@@ -1,17 +1,15 @@
 var inherit = g3wsdk.core.utils.inherit;
 var base =  g3wsdk.core.utils.base;
-var EditingTool = require('./editingtask');
+var EditingTask = require('./editingtask');
 
 // classe  per l'aggiuntadi feature
 // eridita dalla classe padre EditingTool
-function AddFeatureTool(editor, options) {
+function AddFeatureTask(options) {
 
   options = options || {};
   this._running = false;
   this._busy = false;
   // source del layer di editing
-  this.source = editor.getEditVectorLayer().getMapLayer().getSource();
-  this.type = this.editor.getEditVectorLayer().geometrytype;
   // la drw interaction per disegnare la feature
   this.drawInteraction = null;
   this._snap = options.snap || null;
@@ -22,19 +20,19 @@ function AddFeatureTool(editor, options) {
   // ed eventualmente bloccare (vedi API G3WObject)
   this.setters = {
     addFeature: {
-      fnc: AddFeatureTool.prototype._addFeature,
-      fallback: AddFeatureTool.prototype._fallBack
+      fnc: AddFeatureTask.prototype._addFeature,
+      fallback: AddFeatureTask.prototype._fallBack
     }
   };
   
-  base(this, editor);
+  base(this, options);
 }
 
-inherit(AddFeatureTool, EditingTool);
+inherit(AddFeatureTask, EditingTask);
 
-module.exports = AddFeatureTool;
+module.exports = AddFeatureTask;
 
-var proto = AddFeatureTool.prototype;
+var proto = AddFeatureTask.prototype;
 
 // metodo eseguito all'avvio del tool
 proto.run = function() {
@@ -55,12 +53,11 @@ proto.run = function() {
   this.drawInteraction.setActive(true);
   // viene settato sull'inizio del draw l'evento drawstart dell'editor
   this.drawInteraction.on('drawstart',function(e) {
-    self.editor.emit('drawstart',e);
+    // TODO
   });
   // viene settato l'evento drawend
   this.drawInteraction.on('drawend', function(e) {
     e.feature.setStyle(style);
-    self.editor.emit('drawend',e);
     if (!self._busy) {
       self._busy = true;
       self.pause();
@@ -127,7 +124,6 @@ proto._addFeature = function(feature) {
   //risetto allo style iniziale
   feature.setStyle(null);
   ////
-  this.editor.addFeature(feature);
   this._busy = false;
   this.pause(false);
   return true;

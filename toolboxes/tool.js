@@ -1,22 +1,20 @@
 var inherit = g3wsdk.core.utils.inherit;
 var base =  g3wsdk.core.utils.base;
-var resolve = g3wsdk.core.utils.resolve;
 var G3WObject = g3wsdk.core.G3WObject;
 
 // Calsse che rappresenta di fatto
 // il bottone all'interno dell'editor control per l'editing
-function Tool(options){
+function Tool(options) {
   base(this);
   options = options || {};
-  // gli veine passato l'editor
-  this._editor = options.editor;
-  // gli viene passata la sessione
-  //ma serve????
+  // ma mi servirà? la sessione non sarà gestita dal toolbox
   this._session = options.session;
+  // prendo il layer
+  this._layer = options.layer;
   // gli viene passato l'operatore
   // l'oggeto che si occuperà materialmente di gestire l'editazione del layer
   // verosimilmente sarà un oggetto workflow
-  this._op = options.op;
+  this._op = new options.op();
   //stato dell'oggetto tool
   // reattivo
   this.state = {
@@ -32,37 +30,71 @@ inherit(Tool, G3WObject);
 
 var proto = Tool.prototype;
 
+// funzione che al click del bottone lancio
+proto.start = function() {
+  var self = this;
+  var options = {};
+  options.inputs = this._layer;
+  //passo al context la sessione
+  options.context = {
+    session: this._session
+  };
+  // verifico che sia definito l'operatore
+  if (this._op) {
+    //workflow start
+    self.state.started = true;
+    self._op.start(options)
+      .then(function() {
+        // vado a salvare la sessione
+        self._session.save();
+        // faccio ripartire il tool così
+        // da poter ripartire con il flusso
+        self.start();
+      })
+  }
+};
+
 proto.getId = function() {
   return this.state.id;
+};
+
+proto.setId = function(id) {
+  this.state.id = id;
 };
 
 proto.getName = function() {
   return this.state.name;
 };
 
-// funzione che al click del bottone lancio 
-proto.start = function() {
-  var self = this;
-  // verifico che sia definito l'operatore
-  if (this._op) {
-    // a questo punto l'editor è attivo in quanto
-    // ho attivatao (start) il controllo che contiene il tool stesso
-    // recupero il layer così lo passo come input all'operatore(workflow)
-    // che lo userà come inputs per lavorare sulle sue features
-    var layer = self._editor.getLayer();
-    //workflow start
-    //proto.start = function(inputs, context, flow)
-    return self._op.start(layer, {
-      session: self._session
-    });
-    self.state.started = true;
-  }
+proto.isStarted = function() {
+  return this.state.started;
 };
 
+proto.getIcon = function() {
+  return this.state.icon;
+};
+
+proto.setIcon = function(icon) {
+  this.state.icon = icon;
+};
+
+//restituisce la sessione
+proto.getSession = function() {
+  return this._session;
+};
+
+//setta la sessione
+proto.setSession = function(session) {
+  pippo = session;
+  this._session = session;
+};
+
+//fa lo stop del tool
 proto.stop = function() {
   if (this._op) {
-    return this._op.stop();
+    return this._op.stop()
   }
+
 };
 
 module.exports = Tool;

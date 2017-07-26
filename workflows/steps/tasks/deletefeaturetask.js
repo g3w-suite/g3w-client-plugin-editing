@@ -1,23 +1,22 @@
 var inherit = g3wsdk.core.utils.inherit;
 var base =  g3wsdk.core.utils.base;
 var DeleteInteraction = g3wsdk.ol3.interactions.DeleteFeatureInteraction;
-var EditingTool = require('./editingtask');
+var EditingTask = require('./editingtask');
 
-function DeleteFeatureTool(editor) {
-  this.editor = editor;
+function DeleteFeatureTask(options) {
   this.drawInteraction = null;
-  this.layer = null;
-  this.editingLayer = null;
+  this._selectInteraction = null;
+  this._layer = null;
   this.setters = {
-    deleteFeature: DeleteFeatureTool.prototype._deleteFeature
+    deleteFeature: proto._deleteFeature
   };
-  
-  base(this,editor);
+  base(this, options);
 }
-inherit(DeleteFeatureTool, EditingTool);
-module.exports = DeleteFeatureTool;
 
-var proto = DeleteFeatureTool.prototype;
+inherit(DeleteFeatureTask, EditingTask);
+
+
+var proto = DeleteFeatureTask.prototype;
 
 /* BRUTTISSIMO! Tocca ridefinire tutte le parti internet di OL3 non esposte dalle API */
 
@@ -33,11 +32,14 @@ ol.geom.GeometryType = {
   CIRCLE: 'Circle'
 };
 
-var styles = {};
+
 var white = [255, 255, 255, 1];
 var blue = [0, 153, 255, 1];
 var red = [255, 0, 0, 1];
 var width = 3;
+
+//vado a definre lo stile della feature selezionata per essere cancellata
+var styles = {};
 styles[ol.geom.GeometryType.POLYGON] = [
   new ol.style.Style({
     stroke: new ol.style.Stroke({
@@ -49,8 +51,7 @@ styles[ol.geom.GeometryType.POLYGON] = [
     })
   })
 ];
-styles[ol.geom.GeometryType.MULTI_POLYGON] =
-    styles[ol.geom.GeometryType.POLYGON];
+styles[ol.geom.GeometryType.MULTI_POLYGON] = styles[ol.geom.GeometryType.POLYGON];
 
 styles[ol.geom.GeometryType.LINE_STRING] = [
   new ol.style.Style({
@@ -66,14 +67,10 @@ styles[ol.geom.GeometryType.LINE_STRING] = [
     })
   })
 ];
-styles[ol.geom.GeometryType.MULTI_LINE_STRING] =
-    styles[ol.geom.GeometryType.LINE_STRING];
 
-styles[ol.geom.GeometryType.CIRCLE] =
-    styles[ol.geom.GeometryType.POLYGON].concat(
-        styles[ol.geom.GeometryType.LINE_STRING]
-    );
+styles[ol.geom.GeometryType.MULTI_LINE_STRING] = styles[ol.geom.GeometryType.LINE_STRING];
 
+styles[ol.geom.GeometryType.CIRCLE] = styles[ol.geom.GeometryType.POLYGON].concat(styles[ol.geom.GeometryType.LINE_STRING]);
 
 styles[ol.geom.GeometryType.POINT] = [
   new ol.style.Style({
@@ -90,30 +87,30 @@ styles[ol.geom.GeometryType.POINT] = [
     zIndex: Infinity
   })
 ];
-styles[ol.geom.GeometryType.MULTI_POINT] =
-    styles[ol.geom.GeometryType.POINT];
+styles[ol.geom.GeometryType.MULTI_POINT] = styles[ol.geom.GeometryType.POINT];
 
-styles[ol.geom.GeometryType.GEOMETRY_COLLECTION] =
-    styles[ol.geom.GeometryType.POLYGON].concat(
-        styles[ol.geom.GeometryType.LINE_STRING],
-        styles[ol.geom.GeometryType.POINT]
-    );
-
+styles[ol.geom.GeometryType.GEOMETRY_COLLECTION] = styles[ol.geom.GeometryType.POLYGON].concat(styles[ol.geom.GeometryType.LINE_STRING], styles[ol.geom.GeometryType.POINT]);
 
 styles[ol.geom.GeometryType.POLYGON] = _.concat(styles[ol.geom.GeometryType.POLYGON],styles[ol.geom.GeometryType.LINE_STRING]);
+
 styles[ol.geom.GeometryType.GEOMETRY_COLLECTION] = _.concat(styles[ol.geom.GeometryType.GEOMETRY_COLLECTION],styles[ol.geom.GeometryType.LINE_STRING]);
     
 /* FINE BRUTTISSIMO! */
+
 // run del tool di delete feature
-proto.run = function() {
+// che ritorna una promessa
+proto.run = function(inputs, context) {
+  console.log('Delete task run.......');
   var self = this;
-  this.layer = this.editor.getVectorLayer().getMapLayer();
-  this.editingLayer = this.editor.getEditVectorLayer().getMapLayer();
+  var d = $.Deferred();
+  this._layer = inputs;
+  //recupero la sessione dal context
+  var session = context.session;
   this._selectInteraction = new ol.interaction.Select({
-    layers: [this.layer, this.editingLayer],
+    layers: [this._layer],
     condition: ol.events.condition.click,
-    style: function(feature, resolution) {
-      var style = self.editor._editingVectorStyle ? self.editor._editingVectorStyle.delete : styles[feature.getGeometry().getType()];
+    style: function(feature) {
+      var style = styles[feature.getGeometry().getType()];
       return style;
     }
   });
@@ -122,20 +119,22 @@ proto.run = function() {
     features: this._selectInteraction.getFeatures()
   });
   this.addInteraction(this._deleteInteraction);
-  this._deleteInteraction.on('deleteend',function(e){
+  this._deleteInteraction.on('deleteend', function(e){
     var feature = e.features.getArray()[0];
-    var isNew = self._isNew(feature);
-    if (!self._busy){
-      self._busy = true;
-      self.pause(true);
-      self.deleteFeature(feature, isNew)
-      .always(function() {
-        self._busy = false;
-        self.pause(false);
-      })
-    }
+    //var isNew = self._isNew(feature);
+    // vado a rimuovera la feature
+    console.log('delete feature .... ' + feature);
+    self._layer.getSource().removeFeature(feature);
+    // dico di cancellarla (la feature non viene cancellatata ma aggiornato il suo stato
+    feature.delete();
+    // vado ad aggiungere la featurea alla sessione (parte temporanea)
+    session.push(feature);
+    //dovrei aggiungere qui qualcosa per salvare temporaneamente quesa modifica sulla sessione al fine di
+    // portare tutte le modifiche quando viene fatto il save della sessione
+    self._selectInteraction.getFeatures().clear();
+    d.resolve(self._layer);
   });
-
+  return d.promise();
 };
 
 proto.pause = function(pause){
@@ -149,26 +148,29 @@ proto.pause = function(pause){
   }
 };
 
-proto.stop = function(){
+proto.stop = function() {
+  var d = $.Deferred();
   this._selectInteraction.getFeatures().clear();
   this.removeInteraction(this._selectInteraction);
   this._selectInteraction = null;
   this.removeInteraction(this._deleteInteraction);
   this._deleteInteraction = null;
-  return true;
+  d.resolve(true);
+  return d.promise();
 };
 
 proto._deleteFeature = function(feature, isNew) {
-  var relations = [];
-  var relationsPromise = this.editor.getRelationsWithValues(feature);
-  relationsPromise
-  .then(function(relationsArray) {
-    relations = relationsArray;
-  });
-  this.editor.deleteFeature(feature, relations, isNew);
-  this._selectInteraction.getFeatures().clear();
-  this._busy = false;
-  this.pause(false);
+  //var relations = [];
+  // var relationsPromise = this.editor.getRelationsWithValues(feature);
+  // relationsPromise
+  // .then(function(relationsArray) {
+  //   relations = relationsArray;
+  // });
+  //this.editor.deleteFeature(feature, relations, isNew);
+  //this._selectInteraction.getFeatures().clear();
+  //this._busy = false;
+  //this.pause(false);
+  //this._layer.removeFeatures(this._layer.getFeatureById(feature.getId()));
   return true;
 };
 
@@ -178,5 +180,8 @@ proto._fallBack = function(feature) {
 };
 
 proto._isNew = function(feature){
-  return (!_.isNil(this.editingLayer.getSource().getFeatureById(feature.getId())));
+  return (!_.isNil(this._layer.getSource().getFeatureById(feature.getId())));
 };
+
+
+module.exports = DeleteFeatureTask;
