@@ -34,7 +34,9 @@ var proto = Tool.prototype;
 proto.start = function() {
   var self = this;
   var options = {};
-  options.inputs = this._layer;
+  options.inputs = {
+    layer: this._layer
+  };
   //passo al context la sessione
   options.context = {
     session: this._session
@@ -94,7 +96,11 @@ proto.stop = function() {
   if (this._op) {
     return this._op.stop()
   }
+};
 
+proto.clear = function() {
+  this.state.enabled = false;
+  this.state.started = false;
 };
 
 module.exports = Tool;

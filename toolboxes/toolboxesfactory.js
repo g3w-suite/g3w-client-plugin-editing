@@ -154,6 +154,7 @@ function EditorToolBoxesFactory() {
     return new ToolBox({
       id: layer.getId(),
       editor: editor,
+      layer: olLayer,
       tools: tools,
       title: "Edit " + layer.getName()
     })

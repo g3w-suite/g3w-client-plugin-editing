@@ -10,6 +10,8 @@ function ToolBox(options) {
   // editor del Layer che permette di interagire con il layer
   // save, etc ...
   this._editor = options.editor;
+  //layer ol
+  this._layer = options.layer;
   // tasks associati
   this._tools = options.tools;
   //sessione che permette di gestire tutti i movimenti da parte
@@ -53,6 +55,10 @@ proto.getTitle = function() {
 
 proto.getColor = function() {
   return this.state.color;
+};
+
+proto.getLayer = function() {
+  return this._layer;
 };
 
 proto.isEnabled = function() {
@@ -136,8 +142,12 @@ proto.stop = function() {
       .then(function() {
         self.state.editing.on = false;
         self.state.enabled = false;
+        self.state.selected = false;
         //vado a rimuovere tutte le feature dal layer di editing
         self._mapService.getLayerById(layerId).getSource().clear();
+        _.forEach(self._tools, function(tool) {
+          tool.clear();
+        });
         d.resolve(true)
       })
       .fail(function(err) {

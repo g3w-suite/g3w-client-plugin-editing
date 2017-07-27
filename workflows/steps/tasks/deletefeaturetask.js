@@ -103,7 +103,7 @@ proto.run = function(inputs, context) {
   console.log('Delete task run.......');
   var self = this;
   var d = $.Deferred();
-  this._layer = inputs;
+  this._layer = inputs.layer;
   //recupero la sessione dal context
   var session = context.session;
   this._selectInteraction = new ol.interaction.Select({

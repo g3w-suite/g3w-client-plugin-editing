@@ -1,4 +1,15 @@
 <div class="g3w-editing-panel">
+  <div style="margin-bottom: 10px; margin-top:5px;">
+    <div class="editbtn" @click="canSave ? save(): null" :class="{'enabled' : canSave }">
+      <img height="30px" width="30px" src="../dist/client/images/saveedit.png"/>
+    </div>
+    <div class="editbtn pull-right" :class="{'enabled' : canRedo }">
+      <img height="30px" @click="canRedo ? redo(): null" width="30px" src="../dist/client/images/redo.png"/>
+    </div>
+    <div class="editbtn pull-right" @click="canUndo ? undo(): null" :class="{'enabled' : canUndo }">
+      <img height="30px" width="30px" src="../dist/client/images/undo.png"/>
+    </div>
+  </div>
   <template v-for="toolbox in state.toolboxes">
     <div  class="panel panel-primary">
       <div @click="select(toolbox)" class="panel-heading" :class="{ 'toolboxselected': toolbox.state.selected }" :style="{ background: toolbox.state.color}" >
@@ -18,7 +29,7 @@
           </div>
         </template>
         <div class="editbtn pull-right" :class="{'enabled' : true,  toggled : toolbox.state.editing.on}" >
-          <img height="30px" width="30px"  @click="toggleEditing(toolbox)" src="http://iconizer.net/files/Bright/thumb/128/pen_write_edit.png"/>
+          <img height="30px" width="30px"  @click="toggleEditing(toolbox)" src="../dist/client/images/edit.png"/>
         </div>
         <!--<img v-show="toolbox.loading" :src="resourcesurl +'images/loader.svg'">-->
       </div>

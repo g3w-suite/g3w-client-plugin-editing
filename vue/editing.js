@@ -2,9 +2,11 @@ var inherit = g3wsdk.core.utils.inherit;
 var base =  g3wsdk.core.utils.base;
 var merge =  g3wsdk.core.utils.merge;
 var GUI = g3wsdk.gui.GUI;
+var UndoRedoManager = g3wsdk.core.editing.UndoRedoManager;
 var Component = g3wsdk.gui.vue.Component;
 var EditingService = require('../editingservice');
 var EditingTemplate = require('./editing.html');
+
 
 //il bus events per la gestione del pannello di editing
 var events = new Vue();
@@ -31,7 +33,7 @@ var vueComponentOptions = {
             tlbox.setSelected(false);
           });
           toolbox.setSelected(true);
-          this.state.tooboxSelected = toolbox;
+          this.state.toolboxSelected = toolbox;
         }
       }
     },
@@ -42,7 +44,7 @@ var vueComponentOptions = {
     toggletool: function(tool) {
       if (!tool.state.started) {
         events.$emit("tool:start", tool);
-        _.forEach(this.state.tooboxSelected.getTools(), function(t) {
+        _.forEach(this.state.toolboxSelected.getTools(), function(t) {
           if (t.isStarted()) {
             t.stop().
               then(function() {
@@ -67,14 +69,39 @@ var vueComponentOptions = {
           toolbox.setSelected(false);
         });
         toolbox.setSelected(true);
-        this.state.tooboxSelected = toolbox;
+        this.state.toolboxSelected = toolbox;
       } else {
         toolbox.setSelected(false);
-        this.state.tooboxSelected = null;
+        this.state.toolboxSelected = null;
       }
+    },
+    undo: function() {
+      var self = this;
+      var features = this.state.toolboxSelected.getSession().getHistory().undo();
+      UndoRedoManager.execute(self.state.toolboxSelected.getLayer(), features);
+    },
+    redo: function() {
+      var self = this;
+      var features = this.state.toolboxSelected.getSession().getHistory().redo();
+      UndoRedoManager.execute(self.state.toolboxSelected.getLayer(), features);
+    },
+    save: function() {
+      this.toolboxSelected.getSession().commit();
+    },
+    saveAll: function() {
+      //TODO dovrebbe essere legata alla possibilità di salvare tutte le modifiche di tutti i layer
     }
   },
   computed: {
+    canSave: function() {
+      return this.canUndo;
+    },
+    canUndo: function() {
+      return !_.isNull(this.state.toolboxSelected) && this.state.toolboxSelected.getSession() && this.state.toolboxSelected.getSession().getHistory().canUndo();
+    },
+    canRedo: function() {
+      return !_.isNull(this.state.toolboxSelected) && this.state.toolboxSelected.getSession() && this.state.toolboxSelected.getSession().getHistory().canRedo();
+    },
     // editingbtnlabel: function() {
     //   return this.state.editing.on ? "Termina editing" : "Avvia editing";
     // },
@@ -133,7 +160,7 @@ function PanelComponent(options) {
     state: {
       toolboxes: self._toolboxes,
       labels: self._labels,
-      tooboxSelected: null
+      toolboxSelected: null
     }
   });
 
