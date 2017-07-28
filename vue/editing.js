@@ -2,7 +2,7 @@ var inherit = g3wsdk.core.utils.inherit;
 var base =  g3wsdk.core.utils.base;
 var merge =  g3wsdk.core.utils.merge;
 var GUI = g3wsdk.gui.GUI;
-var UndoRedoManager = g3wsdk.core.editing.UndoRedoManager;
+var ChangesManager = g3wsdk.core.editing.ChangesManager;
 var Component = g3wsdk.gui.vue.Component;
 var EditingService = require('../editingservice');
 var EditingTemplate = require('./editing.html');
@@ -77,16 +77,26 @@ var vueComponentOptions = {
     },
     undo: function() {
       var self = this;
-      var features = this.state.toolboxSelected.getSession().getHistory().undo();
-      UndoRedoManager.execute(self.state.toolboxSelected.getLayer(), features);
+      var session = this.state.toolboxSelected.getSession();
+      session.undo()
+        .then(function(features) {
+          ChangesManager.execute(self.state.toolboxSelected.getLayer(), features, true);
+          // non setto a true il reverse in quanto ho ricambiato lo stato nell'operazione precedente
+          ChangesManager.execute(session.getFeaturesStore(), features);
+        });
     },
     redo: function() {
       var self = this;
-      var features = this.state.toolboxSelected.getSession().getHistory().redo();
-      UndoRedoManager.execute(self.state.toolboxSelected.getLayer(), features);
+      var session = this.state.toolboxSelected.getSession();
+      session.redo()
+        .then(function(features) {
+          ChangesManager.execute(self.state.toolboxSelected.getLayer(), features, true);
+          // non setto a true il reverse in quanto ho ricambiato lo stato nell'operazione precedente
+          ChangesManager.execute(session.getFeaturesStore(), features);
+        });
     },
     save: function() {
-      this.toolboxSelected.getSession().commit();
+      this.state.toolboxSelected.getSession().commit();
     },
     saveAll: function() {
       //TODO dovrebbe essere legata alla possibilità di salvare tutte le modifiche di tutti i layer

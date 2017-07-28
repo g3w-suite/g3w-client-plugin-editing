@@ -5,7 +5,6 @@ var PluginService = g3wsdk.core.plugin.PluginService;
 var CatalogLayersStoresRegistry = g3wsdk.core.catalog.CatalogLayersStoresRegistry;
 var MapLayersStoreRegistry = g3wsdk.core.map.MapLayersStoreRegistry;
 var LayersStore = g3wsdk.core.layer.LayersStore;
-var PluginConfig = require('./pluginconfig');
 var ToolBoxesFactory = require('./toolboxes/toolboxesfactory');
 
 function EditingService() {
@@ -16,8 +15,6 @@ function EditingService() {
   this._vectorLayers = [];
   // proprietà che contiene i controlli per l'editing
   this._toolboxes = [];
-  // oggetto contenitore di dipendenze
-  this._dependencies = {};
   // prendo tutti i layers del progetto corrente che si trovano sul
   // CATALOGO quelli naturalmente editabili
   this.layers = CatalogLayersStoresRegistry.getLayers({

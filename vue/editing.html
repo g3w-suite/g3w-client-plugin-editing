@@ -24,7 +24,7 @@
         <!--</button>-->
         <template v-for="tool in toolbox.getTools()">
           <div class="editbtn" :class="{'enabled' : (toolbox.state.editing.on), 'toggled' : tool.state.started}">
-            <img height="30px" width="30px" @click="toggletool(tool)" :alt="tool.state.name" :title="tool.state.name" :src="'../dist/client/images/'+ tool.state.icon"/>
+            <img height="30px" width="30px" @click="toolbox.state.editing.on ? toggletool(tool) : null" :alt="tool.state.name" :title="tool.state.name" :src="'../dist/client/images/'+ tool.state.icon"/>
                  <!--:src="resourcesurl+'images/'+tool.icon"/>-->
           </div>
         </template>

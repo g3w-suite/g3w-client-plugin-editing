@@ -1,6 +1,7 @@
 var inherit = g3wsdk.core.utils.inherit;
 var base =  g3wsdk.core.utils.base;
 var G3WObject = g3wsdk.core.G3WObject;
+var ChangesManager = g3wsdk.core.editing.ChangesManager;
 
 // Calsse che rappresenta di fatto
 // il bottone all'interno dell'editor control per l'editing
@@ -48,7 +49,11 @@ proto.start = function() {
     self._op.start(options)
       .then(function() {
         // vado a salvare la sessione
-        self._session.save();
+        self._session.save()
+          .then(function(features) {
+            ChangesManager.execute(self._session.getFeaturesStore(), features);
+            console.log(self._session.getFeaturesStore())
+          });
         // faccio ripartire il tool così
         // da poter ripartire con il flusso
         self.start();

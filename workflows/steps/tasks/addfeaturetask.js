@@ -16,15 +16,7 @@ function AddFeatureTask(options) {
   this._snapInteraction = null;
   this._finishCondition = options.finishCondition || _.constant(true);
   this._condition = options.condition || _.constant(true);
-  // qui si definiscono i metodi che vogliamo poter intercettare,
-  // ed eventualmente bloccare (vedi API G3WObject)
-  this.setters = {
-    addFeature: {
-      fnc: AddFeatureTask.prototype._addFeature,
-      fallback: AddFeatureTask.prototype._fallBack
-    }
-  };
-  
+
   base(this, options);
 }
 
@@ -35,17 +27,24 @@ module.exports = AddFeatureTask;
 var proto = AddFeatureTask.prototype;
 
 // metodo eseguito all'avvio del tool
-proto.run = function() {
+proto.run = function(inputs, context) {
+  console.log('Add task run.......');
   var self = this;
+  var d = $.Deferred();
+  this._layer = inputs.layer;
+  console.log(this._layer);
+  //recupero la sessione dal context
+  var session = context.session;
   //definisce l'interazione che deve essere aggiunta
   // specificando il layer sul quale le feature aggiunte devono essere messe
+  console.log('qui');
   this.drawInteraction = new ol.interaction.Draw({
-    type: this.type, // il tipo lo prende dal geometry type dell'editing vetor layer che a sua volta lo prende dal tipo si geometry del vector layer originale
-    source: this.source,
+    type: this._layer.getGeometryType(), // il tipo lo prende dal geometry type dell'editing vetor layer che a sua volta lo prende dal tipo si geometry del vector layer originale
+    source: this._layer.getSource(),
     condition: this._condition,
     finishCondition: this._finishCondition // disponibile da https://github.com/openlayers/ol3/commit/d425f75bea05cb77559923e494f54156c6690c0b
   });
-  var style = this.editor._editingVectorStyle ? this.editor._editingVectorStyle.add : null;
+  console.log('qua');
   //aggiunge l'interazione tramite il metodo generale di editor.js
   // che non fa altro che chaimare il mapservice
   this.addInteraction(this.drawInteraction);
@@ -57,16 +56,17 @@ proto.run = function() {
   });
   // viene settato l'evento drawend
   this.drawInteraction.on('drawend', function(e) {
-    e.feature.setStyle(style);
-    if (!self._busy) {
-      self._busy = true;
-      self.pause();
-      //viene chiamato l'addFeature del che  tool (modificata da G3wobject) che
-      // chiama l'addfeature del buffer
-      // il metodo (essendo un "setter") scatena gli eventuali listeners
-      // dati da onbefore, onafter, onbeforeasync
-      self.addFeature(e.feature);
-    }
+    var feature = e.feature;
+    //feature.setStyle(style);
+    //var isNew = self._isNew(feature);
+    // vado a rimuovera la feature
+    console.log('add feature .... ' + feature);
+    self._layer.getSource().addFeature(feature);
+    // dico di cancellarla (la feature non viene cancellatata ma aggiornato il suo stato
+    feature.add();
+    // vado ad aggiungere la featurea alla sessione (parte temporanea)
+    session.push(feature);
+    d.resolve(self._layer);
   });
   //snapping
   if (this._snap) {
@@ -75,6 +75,7 @@ proto.run = function() {
     });
     this.addInteraction(this._snapInteraction);
   }
+  return d.promise();
 };
 
 //metodo pausa
