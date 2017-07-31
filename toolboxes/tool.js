@@ -1,7 +1,6 @@
 var inherit = g3wsdk.core.utils.inherit;
 var base =  g3wsdk.core.utils.base;
 var G3WObject = g3wsdk.core.G3WObject;
-var ChangesManager = g3wsdk.core.editing.ChangesManager;
 
 // Calsse che rappresenta di fatto
 // il bottone all'interno dell'editor control per l'editing
@@ -42,22 +41,30 @@ proto.start = function() {
   options.context = {
     session: this._session
   };
-  // verifico che sia definito l'operatore
-  if (this._op) {
-    //workflow start
-    self.state.started = true;
+  // funzione che mi permette di far ripartire
+  // l'operatore o workflow qaundo è arrivato alla fine
+  function startOp(options) {
     self._op.start(options)
       .then(function() {
         // vado a salvare la sessione
         self._session.save()
-          .then(function(features) {
-            ChangesManager.execute(self._session.getFeaturesStore(), features);
-            console.log(self._session.getFeaturesStore())
+          .then(function() {
+            startOp(options);
           });
-        // faccio ripartire il tool così
-        // da poter ripartire con il flusso
-        self.start();
       })
+      .fail(function() {
+        // in caso di mancato successo faccio il rollback
+        // della sessione da vedere se li
+        self.state.started = false;
+        self._session.rollback();
+      });
+  }
+  // verifico che sia definito l'operatore
+  if (this._op) {
+    // lancio la funzione che mi permette di riavviarea
+    // l'operatore (workflow)  ogni volt è andato a buon fine
+    startOp(options);
+    this.state.started = true;
   }
 };
 
@@ -92,14 +99,17 @@ proto.getSession = function() {
 
 //setta la sessione
 proto.setSession = function(session) {
-  pippo = session;
   this._session = session;
 };
 
 //fa lo stop del tool
 proto.stop = function() {
+  var self = this;
   if (this._op) {
-    return this._op.stop()
+    this._op.stop()
+      .then(function() {
+        self.state.started = false;
+      });
   }
 };
 

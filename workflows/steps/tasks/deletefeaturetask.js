@@ -122,9 +122,6 @@ proto.run = function(inputs, context) {
   this._deleteInteraction.on('deleteend', function(e){
     var feature = e.features.getArray()[0];
     //var isNew = self._isNew(feature);
-    // vado a rimuovera la feature
-    console.log('delete feature .... ' + feature);
-    self._layer.getSource().removeFeature(feature);
     // dico di cancellarla (la feature non viene cancellatata ma aggiornato il suo stato
     feature.delete();
     // vado ad aggiungere la featurea alla sessione (parte temporanea)

@@ -1,6 +1,7 @@
 var inherit = g3wsdk.core.utils.inherit;
 var base =  g3wsdk.core.utils.base;
 var EditingTask = require('./editingtask');
+var Feature = g3wsdk.core.layer.features.Feature;
 
 // classe  per l'aggiuntadi feature
 // eridita dalla classe padre EditingTool
@@ -32,19 +33,17 @@ proto.run = function(inputs, context) {
   var self = this;
   var d = $.Deferred();
   this._layer = inputs.layer;
-  console.log(this._layer);
   //recupero la sessione dal context
   var session = context.session;
   //definisce l'interazione che deve essere aggiunta
   // specificando il layer sul quale le feature aggiunte devono essere messe
-  console.log('qui');
+  var source = this._layer.getSource();
   this.drawInteraction = new ol.interaction.Draw({
-    type: this._layer.getGeometryType(), // il tipo lo prende dal geometry type dell'editing vetor layer che a sua volta lo prende dal tipo si geometry del vector layer originale
-    source: this._layer.getSource(),
+    type: source.getFeatures()[0].getGeometry().getType(), // il tipo lo prende dal geometry type dell'editing vetor layer che a sua volta lo prende dal tipo si geometry del vector layer originale
+    source: new ol.source.Vector(), // lo faccio scrivere su una source temporanea (non vado a modificare il source featuresstore)
     condition: this._condition,
     finishCondition: this._finishCondition // disponibile da https://github.com/openlayers/ol3/commit/d425f75bea05cb77559923e494f54156c6690c0b
   });
-  console.log('qua');
   //aggiunge l'interazione tramite il metodo generale di editor.js
   // che non fa altro che chaimare il mapservice
   this.addInteraction(this.drawInteraction);
@@ -52,21 +51,24 @@ proto.run = function(inputs, context) {
   this.drawInteraction.setActive(true);
   // viene settato sull'inizio del draw l'evento drawstart dell'editor
   this.drawInteraction.on('drawstart',function(e) {
-    // TODO
+    //TODO
   });
   // viene settato l'evento drawend
   this.drawInteraction.on('drawend', function(e) {
-    var feature = e.feature;
+    console.log('Drawend .......');
+    var feature = new Feature({
+      feature: e.feature
+    });
+    feature.setId('__new__' + Date.now());
     //feature.setStyle(style);
     //var isNew = self._isNew(feature);
     // vado a rimuovera la feature
-    console.log('add feature .... ' + feature);
-    self._layer.getSource().addFeature(feature);
     // dico di cancellarla (la feature non viene cancellatata ma aggiornato il suo stato
     feature.add();
     // vado ad aggiungere la featurea alla sessione (parte temporanea)
     session.push(feature);
     d.resolve(self._layer);
+    return feature
   });
   //snapping
   if (this._snap) {
@@ -96,6 +98,7 @@ proto.pause = function(pause) {
 
 // metodo eseguito alla disattivazione del tool
 proto.stop = function() {
+  console.log('stop add task ...');
   //rimuove e setta a null la _snapInteraction
   if (this._snapInteraction) {
      this.removeInteraction(this._snapInteraction);

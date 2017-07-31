@@ -3,6 +3,7 @@ var base =  g3wsdk.core.utils.base;
 var G3WObject = g3wsdk.core.G3WObject;
 var GUI = g3wsdk.gui.GUI;
 var Session = g3wsdk.core.editing.Session;
+var OlFeaturesStore = g3wsdk.core.layer.features.OlFeaturesStore;
 
 function ToolBox(options) {
   options = options || {};
@@ -111,8 +112,19 @@ proto.start = function() {
   });
   //creo la sessione passandogli l'editor
   this._session = new Session({
-    editor: this._editor
+    editor: this._editor,
+    featuresstore: new OlFeaturesStore()
   });
+  // questo ritorna come promessa l'array di features del featuresstore
+  this._session.getFeaturesStore().getFeatures()
+    .then(function(promise) {
+      promise.then(function(features) {
+        //setto come source del layer l'aary / collection feature del features sotre della sessione
+        self._layer.setSource(new ol.source.Vector({
+          features: features
+        }));
+      });
+    });
   //vado a settare la sessione ad ogni tool di quel toolbox
   _.forEach(this._tools, function(tool) {
     tool.setSession(self._session);
@@ -128,7 +140,6 @@ proto.start = function() {
   .fail(function() {
     // mostro un errore a video o tramite un messaggio nel pannello
   });
-
   return d.promise();
 };
 

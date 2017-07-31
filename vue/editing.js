@@ -46,14 +46,11 @@ var vueComponentOptions = {
         events.$emit("tool:start", tool);
         _.forEach(this.state.toolboxSelected.getTools(), function(t) {
           if (t.isStarted()) {
-            t.stop().
-              then(function() {
-                t.state.started = false;
-            })
+            //vado a stoppare il tool
+            t.stop()
           }
         });
         tool.start();
-        tool.state.started = true;
       }
       else {
         events.$emit("tool:stop", tool);
@@ -76,24 +73,13 @@ var vueComponentOptions = {
       }
     },
     undo: function() {
-      var self = this;
       var session = this.state.toolboxSelected.getSession();
-      session.undo()
-        .then(function(features) {
-          ChangesManager.execute(self.state.toolboxSelected.getLayer(), features, true);
-          // non setto a true il reverse in quanto ho ricambiato lo stato nell'operazione precedente
-          ChangesManager.execute(session.getFeaturesStore(), features);
-        });
+      session.undo();
     },
     redo: function() {
-      var self = this;
       var session = this.state.toolboxSelected.getSession();
-      session.redo()
-        .then(function(features) {
-          ChangesManager.execute(self.state.toolboxSelected.getLayer(), features, true);
-          // non setto a true il reverse in quanto ho ricambiato lo stato nell'operazione precedente
-          ChangesManager.execute(session.getFeaturesStore(), features);
-        });
+      session.redo();
+
     },
     save: function() {
       this.state.toolboxSelected.getSession().commit();
