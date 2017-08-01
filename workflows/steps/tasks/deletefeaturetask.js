@@ -129,7 +129,8 @@ proto.run = function(inputs, context) {
     //dovrei aggiungere qui qualcosa per salvare temporaneamente quesa modifica sulla sessione al fine di
     // portare tutte le modifiche quando viene fatto il save della sessione
     self._selectInteraction.getFeatures().clear();
-    d.resolve(self._layer);
+    // ritorno come outpu l'input layer che sarà modificato
+    d.resolve(inputs);
   });
   return d.promise();
 };
@@ -157,23 +158,10 @@ proto.stop = function() {
 };
 
 proto._deleteFeature = function(feature, isNew) {
-  //var relations = [];
-  // var relationsPromise = this.editor.getRelationsWithValues(feature);
-  // relationsPromise
-  // .then(function(relationsArray) {
-  //   relations = relationsArray;
-  // });
-  //this.editor.deleteFeature(feature, relations, isNew);
-  //this._selectInteraction.getFeatures().clear();
-  //this._busy = false;
-  //this.pause(false);
-  //this._layer.removeFeatures(this._layer.getFeatureById(feature.getId()));
   return true;
 };
 
 proto._fallBack = function(feature) {
-  this._busy = false;
-  this.pause(false);
 };
 
 proto._isNew = function(feature){

@@ -67,8 +67,7 @@ proto.run = function(inputs, context) {
     feature.add();
     // vado ad aggiungere la featurea alla sessione (parte temporanea)
     session.push(feature);
-    d.resolve(self._layer);
-    return feature
+    d.resolve(inputs);
   });
   //snapping
   if (this._snap) {

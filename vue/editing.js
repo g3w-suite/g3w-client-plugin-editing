@@ -2,7 +2,6 @@ var inherit = g3wsdk.core.utils.inherit;
 var base =  g3wsdk.core.utils.base;
 var merge =  g3wsdk.core.utils.merge;
 var GUI = g3wsdk.gui.GUI;
-var ChangesManager = g3wsdk.core.editing.ChangesManager;
 var Component = g3wsdk.gui.vue.Component;
 var EditingService = require('../editingservice');
 var EditingTemplate = require('./editing.html');
@@ -21,12 +20,13 @@ var vueComponentOptions = {
   transitions: {'addremovetransition': 'showhide'},
   methods: {
     toggleEditing: function(toolbox) {
-      if (toolbox.state.editing.on) {
-        events.$emit("toolbox:stop", toolbox);
+      // passo il toolbox;
+      if (toolbox.inEditing()) {
+        //events.$emit("toolbox:stop", toolbox);
         toolbox.stop();
       }
       else {
-        events.$emit("toolbox:start", toolbox);
+        //events.$emit("toolbox:start", toolbox);
         toolbox.start();
         if (!toolbox.isSelected()) {
           _.forEach(this.state.toolboxes, function (tlbox) {
@@ -43,7 +43,7 @@ var vueComponentOptions = {
     },
     toggletool: function(tool) {
       if (!tool.state.started) {
-        events.$emit("tool:start", tool);
+        //events.$emit("tool:start", tool);
         _.forEach(this.state.toolboxSelected.getTools(), function(t) {
           if (t.isStarted()) {
             //vado a stoppare il tool
@@ -53,12 +53,12 @@ var vueComponentOptions = {
         tool.start();
       }
       else {
-        events.$emit("tool:stop", tool);
+        //events.$emit("tool:stop", tool);
         tool.state.started = false;
       }
     },
     onClose: function() {
-      events.$emit("close");
+      //events.$emit("close");
     },
     select: function(toolbox) {
       if (!toolbox.isSelected()) {
@@ -82,6 +82,9 @@ var vueComponentOptions = {
 
     },
     save: function() {
+      // funzione che serve a fare il commit della sessione legata al tool
+      // qui probabilmente a seconda del layer se ha dipendenze faccio ogni sessione
+      // produrrà i suoi dati post serializzati che pi saranno uniti per un unico commit
       this.state.toolboxSelected.getSession().commit();
     },
     saveAll: function() {
@@ -104,9 +107,9 @@ var vueComponentOptions = {
     // toolEnabled: function() {
     //   return (!this.state.editing.error && (this.state.editing.enabled || this.state.editing.on)) ? "" : "disabled";
     // },
-    // startorstop: function(control) {
-    //   return this.service
-    // },
+    startorstop: function(control) {
+      return this.service
+    },
     message: function() {
       var message = "";
       // if (!this.state.editing.enabled) {

@@ -48,7 +48,9 @@ proto.start = function() {
       .then(function() {
         // vado a salvare la sessione
         self._session.save()
-          .then(function() {
+          .then(function(uniqueId) {
+            var EditingService = require('../editingservice');
+            EditingService.saveDependencies(self._layer, uniqueId);
             startOp(options);
           });
       })

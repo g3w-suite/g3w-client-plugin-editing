@@ -6,6 +6,7 @@ var Session = g3wsdk.core.editing.Session;
 var OlFeaturesStore = g3wsdk.core.layer.features.OlFeaturesStore;
 
 function ToolBox(options) {
+  var self = this;
   options = options || {};
   base(this);
   // editor del Layer che permette di interagire con il layer
@@ -15,9 +16,30 @@ function ToolBox(options) {
   this._layer = options.layer;
   // tasks associati
   this._tools = options.tools;
+  // recupero il tipo di toolbox
+  var type = options.type || 'vector';
   //sessione che permette di gestire tutti i movimenti da parte
   // dei tools del toolbox durante l'editing del layer
-  this._session = null;
+  //creo la sessione passandogli l'editor
+  this._session = new Session({
+    editor: this._editor,
+    featuresstore: type == 'vector' ? new OlFeaturesStore(): null
+  });
+  // in ascolto dell'onafter start della sessione così se avviata
+  // vado ad associare le features del suo featuresstore al ol.layer.Vector
+  this._session.onafter('start', function() {
+    // questo ritorna come promessa l'array di features del featuresstore
+    self._session.getFeaturesStore().getFeatures()
+      .then(function(promise) {
+        promise.then(function(features) {
+          var source = type == 'vector' ? new ol.source.Vector({features: features }) : self._session.getFeaturesStore();
+          //setto come source del layer l'array / collection feature del features sotre della sessione
+          // il layer deve implementare anche un setSource
+          self._layer.setSource(source);
+        });
+        self.state.editing.on = true;
+      });
+  });
   // mapservice
   this._mapService = GUI.getComponent('map').getService();
   // stato del controllo
@@ -60,6 +82,10 @@ proto.getColor = function() {
 
 proto.getLayer = function() {
   return this._layer;
+};
+
+proto.inEditing = function() {
+  return this.state.editing.on;
 };
 
 proto.isEnabled = function() {
@@ -106,40 +132,26 @@ proto.getSession = function() {
 // inoltre farà uno start e stop dell'editor
 proto.start = function() {
   var self = this;
-  var bbox = this._mapService.getMapBBOX();
-  this._mapService.viewer.map.on('moveend', function() {
-    bbox = self._mapService.getMapBBOX()
-  });
-  //creo la sessione passandogli l'editor
-  this._session = new Session({
-    editor: this._editor,
-    featuresstore: new OlFeaturesStore()
-  });
-  // questo ritorna come promessa l'array di features del featuresstore
-  this._session.getFeaturesStore().getFeatures()
-    .then(function(promise) {
-      promise.then(function(features) {
-        //setto come source del layer l'aary / collection feature del features sotre della sessione
-        self._layer.setSource(new ol.source.Vector({
-          features: features
-        }));
-      });
-    });
+  var d = $.Deferred();
+  // var bbox = this._mapService.getMapBBOX();
+  // this._mapService.viewer.map.on('moveend', function() {
+  //   bbox = self._mapService.getMapBBOX()
+  // });
   //vado a settare la sessione ad ogni tool di quel toolbox
   _.forEach(this._tools, function(tool) {
     tool.setSession(self._session);
   });
-  var d = $.Deferred();
-  this._session.start({
-    bbox: bbox
-  })
-  .then(function() {
-    self.state.editing.on = true;
-    self.state.enabled = true;
-  })
-  .fail(function() {
-    // mostro un errore a video o tramite un messaggio nel pannello
-  });
+  // se non è stata avviata da altri allora faccio avvio sessione
+  if (!this._session.isStarted()) {
+    this._session.start({
+      // qui ci va il filtro ad esempio: bbox: bbox
+    })
+      .then(function() {
+        var EditingService = require('../editingservice');
+        EditingService.getDependencies(self._layer.get('id'));
+      })
+  }
+  self.state.enabled = true;
   return d.promise();
 };
 
@@ -147,17 +159,18 @@ proto.start = function() {
 proto.stop = function() {
   var self = this;
   var d = $.Deferred();
-  var layerId = this._editor.getLayer().getId();
-  if (this._session) {
+  if (this._session && this._session.isStarted()) {
     this._session.stop()
       .then(function() {
         self.state.editing.on = false;
         self.state.enabled = false;
         self.state.selected = false;
-        //vado a rimuovere tutte le feature dal layer di editing
-        self._mapService.getLayerById(layerId).getSource().clear();
+        // seci sono tool attivi vado a spengere
         _.forEach(self._tools, function(tool) {
-          tool.clear();
+          if (tool.isStarted()) {
+            tool.stop();
+            return false;
+          }
         });
         d.resolve(true)
       })
@@ -173,7 +186,7 @@ proto.stop = function() {
 
 //funzione salvataggio modifiche
 proto.save = function () {
-  this._editor.save();
+  this._session.commit();
 };
 
 module.exports = ToolBox;
