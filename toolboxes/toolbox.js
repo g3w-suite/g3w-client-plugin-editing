@@ -22,8 +22,13 @@ function ToolBox(options) {
   // dei tools del toolbox durante l'editing del layer
   //creo la sessione passandogli l'editor
   this._session = new Session({
+    id: options.id, // contiene l'id del layer
     editor: this._editor,
     featuresstore: type == 'vector' ? new OlFeaturesStore(): null
+  });
+  //vado a settare la sessione ad ogni tool di quel toolbox
+  _.forEach(this._tools, function(tool) {
+    tool.setSession(self._session);
   });
   // in ascolto dell'onafter start della sessione così se avviata
   // vado ad associare le features del suo featuresstore al ol.layer.Vector
@@ -42,7 +47,7 @@ function ToolBox(options) {
   });
   // mapservice
   this._mapService = GUI.getComponent('map').getService();
-  // stato del controllo
+  // stato del toolbox
   this.state = {
     id: options.id,
     // colore del layer (darà il colore alla maschera) e quindi
@@ -63,6 +68,70 @@ inherit(ToolBox, G3WObject);
 
 var proto = ToolBox.prototype;
 
+// funzione che fa in modo di attivare tutti i tasks associati
+// al controllo. Questo verrà eventualmente chiamato o dalla pennina di start editing
+// o quando schiacchio il bottone generale Avvia editing
+// inoltre farà uno start e stop dell'editor
+proto.start = function() {
+  var self = this;
+  var d = $.Deferred();
+  // var bbox = this._mapService.getMapBBOX();
+  // this._mapService.viewer.map.on('moveend', function() {
+  //   bbox = self._mapService.getMapBBOX()
+  // });
+  // se non è stata avviata da altri allora faccio avvio sessione
+  if (!this._session.isStarted()) {
+    this._session.start({
+      // qui ci va il filtro ad esempio: bbox: bbox
+    })
+      .then(function() {
+        var EditingService = require('../editingservice');
+        EditingService.startEditingDependencies(self.state.id, {});// dove le opzioni possono essere il filtro;
+        d.resolve();
+      })
+      .fail(function() {
+        self.stop();
+        d.reject();
+      })
+  }
+
+  self.state.enabled = true;
+  return d.promise();
+};
+
+// funzione che disabiliterà
+proto.stop = function() {
+  var self = this;
+  var d = $.Deferred();
+  if (this._session && this._session.isStarted()) {
+    this._session.stop()
+      .then(function() {
+        self.state.editing.on = false;
+        self.state.enabled = false;
+        self.state.selected = false;
+        // seci sono tool attivi vado a spengere
+        _.forEach(self._tools, function(tool) {
+          if (tool.isStarted()) {
+            tool.stop();
+            return false;
+          }
+        });
+        d.resolve(true)
+      })
+      .fail(function(err) {
+        // mostro un errore a video o tramite un messaggio nel pannello
+        d.reject(err)
+      });
+  } else {
+    d.resolve(true)
+  }
+  return d.promise();
+};
+
+//funzione salvataggio modifiche
+proto.save = function () {
+  this._session.commit();
+};
 
 proto.getId = function() {
   return this.state.id;
@@ -126,67 +195,5 @@ proto.getSession = function() {
   return this._session;
 };
 
-// funzione che fa in modo di attivare tutti i tasks associati
-// al controllo. Questo verrà eventualmente chiamato o dalla pennina di start editing
-// o quando schiacchio il bottone generale Avvia editing
-// inoltre farà uno start e stop dell'editor
-proto.start = function() {
-  var self = this;
-  var d = $.Deferred();
-  // var bbox = this._mapService.getMapBBOX();
-  // this._mapService.viewer.map.on('moveend', function() {
-  //   bbox = self._mapService.getMapBBOX()
-  // });
-  //vado a settare la sessione ad ogni tool di quel toolbox
-  _.forEach(this._tools, function(tool) {
-    tool.setSession(self._session);
-  });
-  // se non è stata avviata da altri allora faccio avvio sessione
-  if (!this._session.isStarted()) {
-    this._session.start({
-      // qui ci va il filtro ad esempio: bbox: bbox
-    })
-      .then(function() {
-        var EditingService = require('../editingservice');
-        EditingService.getDependencies(self._layer.get('id'));
-      })
-  }
-  self.state.enabled = true;
-  return d.promise();
-};
-
-// funzione che disabiliterà
-proto.stop = function() {
-  var self = this;
-  var d = $.Deferred();
-  if (this._session && this._session.isStarted()) {
-    this._session.stop()
-      .then(function() {
-        self.state.editing.on = false;
-        self.state.enabled = false;
-        self.state.selected = false;
-        // seci sono tool attivi vado a spengere
-        _.forEach(self._tools, function(tool) {
-          if (tool.isStarted()) {
-            tool.stop();
-            return false;
-          }
-        });
-        d.resolve(true)
-      })
-      .fail(function(err) {
-        // mostro un errore a video o tramite un messaggio nel pannello
-        d.reject(err)
-      });
-  } else {
-    d.resolve(true)
-  }
-  return d.promise();
-};
-
-//funzione salvataggio modifiche
-proto.save = function () {
-  this._session.commit();
-};
 
 module.exports = ToolBox;

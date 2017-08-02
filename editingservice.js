@@ -13,11 +13,15 @@ function EditingService() {
   var self = this;
   base(this);
   // prprietà che contiene i layer vettoriali
-  this._editableLayers = [];
+  this._sessions = {};
   // proprietà che contiene i controlli per l'editing
   this._toolboxes = [];
   // oggetto che contiene il legame tra layers (relazionei / dipendenze)
   this._dependencies = {};
+  // layersStore del plugin editing
+  this._layersstore = new LayersStore({
+    id: 'editing'
+  });
   // prendo tutti i layers del progetto corrente che si trovano
   // all'interno dei Layerstore del catalog registry con caratteristica editabili.
   // Mi verranno estratti tutti i layer editabili anche quelli presenti nell'albero del catalogo
@@ -26,12 +30,8 @@ function EditingService() {
     EDITABLE: true
   });
   this.init = function(config) {
-    // creo il layer Store degli editing
-    var layersStore = new LayersStore({
-      id: 'editing'
-    });
     //vado ad aggiungere il layersstore alla maplayerssotreregistry
-    MapLayersStoreRegistry.addLayersStore(layersStore);
+    MapLayersStoreRegistry.addLayersStore(this._layersstore);
     // vado a settare l'url di editing aggiungendo l'id del
     // progetto essendo editing api generale
     //config.baseurl = config.baseurl + this.project.getId() + '/';
@@ -47,17 +47,18 @@ function EditingService() {
       // estrarre la versione vettoriale del layer di partenza
       editableLayer = layer.getLayerForEditing();
       //aggiungo il layer al layersstore
-      layersStore.addLayer(editableLayer);
+      self._layersstore.addLayer(editableLayer);
       // aggiungo all'array dei vectorlayers se per caso mi servisse
-      self._editableLayers.push(editableLayer);
+      self._sessions[layer.getId()] = null;
       // estraggo l'editor
       editor = editableLayer.getEditor();
+      // qui
       // vado ad aggiungere un nuovo toolbox passandogli l'editor (e quindi il layer associato)
       self.addToolBox(editor);
     });
     //FAKE
-    //CREO UN FAKE DI DIPENDENZA TRA I DUE LAYER
-    this._dependencies['editing_comuni20170629104534275'] = ['editing_ferrovia_firenze20170724115017180'];
+    //CREO UN FAKE DI DIPENDENZA TRA I DUE LAYER (l'id del layer è quello del toolbox)
+    this._dependencies['comuni20170629104534275'] = ['ferrovia_firenze20170724115017180'];
   };
 }
 
@@ -71,6 +72,8 @@ proto.addToolBox = function(editor) {
   // assegnadogli le icone dei bottonii etc ..
   var toolbox = ToolBoxesFactory.build(editor);
   this._toolboxes.push(toolbox);
+  // vado ad aggiungere la sessione
+  this._sessions[toolbox.getId()] = toolbox.getSession();
 };
 
 proto.getToolBoxes = function() {
@@ -106,10 +109,44 @@ proto.saveDependencies = function(layer, uniqueId) {
   })
 };
 
-proto.getDependencies = function(layerId) {
+// fa lo start di tutte le dipendenze del layer legato alla toolbox che si è avviato
+proto.startEditingDependencies = function(id, options) {
+  console.log(id);
+  var self = this;
+  //magari le options lo posso usare per passare il tipo di filtro da passare
+  // allo start della sessione
+  options = options || options;
+  var dependencies = this.getDependencies(id);
+  if (dependencies) {
+    /*
+    * qui andrò a verificare se stata istanziata la sessione altrimenti vienne creata
+    * se la sessione è attiva altrimenti viene attivata
+    * */
+    //cerco prima tra i toolbox se presente
+    var session;
+    _.forEach(dependencies, function(dependency) {
+      session = self._sessions[dependency];
+      if (session)
+        if (!session.isStarted()) {
+          // faccio partire la sessione
+          session.start(options);
+        } else {
+          session.getFeatures(options);
+        }
+      else {
+        var layer =
+        self._sessions[dependency] = new Session({
+
+        })
+      }
+    })
+  }
+};
+
+proto.getDependencies = function(id) {
   //TODO qui passo le sessioni dei layer dipendenti
-  console.log(this._dependencies[layerId]);
- return this._dependencies[layerId];
+  console.log(this._dependencies[id]);
+ return this._dependencies[id];
 };
 
 module.exports = new EditingService;

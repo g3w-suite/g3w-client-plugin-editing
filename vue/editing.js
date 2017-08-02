@@ -62,14 +62,16 @@ var vueComponentOptions = {
     },
     select: function(toolbox) {
       if (!toolbox.isSelected()) {
-        _.forEach(this.state.toolboxes, function(toolbox) {
-          toolbox.setSelected(false);
+        _.forEach(this.state.toolboxes, function(tlbox) {
+          if (toolbox != tlbox && tlbox.isSelected()) {
+            _.forEach(tlbox.getTools(), function (tool) {
+              tool.stop();
+            });
+            tlbox.setSelected(false);
+          }
         });
         toolbox.setSelected(true);
         this.state.toolboxSelected = toolbox;
-      } else {
-        toolbox.setSelected(false);
-        this.state.toolboxSelected = null;
       }
     },
     undo: function() {
