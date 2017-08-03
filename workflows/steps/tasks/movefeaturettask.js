@@ -1,33 +1,28 @@
 var inherit = g3wsdk.core.utils.inherit;
 var base =  g3wsdk.core.utils.base;
-
-var EditingTool = require('./editingtask');
+var Feature = g3wsdk.core.layer.features.Feature;
+var EditingTask = require('./editingtask');
 
 function MoveFeatureTask(options){
   var self = this;
-  this.editor = editor;
-  this.isPausable = true;
+  this._layer = null;
   this.drawInteraction = null;
-  this._origGeometry = null;
-
-  this.setters = {
-    moveFeature: {
-      fnc: MoveFeatureTask.prototype._moveFeature,
-      fallback: MoveFeatureTask.prototype._fallBack
-    }
-  };
-  
   base(this, options);
 }
+
 inherit(MoveFeatureTask, EditingTask);
 
 
 var proto = MoveFeatureTask.prototype;
 
-proto.run = function(){
+proto.run = function(inputs, context) {
   var self = this;
-  var layers = [this.editor.getVectorLayer().getMapLayer(),this.editor.getEditVectorLayer().getMapLayer()];
-  var style = this.editor._editingVectorStyle ? this.editor._editingVectorStyle.move : null;
+  var d = $.Deferred();
+  var session = context.session;
+  var layers = [inputs.layer];
+  var originalFeature = null;
+  var style = null;
+  //var style = this.editor._editingVectorStyle ? this.editor._editingVectorStyle.move : null;
   this._selectInteraction = new ol.interaction.Select({
     layers: layers,
     condition: ol.events.condition.click,
@@ -40,29 +35,33 @@ proto.run = function(){
     hitTolerance: (isMobile && isMobile.any) ? 10 : 0
   });
   this.addInteraction(this._translateInteraction);
-  
+
   this._translateInteraction.on('translatestart',function(e){
     var feature = e.features.getArray()[0];
-    self._origGeometry = feature.getGeometry().clone();
-    self.editor.emit('movestart',feature);
+    // repndo la feature di partenza
+    originalFeature = new Feature({
+      feature: feature.clone()
+    });
+    originalFeature.setId(feature.getId());
+    originalFeature.update();
   });
   
-  this._translateInteraction.on('translateend',function(e){
-    var feature = e.features.getArray()[0];
-    //try {
-      if (!self._busy){
-        self._busy = true;
-        self.pause();
-        self.moveFeature(feature)
-        .then(function(res){
-          self.pause(false);
-        })
-        .fail(function(){
-          feature.setGeometry(self._origGeometry);
-        });
-      }
+  this._translateInteraction.on('translateend',function(e) {
+    var feature = new Feature({
+      feature: e.features.getArray()[0].clone()
+    });
+    feature.setId(originalFeature.getId());
+    feature.update();
+    console.log(originalFeature.getGeometry().getExtent(), feature.getGeometry().getExtent());
+    // vado ad aggiungere la featurea alla sessione (parte temporanea)
+    session.push(feature, originalFeature);
+    //dovrei aggiungere qui qualcosa per salvare temporaneamente quesa modifica sulla sessione al fine di
+    // portare tutte le modifiche quando viene fatto il save della sessione
+    self._selectInteraction.getFeatures().clear();
+    // ritorno come outpu l'input layer che sarà modificato
+    d.resolve(inputs);
   });
-
+  return d.promise()
 };
 
 proto.pause = function(pause){
@@ -76,27 +75,17 @@ proto.pause = function(pause){
   }
 };
 
-proto.stop = function(){
+proto.stop = function() {
+  var d = $.Deferred();
   this._selectInteraction.getFeatures().clear();
   this.removeInteraction(this._selectInteraction);
   this._selectInteraction = null;
   this.removeInteraction(this._translateInteraction);
   this._translateInteraction = null;
-  return true;
+  d.resolve();
+  return d.promise();
 };
 
-proto._moveFeature = function(feature) {
-  this.editor.emit('moveend',feature);
-  this.editor.moveFeature(feature);
-  this._selectInteraction.getFeatures().clear();
-  this._busy = false;
-  this.pause(false);
-  return true;
-};
 
-proto._fallBack = function(feature){
-  this._busy = false;
-  this.pause(false);
-};
 
 module.exports = MoveFeatureTask;

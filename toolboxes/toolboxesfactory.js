@@ -9,7 +9,7 @@ var GUI = g3wsdk.gui.GUI;
 var AddFeatureWorkflow = require('../workflows/addfeatureworkflow');
 var ModifyGeometryWorkflow = require('../workflows/modifygeometryworkflow');
 var ModifyGeometryVertexWorkflow = require('../workflows/modifygeometryvertexworkflow');
-var MoveGeometryWorkflow = require('../workflows/movegeometryworkflow');
+var MoveFeatureWorkflow = require('../workflows/movefeatureworkflow');
 var DeleteFeatureWorkflow = require('../workflows/deletefeatureworkflow');
 var EditFeatureAttributesWorkflow = require('../workflows/editfeatureattributesworkflow');
 
@@ -50,7 +50,7 @@ function EditorToolBoxesFactory() {
                 name: "Sposta feature",
                 icon: "movePoint.png",
                 layer: editingLayer,
-                op: MoveGeometryWorkflow
+                op: MoveFeatureWorkflow
               }),
               new Tool({
                 id: 'point_deletefeature',
@@ -116,7 +116,7 @@ function EditorToolBoxesFactory() {
                 name: "Muovi feature",
                 icon: "MovePolygon.png",
                 layer: editingLayer,
-                op: MoveGeometryWorkflow
+                op: MoveFeatureWorkflow
               }),
               new Tool({
                 id: 'polygon_movevertex',

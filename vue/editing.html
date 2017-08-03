@@ -11,8 +11,8 @@
     </div>
   </div>
   <template v-for="toolbox in state.toolboxes">
-    <div @click="select(toolbox)" class="panel panel-primary">
-      <div class="panel-heading" :class="{ 'toolboxselected': toolbox.state.selected }" :style="{ background: toolbox.state.color}" >
+    <div  @click="select(toolbox)" class="panel panel-primary">
+      <div  class="panel-heading" :class="{ 'toolboxselected': toolbox.state.selected }" :style="{ background: toolbox.state.color}" >
         <h3 class="panel-title" >{{ toolbox.state.title }}</h3>
         <!--<span class="editbtn" :class="{'enabled' : toolbox.isDirty() }" >-->
           <!--<img height="20px" width="20px"  @click="saveEdits(toolbox)" src="https://cdn4.iconfinder.com/data/icons/pretty-office-part-7-simple-style/128/Save-as.png"/>-->

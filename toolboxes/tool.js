@@ -51,6 +51,7 @@ proto.start = function() {
           .then(function(uniqueId) {
             var EditingService = require('../editingservice');
             EditingService.saveDependencies(self._layer, uniqueId);
+            console.log('startOp');//
             startOp(options);
           });
       })

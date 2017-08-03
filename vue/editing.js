@@ -22,11 +22,11 @@ var vueComponentOptions = {
     toggleEditing: function(toolbox) {
       // passo il toolbox;
       if (toolbox.inEditing()) {
-        //events.$emit("toolbox:stop", toolbox);
+        events.$emit("toolbox:stop", toolbox);
         toolbox.stop();
       }
       else {
-        //events.$emit("toolbox:start", toolbox);
+        events.$emit("toolbox:start", toolbox);
         toolbox.start();
         if (!toolbox.isSelected()) {
           _.forEach(this.state.toolboxes, function (tlbox) {
@@ -43,7 +43,7 @@ var vueComponentOptions = {
     },
     toggletool: function(tool) {
       if (!tool.state.started) {
-        //events.$emit("tool:start", tool);
+        events.$emit("tool:start", tool);
         _.forEach(this.state.toolboxSelected.getTools(), function(t) {
           if (t.isStarted()) {
             //vado a stoppare il tool
@@ -65,7 +65,8 @@ var vueComponentOptions = {
         _.forEach(this.state.toolboxes, function(tlbox) {
           if (toolbox != tlbox && tlbox.isSelected()) {
             _.forEach(tlbox.getTools(), function (tool) {
-              tool.stop();
+              if (tool.isStarted())
+                tool.stop();
             });
             tlbox.setSelected(false);
           }

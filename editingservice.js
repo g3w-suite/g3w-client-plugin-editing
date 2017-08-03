@@ -101,7 +101,7 @@ proto.stop = function() {
 };
 
 proto.saveDependencies = function(layer, uniqueId) {
-  console.log(layer, uniqueId);
+  //console.log(layer, uniqueId);
   var layerId = layer.get('id');
   var dependencies = this.getDependencies(layerId);
   _.forEach(dependencies, function(dep) {
@@ -111,7 +111,7 @@ proto.saveDependencies = function(layer, uniqueId) {
 
 // fa lo start di tutte le dipendenze del layer legato alla toolbox che si è avviato
 proto.startEditingDependencies = function(id, options) {
-  console.log(id);
+  //console.log(id);
   var self = this;
   //magari le options lo posso usare per passare il tipo di filtro da passare
   // allo start della sessione
@@ -126,6 +126,7 @@ proto.startEditingDependencies = function(id, options) {
     var session;
     _.forEach(dependencies, function(dependency) {
       session = self._sessions[dependency];
+      //verifico che ci sia la sessione
       if (session)
         if (!session.isStarted()) {
           // faccio partire la sessione
@@ -134,10 +135,14 @@ proto.startEditingDependencies = function(id, options) {
           session.getFeatures(options);
         }
       else {
-        var layer =
-        self._sessions[dependency] = new Session({
-
-        })
+        // altrimenti per quel layer la devo instanziare
+        var layer = self._layersstore.getLayerById(dependency);
+        var editor = layer.getEditor();
+        session = new Session({
+          editor: editor
+        });
+        self._sessions[dependency] = session;
+        sessione.start();
       }
     })
   }
@@ -145,7 +150,7 @@ proto.startEditingDependencies = function(id, options) {
 
 proto.getDependencies = function(id) {
   //TODO qui passo le sessioni dei layer dipendenti
-  console.log(this._dependencies[id]);
+  //console.log(this._dependencies[id]);
  return this._dependencies[id];
 };
 
