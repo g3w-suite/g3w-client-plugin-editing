@@ -39,22 +39,15 @@ proto.run = function(inputs, context) {
   this._translateInteraction.on('translatestart',function(e){
     var feature = e.features.getArray()[0];
     // repndo la feature di partenza
-    originalFeature = new Feature({
-      feature: feature.clone()
-    });
-    originalFeature.setId(feature.getId());
+    originalFeature = feature.clone();
     originalFeature.update();
   });
   
   this._translateInteraction.on('translateend',function(e) {
-    var feature = new Feature({
-      feature: e.features.getArray()[0].clone()
-    });
-    feature.setId(originalFeature.getId());
-    feature.update();
-    console.log(originalFeature.getGeometry().getExtent(), feature.getGeometry().getExtent());
+    var newFeature = e.features.getArray()[0].clone();
+    newFeature.update();
     // vado ad aggiungere la featurea alla sessione (parte temporanea)
-    session.push(feature, originalFeature);
+    session.push(newFeature, originalFeature);
     //dovrei aggiungere qui qualcosa per salvare temporaneamente quesa modifica sulla sessione al fine di
     // portare tutte le modifiche quando viene fatto il save della sessione
     self._selectInteraction.getFeatures().clear();

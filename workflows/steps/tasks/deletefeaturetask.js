@@ -121,6 +121,9 @@ proto.run = function(inputs, context) {
   this.addInteraction(this._deleteInteraction);
   this._deleteInteraction.on('deleteend', function(e){
     var feature = e.features.getArray()[0];
+    // vado a cancellare dalla source la feature selezionata
+    self._layer.getSource().removeFeature(feature);
+    self._selectInteraction.getFeatures().remove(feature);
     //var isNew = self._isNew(feature);
     // dico di cancellarla (la feature non viene cancellatata ma aggiornato il suo stato
     feature.delete();
@@ -128,7 +131,6 @@ proto.run = function(inputs, context) {
     session.push(feature);
     //dovrei aggiungere qui qualcosa per salvare temporaneamente quesa modifica sulla sessione al fine di
     // portare tutte le modifiche quando viene fatto il save della sessione
-    self._selectInteraction.getFeatures().clear();
     // ritorno come outpu l'input layer che sarà modificato
     d.resolve(inputs);
   });

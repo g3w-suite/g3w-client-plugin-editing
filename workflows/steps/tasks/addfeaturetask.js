@@ -40,10 +40,44 @@ proto.run = function(inputs, context) {
   var source = this._layer.getSource();
   this.drawInteraction = new ol.interaction.Draw({
     type: source.getFeatures()[0].getGeometry().getType(), // il tipo lo prende dal geometry type dell'editing vetor layer che a sua volta lo prende dal tipo si geometry del vector layer originale
-    source: new ol.source.Vector(), // lo faccio scrivere su una source temporanea (non vado a modificare il source featuresstore)
+    source: source, // lo faccio scrivere su una source temporanea (non vado a modificare il source featuresstore)
     condition: this._condition,
     finishCondition: this._finishCondition // disponibile da https://github.com/openlayers/ol3/commit/d425f75bea05cb77559923e494f54156c6690c0b
   });
+  // vado a riscrivere lo startDrawing
+  this.drawInteraction.startDrawing_ = function(event) {
+    var start = event.coordinate;
+    this.finishCoordinate_ = start;
+    if (this.mode_ === ol.interaction.Draw.Mode_.POINT) {
+      this.sketchCoords_ = start.slice();
+    } else if (this.mode_ === ol.interaction.Draw.Mode_.POLYGON) {
+      this.sketchCoords_ = [[start.slice(), start.slice()]];
+      this.sketchLineCoords_ = this.sketchCoords_[0];
+    } else {
+      this.sketchCoords_ = [start.slice(), start.slice()];
+      if (this.mode_ === ol.interaction.Draw.Mode_.CIRCLE) {
+        this.sketchLineCoords_ = this.sketchCoords_;
+      }
+    }
+    if (this.sketchLineCoords_) {
+      this.sketchLine_ = new ol.Feature(
+        new ol.geom.LineString(this.sketchLineCoords_));
+    }
+    var geometry = this.geometryFunction_(this.sketchCoords_);
+    this.sketchFeature_ = new Feature({
+      feature: new ol.Feature()
+    });
+    this.sketchFeature_.setId('__new__'+Date.now());
+    this.sketchFeature_.add();
+    if (this.geometryName_) {
+      this.sketchFeature_.setGeometryName(this.geometryName_);
+    }
+    this.sketchFeature_.setGeometry(geometry);
+    this.updateSketchFeatures_();
+    this.dispatchEvent(new ol.interaction.Draw.Event(
+      ol.interaction.DrawEventType.DRAWSTART, this.sketchFeature_));
+  };
+
   //aggiunge l'interazione tramite il metodo generale di editor.js
   // che non fa altro che chaimare il mapservice
   this.addInteraction(this.drawInteraction);
@@ -51,21 +85,14 @@ proto.run = function(inputs, context) {
   this.drawInteraction.setActive(true);
   // viene settato sull'inizio del draw l'evento drawstart dell'editor
   this.drawInteraction.on('drawstart',function(e) {
-    //TODO
   });
+
   // viene settato l'evento drawend
   this.drawInteraction.on('drawend', function(e) {
     console.log('Drawend .......');
-    var feature = new Feature({
-      feature: e.feature
-    });
-    feature.setId('__new__' + Date.now());
-    //feature.setStyle(style);
-    //var isNew = self._isNew(feature);
-    // vado a rimuovera la feature
-    // dico di cancellarla (la feature non viene cancellatata ma aggiornato il suo stato
-    feature.add();
-    // vado ad aggiungere la featurea alla sessione (parte temporanea)
+    // devo creare un clone per evitare che quando eventualmente sposto la feature appena aggiunta
+    // questa non sovrascriva le feature nuova originale del primo update
+    var feature = e.feature.clone();
     session.push(feature);
     d.resolve(inputs);
   });
