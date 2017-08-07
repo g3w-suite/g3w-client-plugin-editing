@@ -132,6 +132,7 @@ proto.run = function(inputs, context) {
     //dovrei aggiungere qui qualcosa per salvare temporaneamente quesa modifica sulla sessione al fine di
     // portare tutte le modifiche quando viene fatto il save della sessione
     // ritorno come outpu l'input layer che sarà modificato
+    inputs.feature = feature;
     d.resolve(inputs);
   });
   return d.promise();

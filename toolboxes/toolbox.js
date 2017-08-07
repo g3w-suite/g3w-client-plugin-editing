@@ -80,12 +80,15 @@ proto.start = function() {
   //   bbox = self._mapService.getMapBBOX()
   // });
   // se non è stata avviata da altri allora faccio avvio sessione
-  if (!this._session.isStarted()) {
+  if (this._session && !this._session.isStarted()) {
     this._session.start({
       // qui ci va il filtro ad esempio: bbox: bbox
     })
       .then(function() {
+        //una volta che è stata avviata la sessione faccio partire
+        // le sessioni dipendenti per poter eseguier l'editing
         var EditingService = require('../editingservice');
+        // passo id del toolbox e le opzioni per far partire la sessione
         EditingService.startEditingDependencies(self.state.id, {});// dove le opzioni possono essere il filtro;
         d.resolve();
       })

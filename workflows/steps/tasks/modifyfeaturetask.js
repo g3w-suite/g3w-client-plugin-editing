@@ -8,15 +8,10 @@ function ModifyFeatureTask(options){
   var self = this;
   options = options || {};
   this.editor = editor;
-  this.isPausable = true;
   this.drawInteraction = null;
   this._deleteCondition = options.deleteCondition || undefined;
   this._snap = options.snap || null;
-  this._snapInteraction = null; 
-
-  this.setters = {
-    modifyFeature: ModifyFeatureTask.prototype._modifyFeature
-  };
+  this._snapInteraction = null;
   
   base(this,editor);
 }

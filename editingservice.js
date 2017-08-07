@@ -31,7 +31,7 @@ function EditingService() {
   });
   this.init = function(config) {
     //vado ad aggiungere il layersstore alla maplayerssotreregistry
-    MapLayersStoreRegistry.addLayersStore(this._layersstore);
+    //MapLayersStoreRegistry.addLayersStore(this._layersstore);
     // vado a settare l'url di editing aggiungendo l'id del
     // progetto essendo editing api generale
     //config.baseurl = config.baseurl + this.project.getId() + '/';
@@ -113,6 +113,7 @@ proto.saveDependencies = function(layer, uniqueId) {
 proto.startEditingDependencies = function(id, options) {
   //console.log(id);
   var self = this;
+  var d = $.Deferred();
   //magari le options lo posso usare per passare il tipo di filtro da passare
   // allo start della sessione
   options = options || options;
@@ -124,6 +125,7 @@ proto.startEditingDependencies = function(id, options) {
     * */
     //cerco prima tra i toolbox se presente
     var session;
+    // cliclo sulle dipendenze create
     _.forEach(dependencies, function(dependency) {
       session = self._sessions[dependency];
       //verifico che ci sia la sessione
@@ -132,6 +134,7 @@ proto.startEditingDependencies = function(id, options) {
           // faccio partire la sessione
           session.start(options);
         } else {
+          // altrimenti recupero le features
           session.getFeatures(options);
         }
       else {
@@ -146,6 +149,7 @@ proto.startEditingDependencies = function(id, options) {
       }
     })
   }
+  return d.promise();
 };
 
 proto.getDependencies = function(id) {

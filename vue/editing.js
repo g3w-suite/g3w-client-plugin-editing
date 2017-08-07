@@ -58,7 +58,7 @@ var vueComponentOptions = {
       }
     },
     onClose: function() {
-      //events.$emit("close");
+      events.$emit("close");
     },
     select: function(toolbox) {
       if (!toolbox.isSelected()) {
@@ -73,6 +73,7 @@ var vueComponentOptions = {
         });
         toolbox.setSelected(true);
         this.state.toolboxSelected = toolbox;
+        events.$emit("toolbox:selected", toolbox);
       }
     },
     undo: function() {

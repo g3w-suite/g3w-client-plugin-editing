@@ -52,6 +52,7 @@ proto.run = function(inputs, context) {
     // portare tutte le modifiche quando viene fatto il save della sessione
     self._selectInteraction.getFeatures().clear();
     // ritorno come outpu l'input layer che sarà modificato
+    inputs.feature = feature;
     d.resolve(inputs);
   });
   return d.promise()

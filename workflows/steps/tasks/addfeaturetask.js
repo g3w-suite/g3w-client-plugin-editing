@@ -94,6 +94,7 @@ proto.run = function(inputs, context) {
     // questa non sovrascriva le feature nuova originale del primo update
     var feature = e.feature.clone();
     session.push(feature);
+    inputs.feature = feature;
     d.resolve(inputs);
   });
   //snapping
