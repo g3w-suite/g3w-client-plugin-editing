@@ -1,6 +1,6 @@
 <div class="g3w-editing-panel">
   <div style="margin-bottom: 10px; margin-top:5px;">
-    <div class="editbtn" @click="canSave ? save(): null" :class="{'enabled' : canSave }">
+    <div class="editbtn" @click="canCommit ? commit(): null" :class="{'enabled' : canCommit }">
       <img height="30px" width="30px" src="../dist/client/images/saveedit.png"/>
     </div>
     <div class="editbtn pull-right" :class="{'enabled' : canRedo }">

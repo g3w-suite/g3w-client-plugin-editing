@@ -58,6 +58,7 @@ proto.run = function(inputs, context) {
       // vado ad aggiungere la featurea alla sessione (parte temporanea)
       session.push(newFeature, originalFeature);
       self._selectInteraction.getFeatures().clear();
+      inputs.features.push(newFeature);
       // ritorno come outpu l'input layer che sarà modificato
       d.resolve(inputs);
     }

@@ -31,7 +31,7 @@ function EditingService() {
   });
   this.init = function(config) {
     //vado ad aggiungere il layersstore alla maplayerssotreregistry
-    //MapLayersStoreRegistry.addLayersStore(this._layersstore);
+    MapLayersStoreRegistry.addLayersStore(this._layersstore);
     // vado a settare l'url di editing aggiungendo l'id del
     // progetto essendo editing api generale
     //config.baseurl = config.baseurl + this.project.getId() + '/';

@@ -85,25 +85,31 @@ var vueComponentOptions = {
       session.redo();
 
     },
-    save: function() {
+    commit: function() {
       // funzione che serve a fare il commit della sessione legata al tool
       // qui probabilmente a seconda del layer se ha dipendenze faccio ogni sessione
       // produrrà i suoi dati post serializzati che pi saranno uniti per un unico commit
-      this.state.toolboxSelected.getSession().commit();
+      var layerId = this.state.toolboxSelected.getLayer().get('id');
+      this.state.toolboxSelected.getSession().commit({
+        layerId: layerId
+      });
     },
     saveAll: function() {
       //TODO dovrebbe essere legata alla possibilità di salvare tutte le modifiche di tutti i layer
     }
   },
   computed: {
-    canSave: function() {
-      return this.canUndo;
+    canCommit: function() {
+      var toolbox = this.state.toolboxSelected;
+      return !_.isNull(toolbox) && toolbox.getSession().getHistory().canCommit();
     },
     canUndo: function() {
-      return !_.isNull(this.state.toolboxSelected) && this.state.toolboxSelected.getSession() && this.state.toolboxSelected.getSession().getHistory().canUndo();
+      var toolbox = this.state.toolboxSelected;
+      return !_.isNull(toolbox) &&  toolbox.getSession().getHistory().canUndo();
     },
     canRedo: function() {
-      return !_.isNull(this.state.toolboxSelected) && this.state.toolboxSelected.getSession() && this.state.toolboxSelected.getSession().getHistory().canRedo();
+      var toolbox = this.state.toolboxSelected;
+      return !_.isNull(toolbox) && toolbox.getSession().getHistory().canRedo();
     },
     // editingbtnlabel: function() {
     //   return this.state.editing.on ? "Termina editing" : "Avvia editing";

@@ -1,13 +1,10 @@
 var Layer = g3wsdk.core.layer.Layer;
 var Geometry = g3wsdk.core.geometry.Geometry;
+var GUI = g3wsdk.gui.GUI;
 
 var Tool = require('./tool');
 var ToolBox = require('./toolbox');
-
-var GUI = g3wsdk.gui.GUI;
-
 var AddFeatureWorkflow = require('../workflows/addfeatureworkflow');
-var ModifyGeometryWorkflow = require('../workflows/modifygeometryworkflow');
 var ModifyGeometryVertexWorkflow = require('../workflows/modifygeometryvertexworkflow');
 var MoveFeatureWorkflow = require('../workflows/movefeatureworkflow');
 var DeleteFeatureWorkflow = require('../workflows/deletefeatureworkflow');

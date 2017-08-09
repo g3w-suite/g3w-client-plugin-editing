@@ -23,8 +23,6 @@ function AddFeatureTask(options) {
 
 inherit(AddFeatureTask, EditingTask);
 
-module.exports = AddFeatureTask;
-
 var proto = AddFeatureTask.prototype;
 
 // metodo eseguito all'avvio del tool
@@ -68,6 +66,7 @@ proto.run = function(inputs, context) {
       feature: new ol.Feature()
     });
     this.sketchFeature_.setId('__new__'+Date.now());
+    // lo setto come add feature lo state
     this.sketchFeature_.add();
     if (this.geometryName_) {
       this.sketchFeature_.setGeometryName(this.geometryName_);
@@ -93,8 +92,10 @@ proto.run = function(inputs, context) {
     // devo creare un clone per evitare che quando eventualmente sposto la feature appena aggiunta
     // questa non sovrascriva le feature nuova originale del primo update
     var feature = e.feature.clone();
+    // al vado ad aggiungere
     session.push(feature);
-    inputs.feature = feature;
+    //session.push(feature);
+    inputs.features.push(feature);
     d.resolve(inputs);
   });
   //snapping
@@ -107,21 +108,6 @@ proto.run = function(inputs, context) {
   return d.promise();
 };
 
-//metodo pausa
-proto.pause = function(pause) {
-  // se non definito o true disattiva (setActive false) le iteractions
-  if (_.isUndefined(pause) || pause === true) {
-    if (this._snapInteraction) {
-      this._snapInteraction.setActive(false);
-    }
-    this.drawInteraction.setActive(false);
-  } else {
-    if (this._snapInteraction) {
-      this._snapInteraction.setActive(true);
-    }
-    this.drawInteraction.setActive(true);
-  }
-};
 
 // metodo eseguito alla disattivazione del tool
 proto.stop = function() {
@@ -138,7 +124,7 @@ proto.stop = function() {
   return true;
 };
 
-proto.removeLastPoint = function() {
+proto._removeLastPoint = function() {
   if (this.drawInteraction) {
     // provo a rimuovere l'ultimo punto. Nel caso non esista la geometria gestisco silenziosamente l'errore
     try{
@@ -149,22 +135,5 @@ proto.removeLastPoint = function() {
     }
   }
 };
-// add Feature fnc setter function
-proto._addFeature = function(feature) {
-  // aggiungo la geometria nell'edit buffer
-  //risetto allo style iniziale
-  feature.setStyle(null);
-  ////
-  this._busy = false;
-  this.pause(false);
-  return true;
-};
-// funzione di call back del setter addFeature
-proto._fallBack = function(feature) {
-  this._busy = false;
-  // rimuovo l'ultima feature inserita, ovvero quella disegnata ma che non si vuole salvare
-  if (this.source.getFeaturesCollection().getLength()){
-    this.source.getFeaturesCollection().pop();
-    this.pause(false);
-  }
-};
+
+module.exports = AddFeatureTask;

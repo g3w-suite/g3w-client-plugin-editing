@@ -34,8 +34,11 @@ var proto = Tool.prototype;
 proto.start = function() {
   var self = this;
   var options = {};
+  // come inpust al tool e di conseguenza al worflow
+  // passo il layer e features
   options.inputs = {
-    layer: this._layer
+    layer: this._layer,
+    features: []
   };
   //passo al context la sessione
   options.context = {
@@ -45,7 +48,7 @@ proto.start = function() {
   // l'operatore o workflow qaundo è arrivato alla fine
   function startOp(options) {
     self._op.start(options)
-      .then(function() {
+      .then(function(outputs) {
         // vado a salvare la sessione
         self._session.save()
           .then(function(uniqueId) {

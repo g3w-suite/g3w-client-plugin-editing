@@ -20,48 +20,28 @@ inherit(PickFeatureTask, EditingTask);
 var proto = PickFeatureTask.prototype;
 
 // metodo eseguito all'avvio del tool
-proto.run = function() {
+proto.run = function(inputs, context) {
+  console.log('Pick Feature Task run ....');
   var self = this;
   var d = $.Deferred();
-  var defaultStyle = new ol.style.Style({
-    image: new ol.style.Circle({
-      radius: 5,
-      fill: new ol.style.Fill({
-        color: 'red'
-      })
-    })
-  });
-  var style = this.editor._editingVectorStyle ? this.editor._editingVectorStyle.edit : null;
+  //var style = this.editor._editingVectorStyle ? this.editor._editingVectorStyle.edit : null;
   // vado a settare i layers su cui faccio l'interacion agisce
-  var layers = [this.editor.getVectorLayer().getMapLayer(),this.editor.getEditVectorLayer().getMapLayer()];
+  var layers = [inputs.layer];
   this.pickFeatureInteraction = new PickFeatureInteraction({
     layers: layers
   });
-  this.pickFeatureInteraction.on('picked', function(e) {
-    self.editor.setPickedFeature(e.feature);
-    if (!self._busy) {
-      e.feature.setStyle(style);
-      self._busy = true;
-      self.pause(true);
-      self.pickFeature(e.feature)
-      .then(function(res) {
-        self._busy = false;
-        self.pause(false);
-      })
-    }
-  });
-  
+  // aggiungo
   this.addInteraction(this.pickFeatureInteraction);
+  // gestisco l'evento
+  this.pickFeatureInteraction.on('picked', function(e) {
+    var feature = e.feature;
+    feature.update();
+    inputs.features.push(feature);
+    d.resolve(inputs);
+  });
+  return d.promise()
 };
 
-proto.pause = function(pause){
-  if (_.isUndefined(pause) || pause){
-    this.pickFeatureInteraction.setActive(false);
-  }
-  else {
-    this.pickFeatureInteraction.setActive(true);
-  }
-};
 // metodo eseguito alla disattivazione del tool
 proto.stop = function(){
   this.removeInteraction(this.pickFeatureInteraction);
@@ -69,9 +49,5 @@ proto.stop = function(){
   return true;
 };
 
-proto._fallBack = function(feature){
-  this._busy = false;
-  this.pause(false);
-};
 
 module.exports = PickFeatureTask;
