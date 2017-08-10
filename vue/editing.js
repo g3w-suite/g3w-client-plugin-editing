@@ -89,10 +89,7 @@ var vueComponentOptions = {
       // funzione che serve a fare il commit della sessione legata al tool
       // qui probabilmente a seconda del layer se ha dipendenze faccio ogni sessione
       // produrrà i suoi dati post serializzati che pi saranno uniti per un unico commit
-      var layerId = this.state.toolboxSelected.getLayer().get('id');
-      this.state.toolboxSelected.getSession().commit({
-        layerId: layerId
-      });
+      this.state.toolboxSelected.getSession().commit();
     },
     saveAll: function() {
       //TODO dovrebbe essere legata alla possibilità di salvare tutte le modifiche di tutti i layer
@@ -101,7 +98,8 @@ var vueComponentOptions = {
   computed: {
     canCommit: function() {
       var toolbox = this.state.toolboxSelected;
-      return !_.isNull(toolbox) && toolbox.getSession().getHistory().canCommit();
+      return this.canUndo;
+      //return !_.isNull(toolbox) && toolbox.getSession().getHistory().canCommit();
     },
     canUndo: function() {
       var toolbox = this.state.toolboxSelected;
@@ -122,6 +120,16 @@ var vueComponentOptions = {
     },
     message: function() {
       var message = "";
+      var operator;
+      if (this.state.toolboxSelected) {
+        _.forEach(this.state.toolboxSelected.getTools(), function(tool) {
+          if (tool.isStarted()) {
+            operator = tool.getOperator();
+            message = operator.getRunningStep() ? operator.getRunningStep().getHelp() : message;
+            return false
+          }
+        })
+      }
       // if (!this.state.editing.enabled) {
       //   message = '<span style="color: red">Aumentare il livello di zoom per abilitare l\'editing';
       // }

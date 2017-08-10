@@ -128,7 +128,10 @@ proto.run = function(inputs, context) {
     // dico di cancellarla (la feature non viene cancellatata ma aggiornato il suo stato
     feature.delete();
     // vado ad aggiungere la featurea alla sessione (parte temporanea)
-    session.push(feature);
+    session.push({
+      layerId: session.getId(),
+      feature: feature
+    });
     //dovrei aggiungere qui qualcosa per salvare temporaneamente quesa modifica sulla sessione al fine di
     // portare tutte le modifiche quando viene fatto il save della sessione
     // ritorno come outpu l'input layer che sarà modificato

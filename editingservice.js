@@ -6,6 +6,7 @@ var CatalogLayersStoresRegistry = g3wsdk.core.catalog.CatalogLayersStoresRegistr
 var MapLayersStoreRegistry = g3wsdk.core.map.MapLayersStoreRegistry;
 var LayersStore = g3wsdk.core.layer.LayersStore;
 var Session = g3wsdk.core.editing.Session;
+var SessionsManager = g3wsdk.core.editing.SessionsManager;
 var ToolBoxesFactory = require('./toolboxes/toolboxesfactory');
 
 function EditingService() {
@@ -22,6 +23,7 @@ function EditingService() {
   this._layersstore = new LayersStore({
     id: 'editing'
   });
+  this._editableLayers = {};
   // prendo tutti i layers del progetto corrente che si trovano
   // all'interno dei Layerstore del catalog registry con caratteristica editabili.
   // Mi verranno estratti tutti i layer editabili anche quelli presenti nell'albero del catalogo
@@ -39,13 +41,17 @@ function EditingService() {
     var editableLayer;
     var editor;
     var layerDependencies;
+    var layerId;
     //ciclo su ogni layer editiabile
     _.forEach(this.layers, function(layer) {
+      layerId = layer.getId();
       //vado a vedere se il layer ha altri layer dipendenti per l'editing
       layerDependencies = layer.getRelations();
       // vado a chiamare la funzione che mi permette di
       // estrarre la versione vettoriale del layer di partenza
       editableLayer = layer.getLayerForEditing();
+      // vado ad aggiungere ai layer editabili
+      self._editableLayers[layerId] = editableLayer;
       //aggiungo il layer al layersstore
       self._layersstore.addLayer(editableLayer);
       // aggiungo all'array dei vectorlayers se per caso mi servisse
@@ -157,5 +163,6 @@ proto.getDependencies = function(id) {
   //console.log(this._dependencies[id]);
  return this._dependencies[id];
 };
+
 
 module.exports = new EditingService;

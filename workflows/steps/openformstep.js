@@ -7,7 +7,7 @@ var OpenFormTask = require('./tasks/openformtask');
 var OpenFormStep = function(options) {
   options = options || {};
   options.task = new OpenFormTask();
-  options.help = "Inserisci gli attributi della feature selezionata";
+  options.help = "Inserisci gli attributi della feature";
   base(this, options)
 };
 

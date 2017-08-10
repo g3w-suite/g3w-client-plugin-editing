@@ -47,7 +47,13 @@ proto.run = function(inputs, context) {
     var newFeature = e.features.getArray()[0].clone();
     newFeature.update();
     // vado ad aggiungere la featurea alla sessione (parte temporanea)
-    session.push(newFeature, originalFeature);
+    session.push({
+      layerId: session.getId(),
+      feature: newFeature
+    }, {
+      layerId: session.getId(),
+      feature:originalFeature
+    });
     //dovrei aggiungere qui qualcosa per salvare temporaneamente quesa modifica sulla sessione al fine di
     // portare tutte le modifiche quando viene fatto il save della sessione
     self._selectInteraction.getFeatures().clear();

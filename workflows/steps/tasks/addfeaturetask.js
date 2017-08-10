@@ -92,9 +92,6 @@ proto.run = function(inputs, context) {
     // devo creare un clone per evitare che quando eventualmente sposto la feature appena aggiunta
     // questa non sovrascriva le feature nuova originale del primo update
     var feature = e.feature.clone();
-    // al vado ad aggiungere
-    session.push(feature);
-    //session.push(feature);
     inputs.features.push(feature);
     d.resolve(inputs);
   });

@@ -27,8 +27,10 @@ function ToolBox(options) {
     featuresstore: type == 'vector' ? new OlFeaturesStore(): null
   });
   //vado a settare la sessione ad ogni tool di quel toolbox
+  // e lo stesso toolbox
   _.forEach(this._tools, function(tool) {
     tool.setSession(self._session);
+    tool.setToolBox(self);
   });
   // in ascolto dell'onafter start della sessione così se avviata
   // vado ad associare le features del suo featuresstore al ol.layer.Vector
@@ -87,9 +89,9 @@ proto.start = function() {
       .then(function() {
         //una volta che è stata avviata la sessione faccio partire
         // le sessioni dipendenti per poter eseguier l'editing
-        var EditingService = require('../editingservice');
+        //var EditingService = require('../editingservice');
         // passo id del toolbox e le opzioni per far partire la sessione
-        EditingService.startEditingDependencies(self.state.id, {});// dove le opzioni possono essere il filtro;
+        //EditingService.startEditingDependencies(self.state.id, {});// dove le opzioni possono essere il filtro;
         d.resolve();
       })
       .fail(function() {

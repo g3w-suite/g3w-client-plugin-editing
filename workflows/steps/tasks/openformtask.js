@@ -47,7 +47,12 @@ proto.run = function(inputs, context) {
         type: "save",
         class: "btn-danger",
         cbk: function(fields, relations) {
+
           self._setFieldsWithValues(feature, fields, relations);
+          session.push({
+            layerId: session.getId(),
+            feature: feature
+          });
           GUI.setModal(false);
           d.resolve(inputs);
         }

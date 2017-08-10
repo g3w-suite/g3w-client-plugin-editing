@@ -6,7 +6,7 @@ var AddFeatureTask = require('./tasks/addfeaturetask');
 var AddFeatureStep = function(options) {
   options = options || {};
   options.task = new AddFeatureTask();
-  options.help = "Clicca su una feature per poterla editare";
+  options.help = "Disegna sulla mappa la feature";
   base(this, options)
 };
 

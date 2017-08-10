@@ -7,6 +7,8 @@ var G3WObject = g3wsdk.core.G3WObject;
 function Tool(options) {
   base(this);
   options = options || {};
+  // contiene il toolbox che contiene il tool
+  this._toolbox = options.toolbox || null;
   // ma mi servirà? la sessione non sarà gestita dal toolbox
   this._session = options.session;
   // prendo il layer
@@ -98,6 +100,10 @@ proto.setIcon = function(icon) {
   this.state.icon = icon;
 };
 
+proto.getOperator = function() {
+  return this._op;
+};
+
 //restituisce la sessione
 proto.getSession = function() {
   return this._session;
@@ -106,6 +112,14 @@ proto.getSession = function() {
 //setta la sessione
 proto.setSession = function(session) {
   this._session = session;
+};
+
+proto.setToolBox = function(toolbox) {
+  this._toolbox = toolbox;
+};
+
+proto.getToolBox = function() {
+  return this._toolbox;
 };
 
 //fa lo stop del tool

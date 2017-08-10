@@ -56,7 +56,13 @@ proto.run = function(inputs, context) {
       newFeature = feature.clone();
       newFeature.update();
       // vado ad aggiungere la featurea alla sessione (parte temporanea)
-      session.push(newFeature, originalFeature);
+      session.push({
+        layerId: session.getId(),
+        feature: newFeature
+      }, {
+        layerId: session.getId(),
+        feature:originalFeature
+      });
       self._selectInteraction.getFeatures().clear();
       inputs.features.push(newFeature);
       // ritorno come outpu l'input layer che sarà modificato
