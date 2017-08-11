@@ -11,9 +11,14 @@
     </div>
   </div>
   <template v-for="toolbox in state.toolboxes">
-    <div  @click="select(toolbox)" class="panel panel-primary">
-      <div  class="panel-heading" :class="{ 'toolboxselected': toolbox.state.selected }" :style="{ background: toolbox.state.color}" >
-        <h3 class="panel-title" >{{ toolbox.state.title }}</h3>
+    <div  @click="select(toolbox)" class="panel panel-primary" :class="{ 'toolboxselected': toolbox.state.selected }">
+      <div  class="panel-heading"  style="position:relative; height: 40px;" :style="{ background: toolbox.state.color}" >
+        <h3 class="panel-title" style="display: inline-block;">
+          {{ toolbox.state.title }}
+        </h3>
+        <div class="editbtn" style="position:absolute; right:0;" :class="{'enabled' : true,  toggled : toolbox.state.editing.on}" >
+          <img height="20px" width="20px"  @click="toggleEditing(toolbox)" src="../dist/client/images/edit.png"/>
+        </div>
         <!--<span class="editbtn" :class="{'enabled' : toolbox.isDirty() }" >-->
           <!--<img height="20px" width="20px"  @click="saveEdits(toolbox)" src="https://cdn4.iconfinder.com/data/icons/pretty-office-part-7-simple-style/128/Save-as.png"/>-->
         <!--</span>-->
@@ -28,9 +33,6 @@
                  <!--:src="resourcesurl+'images/'+tool.icon"/>-->
           </div>
         </template>
-        <div class="editbtn pull-right" :class="{'enabled' : true,  toggled : toolbox.state.editing.on}" >
-          <img height="30px" width="30px"  @click="toggleEditing(toolbox)" src="../dist/client/images/edit.png"/>
-        </div>
         <!--<img v-show="toolbox.loading" :src="resourcesurl +'images/loader.svg'">-->
       </div>
     </div>

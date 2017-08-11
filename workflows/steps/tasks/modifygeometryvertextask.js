@@ -1,16 +1,13 @@
 var inherit = g3wsdk.core.utils.inherit;
 var base =  g3wsdk.core.utils.base;
-var PickFeatureInteraction = g3wsdk.ol3.interactions.PickFeatureInteraction;
 
 var EditingTask = require('./editingtask');
 
 function ModifyGeometryVertexTask(options){
-  var self = this;
   options = options || {};
-  this.isPausable = true;null;
-  this.layer = null;
   this.drawInteraction = null;
-  this._selectInteraction= null;
+  this._originalStyle = null;
+  this._feature = null;
   this._deleteCondition = options.deleteCondition || undefined;
   this._snap = options.snap || null;
   this._snapInteraction = null;
@@ -23,22 +20,38 @@ inherit(ModifyGeometryVertexTask, EditingTask);
 var proto = ModifyGeometryVertexTask.prototype;
 
 proto.run = function(inputs, context) {
-  var self = this;
   var d = $.Deferred();
-  this.layer = inputs.layer;
+  var layer = inputs.layer;
   var session = context.session;
   var originalFeature,
     newFeature;
-  //var style = this.editor._editingVectorStyle ? this.editor._editingVectorStyle.move : null;
-  this._selectInteraction = new ol.interaction.Select({
-    layers: [this.layer],
-    condition: ol.events.condition.click,
-    hitTolerance: (isMobile && isMobile.any) ? 10 : 0
-  });
-  this.addInteraction(this._selectInteraction);
-
+  this._feature = inputs.features[0];
+  this._originalStyle = layer.getStyle();
+  var style = [
+    new ol.style.Style({
+      stroke : new ol.style.Stroke({
+        color : "grey",
+        width: 3
+      })
+    }),
+    new ol.style.Style({
+      image: new ol.style.Circle({
+        radius: 5,
+        fill: new ol.style.Fill({
+          color: 'orange'
+        })
+      }),
+      geometry: function(feature) {
+        // return the coordinates of the first ring of the polygon
+        var coordinates = feature.getGeometry().getCoordinates()[0];
+        return new ol.geom.MultiPoint(coordinates);
+      }
+    })
+  ];
+  this._feature.setStyle(style);
+  var features = new ol.Collection(inputs.features);
   this._modifyInteraction = new ol.interaction.Modify({
-    features: this._selectInteraction.getFeatures(),
+    features: features,
     deleteCondition: this._deleteCondition
   });
   
@@ -63,7 +76,7 @@ proto.run = function(inputs, context) {
         layerId: session.getId(),
         feature:originalFeature
       });
-      self._selectInteraction.getFeatures().clear();
+      //self._selectInteraction.getFeatures().clear();
       inputs.features.push(newFeature);
       // ritorno come outpu l'input layer che sarà modificato
       d.resolve(inputs);
@@ -85,8 +98,7 @@ proto.stop = function(){
      this.removeInteraction(this._snapInteraction);
      this._snapInteraction = null;
   }
-  this.removeInteraction(this._selectInteraction);
-  this._selectInteraction = null;
+  this._feature.setStyle(this._originalStyle);
   this.removeInteraction(this._modifyInteraction);
   this._modifyInteraction = null;
   return true;

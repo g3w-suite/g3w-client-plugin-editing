@@ -21,17 +21,27 @@ proto.run = function(inputs, context) {
   var session = context.session;
   var layers = [inputs.layer];
   var originalFeature = null;
-  var style = null;
-  //var style = this.editor._editingVectorStyle ? this.editor._editingVectorStyle.move : null;
-  this._selectInteraction = new ol.interaction.Select({
-    layers: layers,
-    condition: ol.events.condition.click,
-    style: style,
-    hitTolerance: (isMobile && isMobile.any) ? 10 : 0
+  var originalStyle = inputs.layer.getStyle();
+  var style = new ol.style.Style({
+    fill: new ol.style.Fill({
+      color: 'rgba(255, 255, 255, 0.2)'
+    }),
+    stroke: new ol.style.Stroke({
+      color: '#ffcc33',
+      width: 3
+    }),
+    image: new ol.style.Circle({
+      radius: 7,
+      fill: new ol.style.Fill({
+        color: '#ffcc33'
+      })
+    })
   });
-  this.addInteraction(this._selectInteraction);
+  var features = new ol.Collection(inputs.features);
+  var feature = inputs.features[0];
+  feature.setStyle(style);
   this._translateInteraction = new ol.interaction.Translate({
-    features: this._selectInteraction.getFeatures(),
+    features: features,
     hitTolerance: (isMobile && isMobile.any) ? 10 : 0
   });
   this.addInteraction(this._translateInteraction);
@@ -44,7 +54,8 @@ proto.run = function(inputs, context) {
   });
   
   this._translateInteraction.on('translateend',function(e) {
-    var newFeature = e.features.getArray()[0].clone();
+    var feature = e.features.getArray()[0];
+    var newFeature = feature.clone();
     newFeature.update();
     // vado ad aggiungere la featurea alla sessione (parte temporanea)
     session.push({
@@ -54,32 +65,17 @@ proto.run = function(inputs, context) {
       layerId: session.getId(),
       feature:originalFeature
     });
-    //dovrei aggiungere qui qualcosa per salvare temporaneamente quesa modifica sulla sessione al fine di
-    // portare tutte le modifiche quando viene fatto il save della sessione
-    self._selectInteraction.getFeatures().clear();
     // ritorno come outpu l'input layer che sarà modificato
     inputs.features.push(newFeature);
+    feature.setStyle(originalStyle);
     d.resolve(inputs);
   });
   return d.promise()
 };
 
-proto.pause = function(pause){
-  if (_.isUndefined(pause) || pause){
-    this._selectInteraction.setActive(false);
-    this._translateInteraction.setActive(false);
-  }
-  else {
-    this._selectInteraction.setActive(true);
-    this._translateInteraction.setActive(true);
-  }
-};
 
 proto.stop = function() {
   var d = $.Deferred();
-  this._selectInteraction.getFeatures().clear();
-  this.removeInteraction(this._selectInteraction);
-  this._selectInteraction = null;
   this.removeInteraction(this._translateInteraction);
   this._translateInteraction = null;
   d.resolve();

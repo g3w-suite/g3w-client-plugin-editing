@@ -7,6 +7,6 @@ function EditAttributesTask() {
 }
 inherit(EditAttributesTask, EditingTool);
 
-var proto = Ed
+var proto = EditAttributesTask.prototype;
 
 module.exports = EditAttributesTask;

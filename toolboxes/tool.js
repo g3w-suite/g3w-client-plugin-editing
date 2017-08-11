@@ -53,10 +53,8 @@ proto.start = function() {
       .then(function(outputs) {
         // vado a salvare la sessione
         self._session.save()
-          .then(function(uniqueId) {
-            var EditingService = require('../editingservice');
-            EditingService.saveDependencies(self._layer, uniqueId);
-            console.log('startOp');//
+          .then(function() {
+            options.inputs.features = [];
             startOp(options);
           });
       })
@@ -69,12 +67,33 @@ proto.start = function() {
   }
   // verifico che sia definito l'operatore
   if (this._op) {
+    this.state.started = true;
     // lancio la funzione che mi permette di riavviarea
     // l'operatore (workflow)  ogni volt è andato a buon fine
     startOp(options);
-    this.state.started = true;
+
   }
 };
+
+//fa lo stop del tool
+proto.stop = function() {
+  var self = this;
+  console.log('Stopping Tool ... ');
+  if (this._op) {
+    this._op.stop()
+      .then(function() {
+        //TODO
+      })
+      .fail(function(err) {
+        //in caso di errore faccio un rollback della sessione
+        self._session.rollback();
+      })
+      .always(function() {
+        self.state.started = false;
+      })
+  }
+};
+
 
 proto.getId = function() {
   return this.state.id;
@@ -120,17 +139,6 @@ proto.setToolBox = function(toolbox) {
 
 proto.getToolBox = function() {
   return this._toolbox;
-};
-
-//fa lo stop del tool
-proto.stop = function() {
-  var self = this;
-  if (this._op) {
-    this._op.stop()
-      .then(function() {
-        self.state.started = false;
-      });
-  }
 };
 
 proto.clear = function() {

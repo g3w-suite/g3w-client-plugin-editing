@@ -30,7 +30,13 @@ var vueComponentOptions = {
         toolbox.start();
         if (!toolbox.isSelected()) {
           _.forEach(this.state.toolboxes, function (tlbox) {
-            tlbox.setSelected(false);
+            if (tlbox.isSelected()) {
+              _.forEach(tlbox.getTools(), function (tool) {
+                if (tool.isStarted())
+                  tool.stop();
+              });
+              tlbox.setSelected(false);
+            }
           });
           toolbox.setSelected(true);
           this.state.toolboxSelected = toolbox;
@@ -42,7 +48,7 @@ var vueComponentOptions = {
       toolbox.save();
     },
     toggletool: function(tool) {
-      if (!tool.state.started) {
+      if (!tool.isStarted()) {
         events.$emit("tool:start", tool);
         _.forEach(this.state.toolboxSelected.getTools(), function(t) {
           if (t.isStarted()) {
@@ -53,8 +59,8 @@ var vueComponentOptions = {
         tool.start();
       }
       else {
-        //events.$emit("tool:stop", tool);
-        tool.state.started = false;
+        events.$emit("tool:stop", tool);
+        tool.stop();
       }
     },
     onClose: function() {
@@ -98,8 +104,7 @@ var vueComponentOptions = {
   computed: {
     canCommit: function() {
       var toolbox = this.state.toolboxSelected;
-      return this.canUndo;
-      //return !_.isNull(toolbox) && toolbox.getSession().getHistory().canCommit();
+      return !_.isNull(toolbox) && toolbox.getSession().getHistory().canCommit();
     },
     canUndo: function() {
       var toolbox = this.state.toolboxSelected;

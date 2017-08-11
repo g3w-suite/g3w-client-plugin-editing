@@ -6,7 +6,7 @@ var ModifyGeometryVertexTask = require('./tasks/modifygeometryvertextask');
 var ModifyGeometryVertexStep = function(options) {
   options = options || {};
   options.task = new ModifyGeometryVertexTask();
-  options.help = "Clicca su una feature per poter modifirare i sui veritici";
+  options.help = "Modifica o aggiungi un vertice alla feature selezionata";
   base(this, options)
 };
 

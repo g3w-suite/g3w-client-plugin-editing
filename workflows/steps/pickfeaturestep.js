@@ -7,7 +7,7 @@ var PickFeatureTask = require('./tasks/pickfeaturetask');
 var PickFeatureStep = function(options) {
   options = options || {};
   options.task = new PickFeatureTask();
-  options.help = "Clicca su una feature per poterla editare";
+  options.help = "Clicca su una feature per poterla modificare";
   base(this, options)
 };
 

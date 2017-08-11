@@ -6,7 +6,7 @@ var MoveFeatureTask = require('./tasks/movefeaturettask');
 var MoveFeatureStep = function(options) {
   options = options || {};
   options.task = new MoveFeatureTask();
-  options.help = "Clicca su una feature per poterla muovere";
+  options.help = "Muovi la feature selezionata";
   base(this, options)
 };
 

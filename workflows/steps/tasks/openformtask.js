@@ -47,12 +47,14 @@ proto.run = function(inputs, context) {
         type: "save",
         class: "btn-danger",
         cbk: function(fields, relations) {
-
           self._setFieldsWithValues(feature, fields, relations);
-          session.push({
-            layerId: session.getId(),
-            feature: feature
-          });
+          if (!feature.isNew()) {
+            feature.update();
+            session.push({
+              layerId: session.getId(),
+              feature: feature
+            })
+          }
           GUI.setModal(false);
           d.resolve(inputs);
         }
@@ -70,6 +72,7 @@ proto.run = function(inputs, context) {
   });
   return d.promise();
 };
+
 
 proto._generateFormId = function() {
   return this._newPrefix+Date.now();
@@ -156,6 +159,8 @@ proto._getRelationsWithValues = function(feature) {
 // metodo eseguito alla disattivazione del tool
 proto.stop = function() {
   console.log('stop openform task ...');
+  GUI.closeForm();
+  GUI.setModal(false);
   return true;
 };
 
