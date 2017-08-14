@@ -89,9 +89,9 @@ proto.start = function() {
       .then(function() {
         //una volta che è stata avviata la sessione faccio partire
         // le sessioni dipendenti per poter eseguier l'editing
-        //var EditingService = require('../editingservice');
+        var EditingService = require('../editingservice');
         // passo id del toolbox e le opzioni per far partire la sessione
-        //EditingService.startEditingDependencies(self.state.id, {});// dove le opzioni possono essere il filtro;
+        EditingService.startEditingDependencies(self.state.id, {});// dove le opzioni possono essere il filtro;
         d.resolve();
       })
       .fail(function() {

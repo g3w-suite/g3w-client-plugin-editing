@@ -84,12 +84,13 @@ var vueComponentOptions = {
     },
     undo: function() {
       var session = this.state.toolboxSelected.getSession();
-      session.undo();
+      var dependenciesChanges = session.undo();
+      this.$options.service.applyChangesDependencies(session.getId(), dependenciesChanges);
     },
     redo: function() {
       var session = this.state.toolboxSelected.getSession();
-      session.redo();
-
+      var dependenciesChanges = session.redo();
+      this.$options.service.applyChangesDependencies(session.getId(), dependenciesChanges);
     },
     commit: function() {
       // funzione che serve a fare il commit della sessione legata al tool

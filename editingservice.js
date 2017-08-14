@@ -13,7 +13,7 @@ function EditingService() {
 
   var self = this;
   base(this);
-  // prprietà che contiene i layer vettoriali
+  // proprietà che contiene i layer vettoriali
   this._sessions = {};
   // proprietà che contiene i controlli per l'editing
   this._toolboxes = [];
@@ -115,6 +115,15 @@ proto.saveDependencies = function(layer, uniqueId) {
   })
 };
 
+proto.applyChangesDependencies = function(id, changes) {
+  var self = this;
+  var dependencies = this.getDependencies(id);
+  var session;
+  _.forEach(dependencies, function(dependecy) {
+    session = self._sessions[dependecy].applyChanges(changes[dependecy], true);
+  })
+};
+
 // fa lo start di tutte le dipendenze del layer legato alla toolbox che si è avviato
 proto.startEditingDependencies = function(id, options) {
   //console.log(id);
@@ -123,7 +132,9 @@ proto.startEditingDependencies = function(id, options) {
   //magari le options lo posso usare per passare il tipo di filtro da passare
   // allo start della sessione
   options = options || options;
+  // vado a recuperare le dependencies di quel paricolare layer/toolbox
   var dependencies = this.getDependencies(id);
+  // se ci sono
   if (dependencies) {
     /*
     * qui andrò a verificare se stata istanziata la sessione altrimenti vienne creata
@@ -151,7 +162,7 @@ proto.startEditingDependencies = function(id, options) {
           editor: editor
         });
         self._sessions[dependency] = session;
-        sessione.start();
+        session.start();
       }
     })
   }
