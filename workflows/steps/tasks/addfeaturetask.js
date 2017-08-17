@@ -44,7 +44,6 @@ proto.run = function(inputs, context) {
     condition: this._condition,
     finishCondition: this._finishCondition // disponibile da https://github.com/openlayers/ol3/commit/d425f75bea05cb77559923e494f54156c6690c0b
   });
-
   //aggiunge l'interazione tramite il metodo generale di editor.js
   // che non fa altro che chaimare il mapservice
   this.addInteraction(this.drawInteraction);

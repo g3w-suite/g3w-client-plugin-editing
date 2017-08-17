@@ -6,6 +6,7 @@ var CatalogLayersStoresRegistry = g3wsdk.core.catalog.CatalogLayersStoresRegistr
 var MapLayersStoreRegistry = g3wsdk.core.map.MapLayersStoreRegistry;
 var LayersStore = g3wsdk.core.layer.LayersStore;
 var Session = g3wsdk.core.editing.Session;
+var ProjectsRegistry = g3wsdk.core.project.ProjectsRegistry;
 var SessionsManager = g3wsdk.core.editing.SessionsManager;
 var ToolBoxesFactory = require('./toolboxes/toolboxesfactory');
 
@@ -13,6 +14,7 @@ function EditingService() {
 
   var self = this;
   base(this);
+  this._baseUrl = null;
   // proprietà che contiene i layer vettoriali
   this._sessions = {};
   // proprietà che contiene i controlli per l'editing
@@ -32,6 +34,8 @@ function EditingService() {
     EDITABLE: true
   });
   this.init = function(config) {
+    var currentProject = ProjectsRegistry.getCurrentProject();
+    console.log(currentProject.getType());
     //vado ad aggiungere il layersstore alla maplayerssotreregistry
     MapLayersStoreRegistry.addLayersStore(this._layersstore);
     // vado a settare l'url di editing aggiungendo l'id del
@@ -42,7 +46,10 @@ function EditingService() {
     var editor;
     var layerDependencies;
     var layerId;
+    // base layer url per l'eeditng
+    this._baseUrl = config.baseurl;
     //ciclo su ogni layer editiabile
+    var editingUrl;
     _.forEach(this.layers, function(layer) {
       layerId = layer.getId();
       //vado a vedere se il layer ha altri layer dipendenti per l'editing
@@ -50,6 +57,15 @@ function EditingService() {
       // vado a chiamare la funzione che mi permette di
       // estrarre la versione vettoriale del layer di partenza
       editableLayer = layer.getLayerForEditing();
+      /*
+      * composizione url editing api
+      * la chimata /api/vector/<tipo di richiesta: data/editing/config>/<project_type>/<project_id>/<layer_id>
+      * esempio /api/vector/config/qdjango/10/punti273849503023
+      *
+      */
+      editingUrl = self._baseUrl + 'editing/'+ currentProject.getType() + '/' + currentProject.getId() + '/' + layerId + '/';
+      // vado a settare il dataUrl
+      editableLayer.setDataUrl(self._baseUrl);
       // vado ad aggiungere ai layer editabili
       self._editableLayers[layerId] = editableLayer;
       //aggiungo il layer al layersstore
