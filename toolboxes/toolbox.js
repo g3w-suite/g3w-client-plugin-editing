@@ -43,9 +43,14 @@ function ToolBox(options) {
           //setto come source del layer l'array / collection feature del features sotre della sessione
           // il layer deve implementare anche un setSource
           self._layer.setSource(source);
-        });
-        self.state.editing.on = true;
-      });
+          self.state.enabled = true;
+          self.state.editing.on = true;
+        })
+        .fail(function(err) {
+          self.state.enabled = false;
+          self.state.editing.on = false;
+        })
+      })
   });
   // mapservice
   this._mapService = GUI.getComponent('map').getService();
@@ -99,8 +104,6 @@ proto.start = function() {
         d.reject();
       })
   }
-
-  self.state.enabled = true;
   return d.promise();
 };
 
@@ -113,7 +116,6 @@ proto.stop = function() {
       .then(function() {
         self.state.editing.on = false;
         self.state.enabled = false;
-        self.state.selected = false;
         // seci sono tool attivi vado a spengere
         _.forEach(self._tools, function(tool) {
           if (tool.isStarted()) {

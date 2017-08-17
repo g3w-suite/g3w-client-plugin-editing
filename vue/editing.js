@@ -20,6 +20,7 @@ var vueComponentOptions = {
   transitions: {'addremovetransition': 'showhide'},
   methods: {
     toggleEditing: function(toolbox) {
+      var self = this;
       // passo il toolbox;
       if (toolbox.inEditing()) {
         events.$emit("toolbox:stop", toolbox);
@@ -27,20 +28,20 @@ var vueComponentOptions = {
       }
       else {
         events.$emit("toolbox:start", toolbox);
-        toolbox.start();
-        if (!toolbox.isSelected()) {
-          _.forEach(this.state.toolboxes, function (tlbox) {
-            if (tlbox.isSelected()) {
-              _.forEach(tlbox.getTools(), function (tool) {
-                if (tool.isStarted())
-                  tool.stop();
-              });
-              tlbox.setSelected(false);
-            }
-          });
-          toolbox.setSelected(true);
-          this.state.toolboxSelected = toolbox;
-        }
+        _.forEach(this.state.toolboxes, function (tlbox) {
+          if (tlbox.isSelected()) {
+            _.forEach(tlbox.getTools(), function (tool) {
+              if (tool.isStarted())
+                tool.stop();
+            });
+            tlbox.setSelected(false);
+          }
+        });
+        toolbox.start()
+          .then(function() {
+            toolbox.setSelected(true);
+            self.state.toolboxSelected = toolbox;
+        })
       }
     },
     saveEdits: function(toolbox) {

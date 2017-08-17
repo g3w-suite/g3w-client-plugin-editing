@@ -151,7 +151,7 @@ proto.startEditingDependencies = function(id, options) {
           // faccio partire la sessione
           session.start(options);
         } else {
-          // altrimenti recupero le features
+          // altrimenti recupero le features secondo quell'opzione
           session.getFeatures(options);
         }
       else {
