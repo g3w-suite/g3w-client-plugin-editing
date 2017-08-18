@@ -7,9 +7,6 @@ function DeleteFeatureTask(options) {
   this.drawInteraction = null;
   this._selectInteraction = null;
   this._layer = null;
-  this.setters = {
-    deleteFeature: proto._deleteFeature
-  };
   base(this, options);
 }
 
@@ -124,7 +121,6 @@ proto.run = function(inputs, context) {
     // vado a cancellare dalla source la feature selezionata
     self._layer.getSource().removeFeature(feature);
     self._selectInteraction.getFeatures().remove(feature);
-    //var isNew = self._isNew(feature);
     // dico di cancellarla (la feature non viene cancellatata ma aggiornato il suo stato
     feature.delete();
     // vado ad aggiungere la featurea alla sessione (parte temporanea)
@@ -141,18 +137,8 @@ proto.run = function(inputs, context) {
   return d.promise();
 };
 
-proto.pause = function(pause){
-  if (_.isUndefined(pause) || pause){
-    this._selectInteraction.setActive(false);
-    this._deleteInteraction.setActive(false);
-  }
-  else {
-    this._selectInteraction.setActive(true);
-    this._deleteInteraction.setActive(true);
-  }
-};
-
 proto.stop = function() {
+  console.log('Stop delete task ....');
   var d = $.Deferred();
   this._selectInteraction.getFeatures().clear();
   this.removeInteraction(this._selectInteraction);
@@ -161,17 +147,6 @@ proto.stop = function() {
   this._deleteInteraction = null;
   d.resolve(true);
   return d.promise();
-};
-
-proto._deleteFeature = function(feature, isNew) {
-  return true;
-};
-
-proto._fallBack = function(feature) {
-};
-
-proto._isNew = function(feature){
-  return (!_.isNil(this._layer.getSource().getFeatureById(feature.getId())));
 };
 
 

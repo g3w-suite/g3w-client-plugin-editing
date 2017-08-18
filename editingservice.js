@@ -6,8 +6,6 @@ var CatalogLayersStoresRegistry = g3wsdk.core.catalog.CatalogLayersStoresRegistr
 var MapLayersStoreRegistry = g3wsdk.core.map.MapLayersStoreRegistry;
 var LayersStore = g3wsdk.core.layer.LayersStore;
 var Session = g3wsdk.core.editing.Session;
-var ProjectsRegistry = g3wsdk.core.project.ProjectsRegistry;
-var SessionsManager = g3wsdk.core.editing.SessionsManager;
 var ToolBoxesFactory = require('./toolboxes/toolboxesfactory');
 
 function EditingService() {
@@ -34,8 +32,6 @@ function EditingService() {
     EDITABLE: true
   });
   this.init = function(config) {
-    var currentProject = ProjectsRegistry.getCurrentProject();
-    console.log(currentProject.getType());
     //vado ad aggiungere il layersstore alla maplayerssotreregistry
     MapLayersStoreRegistry.addLayersStore(this._layersstore);
     // vado a settare l'url di editing aggiungendo l'id del
@@ -57,15 +53,11 @@ function EditingService() {
       // vado a chiamare la funzione che mi permette di
       // estrarre la versione vettoriale del layer di partenza
       editableLayer = layer.getLayerForEditing();
-      /*
-      * composizione url editing api
-      * la chimata /api/vector/<tipo di richiesta: data/editing/config>/<project_type>/<project_id>/<layer_id>
-      * esempio /api/vector/config/qdjango/10/punti273849503023
-      *
-      */
-      editingUrl = self._baseUrl + 'editing/'+ currentProject.getType() + '/' + currentProject.getId() + '/' + layerId + '/';
-      // vado a settare il dataUrl
-      editableLayer.setDataUrl(self._baseUrl);
+      // vado a prendere la configurazione
+      editableLayer.getEditingConfig()
+        .then(function(config) {
+          // qui ci sono le configurazioni
+        });
       // vado ad aggiungere ai layer editabili
       self._editableLayers[layerId] = editableLayer;
       //aggiungo il layer al layersstore
