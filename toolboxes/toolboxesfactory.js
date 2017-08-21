@@ -29,6 +29,8 @@ function EditorToolBoxesFactory() {
     switch (layerType) {
       // caso layer vettoriale
       case Layer.LayerTypes.VECTOR:
+        // vado a recuperare il layer (ol.Layer) della mappa
+        // su cui tutti i tool agiranno
         editingLayer = this._mapService.getLayerById(layerId);
         var geometryType = layer.getGeometryType();
         switch (geometryType) {

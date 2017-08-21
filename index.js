@@ -13,19 +13,22 @@ var _Plugin = function(){
     this.setService(Service);
     //recupero configurazione del plugin
     this.config = this.getConfig();
-    // inizializzo l'editing
-    this.service.init(this.config);
-    //regitro il plugin
-    if (this.registerPlugin(this.config.gid)) {
-      if (!GUI.ready) {
-        GUI.on('ready',_.bind(this.setupGui, this));
-      } else {
-        this.setupGui();
+    // verifico se ci sono layer editabili
+    if (this.service.loadPlugin()) {
+      // inizializzo l'editing
+      this.service.init(this.config);
+      //regitro il plugin
+      if (this.registerPlugin(this.config.gid)) {
+        if (!GUI.ready) {
+          GUI.on('ready',_.bind(this.setupGui, this));
+        } else {
+          this.setupGui();
+        }
       }
     }
   };
   //metto su l'interfaccia del plugin
-  this.setupGui = function(){
+  this.setupGui = function() {
     var self = this;
     var toolsComponent = GUI.getComponent('tools');
     var toolsService = toolsComponent.getService();
