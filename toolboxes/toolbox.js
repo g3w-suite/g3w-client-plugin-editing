@@ -12,6 +12,8 @@ function ToolBox(options) {
   // editor del Layer che permette di interagire con il layer
   // save, etc ...
   this._editor = options.editor;
+  // l'editing layer originale che contiene tutte le informazioni anche le relazioni
+  this._editingLayer = this._editor.getLayer();
   //layer ol
   this._layer = options.layer;
   // tasks associati

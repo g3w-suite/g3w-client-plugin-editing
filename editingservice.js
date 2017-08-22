@@ -2,7 +2,6 @@ var inherit = g3wsdk.core.utils.inherit;
 var base =  g3wsdk.core.utils.base;
 //prendo il plugin service di core
 var PluginService = g3wsdk.core.plugin.PluginService;
-var ProjectsRegistry = g3wsdk.core.project.ProjectsRegistry;
 var CatalogLayersStoresRegistry = g3wsdk.core.catalog.CatalogLayersStoresRegistry;
 var MapLayersStoreRegistry = g3wsdk.core.map.MapLayersStoreRegistry;
 var LayersStore = g3wsdk.core.layer.LayersStore;
@@ -47,11 +46,11 @@ function EditingService() {
       // vado a chiamare la funzione che mi permette di
       // estrarre la versione vettoriale del layer di partenza
       editableLayer = layer.getLayerForEditing();
-      // vado a prendere la configurazione
-      editableLayer.getEditingConfig()
-        .then(function(config) {
-          // qui ci sono le configurazioni
-        });
+      editableLayer.on('config:ready', function(config) {
+        // vado ad aggiungere un nuovo toolbox passandogli l'editor (e quindi il layer associato)
+        self.addToolBox(editor);
+        console.log(config);
+      });
       // vado ad aggiungere ai layer editabili
       self._layers[layerId] = editableLayer;
       //aggiungo il layer al layersstore
@@ -60,13 +59,7 @@ function EditingService() {
       self._sessions[layer.getId()] = null;
       // estraggo l'editor
       editor = editableLayer.getEditor();
-      // vado ad aggiungere un nuovo toolbox passandogli l'editor (e quindi il layer associato)
-      self.addToolBox(editor);
     });
-    // solo nel caso si editing vado a creare le relazioni;
-    var relations = ProjectsRegistry.getCurrentProject().getRelations();
-    // vado a creare le relazioni per il layerstore editing
-    this._layersstore.createRelations(relations);
   }
 }
 
