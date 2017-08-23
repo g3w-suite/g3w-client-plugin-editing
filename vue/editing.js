@@ -106,7 +106,7 @@ var vueComponentOptions = {
       //TODO dovrebbe igessere legata alla possibilità di salvare tutte le modifiche di tutti i layer
     },
     // funzione che visualizza il toolbox appena sono disponibili le configurazioni
-    // fields
+    // fields (passato dal metodo perchè in grado di ricevere parametri)
     show: function(toolbox) {
       var show = !!toolbox.getLayer().getEditingFields().length;
       if (!show)
