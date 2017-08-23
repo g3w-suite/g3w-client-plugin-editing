@@ -46,11 +46,6 @@ function EditingService() {
       // vado a chiamare la funzione che mi permette di
       // estrarre la versione vettoriale del layer di partenza
       editableLayer = layer.getLayerForEditing();
-      editableLayer.on('config:ready', function(config) {
-        // vado ad aggiungere un nuovo toolbox passandogli l'editor (e quindi il layer associato)
-        self.addToolBox(editor);
-        console.log(config);
-      });
       // vado ad aggiungere ai layer editabili
       self._layers[layerId] = editableLayer;
       //aggiungo il layer al layersstore
@@ -59,6 +54,8 @@ function EditingService() {
       self._sessions[layer.getId()] = null;
       // estraggo l'editor
       editor = editableLayer.getEditor();
+      // vado ad aggiungere la toolbox
+      self.addToolBox(editor);
     });
   }
 }
@@ -110,25 +107,6 @@ proto.stop = function() {
   this._stopEditing();
 };
 
-proto.saveDependencies = function(layer, uniqueId) {
-  //console.log(layer, uniqueId);
-  var layerId = layer.get('id');
-  var dependencies = this.getDependencies(layerId);
-  _.forEach(dependencies, function(dep) {
-    //TODO
-  })
-};
-
-proto.applyChangesDependencies = function(id, changes) {
-  var self = this;
-  var dependencies = this.getDependencies(id);
-  var session;
-  _.forEach(dependencies, function(dependecy) {
-    session = self._sessions[dependecy].applyChanges(changes[dependecy], true);
-  })
-};
-
-
 // fa lo start di tutte le dipendenze del layer legato alla toolbox che si è avviato
 proto.startEditingDependencies = function(layerId, options) {
   var self = this;
@@ -142,8 +120,7 @@ proto.startEditingDependencies = function(layerId, options) {
   IMPORTANTE: PER EVITARE PROBLEMI È IMPORTANTE CHE I LAYER DIPENDENTI SIANO A SUA VOLTA EDITABILI
 
    */
-
-  var dependencyLayers = this._layers[layerId].getChildrens();
+  var dependencyLayers = this._layers[layerId].getChildren();
   // se ci sono
   if (dependencyLayers) {
     /*
@@ -166,24 +143,24 @@ proto.startEditingDependencies = function(layerId, options) {
         }
       else {
         // altrimenti per quel layer la devo instanziare
-        var layer = self._layersstore.getLayerById(id);
-        var editor = layer.getEditor();
-        session = new Session({
-          editor: editor
-        });
-        self._sessions[id] = session;
-        session.start();
+        try {
+          var layer = self._layersstore.getLayerById(id);
+          var editor = layer.getEditor();
+          session = new Session({
+            editor: editor
+          });
+          self._sessions[id] = session;
+          session.start();
+        }
+        catch(err) {
+          console.log(err);
+        }
       }
     })
   }
   return d.promise();
 };
 
-proto.getDependencies = function(id) {
-  //TODO qui passo le sessioni dei layer dipendenti
-  //console.log(this._dependencies[id]);
- return this._dependencies[id];
-};
 
 
 module.exports = new EditingService;

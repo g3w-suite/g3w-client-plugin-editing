@@ -11,10 +11,10 @@
     </div>
   </div>
   <template v-for="toolbox in state.toolboxes">
-    <div  @click="select(toolbox)" class="panel panel-primary" :class="{ 'toolboxselected': toolbox.state.selected }">
+    <div v-if="show(toolbox)" @click="select(toolbox)" class="panel panel-primary" :class="{ 'toolboxselected': toolbox.state.selected }">
       <div  class="panel-heading"  style="position:relative; height: 40px;" :style="{ background: toolbox.state.color}" >
         <h3 class="panel-title" style="display: inline-block;">
-          {{ toolbox.state.title }}
+          {{ toolbox.state.title }} {{ toolbox.state.show }}
         </h3>
         <div class="editbtn" style="position:absolute; right:0;" :class="{'enabled' : true,  toggled : toolbox.state.editing.on}" >
           <img height="20px" width="20px"  @click="toggleEditing(toolbox)" src="../dist/client/images/edit.png"/>
@@ -36,6 +36,8 @@
         <!--<img v-show="toolbox.loading" :src="resourcesurl +'images/loader.svg'">-->
       </div>
     </div>
+    <div v-else class="message" v-html="toolbox.state.message"></div>
   </template>
+  <div class="message" v-html="toolmessage"></div>
   <div class="message" v-html="message"></div>
 </div>

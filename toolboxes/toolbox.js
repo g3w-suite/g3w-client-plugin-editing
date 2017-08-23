@@ -7,19 +7,35 @@ var OlFeaturesStore = g3wsdk.core.layer.features.OlFeaturesStore;
 
 function ToolBox(options) {
   var self = this;
-  options = options || {};
   base(this);
+  options = options || {};
   // editor del Layer che permette di interagire con il layer
   // save, etc ...
   this._editor = options.editor;
   // l'editing layer originale che contiene tutte le informazioni anche le relazioni
-  this._editingLayer = this._editor.getLayer();
-  //layer ol
-  this._layer = options.layer;
+  this._layer = this._editor.getLayer();
+  //layer ol della mappa
+  this._ollayer = options.layer;
   // tasks associati
   this._tools = options.tools;
   // recupero il tipo di toolbox
   var type = options.type || 'vector';
+  // stato del toolbox;
+  this.state = {
+    id: options.id,
+    // colore del layer (darà il colore alla maschera) e quindi
+    // delle feature visualizzate sulla mappa
+    color: this._layer.getColor() || 'blue',
+    title: options.title || "Edit Layer",
+    loading: false,
+    enabled: false,
+    message: null,
+    selected: false, //proprieà che mi server per switchare tra un toolbox e un altro
+    editing: {
+      on: false,
+      dirty: false
+    }
+  };
   //sessione che permette di gestire tutti i movimenti da parte
   // dei tools del toolbox durante l'editing del layer
   //creo la sessione passandogli l'editor
@@ -44,7 +60,7 @@ function ToolBox(options) {
           var source = type == 'vector' ? new ol.source.Vector({features: features }) : self._session.getFeaturesStore();
           //setto come source del layer l'array / collection feature del features sotre della sessione
           // il layer deve implementare anche un setSource
-          self._layer.setSource(source);
+          self._ollayer.setSource(source);
           self.state.enabled = true;
           self.state.editing.on = true;
         })
@@ -56,21 +72,6 @@ function ToolBox(options) {
   });
   // mapservice
   this._mapService = GUI.getComponent('map').getService();
-  // stato del toolbox
-  this.state = {
-    id: options.id,
-    // colore del layer (darà il colore alla maschera) e quindi
-    // delle feature visualizzate sulla mappa
-    color: this._editor.getLayer().getColor() || 'blue',
-    title: options.title || "Edit Layer",
-    loading: false,
-    enabled: false,
-    selected: false, //proprieà che mi server per switchare tra un toolbox e un altro
-    editing: {
-      on: false,
-      dirty: false
-    }
-  }
 }
 
 inherit(ToolBox, G3WObject);
@@ -140,6 +141,18 @@ proto.stop = function() {
 //funzione salvataggio modifiche
 proto.save = function () {
   this._session.commit();
+};
+
+proto.setMessage = function(message) {
+  this.state.message = message;
+};
+
+proto.getMessage = function() {
+  return this.state.message;
+};
+
+proto.resetMessage = function() {
+  this.setMessage(null);
 };
 
 proto.getId = function() {

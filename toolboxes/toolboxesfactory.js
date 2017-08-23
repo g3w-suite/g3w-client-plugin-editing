@@ -152,7 +152,7 @@ function EditorToolBoxesFactory() {
         tools = [];
         break;
     }
-
+    
     return new ToolBox({
       id: layer.getId(),
       type: layerType,
