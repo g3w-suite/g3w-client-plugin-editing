@@ -94,7 +94,6 @@ proto.stop = function() {
   }
 };
 
-
 proto.getId = function() {
   return this.state.id;
 };
@@ -117,6 +116,14 @@ proto.getIcon = function() {
 
 proto.setIcon = function(icon) {
   this.state.icon = icon;
+};
+
+proto.setEnable = function(bool) {
+  this.state.enabled = _.isBoolean(bool) ? bool : false;
+};
+
+proto.isEnabled = function() {
+  return this.state.enabled;
 };
 
 proto.getOperator = function() {

@@ -114,15 +114,15 @@ proto.startEditingDependencies = function(layerId, options) {
   //magari le options lo posso usare per passare il tipo di filtro da passare
   // allo start della sessione
   options = options || options;
-  // vado a recuperare le dependencies (figli al momento) di quel paricolare layer
+  // vado a recuperare le relazioni (figli al momento) di quel paricolare layer
   /*
 
   IMPORTANTE: PER EVITARE PROBLEMI È IMPORTANTE CHE I LAYER DIPENDENTI SIANO A SUA VOLTA EDITABILI
 
    */
-  var dependencyLayers = this._layers[layerId].getChildren();
+  var relationLayers = this._layers[layerId].getChildren();
   // se ci sono
-  if (dependencyLayers) {
+  if (relationLayers) {
     /*
     * qui andrò a verificare se stata istanziata la sessione altrimenti vienne creata
     * se la sessione è attiva altrimenti viene attivata
@@ -130,7 +130,7 @@ proto.startEditingDependencies = function(layerId, options) {
     //cerco prima tra i toolbox se presente
     var session;
     // cliclo sulle dipendenze create
-    _.forEach(dependencyLayers, function(id) {
+    _.forEach(relationLayers, function(id) {
       session = self._sessions[id];
       //verifico che ci sia la sessione
       if (session)

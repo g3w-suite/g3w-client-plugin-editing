@@ -12,17 +12,15 @@ var events = new Vue();
 
 var vueComponentOptions = {
   template: EditingTemplate,
-  data: function() {
-    return {
-      state: this.$options.state
-    }
-  },
+  data: null,
   transitions: {'addremovetransition': 'showhide'},
   methods: {
     showToolbox: function(toolbox){
       return !!toolbox.state.show;
     },
     toggleEditing: function(toolbox) {
+      if (!this.isToolboxEnabled(toolbox))
+        return;
       var self = this;
       // passo il toolbox;
       if (toolbox.inEditing()) {
@@ -61,16 +59,23 @@ var vueComponentOptions = {
           }
         });
         tool.start();
+        // vado a settare
+        operator = tool.getOperator();
+        message = operator.getRunningStep() ? operator.getRunningStep().getHelp() : null;
+        this.state.toolboxSelected.state.toolmessage = message;
       }
       else {
         events.$emit("tool:stop", tool);
         tool.stop();
+        this.state.toolboxSelected.state.toolmessage = null;
       }
     },
     onClose: function() {
       events.$emit("close");
     },
     select: function(toolbox) {
+      if (!this.isToolboxEnabled(toolbox))
+        return;
       if (!toolbox.isSelected()) {
         _.forEach(this.state.toolboxes, function(tlbox) {
           if (toolbox != tlbox && tlbox.isSelected()) {
@@ -78,23 +83,25 @@ var vueComponentOptions = {
               if (tool.isStarted())
                 tool.stop();
             });
+            // vado a cancellare eventuali messaggi dei tools
+            tlbox.state.toolmessage = null;
+            // vado a deselezionarlo
             tlbox.setSelected(false);
           }
         });
         toolbox.setSelected(true);
         this.state.toolboxSelected = toolbox;
-        events.$emit("toolbox:selected", toolbox);
       }
     },
     undo: function() {
       var session = this.state.toolboxSelected.getSession();
-      var dependenciesChanges = session.undo();
-      this.$options.service.applyChangesDependencies(session.getId(), dependenciesChanges);
+      var relationsChanges = session.undo();
+      //this.$options.service.applyChangesDependencies(session.getId(), dependenciesChanges);
     },
     redo: function() {
       var session = this.state.toolboxSelected.getSession();
-      var dependenciesChanges = session.redo();
-      this.$options.service.applyChangesDependencies(session.getId(), dependenciesChanges);
+      var relationsChanges = session.redo();
+      //this.$options.service.applyChangesDependencies(session.getId(), dependenciesChanges);
     },
     commit: function() {
       // funzione che serve a fare il commit della sessione legata al tool
@@ -107,13 +114,13 @@ var vueComponentOptions = {
     },
     // funzione che visualizza il toolbox appena sono disponibili le configurazioni
     // fields (passato dal metodo perchè in grado di ricevere parametri)
-    show: function(toolbox) {
-      var show = !!toolbox.getLayer().getEditingFields().length;
-      if (!show)
+    isToolboxEnabled: function(toolbox) {
+      var enabled = !!toolbox.getLayer().getEditingFields().length;
+      if (!enabled)
         toolbox.setMessage('Configurazione ' +  toolbox.getLayer().getName() + ' in corso .. ');
       else
         toolbox.resetMessage();
-      return show;
+      return enabled;
     }
   },
   computed: {
@@ -132,20 +139,7 @@ var vueComponentOptions = {
     startorstop: function(control) {
       return this.service
     },
-    toolmessage: function() {
-      var message = "";
-      var operator;
-      if (this.state.toolboxSelected) {
-        _.forEach(this.state.toolboxSelected.getTools(), function(tool) {
-          if (tool.isStarted()) {
-            operator = tool.getOperator();
-            message = operator.getRunningStep() ? operator.getRunningStep().getHelp() : message;
-            return false
-          }
-        })
-      }
-      return message;
-    },
+    // meaasssio generale dell'editing
     message: function() {
       var message = "";
       return message;
@@ -182,10 +176,16 @@ function PanelComponent(options) {
   var InternalComponent = Vue.extend(this.vueComponent);
   this.internalComponent = new InternalComponent({
     service: this._service,
-    state: {
-      toolboxes: self._toolboxes,
-      labels: self._labels,
-      toolboxSelected: null
+    data: function() {
+      return {
+        //lo state è quello del servizio in quanto è lui che va a modificare operare sui dati
+        state: {
+          toolboxes: self._toolboxes,
+          labels: self._labels,
+          toolboxSelected: null
+        },
+        resourcesurl: self._resourcesUrl
+      }
     }
   });
 

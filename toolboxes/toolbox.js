@@ -15,11 +15,11 @@ function ToolBox(options) {
   // l'editing layer originale che contiene tutte le informazioni anche le relazioni
   this._layer = this._editor.getLayer();
   //layer ol della mappa
-  this._ollayer = options.layer;
+  this._editingLayer = options.layer;
   // tasks associati
   this._tools = options.tools;
   // recupero il tipo di toolbox
-  var type = options.type || 'vector';
+  this._layerType = options.type || 'vector';
   // stato del toolbox;
   this.state = {
     id: options.id,
@@ -30,6 +30,7 @@ function ToolBox(options) {
     loading: false,
     enabled: false,
     message: null,
+    toolmessage: null,
     selected: false, //proprieà che mi server per switchare tra un toolbox e un altro
     editing: {
       on: false,
@@ -42,7 +43,7 @@ function ToolBox(options) {
   this._session = new Session({
     id: options.id, // contiene l'id del layer
     editor: this._editor,
-    featuresstore: type == 'vector' ? new OlFeaturesStore(): null
+    featuresstore: this._layerType == 'vector' ? new OlFeaturesStore(): null
   });
   //vado a settare la sessione ad ogni tool di quel toolbox
   // e lo stesso toolbox
@@ -53,30 +54,32 @@ function ToolBox(options) {
   // in ascolto dell'onafter start della sessione così se avviata
   // vado ad associare le features del suo featuresstore al ol.layer.Vector
   this._session.onafter('start', function() {
-    // questo ritorna come promessa l'array di features del featuresstore
-    self._session.getFeaturesStore().getFeatures()
-      .then(function(promise) {
-        promise.then(function(features) {
-          var source = type == 'vector' ? new ol.source.Vector({features: features }) : self._session.getFeaturesStore();
-          //setto come source del layer l'array / collection feature del features sotre della sessione
-          // il layer deve implementare anche un setSource
-          self._ollayer.setSource(source);
-          self.state.enabled = true;
-          self.state.editing.on = true;
-        })
-        .fail(function(err) {
-          self.state.enabled = false;
-          self.state.editing.on = false;
-        })
-      })
+    // le sessioni dipendenti per poter eseguier l'editing
+    var EditingService = require('../editingservice');
+    // passo id del toolbox e le opzioni per far partire la sessione
+    EditingService.startEditingDependencies(self.state.id, {});// dove le opzioni possono essere il filtro;
   });
-  // mapservice
+  // mapservice mi servirà per fare richieste al server sulle features (bbox) quando agisco sull mappa
   this._mapService = GUI.getComponent('map').getService();
+  // vado a settare il source all'editing layer
+  this._setEditingLayerSource();
 }
 
 inherit(ToolBox, G3WObject);
 
 var proto = ToolBox.prototype;
+
+// funzione che permette di settare il featurestore del session in particolare
+// collezioni di features per quanto riguarda il vector layer e da vedere per il table layer (forse array) al table layer
+proto._setEditingLayerSource = function() {
+  var featuresstore = this._session.getFeaturesStore();
+  // questo ritorna come promessa l'array di features del featuresstore
+  // vado  a settare il source del layer
+  var source = this._layerType == 'vector' ? new ol.source.Vector({features: featuresstore.getFeaturesCollection() }) : featuresstore;
+  //setto come source del layer l'array / collection feature del features sotre della sessione
+  // il layer deve implementare anche un setSource
+  this._editingLayer.setSource(source);
+};
 
 // funzione che fa in modo di attivare tutti i tasks associati
 // al controllo. Questo verrà eventualmente chiamato o dalla pennina di start editing
@@ -85,27 +88,33 @@ var proto = ToolBox.prototype;
 proto.start = function() {
   var self = this;
   var d = $.Deferred();
-  // var bbox = this._mapService.getMapBBOX();
-  // this._mapService.viewer.map.on('moveend', function() {
-  //   bbox = self._mapService.getMapBBOX()
-  // });
+  var bbox = this._mapService.getMapBBOX();
+  this._mapService.viewer.map.on('moveend', function() {
+    bbox = self._mapService.getMapBBOX();
+  });
   // se non è stata avviata da altri allora faccio avvio sessione
   if (this._session && !this._session.isStarted()) {
     this._session.start({
-      // qui ci va il filtro ad esempio: bbox: bbox
+      filter: bbox
     })
-      .then(function() {
-        //una volta che è stata avviata la sessione faccio partire
-        // le sessioni dipendenti per poter eseguier l'editing
-        var EditingService = require('../editingservice');
-        // passo id del toolbox e le opzioni per far partire la sessione
-        EditingService.startEditingDependencies(self.state.id, {});// dove le opzioni possono essere il filtro;
-        d.resolve();
-      })
-      .fail(function() {
-        self.stop();
-        d.reject();
-      })
+    .then(function(promise) {
+      // setto il loding dei dati a true
+      self.state.loading = true;
+      promise
+        .then(function (features) {
+          self.state.enabled = true;
+          self.state.editing.on = true;
+          self.state.loading = false;
+          d.resolve();
+        })
+        .fail(function(err) {
+          self.state.enabled = false;
+          self.state.editing.on = false;
+          self.state.loading = false;
+          self.stop();
+          d.reject(err);
+        })
+    })
   }
   return d.promise();
 };
@@ -211,6 +220,18 @@ proto.setSelected = function(bool) {
 
 proto.getTools = function() {
   return this._tools;
+};
+
+proto.setActiveTool = function() {
+
+};
+
+proto.getActiveTool = function() {
+
+};
+
+proto.getToolMessage = function() {
+
 };
 
 proto.getSession = function() {
