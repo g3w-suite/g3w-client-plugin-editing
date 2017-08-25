@@ -7,8 +7,6 @@ var G3WObject = g3wsdk.core.G3WObject;
 function Tool(options) {
   base(this);
   options = options || {};
-  // contiene il toolbox che contiene il tool
-  this._toolbox = options.toolbox || null;
   // ma mi servirà? la sessione non sarà gestita dal toolbox
   this._session = options.session;
   // prendo il layer
@@ -23,8 +21,9 @@ function Tool(options) {
     id: options.id,
     name: options.name,
     enabled: false,
-    started: false,
-    icon: options.icon
+    active: false,
+    icon: options.icon,
+    message: null
   };
 }
 
@@ -61,17 +60,16 @@ proto.start = function() {
       .fail(function() {
         // in caso di mancato successo faccio il rollback
         // della sessione da vedere se li
-        self.state.started = false;
+        self.state.active = false;
         self._session.rollback();
       });
   }
   // verifico che sia definito l'operatore
   if (this._op) {
-    this.state.started = true;
+    this.state.active = true;
     // lancio la funzione che mi permette di riavviarea
     // l'operatore (workflow)  ogni volt è andato a buon fine
     startOp(options);
-
   }
 };
 
@@ -89,7 +87,7 @@ proto.stop = function() {
         self._session.rollback();
       })
       .always(function() {
-        self.state.started = false;
+        self.state.active = false;
       })
   }
 };
@@ -106,8 +104,8 @@ proto.getName = function() {
   return this.state.name;
 };
 
-proto.isStarted = function() {
-  return this.state.started;
+proto.isActive = function() {
+  return this.state.active;
 };
 
 proto.getIcon = function() {
@@ -140,17 +138,22 @@ proto.setSession = function(session) {
   this._session = session;
 };
 
-proto.setToolBox = function(toolbox) {
-  this._toolbox = toolbox;
-};
-
-proto.getToolBox = function() {
-  return this._toolbox;
-};
-
 proto.clear = function() {
   this.state.enabled = false;
-  this.state.started = false;
+  this.state.active = false;
+};
+
+proto.getMessage = function() {
+  var operator = this.getOperator();
+  return operator.getRunningStep() ? operator.getRunningStep().getHelp() : null;
+};
+
+proto.setMessage = function(message) {
+  this.state.message = message;
+};
+
+proto.clearMessage = function() {
+  this.state.message = null;  
 };
 
 module.exports = Tool;

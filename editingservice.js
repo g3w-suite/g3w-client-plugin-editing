@@ -96,13 +96,16 @@ proto._cancelOrSave = function(){
 };
 
 proto._stopEditing = function(){
-
+  console.log('Stop editing ...');
 };
 
 proto.stop = function() {
   // vado a chiamare lo stop di ogni toolbox
   _.forEach(this._toolboxes, function(toolbox) {
-      toolbox.stop();
+    // vado a stoppare tutti le toolbox
+    toolbox.stop();
+    // vado a deselzionare eventuali toolbox
+    toolbox.setSelected(false);
   });
   this._stopEditing();
 };

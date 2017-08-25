@@ -32,6 +32,7 @@ function ToolBox(options) {
     message: null,
     toolmessage: null,
     selected: false, //proprieà che mi server per switchare tra un toolbox e un altro
+    activetool: null,
     editing: {
       on: false,
       dirty: false
@@ -49,7 +50,6 @@ function ToolBox(options) {
   // e lo stesso toolbox
   _.forEach(this._tools, function(tool) {
     tool.setSession(self._session);
-    tool.setToolBox(self);
   });
   // in ascolto dell'onafter start della sessione così se avviata
   // vado ad associare le features del suo featuresstore al ol.layer.Vector
@@ -105,7 +105,7 @@ proto.start = function() {
           self.state.enabled = true;
           self.state.editing.on = true;
           self.state.loading = false;
-          d.resolve();
+          d.resolve(features);
         })
         .fail(function(err) {
           self.state.enabled = false;
@@ -129,12 +129,8 @@ proto.stop = function() {
         self.state.editing.on = false;
         self.state.enabled = false;
         // seci sono tool attivi vado a spengere
-        _.forEach(self._tools, function(tool) {
-          if (tool.isStarted()) {
-            tool.stop();
-            return false;
-          }
-        });
+        self.stopActiveTool();
+        self.clearToolboxMessages();
         d.resolve(true)
       })
       .fail(function(err) {
@@ -160,8 +156,13 @@ proto.getMessage = function() {
   return this.state.message;
 };
 
-proto.resetMessage = function() {
+proto.clearMessage = function() {
   this.setMessage(null);
+};
+
+proto.clearToolboxMessages = function() {
+  this.clearToolMessage();
+  this.clearMessage();
 };
 
 proto.getId = function() {
@@ -222,21 +223,55 @@ proto.getTools = function() {
   return this._tools;
 };
 
-proto.setActiveTool = function() {
-
+// funzione che attiva il tool
+proto.setActiveTool = function(tool) {
+  tool.start();
+  this.state.activetool = tool;
+  var message = this.getToolMessage();
+  this.setToolMessage(message);
 };
 
 proto.getActiveTool = function() {
+  return this.state.activetool;
+};
 
+proto.stopActiveTool = function() {
+  var tool = this.getActiveTool();
+  if (tool) {
+    tool.stop();
+    this.state.activetool = null;
+  }
+};
+
+proto.clearToolMessage = function() {
+  this.state.toolmessage = null;
 };
 
 proto.getToolMessage = function() {
+  var tool = this.getActiveTool();
+  return tool.getMessage();
+};
 
+proto.setToolMessage = function(message) {
+  this.state.toolmessage = message;
 };
 
 proto.getSession = function() {
   return this._session;
 };
 
+//PARTE DEDICATA ALLE RELAZIONI
+
+proto.hasChildren = function() {
+  return this._layer.hasChildren();
+};
+
+proto.hasFathers = function() {
+  return this._layer.hasFathers();
+};
+
+proto.hasRelations = function() {
+  return this._layer.hasRelations();
+};
 
 module.exports = ToolBox;

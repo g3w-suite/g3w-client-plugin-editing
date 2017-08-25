@@ -15,59 +15,22 @@ var vueComponentOptions = {
   data: null,
   transitions: {'addremovetransition': 'showhide'},
   methods: {
-    showToolbox: function(toolbox){
-      return !!toolbox.state.show;
-    },
     toggleEditing: function(toolbox) {
+      // se il toolbox non è ancora abilitato non faccio niente
       if (!this.isToolboxEnabled(toolbox))
         return;
-      var self = this;
-      // passo il toolbox;
-      if (toolbox.inEditing()) {
-        events.$emit("toolbox:stop", toolbox);
-        toolbox.stop();
-      }
-      else {
-        events.$emit("toolbox:start", toolbox);
-        _.forEach(this.state.toolboxes, function (tlbox) {
-          if (tlbox.isSelected()) {
-            _.forEach(tlbox.getTools(), function (tool) {
-              if (tool.isStarted())
-                tool.stop();
-            });
-            tlbox.setSelected(false);
-          }
-        });
-        toolbox.start()
-          .then(function() {
-            toolbox.setSelected(true);
-            self.state.toolboxSelected = toolbox;
-        })
-      }
+      // verifico se il toobox in oggetto è in editing o no
+      toolbox.inEditing() ? toolbox.stop(): toolbox.start();
     },
     saveEdits: function(toolbox) {
-      events.$emit("toolbox:save", toolbox);
       toolbox.save();
     },
-    toggletool: function(tool) {
-      if (!tool.isStarted()) {
-        events.$emit("tool:start", tool);
-        _.forEach(this.state.toolboxSelected.getTools(), function(t) {
-          if (t.isStarted()) {
-            //vado a stoppare il tool
-            t.stop()
-          }
-        });
-        tool.start();
-        // vado a settare
-        operator = tool.getOperator();
-        message = operator.getRunningStep() ? operator.getRunningStep().getHelp() : null;
-        this.state.toolboxSelected.state.toolmessage = message;
-      }
-      else {
-        events.$emit("tool:stop", tool);
-        tool.stop();
-        this.state.toolboxSelected.state.toolmessage = null;
+    toggletool: function(tool, toolbox) {
+      if (!tool.isActive()) {
+        toolbox.stopActiveTool();
+        toolbox.setActiveTool(tool);
+      } else {
+        toolbox.stopActiveTool();
       }
     },
     onClose: function() {
@@ -77,21 +40,17 @@ var vueComponentOptions = {
       if (!this.isToolboxEnabled(toolbox))
         return;
       if (!toolbox.isSelected()) {
-        _.forEach(this.state.toolboxes, function(tlbox) {
-          if (toolbox != tlbox && tlbox.isSelected()) {
-            _.forEach(tlbox.getTools(), function (tool) {
-              if (tool.isStarted())
-                tool.stop();
-            });
-            // vado a cancellare eventuali messaggi dei tools
-            tlbox.state.toolmessage = null;
-            // vado a deselezionarlo
-            tlbox.setSelected(false);
-          }
-        });
-        toolbox.setSelected(true);
-        this.state.toolboxSelected = toolbox;
+        this._setSelectedToolbox(toolbox);
       }
+    },
+    _setSelectedToolbox: function(toolbox) {
+      if (this.state.toolboxSelected) {
+        this.state.toolboxSelected.setSelected(false);
+        this.state.toolboxSelected.stopActiveTool();
+        this.state.toolboxSelected.clearToolMessage();
+      }
+      toolbox.setSelected(true);
+      this.state.toolboxSelected = toolbox;
     },
     undo: function() {
       var session = this.state.toolboxSelected.getSession();
@@ -119,7 +78,7 @@ var vueComponentOptions = {
       if (!enabled)
         toolbox.setMessage('Configurazione ' +  toolbox.getLayer().getName() + ' in corso .. ');
       else
-        toolbox.resetMessage();
+        toolbox.clearMessage();
       return enabled;
     }
   },
@@ -139,7 +98,8 @@ var vueComponentOptions = {
     startorstop: function(control) {
       return this.service
     },
-    // meaasssio generale dell'editing
+    // messaggio generale dell'editing esempio comunicando che il layer
+    // che stiamo editindo è padre e quindi i figli sono disabilitati
     message: function() {
       var message = "";
       return message;
