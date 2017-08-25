@@ -49,7 +49,7 @@ proto.run = function() {
   
   this._modifyInteraction.on('modifyend',function(e){
     var feature = e.features.getArray()[0];
-    var isNew = self._isNew(feature);
+    var isNew = feature.isNew();
     //try {
       if (!self._busy) {
         self._busy = true;
@@ -123,13 +123,5 @@ proto.removePoint = function(coordinate){
   }
 };
 
-proto._fallBack = function(feature){
-  this._busy = false;
-  this.pause(false);
-};
-
-proto._isNew = function(feature){
-  return (!_.isNil(this.editingLayer.getSource().getFeatureById(feature.getId())));
-};
 
 module.exports = ModifyFeatureTask;

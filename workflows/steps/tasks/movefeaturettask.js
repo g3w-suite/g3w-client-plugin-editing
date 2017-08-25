@@ -4,7 +4,6 @@ var Feature = g3wsdk.core.layer.features.Feature;
 var EditingTask = require('./editingtask');
 
 function MoveFeatureTask(options){
-  var self = this;
   this._layer = null;
   this.drawInteraction = null;
   base(this, options);
@@ -12,14 +11,11 @@ function MoveFeatureTask(options){
 
 inherit(MoveFeatureTask, EditingTask);
 
-
 var proto = MoveFeatureTask.prototype;
 
 proto.run = function(inputs, context) {
-  var self = this;
   var d = $.Deferred();
   var session = context.session;
-  var layers = [inputs.layer];
   var originalFeature = null;
   var originalStyle = inputs.layer.getStyle();
   var style = new ol.style.Style({

@@ -95,7 +95,10 @@ proto.start = function() {
   // se non è stata avviata da altri allora faccio avvio sessione
   if (this._session && !this._session.isStarted()) {
     this._session.start({
-      filter: bbox
+      editing: true,
+      filter: {
+        bbox: bbox
+      }
     })
     .then(function(promise) {
       // setto il loding dei dati a true

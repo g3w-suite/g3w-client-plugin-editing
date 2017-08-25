@@ -8,7 +8,6 @@ var Feature = g3wsdk.core.layer.features.Feature;
 function AddFeatureTask(options) {
 
   options = options || {};
-  this._running = false;
   this._busy = false;
   // source del layer di editing
   // la drw interaction per disegnare la feature
@@ -28,11 +27,12 @@ var proto = AddFeatureTask.prototype;
 // metodo eseguito all'avvio del tool
 proto.run = function(inputs, context) {
   console.log('Add task run.......');
-  var self = this;
   var d = $.Deferred();
   this._layer = inputs.layer;
   //recupero la sessione dal context
   var session = context.session;
+  // vado a rrecuperare la primary key del layer
+  var pk = session.getEditor().getLayer().getPk();
   //definisce l'interazione che deve essere aggiunta
   // specificando il layer sul quale le feature aggiunte devono essere messe
   var source = this._layer.getSource();
@@ -57,9 +57,10 @@ proto.run = function(inputs, context) {
   this.drawInteraction.on('drawend', function(e) {
     console.log('Drawend .......');
     var feature = new Feature({
-      feature: e.feature
+      feature: e.feature,
+      pk: pk // passo la pk della feature
     });
-    feature.setId('__new__'+Date.now());
+    feature.createNewPk();
     // lo setto come add feature lo state
     feature.add();
     // vado a aggiungerla
