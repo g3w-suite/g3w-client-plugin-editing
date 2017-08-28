@@ -3,11 +3,12 @@ var ToolComponent = require('./tool');
 
 var ToolboxComponent = Vue.extend({
   template: require('./toolbox.html'),
-  props: ['toolbox'],
+  props: ['toolbox', 'editingeventsbus'],
   data: function() {
     return {
       state: this.toolbox.state,
-      resourcesurl: GUI.getResourcesUrl()
+      resourcesurl: GUI.getResourcesUrl(),
+      toolboxeventsbus: new Vue()
     }
   },
   components: {
@@ -18,17 +19,10 @@ var ToolboxComponent = Vue.extend({
       if (!this.isToolboxEnabled())
         return;
       if (!this.toolbox.isSelected()) {
-        this._setSelectedToolbox(this.toolbox);
+        this.editingeventsbus.$emit('select:toolbox', this.toolbox);
+        this.toolbox.setSelected(true);
+        
       }
-    },
-    _setSelectedToolbox: function() {
-      if (this.state.toolboxSelected) {
-        this.state.toolboxSelected.setSelected(false);
-        this.state.toolboxSelected.stopActiveTool();
-        this.state.toolboxSelected.clearToolMessage();
-      }
-      this.toolbox.setSelected(true);
-      this.state.toolboxSelected = this.toolbox;
     },
     toggleEditing: function() {
       // se il toolbox non è ancora abilitato non faccio niente
@@ -50,6 +44,15 @@ var ToolboxComponent = Vue.extend({
         this.toolbox.clearMessage();
       return enabled;
     }
+  },
+  mounted: function() {
+    var self = this;
+    this.toolboxeventsbus.$on('stop:activetool', function() {
+      self.toolbox.stopActiveTool();
+    });
+    this.toolboxeventsbus.$on('set:activetool', function(tool) {
+      self.toolbox.setActiveTool(tool);
+    })
   }
 });
 

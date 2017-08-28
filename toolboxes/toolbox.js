@@ -228,6 +228,8 @@ proto.getTools = function() {
 
 // funzione che attiva il tool
 proto.setActiveTool = function(tool) {
+  // prima stoppo l'eventuale active tool
+  this.stopActiveTool();
   tool.start();
   this.state.activetool = tool;
   var message = this.getToolMessage();
@@ -240,6 +242,7 @@ proto.getActiveTool = function() {
 
 proto.stopActiveTool = function() {
   var tool = this.getActiveTool();
+  console.log(tool);
   if (tool) {
     tool.stop();
     this.state.activetool = null;

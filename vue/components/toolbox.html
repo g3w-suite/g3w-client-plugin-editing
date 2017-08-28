@@ -6,11 +6,11 @@
           {{ state.title }}
         </h3>
         <div class="editbtn" style="position:absolute; right:0;" :class="{'enabled' : isToolboxEnabled,  toggled : state.editing.on}" >
-          <img height="20px" width="20px" @click="toggleEditing" :src="resourcesurl + '/images/edit.png'"/>
+          <img height="20px" width="20px" @click="toggleEditing" :src="resourcesurl + 'images/edit.png'"/>
         </div>
       </div>
       <div class="panel-body">
-        <tool :tool="tool" :toolboxstate="state" v-for="tool in toolbox.getTools()"></tool>
+        <tool :tool="tool" :toolboxeventsbus="toolboxeventsbus" :toolboxstate="state" v-for="tool in toolbox.getTools()"></tool>
       </div>
     </div>
   </div>

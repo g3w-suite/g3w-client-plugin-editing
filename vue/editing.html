@@ -1,15 +1,15 @@
 <div class="g3w-editing-panel">
   <div style="margin-bottom: 10px; margin-top:5px;">
     <div class="editbtn" @click="canCommit ? commit(): null" :class="{'enabled' : canCommit }">
-      <img height="30px" width="30px" :src="resourcesurl + '/images/saveedit.png'"/>
+      <img height="30px" width="30px" :src="resourcesurl + 'images/saveedit.png'"/>
     </div>
     <div class="editbtn pull-right" :class="{'enabled' : canRedo }">
-      <img height="30px" @click="canRedo ? redo(): null" width="30px" :src="resourcesurl + '/images/redo.png'"/>
+      <img height="30px" @click="canRedo ? redo(): null" width="30px" :src="resourcesurl + 'images/redo.png'"/>
     </div>
     <div class="editbtn pull-right" @click="canUndo ? undo(): null" :class="{'enabled' : canUndo }">
-      <img height="30px" width="30px" :src="resourcesurl + '/images/undo.png'"/>
+      <img height="30px" width="30px" :src="resourcesurl + 'images/undo.png'"/>
     </div>
   </div>
-  <toolbox :toolbox="toolbox" v-for="toolbox in state.toolboxes"></toolbox>
+  <toolbox :toolbox="toolbox" :editingeventsbus="editingeventsbus" v-for="toolbox in state.toolboxes"></toolbox>
   <div class="message" v-html="message"></div>
 </div>

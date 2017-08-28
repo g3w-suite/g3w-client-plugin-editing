@@ -8,7 +8,7 @@ var EditingTemplate = require('./editing.html');
 var ToolboxComponent = require('./components/toolbox');
 
 //il bus events per la gestione del pannello di editing
-var events = new Vue();
+var editingeventsbus = new Vue();
 
 var vueComponentOptions = {
   template: EditingTemplate,
@@ -38,6 +38,14 @@ var vueComponentOptions = {
     },
     saveAll: function() {
       //TODO dovrebbe igessere legata alla possibilità di salvare tutte le modifiche di tutti i layer
+    },
+    setSelectedToolbox: function(toolbox) {
+      if(this.state.toolboxSelected) {
+        this.state.toolboxSelected.setSelected(false);
+        this.state.toolboxSelected.stopActiveTool();
+        this.state.toolboxSelected.clearToolMessage();
+      }
+      this.state.toolboxSelected = toolbox;
     }
   },
   computed: {
@@ -59,6 +67,12 @@ var vueComponentOptions = {
       var message = "";
       return message;
     }
+  },
+  mounted: function() {
+    var self = this;
+    editingeventsbus.$on('select:toolbox', function(toolbox) {
+      self.setSelectedToolbox(toolbox);
+    })
   }
 };
 
@@ -97,7 +111,8 @@ function PanelComponent(options) {
           labels: self._labels,
           toolboxSelected: null
         },
-        resourcesurl: self._resourcesUrl
+        resourcesurl: self._resourcesUrl,
+        editingeventsbus: editingeventsbus
       }
     }
   });
@@ -113,30 +128,6 @@ function PanelComponent(options) {
     this._service.stop();
     return base(this, 'unmount');
   };
-
-  events.$on("close",function(){
-    self.unmount();
-  });
-
-  events.$on("toolbox:start", function(toolbox) {
-    // inizia editing layer
-  });
-
-  events.$on("toolbox:stop", function(toolbox) {
-    // termina editing layer
-  });
-
-  events.$on("toolbox:save", function(toolbox) {
-    // salva editing layer
-  });
-
-  events.$on("tool:start", function(tool) {
-    // inizia operazione di editing
-  });
-
-  events.$on("tool:stop", function(tool) {
-    // termina operazione di editing
-  });
 }
 
 inherit(PanelComponent, Component);
