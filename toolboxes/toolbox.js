@@ -220,6 +220,9 @@ proto.isSelected = function() {
 
 proto.setSelected = function(bool) {
   this.state.selected = _.isBoolean(bool) ? bool : false;
+  if (!this.state.selected) {
+    this.stopActiveTool();
+  }
 };
 
 proto.getTools = function() {
@@ -242,9 +245,9 @@ proto.getActiveTool = function() {
 
 proto.stopActiveTool = function() {
   var tool = this.getActiveTool();
-  console.log(tool);
   if (tool) {
     tool.stop();
+    this.clearToolMessage();
     this.state.activetool = null;
   }
 };

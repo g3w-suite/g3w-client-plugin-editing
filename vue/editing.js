@@ -14,7 +14,7 @@ var vueComponentOptions = {
   template: EditingTemplate,
   data: null,
   components: {
-    'toolbox': ToolboxComponent
+    'toolbox': ToolboxComponent //componenti
   },
   transitions: {'addremovetransition': 'showhide'},
   methods: {
@@ -22,7 +22,7 @@ var vueComponentOptions = {
     },
     undo: function() {
       var session = this.state.toolboxSelected.getSession();
-      var relationsChanges = session.undo();
+      var relationsChanges = session.undo(); // questi solo le feature (cambiamenti) che devo applicare al features stores dei singoli layers coinvolti
       //this.$options.service.applyChangesDependencies(session.getId(), dependenciesChanges);
     },
     redo: function() {
@@ -42,9 +42,8 @@ var vueComponentOptions = {
     setSelectedToolbox: function(toolbox) {
       if(this.state.toolboxSelected) {
         this.state.toolboxSelected.setSelected(false);
-        this.state.toolboxSelected.stopActiveTool();
-        this.state.toolboxSelected.clearToolMessage();
       }
+      toolbox.setSelected(true);
       this.state.toolboxSelected = toolbox;
     }
   },

@@ -20,8 +20,6 @@ var ToolboxComponent = Vue.extend({
         return;
       if (!this.toolbox.isSelected()) {
         this.editingeventsbus.$emit('select:toolbox', this.toolbox);
-        this.toolbox.setSelected(true);
-        
       }
     },
     toggleEditing: function() {
