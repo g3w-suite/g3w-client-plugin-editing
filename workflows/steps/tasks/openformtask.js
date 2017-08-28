@@ -23,22 +23,22 @@ proto.run = function(inputs, context) {
   var self = this;
   console.log('Open Form Task task run.......');
   var d = $.Deferred();
-  this._layer = inputs.layer;
   var session = context.session;
-  var editingLayer = session.getEditor().getLayer();
+  // vado a recuperare i
+  var layer = session.getEditor().getLayer();
   var feature = inputs.features[0];
-  var fields = editingLayer.getFieldsWithValues(feature);
-  var relations = editingLayer.getRelations();
-  console.log(relations);
+  var fields = layer.getFieldsWithValues(feature);
+  var relations = layer.getRelations();
   var showForm  = GUI.showContentFactory('form');
+  var layerName = layer.getName();
   showForm({
     provider: self,
-    name: "Edita attributi "+this._layer.get('name'),
-    formId: self._generateFormId(this._layer.get('name')),
-    dataid: this._layer.get('name'),
-    layer: this._layer,
+    name: "Edita attributi "+ layerName,
+    formId: self._generateFormId(layerName),
+    dataid: layerName,
+    layer: layer,
     pk: 'id',//vectorLayer.pk,
-    isnew: self._isNewFeature(feature.getId()),
+    isnew: feature.isNew(),
     fields: fields,
     relations: [],
     relationOne: null,//self.checkOneRelation,
