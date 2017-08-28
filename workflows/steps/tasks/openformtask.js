@@ -26,9 +26,10 @@ proto.run = function(inputs, context) {
   this._layer = inputs.layer;
   var session = context.session;
   var editingLayer = session.getEditor().getLayer();
-  var fields = editingLayer.getFields();
   var feature = inputs.features[0];
+  var fields = editingLayer.getFieldsWithValues(feature);
   var relations = editingLayer.getRelations();
+  console.log(relations);
   var showForm  = GUI.showContentFactory('form');
   showForm({
     provider: self,
