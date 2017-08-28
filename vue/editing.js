@@ -5,7 +5,7 @@ var GUI = g3wsdk.gui.GUI;
 var Component = g3wsdk.gui.vue.Component;
 var EditingService = require('../editingservice');
 var EditingTemplate = require('./editing.html');
-
+var ToolboxComponent = require('./components/toolbox');
 
 //il bus events per la gestione del pannello di editing
 var events = new Vue();
@@ -13,44 +13,12 @@ var events = new Vue();
 var vueComponentOptions = {
   template: EditingTemplate,
   data: null,
+  components: {
+    'toolbox': ToolboxComponent
+  },
   transitions: {'addremovetransition': 'showhide'},
   methods: {
-    toggleEditing: function(toolbox) {
-      // se il toolbox non è ancora abilitato non faccio niente
-      if (!this.isToolboxEnabled(toolbox))
-        return;
-      // verifico se il toobox in oggetto è in editing o no
-      toolbox.inEditing() ? toolbox.stop(): toolbox.start();
-    },
-    saveEdits: function(toolbox) {
-      toolbox.save();
-    },
-    toggletool: function(tool, toolbox) {
-      if (!tool.isActive()) {
-        toolbox.stopActiveTool();
-        toolbox.setActiveTool(tool);
-      } else {
-        toolbox.stopActiveTool();
-      }
-    },
     onClose: function() {
-      events.$emit("close");
-    },
-    select: function(toolbox) {
-      if (!this.isToolboxEnabled(toolbox))
-        return;
-      if (!toolbox.isSelected()) {
-        this._setSelectedToolbox(toolbox);
-      }
-    },
-    _setSelectedToolbox: function(toolbox) {
-      if (this.state.toolboxSelected) {
-        this.state.toolboxSelected.setSelected(false);
-        this.state.toolboxSelected.stopActiveTool();
-        this.state.toolboxSelected.clearToolMessage();
-      }
-      toolbox.setSelected(true);
-      this.state.toolboxSelected = toolbox;
     },
     undo: function() {
       var session = this.state.toolboxSelected.getSession();
@@ -70,16 +38,6 @@ var vueComponentOptions = {
     },
     saveAll: function() {
       //TODO dovrebbe igessere legata alla possibilità di salvare tutte le modifiche di tutti i layer
-    },
-    // funzione che visualizza il toolbox appena sono disponibili le configurazioni
-    // fields (passato dal metodo perchè in grado di ricevere parametri)
-    isToolboxEnabled: function(toolbox) {
-      var enabled = !!toolbox.getLayer().getEditingFields().length;
-      if (!enabled)
-        toolbox.setMessage('Configurazione ' +  toolbox.getLayer().getName() + ' in corso .. ');
-      else
-        toolbox.clearMessage();
-      return enabled;
     }
   },
   computed: {
@@ -94,9 +52,6 @@ var vueComponentOptions = {
     canRedo: function() {
       var toolbox = this.state.toolboxSelected;
       return !_.isNull(toolbox) && toolbox.getSession().getHistory().canRedo();
-    },
-    startorstop: function(control) {
-      return this.service
     },
     // messaggio generale dell'editing esempio comunicando che il layer
     // che stiamo editindo è padre e quindi i figli sono disabilitati
@@ -117,8 +72,6 @@ function PanelComponent(options) {
   this.vueComponent = vueComponentOptions;
   this.name = options.name || 'Gestione dati';
   merge(this, options);
-  // dichiaro l'internal Component
-  this.internalComponent = null;
   // contiene tuti gli editor Controls che a loro volta contengono i tasks per l'editing
   // di quello specifico layer
   this._toolboxes = options.toolboxes || [];

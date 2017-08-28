@@ -10,31 +10,6 @@
       <img height="30px" width="30px" :src="resourcesurl + '/images/undo.png'"/>
     </div>
   </div>
-  <template v-for="toolbox in state.toolboxes">
-    <div :class="{'disableddiv' : !isToolboxEnabled(toolbox) }" :id="'id_toolbox_'+ toolbox.state.id">
-      <div @click="select(toolbox)" class="panel panel-primary" :class="{ 'toolboxselected': toolbox.state.selected }">
-        <div  class="panel-heading"  style="position:relative; height: 40px;" :style="{ background: toolbox.state.color}" >
-          <h3 class="panel-title" style="display: inline-block;">
-            {{ toolbox.state.title }}
-          </h3>
-          <div class="editbtn" style="position:absolute; right:0;" :class="{'enabled' : isToolboxEnabled(toolbox),  toggled : toolbox.state.editing.on}" >
-            <img height="20px" width="20px" @click="toggleEditing(toolbox)" :src="resourcesurl + '/images/edit.png'"/>
-          </div>
-        </div>
-        <div class="panel-body">
-          <template v-for="tool in toolbox.getTools()">
-            <div class="editbtn" :class="{'enabled' : (toolbox.state.editing.on), 'toggled' : tool.state.active}">
-              <img height="30px" width="30px" @click="toolbox.state.editing.on ? toggletool(tool, toolbox): null" :alt="tool.state.name" :title="tool.state.name" :src="resourcesurl + 'images/'+ tool.state.icon"/>
-            </div>
-          </template>
-        </div>
-      </div>
-    </div>
-    <div class="message" :id="'id_toolbox_messages_'+ toolbox.state.id">
-      <div v-html="toolbox.state.message"></div>
-      <div v-html="toolbox.state.toolmessage"></div>
-      <div v-show="toolbox.state.loading" >Caricamento dati  <img :src="resourcesurl + '/images/loader.svg'"></div>
-    </div>
-  </template>
+  <toolbox :toolbox="toolbox" v-for="toolbox in state.toolboxes"></toolbox>
   <div class="message" v-html="message"></div>
 </div>

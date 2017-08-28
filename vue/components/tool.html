@@ -1,0 +1,3 @@
+<div class="editbtn" :class="{'enabled' : (toolboxstate.editing.on), 'toggled' : state.active}">
+  <img height="30px" width="30px" @click="toolboxstate.editing.on ? toggletool(): null" :alt="state.name" :title="state.name" :src="resourcesurl + 'images/'+ state.icon"/>
+</div>
