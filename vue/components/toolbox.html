@@ -10,7 +10,7 @@
         </div>
       </div>
       <div class="panel-body">
-        <tool :tool="tool" :toolboxeventsbus="toolboxeventsbus" :toolboxstate="state" v-for="tool in toolbox.getTools()"></tool>
+        <tool :tool="tool" :toolboxstate="state" @stopactivetool="stopActiveTool" @setactivetool="setActiveTool" v-for="tool in toolbox.getTools()"></tool>
       </div>
     </div>
   </div>

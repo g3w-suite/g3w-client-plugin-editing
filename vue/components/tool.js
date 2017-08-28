@@ -11,9 +11,9 @@ var ToolComponent = Vue.extend({
   methods: {
     toggletool: function() {
       if (!this.tool.isActive()) {
-        this.toolboxeventsbus.$emit('set:activetool', this.tool);
+        this.$emit('setactivetool', this.tool);
       } else {
-        this.$emit('stop:activetool');
+        this.$emit('stopactivetool');
       }
     }
   }
