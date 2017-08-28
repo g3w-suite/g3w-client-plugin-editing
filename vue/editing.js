@@ -7,9 +7,6 @@ var EditingService = require('../editingservice');
 var EditingTemplate = require('./editing.html');
 var ToolboxComponent = require('./components/toolbox');
 
-//il bus events per la gestione del pannello di editing
-var editingeventsbus = new Vue();
-
 var vueComponentOptions = {
   template: EditingTemplate,
   data: null,
@@ -66,16 +63,11 @@ var vueComponentOptions = {
       var message = "";
       return message;
     }
-  },
-  mounted: function() {
-    var self = this;
-    editingeventsbus.$on('select:toolbox', function(toolbox) {
-      self.setSelectedToolbox(toolbox);
-    })
   }
 };
 
 function PanelComponent(options) {
+  var self = this;
   var self = this;
   // proprietà necessarie. In futuro le mettermo in una classe Panel
   // da cui deriveranno tutti i pannelli che vogliono essere mostrati nella sidebar
@@ -110,8 +102,7 @@ function PanelComponent(options) {
           labels: self._labels,
           toolboxSelected: null
         },
-        resourcesurl: self._resourcesUrl,
-        editingeventsbus: editingeventsbus
+        resourcesurl: self._resourcesUrl
       }
     }
   });
