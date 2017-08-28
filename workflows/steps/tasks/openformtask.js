@@ -25,9 +25,10 @@ proto.run = function(inputs, context) {
   var d = $.Deferred();
   this._layer = inputs.layer;
   var session = context.session;
+  var editingLayer = session.getEditor().getLayer();
+  var fields = editingLayer.getFields();
   var feature = inputs.features[0];
-  var fields = feature.getProperties();
-  var relations = [];
+  var relations = editingLayer.getRelations();
   var showForm  = GUI.showContentFactory('form');
   showForm({
     provider: self,
@@ -37,7 +38,7 @@ proto.run = function(inputs, context) {
     layer: this._layer,
     pk: 'id',//vectorLayer.pk,
     isnew: self._isNewFeature(feature.getId()),
-    fields: [],
+    fields: fields,
     relations: [],
     relationOne: null,//self.checkOneRelation,
     tools: [],//self._formTools,
