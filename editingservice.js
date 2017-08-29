@@ -123,6 +123,7 @@ proto.stop = function() {
     // vado a deselzionare eventuali toolbox
     toolbox.setSelected(false);
   });
+  this.state.toolboxselected = null;
   this._stopEditing();
 };
 

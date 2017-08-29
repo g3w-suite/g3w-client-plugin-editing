@@ -15,7 +15,6 @@ var vueComponentOptions = {
   },
   transitions: {'addremovetransition': 'showhide'},
   methods: {
-    onClose: function() {},
     undo: function() {
       var session = this.state.toolboxselected.getSession();
       var relationsChanges = session.undo(); // questi solo le feature (cambiamenti) che devo applicare al features stores dei singoli layers coinvolti
