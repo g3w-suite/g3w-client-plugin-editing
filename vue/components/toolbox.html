@@ -1,16 +1,21 @@
 <div class="toolbox">
-  <div :class="{'disableddiv' : !isToolboxEnabled }" :id="'id_toolbox_'+ state.id">
+  <div :class="{'disableddiv' : !isLayerReady }" :id="'id_toolbox_'+ state.id">
     <div @click="select" class="panel panel-primary" :class="{ 'toolboxselected': state.selected }">
       <div  class="panel-heading"  style="position:relative; height: 40px;" :style="{ background: state.color}" >
         <h3 class="panel-title" style="display: inline-block;">
           {{ state.title }}
         </h3>
-        <div class="editbtn" style="position:absolute; right:0;" :class="{'enabled' : isToolboxEnabled,  toggled : state.editing.on}" >
+        <div class="editbtn" style="position:absolute; right:0;" :class="{'enabled' : isLayerReady,  toggled : state.editing.on}" >
           <img height="20px" width="20px" @click="toggleEditing" :src="resourcesurl + 'images/edit.png'"/>
         </div>
       </div>
       <div class="panel-body">
-        <tool :tool="tool" :toolboxstate="state" @stopactivetool="stopActiveTool" @setactivetool="setActiveTool" v-for="tool in toolbox.getTools()"></tool>
+        <tool
+          :state="toolstate"
+          :resourcesurl="resourcesurl"
+          @stopactivetool="stopActiveTool"
+          @setactivetool="setActiveTool"
+          v-for="toolstate in state.tools"></tool>
       </div>
     </div>
   </div>

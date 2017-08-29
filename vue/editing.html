@@ -10,6 +10,16 @@
       <img height="30px" width="30px" :src="resourcesurl + 'images/undo.png'"/>
     </div>
   </div>
-  <toolbox :toolbox="toolbox" @setselectedtoolbox="setSelectedToolbox" v-for="toolbox in state.toolboxes"></toolbox>
+  <toolbox
+    :state="toolboxstate"
+    :resourcesurl="resourcesurl"
+    @setselectedtoolbox="setSelectedToolbox"
+    @starttoolbox="startToolBox"
+    @stoptoolbox="stopToolBox"
+    @savetoolbox="saveToolBox"
+    @setactivetool="setActiveTool"
+    @stopactivetool="stopActiveTool"
+    v-for="toolboxstate in state.toolboxes">
+  </toolbox>
   <div class="message" v-html="message"></div>
 </div>

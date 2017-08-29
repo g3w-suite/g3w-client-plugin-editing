@@ -1,17 +1,13 @@
-var GUI = g3wsdk.gui.GUI;
 var ToolComponent = Vue.extend({
   template: require('./tool.html'),
-  props: ['tool' ,'toolboxstate', 'toolboxeventsbus'],
+  props: ['state' ,'resourcesurl'],
   data: function() {
-    return {
-      state: this.tool.state,
-      resourcesurl: GUI.getResourcesUrl()
-    }
+    return {}
   },
   methods: {
     toggletool: function() {
-      if (!this.tool.isActive()) {
-        this.$emit('setactivetool', this.tool);
+      if (!this.state.active) {
+        this.$emit('setactivetool', this.state.id);
       } else {
         this.$emit('stopactivetool');
       }

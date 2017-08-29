@@ -11,10 +11,6 @@ var ToolBoxesFactory = require('./toolboxes/toolboxesfactory');
 function EditingService() {
   var self = this;
   base(this);
-  // contiene la configurazione del plugin
-  this._config = null;
-  // conterrà i layer di editing
-  this._layers = {};
   // proprietà che contiene tutte le sessioni legati ai layer e quindi ai toolbox
   this._sessions = {};
   // contiene tutti i toolbox
@@ -26,8 +22,14 @@ function EditingService() {
   var layers =  CatalogLayersStoresRegistry.getLayers({
     EDITABLE: true
   });
-  // mi dice se caricare o meno il plugin di editing;
-  this._load = !!layers.length;
+  this._layers = {}; // layers di editing
+  this._load = !!layers.length; // mi dice se ci sono layer in editing e quindi da caricare il plugin
+  // STATO GENERALE DEL EDITNG SERVICE
+  // CHE CONTERRÀ TUTTI GLI STATI DEI VARI PEZZI UTILI A FAR REAGIRE L'INTERFACCIA
+  this.state = {
+    toolboxes: [],
+    toolboxselected: null
+  };
   // prendo tutti i layers del progetto corrente che si trovano
   // all'interno dei Layerstore del catalog registry con caratteristica editabili.
   // Mi verranno estratti tutti i layer editabili anche quelli presenti nell'albero del catalogo
@@ -73,12 +75,26 @@ proto.getLayers = function() {
   return this._layers;
 };
 
+// vado a recuperare il toolbox a seconda del suo id
+proto.getToolBoxById = function(toolboxId) {
+  var toolBox = null;
+  _.forEach(this._toolboxes, function(toolbox) {
+    if (toolbox.getId() == toolboxId) {
+      toolBox = toolbox;
+      return false;
+    }
+  });
+  return toolBox;
+};
+
 //funzione che server per aggiungere un editor
 proto.addToolBox = function(editor) {
   // la toolboxes costruirà il toolboxex adatto per quel layer
   // assegnadogli le icone dei bottonii etc ..
   var toolbox = ToolBoxesFactory.build(editor);
+  // vado a popolare lo state delle toolbox
   this._toolboxes.push(toolbox);
+  this.state.toolboxes.push(toolbox.state);
   // vado ad aggiungere la sessione
   this._sessions[toolbox.getId()] = toolbox.getSession();
 };
@@ -163,7 +179,5 @@ proto.startEditingDependencies = function(layerId, options) {
   }
   return d.promise();
 };
-
-
 
 module.exports = new EditingService;

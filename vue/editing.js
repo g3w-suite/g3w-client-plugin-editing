@@ -11,19 +11,18 @@ var vueComponentOptions = {
   template: EditingTemplate,
   data: null,
   components: {
-    'toolbox': ToolboxComponent //componenti
+    'toolbox': ToolboxComponent //componente toolbox
   },
   transitions: {'addremovetransition': 'showhide'},
   methods: {
-    onClose: function() {
-    },
+    onClose: function() {},
     undo: function() {
-      var session = this.state.toolboxSelected.getSession();
+      var session = this.state.toolboxselected.getSession();
       var relationsChanges = session.undo(); // questi solo le feature (cambiamenti) che devo applicare al features stores dei singoli layers coinvolti
       //this.$options.service.applyChangesDependencies(session.getId(), dependenciesChanges);
     },
     redo: function() {
-      var session = this.state.toolboxSelected.getSession();
+      var session = this.state.toolboxselected.getSession();
       var relationsChanges = session.redo();
       //this.$options.service.applyChangesDependencies(session.getId(), dependenciesChanges);
     },
@@ -31,43 +30,82 @@ var vueComponentOptions = {
       // funzione che serve a fare il commit della sessione legata al tool
       // qui probabilmente a seconda del layer se ha dipendenze faccio ogni sessione
       // produrrà i suoi dati post serializzati che pi saranno uniti per un unico commit
-      this.state.toolboxSelected.getSession().commit();
+      this.state.toolboxselected.getSession().commit();
     },
     saveAll: function() {
       //TODO dovrebbe igessere legata alla possibilità di salvare tutte le modifiche di tutti i layer
     },
-    setSelectedToolbox: function(toolbox) {
-      if(this.state.toolboxSelected) {
-        this.state.toolboxSelected.setSelected(false);
+    startToolBox: function(toolboxId) {
+      var toolbox = this._getToolBoxById(toolboxId);
+      if (toolbox)
+        toolbox.start();
+    },
+    stopToolBox: function(toolboxId) {
+      var toolbox = this._getToolBoxById(toolboxId);
+      if (toolbox)
+        toolbox.stop();
+    },
+    saveToolBox: function() {
+      var toolbox = this._getToolBoxById(toolboxId);
+      if (toolbox)
+        toolbox.save();
+    },
+    setActiveTool: function(toolId, toolboxId) {
+      var tool;
+      var toolbox = this._getToolBoxById(toolboxId);
+      if (toolbox) {
+        tool = toolbox.getToolById(toolId);
+        toolbox.setActiveTool(tool);
       }
+    },
+    stopActiveTool: function(toolboxId) {
+      var toolbox = this._getToolBoxById(toolboxId);
+      if (toolbox) {
+        toolbox.stopActiveTool()
+      }
+    },
+    setSelectedToolbox: function(toolboxId) {
+      var service = this.$options.service;
+      var toolbox = this._getToolBoxById(toolboxId);
+      var toolboxes = service.getToolBoxes();
+      _.forEach(toolboxes, function(toolbox) {
+        if (toolbox.isSelected()) {
+          toolbox.setSelected(false);
+          return false;
+        }
+      });
       toolbox.setSelected(true);
-      this.state.toolboxSelected = toolbox;
-    }
+      this.state.toolboxselected = toolbox;
+    },
+    // funzione che mi va a aprendere dal service il toolbox in base al suo id
+    _getToolBoxById: function(toolboxId) {
+      var service = this.$options.service;
+      var toolbox = service.getToolBoxById(toolboxId);
+      return toolbox;
+    },
   },
   computed: {
-    canCommit: function() {
-      var toolbox = this.state.toolboxSelected;
-      return !_.isNull(toolbox) && toolbox.getSession().getHistory().canCommit();
-    },
-    canUndo: function() {
-      var toolbox = this.state.toolboxSelected;
-      return !_.isNull(toolbox) &&  toolbox.getSession().getHistory().canUndo();
-    },
-    canRedo: function() {
-      var toolbox = this.state.toolboxSelected;
-      return !_.isNull(toolbox) && toolbox.getSession().getHistory().canRedo();
-    },
     // messaggio generale dell'editing esempio comunicando che il layer
     // che stiamo editindo è padre e quindi i figli sono disabilitati
     message: function() {
       var message = "";
       return message;
+    },
+    canCommit: function() {
+      return this.state.toolboxselected && this.state.toolboxselected.state.editing.history.commit;
+    },
+    canUndo: function() {
+      var toolbox = this.state.toolboxselected;
+      return !_.isNull(toolbox) &&  toolbox.state.editing.history.undo;
+    },
+    canRedo: function() {
+      var toolbox = this.state.toolboxselected;
+      return !_.isNull(toolbox) && toolbox.state.editing.history.redo;
     }
   }
 };
 
 function PanelComponent(options) {
-  var self = this;
   var self = this;
   // proprietà necessarie. In futuro le mettermo in una classe Panel
   // da cui deriveranno tutti i pannelli che vogliono essere mostrati nella sidebar
@@ -77,16 +115,6 @@ function PanelComponent(options) {
   this.vueComponent = vueComponentOptions;
   this.name = options.name || 'Gestione dati';
   merge(this, options);
-  // contiene tuti gli editor Controls che a loro volta contengono i tasks per l'editing
-  // di quello specifico layer
-  this._toolboxes = options.toolboxes || [];
-   // save buttons
-  this._labels = {
-    start: "Avvia modifica",
-    stop: "Disattiva modifica",
-    save: "Salve"
-  };
-  this._saveBtnLabel = options.saveBtnLabel || "Salva";
   // resource urls
   this._resourcesUrl = options.resourcesUrl || GUI.getResourcesUrl();
   this._service = options.service || EditingService;
@@ -97,11 +125,7 @@ function PanelComponent(options) {
     data: function() {
       return {
         //lo state è quello del servizio in quanto è lui che va a modificare operare sui dati
-        state: {
-          toolboxes: self._toolboxes,
-          labels: self._labels,
-          toolboxSelected: null
-        },
+        state: self._service.state,
         resourcesurl: self._resourcesUrl
       }
     }

@@ -1,51 +1,43 @@
-var GUI = g3wsdk.gui.GUI;
 var ToolComponent = require('./tool');
 
 var ToolboxComponent = Vue.extend({
   template: require('./toolbox.html'),
-  props: ['toolbox'],
+  props: ['state', 'resourcesurl'],
   data: function() {
-    return {
-      state: this.toolbox.state,
-      resourcesurl: GUI.getResourcesUrl()
-    }
+    return {}
   },
   components: {
     'tool': ToolComponent
   },
   methods: {
     select: function() {
-      if (!this.isToolboxEnabled())
+      if (!this.isLayerReady())
         return;
-      if (!this.toolbox.isSelected()) {
-        this.$emit('setselectedtoolbox', this.toolbox);
+      if (!this.state.selected) {
+        this.$emit('setselectedtoolbox', this.state.id);
       }
     },
     toggleEditing: function() {
-      // se il toolbox non è ancora abilitato non faccio niente
-      if (!this.isToolboxEnabled())
+      //se il toolbox non è ancora abilitato non faccio niente
+      if (!this.state.layerstate.editing.ready)
         return;
+      this.$emit('stoptoolbox', this.state.id);
       // verifico se il toobox in oggetto è in editing o no
-      this.toolbox.inEditing() ? this.toolbox.stop(): this.toolbox.start();
+      this.state.editing.on ? this.$emit('stoptoolbox', this.state.id): this.$emit('starttoolbox', this.state.id);
     },
     saveEdits: function() {
-      this.toolbox.save();
+      this.$emit('savetoolbox', this.state.id);
     },
     // funzione che visualizza il toolbox appena sono disponibili le configurazioni
     // fields (passato dal metodo perchè in grado di ricevere parametri)
-    isToolboxEnabled: function() {
-      var enabled = !!this.toolbox.getLayer().getEditingFields().length;
-      if (!enabled)
-        this.toolbox.setMessage('Configurazione ' +  toolbox.getLayer().getName() + ' in corso .. ');
-      else
-        this.toolbox.clearMessage();
-      return enabled;
+    isLayerReady: function() {
+      return this.state.layerstate.editing.ready;
     },
     stopActiveTool:function() {
-      this.toolbox.stopActiveTool();
+      this.$emit('stopactivetool', this.state.id);
     },
-    setActiveTool: function(tool) {
-      this.toolbox.setActiveTool(tool);
+    setActiveTool: function(toolId) {
+      this.$emit('setactivetool', toolId, this.state.id);
     }
   }
 });

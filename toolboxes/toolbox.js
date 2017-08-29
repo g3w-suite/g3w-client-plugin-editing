@@ -16,10 +16,22 @@ function ToolBox(options) {
   this._layer = this._editor.getLayer();
   //layer ol della mappa
   this._editingLayer = options.layer;
-  // tasks associati
-  this._tools = options.tools;
   // recupero il tipo di toolbox
   this._layerType = options.type || 'vector';
+  this._tools = options.tools;
+  // popolo gl'array degli state del tools appartenenti al toobox
+  var toolsstate = [];
+  _.forEach(this._tools, function(tool) {
+    toolsstate.push(tool.getState())
+  });
+  //sessione che permette di gestire tutti i movimenti da parte
+  // dei tools del toolbox durante l'editing del layer
+  //creo la sessione passandogli l'editor
+  this._session = new Session({
+    id: options.id, // contiene l'id del layer
+    editor: this._editor,
+    featuresstore: this._layerType == 'vector' ? new OlFeaturesStore(): null
+  });
   // stato del toolbox;
   this.state = {
     id: options.id,
@@ -31,21 +43,17 @@ function ToolBox(options) {
     enabled: false,
     message: null,
     toolmessage: null,
+    tools: toolsstate,
     selected: false, //proprieà che mi server per switchare tra un toolbox e un altro
     activetool: null,
     editing: {
       on: false,
-      dirty: false
-    }
+      dirty: false,
+      session: this._session.state, // STATE DELLA SESSIONE
+      history: this._session.getHistory().state // assegno lo state della history
+    },
+    layerstate: this._layer.state
   };
-  //sessione che permette di gestire tutti i movimenti da parte
-  // dei tools del toolbox durante l'editing del layer
-  //creo la sessione passandogli l'editor
-  this._session = new Session({
-    id: options.id, // contiene l'id del layer
-    editor: this._editor,
-    featuresstore: this._layerType == 'vector' ? new OlFeaturesStore(): null
-  });
   //vado a settare la sessione ad ogni tool di quel toolbox
   // e lo stesso toolbox
   _.forEach(this._tools, function(tool) {
@@ -108,12 +116,14 @@ proto.start = function() {
           self.state.enabled = true;
           self.state.editing.on = true;
           self.state.loading = false;
+          self._setToolsEnabled(true);
           d.resolve(features);
         })
         .fail(function(err) {
           self.state.enabled = false;
           self.state.editing.on = false;
           self.state.loading = false;
+          self._setToolsEnabled(false);
           self.stop();
           d.reject(err);
         })
@@ -132,7 +142,7 @@ proto.stop = function() {
         self.state.editing.on = false;
         self.state.enabled = false;
         // seci sono tool attivi vado a spengere
-        self.stopActiveTool();
+        self._setToolsEnabled(false);
         self.clearToolboxMessages();
         d.resolve(true)
       })
@@ -149,6 +159,12 @@ proto.stop = function() {
 //funzione salvataggio modifiche
 proto.save = function () {
   this._session.commit();
+};
+
+proto._setToolsEnabled = function(bool) {
+  _.forEach(this.state.tools, function(tool) {
+    tool.enabled = bool;
+  })
 };
 
 proto.setMessage = function(message) {
@@ -227,6 +243,17 @@ proto.setSelected = function(bool) {
 
 proto.getTools = function() {
   return this._tools;
+};
+
+proto.getToolById = function(toolId) {
+  var Tool = null;
+  _.forEach(this._tools, function(tool) {
+    if (toolId == tool.getId()) {
+      Tool = tool;
+      return false
+    }
+  });
+  return Tool;
 };
 
 // funzione che attiva il tool

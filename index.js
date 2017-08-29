@@ -43,9 +43,7 @@ var _Plugin = function(){
 
   //funzione che mostra il pannello dell'editing
   this.showEditingPanel = function() {
-    var panel = new EditingPanel({
-      toolboxes: this.service.getToolBoxes()
-    });
+    var panel = new EditingPanel();
     GUI.showPanel(panel);
   };
 

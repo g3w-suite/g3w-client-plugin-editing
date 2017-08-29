@@ -93,8 +93,10 @@ proto._isNewFeature = function(fid) {
 proto._setFieldsWithValues = function(feature, fields, relations) {
   var attributes = {};
   _.forEach(fields, function(field) {
+    if (feature.getPkFieldName() == field.name && feature.isNew()) {
+      field.value = feature.getPk();
+    }
     // mi serve nel caso delle select ch devo forzare il valore a 'null'
-    //
     if (field.value == 'null') {
       field.value = null;
     }

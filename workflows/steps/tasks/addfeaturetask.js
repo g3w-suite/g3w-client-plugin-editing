@@ -52,7 +52,6 @@ proto.run = function(inputs, context) {
   // viene settato sull'inizio del draw l'evento drawstart dell'editor
   this.drawInteraction.on('drawstart',function(e) {
   });
-
   // viene settato l'evento drawend
   this.drawInteraction.on('drawend', function(e) {
     console.log('Drawend .......');

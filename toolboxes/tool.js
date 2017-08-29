@@ -92,6 +92,14 @@ proto.stop = function() {
   }
 };
 
+proto.getState = function() {
+  return this.state;
+};
+
+proto.setState = function(state) {
+  this.state = state;
+};
+
 proto.getId = function() {
   return this.state.id;
 };
