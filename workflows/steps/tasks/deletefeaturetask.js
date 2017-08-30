@@ -31,7 +31,6 @@ ol.geom.GeometryType = {
 
 
 var white = [255, 255, 255, 1];
-var blue = [0, 153, 255, 1];
 var red = [255, 0, 0, 1];
 var width = 3;
 
@@ -113,17 +112,17 @@ proto.run = function(inputs, context) {
   });
   this.addInteraction(this._selectInteraction);
   this._deleteInteraction = new DeleteInteraction({
-    features: this._selectInteraction.getFeatures()
+    features: this._selectInteraction.getFeatures(), // passo le features selezionate
+    layer: this._layer // il layer appartenente
   });
   this.addInteraction(this._deleteInteraction);
-  this._deleteInteraction.on('deleteend', function(e){
+  this._deleteInteraction.on('deleteend', function(e) {
     var feature = e.features.getArray()[0];
     // vado a cancellare dalla source la feature selezionata
     self._layer.getSource().removeFeature(feature);
     self._selectInteraction.getFeatures().remove(feature);
     // dico di cancellarla (la feature non viene cancellatata ma aggiornato il suo stato
     feature.delete();
-    // vado ad aggiungere la featurea alla sessione (parte temporanea)
     session.push({
       layerId: session.getId(),
       feature: feature

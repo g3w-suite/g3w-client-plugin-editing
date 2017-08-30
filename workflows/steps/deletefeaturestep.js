@@ -6,7 +6,7 @@ var DeleteFeatureTask = require('./tasks/deletefeaturetask');
 var DeleteFeatureStep = function(options) {
   options = options || {};
   options.task = new DeleteFeatureTask();
-  options.help = "Clicca sulla feature che vuoi cancellare";
+  options.help = "Doppio Click sulla feature che vuoi cancellare";
   base(this, options)
 };
 
