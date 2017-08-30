@@ -113,6 +113,7 @@ proto.start = function() {
       self.state.loading = true;
       promise
         .then(function (features) {
+          console.log('qui')
           self.state.enabled = true;
           self.state.editing.on = true;
           self.state.loading = false;

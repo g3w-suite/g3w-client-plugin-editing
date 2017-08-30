@@ -28,7 +28,8 @@ function EditingService() {
   // CHE CONTERRÀ TUTTI GLI STATI DEI VARI PEZZI UTILI A FAR REAGIRE L'INTERFACCIA
   this.state = {
     toolboxes: [],
-    toolboxselected: null
+    toolboxselected: null,
+    message: null
   };
   // prendo tutti i layers del progetto corrente che si trovano
   // all'interno dei Layerstore del catalog registry con caratteristica editabili.
