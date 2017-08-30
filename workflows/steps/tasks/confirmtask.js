@@ -28,7 +28,7 @@ proto.run = function(inputs, context) {
     if (result)
       d.resolve(inputs);
      else
-      d.reject();
+      d.reject(inputs);
   });
   return d.promise()
 };

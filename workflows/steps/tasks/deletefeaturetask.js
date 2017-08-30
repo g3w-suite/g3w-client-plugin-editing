@@ -142,6 +142,8 @@ proto.stop = function() {
   this._selectInteraction.getFeatures().clear();
   this.removeInteraction(this._selectInteraction);
   this._selectInteraction = null;
+  // funzione che mi fa il resete di tuttle le modalità inserite dall'interazione
+  this._deleteInteraction.clear();
   this.removeInteraction(this._deleteInteraction);
   this._deleteInteraction = null;
   d.resolve(true);

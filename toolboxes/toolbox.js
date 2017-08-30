@@ -259,7 +259,7 @@ proto.getToolById = function(toolId) {
 // funzione che attiva il tool
 proto.setActiveTool = function(tool) {
   // prima stoppo l'eventuale active tool
-  this.stopActiveTool();
+  this.stopActiveTool(tool);
   tool.start();
   this.state.activetool = tool;
   var message = this.getToolMessage();
@@ -270,10 +270,10 @@ proto.getActiveTool = function() {
   return this.state.activetool;
 };
 
-proto.stopActiveTool = function() {
-  var tool = this.getActiveTool();
-  if (tool) {
-    tool.stop();
+proto.stopActiveTool = function(tool) {
+  var activeTool = this.getActiveTool();
+  if (activeTool && activeTool != tool) {
+    activeTool.stop();
     this.clearToolMessage();
     this.state.activetool = null;
   }
