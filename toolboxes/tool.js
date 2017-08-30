@@ -53,16 +53,21 @@ proto.start = function() {
         // vado a salvare la sessione
         self._session.save()
           .then(function() {
-            options.inputs.features = [];
-            startOp(options);
+            //TODO
           });
       })
       .fail(function() {
         // in caso di mancato successo faccio il rollback
         // della sessione da vedere se li
-        self.state.active = false;
-        self._session.rollback();
-      });
+        self._session.rollback()
+          .then(function() {
+           //TODO
+          })
+      })
+      .always(function() {
+        options.inputs.features = [];
+        startOp(options);
+      })
   }
   // verifico che sia definito l'operatore
   if (this._op) {
