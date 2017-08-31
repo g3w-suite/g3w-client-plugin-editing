@@ -3,15 +3,51 @@ var base =  g3wsdk.core.utils.base;
 var GUI = g3wsdk.gui.GUI;
 var EditingTask = require('./editingtask');
 
-var Messagges = {
-  delete: "Vuoi eliminare l'elemento selezionato?",
-  default: "Vuoi confermare l'azione eseguita?"
+// oggetto che contiene tutte le timpologie di dialog, confirm etc ...
+var Dialogs = {
+  delete: {
+    fnc: function(inputs) {
+      var d = $.Deferred();
+      GUI.dialog.confirm("Vuoi eliminare l'elemento selezionato?", function(result) {
+        if (result)
+          d.resolve(inputs);
+        else
+          d.reject(inputs);
+      });
+      return d.promise();
+    }
+  },
+  commit: {
+    fnc: function(inputs) {
+      var d = $.Deferred();
+      GUI.dialog.dialog({
+        message: "Vuoi salvare definitivamente le modifiche?",
+        title: "Salvataggio modifica " + inputs.layer.getName(),
+        buttons: {
+          SAVE: {
+            label: "Salva",
+            className: "btn-success",
+            callback: function () {
+              d.resolve(inputs);
+            }
+          },
+          CANCEL: {
+            label: "Annulla",
+            className: "btn-primary",
+            callback: function () {
+              d.reject('');
+            }
+          }
+        }
+      });
+      return d.promise()
+    }
+  }
 };
 
 function ConfirmTask(options) {
-  var self = this;
   var type = options.type || "default";
-  this._message = Messagges[type];
+  this._dialog = Dialogs[type];
   base(this, options);
 }
 
@@ -22,15 +58,7 @@ var proto = ConfirmTask.prototype;
 // metodo eseguito all'avvio del tool
 proto.run = function(inputs, context) {
   console.log('Confirm Feature Task run ....');
-  var d = $.Deferred();
-  // vado ad aggiungere la featurea alla sessione (parte temporanea)
-  GUI.dialog.confirm(this._message, function(result) {
-    if (result)
-      d.resolve(inputs);
-     else
-      d.reject(inputs);
-  });
-  return d.promise()
+  return this._dialog.fnc(inputs);
 };
 
 // metodo eseguito alla disattivazione del tool

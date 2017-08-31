@@ -6,7 +6,9 @@ var CatalogLayersStoresRegistry = g3wsdk.core.catalog.CatalogLayersStoresRegistr
 var MapLayersStoreRegistry = g3wsdk.core.map.MapLayersStoreRegistry;
 var LayersStore = g3wsdk.core.layer.LayersStore;
 var Session = g3wsdk.core.editing.Session;
+var GUI = g3wsdk.gui.GUI;
 var ToolBoxesFactory = require('./toolboxes/toolboxesfactory');
+var CommitFeaturesWorkflow = require('./workflows/commitfeaturesworkflow');
 
 function EditingService() {
   var self = this;
@@ -117,8 +119,14 @@ proto._stopEditing = function(){
 };
 
 proto.stop = function() {
+  var self = this;
   // vado a chiamare lo stop di ogni toolbox
   _.forEach(this._toolboxes, function(toolbox) {
+    // vado a verificare se c'è una sessione sporca e quindi
+    // chiedere se salvare
+    if (toolbox.getSession().getHistory().canCommit()) {
+      self.commit(toolbox);
+    }
     // vado a stoppare tutti le toolbox
     toolbox.stop();
     // vado a deselzionare eventuali toolbox
@@ -180,6 +188,55 @@ proto.startEditingDependencies = function(layerId, options) {
     })
   }
   return d.promise();
+};
+
+proto.commit = function(toolbox) {
+  toolbox = toolbox || this.state.toolboxselected;
+  var layer = toolbox.getLayer();
+  var workflow = new CommitFeaturesWorkflow({
+    type:  'commit'
+  });
+  workflow.start({
+    inputs: {
+      layer: layer
+    }
+  })
+    .then(function() {
+      var session = toolbox.getSession();
+      // funzione che serve a fare il commit della sessione legata al tool
+      // qui probabilmente a seconda del layer se ha dipendenze faccio ogni sessione
+      // produrrà i suoi dati post serializzati che pi saranno uniti per un unico commit
+      session.commit()
+        .then(function() {
+          GUI.notify.success("I dati sono stati salvati correttamente");
+        })
+        .fail(function(err) {
+          var error_message = "";
+          function traverseErrorMessage(obj) {
+            _.forIn(obj, function (val, key) {
+              if (_.isArray(val)) {
+                error_message = val[0];
+              }
+              if (_.isObject(val)) {
+                traverseErrorMessage(obj[key]);
+              }
+              if (error_message) {
+                return false;
+              }
+            });
+          }
+          if (err) {
+            traverseErrorMessage(err.error.data);
+            GUI.notify.error("<h4>Errore nel salvataggio sul server</h4>" +
+              "<h5>" + error_message  + "</h5>");
+          } else {
+            GUI.notify.error("Errore nel salvataggio sul server");
+          }
+        })
+    })
+    .fail(function(err) {
+      // QUI HO DECISO DI NON SALVARE I DATI
+    });
 };
 
 module.exports = new EditingService;

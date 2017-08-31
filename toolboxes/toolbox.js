@@ -69,6 +69,8 @@ function ToolBox(options) {
   });
   // mapservice mi servirà per fare richieste al server sulle features (bbox) quando agisco sull mappa
   this._mapService = GUI.getComponent('map').getService();
+  //eventi per catturare le feature
+  this._getFeaturesEvents = {};
   // vado a settare il source all'editing layer
   this._setEditingLayerSource();
 }
@@ -96,27 +98,32 @@ proto._setEditingLayerSource = function() {
 proto.start = function() {
   var self = this;
   var d = $.Deferred();
-  var bbox = this._mapService.getMapBBOX();
-  this._mapService.viewer.map.on('moveend', function() {
-    bbox = self._mapService.getMapBBOX();
-  });
-  // se non è stata avviata da altri allora faccio avvio sessione
-  if (this._session && !this._session.isStarted()) {
-    this._session.start({
+  var getFeaturesOptions;
+  if (this._layerType == 'vector') {
+    getFeaturesOptions = {
       editing: true,
       filter: {
-        bbox: bbox
+        bbox: this._mapService.getMapBBOX()
       }
-    })
+    };
+  } else {
+    getFeaturesOptions = {
+      editing: true
+    };
+  }
+  // se non è stata avviata da altri allora faccio avvio sessione
+  if (this._session && !this._session.isStarted()) {
+    // setto il loding dei dati a true
+    self.state.loading = true;
+    this._session.start(getFeaturesOptions)
     .then(function(promise) {
-      // setto il loding dei dati a true
-      self.state.loading = true;
       promise
         .then(function (features) {
           self.state.enabled = true;
           self.state.editing.on = true;
           self.state.loading = false;
           self._setToolsEnabled(true);
+          self._registerGetFeaturesEvents('moveend', getFeaturesOptions);
           d.resolve(features);
         })
         .fail(function(err) {
@@ -159,6 +166,17 @@ proto.stop = function() {
 //funzione salvataggio modifiche
 proto.save = function () {
   this._session.commit();
+};
+
+// funzione che ha lo scopo di registrare gli eventi per catturare le feature
+proto._registerGetFeaturesEvents = function(type, options) {
+  var self = this;
+  var event = this._mapService.getMap().on('moveend', function() {
+    bbox = self._mapService.getMapBBOX();
+    options.filter.bbox = bbox;
+    self._session.getFeatures(options)
+  });
+
 };
 
 proto._setToolsEnabled = function(bool) {
@@ -294,6 +312,14 @@ proto.setToolMessage = function(message) {
 
 proto.getSession = function() {
   return this._session;
+};
+
+proto.getEditor = function() {
+  return this._editor;
+};
+
+proto.setEditor = function(editor) {
+  this._editor = editor;
 };
 
 //PARTE DEDICATA ALLE RELAZIONI

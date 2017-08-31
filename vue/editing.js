@@ -7,6 +7,7 @@ var EditingService = require('../editingservice');
 var EditingTemplate = require('./editing.html');
 var ToolboxComponent = require('./components/toolbox');
 
+
 var vueComponentOptions = {
   template: EditingTemplate,
   data: null,
@@ -26,20 +27,7 @@ var vueComponentOptions = {
       //this.$options.service.applyChangesDependencies(session.getId(), dependenciesChanges);
     },
     commit: function() {
-      var self = this;
-      // funzione che serve a fare il commit della sessione legata al tool
-      // qui probabilmente a seconda del layer se ha dipendenze faccio ogni sessione
-      // produrrà i suoi dati post serializzati che pi saranno uniti per un unico commit
-      this.state.toolboxselected.getSession().commit()
-        .then(function() {
-          self.state.message = "Il salvataggio dei dati è andato a buon fine";
-          setTimeout(function() {
-            self.state.message = null;
-          }, 2000)
-        })
-        .fail(function() {
-
-        })
+      this.$options.service.commit();
     },
     saveAll: function() {
       //TODO dovrebbe igessere legata alla possibilità di salvare tutte le modifiche di tutti i layer
