@@ -134,11 +134,22 @@ function PanelComponent(options) {
   };
 
   this.unmount = function() {
-    // faccio in modo che venga disattivato l'eventuale tool attivo al momento del
-    // click sulla x
-    this._service.stop();
-    return base(this, 'unmount');
+    var self = this;
+    var d = $.Deferred();
+    this._service.stop()
+      .then(function() {
+        //vado a riscrivere la proprietà
+        self.unmount = function() {
+          base(self, 'unmount')
+            .then(function() {
+              d.resolve()
+            });
+        };
+        self.unmount();
+      });
+    return d.promise();
   };
+
 }
 
 inherit(PanelComponent, Component);

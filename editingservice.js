@@ -114,26 +114,30 @@ proto._cancelOrSave = function(){
   return resolve();
 };
 
-proto._stopEditing = function(){
-  console.log('Stop editing ...');
-};
-
 proto.stop = function() {
+  var d = $.Deferred();
   var self = this;
+  var commitpromises = [];
   // vado a chiamare lo stop di ogni toolbox
   _.forEach(this._toolboxes, function(toolbox) {
     // vado a verificare se c'è una sessione sporca e quindi
     // chiedere se salvare
-    if (toolbox.getSession().getHistory().canCommit()) {
-      self.commit(toolbox);
+    if (toolbox.getSession().getHistory().state.commit) {
+      commitpromises.push(self.commit(toolbox));
     }
-    // vado a stoppare tutti le toolbox
-    toolbox.stop();
-    // vado a deselzionare eventuali toolbox
-    toolbox.setSelected(false);
   });
+  $.when.apply(this, commitpromises).
+    always(function() {
+      _.forEach(arguments, function(toolbox) {
+        // vado a stoppare tutti le toolbox
+        toolbox.stop();
+        // vado a deselzionare eventuali toolbox
+        toolbox.setSelected(false);
+      });
+      d.resolve();
+    });
   this.state.toolboxselected = null;
-  this._stopEditing();
+  return d.promise();
 };
 
 // fa lo start di tutte le dipendenze del layer legato alla toolbox che si è avviato
@@ -191,6 +195,7 @@ proto.startEditingDependencies = function(layerId, options) {
 };
 
 proto.commit = function(toolbox) {
+  var d = $.Deferred();
   toolbox = toolbox || this.state.toolboxselected;
   var layer = toolbox.getLayer();
   var workflow = new CommitFeaturesWorkflow({
@@ -232,11 +237,15 @@ proto.commit = function(toolbox) {
           } else {
             GUI.notify.error("Errore nel salvataggio sul server");
           }
+        }).
+        always(function() {
+          d.resolve(toolbox);
         })
     })
-    .fail(function(err) {
-      // QUI HO DECISO DI NON SALVARE I DATI
+    .fail(function() {
+      d.reject(toolbox);
     });
+  return d.promise();
 };
 
 module.exports = new EditingService;
