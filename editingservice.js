@@ -33,6 +33,8 @@ function EditingService() {
     toolboxselected: null,
     message: null
   };
+  //mapservice
+  this._mapService = GUI.getComponent('map').getService();
   // prendo tutti i layers del progetto corrente che si trovano
   // all'interno dei Layerstore del catalog registry con caratteristica editabili.
   // Mi verranno estratti tutti i layer editabili anche quelli presenti nell'albero del catalogo
@@ -114,6 +116,7 @@ proto._cancelOrSave = function(){
   return resolve();
 };
 
+
 proto.stop = function() {
   var d = $.Deferred();
   var self = this;
@@ -126,9 +129,11 @@ proto.stop = function() {
       commitpromises.push(self.commit(toolbox));
     }
   });
+  // prima di stoppare tutto e chidere panello
   $.when.apply(this, commitpromises).
     always(function() {
-      _.forEach(arguments, function(toolbox) {
+    self._mapService.refreshMap();
+      _.forEach(self._toolboxes, function(toolbox) {
         // vado a stoppare tutti le toolbox
         toolbox.stop();
         // vado a deselzionare eventuali toolbox
@@ -195,6 +200,7 @@ proto.startEditingDependencies = function(layerId, options) {
 };
 
 proto.commit = function(toolbox) {
+  var self = this;
   var d = $.Deferred();
   toolbox = toolbox || this.state.toolboxselected;
   var layer = toolbox.getLayer();
@@ -214,6 +220,7 @@ proto.commit = function(toolbox) {
       session.commit()
         .then(function() {
           GUI.notify.success("I dati sono stati salvati correttamente");
+          self._mapService.refreshMap();
         })
         .fail(function(err) {
           var error_message = "";

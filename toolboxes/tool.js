@@ -117,6 +117,10 @@ proto.getName = function() {
   return this.state.name;
 };
 
+proto.setActive = function(bool) {
+  this.state.active = _.isBoolean(bool) ? bool : false;
+};
+
 proto.isActive = function() {
   return this.state.active;
 };
@@ -129,7 +133,7 @@ proto.setIcon = function(icon) {
   this.state.icon = icon;
 };
 
-proto.setEnable = function(bool) {
+proto.setEnabled = function(bool) {
   this.state.enabled = _.isBoolean(bool) ? bool : false;
 };
 

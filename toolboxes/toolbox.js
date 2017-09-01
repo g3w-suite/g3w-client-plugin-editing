@@ -32,6 +32,8 @@ function ToolBox(options) {
     editor: this._editor,
     featuresstore: this._layerType == 'vector' ? new OlFeaturesStore(): null
   });
+  var historystate = this._session.getHistory().state;
+  var  sessionstate = this._session.state;
   // stato del toolbox;
   this.state = {
     id: options.id,
@@ -47,10 +49,10 @@ function ToolBox(options) {
     selected: false, //proprieà che mi server per switchare tra un toolbox e un altro
     activetool: null,
     editing: {
+      session: sessionstate, // STATE DELLA SESSIONE
+      history: historystate,// assegno lo state della history
       on: false,
-      dirty: false,
-      session: this._session.state, // STATE DELLA SESSIONE
-      history: this._session.getHistory().state // assegno lo state della history
+      dirty: historystate.commit
     },
     layerstate: this._layer.state
   };
@@ -63,14 +65,18 @@ function ToolBox(options) {
   // vado ad associare le features del suo featuresstore al ol.layer.Vector
   this._session.onafter('start', function() {
     // le sessioni dipendenti per poter eseguier l'editing
-    var EditingService = require('../editingservice');
+    //var EditingService = require('../editingservice');
     // passo id del toolbox e le opzioni per far partire la sessione
-    EditingService.startEditingDependencies(self.state.id, {});// dove le opzioni possono essere il filtro;
+    //EditingService.startEditingDependencies(self.state.id, {});// dove le opzioni possono essere il filtro;
   });
   // mapservice mi servirà per fare richieste al server sulle features (bbox) quando agisco sull mappa
   this._mapService = GUI.getComponent('map').getService();
   //eventi per catturare le feature
-  this._getFeaturesEvents = {};
+  this._getFeaturesEvent = {
+    event: null,
+    fnc: null
+  };
+  this._loadedExtent = null;
   // vado a settare il source all'editing layer
   this._setEditingLayerSource();
 }
@@ -100,10 +106,11 @@ proto.start = function() {
   var d = $.Deferred();
   var getFeaturesOptions;
   if (this._layerType == 'vector') {
+    var bbox = this._loadedExtent = this._mapService.getMapBBOX();
     getFeaturesOptions = {
       editing: true,
       filter: {
-        bbox: this._mapService.getMapBBOX()
+        bbox: bbox
       }
     };
   } else {
@@ -123,14 +130,10 @@ proto.start = function() {
           self.state.editing.on = true;
           self.state.loading = false;
           self._setToolsEnabled(true);
-          self._registerGetFeaturesEvents('moveend', getFeaturesOptions);
+          self._registerGetFeaturesEvent(getFeaturesOptions);
           d.resolve(features);
         })
         .fail(function(err) {
-          self.state.enabled = false;
-          self.state.editing.on = false;
-          self.state.loading = false;
-          self._setToolsEnabled(false);
           self.stop();
           d.reject(err);
         })
@@ -148,9 +151,12 @@ proto.stop = function() {
       .then(function() {
         self.state.editing.on = false;
         self.state.enabled = false;
+        self.state.loading = false;
         // seci sono tool attivi vado a spengere
         self._setToolsEnabled(false);
         self.clearToolboxMessages();
+        self._unregisterGetFeaturesEvent();
+        self._loadedExtent = null;
         d.resolve(true)
       })
       .fail(function(err) {
@@ -168,20 +174,48 @@ proto.save = function () {
   this._session.commit();
 };
 
-// funzione che ha lo scopo di registrare gli eventi per catturare le feature
-proto._registerGetFeaturesEvents = function(type, options) {
-  var self = this;
-  var event = this._mapService.getMap().on('moveend', function() {
-    bbox = self._mapService.getMapBBOX();
-    options.filter.bbox = bbox;
-    self._session.getFeatures(options)
-  });
+// unregistra eventi che sono legati al getFeatures
+proto._unregisterGetFeaturesEvent = function() {
+  switch(this._layerType) {
+    case 'vector':
+      this._mapService.getMap().unset(this._getFeaturesEvent.event, this._getFeaturesEvent.fnc);
+      break;
+    default:
+      return;
+  }
+};
 
+// funzione che ha lo scopo di registrare gli eventi per catturare le feature
+proto._registerGetFeaturesEvent = function(options) {
+  switch(this._layerType) {
+    case 'vector':
+      var fnc = _.bind(function (options) {
+        var bbox = this._mapService.getMapBBOX();
+        if(this._loadedExtent && ol.extent.containsExtent(this._loadedExtent, bbox)) {
+          return;
+        }
+        if(!this._loadedExtent) {
+          this._loadedExtent = bbox;
+        } else {
+          this._loadedExtent = ol.extent.extend(this._loadedExtent, bbox);
+        }
+        options.filter.bbox = bbox;
+        this._session.getFeatures(options)
+      }, this, options);
+
+      this._mapService.getMap().on('moveend', fnc);
+      this._getFeaturesEvent.event = 'moveend';
+      this._getFeaturesEvent.fnc = fnc;
+    default:
+      return;
+  }    
 };
 
 proto._setToolsEnabled = function(bool) {
-  _.forEach(this.state.tools, function(tool) {
-    tool.enabled = bool;
+  _.forEach(this._tools, function(tool) {
+    tool.setEnabled(bool)
+    if (!bool)
+      tool.setActive(bool);
   })
 };
 
@@ -335,5 +369,6 @@ proto.hasFathers = function() {
 proto.hasRelations = function() {
   return this._layer.hasRelations();
 };
+
 
 module.exports = ToolBox;

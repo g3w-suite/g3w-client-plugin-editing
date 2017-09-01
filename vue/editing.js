@@ -39,8 +39,15 @@ var vueComponentOptions = {
     },
     stopToolBox: function(toolboxId) {
       var toolbox = this._getToolBoxById(toolboxId);
-      if (toolbox)
-        toolbox.stop();
+      if (toolbox) {
+        if (toolbox.state.editing.history.commit)
+          this.$options.service.commit()
+            .then(function() {
+              toolbox.stop();
+            });
+        else
+          toolbox.stop()
+      }
     },
     saveToolBox: function() {
       var toolbox = this._getToolBoxById(toolboxId);
