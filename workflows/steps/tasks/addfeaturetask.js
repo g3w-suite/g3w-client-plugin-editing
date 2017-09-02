@@ -36,6 +36,9 @@ proto.run = function(inputs, context) {
   //definisce l'interazione che deve essere aggiunta
   // specificando il layer sul quale le feature aggiunte devono essere messe
   var source = this._layer.getSource();
+  var attributes = _.filter(session.getEditor().getLayer().getFields(), function(field) {
+    return field.editable;
+  });
   // creo una source temporanea
   var temporarySource = new ol.source.Vector();
   this.drawInteraction = new ol.interaction.Draw({
@@ -55,11 +58,16 @@ proto.run = function(inputs, context) {
   // viene settato l'evento drawend
   this.drawInteraction.on('drawend', function(e) {
     console.log('Drawend .......');
+    // vado ad assegnare le proprià del layer alla nuova feature
+    _.forEach(attributes, function(attribute) {
+      e.feature.set(attribute.name, null);
+    });
     var feature = new Feature({
       feature: e.feature,
       pk: pk // passo la pk della feature
     });
-    feature.createNewPk();
+    // verifico se la pk è editabile o meno
+    session.getEditor().getLayer().isPkEditable() ?  feature.setNew() : feature.setNewPkValue();
     // lo setto come add feature lo state
     feature.add();
     // vado a aggiungerla

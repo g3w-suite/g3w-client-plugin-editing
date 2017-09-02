@@ -37,7 +37,7 @@ proto.run = function(inputs, context) {
     formId: self._generateFormId(layerName),
     dataid: layerName,
     layer: layer,
-    pk: 'id',//vectorLayer.pk,
+    pk: layer.getPk(),
     isnew: feature.isNew(),
     fields: fields,
     relations: [],
@@ -93,8 +93,9 @@ proto._isNewFeature = function(fid) {
 proto._setFieldsWithValues = function(feature, fields, relations) {
   var attributes = {};
   _.forEach(fields, function(field) {
-    if (feature.getPkFieldName() == field.name && feature.isNew()) {
-      field.value = feature.getPk();
+    // vado a verificares se il campo è primary key e se è editable
+    if (feature.getPkFieldName() == field.name && field.editable && feature.isNew()) {
+      feature.setId(field.value)
     }
     // mi serve nel caso delle select ch devo forzare il valore a 'null'
     if (field.value == 'null') {
