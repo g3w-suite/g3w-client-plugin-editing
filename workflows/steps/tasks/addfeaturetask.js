@@ -32,17 +32,19 @@ proto.run = function(inputs, context) {
   //recupero la sessione dal context
   var session = context.session;
   // vado a rrecuperare la primary key del layer
-  var pk = session.getEditor().getLayer().getPk();
-  //definisce l'interazione che deve essere aggiunta
+  var originalLayer = session.getEditor().getLayer();
+  var pk = originalLayer.getPk();
+  var geometryType = originalLayer.getEditingGeometryType();
+    //definisce l'interazione che deve essere aggiunta
   // specificando il layer sul quale le feature aggiunte devono essere messe
   var source = this._layer.getSource();
-  var attributes = _.filter(session.getEditor().getLayer().getFields(), function(field) {
+  var attributes = _.filter(originalLayer.getFields(), function(field) {
     return field.editable;
   });
   // creo una source temporanea
   var temporarySource = new ol.source.Vector();
   this.drawInteraction = new ol.interaction.Draw({
-    type: source.getFeatures()[0].getGeometry().getType(), // il tipo lo prende dal geometry type dell'editing vetor layer che a sua volta lo prende dal tipo si geometry del vector layer originale
+    type: geometryType, // il tipo lo prende dal geometry type dell'editing vetor layer che a sua volta lo prende dal tipo si geometry del vector layer originale
     source: temporarySource, // lo faccio scrivere su una source temporanea (non vado a modificare il source featuresstore)
     condition: this._condition,
     finishCondition: this._finishCondition // disponibile da https://github.com/openlayers/ol3/commit/d425f75bea05cb77559923e494f54156c6690c0b
@@ -67,7 +69,7 @@ proto.run = function(inputs, context) {
       pk: pk // passo la pk della feature
     });
     // verifico se la pk è editabile o meno
-    session.getEditor().getLayer().isPkEditable() ?  feature.setNew() : feature.setNewPkValue();
+    originalLayer.isPkEditable() ?  feature.setNew() : feature.setTemporaryId();
     // lo setto come add feature lo state
     feature.add();
     // vado a aggiungerla

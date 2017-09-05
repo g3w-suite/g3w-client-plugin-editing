@@ -42,14 +42,14 @@ proto.run = function(inputs, context) {
     fields: fields,
     relations: [],
     relationOne: null,//self.checkOneRelation,
-    tools: [],//self._formTools,
+    tools: ['copypaste'], 
     buttons:[
       {
         title: "Salva",
         type: "save",
         class: "btn-danger",
         cbk: function(fields, relations) {
-          self._setFieldsWithValues(feature, fields, relations);
+          layer._setFieldsWithValues(feature, fields, relations);
           if (!feature.isNew()) {
             feature.update();
             session.push({
@@ -85,30 +85,6 @@ proto._isNewFeature = function(fid) {
     return fid.toString().indexOf(this._newPrefix) == 0;
   }
   return true;
-};
-
-
-// viene chamato quando si preme ad esempio Salva sul Form degli
-// attributi di una feature
-proto._setFieldsWithValues = function(feature, fields, relations) {
-  var attributes = {};
-  _.forEach(fields, function(field) {
-    // vado a verificares se il campo è primary key e se è editable
-    if (feature.getPkFieldName() == field.name && field.editable && feature.isNew()) {
-      feature.setId(field.value)
-    }
-    // mi serve nel caso delle select ch devo forzare il valore a 'null'
-    if (field.value == 'null') {
-      field.value = null;
-    }
-    attributes[field.name] = field.value;
-  });
-  // setto i campi della feature con i valori editati nel form
-  feature.setProperties(attributes);
-  if (relations) {
-    // se ci sono relazioni vado a settare i dai delle relazioni nel layervettoriale originale
-    //this.layer.setRelationsData(feature.getId(), relations);
-  }
 };
 
 //funzione che in base alla feature passata recupera le relazioni associata ad essa

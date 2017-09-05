@@ -64,6 +64,14 @@ function EditingService() {
       // vado ad aggiungere la toolbox
       self.addToolBox(editor);
     });
+    // disabilito l'eventuale tool attivo se viene attivata
+    // un'interazione di tipo pointerInteractionSet sulla mappa
+    this._mapService.on('mapcontrol:active', function(interaction) {
+      var toolboxselected = self.state.toolboxselected;
+      if ( toolboxselected && toolboxselected.getActiveTool()) {
+        toolboxselected.getActiveTool().stop();
+      }
+    });
   }
 }
 

@@ -120,14 +120,14 @@ function EditorToolBoxesFactory() {
               new Tool({
                 id: 'polygon_movevertex',
                 name: "Modifica vertice",
-                icon: "moveVertex.png",
+                icon: "MovePolygonVertex.png",
                 layer: olLayer,
                 op: ModifyGeometryVertexWorkflow
               }),
               new Tool({
                 id: 'polygon_deletefeature',
                 name: "Elimina feature",
-                icon: "deleteLine.png",
+                icon: "deletePolygon.png",
                 layer: olLayer,
                 op: DeleteFeatureWorkflow
               }),

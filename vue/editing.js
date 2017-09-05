@@ -86,7 +86,7 @@ var vueComponentOptions = {
       var service = this.$options.service;
       var toolbox = service.getToolBoxById(toolboxId);
       return toolbox;
-    },
+    }
   },
   computed: {
     // messaggio generale dell'editing esempio comunicando che il layer

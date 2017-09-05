@@ -74,7 +74,10 @@ function ToolBox(options) {
   //eventi per catturare le feature
   this._getFeaturesEvent = {
     event: null,
-    fnc: null
+    fnc: null,
+    options: {
+      extent: null
+    }
   };
   this._loadedExtent = null;
   // vado a settare il source all'editing layer
@@ -156,7 +159,6 @@ proto.stop = function() {
         self._setToolsEnabled(false);
         self.clearToolboxMessages();
         self._unregisterGetFeaturesEvent();
-        self._loadedExtent = null;
         d.resolve(true)
       })
       .fail(function(err) {
@@ -178,7 +180,8 @@ proto.save = function () {
 proto._unregisterGetFeaturesEvent = function() {
   switch(this._layerType) {
     case 'vector':
-      this._mapService.getMap().unset(this._getFeaturesEvent.event, this._getFeaturesEvent.fnc);
+      this._mapService.getMap().un(this._getFeaturesEvent.event, this._getFeaturesEvent.fnc);
+      this._getFeaturesEvent.options.extent = null;
       break;
     default:
       return;
@@ -191,29 +194,26 @@ proto._registerGetFeaturesEvent = function(options) {
     case 'vector':
       var fnc = _.bind(function (options) {
         var bbox = this._mapService.getMapBBOX();
-        if(this._loadedExtent && ol.extent.containsExtent(this._loadedExtent, bbox)) {
+        var extent = this._getFeaturesEvent.options.extent;
+        if (extent && ol.extent.containsExtent(extent, bbox)) {
           return;
         }
-        if(!this._loadedExtent) {
-          this._loadedExtent = bbox;
-        } else {
-          this._loadedExtent = ol.extent.extend(this._loadedExtent, bbox);
-        }
+        this._getFeaturesEvent.options.extent = extent ? ol.extent.extend(extent, bbox) : extent = bbox;
         options.filter.bbox = bbox;
         this._session.getFeatures(options)
       }, this, options);
-
-      this._mapService.getMap().on('moveend', fnc);
       this._getFeaturesEvent.event = 'moveend';
       this._getFeaturesEvent.fnc = fnc;
+      this._mapService.getMap().on('moveend', fnc);
+      break;
     default:
       return;
-  }    
+  }
 };
 
 proto._setToolsEnabled = function(bool) {
   _.forEach(this._tools, function(tool) {
-    tool.setEnabled(bool)
+    tool.setEnabled(bool);
     if (!bool)
       tool.setActive(bool);
   })
