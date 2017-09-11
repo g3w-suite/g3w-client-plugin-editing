@@ -42,7 +42,8 @@ var vueComponentOptions = {
       if (toolbox) {
         if (toolbox.state.editing.history.commit)
           this.$options.service.commit()
-            .then(function() {
+            // in ogni caso chiamo lo stop del toolbox
+            .always(function() {
               toolbox.stop();
             });
         else

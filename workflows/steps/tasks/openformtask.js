@@ -2,7 +2,7 @@ var inherit = g3wsdk.core.utils.inherit;
 var base =  g3wsdk.core.utils.base;
 var GUI = g3wsdk.gui.GUI;
 var EditingTask = require('./editingtask');
-
+var EditingFormComponent = require('../../../form/vue/editingform');
 
 function OpenFormTask(options) {
 
@@ -32,6 +32,8 @@ proto.run = function(inputs, context) {
   var showForm  = GUI.showContentFactory('form');
   var layerName = layer.getName();
   showForm({
+    formComponent: EditingFormComponent,
+    title: 'Edit Feature',
     provider: self,
     name: "Edita attributi "+ layerName,
     formId: self._generateFormId(layerName),
@@ -41,13 +43,13 @@ proto.run = function(inputs, context) {
     isnew: feature.isNew(),
     fields: fields,
     relations: [],
+    modal: true,
     relationOne: null,//self.checkOneRelation,
     tools: ['copypaste'], 
-    buttons:[
-      {
+    buttons:[{
         title: "Salva",
         type: "save",
-        class: "btn-danger",
+        class: "btn-success",
         cbk: function(fields, relations) {
           layer._setFieldsWithValues(feature, fields, relations);
           if (!feature.isNew()) {
