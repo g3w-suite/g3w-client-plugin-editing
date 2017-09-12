@@ -7,10 +7,11 @@ var RelationsComponent = Vue.extend({
   data: function() {
     return {
       state: {
-        min: 1,
-        max: 1,
+        min: 1, // indica il numero mninimo di relazioni previste
         relations: [],
-        valid: false
+        validate: {
+          valid: false
+        }
       }
     }
   },
@@ -22,17 +23,17 @@ var RelationsComponent = Vue.extend({
       var relation = {
         name: Date.now()
       };
-      console.log('qui');
       this.state.relations.push(relation);
     },
     isValidRelationsNumber: function() {
-       this.state.valid = (this.state.relations.length >= this.state.min && this.state.relations.length <= this.state.max);
+       this.state.validate.valid = this.state.relations.length >= this.state.min;
     }
   },
   watch: {
     // vado a verificare lo state
     'state.relations': function() {
       this.isValidRelationsNumber();
+      // emetto il segnale che mi fa verificare se il form è valido e quindi attivo il bottone salva
       this.$emit('validateform');
       Vue.nextTick(function() {
         $(".nano").nanoScroller();
@@ -42,7 +43,8 @@ var RelationsComponent = Vue.extend({
   mounted: function() {
     //vado a verificare il numero di relationi
     this.isValidRelationsNumber();
-    this.$emit('addtovalidate', this.state)
+    // emetto il segnale che il form riconoscerà come agiunta a validazione
+    this.$emit('addtovalidate', this.state.validate)
   }
 });
 
