@@ -13,13 +13,7 @@
   <toolbox
     :state="toolboxstate"
     :resourcesurl="resourcesurl"
-    @setselectedtoolbox="setSelectedToolbox"
-    @starttoolbox="startToolBox"
-    @stoptoolbox="stopToolBox"
-    @savetoolbox="saveToolBox"
-    @setactivetool="setActiveTool"
-    @stopactivetool="stopActiveTool"
     v-for="toolboxstate in state.toolboxes">
   </toolbox>
-  <div class="message" v-html="state.message"></div>
+  <div class="warning-message" v-html="state.message"></div>
 </div>

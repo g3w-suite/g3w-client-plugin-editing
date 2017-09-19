@@ -15,6 +15,8 @@ var ToolComponent = Vue.extend({
   }
 });
 
+// dichairo il componente tool in generale da poter esserre riutilizzato
+Vue.component('tool', ToolComponent);
 
 module.exports = ToolComponent;
 

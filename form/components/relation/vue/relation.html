@@ -1,8 +1,19 @@
-<tr class="g3w-form-component_relation" style="margin:5px;">
-  <td>
-    <span>Relazione {{ state.name }}</span>
-  </td>
-  <td>
-    <i style="color:#3c8dbc; cursor:pointer; font-size:20px; padding:5px; border:2px solid #3c8dbc; border-radius:25px;" class="fa fa-chain-broken pull-right" @click="unlinkRelation" aria-hidden="true"></i>
-  </td>
-</tr>
+<div>
+  <div class="box-header with-border" style="margin:5px 0px 5px 0px;">
+    <span>{{ state.name }}</span>
+    <i style="padding:5px; border:2px solid #3c8dbc; border-radius:25px; color:#3c8dbc; font-size: 20px; background-color: #ffffff" class="fa fa-link pull-right" @click="linkRelation" aria-hidden="true"></i>
+  </div>
+  <table class="table table-striped">
+    <thead></thead>
+    <tbody>
+    <tr class="g3w-form-component_relation" style="margin:5px;" v-for="(relation, index) in relations" >
+      <td>
+        <span>Relazione {{ relation.name }}</span>
+      </td>
+      <td>
+        <i style="color:#3c8dbc; cursor:pointer; font-size:20px; padding:5px; border:2px solid #3c8dbc; border-radius:25px;" class="fa fa-chain-broken pull-right" @click="unlinkRelation(index)" aria-hidden="true"></i>
+      </td>
+    </tr>
+    </tbody>
+  </table>
+</div>

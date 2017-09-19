@@ -25,7 +25,6 @@ function EditorToolBoxesFactory() {
     var olLayer;
     // array contenete tutti i tasks dell'editor control
     var tools = [];
-    var color;
     switch (layerType) {
       // caso layer vettoriale
       case Layer.LayerTypes.VECTOR:
@@ -146,7 +145,15 @@ function EditorToolBoxesFactory() {
       case Layer.LayerTypes.TABLE:
         editingLayer = ''; // qui da definire
         color = 'blue';
-        tools = [];
+        tools = [
+          new Tool({
+            id: 'modifica_tabella',
+            name: "Modifica attributi",
+            icon: "editAttributes.png",
+            layer: olLayer,
+            op: EditFeatureAttributesWorkflow
+          })
+        ];
         break;
       default:
         tools = [];
@@ -155,6 +162,7 @@ function EditorToolBoxesFactory() {
     
     return new ToolBox({
       id: layer.getId(),
+      color: layer.getColor(),
       type: layerType,
       editor: editor,
       layer: olLayer,

@@ -34,7 +34,8 @@ proto.run = function(inputs, context) {
   // vado a rrecuperare la primary key del layer
   var originalLayer = session.getEditor().getLayer();
   var pk = originalLayer.getPk();
-  var geometryType = originalLayer.getEditingGeometryType();
+  var geometryType = originalLayer.getEditingGeometryType() == 'Line' ? 'LineString': originalLayer.getEditingGeometryType();
+  console.log(geometryType);
     //definisce l'interazione che deve essere aggiunta
   // specificando il layer sul quale le feature aggiunte devono essere messe
   var source = this._layer.getSource();

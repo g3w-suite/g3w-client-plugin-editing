@@ -4,6 +4,7 @@ var G3WObject = g3wsdk.core.G3WObject;
 var GUI = g3wsdk.gui.GUI;
 var Session = g3wsdk.core.editing.Session;
 var OlFeaturesStore = g3wsdk.core.layer.features.OlFeaturesStore;
+var FeaturesStore = g3wsdk.core.layer.features.FeaturesStore;
 
 function ToolBox(options) {
   var self = this;
@@ -30,16 +31,19 @@ function ToolBox(options) {
   this._session = new Session({
     id: options.id, // contiene l'id del layer
     editor: this._editor,
-    featuresstore: this._layerType == 'vector' ? new OlFeaturesStore(): null
+    featuresstore: this._layerType == 'vector' ? new OlFeaturesStore(): new FeaturesStore()
   });
+  // opzione per recuperare le feature
+  this._getFeaturesOption = {};
+  // stato della history
   var historystate = this._session.getHistory().state;
-  var  sessionstate = this._session.state;
+  var sessionstate = this._session.state;
   // stato del toolbox;
   this.state = {
     id: options.id,
     // colore del layer (darà il colore alla maschera) e quindi
     // delle feature visualizzate sulla mappa
-    color: this._layer.getColor() || 'blue',
+    color: options.color || 'blue',
     title: options.title || "Edit Layer",
     loading: false,
     enabled: false,
@@ -47,12 +51,14 @@ function ToolBox(options) {
     toolmessage: null,
     tools: toolsstate,
     selected: false, //proprieà che mi server per switchare tra un toolbox e un altro
-    activetool: null,
+    activetool: null, // tiene conto del tool attivo corrente
     editing: {
       session: sessionstate, // STATE DELLA SESSIONE
       history: historystate,// assegno lo state della history
       on: false,
-      dirty: historystate.commit
+      dependencies: [], // array di id dei toolbox dipendenti, utili per accendere spendere editing e chiedere il commit
+      relations: [],
+      father: false
     },
     layerstate: this._layer.state
   };
@@ -63,11 +69,11 @@ function ToolBox(options) {
   });
   // in ascolto dell'onafter start della sessione così se avviata
   // vado ad associare le features del suo featuresstore al ol.layer.Vector
-  this._session.onafter('start', function() {
+  this._session.onafter('start', function(options) {
     // le sessioni dipendenti per poter eseguier l'editing
-    //var EditingService = require('../editingservice');
+    var EditingService = require('../editingservice');
     // passo id del toolbox e le opzioni per far partire la sessione
-    //EditingService.startEditingDependencies(self.state.id, {});// dove le opzioni possono essere il filtro;
+    EditingService.getLayersDependencyFeatures(self.state.id, options);// dove le opzioni possono essere il filtro;
   });
   // mapservice mi servirà per fare richieste al server sulle features (bbox) quando agisco sull mappa
   this._mapService = GUI.getComponent('map').getService();
@@ -88,6 +94,48 @@ inherit(ToolBox, G3WObject);
 
 var proto = ToolBox.prototype;
 
+
+proto.setFather = function(bool) {
+  this.state.editing.father = bool;
+};
+
+proto.isFather = function() {
+  return this.state.editing.father;
+};
+
+proto.addRelations = function(relations) {
+  var self = this;
+  _.forEach(relations, function(relation) {
+    self.addRelation(relation);
+  })
+};
+
+proto.revert = function() {
+  return this._session.revert();
+};
+
+proto.addRelation = function(relation) {
+  this.state.editing.relations.push(relation);
+};
+
+proto.getDependencies = function() {
+  return this.state.editing.dependencies;
+};
+
+proto.hasDependencies = function() {
+  return !!this.state.editing.dependencies.length;
+};
+
+proto.addDependencies = function(dependencies) {
+  _.forEach(dependencies, function(dependency) {
+    self.addDependency(dependency);
+  })
+};
+
+proto.addDependency = function(dependency) {
+  this.state.editing.dependencies.push(dependency);
+};
+
 // funzione che permette di settare il featurestore del session in particolare
 // collezioni di features per quanto riguarda il vector layer e da vedere per il table layer (forse array) al table layer
 proto._setEditingLayerSource = function() {
@@ -107,47 +155,56 @@ proto._setEditingLayerSource = function() {
 proto.start = function() {
   var self = this;
   var d = $.Deferred();
-  var getFeaturesOptions;
   if (this._layerType == 'vector') {
     var bbox = this._loadedExtent = this._mapService.getMapBBOX();
-    getFeaturesOptions = {
+    this._getFeaturesOption = {
       editing: true,
       filter: {
         bbox: bbox
       }
     };
   } else {
-    getFeaturesOptions = {
+    this._getFeaturesOption = {
       editing: true
     };
   }
   // se non è stata avviata da altri allora faccio avvio sessione
-  if (this._session && !this._session.isStarted()) {
-    // setto il loding dei dati a true
-    self.state.loading = true;
-    this._session.start(getFeaturesOptions)
-    .then(function(promise) {
-      promise
-        .then(function (features) {
-          self.state.enabled = true;
-          self.state.editing.on = true;
-          self.state.loading = false;
-          self._setToolsEnabled(true);
-          self._registerGetFeaturesEvent(getFeaturesOptions);
-          d.resolve(features);
+  if (this._session) {
+    if (!this._session.isStarted()) {
+      // setto il loding dei dati a true
+      self.state.loading = true;
+      this._session.start(this._getFeaturesOption)
+        .then(function(promise) {
+          promise
+            .then(function (features) {
+              self.state.loading = false;
+              self.setEditing(true);
+              // vado a registrare l'evento getFeatiure
+              self._registerGetFeaturesEvent(self._getFeaturesOption);
+              d.resolve(features);
+            })
+            .fail(function(err) {
+              self.stop();
+              d.reject(err);
+            })
         })
-        .fail(function(err) {
-          self.stop();
-          d.reject(err);
-        })
-    })
+    } else {
+      self.setEditing(true);
+      self.state.loading = false;
+      self._registerGetFeaturesEvent(this._getFeaturesOption);
+    }
   }
   return d.promise();
+};
+
+proto.getFeaturesOption = function() {
+  return this._getFeaturesOption;
 };
 
 // funzione che disabiliterà
 proto.stop = function() {
   var self = this;
+  // le sessioni dipendenti per poter eseguier l'editing
   var d = $.Deferred();
   if (this._session && this._session.isStarted()) {
     this._session.stop()
@@ -155,6 +212,7 @@ proto.stop = function() {
         self.state.editing.on = false;
         self.state.enabled = false;
         self.state.loading = false;
+        self._getFeaturesOption = {};
         // seci sono tool attivi vado a spengere
         self._setToolsEnabled(false);
         self.clearToolboxMessages();
@@ -190,6 +248,7 @@ proto._unregisterGetFeaturesEvent = function() {
 
 // funzione che ha lo scopo di registrare gli eventi per catturare le feature
 proto._registerGetFeaturesEvent = function(options) {
+  // le sessioni dipendenti per poter eseguier l'editing
   switch(this._layerType) {
     case 'vector':
       var fnc = _.bind(function (options) {
@@ -200,7 +259,7 @@ proto._registerGetFeaturesEvent = function(options) {
         }
         this._getFeaturesEvent.options.extent = extent ? ol.extent.extend(extent, bbox) : extent = bbox;
         options.filter.bbox = bbox;
-        this._session.getFeatures(options)
+        this._session.getFeatures(options);
       }, this, options);
       this._getFeaturesEvent.event = 'moveend';
       this._getFeaturesEvent.fnc = fnc;
@@ -256,6 +315,12 @@ proto.getLayer = function() {
   return this._layer;
 };
 
+proto.setEditing = function(bool) {
+  this.setEnable(bool);
+  this.state.editing.on = bool;
+  this.enableTools(bool);
+};
+
 proto.inEditing = function() {
   return this.state.editing.on;
 };
@@ -274,12 +339,7 @@ proto.isLoading = function() {
 };
 
 proto.isDirty = function() {
-  return this.state.editing.dirty;
-};
-
-proto.setDirty = function(bool) {
-  this.state.editing.dirty = _.isBoolean(bool) ? bool : false;
-  return this.state.editing.dirty;
+  return this.state.editing.history.commit;
 };
 
 proto.isSelected = function() {
@@ -306,6 +366,12 @@ proto.getToolById = function(toolId) {
     }
   });
   return Tool;
+};
+
+proto.enableTools = function(bool) {
+  _.forEach(this._tools, function(tool) {
+    tool.setEnabled(bool);
+  })
 };
 
 // funzione che attiva il tool

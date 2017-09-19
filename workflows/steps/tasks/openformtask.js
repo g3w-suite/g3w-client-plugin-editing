@@ -25,10 +25,14 @@ proto.run = function(inputs, context) {
   var d = $.Deferred();
   var session = context.session;
   // vado a recuperare i
+  var relations = [];
   var layer = session.getEditor().getLayer();
+  if (layer.isFather()) {
+    relations = layer.getRelations().getArray();
+  }
   var feature = inputs.features[0];
   var fields = layer.getFieldsWithValues(feature);
-  var relations = layer.getRelations();
+
   var showForm  = GUI.showContentFactory('form');
   var layerName = layer.getName();
   showForm({
@@ -42,7 +46,8 @@ proto.run = function(inputs, context) {
     pk: layer.getPk(),
     isnew: feature.isNew(),
     fields: fields,
-    relations: [],
+    relations: relations,
+    hasRelations: layer.hasRelations(),
     modal: true,
     relationOne: null,//self.checkOneRelation,
     tools: ['copypaste'], 

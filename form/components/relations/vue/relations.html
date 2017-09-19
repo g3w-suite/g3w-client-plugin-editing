@@ -1,16 +1,14 @@
-<div v-if="true" class="g3w-form-component_relations">
-  <div class="box-header with-border g3w-form-component_title" style="margin:5px 0px 5px 0px;">
-    <i style="padding:5px; border:2px solid #3c8dbc; border-radius:25px; color:#3c8dbc; font-size: 20px; background-color: #ffffff" class="fa fa-link pull-right" @click="linkRelation()" aria-hidden="true"></i>
-  </div>
-  <div style="min-height:100px;" class="nano">
-    <div class="nano-content">
-      <table class="table table-striped">
-        <thead></thead>
-        <tbody>
-          <tr @unlinkrelation="unlinkRelation" :index="index" is="relation" :state="relation" v-for="(relation, index) in state.relations">
-          </tr>
-        </tbody>
-      </table>
+<div class="nano">
+  <div class="nano-content">
+    <div class="g3w-form-component_relations">
+      <div  class="nano">
+        <div class="nano-content">
+          <relation
+            :state="relation"
+            v-for="relation in state.relations">
+          </relation>
+        </div>
+      </div>
     </div>
   </div>
 </div>

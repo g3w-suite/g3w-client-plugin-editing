@@ -6,13 +6,14 @@ var Component = g3wsdk.gui.vue.Component;
 var EditingService = require('../editingservice');
 var EditingTemplate = require('./editing.html');
 var ToolboxComponent = require('./components/toolbox');
-
+var editingEventsBus = require('./editingeventbus');
 
 var vueComponentOptions = {
   template: EditingTemplate,
   data: null,
   components: {
     'toolbox': ToolboxComponent //componente toolbox
+
   },
   transitions: {'addremovetransition': 'showhide'},
   methods: {
@@ -26,8 +27,9 @@ var vueComponentOptions = {
       var relationsChanges = session.redo();
       //this.$options.service.applyChangesDependencies(session.getId(), dependenciesChanges);
     },
-    commit: function() {
-      this.$options.service.commit();
+    commit: function(toolboxId) {
+      var toolbox = this.$options.service.getToolBoxById(toolboxId);
+      this.$options.service.commit(toolbox)
     },
     saveAll: function() {
       //TODO dovrebbe igessere legata alla possibilità di salvare tutte le modifiche di tutti i layer
@@ -38,19 +40,20 @@ var vueComponentOptions = {
         toolbox.start();
     },
     stopToolBox: function(toolboxId) {
+      var self = this;
       var toolbox = this._getToolBoxById(toolboxId);
       if (toolbox) {
         if (toolbox.state.editing.history.commit)
           this.$options.service.commit()
             // in ogni caso chiamo lo stop del toolbox
             .always(function() {
-              toolbox.stop();
+              toolbox.stop()
             });
         else
           toolbox.stop()
       }
     },
-    saveToolBox: function() {
+    saveToolBox: function(toolboxId) {
       var toolbox = this._getToolBoxById(toolboxId);
       if (toolbox)
         toolbox.save();
@@ -66,7 +69,7 @@ var vueComponentOptions = {
     stopActiveTool: function(toolboxId) {
       var toolbox = this._getToolBoxById(toolboxId);
       if (toolbox) {
-        toolbox.stopActiveTool()
+        toolbox.stopActiveTool();
       }
     },
     setSelectedToolbox: function(toolboxId) {
@@ -81,6 +84,14 @@ var vueComponentOptions = {
       });
       toolbox.setSelected(true);
       this.state.toolboxselected = toolbox;
+      if (toolbox.getDependencies().length) {
+        this.state.message = "Layer in relazione. Prima di passare ad altri editing è obbligatorio salvare le modifiche correnti"
+      } else {
+        this.state.message = null;
+      }
+    },
+    checkDirtyToolBoxes: function(toolboxId) {
+      this.$options.service.commitDirtyToolBoxes(toolboxId);
     },
     // funzione che mi va a aprendere dal service il toolbox in base al suo id
     _getToolBoxById: function(toolboxId) {
@@ -107,6 +118,16 @@ var vueComponentOptions = {
       var toolbox = this.state.toolboxselected;
       return !_.isNull(toolbox) && toolbox.state.editing.history.redo;
     }
+  },
+  mounted: function() {
+    // tutti gli eventi dei toolboxes
+    editingEventsBus.$on('setselectedtoolbox', this.setSelectedToolbox);
+    editingEventsBus.$on('starttoolbox', this.startToolBox);
+    editingEventsBus.$on('stoptoolbox', this.stopToolBox);
+    editingEventsBus.$on('savetoolbox', this.saveToolBox);
+    editingEventsBus.$on('setactivetool', this.setActiveTool);
+    editingEventsBus.$on('stopactivetool', this.stopActiveTool);
+    editingEventsBus.$on('checkdirtytoolboxes', this.checkDirtyToolBoxes)
   }
 };
 
