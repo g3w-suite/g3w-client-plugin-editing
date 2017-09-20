@@ -61,7 +61,7 @@ proto.run = function(inputs, context) {
       layerId: session.getId(),
       feature:originalFeature
     });
-    // ritorno come outpu l'input layer che sarà modificato
+    // ritorno come output l'input layer che sarà modificato
     inputs.features.push(newFeature);
     feature.setStyle(originalStyle);
     d.resolve(inputs);

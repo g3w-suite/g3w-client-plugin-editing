@@ -1,14 +1,18 @@
 <div>
-  <div class="box-header with-border" style="margin:5px 0px 5px 0px;">
-    <span>{{ state.name }}</span>
-    <i style="padding:5px; border:2px solid #3c8dbc; border-radius:25px; color:#3c8dbc; font-size: 20px; background-color: #ffffff" class="fa fa-link pull-right" @click="linkRelation" aria-hidden="true"></i>
+  <div class="box-header with-border" style="margin:5px 0px 5px 0px; background-color: #ffffff; color: #3c8dbc">
+    <div class="col-md-8">
+      <h4>{{ state.name }}</h4>
+    </div>
+    <div class="col-md-4">
+      <i style="padding:5px; border:2px solid #3c8dbc; border-radius:25px; color:#3c8dbc; font-size: 20px; background-color: #ffffff" class="fa fa-link pull-right" @click="linkRelation" aria-hidden="true"></i>
+    </div>
   </div>
   <table class="table table-striped">
     <thead></thead>
     <tbody>
     <tr class="g3w-form-component_relation" style="margin:5px;" v-for="(relation, index) in relations" >
       <td>
-        <span>Relazione {{ relation.name }}</span>
+        <span> {{ relation.valore }}</span>
       </td>
       <td>
         <i style="color:#3c8dbc; cursor:pointer; font-size:20px; padding:5px; border:2px solid #3c8dbc; border-radius:25px;" class="fa fa-chain-broken pull-right" @click="unlinkRelation(index)" aria-hidden="true"></i>

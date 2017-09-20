@@ -10,7 +10,6 @@ var GUI = g3wsdk.gui.GUI;
 var ToolBoxesFactory = require('./toolboxes/toolboxesfactory');
 var CommitFeaturesWorkflow = require('./workflows/commitfeaturesworkflow');
 
-
 function EditingService() {
   var self = this;
   base(this);
@@ -24,10 +23,11 @@ function EditingService() {
   // STATO GENERALE DEL EDITNG SERVICE
   // CHE CONTERRÀ TUTTI GLI STATI DEI VARI PEZZI UTILI A FAR REAGIRE L'INTERFACCIA
   this.state = {
-    toolboxes: [],
-    toolboxselected: null,
-    message: null,
-    relations: []
+    toolboxes: [], // contiene tutti gli stati delle toolbox in editing
+    toolboxselected: null, // tiene riferimento alla toolbox selezionata
+    toolboxidactivetool: null,
+    message: null, // messaggio genarle del pannello di editing
+    relations: [] // relazioni
   };
   //mapservice
   this._mapService = GUI.getComponent('map').getService();
@@ -97,6 +97,11 @@ function EditingService() {
 inherit(EditingService, PluginService);
 
 var proto = EditingService.prototype;
+
+proto.getEditingLayer = function(id) {
+  var toolbox = this.getToolBoxById(id);
+  return toolbox.getEditingLayer();
+};
 
 proto._buildToolBoxes = function() {
   var self = this;
@@ -228,7 +233,6 @@ proto._cancelOrSave = function(){
   return resolve();
 };
 
-
 proto.stop = function() {
   var d = $.Deferred();
   var self = this;
@@ -251,10 +255,28 @@ proto.stop = function() {
         // vado a deselzionare eventuali toolbox
         toolbox.setSelected(false);
       });
+      self.clearState();
       d.resolve();
     });
-  this.state.toolboxselected = null;
   return d.promise();
+};
+
+proto.clearState = function() {
+  this.state.toolboxselected = null; // tiene riferimento alla toolbox selezionata
+  this.state.toolboxidactivetool =  null;
+  this.state.message =  null; // messaggio genarle del pannello di editing
+};
+
+// funzione che filtra le relazioni in base a quelle presenti in editing
+proto.filterRelationsInEditing = function(relations) {
+  var self = this;
+  var relationinediting = [];
+  _.forEach(relations, function(relation) {
+    if (self._layers[relation.getChild()])
+      // aggiungo lo state della relazione
+      relationinediting.push(relation.getState());
+  });
+  return relationinediting;
 };
 
 // fa lo start di tutte le dipendenze del layer legato alla toolbox che si è avviato

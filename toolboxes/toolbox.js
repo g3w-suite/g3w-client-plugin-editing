@@ -94,6 +94,14 @@ inherit(ToolBox, G3WObject);
 
 var proto = ToolBox.prototype;
 
+proto.getLayer = function() {
+  return this._layer;
+};
+
+proto.getEditingLayer = function() {
+  return this._editingLayer;
+};
+
 
 proto.setFather = function(bool) {
   this.state.editing.father = bool;

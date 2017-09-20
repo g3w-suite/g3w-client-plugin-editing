@@ -5,7 +5,9 @@ var ToolboxComponent = Vue.extend({
   template: require('./toolbox.html'),
   props: ['state', 'resourcesurl'],
   data: function() {
-    return {}
+    return {
+      active: false
+    }
   },
   components: {
     'tool': ToolComponent
@@ -42,13 +44,6 @@ var ToolboxComponent = Vue.extend({
   computed: {
     father: function() {
       return this.state.editing.father && !!this.state.editing.dependencies.length;
-    }
-  },
-  watch: {
-    'state.activetool': function (newVal, oldVal) {
-      if (newVal)
-        // vado a chiedere di fare il commit delle modifiche
-        editingEventsBus.$emit('checkdirtytoolboxes', this.state.id);
     }
   }
 });

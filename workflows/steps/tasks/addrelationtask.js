@@ -1,7 +1,9 @@
 var inherit = g3wsdk.core.utils.inherit;
 var base =  g3wsdk.core.utils.base;
 var EditingTask = require('./editingtask');
-var Feature = g3wsdk.core.layer.features.Feature;
+var GUI = g3wsdk.gui.GUI;
+var PickFeatureInteraction = g3wsdk.ol3.interactions.PickFeatureInteraction;
+
 
 // classe  per l'aggiungere una relazione
 function AddRelationTask(options) {
@@ -15,31 +17,46 @@ var proto = AddRelationTask.prototype;
 
 // metodo eseguito all'avvio del tool
 proto.run = function(inputs, context) {
-  console.log('Add relation task run.......');
+  console.log(inputs, context);
+  var self = this;
   var d = $.Deferred();
-  this._layer = inputs.layer;
-  //recupero la sessione dal context
+  console.log('Add relation task run.......');
+  GUI.setModal(false);
   var session = context.session;
-  // vado a rrecuperare la primary key del layer
-  var originalLayer = session.getEditor().getLayer();
-  return d.promise();
+  console.log(session);
+  var fatherField = context.fatherField;
+  var childField = context.childField;
+  //var style = this.editor._editingVectorStyle ? this.editor._editingVectorStyle.edit : null;
+  // vado a settare i layers su cui faccio l'interacion agisce
+  var fatherFeature = inputs.features[0];
+  var layers = [inputs.layer];
+  var layerId = inputs.layer.get('id');
+  this.pickFeatureInteraction = new PickFeatureInteraction({
+    layers: layers
+  });
+  // aggiungo
+  this.addInteraction(this.pickFeatureInteraction);
+  // gestisco l'evento
+  this.pickFeatureInteraction.on('picked', function(e) {
+    var feature = e.feature;
+    feature.set(childField, fatherFeature.get(fatherField));
+    feature.update();
+    session.push({
+      layerId: layerId,
+      feature: e.feature
+    });
+    d.resolve(feature);
+  });
+  return d.promise()
 };
-
 
 // metodo eseguito alla disattivazione del tool
 proto.stop = function() {
-  console.log('stop add task ...');
-  //rimuove e setta a null la _snapInteraction
-  if (this._snapInteraction) {
-    this.removeInteraction(this._snapInteraction);
-    this._snapInteraction = null;
-  }
-  //rimove l'interazione e setta a null drawInteracion
-  this.removeInteraction(this.drawInteraction);
-  this.drawInteraction = null;
-  // rtirna semprte true
+  GUI.setModal(true);
+  this.removeInteraction(this.pickFeatureInteraction);
+  this.pickFeatureInteraction = null;
   return true;
 };
 
 
-module.exports = AddFeatureTask;
+module.exports = AddRelationTask;

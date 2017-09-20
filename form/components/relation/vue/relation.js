@@ -12,17 +12,19 @@ var RelationComponent = Vue.extend({
       this.relations.splice(index, 1)
     },
     linkRelation: function() {
-      this.service.addRelation(this.state);
-      var relation = {
-        name: Date.now()
-      };
-      this.relations.push(relation);
+      var self = this;
+      this.service.addRelation(this.state)
+        .then(function(feature) {
+          var attributes = feature.getProperties();
+          self.relations.push(attributes)
+        })
     }
   },
   watch: {
     // vado a verificare lo state
     'relations': function() {
       Vue.nextTick(function() {
+        // con l'aggiunta di relazioni vado a fare il nano scroll
         $(".g3w-form-component_relations .nano").nanoScroller();
       })
     }

@@ -1,18 +1,12 @@
 var RelationComponent = require('../../relation/vue/relation');
-var RelationService = require('../relationsservice');
-var RelationsComponent = Vue.extend({
+var RelationsComponentObj = {
   template: require('./relations.html'),
   components: {
     'relation': RelationComponent
   },
   data: function() {
     return {
-      state: {
-        relations: RelationService.state.relations, // array contenete tutte le relazioni previste per quel layer
-        validate: {
-          valid: true // oggetto validate (generale) che server per poter validate
-        }
-      }
+      state: null
     }
   },
   methods: {
@@ -22,10 +16,9 @@ var RelationsComponent = Vue.extend({
   },
   mounted: function() {
     //vado a verificare il numero di relationi
-    //this.isValidRelationsNumber();
     // emetto il segnale che il form riconoscerà come agiunta a validazione
     this.$emit('addtovalidate', this.state.validate)
   }
-});
+};
 
-module.exports = RelationsComponent;
+module.exports = RelationsComponentObj;
