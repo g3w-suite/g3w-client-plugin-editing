@@ -20,20 +20,29 @@ var proto = OpenFormTask.prototype;
 
 // metodo eseguito all'avvio del tool
 proto.run = function(inputs, context) {
+  var EditingService = require('../../../editingservice');
+  var context = context;
   var self = this;
   console.log('Open Form Task task run.......');
   var d = $.Deferred();
   var session = context.session;
   // vado a recuperare i
+  var feature = inputs.features[0];
+  var originalFeature = feature.clone();
+  originalFeature.update();
+  var fields = layer.getFieldsWithValues(feature);
+  var showForm  = GUI.showContentFactory('form');
+  var layerName = layer.getName();
   var relations = [];
   var layer = session.getEditor().getLayer();
   if (layer.isFather()) {
     relations = layer.getRelations().getArray();
+    // vado a filtrare le relazioni per quelle che son o effettivamente in editing
+    relations = EditingService.filterRelationsInEditing(relations);
+    if (!feature.isNew()) {
+      EditingService.getRelationsByFeature(relations, feature)
+    }
   }
-  var feature = inputs.features[0];
-  var fields = layer.getFieldsWithValues(feature);
-  var showForm  = GUI.showContentFactory('form');
-  var layerName = layer.getName();
   showForm({
     formComponent: EditingFormComponent,
     title: 'Edit Feature',
@@ -67,7 +76,10 @@ proto.run = function(inputs, context) {
             session.push({
               layerId: session.getId(),
               feature: feature
-            })
+            }, {
+              layerId: session.getId(),
+              feature:originalFeature
+            });
           }
           GUI.setModal(false);
           d.resolve(inputs);

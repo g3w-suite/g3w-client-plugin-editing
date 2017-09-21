@@ -4,7 +4,6 @@ var RelationsService = function(options) {
   options = options || {};
   this._context = options.options.context || {};
   this._inputs = options.options.inputs || {};
-  console.log(this._inputs);
   this.state = {
     relations: [],
     validate: {
@@ -13,8 +12,6 @@ var RelationsService = function(options) {
   };
   var relations = options.relations || [];
   var EditingService = require('../../../editingservice');
-  // vado a filtrare le relazioni per quelle che son o effettivamente in editing
-  relations = EditingService.filterRelationsInEditing(relations);
   _.forEach(relations, function(relation) {
     self._context.fatherField = relation.fatherField;
     self._context.childField = relation.childField;

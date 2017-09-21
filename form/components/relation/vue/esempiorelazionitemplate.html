@@ -1,0 +1,66 @@
+<div class="queryresults-container">
+  <ul class="queryresults" id="relations">
+    <template v-for="relation in feature.attributes.relations">
+      <li>
+        <div class="box box-solid box-default relationsbox collapsed-box">
+          <div class="box-header with-border" data-widget="collapse">
+            <h3 class="box-title">{{ relation.name }} ({{ relation.elements.length }})</h3>
+            <div class="box-tools pull-right">
+              <button class="btn btn-box-tool" data-widget="collapse"><i class="btn-collapser fa fa-plus"></i></button>
+            </div>
+          </div>
+          <div class="box-body">
+            <template v-for="(element, index) in relation.elements">
+              <table class="table table-striped">
+                <thead>
+                <tr>
+                  <th v-for="attribute in relationsAttributesSubset(element)">
+                    {{attribute.label}}
+                  </th>
+                  <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr @click="toggleFeatureBox(layer, feature, relation.name+index)"  class="featurebox-header">
+                  <td v-for="attribute in relationsAttributesSubset(element)">
+                    <span>{{attribute.value}}</span>
+                  </td>
+                  <td class="action-cell text-center">
+                    <span class="fa link morelink" :class="[collapsedFeatureBox(layer, feature, relation.name+index) ? 'fa-minus' : 'fa-plus']" style="text-align: right"></span>
+                  </td>
+                </tr>
+                <tr v-show="collapsedFeatureBox(layer, feature, relation.name+index)" class="featurebox-body">
+                  <td :colspan="relationsAttributesSubsetLength(element)+1">
+                    <table>
+                      <tr v-for="relattribute in relationsAttributes(element)">
+                        <td class="attr-label">{{relattribute.label}}</td>
+                        <!--<td class="attr-value">{{attribute.value}}</td>-->
+                        <td class="attr-value">
+                          <div v-if="isArray(relattribute.value)" v-for="value in relattribute.value">
+                            <div v-for="value, label in value">
+                              <span>{{ label }}</span><span class="pull-right">{{ value }}</span>
+                            </div>
+                            <span class="divider"></span>
+                          </div>
+                          <span v-if="isSimple(layer,relattribute.name, relattribute.value)">{{relattribute.value}}</span>
+                          <!--<img v-if="is('photo',layer,relattribute.name,feature.attributes[attribute.name])"  class="photo-preview img-responsive img-thumbnail" title="Clicca per allargare"  @click="showFullPhoto(isRelativePath(feature.attributes[attribute.name]))" :src="isRelativePath(feature.attributes[attribute.name])">-->
+                          <!--<img v-if="relattribute.label == 'image'"  class="photo-preview img-responsive img-thumbnail" title="Clicca per allargare"  @click="showFullPhoto(isRelativePath(relattribute.value))" :src="isRelativePath(relattribute.value)">-->
+                          <img v-else-if="checkField('image', relattribute.label, layer.relationsattributes[relation.name])"  class="photo-preview img-responsive img-thumbnail" title="Clicca per allargare"  @click="showFullPhoto(isRelativePath(relattribute.value))" :src="isRelativePath(relattribute.value)">
+                          <img v-else-if="is('photo',layer, relattribute.name, relattribute.value)"  class="photo-preview img-responsive img-thumbnail" title="Clicca per allargare"  @click="showFullPhoto(isRelativePath(relattribute.value))" :src="isRelativePath(relattribute.value)">
+                          <!--&lt;!&ndash;<span v-if="isRoute(layer,feature,attribute)" class="link dashboardlink" @click="goto(layer,feature.attributes[attribute.name])">{{ feature.attributes[attribute.name] }}</span>&ndash;&gt;-->
+                          <!--<img v-if="isPhoto(layer,feature,attribute)" v-bind:data-url="getPhotoUrl(feature.attributes[attribute.name])" style="max-width:50px" :src="getPhotoUrl(feature.attributes[attribute.name],thumb)" />-->
+                          <a v-if="isLink(layer,relattribute.name, relattribute.value)" :href="relattribute.value" target="_blank" class="glyphicon glyphicon-link"></a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                </tbody>
+              </table>
+            </template>
+          </div>
+        </div>
+      </li>
+    </template>
+  </ul>
+</div>

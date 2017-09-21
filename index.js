@@ -44,7 +44,6 @@ var _Plugin = function(){
   //funzione che mostra il pannello dell'editing
   this.showEditingPanel = function() {
     var panel = new EditingPanel();
-    console.log(panel);
     GUI.showPanel(panel);
   };
 

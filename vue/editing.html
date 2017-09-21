@@ -10,10 +10,10 @@
       <img height="30px" width="30px" :src="resourcesurl + 'images/undo.png'"/>
     </div>
   </div>
+  <div class="warning-message" v-html="state.message"></div>
   <toolbox
     :state="toolboxstate"
     :resourcesurl="resourcesurl"
     v-for="toolboxstate in state.toolboxes">
   </toolbox>
-  <div class="warning-message" v-html="state.message"></div>
 </div>

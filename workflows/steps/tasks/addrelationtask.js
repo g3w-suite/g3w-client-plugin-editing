@@ -17,13 +17,11 @@ var proto = AddRelationTask.prototype;
 
 // metodo eseguito all'avvio del tool
 proto.run = function(inputs, context) {
-  console.log(inputs, context);
-  var self = this;
+  var context = context;
   var d = $.Deferred();
   console.log('Add relation task run.......');
   GUI.setModal(false);
   var session = context.session;
-  console.log(session);
   var fatherField = context.fatherField;
   var childField = context.childField;
   //var style = this.editor._editingVectorStyle ? this.editor._editingVectorStyle.edit : null;
@@ -39,11 +37,16 @@ proto.run = function(inputs, context) {
   // gestisco l'evento
   this.pickFeatureInteraction.on('picked', function(e) {
     var feature = e.feature;
+    var originalFeature = feature.clone();
+    originalFeature.update();
     feature.set(childField, fatherFeature.get(fatherField));
     feature.update();
     session.push({
       layerId: layerId,
-      feature: e.feature
+      feature: feature
+    }, {
+      layerId: layerId,
+      feature: originalFeature
     });
     d.resolve(feature);
   });

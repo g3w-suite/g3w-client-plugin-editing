@@ -19,13 +19,13 @@ var vueComponentOptions = {
   methods: {
     undo: function() {
       var session = this.state.toolboxselected.getSession();
-      var relationsChanges = session.undo(); // questi solo le feature (cambiamenti) che devo applicare al features stores dei singoli layers coinvolti
-      //this.$options.service.applyChangesDependencies(session.getId(), dependenciesChanges);
+      var undoItems = session.undo(); // questi solo le feature (cambiamenti) che devo applicare al features stores dei singoli layers coinvolti
+      this.$options.service.undoRelations(undoItems)
     },
     redo: function() {
       var session = this.state.toolboxselected.getSession();
-      var relationsChanges = session.redo();
-      //this.$options.service.applyChangesDependencies(session.getId(), dependenciesChanges);
+      var redoItems = session.redo();
+      this.$options.service.redoRelations(redoItems)
     },
     commit: function(toolboxId) {
       var toolbox = this.$options.service.getToolBoxById(toolboxId);

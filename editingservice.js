@@ -98,6 +98,30 @@ inherit(EditingService, PluginService);
 
 var proto = EditingService.prototype;
 
+// udo delle relazioni
+proto.undoRelations = function(undoItems) {
+  var self = this;
+  var session;
+  var toolbox;
+  _.forEach(undoItems, function(items, toolboxId) {
+    toolbox = self.getToolBoxById(toolboxId);
+    session = toolbox.getSession();
+    session.undo(items);
+  })
+};
+
+// redo delle relazioni
+proto.redoRelations = function(redoItems) {
+  var self = this;
+  var session;
+  var toolbox;
+  _.forEach(redoItems, function(items, toolboxId) {
+    toolbox = self.getToolBoxById(toolboxId);
+    session = toolbox.getSession();
+    session.redo(items);
+  })
+};
+
 proto.getEditingLayer = function(id) {
   var toolbox = this.getToolBoxById(id);
   return toolbox.getEditingLayer();
@@ -175,7 +199,13 @@ proto.commitDirtyToolBoxes = function(toolboxId) {
     if (tid != toolboxId && toolbox.isDirty() && toolbox.hasDependencies()) {
       self.commit(toolbox)
         .fail(function() {
-          toolbox.revert();
+          toolbox.revert()
+            .then(function() {
+              // se ha dpiendenze vado a fare il revert delle modifche fatte
+              _.forEach(toolbox.getDependencies(), function(toolboxId) {
+                self.getToolBoxById(toolboxId).revert();
+              })
+            })
         })
     }
   })
@@ -198,6 +228,18 @@ proto._getEditableLayersFromCatalog = function() {
     EDITABLE: true
   });
   return layers;
+};
+
+proto.getRelationsByFeature = function(relations, feature) {
+  var self = this;
+  var toolbox;
+  var toolboxId;
+  var editingLayer;
+  _.forEach(relations, function(relation) {
+    toolboxId = relation.child;
+    toolbox = self.getToolBoxById(toolboxId);
+    editingLayer = toolbox.getEditingLayer();
+  })
 };
 
 proto.loadPlugin = function() {

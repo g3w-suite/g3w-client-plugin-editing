@@ -9,7 +9,6 @@ var RelationService = function() {
         d.resolve(feature);
       })
       .fail(function(err) {
-        console.log(err);
       });
     return d.promise();
   }
