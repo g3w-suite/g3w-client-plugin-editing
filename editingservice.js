@@ -110,6 +110,18 @@ proto.undoRelations = function(undoItems) {
   })
 };
 
+// udo delle relazioni
+proto.rollbackRelations = function(rollbackItems) {
+  var self = this;
+  var session;
+  var toolbox;
+  _.forEach(rollbackItems, function(items, toolboxId) {
+    toolbox = self.getToolBoxById(toolboxId);
+    session = toolbox.getSession();
+    session.rollback(items);
+  })
+};
+
 // redo delle relazioni
 proto.redoRelations = function(redoItems) {
   var self = this;
@@ -230,16 +242,20 @@ proto._getEditableLayersFromCatalog = function() {
   return layers;
 };
 
-proto.getRelationsByFeature = function(relations, feature) {
-  var self = this;
-  var toolbox;
-  var toolboxId;
-  var editingLayer;
-  _.forEach(relations, function(relation) {
-    toolboxId = relation.child;
-    toolbox = self.getToolBoxById(toolboxId);
-    editingLayer = toolbox.getEditingLayer();
-  })
+proto.getRelationsByFeature = function(relation, feature) {
+  var toolboxId = relation.getChild();
+  var relationChildField = relation.getChildField();
+  var relationFatherField= relation.getFatherField();
+  var featureValue = feature.get(relationFatherField);
+  var toolbox = this.getToolBoxById(toolboxId);
+  var editingLayer = toolbox.getEditingLayer();
+  var features = editingLayer.getSource().getFeatures();
+  var relations = [];
+  _.forEach(features, function(feature) {
+    if (feature.get(relationChildField) == featureValue)
+      relations.push(feature);
+  });
+  return relations;
 };
 
 proto.loadPlugin = function() {
@@ -249,6 +265,10 @@ proto.loadPlugin = function() {
 // ritorna i layer editabili presenti nel layerstore dell'editing
 proto.getLayers = function() {
   return this._layers;
+};
+
+proto.getLayersById = function(layerId) {
+  return this._layers[layerId];
 };
 
 // vado a recuperare il toolbox a seconda del suo id
@@ -310,15 +330,19 @@ proto.clearState = function() {
 };
 
 // funzione che filtra le relazioni in base a quelle presenti in editing
-proto.filterRelationsInEditing = function(relations) {
+proto.filterRelationsInEditing = function(relations, feature, isNew) {
   var self = this;
-  var relationinediting = [];
+  var relationsinediting = [];
+  var relationinediting;
   _.forEach(relations, function(relation) {
-    if (self._layers[relation.getChild()])
+    if (self._layers[relation.getChild()]) {
       // aggiungo lo state della relazione
-      relationinediting.push(relation.getState());
+      relationinediting = relation.getState();
+      relationinediting.relations = !isNew ? self.getRelationsByFeature(relation, feature): []; // le relazioni esistenti
+      relationsinediting.push(relationinediting);
+    }
   });
-  return relationinediting;
+  return relationsinediting;
 };
 
 // fa lo start di tutte le dipendenze del layer legato alla toolbox che si è avviato
@@ -421,6 +445,7 @@ proto.commit = function(toolbox) {
           }
         }).
         always(function() {
+          workflow.stop();
           d.resolve(toolbox);
         })
     })

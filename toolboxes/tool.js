@@ -43,7 +43,8 @@ proto.start = function() {
   };
   //passo al context la sessione
   options.context = {
-    session: this._session
+    session: this._session,
+    layer: this._session.getEditor().getLayer()
   };
   // funzione che mi permette di far ripartire
   // l'operatore o workflow qaundo è arrivato alla fine
@@ -59,9 +60,10 @@ proto.start = function() {
       .fail(function() {
         // in caso di mancato successo faccio il rollback
         // della sessione da vedere se li
+        var EditingService = require('../editingservice');
         self._session.rollback()
-          .then(function() {
-           //TODO
+          .then(function(relationsChanges) {
+            EditingService.rollbackRelations(relationsChanges);
           })
       })
       .always(function() {
@@ -81,7 +83,7 @@ proto.start = function() {
 //fa lo stop del tool
 proto.stop = function() {
   var self = this;
-  console.log('Stopping Tool ... ');
+  console.log('Stopping Tool ... ', this);
   if (this._op) {
     this._op.stop()
       .then(function() {

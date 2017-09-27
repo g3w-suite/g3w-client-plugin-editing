@@ -4,7 +4,8 @@
       <div  class="nano">
         <div class="nano-content">
           <relation
-            :state="relation"
+            :relation="relation"
+            :get-form-event-bus="getFormEventBus"
             v-for="relation in state.relations">
           </relation>
         </div>

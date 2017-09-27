@@ -1,61 +1,91 @@
 var RelationService = require('../relationservice');
-var InputsEventBus = g3wsdk.gui.vue.inputs.InputsEventBus;
+var GUI = g3wsdk.gui.GUI;
 var maxSubsetLength = 3;
 var RelationComponent = Vue.extend({
   template: require('./relation.html'),
-  props: ['index', 'state'],
+  props: ['relation', 'getFormEventBus'],
   data: function() {
     return {
-      relations: []
+      relations: this.relation.relations,
+      validate: {
+        valid: true
+      },
+      tools:  [],// tools che uguali per tutte le relazioni
+      showtoolsatindex: null,
+      resourcesurl: GUI.getResourcesUrl()
     }
   },
   methods: {
     relationAttributesSubset: function(relation) {
       var attributes = [];
-      _.forEach(relation.getProperties(), function (value, attribute) {
-        if (attribute != 'geometry') {
-          if (_.isArray(value)) return;
-          attributes.push({label: attribute, value: value})
-        }
+      _.forEach(this.service.getLayer().getFieldsWithValues(relation), function (field) {
+          if (_.isArray(field.value)) return;
+          attributes.push({label: field.label, value: field.value})
       });
       var end = Math.min(maxSubsetLength, attributes.length);
       return attributes.slice(0, end);
     },
     unlinkRelation: function(index) {
-      var relation = this.relations.splice(index, 1)[0];
-      relation.set(this.state.childField, null);
+      var self = this;
+      var relation = this.relations[index];
+      this.service.unlinkRelation(relation)
+        .then(function(relation) {
+          self.relations.splice(index, 1)[0];
+        })
     },
-    addNewRelationAndLink: function() {
-      alert('add new relation');
+    addRelationAndLink: function() {
+      var self = this;
+      this.service.addRelation()
+        .then(function(relation) {
+          self.relations.push(relation);
+        })
+    },
+    startTool: function(relationtool, index) {
+      var self = this;
+      var relation = this.relations[index];
+      this.service.startTool(relationtool, relation)
+        .then(function(relation) {
+          if (relationtool.getId() == 'deletefeature')
+            self.relations.splice(index, 1)
+        })
     },
     linkRelation: function() {
       var self = this;
-      this.service.addRelation(this.state)
-        .then(function(feature) {
-          self.relations.push(feature)
+      this.service.linkRelation()
+        .then(function(relation) {
+          self.relations.push(relation);
         })
     },
     updateExternalKeyValueRelations: function(input) {
-      var self = this;
-      if (input.name == this.state.fatherField) {
-        _.forEach(this.relations, function(relation) {
-          relation.set(self.state.childField, input.value);
-        })
-      }
+      this.service.updateExternalKeyValueRelations(input);
+    },
+    
+    showRelationTools: function(index) {
+      this.showtoolsatindex = this.showtoolsatindex == index ? null : index;
+    },
+    getRelationTools: function() {
+      return this.service.getRelationTools();
     }
   },
   watch: {
     // vado a verificare lo state
-    'relations': function() {
+    'state.relations': function() {
       Vue.nextTick(function() {
         // con l'aggiunta di relazioni vado a fare il nano scroll
         $(".g3w-form-component_relations .nano").nanoScroller();
       })
     }
   },
+  created: function() {
+    this.service = new RelationService({
+      relation: this.relation
+    });
+    this.service.init();
+  },
   mounted: function() {
-    this.service = new RelationService();
-    InputsEventBus.$on('changeinput', this.updateExternalKeyValueRelations);
+    var formEventBus = this.getFormEventBus();
+    formEventBus.$on('changeinput', this.updateExternalKeyValueRelations);
+    formEventBus.$emit('addtovalidate', this.validate)
   }
  });
 

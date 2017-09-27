@@ -54,15 +54,19 @@ var vueComponentOptions = {
       var toolbox = this._getToolBoxById(toolboxId);
       toolbox.save();
     },
-    setActiveTool: function(toolId, toolboxId) {
+    startActiveTool: function(toolId, toolboxId) {
+      console.log('start active tool');
       var tool;
       var toolbox = this._getToolBoxById(toolboxId);
+      // vado a verificare se l'id dell too attivo è diverso o meno da quello premuto
+      if (this.state.toolboxidactivetool && toolboxId != this.state.toolboxidactivetool) {
+        this._checkDirtyToolBoxes(this.state.toolboxidactivetool);
+        // vado a stoppare l'eventuale tool attivo del precedente toolbox
+        this._getToolBoxById(this.state.toolboxidactivetool).stopActiveTool();
+      }
+      this.state.toolboxidactivetool = toolboxId;
       tool = toolbox.getToolById(toolId);
       toolbox.setActiveTool(tool);
-      // vado a verificare se l'id dell too attivo è diverso o meno da quello premuto
-      if (this.state.toolboxidactivetool && toolboxId != this.state.toolboxidactivetool)
-        this._checkDirtyToolBoxes(this.state.toolboxidactivetool);
-      this.state.toolboxidactivetool = toolboxId;
     },
     stopActiveTool: function(toolboxId) {
       var toolbox = this._getToolBoxById(toolboxId);
@@ -121,7 +125,7 @@ var vueComponentOptions = {
     editingEventsBus.$on('starttoolbox', this.startToolBox);
     editingEventsBus.$on('stoptoolbox', this.stopToolBox);
     editingEventsBus.$on('savetoolbox', this.saveToolBox);
-    editingEventsBus.$on('setactivetool', this.setActiveTool);
+    editingEventsBus.$on('setactivetool', this.startActiveTool);
     editingEventsBus.$on('stopactivetool', this.stopActiveTool);
   }
 };

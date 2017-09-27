@@ -1,6 +1,6 @@
 var inherit = g3wsdk.core.utils.inherit;
 var base =  g3wsdk.core.utils.base;
-var Workflow = g3wsdk.core.workflow.Workflow;
+var EditingWorkflow = require('./editingworkflow');
 var DeleteFeatureStep = require('./steps/deletefeaturestep');
 var ConfirmStep = require('./steps/confirmstep');
 
@@ -12,7 +12,7 @@ function DeleteFeatureWorflow(options) {
   base(this, options);
 }
 
-inherit(DeleteFeatureWorflow, Workflow);
+inherit(DeleteFeatureWorflow, EditingWorkflow);
 
 var proto = DeleteFeatureWorflow.prototype;
 

@@ -6,6 +6,7 @@ var ToolComponent = Vue.extend({
   },
   methods: {
     toggletool: function() {
+      // se non è attivo lo attivo emettendo il segnale
       if (!this.state.active) {
         this.$emit('setactivetool', this.state.id);
       } else {

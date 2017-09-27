@@ -102,7 +102,6 @@ proto.getEditingLayer = function() {
   return this._editingLayer;
 };
 
-
 proto.setFather = function(bool) {
   this.state.editing.father = bool;
 };
@@ -356,9 +355,6 @@ proto.isSelected = function() {
 
 proto.setSelected = function(bool) {
   this.state.selected = _.isBoolean(bool) ? bool : false;
-  if (!this.state.selected) {
-    this.stopActiveTool();
-  }
 };
 
 proto.getTools = function() {
@@ -386,8 +382,9 @@ proto.enableTools = function(bool) {
 proto.setActiveTool = function(tool) {
   // prima stoppo l'eventuale active tool
   this.stopActiveTool(tool);
-  tool.start();
+  // faccio partire lo start del tool
   this.state.activetool = tool;
+  tool.start();
   var message = this.getToolMessage();
   this.setToolMessage(message);
 };

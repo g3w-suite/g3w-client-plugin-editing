@@ -11,6 +11,7 @@ function ModifyGeometryVertexTask(options){
   this._deleteCondition = options.deleteCondition || undefined;
   this._snap = options.snap || null;
   this._snapInteraction = null;
+  this._layer = null;
   base(this, options);
 }
 
@@ -21,12 +22,13 @@ var proto = ModifyGeometryVertexTask.prototype;
 
 proto.run = function(inputs, context) {
   var d = $.Deferred();
-  var layer = inputs.layer;
+  this._layer = inputs.layer;
   var session = context.session;
+  var layer = context.layer;
   var originalFeature,
     newFeature;
   this._feature = inputs.features[0];
-  this._originalStyle = layer.getStyle();
+  this._originalStyle = this._layer.getStyle();
   var style = [
     new ol.style.Style({
       stroke : new ol.style.Stroke({
@@ -70,10 +72,10 @@ proto.run = function(inputs, context) {
       newFeature.update();
       // vado ad aggiungere la featurea alla sessione (parte temporanea)
       session.push({
-        layerId: session.getId(),
+        layerId: layer.getId(),
         feature: newFeature
       }, {
-        layerId: session.getId(),
+        layerId: layer.getId(),
         feature:originalFeature
       });
       //self._selectInteraction.getFeatures().clear();

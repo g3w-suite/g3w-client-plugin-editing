@@ -1,15 +1,15 @@
 var inherit = g3wsdk.core.utils.inherit;
 var base =  g3wsdk.core.utils.base;
 var EditingStep = require('./editingstep');
-var AddRelationTask = require('./tasks/addrelationtask');
+var LinkRelationTask = require('./tasks/linkrelationtask');
 
-var AddRelationStep = function(options) {
+var LinkRelationStep = function(options) {
   options = options || {};
-  options.task = new AddRelationTask();
+  options.task = new LinkRelationTask();
   options.help = "Seleziona la feature che vuoi mettere in relazione";
   base(this, options)
 };
 
-inherit(AddRelationStep, EditingStep);
+inherit(LinkRelationStep, EditingStep);
 
-module.exports = AddRelationStep;
+module.exports = LinkRelationStep;

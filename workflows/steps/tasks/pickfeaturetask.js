@@ -2,6 +2,7 @@ var inherit = g3wsdk.core.utils.inherit;
 var base =  g3wsdk.core.utils.base;
 var PickFeatureInteraction = g3wsdk.ol3.interactions.PickFeatureInteraction;
 var EditingTask = require('./editingtask');
+var GUI = g3wsdk.gui.GUI;
 
 function PickFeatureTask(options) {
   this.pickFeatureInteraction = null;
@@ -20,8 +21,10 @@ proto.run = function(inputs, context) {
   //var style = this.editor._editingVectorStyle ? this.editor._editingVectorStyle.edit : null;
   // vado a settare i layers su cui faccio l'interacion agisce
   var layers = [inputs.layer];
+  var features = inputs.features.length ? inputs.features : null;
   this.pickFeatureInteraction = new PickFeatureInteraction({
-    layers: layers
+    layers: layers,
+    features: features
   });
   // aggiungo
   this.addInteraction(this.pickFeatureInteraction);
@@ -35,7 +38,8 @@ proto.run = function(inputs, context) {
 };
 
 // metodo eseguito alla disattivazione del tool
-proto.stop = function(){
+proto.stop = function() {
+  console.log('Stop pick feature');
   this.removeInteraction(this.pickFeatureInteraction);
   this.pickFeatureInteraction = null;
   return true;

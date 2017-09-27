@@ -100,6 +100,7 @@ proto.run = function(inputs, context) {
   var self = this;
   var d = $.Deferred();
   this._layer = inputs.layer;
+  var layer = context.layer;
   //recupero la sessione dal context
   var session = context.session;
   this._selectInteraction = new ol.interaction.Select({
@@ -124,13 +125,12 @@ proto.run = function(inputs, context) {
     // dico di cancellarla (la feature non viene cancellatata ma aggiornato il suo stato
     feature.delete();
     session.push({
-      layerId: session.getId(),
+      layerId: layer.getId(),
       feature: feature
     });
     //dovrei aggiungere qui qualcosa per salvare temporaneamente quesa modifica sulla sessione al fine di
     // portare tutte le modifiche quando viene fatto il save della sessione
     // ritorno come outpu l'input layer che sarà modificato
-    inputs.features.push(feature);
     d.resolve(inputs);
   });
   return d.promise();

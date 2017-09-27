@@ -12,12 +12,15 @@ var RelationsComponentObj = {
   methods: {
     isValidRelationsNumber: function(idx) {
       this.state.validate.valid = this.state.relations[idx].length >= this.state.relations[idx].TYPE;
+    },
+    getFormEventBus: function() {
+      return this.getService().getFormEventBus();
     }
   },
   mounted: function() {
     //vado a verificare il numero di relationi
     // emetto il segnale che il form riconoscerà come agiunta a validazione
-    this.$emit('addtovalidate', this.state.validate)
+    //this.$emit('addtovalidate', this.state.validate)
   }
 };
 
