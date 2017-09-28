@@ -28,10 +28,10 @@ proto.run = function(inputs, context) {
   var session = context.session;
   // vado a recuperare i
   var layer = context.layer;
+  var layerId = layer.getId();
   var excludeFields = context.excludeFields;
   var feature = inputs.features[inputs.features.length - 1];
   var originalFeature = feature.clone();
-  originalFeature.update();
   var fields = layer.getFieldsWithValues(feature, {
     exclude: excludeFields
   });
@@ -63,15 +63,7 @@ proto.run = function(inputs, context) {
           layer.setFieldsWithValues(feature, fields);
           // verifico se non è nuovo
           if (!feature.isNew()) {
-            // lo setto come update
-            feature.update();
-            session.push({
-              layerId: layer.getId(),
-              feature: feature
-            }, {
-              layerId: layer.getId(),
-              feature:originalFeature
-            });
+            session.pushUpdate(layerId, feature, originalFeature);
           } 
           GUI.setModal(false);
           d.resolve(inputs);

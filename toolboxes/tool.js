@@ -83,7 +83,7 @@ proto.start = function() {
 //fa lo stop del tool
 proto.stop = function() {
   var self = this;
-  console.log('Stopping Tool ... ', this);
+  console.log('Stopping Tool ... ');
   if (this._op) {
     this._op.stop()
       .then(function() {

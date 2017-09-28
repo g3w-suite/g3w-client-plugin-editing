@@ -31,7 +31,8 @@ proto.run = function(inputs, context) {
   // gestisco l'evento
   this.pickFeatureInteraction.on('picked', function(e) {
     var feature = e.feature;
-    inputs.features.push(feature);
+    if (!features)
+      inputs.features.push(feature);
     d.resolve(inputs);
   });
   return d.promise()

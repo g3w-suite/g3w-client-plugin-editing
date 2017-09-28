@@ -5,9 +5,7 @@ var RelationsComponentObj = {
     'relation': RelationComponent
   },
   data: function() {
-    return {
-      state: null
-    }
+    return {}
   },
   methods: {
     isValidRelationsNumber: function(idx) {

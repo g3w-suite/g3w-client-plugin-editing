@@ -35,6 +35,8 @@ proto.run = function(inputs, context) {
   });
   var features = new ol.Collection(inputs.features);
   var feature = inputs.features[0];
+  var layer = context.layer;
+  var layerId = layer.getId();
   feature.setStyle(style);
   this._translateInteraction = new ol.interaction.Translate({
     features: features,
@@ -46,21 +48,12 @@ proto.run = function(inputs, context) {
     var feature = e.features.getArray()[0];
     // repndo la feature di partenza
     originalFeature = feature.clone();
-    originalFeature.update();
   });
   
   this._translateInteraction.on('translateend',function(e) {
     var feature = e.features.getArray()[0];
     var newFeature = feature.clone();
-    newFeature.update();
-    // vado ad aggiungere la featurea alla sessione (parte temporanea)
-    session.push({
-      layerId: session.getId(),
-      feature: newFeature
-    }, {
-      layerId: session.getId(),
-      feature:originalFeature
-    });
+    session.pushUpdate(layerId, newFeature, originalFeature);
     // ritorno come output l'input layer che sarà modificato
     inputs.features.push(newFeature);
     feature.setStyle(originalStyle);

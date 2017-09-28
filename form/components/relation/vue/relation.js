@@ -1,24 +1,23 @@
 var RelationService = require('../relationservice');
-var GUI = g3wsdk.gui.GUI;
 var maxSubsetLength = 3;
+var service;
 var RelationComponent = Vue.extend({
   template: require('./relation.html'),
-  props: ['relation', 'getFormEventBus'],
+  props: ['relation', 'resourcesurl', 'formeventbus'],
   data: function() {
     return {
       relations: this.relation.relations,
       validate: {
         valid: true
       },
-      tools:  [],// tools che uguali per tutte le relazioni
-      showtoolsatindex: null,
-      resourcesurl: GUI.getResourcesUrl()
+      showtoolsatindex: null
     }
   },
   methods: {
     relationAttributesSubset: function(relation) {
       var attributes = [];
-      _.forEach(this.service.getLayer().getFieldsWithValues(relation), function (field) {
+      var layer = service.getLayer();
+      _.forEach(layer.getFieldsWithValues(relation), function (field) {
           if (_.isArray(field.value)) return;
           attributes.push({label: field.label, value: field.value})
       });
@@ -26,45 +25,26 @@ var RelationComponent = Vue.extend({
       return attributes.slice(0, end);
     },
     unlinkRelation: function(index) {
-      var self = this;
-      var relation = this.relations[index];
-      this.service.unlinkRelation(relation)
-        .then(function(relation) {
-          self.relations.splice(index, 1)[0];
-        })
+      service.unlinkRelation(index)
     },
     addRelationAndLink: function() {
-      var self = this;
-      this.service.addRelation()
-        .then(function(relation) {
-          self.relations.push(relation);
-        })
+      service.addRelation();
     },
     startTool: function(relationtool, index) {
-      var self = this;
-      var relation = this.relations[index];
-      this.service.startTool(relationtool, relation)
-        .then(function(relation) {
-          if (relationtool.getId() == 'deletefeature')
-            self.relations.splice(index, 1)
-        })
+      service.startTool(relationtool, index)
     },
     linkRelation: function() {
-      var self = this;
-      this.service.linkRelation()
-        .then(function(relation) {
-          self.relations.push(relation);
-        })
+      service.linkRelation();
     },
     updateExternalKeyValueRelations: function(input) {
-      this.service.updateExternalKeyValueRelations(input);
+      service.updateExternalKeyValueRelations(input);
     },
-    
+
     showRelationTools: function(index) {
       this.showtoolsatindex = this.showtoolsatindex == index ? null : index;
     },
     getRelationTools: function() {
-      return this.service.getRelationTools();
+      return service.getRelationTools();
     }
   },
   watch: {
@@ -77,15 +57,15 @@ var RelationComponent = Vue.extend({
     }
   },
   created: function() {
-    this.service = new RelationService({
+    //vado a settare il servizio
+    service = new RelationService({
       relation: this.relation
     });
-    this.service.init();
+    service.init();
   },
   mounted: function() {
-    var formEventBus = this.getFormEventBus();
-    formEventBus.$on('changeinput', this.updateExternalKeyValueRelations);
-    formEventBus.$emit('addtovalidate', this.validate)
+    this.formeventbus.$on('changeinput', this.updateExternalKeyValueRelations);
+    this.formeventbus.$emit('addtovalidate', this.validate)
   }
  });
 

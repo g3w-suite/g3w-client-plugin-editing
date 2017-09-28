@@ -37,6 +37,7 @@ proto.run = function(inputs, context) {
   //recupero la sessione dal context
   var session = context.session;
   var layer = context.layer;
+  var layerId = layer.getId();
   // vado a rrecuperare la primary key del layer
   var pk = layer.getPk();
   // qui vado a valutare il tipo di layer
@@ -79,16 +80,13 @@ proto.run = function(inputs, context) {
         // verifico se la pk è editabile o meno
         layer.isPkEditable() ?  feature.setNew() : feature.setTemporaryId();
         // lo setto come add feature lo state
-        feature.add();
+
         // vado a aggiungerla
         source.addFeature(feature);
         //source.readFeatures().push(feature);
         // devo creare un clone per evitare che quando eventualmente sposto la feature appena aggiunta
         // questa non sovrascriva le feature nuova originale del primo update
-        session.push({
-          layerId : layer.getId(),
-          feature: feature
-        });
+        session.pushAdd(layerId, feature);
         inputs.features.push(feature);
         d.resolve(inputs);
       });

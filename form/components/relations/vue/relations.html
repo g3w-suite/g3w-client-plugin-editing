@@ -5,7 +5,8 @@
         <div class="nano-content">
           <relation
             :relation="relation"
-            :get-form-event-bus="getFormEventBus"
+            :resourcesurl="resourcesurl"
+            :formeventbus="formeventbus"
             v-for="relation in state.relations">
           </relation>
         </div>

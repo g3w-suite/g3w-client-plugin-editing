@@ -1,9 +1,7 @@
-var RelationsService = function(options) {
-  options = options || {};
-  this._formEventBus = options.formEventBus;
+var RelationsService = function() {
   this.state = {
     relations: []
-  }
+  };
 };
 
 var proto = RelationsService.prototype;

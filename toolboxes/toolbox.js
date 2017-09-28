@@ -75,6 +75,14 @@ function ToolBox(options) {
     // passo id del toolbox e le opzioni per far partire la sessione
     EditingService.getLayersDependencyFeatures(self.state.id, options);// dove le opzioni possono essere il filtro;
   });
+
+  // in ascolto dell'onafter start della sessione così se avviata
+  // vado ad associare le features del suo featuresstore al ol.layer.Vector
+  this._session.onafter('stop', function() {
+    var EditingService = require('../editingservice');
+    EditingService.stopSessionDependencies(self.state.id);
+  });
+
   // mapservice mi servirà per fare richieste al server sulle features (bbox) quando agisco sull mappa
   this._mapService = GUI.getComponent('map').getService();
   //eventi per catturare le feature
@@ -220,6 +228,8 @@ proto.stop = function() {
         self.state.enabled = false;
         self.state.loading = false;
         self._getFeaturesOption = {};
+        // spengo il tool attivo
+        self.stopActiveTool();
         // seci sono tool attivi vado a spengere
         self._setToolsEnabled(false);
         self.clearToolboxMessages();

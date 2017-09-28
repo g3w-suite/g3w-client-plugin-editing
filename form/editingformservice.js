@@ -1,3 +1,4 @@
+var GUI = g3wsdk.gui.GUI;
 var RelationsComponentObj = require('./components/relations/vue/relations');
 var RelationsService = require('./components/relations/relationsservice');
 var EdtingFormService = function(options) {
@@ -12,7 +13,7 @@ var EdtingFormService = function(options) {
   // riceve gli inpust del form principale
   this._inputs = options.inputs || {};
   // riceve l'event bus del form pricipale
-  var formEventBus = options.formEventBus || null;
+  this._formEventBus = options.formEventBus || null;
   // sono le relazioni effettive presenti
   var relations = [];
   var formLayer = this._context.layer;
@@ -25,9 +26,7 @@ var EdtingFormService = function(options) {
     // le relazioni in questione sono oggetti Realtion che contengono le informazioni nello stato delle composizione della relazione
   }
   // istanzio il servizio delle relazioni
-  this._relationsService = new RelationsService({
-    formEventBus: formEventBus
-  });
+  this._relationsService = new RelationsService();
   // cliclo sulle relazioni che ho eventualmente trovato
   _.forEach(relations, function(relation) {
     // la realtione è di tipo Relation
@@ -46,7 +45,9 @@ var EdtingFormService = function(options) {
       },
       data: function() {
         return {
-          state: self._relationsService.state
+          state: self._relationsService.state,
+          resourcesurl: GUI.getResourcesUrl(),
+          formeventbus: self._formEventBus
         }
       }
     })

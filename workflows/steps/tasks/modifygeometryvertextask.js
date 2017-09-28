@@ -25,6 +25,7 @@ proto.run = function(inputs, context) {
   this._layer = inputs.layer;
   var session = context.session;
   var layer = context.layer;
+  var layerId = layer.getId();
   var originalFeature,
     newFeature;
   this._feature = inputs.features[0];
@@ -62,22 +63,13 @@ proto.run = function(inputs, context) {
   this._modifyInteraction.on('modifystart', function(e) {
     var feature = e.features.getArray()[0];
     originalFeature = feature.clone();
-    originalFeature.update();
   });
   
   this._modifyInteraction.on('modifyend',function(e){
     var feature = e.features.getArray()[0];
     if (feature.getGeometry().getExtent() != originalFeature.getGeometry().getExtent()) {
       newFeature = feature.clone();
-      newFeature.update();
-      // vado ad aggiungere la featurea alla sessione (parte temporanea)
-      session.push({
-        layerId: layer.getId(),
-        feature: newFeature
-      }, {
-        layerId: layer.getId(),
-        feature:originalFeature
-      });
+      session.pushUpdate(layerId, newFeature, originalFeature);
       //self._selectInteraction.getFeatures().clear();
       inputs.features.push(newFeature);
       // ritorno come outpu l'input layer che sarà modificato

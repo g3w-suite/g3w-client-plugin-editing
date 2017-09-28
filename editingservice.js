@@ -110,7 +110,7 @@ proto.undoRelations = function(undoItems) {
   })
 };
 
-// udo delle relazioni
+// undo delle relazioni
 proto.rollbackRelations = function(rollbackItems) {
   var self = this;
   var session;
@@ -223,18 +223,6 @@ proto.commitDirtyToolBoxes = function(toolboxId) {
   })
 };
 
-// funzione che mi rwsituisce la toolbox by Id
-proto.getToolBoxById = function(id) {
-  var toolbox = null;
-  _.forEach(this._toolboxes, function(_toolbox) {
-    if (_toolbox.getId() == id) {
-      toolbox = _toolbox;
-      return false;
-    }
-  });
-  return toolbox;
-};
-
 proto._getEditableLayersFromCatalog = function() {
   var layers = CatalogLayersStoresRegistry.getLayers({
     EDITABLE: true
@@ -339,10 +327,25 @@ proto.filterRelationsInEditing = function(relations, feature, isNew) {
       // aggiungo lo state della relazione
       relationinediting = relation.getState();
       relationinediting.relations = !isNew ? self.getRelationsByFeature(relation, feature): []; // le relazioni esistenti
+      relationinediting.validate = {
+        valid:true
+      };
       relationsinediting.push(relationinediting);
+      
     }
   });
   return relationsinediting;
+};
+
+proto.stopSessionDependencies = function(layerId) {
+  var self = this;
+  var relationLayers = this._layers[layerId].getChildren();
+  var toolbox;
+  _.forEach(relationLayers, function(id) {
+    toolbox = self.getToolBoxById(id);
+    if (toolbox && !toolbox.inEditing())
+      self._sessions[id].stop();
+  })
 };
 
 // fa lo start di tutte le dipendenze del layer legato alla toolbox che si è avviato
@@ -450,6 +453,7 @@ proto.commit = function(toolbox) {
         })
     })
     .fail(function() {
+      workflow.stop();
       d.reject(toolbox);
     });
   return d.promise();

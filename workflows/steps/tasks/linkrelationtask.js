@@ -37,11 +37,10 @@ proto.run = function(inputs, context) {
   this.addInteraction(this.pickFeatureInteraction);
   // gestisco l'evento
   this.pickFeatureInteraction.on('picked', function(e) {
-    var feature = e.feature;
-    var originalFeature = feature.clone();
-    originalFeature.update();
-    inputs.features.push(originalFeature);
-    inputs.features.push(feature);
+    var relation = e.feature;
+    var originalRelation = relation.clone();
+    inputs.features.push(relation);
+    inputs.features.push(originalRelation);
     GUI.setModal(true);
     if (previousPercContent)
       GUI.hideContent(false, previousPercContent);
