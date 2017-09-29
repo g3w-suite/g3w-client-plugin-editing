@@ -38,10 +38,28 @@
                 <span>{{attribute.value}}</span>
               </td>
               <td>
-                <i style="color:#3c8dbc; cursor:pointer; font-size:10px; padding:5px; border:2px solid #3c8dbc; border-radius:15px;" class="fa fa-chain-broken pull-right" @click="unlinkRelation(index)" aria-hidden="true"></i>
+                <i v-if="!fieldrequired" style="color:#3c8dbc; cursor:pointer; font-size:10px; padding:5px; border:2px solid #3c8dbc; border-radius:15px;" class="fa fa-chain-broken pull-right" @click="unlinkRelation(index)" aria-hidden="true"></i>
               </td>
               <td>
-                <i style="color:#3c8dbc; cursor:pointer; font-size:10px; padding:5px; border:2px solid #3c8dbc; border-radius:15px;" class="fa fa-cogs pull-right" @click="showRelationTools(index)" aria-hidden="true"></i>
+                <div class="dropup">
+                  <i style="color:#3c8dbc;
+                  cursor:pointer; font-size:10px;
+                  padding:5px; border:2px solid #3c8dbc;
+                   border-radius:15px;"
+                     data-toggle="dropdown"
+                     aria-haspopup="true" aria-expanded="false"
+                     class="dropdown-toggle fa fa-cogs pull-right"
+                     aria-hidden="true"></i>
+                  <div class="dropdown-menu pull-right" style="margin-bottom:5px; box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.5) !important;" :style="{'min-width': getRelationTools().length*40 + 'px !important' }">
+                    <div v-for="relationtool in getRelationTools()" class="editbtn enabled" style="display:inline-block">
+                      <img height="20px" width="20px"
+                           @click="startTool(relationtool, index)"
+                           :alt="relationtool.state.name"
+                           :title="relationtool.state.name"
+                           :src="resourcesurl + 'images/'+ relationtool.state.icon"/>
+                    </div>
+                  </div>
+                </div>
               </td>
             </tr>
           </template>

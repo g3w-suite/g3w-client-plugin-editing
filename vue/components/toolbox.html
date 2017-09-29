@@ -2,18 +2,18 @@
   <div :class="{'disableddiv' : !isLayerReady }" :id="'id_toolbox_'+ state.id">
     <div @click="select" class="panel panel-primary" :class="{ 'toolboxselected': state.selected }">
       <div  class="panel-heading"  style="position:relative; height: 40px;" :style="{ background: state.color}" >
+        <div v-if="father" style="margin-right:5px;display: inline-block" class="enabled editbtn dropdown">
+          <img  height="20px" width="20px" class="dropbtn" data-toggle="dropdown" :src="resourcesurl + 'images/relation.png'"/>
+          <div class="dropdown-content" style="padding: 5px;">
+            <span v-for="dependency in state.editing.dependencies" style="color: black" >{{ dependency }}</span>
+          </div>
+        </div>
         <h3 class="panel-title" style="display: inline-block;">
           {{ state.title }}
         </h3>
         <div class="editbtn" style="position:absolute; right:0;" :class="{'enabled' : isLayerReady,  toggled : state.editing.on}" >
           <img height="20px" width="20px" @click="toggleEditing" :src="resourcesurl + 'images/edit.png'"/>
         </div>
-        <!--<div v-if="father" style="position:absolute; margin-left: 5px;" class="enabled editbtn dropdown">-->
-          <!--<img height="20px" width="20px" data-toggle="dropdown" :src="resourcesurl + 'images/relation.png'"/>-->
-          <!--<ul class="dropdown-menu">-->
-            <!--<li v-for="dependency in state.editing.dependencies" style="color: black" >{{ dependency }}</li>-->
-          <!--</ul>-->
-        <!--</div>-->
       </div>
       <div class="panel-body">
         <tool

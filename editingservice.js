@@ -176,6 +176,10 @@ proto._createToolBoxDependencies = function() {
   })
 };
 
+proto.isFieldRequired = function(layerId, fieldName) {
+  return this._layers[layerId].isFieldRequired(fieldName);
+};
+
 proto._getToolBoxEditingDependencies = function(layer) {
   var self = this;
   var relationLayers = _.merge(layer.getChildren(), layer.getFathers());

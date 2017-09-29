@@ -13,10 +13,12 @@ var RELATIONTOOLS = {
 var RelationService = function(options) {
   this.relation = options.relation;
   this._relationTools = [];
+  this._isExternalFieldRequired = false;
   this.init = function () {
     var self = this;
     this._layerId = this.relation.child;
     this._relationTools = [];
+    this._isExternalFieldRequired = this._checkIfExternalFieldRequired();
     this._currentWorkflow = WorkflowsStack.getLast();
     this._currentWorkflowSession = this._currentWorkflow.getSession();
     this._currentWorkflowInputs = this._currentWorkflow.getInputs();
@@ -77,8 +79,9 @@ proto.startTool = function(relationtool, index) {
     })
   }));
 
-  var percContent = GUI.hideContent(true);
-
+  var percContent = this._bindEscKeyUp(workflow,  function() {
+    relation.setStyle(originalStyle);
+  });
   workflow.start(options)
     .then(function(outputs) {
       if (relationtool.getId() == 'deletefeature')
@@ -91,6 +94,7 @@ proto.startTool = function(relationtool, index) {
       relation.setStyle(originalStyle);
       workflow.stop();
       GUI.hideContent(false, percContent);
+      self._unbindEscKeyUp();
       GUI.setModal(true);
     });
   return d.promise()
@@ -128,28 +132,71 @@ proto.updateExternalKeyValueRelations = function(input) {
   }
 };
 
+// funzione che gestisce l'evento keyup esc
+proto._escKeyUpHandler = function(evt) {
+  if (evt.keyCode === 27) {
+    evt.data.workflow.stop();
+    GUI.hideContent(false, evt.data.percContent);
+    evt.data.callback()
+  }
+};
+
+// funzione che fa unbind dell'evento esc key
+proto._unbindEscKeyUp = function() {
+  $(document).unbind('keyup', this._escKeyUpHandler);
+};
+
+proto._bindEscKeyUp = function(workflow, callback) {
+  var percContent = GUI.hideContent(true);
+  $(document).one('keyup', {
+    workflow: workflow,
+    percContent: percContent,
+    callback: callback || function() {}
+  }, this._escKeyUpHandler);
+  return percContent;
+};
+
 proto.linkRelation = function() {
   var self = this;
   var workflow = new LinkRelationWorkflow();
+  var percContent = this._bindEscKeyUp(workflow);
   var options = this._createWorkflowOptions();
   workflow.start(options)
     .then(function(outputs) {
       var relation = outputs.features[0];
       var originalRelation = outputs.features[1];
-      if (self.relation.relations.indexOf(originalRelation) == -1) {
+      var relationAlreadyLinked = false;
+      _.forEach(self.relation.relations, function(rel) {
+        if (rel.getId() == relation.getId()) {
+          relationAlreadyLinked = true;
+          return false;
+        }
+      });
+      if (!relationAlreadyLinked) {
         relation.set(self.relation.childField, self._curentFeatureFatherFieldValue);
         self._currentWorkflowSession.pushUpdate(self._layerId , relation, originalRelation);
         self.relation.relations.push(relation);
       } else {
         GUI.notify.warning('Relazione già presente');
-        d.reject()
       }
     })
     .fail(function(err) {
     })
     .always(function() {
       workflow.stop();
+      GUI.hideContent(false, percContent);
+      self._unbindEscKeyUp()
     });
+};
+
+proto._checkIfExternalFieldRequired = function() {
+  var layerId = this.relation.child;
+  var fieldName = this.relation.childField;
+  return this.getEditingService().isFieldRequired(layerId, fieldName);
+};
+
+proto.isRequired = function() {
+  return this._isExternalFieldRequired;
 };
 
 proto.unlinkRelation = function(index) {
@@ -182,6 +229,7 @@ proto.addRelation = function() {
   var AddFeatureWorkflow = require('../../../workflows/addfeatureworkflow');
   GUI.setModal(false);
   var workflow = new AddFeatureWorkflow();
+  var percContent = this._bindEscKeyUp(workflow);
   var options = this._createWorkflowOptions();
   workflow.start(options)
     .then(function(outputs) {
@@ -192,6 +240,8 @@ proto.addRelation = function() {
     .fail(function(err) {
     })
     .always(function() {
+      GUI.hideContent(false, percContent);
+      self._unbindEscKeyUp();
       workflow.stop();
       GUI.setModal(true);
     });

@@ -19,17 +19,11 @@ var proto = LinkRelationTask.prototype;
 proto.run = function(inputs, context) {
   var context = context;
   var d = $.Deferred();
-  var previousPercContent;
   console.log('Add relation task run.......');
-  if (context.isChild)
-    previousPercContent = GUI.hideContent(true);
   GUI.setModal(false);
-  var session = context.session;
-  var childField = context.childField;
   //var style = this.editor._editingVectorStyle ? this.editor._editingVectorStyle.edit : null;
   // vado a settare i layers su cui faccio l'interacion agisce
   var layers = [inputs.layer];
-  var layerId = inputs.layer.get('id');
   this.pickFeatureInteraction = new PickFeatureInteraction({
     layers: layers
   });
@@ -42,8 +36,6 @@ proto.run = function(inputs, context) {
     inputs.features.push(relation);
     inputs.features.push(originalRelation);
     GUI.setModal(true);
-    if (previousPercContent)
-      GUI.hideContent(false, previousPercContent);
     d.resolve(inputs);
   });
   return d.promise()

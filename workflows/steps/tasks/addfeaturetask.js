@@ -30,9 +30,6 @@ var proto = AddFeatureTask.prototype;
 proto.run = function(inputs, context) {
   console.log('Add task run.......');
   var d = $.Deferred();
-  if (context.isChild) {
-    GUI.hideContent(true);
-  }
   this._layer = inputs.layer;
   //recupero la sessione dal context
   var session = context.session;

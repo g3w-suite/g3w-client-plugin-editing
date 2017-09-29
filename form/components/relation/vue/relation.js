@@ -39,12 +39,19 @@ var RelationComponent = Vue.extend({
     updateExternalKeyValueRelations: function(input) {
       service.updateExternalKeyValueRelations(input);
     },
-
+    isRequired: function() {
+      return service.isRequired();
+    },
     showRelationTools: function(index) {
       this.showtoolsatindex = this.showtoolsatindex == index ? null : index;
     },
     getRelationTools: function() {
       return service.getRelationTools();
+    }
+  },
+  computed: {
+    fieldrequired: function() {
+      return service.isRequired();
     }
   },
   watch: {
