@@ -22,17 +22,6 @@
           </thead>
           <tbody>
           <template v-for="(relation, index) in relations">
-            <tr v-if="index == showtoolsatindex">
-              <td :colspan="relationtool.length" v-for="relationtool in getRelationTools()" style="background-color: #ffffff">
-                <div class="editbtn enabled" >
-                  <img height="20px" width="20px"
-                       @click="startTool(relationtool, index)"
-                       :alt="relationtool.state.name"
-                       :title="relationtool.state.name"
-                       :src="resourcesurl + 'images/'+ relationtool.state.icon"/>
-                </div>
-              </td>
-            </tr>
             <tr class="featurebox-header" >
               <td v-for="attribute in relationAttributesSubset(relation)">
                 <span>{{attribute.value}}</span>

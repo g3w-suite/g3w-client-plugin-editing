@@ -1,5 +1,4 @@
 var GUI = g3wsdk.gui.GUI;
-var WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 var LinkRelationWorkflow = require('../../../workflows/linkrelationworkflow');
 
 var RELATIONTOOLS = {
@@ -11,31 +10,24 @@ var RELATIONTOOLS = {
 
 // servizio che in base alle relazioni (configurazione)
 var RelationService = function(options) {
+  var self = this;
   this.relation = options.relation;
   this._relationTools = [];
   this._isExternalFieldRequired = false;
-  this.init = function () {
-    var self = this;
-    this._layerId = this.relation.child;
-    this._relationTools = [];
-    this._isExternalFieldRequired = this._checkIfExternalFieldRequired();
-    this._currentWorkflow = WorkflowsStack.getLast();
-    this._currentWorkflowSession = this._currentWorkflow.getSession();
-    this._currentWorkflowInputs = this._currentWorkflow.getInputs();
-    this._currentFeature = this._currentWorkflowInputs.features[this._currentWorkflowInputs.features.length - 1];
-    this._curentFeatureFatherFieldValue = this._currentFeature.get(this.relation.fatherField);
-    var relationLayerType = this.getLayer().getGeometryType();
-    var allrelationtools = this.getEditingService().getToolBoxById(this.relation.child).getTools();
-    _.forEach(allrelationtools, function (tool) {
-      if(_.concat(RELATIONTOOLS[relationLayerType], RELATIONTOOLS.default).indexOf(tool.getId()) != -1) {
-        self._relationTools.push(_.cloneDeep(tool));
-      }
-    });
-  };
+  this._layerId = this.relation.child;
+  this._relationTools = [];
+  this._isExternalFieldRequired = this._checkIfExternalFieldRequired();
+  this._curentFeatureFatherFieldValue = this.getCurrentWorkflow().feature.get(this.relation.fatherField);
+  var relationLayerType = this.getLayer().getGeometryType();
+  var allrelationtools = this.getEditingService().getToolBoxById(this.relation.child).getTools();
+  _.forEach(allrelationtools, function (tool) {
+    if(_.concat(RELATIONTOOLS[relationLayerType], RELATIONTOOLS.default).indexOf(tool.getId()) != -1) {
+      self._relationTools.push(_.cloneDeep(tool));
+    }
+  });
 };
 
 var proto = RelationService.prototype;
-
 
 proto.getRelationTools = function() {
   return this._relationTools
@@ -47,7 +39,6 @@ proto.startTool = function(relationtool, index) {
   var relation = this.relation.relations[index];
   GUI.setModal(false);
   var workflows = {
-    AddFeatureWorkflow: require('../../../workflows/addfeatureworkflow'),
     ModifyGeometryVertexWorkflow: require('../../../workflows/modifygeometryvertexworkflow'),
     MoveFeatureWorkflow : require('../../../workflows/movefeatureworkflow'),
     DeleteFeatureWorkflow : require('../../../workflows/deletefeatureworkflow'),
@@ -82,10 +73,18 @@ proto.startTool = function(relationtool, index) {
   var percContent = this._bindEscKeyUp(workflow,  function() {
     relation.setStyle(originalStyle);
   });
-  workflow.start(options)
-    .then(function(outputs) {
-      if (relationtool.getId() == 'deletefeature')
+  var start;
+  if (workflow instanceof workflows.DeleteFeatureWorkflow || workflow instanceof workflows.EditFeatureAttributesWorkflow )
+    start  = workflow.startFromLastStep(options);
+  else
+    start = workflow.start(options);
+  start.then(function(outputs) {
+      if (relationtool.getId() == 'deletefeature') {
+        self.getEditingService().getEditingLayer(self._layerId).getSource().removeFeature(relation);
+        self.getCurrentWorkflow().session.pushDelete(self._layerId, relation);
         self.relation.relations.splice(index, 1)
+      }
+      d.resolve(outputs)
     })
     .fail(function(err) {
       d.reject(err)
@@ -100,7 +99,6 @@ proto.startTool = function(relationtool, index) {
   return d.promise()
 };
 
-
 proto.getLayer = function() {
   return this.getEditingService().getLayersById(this.relation.child);
 };
@@ -113,7 +111,6 @@ proto.getEditingService = function() {
   var EditingService = require('../../../editingservice');
   return EditingService;
 };
-
 
 proto.updateExternalKeyValueRelations = function(input) {
   var self = this;
@@ -156,6 +153,30 @@ proto._bindEscKeyUp = function(workflow, callback) {
   return percContent;
 };
 
+proto.addRelation = function() {
+  var self =this;
+  var AddFeatureWorkflow = require('../../../workflows/addfeatureworkflow');
+  GUI.setModal(false);
+  var workflow = new AddFeatureWorkflow();
+  var percContent = this._bindEscKeyUp(workflow);
+  var options = this._createWorkflowOptions();
+  workflow.start(options)
+    .then(function(outputs) {
+      var relation = outputs.features[outputs.features.length - 1]; // vado a prende l'ultima inserrita
+      // vado a settare il valore
+      relation.set(self.relation.childField, self._curentFeatureFatherFieldValue);
+      self.relation.relations.push(relation);
+    })
+    .fail(function(err) {
+    })
+    .always(function() {
+      GUI.hideContent(false, percContent);
+      self._unbindEscKeyUp();
+      workflow.stop();
+      GUI.setModal(true);
+    });
+};
+
 proto.linkRelation = function() {
   var self = this;
   var workflow = new LinkRelationWorkflow();
@@ -174,7 +195,7 @@ proto.linkRelation = function() {
       });
       if (!relationAlreadyLinked) {
         relation.set(self.relation.childField, self._curentFeatureFatherFieldValue);
-        self._currentWorkflowSession.pushUpdate(self._layerId , relation, originalRelation);
+        self.getCurrentWorkflow().session.pushUpdate(self._layerId , relation, originalRelation);
         self.relation.relations.push(relation);
       } else {
         GUI.notify.warning('Relazione già presente');
@@ -203,15 +224,19 @@ proto.unlinkRelation = function(index) {
   var relation = this.relation.relations[index];
   var originalRelation = relation.clone();
   relation.set(this.relation.childField, null);
-  this._currentWorkflowSession.pushUpdate(this._layerId, relation, originalRelation);
+  this.getCurrentWorkflow().session.pushUpdate(this._layerId, relation, originalRelation);
   this.relation.relations.splice(index, 1);
+};
+
+proto.getCurrentWorkflow = function() {
+  return this.getEditingService().getCurrentWorflow();
 };
 
 proto._createWorkflowOptions = function(options) {
   options = options || {};
   var options = {
     context: {
-      session: this._currentWorkflow.getSession(),
+      session: this.getCurrentWorkflow().session,
       isChild: options.isChild || true,
       layer: this.getLayer(),
       excludeFields: [this.relation.childField]
@@ -224,27 +249,5 @@ proto._createWorkflowOptions = function(options) {
   return options;
 };
 
-proto.addRelation = function() {
-  var self =this;
-  var AddFeatureWorkflow = require('../../../workflows/addfeatureworkflow');
-  GUI.setModal(false);
-  var workflow = new AddFeatureWorkflow();
-  var percContent = this._bindEscKeyUp(workflow);
-  var options = this._createWorkflowOptions();
-  workflow.start(options)
-    .then(function(outputs) {
-      var relation = outputs.features[outputs.features.length - 1]; // vado a prende l'ultima inserrita
-      // vado a settare il valore
-      relation.set(self.relation.childField, self._curentFeatureFatherFieldValue);
-    })
-    .fail(function(err) {
-    })
-    .always(function() {
-      GUI.hideContent(false, percContent);
-      self._unbindEscKeyUp();
-      workflow.stop();
-      GUI.setModal(true);
-    });
-};
 
 module.exports = RelationService;

@@ -1,6 +1,7 @@
 var inherit = g3wsdk.core.utils.inherit;
 var base =  g3wsdk.core.utils.base;
 //prendo il plugin service di core
+var WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 var PluginService = g3wsdk.core.plugin.PluginService;
 var CatalogLayersStoresRegistry = g3wsdk.core.catalog.CatalogLayersStoresRegistry;
 var MapLayersStoreRegistry = g3wsdk.core.map.MapLayersStoreRegistry;
@@ -232,6 +233,16 @@ proto._getEditableLayersFromCatalog = function() {
     EDITABLE: true
   });
   return layers;
+};
+
+proto.getCurrentWorflow = function() {
+  var currentWorkFlow = WorkflowsStack.getLast();
+  return {
+    session: currentWorkFlow.getSession(),
+    inputs: currentWorkFlow.getInputs(),
+    context: currentWorkFlow.getContext(),
+    feature: currentWorkFlow.getCurrentFeature()
+  };
 };
 
 proto.getRelationsByFeature = function(relation, feature) {

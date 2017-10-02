@@ -68,7 +68,6 @@ var RelationComponent = Vue.extend({
     service = new RelationService({
       relation: this.relation
     });
-    service.init();
   },
   mounted: function() {
     this.formeventbus.$on('changeinput', this.updateExternalKeyValueRelations);

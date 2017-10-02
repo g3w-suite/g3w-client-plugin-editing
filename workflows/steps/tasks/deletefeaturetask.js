@@ -102,6 +102,7 @@ proto.run = function(inputs, context) {
   this._layer = inputs.layer;
   var layer = context.layer;
   var layerId = layer.getId();
+  var features = inputs.features;
   //recupero la sessione dal context
   var session = context.session;
   this._selectInteraction = new ol.interaction.Select({
