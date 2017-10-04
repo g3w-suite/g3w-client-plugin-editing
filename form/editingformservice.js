@@ -1,9 +1,7 @@
 var GUI = g3wsdk.gui.GUI;
 var RelationsComponentObj = require('./components/relations/vue/relations');
-var RelationsService = require('./components/relations/relationsservice');
 var EdtingFormService = function(options) {
   var EditingService = require('../editingservice');
-  var self = this;
   options = options || {};
   this.state = {
     relations: []
@@ -22,16 +20,11 @@ var EdtingFormService = function(options) {
     // recupero l'array delle relazioni
     relations = formLayer.getRelations().getArray();
     // vado a filtrare le relazioni per quelle che son o effettivamente in editing
-    relations = EditingService.filterRelationsInEditing(relations, formFeature, formFeature.isNew());
+    relations = EditingService.getRelationsInEditing(relations, formFeature, formFeature.isNew());
     // le relazioni in questione sono oggetti Realtion che contengono le informazioni nello stato delle composizione della relazione
   }
   // istanzio il servizio delle relazioni
-  this._relationsService = new RelationsService();
-  // cliclo sulle relazioni che ho eventualmente trovato
-  _.forEach(relations, function(relation) {
-    // la realtione è di tipo Relation
-    self._relationsService.addRelation(relation);
-  });
+  
   // funzione che mi serve per costruire il componente vue da innestare dentro il form
   // come componente relations
   this.buildRelationsComponents = function() {
@@ -45,7 +38,7 @@ var EdtingFormService = function(options) {
       },
       data: function() {
         return {
-          state: self._relationsService.state,
+          relations: relations,
           resourcesurl: GUI.getResourcesUrl(),
           formeventbus: self._formEventBus
         }

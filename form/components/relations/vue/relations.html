@@ -1,13 +1,14 @@
-<div class="nano" v-if="state.relations.length">
+<div class="nano" v-if="relations.length">
   <div class="nano-content">
     <div class="g3w-form-component_relations">
       <div  class="nano">
         <div class="nano-content">
           <relation
-            :relation="relation"
+            :relation="relation.relation"
+            :relations="relation.relations"
             :resourcesurl="resourcesurl"
             :formeventbus="formeventbus"
-            v-for="relation in state.relations">
+            v-for="relation in relations" :key="relation.id">
           </relation>
         </div>
       </div>

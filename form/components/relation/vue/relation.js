@@ -3,27 +3,8 @@ var maxSubsetLength = 3;
 var service;
 var RelationComponent = Vue.extend({
   template: require('./relation.html'),
-  props: ['relation', 'resourcesurl', 'formeventbus'],
-  data: function() {
-    return {
-      relations: this.relation.relations,
-      validate: {
-        valid: true
-      },
-      showtoolsatindex: null
-    }
-  },
+  props: ['relation', 'relations', 'resourcesurl', 'formeventbus'],
   methods: {
-    relationAttributesSubset: function(relation) {
-      var attributes = [];
-      var layer = service.getLayer();
-      _.forEach(layer.getFieldsWithValues(relation), function (field) {
-          if (_.isArray(field.value)) return;
-          attributes.push({label: field.label, value: field.value})
-      });
-      var end = Math.min(maxSubsetLength, attributes.length);
-      return attributes.slice(0, end);
-    },
     unlinkRelation: function(index) {
       service.unlinkRelation(index)
     },
@@ -42,21 +23,31 @@ var RelationComponent = Vue.extend({
     isRequired: function() {
       return service.isRequired();
     },
-    showRelationTools: function(index) {
-      this.showtoolsatindex = this.showtoolsatindex == index ? null : index;
+    relationAttributesSubset: function(relation) {
+      var attributes = [];
+      _.forEach(relation.fields, function (field) {
+        if (_.isArray(field.value)) return;
+        attributes.push({label: field.label, value: field.value})
+      });
+      var end = Math.min(maxSubsetLength, attributes.length);
+      return attributes.slice(0, end);
     },
     getRelationTools: function() {
       return service.getRelationTools();
     }
   },
   computed: {
+    relationsLength: function() {
+      return this.relations.length;
+    },
     fieldrequired: function() {
       return service.isRequired();
     }
   },
   watch: {
     // vado a verificare lo state
-    'state.relations': function() {
+    'relations': function() {
+      service.showRelationStyle();
       Vue.nextTick(function() {
         // con l'aggiunta di relazioni vado a fare il nano scroll
         $(".g3w-form-component_relations .nano").nanoScroller();
@@ -66,12 +57,17 @@ var RelationComponent = Vue.extend({
   created: function() {
     //vado a settare il servizio
     service = new RelationService({
-      relation: this.relation
-    });
+      relation: this.relation,
+      relations: this.relations
+    })
   },
   mounted: function() {
+    service.showRelationStyle();
     this.formeventbus.$on('changeinput', this.updateExternalKeyValueRelations);
     this.formeventbus.$emit('addtovalidate', this.validate)
+  },
+  destroyed: function() {
+    service.hideRelationStyle();
   }
  });
 

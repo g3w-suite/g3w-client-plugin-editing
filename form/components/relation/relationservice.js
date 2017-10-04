@@ -12,6 +12,7 @@ var RELATIONTOOLS = {
 var RelationService = function(options) {
   var self = this;
   this.relation = options.relation;
+  this.relations = options.relations;
   this._relationTools = [];
   this._isExternalFieldRequired = false;
   this._layerId = this.relation.child;
@@ -25,6 +26,7 @@ var RelationService = function(options) {
       self._relationTools.push(_.cloneDeep(tool));
     }
   });
+  this._originalLayerStyle = this.getEditingLayer().getStyle();
 };
 
 var proto = RelationService.prototype;
@@ -32,11 +34,46 @@ var proto = RelationService.prototype;
 proto.getRelationTools = function() {
   return this._relationTools
 };
+
+proto._highlightRelationSelect = function(relation) {
+  var geometryType = this.getLayer().getGeometryType();
+  var style;
+  if (geometryType == 'LineString' || geometryType == 'MultiLineString') {
+    style = new ol.style.Style({
+      stroke: new ol.style.Stroke({
+        color: 'rgb(255,255,0)',
+        width: 4
+      })
+    });
+  }
+  else if (geometryType == 'Point' || geometryType == 'MultiPoint') {
+    style = new ol.style.Style({
+      image: new ol.style.Circle({
+        radius: 8,
+        fill: new ol.style.Fill({
+          color: 'rgb(255,255,0)'
+        })
+      })
+    });
+  } else if (geometryType == 'MultiPolygon' || geometryType == 'Polygon') {
+    style = new ol.style.Style({
+      stroke: new ol.style.Stroke({
+        color: 'rgb(255,255,0)',
+        width: 4
+      }),
+      fill: new ol.style.Fill({
+        color: 'rgba(255, 255, 0, 0.5)'
+      })
+    });
+  }
+  relation.setStyle(style);
+};
   
 proto.startTool = function(relationtool, index) {
   var self = this;
   var d = $.Deferred();
-  var relation = this.relation.relations[index];
+  var relation = this.relations[index]; // oggetto relazione
+  var relationfeature = this._getRelationFeature(relation.id); // relation feature
   GUI.setModal(false);
   var workflows = {
     ModifyGeometryVertexWorkflow: require('../../../workflows/modifygeometryvertexworkflow'),
@@ -53,22 +90,10 @@ proto.startTool = function(relationtool, index) {
   });
 
   var options = this._createWorkflowOptions({
-    features: [relation]
+    features: [relationfeature]
   });
 
-  var originalStyle = this.getEditingLayer().getStyle();
-  relation.setStyle(new ol.style.Style({
-    image: new ol.style.Circle({
-      radius: 8,
-      stroke: new ol.style.Stroke({
-        color: 'orange',
-        width: 3
-      }),
-      fill: new ol.style.Fill({
-        color: 'red'
-      })
-    })
-  }));
+  this._highlightRelationSelect(relationfeature);
 
   var percContent = this._bindEscKeyUp(workflow,  function() {
     relation.setStyle(originalStyle);
@@ -80,9 +105,19 @@ proto.startTool = function(relationtool, index) {
     start = workflow.start(options);
   start.then(function(outputs) {
       if (relationtool.getId() == 'deletefeature') {
-        self.getEditingService().getEditingLayer(self._layerId).getSource().removeFeature(relation);
-        self.getCurrentWorkflow().session.pushDelete(self._layerId, relation);
-        self.relation.relations.splice(index, 1)
+        // vado a cambiarli lo style
+        relationfeature.setStyle(self._originalLayerStyle);
+        self.getEditingLayer().getSource().removeFeature(relationfeature);
+        self.getCurrentWorkflow().session.pushDelete(self._layerId, relationfeature);
+        self.relations.splice(index, 1)
+      }
+      if (relationtool.getId() == 'editattributes') {
+        _.forEach(self._getRelationFieldsValue(relationfeature), function(_field) {
+          _.forEach(relation.fields, function(field) {
+            if (field.name == _field.name)
+              field.value = _field.value;
+          })
+        });
       }
       d.resolve(outputs)
     })
@@ -90,7 +125,8 @@ proto.startTool = function(relationtool, index) {
       d.reject(err)
     })
     .always(function() {
-      relation.setStyle(originalStyle);
+      // vado a mettere lo style della relazione
+      self.showRelationStyle();
       workflow.stop();
       GUI.hideContent(false, percContent);
       self._unbindEscKeyUp();
@@ -99,10 +135,12 @@ proto.startTool = function(relationtool, index) {
   return d.promise()
 };
 
+// ritorna il layer dell'editor
 proto.getLayer = function() {
   return this.getEditingService().getLayersById(this.relation.child);
 };
 
+// ritorna il layer che è effettivamente in editing
 proto.getEditingLayer = function() {
   return this.getEditingService().getEditingLayer(this.relation.child);
 };
@@ -118,7 +156,13 @@ proto.updateExternalKeyValueRelations = function(input) {
   var layerId = this.relation.child;
   if (input.name == this.relation.fatherField) {
     this._curentFeatureFatherFieldValue = input.value;
-    _.forEach(this.relation.relations, function(relation) {
+    _.forEach(this.relations, function(relation) {
+      _.forEach(relation.fields, function(field) {
+        if (field.name == self.relation.childField){
+          field.value = self._curentFeatureFatherFieldValue
+        }
+      });
+      relation = self._getRelationFeature(relation.id);
       // vado a setare il valore della relazione e aggiornare la sessione
       var originalRelation = relation.clone();
       relation.set(self.relation.childField, input.value);
@@ -153,6 +197,19 @@ proto._bindEscKeyUp = function(workflow, callback) {
   return percContent;
 };
 
+proto._getRelationFieldsValue = function(relation) {
+  var layer = this.getLayer();
+  var fields = layer.getFieldsWithValues(relation);
+  return fields;
+};
+
+proto._createRelationObj = function(relation) {
+  return {
+    fields: this._getRelationFieldsValue(relation),
+    id: relation.getId()
+  }
+};
+
 proto.addRelation = function() {
   var self =this;
   var AddFeatureWorkflow = require('../../../workflows/addfeatureworkflow');
@@ -160,12 +217,13 @@ proto.addRelation = function() {
   var workflow = new AddFeatureWorkflow();
   var percContent = this._bindEscKeyUp(workflow);
   var options = this._createWorkflowOptions();
+  var layer = this.getLayer();
   workflow.start(options)
     .then(function(outputs) {
       var relation = outputs.features[outputs.features.length - 1]; // vado a prende l'ultima inserrita
       // vado a settare il valore
       relation.set(self.relation.childField, self._curentFeatureFatherFieldValue);
-      self.relation.relations.push(relation);
+      self.relations.push(self._createRelationObj(relation));
     })
     .fail(function(err) {
     })
@@ -177,18 +235,26 @@ proto.addRelation = function() {
     });
 };
 
+// funzione che screa lo stile delle relazioni diepndenti riconoscibili con il colore del padre
+proto._getRelationAsFatherStyleColor = function() {
+  var fatherLayerStyleColor = this.getEditingService().getEditingLayer(this.relation.father).getStyle();
+  return fatherLayerStyleColor.getFill().getColor();
+
+};
+
 proto.linkRelation = function() {
   var self = this;
   var workflow = new LinkRelationWorkflow();
   var percContent = this._bindEscKeyUp(workflow);
   var options = this._createWorkflowOptions();
+  var layer = this.getLayer();
   workflow.start(options)
     .then(function(outputs) {
       var relation = outputs.features[0];
       var originalRelation = outputs.features[1];
       var relationAlreadyLinked = false;
-      _.forEach(self.relation.relations, function(rel) {
-        if (rel.getId() == relation.getId()) {
+      _.forEach(self.relations, function(rel) {
+        if (rel.id == relation.getId()) {
           relationAlreadyLinked = true;
           return false;
         }
@@ -196,7 +262,7 @@ proto.linkRelation = function() {
       if (!relationAlreadyLinked) {
         relation.set(self.relation.childField, self._curentFeatureFatherFieldValue);
         self.getCurrentWorkflow().session.pushUpdate(self._layerId , relation, originalRelation);
-        self.relation.relations.push(relation);
+        self.relations.push(self._createRelationObj(relation));
       } else {
         GUI.notify.warning('Relazione già presente');
       }
@@ -220,12 +286,18 @@ proto.isRequired = function() {
   return this._isExternalFieldRequired;
 };
 
+proto._getRelationFeature = function(featureId) {
+  var editingLayer = this.getEditingLayer();
+  var feature = editingLayer.getSource().getFeatureById(featureId);
+  return feature;
+};
+
 proto.unlinkRelation = function(index) {
-  var relation = this.relation.relations[index];
+  var relation = this.relations[index];
   var originalRelation = relation.clone();
   relation.set(this.relation.childField, null);
   this.getCurrentWorkflow().session.pushUpdate(this._layerId, relation, originalRelation);
-  this.relation.relations.splice(index, 1);
+  this.relations.splice(index, 1);
 };
 
 proto.getCurrentWorkflow = function() {
@@ -247,6 +319,65 @@ proto._createWorkflowOptions = function(options) {
     }
   };
   return options;
+};
+
+proto.showRelationStyle = function() {
+  var self = this;
+  var style;
+  var geometryType = this.getLayer().getGeometryType();
+  switch (geometryType) {
+    case 'Point' || 'MultiPoint':
+      var color = this._originalLayerStyle.getImage().getFill().getColor();
+      style = new ol.style.Style({
+        image: new ol.style.Circle({
+          radius: 8,
+          fill: new ol.style.Fill({
+            color: color
+          }),
+          stroke: new ol.style.Stroke({
+            width: 5,
+            color:  self._getRelationAsFatherStyleColor()
+          })
+        })
+      });
+      break;
+    case 'Line' || 'MultiLine':
+      style = new ol.style.Style({
+        fill: new ol.style.Fill({
+          color: color
+        }),
+        stroke: new ol.style.Stroke({
+          width: 5,
+          color: self._getRelationAsFatherStyleColor()
+        })
+      });
+      break;
+    case 'Polygon' || 'MultiPolygon':
+      style =  new ol.style.Style({
+        stroke: new ol.style.Stroke({
+          color:  self._getRelationAsFatherStyleColor(),
+          width: 5
+        }),
+        fill: new ol.style.Fill({
+          color: color,
+          opacity: 0.5
+        })
+      })
+  }
+  var relationfeature;
+  _.forEach(this.relations, function(relation) {
+    relationfeature = self._getRelationFeature(relation.id);
+    relationfeature.setStyle(style);
+  })
+};
+
+
+proto.hideRelationStyle = function() {
+  var self = this;
+  _.forEach(this.relations, function(relation) {
+    relationfeature = self._getRelationFeature(relation.id);
+    relationfeature.setStyle(self._originalLayerStyle);
+  })
 };
 
 

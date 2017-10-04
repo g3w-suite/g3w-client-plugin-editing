@@ -9,7 +9,7 @@
     </div>
   </div>
   <div class="box-body">
-    <template v-if="relations.length">
+    <template v-if="relationsLength">
       <table class="table table-striped">
         <thead>
           <tr>
@@ -21,8 +21,7 @@
           </tr>
           </thead>
           <tbody>
-          <template v-for="(relation, index) in relations">
-            <tr class="featurebox-header" >
+            <tr v-for="(relation, index) in relations" class="featurebox-header">
               <td v-for="attribute in relationAttributesSubset(relation)">
                 <span>{{attribute.value}}</span>
               </td>
@@ -32,9 +31,9 @@
               <td>
                 <div class="dropup">
                   <i style="color:#3c8dbc;
-                  cursor:pointer; font-size:10px;
-                  padding:5px; border:2px solid #3c8dbc;
-                   border-radius:15px;"
+                      cursor:pointer; font-size:10px;
+                      padding:5px; border:2px solid #3c8dbc;
+                        border-radius:15px;"
                      data-toggle="dropdown"
                      aria-haspopup="true" aria-expanded="false"
                      class="dropdown-toggle fa fa-cogs pull-right"
@@ -51,7 +50,6 @@
                 </div>
               </td>
             </tr>
-          </template>
           </tbody>
         </table>
       </template>

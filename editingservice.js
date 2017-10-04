@@ -241,8 +241,25 @@ proto.getCurrentWorflow = function() {
     session: currentWorkFlow.getSession(),
     inputs: currentWorkFlow.getInputs(),
     context: currentWorkFlow.getContext(),
-    feature: currentWorkFlow.getCurrentFeature()
+    feature: currentWorkFlow.getCurrentFeature(),
+    layer: currentWorkFlow.getLayer()
   };
+};
+
+proto.getRelationsAttributesByFeature = function(relation, feature) {
+  var relationsattributes = [];
+  var toolboxId = relation.getChild();
+  var layer = this.getToolBoxById(toolboxId).getLayer();
+  var relations = this.getRelationsByFeature(relation, feature);
+  var fields;
+  _.forEach(relations, function(relation) {
+    fields = layer.getFieldsWithValues(relation);
+    relationsattributes.push({
+      fields: fields,
+      id: relation.getId()
+    });
+  });
+  return relationsattributes;
 };
 
 proto.getRelationsByFeature = function(relation, feature) {
@@ -255,8 +272,9 @@ proto.getRelationsByFeature = function(relation, feature) {
   var features = editingLayer.getSource().getFeatures();
   var relations = [];
   _.forEach(features, function(feature) {
-    if (feature.get(relationChildField) == featureValue)
+    if (feature.get(relationChildField) == featureValue) {
       relations.push(feature);
+    }
   });
   return relations;
 };
@@ -333,20 +351,22 @@ proto.clearState = function() {
 };
 
 // funzione che filtra le relazioni in base a quelle presenti in editing
-proto.filterRelationsInEditing = function(relations, feature, isNew) {
+proto.getRelationsInEditing = function(relations, feature, isNew) {
   var self = this;
   var relationsinediting = [];
   var relationinediting;
   _.forEach(relations, function(relation) {
     if (self._layers[relation.getChild()]) {
       // aggiungo lo state della relazione
-      relationinediting = relation.getState();
-      relationinediting.relations = !isNew ? self.getRelationsByFeature(relation, feature): []; // le relazioni esistenti
+      relationinediting = {
+        relation:relation.getState(),
+        relations: !isNew ? self.getRelationsAttributesByFeature(relation, feature): {} // le relazioni esistenti
+      };
       relationinediting.validate = {
         valid:true
       };
       relationsinediting.push(relationinediting);
-      
+
     }
   });
   return relationsinediting;
