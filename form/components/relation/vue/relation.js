@@ -4,6 +4,11 @@ var service;
 var RelationComponent = Vue.extend({
   template: require('./relation.html'),
   props: ['relation', 'relations', 'resourcesurl', 'formeventbus'],
+  data: function() {
+    return {
+      showallfieldsindex: null
+    }
+  },
   methods: {
     unlinkRelation: function(index) {
       service.unlinkRelation(index)
@@ -31,6 +36,22 @@ var RelationComponent = Vue.extend({
       });
       var end = Math.min(maxSubsetLength, attributes.length);
       return attributes.slice(0, end);
+    },
+    relationsAttributesSubsetLength: function(relation) {
+      return this.relationAttributesSubset(relation).length;
+    },
+    relationsFields: function(relation) {
+      var attributes = [];
+      _.forEach(relation.fields, function (field) {
+        attributes.push({label: field.label, value: field.value})
+      });
+      return attributes;
+    },
+    showAllRelationFields: function(index) {
+      this.showallfieldsindex = this.showallfieldsindex == index ? null : index;
+    },
+    showAllFieds: function(index) {
+      return this.showallfieldsindex == index;
     },
     getRelationTools: function() {
       return service.getRelationTools();

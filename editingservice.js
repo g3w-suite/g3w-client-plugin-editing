@@ -7,9 +7,11 @@ var CatalogLayersStoresRegistry = g3wsdk.core.catalog.CatalogLayersStoresRegistr
 var MapLayersStoreRegistry = g3wsdk.core.map.MapLayersStoreRegistry;
 var LayersStore = g3wsdk.core.layer.LayersStore;
 var Session = g3wsdk.core.editing.Session;
+var Layer = g3wsdk.core.layer.Layer;
 var GUI = g3wsdk.gui.GUI;
 var ToolBoxesFactory = require('./toolboxes/toolboxesfactory');
 var CommitFeaturesWorkflow = require('./workflows/commitfeaturesworkflow');
+
 
 function EditingService() {
   var self = this;
@@ -69,14 +71,13 @@ function EditingService() {
       // vado a chiamare la funzione che mi permette di
       // estrarre la versione vettoriale del layer di partenza
       editableLayer = layer.getLayerForEditing();
-      // colore
-      color = COLORS.splice(0,1).pop();
-      // applico il colore
+      color = layer.getType() == Layer.LayerTypes.TABLE ? "#cc3300" : COLORS.splice(0,1).pop();
       editableLayer.setColor(color);
       // vado ad aggiungere ai layer editabili
       self._layers[layerId] = editableLayer;
       //aggiungo il layer al layersstore
-      self._layersstore.addLayer(editableLayer);
+      if (Layer.LayerTypes.VECTOR)
+        self._layersstore.addLayer(editableLayer);
       // aggiungo all'array dei vectorlayers se per caso mi servisse
       self._sessions[layer.getId()] = null;
     });
@@ -162,6 +163,7 @@ proto.addToolBox = function(toolbox) {
   this.state.toolboxes.push(toolbox.state);
 };
 
+// funzione che crea le dipendenze
 proto._createToolBoxDependencies = function() {
   var self = this;
   var layer;
@@ -250,7 +252,7 @@ proto.getRelationsAttributesByFeature = function(relation, feature) {
   var relationsattributes = [];
   var toolboxId = relation.getChild();
   var layer = this.getToolBoxById(toolboxId).getLayer();
-  var relations = this.getRelationsByFeature(relation, feature);
+  var relations = this.getRelationsByFeature(relation, feature, layer.getType());
   var fields;
   _.forEach(relations, function(relation) {
     fields = layer.getFieldsWithValues(relation);
@@ -262,14 +264,14 @@ proto.getRelationsAttributesByFeature = function(relation, feature) {
   return relationsattributes;
 };
 
-proto.getRelationsByFeature = function(relation, feature) {
+proto.getRelationsByFeature = function(relation, feature, layerType) {
   var toolboxId = relation.getChild();
   var relationChildField = relation.getChildField();
   var relationFatherField= relation.getFatherField();
   var featureValue = feature.get(relationFatherField);
   var toolbox = this.getToolBoxById(toolboxId);
   var editingLayer = toolbox.getEditingLayer();
-  var features = editingLayer.getSource().getFeatures();
+  var features = layerType == 'vector' ? editingLayer.getSource().getFeatures() : editingLayer.getSource().readFeatures() ;
   var relations = [];
   _.forEach(features, function(feature) {
     if (feature.get(relationChildField) == featureValue) {
@@ -396,7 +398,9 @@ proto.getLayersDependencyFeatures = function(layerId, options) {
   IMPORTANTE: PER EVITARE PROBLEMI È IMPORTANTE CHE I LAYER DIPENDENTI SIANO A SUA VOLTA EDITABILI
 
    */
-  var relationLayers = this._layers[layerId].getChildren();
+  var relationLayers = _.filter(this._layers[layerId].getChildren(), function(id) {
+    return !!self._layers[id];
+  });
   // se ci sono
   if (relationLayers) {
     /*
@@ -411,6 +415,11 @@ proto.getLayersDependencyFeatures = function(layerId, options) {
       //verifico che ci sia la sessione
       if (session)
         if (!session.isStarted()) {
+          if (options.type != self._layers[id].getType())
+            options = {
+              type: self._layers[id].getType(),
+              editing: true
+            };
           session.start(options);
         } else {
           // altrimenti recupero le features secondo quell'opzione

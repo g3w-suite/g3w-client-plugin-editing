@@ -33,7 +33,7 @@ function EditorToolBoxesFactory() {
         break;
       // caso layer tabellare da mettere in piedi
       case Layer.LayerTypes.TABLE:
-        editingLayer = ''; // qui da definire
+        editLayer = layer; // qui da definire
         tools = EditToolsFactory.build({
           type: layerType,
           layer: editLayer

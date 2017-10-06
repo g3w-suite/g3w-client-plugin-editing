@@ -1,0 +1,30 @@
+<div id="editing_table" class="g3w-editing-table nano">
+  <div style="max-height:85%" class="nano-content">
+    <table class="table table-striped">
+      <thead>
+      <tr>
+        <th v-for="header in headers">{{ header }}</th>
+      </tr>
+      <tr></tr>
+      <tr></tr>
+      </thead>
+      <tbody>
+      <tr v-for="(feature, index) in state.features">
+        <td v-for="value in feature">{{ value }}</td>
+        <td>
+          <i class="fa fa-trash-o" style="cursor: pointer; color:red;" aria-hidden="true" @click="deleteFeature(index)"></i>
+        </td>
+        <td>
+          <i class="fa fa-pencil" style="cursor: pointer; color:#3c8dbc;" aria-hidden="true" @click="editFeature(index)"></i>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+   </div>
+   <div style="position:absolute; bottom:10px; width:100%">
+     <div class="col-sm-offset-4 col-sm-8">
+       <button class="btn  btn-success" @click="save">Salva</button>
+       <button class="btn  btn-primary" @click="cancel">Cancella</button>
+     </div>
+   </div>
+  </div>

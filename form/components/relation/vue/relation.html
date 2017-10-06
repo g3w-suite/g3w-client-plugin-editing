@@ -8,7 +8,7 @@
       <i style="padding:5px; border:2px solid #3c8dbc; border-radius:25px; color:#3c8dbc; font-size: 20px; background-color: #ffffff" class="fa fa-link pull-right" @click="linkRelation" aria-hidden="true"></i>
     </div>
   </div>
-  <div class="box-body">
+  <div class="box-body"style="padding:0px;">
     <template v-if="relationsLength">
       <table class="table table-striped">
         <thead>
@@ -18,12 +18,29 @@
             </th>
             <th></th>
             <th></th>
+            <th></th>
           </tr>
           </thead>
           <tbody>
             <tr v-for="(relation, index) in relations" class="featurebox-header">
-              <td v-for="attribute in relationAttributesSubset(relation)">
+              <td v-show="!showAllFieds(index)" v-for="attribute in relationAttributesSubset(relation)">
                 <span>{{attribute.value}}</span>
+              </td>
+              <td v-show="showAllFieds(index)" :colspan="relationsAttributesSubsetLength(relation)">
+                <table style="background:none !important;">
+                  <tr v-for="field in relationsFields(relation)">
+                    <td class="attr-label">{{field.label}}</td>
+                    <td class="attr-value">
+                      <span>{{field.value}}</span>
+                  </td>
+                  </tr>
+                </table>
+              </td>
+              <td class="action-cell">
+                <span @click="showAllRelationFields(index)"
+                      style="color:#3c8dbc; cursor:pointer;" class="fa link morelink"
+                      :class="[showallfieldsindex == index ? 'fa-minus': 'fa-plus' ]">
+                </span>
               </td>
               <td>
                 <i v-if="!fieldrequired" style="color:#3c8dbc; cursor:pointer; font-size:10px; padding:5px; border:2px solid #3c8dbc; border-radius:15px;" class="fa fa-chain-broken pull-right" @click="unlinkRelation(index)" aria-hidden="true"></i>

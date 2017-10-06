@@ -2,6 +2,7 @@ var inherit = g3wsdk.core.utils.inherit;
 var base =  g3wsdk.core.utils.base;
 var G3WObject = g3wsdk.core.G3WObject;
 var GUI = g3wsdk.gui.GUI;
+var Layer = g3wsdk.core.layer.Layer;
 var Session = g3wsdk.core.editing.Session;
 var OlFeaturesStore = g3wsdk.core.layer.features.OlFeaturesStore;
 var FeaturesStore = g3wsdk.core.layer.features.FeaturesStore;
@@ -31,7 +32,7 @@ function ToolBox(options) {
   this._session = new Session({
     id: options.id, // contiene l'id del layer
     editor: this._editor,
-    featuresstore: this._layerType == 'vector' ? new OlFeaturesStore(): new FeaturesStore()
+    featuresstore: this._layerType == Layer.LayerTypes.VECTOR ? new OlFeaturesStore(): this._editingLayer.getFeaturesStore()
   });
   // opzione per recuperare le feature
   this._getFeaturesOption = {};
@@ -154,10 +155,11 @@ proto.addDependency = function(dependency) {
 // funzione che permette di settare il featurestore del session in particolare
 // collezioni di features per quanto riguarda il vector layer e da vedere per il table layer (forse array) al table layer
 proto._setEditingLayerSource = function() {
+  // vado a prendere
   var featuresstore = this._session.getFeaturesStore();
   // questo ritorna come promessa l'array di features del featuresstore
   // vado  a settare il source del layer
-  var source = this._layerType == 'vector' ? new ol.source.Vector({features: featuresstore.getFeaturesCollection() }) : featuresstore;
+  var source = this._layerType == Layer.LayerTypes.VECTOR ? new ol.source.Vector({features: featuresstore.getFeaturesCollection() }) : featuresstore;
   //setto come source del layer l'array / collection feature del features sotre della sessione
   // il layer deve implementare anche un setSource
   this._editingLayer.setSource(source);
@@ -170,16 +172,18 @@ proto._setEditingLayerSource = function() {
 proto.start = function() {
   var self = this;
   var d = $.Deferred();
-  if (this._layerType == 'vector') {
+  if (this._layerType == Layer.LayerTypes.VECTOR) {
     var bbox = this._loadedExtent = this._mapService.getMapBBOX();
     this._getFeaturesOption = {
       editing: true,
+      type: this._layerType,
       filter: {
         bbox: bbox
       }
     };
   } else {
     this._getFeaturesOption = {
+      type: this._layerType,
       editing: true
     };
   }
@@ -267,7 +271,7 @@ proto._unregisterGetFeaturesEvent = function() {
 proto._registerGetFeaturesEvent = function(options) {
   // le sessioni dipendenti per poter eseguier l'editing
   switch(this._layerType) {
-    case 'vector':
+    case 'Layer.LayerTypes.VECTOR':
       var fnc = _.bind(function (options) {
         var bbox = this._mapService.getMapBBOX();
         var extent = this._getFeaturesEvent.options.extent;

@@ -68,7 +68,10 @@ proto.start = function() {
       })
       .always(function() {
         options.inputs.features = [];
-        startOp(options);
+        if (self._session.getEditor().getLayer().getType() != 'table')
+          startOp(options);
+        else
+          self.stop();
       })
   }
   // verifico che sia definito l'operatore

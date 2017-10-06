@@ -6,14 +6,8 @@ var ModifyGeometryVertexWorkflow = require('../workflows/modifygeometryvertexwor
 var MoveFeatureWorkflow = require('../workflows/movefeatureworkflow');
 var DeleteFeatureWorkflow = require('../workflows/deletefeatureworkflow');
 var EditFeatureAttributesWorkflow = require('../workflows/editfeatureattributesworkflow');
-
-var WORKFLOWS = {
-  'addfeature': AddFeatureWorkflow,
-  'deletefeature': DeleteFeatureWorkflow,
-  'editattributes': EditFeatureAttributesWorkflow,
-  'movefeature': MoveFeatureWorkflow,
-  'movevertex': ModifyGeometryVertexWorkflow
-};
+var EditTableFeaturesWorkflow = require('../workflows/edittableworkflow');
+var AddTableFeatureWorflow = require('../workflows/addtablefeatureworkflow');
 
 // classe costruttrice di Tools
 function EditorToolsFactory() {
@@ -145,11 +139,18 @@ function EditorToolsFactory() {
         color = 'blue';
         tools = [
           new Tool({
-            id: 'modifica_tabella',
+            id: 'addfeature',
+            name: "Inserisci feature",
+            icon: "addTableRow.png",
+            layer: layer,
+            op: AddTableFeatureWorflow
+          }),
+          new Tool({
+            id: 'edittable',
             name: "Modifica attributi",
             icon: "editAttributes.png",
             layer: layer,
-            op: EditFeatureAttributesWorkflow
+            op: EditTableFeaturesWorkflow
           })
         ];
         break;

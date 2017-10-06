@@ -2,6 +2,7 @@ var GUI = g3wsdk.gui.GUI;
 var LinkRelationWorkflow = require('../../../workflows/linkrelationworkflow');
 
 var RELATIONTOOLS = {
+  'table' : [],
   'Point': ['movefeature'],
   'LineString': ['movevertex'],
   'Polygon': ['movefeature', 'movevertex'],
@@ -19,14 +20,14 @@ var RelationService = function(options) {
   this._relationTools = [];
   this._isExternalFieldRequired = this._checkIfExternalFieldRequired();
   this._curentFeatureFatherFieldValue = this.getCurrentWorkflow().feature.get(this.relation.fatherField);
-  var relationLayerType = this.getLayer().getGeometryType();
+  var relationLayerType = this.getLayer().getType() == 'vector' ? this.getLayer().getGeometryType() : 'table';
   var allrelationtools = this.getEditingService().getToolBoxById(this.relation.child).getTools();
   _.forEach(allrelationtools, function (tool) {
     if(_.concat(RELATIONTOOLS[relationLayerType], RELATIONTOOLS.default).indexOf(tool.getId()) != -1) {
       self._relationTools.push(_.cloneDeep(tool));
     }
   });
-  this._originalLayerStyle = this.getEditingLayer().getStyle();
+  this._originalLayerStyle = this.getLayer().getType() == 'vector' ? this.getEditingLayer().getStyle() : null;
 };
 
 var proto = RelationService.prototype;
@@ -324,6 +325,9 @@ proto._createWorkflowOptions = function(options) {
 proto.showRelationStyle = function() {
   var self = this;
   var style;
+  var layerType = this.getLayer().getType();
+  if (layerType == 'table')
+    return;
   var geometryType = this.getLayer().getGeometryType();
   switch (geometryType) {
     case 'Point' || 'MultiPoint':
