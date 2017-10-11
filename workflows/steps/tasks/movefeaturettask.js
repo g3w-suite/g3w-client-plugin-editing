@@ -1,6 +1,5 @@
 var inherit = g3wsdk.core.utils.inherit;
 var base =  g3wsdk.core.utils.base;
-var Feature = g3wsdk.core.layer.features.Feature;
 var EditingTask = require('./editingtask');
 
 function MoveFeatureTask(options){

@@ -5,7 +5,6 @@ var GUI = g3wsdk.gui.GUI;
 var PickFeatureInteraction = g3wsdk.ol3.interactions.PickFeatureInteraction;
 
 
-
 // classe  per l'aggiungere una relazione
 function LinkRelationTask(options) {
   options = options || {};
@@ -36,14 +35,12 @@ proto.run = function(inputs, context) {
     // gestisco l'evento
     this.pickFeatureInteraction.on('picked', function(e) {
       var relation = e.feature;
-      var originalRelation = relation.clone();
       inputs.features.push(relation);
-      inputs.features.push(originalRelation);
       GUI.setModal(true);
       d.resolve(inputs);
     });
   } else {
-    d.resolve()
+
   }
 
   return d.promise()

@@ -23,7 +23,6 @@ var EdtingFormService = function(options) {
     relations = EditingService.getRelationsInEditing(relations, formFeature, formFeature.isNew());
     // le relazioni in questione sono oggetti Realtion che contengono le informazioni nello stato delle composizione della relazione
   }
-  // istanzio il servizio delle relazioni
   
   // funzione che mi serve per costruire il componente vue da innestare dentro il form
   // come componente relations

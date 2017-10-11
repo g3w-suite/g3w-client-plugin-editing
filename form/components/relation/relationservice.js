@@ -1,5 +1,5 @@
 var GUI = g3wsdk.gui.GUI;
-var LinkRelationWorkflow = require('../../../workflows/linkrelationworkflow');
+var EditTableFeatureWorkflow = require('../../../workflows/edittablefeatureworkflow');
 
 var RELATIONTOOLS = {
   'table' : [],
@@ -9,6 +9,7 @@ var RELATIONTOOLS = {
   default: ['editattributes', 'deletefeature']
 };
 
+
 // servizio che in base alle relazioni (configurazione)
 var RelationService = function(options) {
   var self = this;
@@ -17,20 +18,66 @@ var RelationService = function(options) {
   this._relationTools = [];
   this._isExternalFieldRequired = false;
   this._layerId = this.relation.child;
+  this._layerType = this.getLayer().getType();
   this._relationTools = [];
+  this._add_link_workflow = null; // sono i workflow link e adda che verranmno settati in base al tipo di layer
   this._isExternalFieldRequired = this._checkIfExternalFieldRequired();
   this._curentFeatureFatherFieldValue = this.getCurrentWorkflow().feature.get(this.relation.fatherField);
   var relationLayerType = this.getLayer().getType() == 'vector' ? this.getLayer().getGeometryType() : 'table';
-  var allrelationtools = this.getEditingService().getToolBoxById(this.relation.child).getTools();
-  _.forEach(allrelationtools, function (tool) {
-    if(_.concat(RELATIONTOOLS[relationLayerType], RELATIONTOOLS.default).indexOf(tool.getId()) != -1) {
-      self._relationTools.push(_.cloneDeep(tool));
-    }
-  });
+  var allrelationtools;
+  if (relationLayerType == 'table') {
+    self._relationTools.push({
+      state: {
+        icon: 'deleteTableRow.png',
+        id: 'deletefeature',
+        name: "Elimina feature"
+      }
+    });
+    self._relationTools.push({
+      state: {
+        icon: 'editAttributes.png',
+        id: 'editattributes',
+        name: "Modifica attributi"
+
+      }
+    })
+
+  } else {
+    allrelationtools = this.getEditingService().getToolBoxById(this.relation.child).getTools();
+    _.forEach(allrelationtools, function (tool) {
+      if(_.concat(RELATIONTOOLS[relationLayerType], RELATIONTOOLS.default).indexOf(tool.getId()) != -1) {
+        self._relationTools.push(_.cloneDeep(tool));
+      }
+    });
+  }
   this._originalLayerStyle = this.getLayer().getType() == 'vector' ? this.getEditingLayer().getStyle() : null;
+  // vado ad aggiungere i workflow per link relation che add new relation
+  this._setAddLinkWorkflow();
 };
 
 var proto = RelationService.prototype;
+
+proto._setAddLinkWorkflow = function() {
+  var add_link_workflow = {
+    vector: {
+      link: require('../../../workflows/linkrelationworkflow'),
+      add: require('../../../workflows/addfeatureworkflow')
+    },
+    table: {
+      link: require('../../../workflows/edittableworkflow'),
+      add: require('../../../workflows/addtablefeatureworkflow')
+    }
+  };
+  this._add_link_workflow = add_link_workflow[this._layerType];
+};
+
+proto._getLinkFeatureWorkflow = function() {
+  return new this._add_link_workflow.link();
+};
+
+proto._getAddFeatureWorkflow = function() {
+  return new this._add_link_workflow.add();
+};
 
 proto.getRelationTools = function() {
   return this._relationTools
@@ -69,8 +116,66 @@ proto._highlightRelationSelect = function(relation) {
   }
   relation.setStyle(style);
 };
-  
+
+// funzione che lachia la funzione in base al tipo di layer
 proto.startTool = function(relationtool, index) {
+  if (this._layerType == 'vector') {
+    return this.startVectorTool(relationtool, index);
+  }
+  if (this._layerType == 'table') {
+    return this.startTableTool(relationtool, index);
+  }
+};
+
+proto.startTableTool = function(relationtool, index) {
+  var self = this;
+  var d = $.Deferred();
+  var relation = this.relations[index]; // oggetto relazione
+  var featurestore = this.getEditingService().getToolBoxById(this._layerId).getSession().getFeaturesStore();
+  var relationfeature = featurestore.getFeatureById(relation.id); // relation feature
+  GUI.setModal(false);
+  var options = this._createWorkflowOptions({
+    features: [relationfeature]
+  });
+  var workflow;
+  if (relationtool.state.id == 'deletefeature') {
+    var self = this;
+    GUI.dialog.confirm("Vuoi eliminare l'elemento selezionato?", function(result) {
+      if (result) {
+        self.getCurrentWorkflow().session.pushDelete(self._layerId, relationfeature);
+        self.relations.splice(index, 1);
+        featurestore.removeFeature(relationfeature);
+      }
+      d.resolve();
+    });
+  }
+  if (relationtool.state.id == 'editattributes') {
+    workflow = new EditTableFeatureWorkflow();
+    var percContent = this._bindEscKeyUp(workflow,  function() {});
+    workflow.start(options)
+      .then(function(output) {
+        _.forEach(self._getRelationFieldsValue(relationfeature), function(_field) {
+          _.forEach(relation.fields, function(field) {
+            if (field.name == _field.name)
+              field.value = _field.value;
+          })
+        });
+        d.resolve(output);
+      })
+      .fail(function(err) {
+        d.reject(err)
+      })
+      .always(function() {
+        workflow.stop();
+        GUI.hideContent(false, percContent);
+        self._unbindEscKeyUp();
+        GUI.setModal(true);
+      })
+  }
+  return d.promise()
+};
+
+proto.startVectorTool = function(relationtool, index) {
   var self = this;
   var d = $.Deferred();
   var relation = this.relations[index]; // oggetto relazione
@@ -97,7 +202,7 @@ proto.startTool = function(relationtool, index) {
   this._highlightRelationSelect(relationfeature);
 
   var percContent = this._bindEscKeyUp(workflow,  function() {
-    relation.setStyle(originalStyle);
+    relation.setStyle(this._originalLayerStyle);
   });
   var start;
   if (workflow instanceof workflows.DeleteFeatureWorkflow || workflow instanceof workflows.EditFeatureAttributesWorkflow )
@@ -213,12 +318,10 @@ proto._createRelationObj = function(relation) {
 
 proto.addRelation = function() {
   var self =this;
-  var AddFeatureWorkflow = require('../../../workflows/addfeatureworkflow');
   GUI.setModal(false);
-  var workflow = new AddFeatureWorkflow();
+  var workflow = this._getAddFeatureWorkflow();
   var percContent = this._bindEscKeyUp(workflow);
   var options = this._createWorkflowOptions();
-  var layer = this.getLayer();
   workflow.start(options)
     .then(function(outputs) {
       var relation = outputs.features[outputs.features.length - 1]; // vado a prende l'ultima inserrita
@@ -238,21 +341,20 @@ proto.addRelation = function() {
 
 // funzione che screa lo stile delle relazioni diepndenti riconoscibili con il colore del padre
 proto._getRelationAsFatherStyleColor = function() {
-  var fatherLayerStyleColor = this.getEditingService().getEditingLayer(this.relation.father).getStyle();
-  return fatherLayerStyleColor.getFill().getColor();
-
+  var fatherLayerStyle = this.getEditingService().getEditingLayer(this.relation.father).getStyle();
+  var fatherLayerStyleColor = fatherLayerStyle.getFill() ? fatherLayerStyle.getFill() : fatherLayerStyle.getStroke();
+  return fatherLayerStyleColor.getColor();
 };
 
 proto.linkRelation = function() {
   var self = this;
-  var workflow = new LinkRelationWorkflow();
+  var workflow = this._getLinkFeatureWorkflow();
   var percContent = this._bindEscKeyUp(workflow);
   var options = this._createWorkflowOptions();
   var layer = this.getLayer();
   workflow.start(options)
     .then(function(outputs) {
       var relation = outputs.features[0];
-      var originalRelation = outputs.features[1];
       var relationAlreadyLinked = false;
       _.forEach(self.relations, function(rel) {
         if (rel.id == relation.getId()) {
@@ -261,6 +363,7 @@ proto.linkRelation = function() {
         }
       });
       if (!relationAlreadyLinked) {
+        var originalRelation = relation;
         relation.set(self.relation.childField, self._curentFeatureFatherFieldValue);
         self.getCurrentWorkflow().session.pushUpdate(self._layerId , relation, originalRelation);
         self.relations.push(self._createRelationObj(relation));
@@ -295,6 +398,7 @@ proto._getRelationFeature = function(featureId) {
 
 proto.unlinkRelation = function(index) {
   var relation = this.relations[index];
+  relation = this.getEditingLayer().getSource().getFeatureById(relation.id);
   var originalRelation = relation.clone();
   relation.set(this.relation.childField, null);
   this.getCurrentWorkflow().session.pushUpdate(this._layerId, relation, originalRelation);
@@ -312,7 +416,8 @@ proto._createWorkflowOptions = function(options) {
       session: this.getCurrentWorkflow().session,
       isChild: options.isChild || true,
       layer: this.getLayer(),
-      excludeFields: [this.relation.childField]
+      excludeFields: [this.relation.childField],
+      fatherValue: this._curentFeatureFatherFieldValue
     },
     inputs: {
       features: options.features || [],
@@ -378,10 +483,12 @@ proto.showRelationStyle = function() {
 
 proto.hideRelationStyle = function() {
   var self = this;
-  _.forEach(this.relations, function(relation) {
-    relationfeature = self._getRelationFeature(relation.id);
-    relationfeature.setStyle(self._originalLayerStyle);
-  })
+  if (this._layerType == 'vector') {
+    _.forEach(this.relations, function(relation) {
+      relationfeature = self._getRelationFeature(relation.id);
+      relationfeature.setStyle(self._originalLayerStyle);
+    })
+  }
 };
 
 

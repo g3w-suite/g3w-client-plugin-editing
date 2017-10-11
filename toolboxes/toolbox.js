@@ -32,7 +32,7 @@ function ToolBox(options) {
   this._session = new Session({
     id: options.id, // contiene l'id del layer
     editor: this._editor,
-    featuresstore: this._layerType == Layer.LayerTypes.VECTOR ? new OlFeaturesStore(): this._editingLayer.getFeaturesStore()
+    featuresstore: this._layerType == Layer.LayerTypes.VECTOR ? new OlFeaturesStore(): new FeaturesStore()
   });
   // opzione per recuperare le feature
   this._getFeaturesOption = {};
@@ -68,20 +68,12 @@ function ToolBox(options) {
   _.forEach(this._tools, function(tool) {
     tool.setSession(self._session);
   });
-  // in ascolto dell'onafter start della sessione così se avviata
-  // vado ad associare le features del suo featuresstore al ol.layer.Vector
-  this._session.onafter('start', function(options) {
-    // le sessioni dipendenti per poter eseguier l'editing
-    var EditingService = require('../editingservice');
-    // passo id del toolbox e le opzioni per far partire la sessione
-    EditingService.getLayersDependencyFeatures(self.state.id, options);// dove le opzioni possono essere il filtro;
-  });
 
   // in ascolto dell'onafter start della sessione così se avviata
   // vado ad associare le features del suo featuresstore al ol.layer.Vector
   this._session.onafter('stop', function() {
     var EditingService = require('../editingservice');
-    EditingService.stopSessionDependencies(self.state.id);
+    EditingService.stopSessionChildren(self.state.id);
   });
 
   // mapservice mi servirà per fare richieste al server sulle features (bbox) quando agisco sull mappa
@@ -159,10 +151,12 @@ proto._setEditingLayerSource = function() {
   var featuresstore = this._session.getFeaturesStore();
   // questo ritorna come promessa l'array di features del featuresstore
   // vado  a settare il source del layer
-  var source = this._layerType == Layer.LayerTypes.VECTOR ? new ol.source.Vector({features: featuresstore.getFeaturesCollection() }) : featuresstore;
-  //setto come source del layer l'array / collection feature del features sotre della sessione
-  // il layer deve implementare anche un setSource
-  this._editingLayer.setSource(source);
+  if (this._layerType == Layer.LayerTypes.VECTOR) {
+    var source = new ol.source.Vector({features: featuresstore.getFeaturesCollection() });
+    //setto come source del layer l'array / collection feature del features sotre della sessione
+    // il layer deve implementare anche un setSource
+    this._editingLayer.setSource(source);
+  }
 };
 
 // funzione che fa in modo di attivare tutti i tasks associati
@@ -172,6 +166,7 @@ proto._setEditingLayerSource = function() {
 proto.start = function() {
   var self = this;
   var d = $.Deferred();
+  // caso vettoriale
   if (this._layerType == Layer.LayerTypes.VECTOR) {
     var bbox = this._loadedExtent = this._mapService.getMapBBOX();
     this._getFeaturesOption = {
@@ -200,6 +195,9 @@ proto.start = function() {
               self.setEditing(true);
               // vado a registrare l'evento getFeatiure
               self._registerGetFeaturesEvent(self._getFeaturesOption);
+              var EditingService = require('../editingservice');
+              // passo id del toolbox e le opzioni per far partire la sessione
+              EditingService.getLayersDependencyFeatures(self.state.id, self._getFeaturesOption);// dove le opzioni possono essere il filtro;
               d.resolve(features);
             })
             .fail(function(err) {
@@ -226,24 +224,38 @@ proto.stop = function() {
   // le sessioni dipendenti per poter eseguier l'editing
   var d = $.Deferred();
   if (this._session && this._session.isStarted()) {
-    this._session.stop()
-      .then(function() {
-        self.state.editing.on = false;
-        self.state.enabled = false;
-        self.state.loading = false;
-        self._getFeaturesOption = {};
-        // spengo il tool attivo
-        self.stopActiveTool();
-        // seci sono tool attivi vado a spengere
-        self._setToolsEnabled(false);
-        self.clearToolboxMessages();
-        self._unregisterGetFeaturesEvent();
-        d.resolve(true)
-      })
-      .fail(function(err) {
-        // mostro un errore a video o tramite un messaggio nel pannello
-        d.reject(err)
-      });
+    //vado a verificare se  c'è un padre in editing
+    var EditingService = require('../editingservice');
+    var is_there_a_father_in_editing = EditingService.fatherInEditing(self.state.id);
+    if (!is_there_a_father_in_editing) {
+      this._session.stop()
+        .then(function() {
+          self.state.editing.on = false;
+          self.state.enabled = false;
+          self.state.loading = false;
+          self._getFeaturesOption = {};
+          // spengo il tool attivo
+          self.stopActiveTool();
+          // seci sono tool attivi vado a spengere
+          self._setToolsEnabled(false);
+          self.clearToolboxMessages();
+          self._unregisterGetFeaturesEvent();
+          d.resolve(true)
+        })
+        .fail(function(err) {
+          // mostro un errore a video o tramite un messaggio nel pannello
+          d.reject(err)
+        });
+    } else {
+      // spengo il tool attivo
+      self.stopActiveTool();
+      // seci sono tool attivi vado a spengere
+      self.state.editing.on = false;
+      self._setToolsEnabled(false);
+      self.clearToolboxMessages();
+      self._unregisterGetFeaturesEvent();
+      EditingService.stopSessionChildren(self.state.id);
+    }
   } else {
     d.resolve(true)
   }

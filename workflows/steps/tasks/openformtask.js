@@ -39,7 +39,7 @@ proto.run = function(inputs, context) {
   var layerName = layer.getName();
   var formService = showForm({
     formComponent: EditingFormComponent,
-    title: 'Edit Feature',
+    title: "Edita attributi "+ layerName,
     name: "Edita attributi "+ layerName,
     id: self._generateFormId(layerName),
     dataid: layerName,

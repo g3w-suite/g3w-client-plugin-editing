@@ -135,8 +135,6 @@ function EditorToolsFactory() {
         break;
       // caso layer tabellare da mettere in piedi
       case Layer.LayerTypes.TABLE:
-        editingLayer = ''; // qui da definire
-        color = 'blue';
         tools = [
           new Tool({
             id: 'addfeature',

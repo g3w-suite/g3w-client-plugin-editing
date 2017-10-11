@@ -23,12 +23,22 @@ var InternalComponent = Vue.extend({
     },
     editFeature: function(index) {
       this.$options.service.editFeature(index);
+    },
+    linkFeature: function(index) {
+     this.$options.service.linkFeature(index);
+    }
+  },
+  watch: {
+    'state.relations' : function() {
+      this.$nextTick(function() {
+        $(".nano").nanoScroller();
+      });
     }
   },
   mounted: function() {
     var self = this;
     this.$nextTick(function() {
-      $("#editing_table .nano").nanoScroller();
+      $(".nano").nanoScroller();
     });
   }
 });
@@ -40,7 +50,10 @@ var TableComponent = function(options) {
     features: options.features,
     promise: options.promise,
     context: options.context,
-    inputs: options.inputs
+    inputs: options.inputs,
+    isrelation: options.isrelation,
+    fatherValue: options.fatherValue,
+    foreignKey: options.foreignKey
   });
   var headers = options.headers || [];
   // istanzio il componente interno

@@ -12,7 +12,6 @@ var GUI = g3wsdk.gui.GUI;
 var ToolBoxesFactory = require('./toolboxes/toolboxesfactory');
 var CommitFeaturesWorkflow = require('./workflows/commitfeaturesworkflow');
 
-
 function EditingService() {
   var self = this;
   base(this);
@@ -22,7 +21,8 @@ function EditingService() {
   this._layersstore = new LayersStore({
     id: 'editing'
   });
-  this._layers = {}; // layers di editing
+  // oggetto contenente tutti i layers in editing
+  this._editableLayers = {};
   // STATO GENERALE DEL EDITNG SERVICE
   // CHE CONTERRÀ TUTTI GLI STATI DEI VARI PEZZI UTILI A FAR REAGIRE L'INTERFACCIA
   this.state = {
@@ -62,6 +62,7 @@ function EditingService() {
     var editableLayer;
     var layerId;
     var color;
+    // sono i layer originali caricati dal progetto e messi nel catalogo
     var layers = this._getEditableLayersFromCatalog();
     //vado ad aggiungere il layersstore alla maplayerssotreregistry
     MapLayersStoreRegistry.addLayersStore(this._layersstore);
@@ -69,15 +70,16 @@ function EditingService() {
     _.forEach(layers, function(layer) {
       layerId = layer.getId();
       // vado a chiamare la funzione che mi permette di
-      // estrarre la versione vettoriale del layer di partenza
+      // estrarre la versione editabile del layer di partenza (es. da imagelayer a vector layer, table layer/tablelayer etc..)
       editableLayer = layer.getLayerForEditing();
+      // se di tipo table assesgno sempre un solo colore
       color = layer.getType() == Layer.LayerTypes.TABLE ? "#cc3300" : COLORS.splice(0,1).pop();
+      // setto il colore che mi servrà per colorarare si il vettoriale che il toolbox
       editableLayer.setColor(color);
       // vado ad aggiungere ai layer editabili
-      self._layers[layerId] = editableLayer;
+      self._editableLayers[layerId] = editableLayer;
       //aggiungo il layer al layersstore
-      if (Layer.LayerTypes.VECTOR)
-        self._layersstore.addLayer(editableLayer);
+      self._layersstore.addLayer(editableLayer);
       // aggiungo all'array dei vectorlayers se per caso mi servisse
       self._sessions[layer.getId()] = null;
     });
@@ -144,12 +146,10 @@ proto.getEditingLayer = function(id) {
 proto._buildToolBoxes = function() {
   var self = this;
   var toolbox;
-  var editor;
-  _.forEach(this._layers, function(layer) {
-    editor = layer.getEditor();
+  _.forEach(this._editableLayers, function(layer) {
     // la toolboxes costruirà il toolboxex adatto per quel layer
     // assegnadogli le icone dei bottonii etc ..
-    toolbox = ToolBoxesFactory.build(editor);
+    toolbox = ToolBoxesFactory.build(layer);
     // vado ad aggiungere la toolbox
     self.addToolBox(toolbox);
   })
@@ -180,14 +180,14 @@ proto._createToolBoxDependencies = function() {
 };
 
 proto.isFieldRequired = function(layerId, fieldName) {
-  return this._layers[layerId].isFieldRequired(fieldName);
+  return this._editableLayers[layerId].isFieldRequired(fieldName);
 };
 
 proto._getToolBoxEditingDependencies = function(layer) {
   var self = this;
   var relationLayers = _.merge(layer.getChildren(), layer.getFathers());
   var toolboxesIds = _.filter(relationLayers, function(layerName) {
-    return !!self._layers[layerName]
+    return !!self._editableLayers[layerName]
   });
   return toolboxesIds;
 };
@@ -209,24 +209,6 @@ proto.handleToolboxDependencies = function(toolbox) {
     dependecyToolBox = self.getToolBoxById(toolboxId);
     // disabilito visivamente l'editing
     dependecyToolBox.setEditing(false);
-  })
-};
-
-proto.commitDirtyToolBoxes = function(toolboxId) {
-  var self = this;
-  _.forEach(this._toolboxes, function(toolbox, tid) {
-    if (tid != toolboxId && toolbox.isDirty() && toolbox.hasDependencies()) {
-      self.commit(toolbox)
-        .fail(function() {
-          toolbox.revert()
-            .then(function() {
-              // se ha dpiendenze vado a fare il revert delle modifche fatte
-              _.forEach(toolbox.getDependencies(), function(toolboxId) {
-                self.getToolBoxById(toolboxId).revert();
-              })
-            })
-        })
-    }
   })
 };
 
@@ -271,7 +253,7 @@ proto.getRelationsByFeature = function(relation, feature, layerType) {
   var featureValue = feature.get(relationFatherField);
   var toolbox = this.getToolBoxById(toolboxId);
   var editingLayer = toolbox.getEditingLayer();
-  var features = layerType == 'vector' ? editingLayer.getSource().getFeatures() : editingLayer.getSource().readFeatures() ;
+  var features = layerType == 'vector' ? editingLayer.getSource().getFeatures() : toolbox.getSession().getFeaturesStore().readFeatures() ;
   var relations = [];
   _.forEach(features, function(feature) {
     if (feature.get(relationChildField) == featureValue) {
@@ -287,11 +269,11 @@ proto.loadPlugin = function() {
 
 // ritorna i layer editabili presenti nel layerstore dell'editing
 proto.getLayers = function() {
-  return this._layers;
+  return this._editableLayers;
 };
 
 proto.getLayersById = function(layerId) {
-  return this._layers[layerId];
+  return this._editableLayers[layerId];
 };
 
 // vado a recuperare il toolbox a seconda del suo id
@@ -358,7 +340,7 @@ proto.getRelationsInEditing = function(relations, feature, isNew) {
   var relationsinediting = [];
   var relationinediting;
   _.forEach(relations, function(relation) {
-    if (self._layers[relation.getChild()]) {
+    if (self._editableLayers[relation.getChild()]) {
       // aggiungo lo state della relazione
       relationinediting = {
         relation:relation.getState(),
@@ -374,15 +356,33 @@ proto.getRelationsInEditing = function(relations, feature, isNew) {
   return relationsinediting;
 };
 
-proto.stopSessionDependencies = function(layerId) {
+// qui devo verificare sia l condizione del padre che del figlio
+proto.stopSessionChildren = function(layerId) {
   var self = this;
-  var relationLayers = this._layers[layerId].getChildren();
+  // caso padre verifico se i figli sono in editing o meno
+  var relationLayerChildren = this._editableLayers[layerId].getChildren();
   var toolbox;
-  _.forEach(relationLayers, function(id) {
+  _.forEach(relationLayerChildren, function(id) {
     toolbox = self.getToolBoxById(id);
     if (toolbox && !toolbox.inEditing())
       self._sessions[id].stop();
-  })
+  });
+};
+
+proto.fatherInEditing = function(layerId) {
+  var self = this;
+  var inEditing = false;
+  var toolbox;
+  // caso padre verifico se ci sono padri in editing o meno
+  var relationLayerFathers = this._editableLayers[layerId].getFathers();
+  _.forEach(relationLayerFathers, function(id) {
+    toolbox = self.getToolBoxById(id);
+    if (toolbox && toolbox.inEditing()) {
+      inEditing = true;
+      return false;
+    }
+  });
+  return inEditing;
 };
 
 // fa lo start di tutte le dipendenze del layer legato alla toolbox che si è avviato
@@ -398,8 +398,8 @@ proto.getLayersDependencyFeatures = function(layerId, options) {
   IMPORTANTE: PER EVITARE PROBLEMI È IMPORTANTE CHE I LAYER DIPENDENTI SIANO A SUA VOLTA EDITABILI
 
    */
-  var relationLayers = _.filter(this._layers[layerId].getChildren(), function(id) {
-    return !!self._layers[id];
+  var relationLayers = _.filter(this._editableLayers[layerId].getChildren(), function(id) {
+    return !!self._editableLayers[id];
   });
   // se ci sono
   if (relationLayers) {
@@ -415,15 +415,16 @@ proto.getLayersDependencyFeatures = function(layerId, options) {
       //verifico che ci sia la sessione
       if (session)
         if (!session.isStarted()) {
-          if (options.type != self._layers[id].getType())
+          if (options.type != self._editableLayers[id].getType())
             options = {
-              type: self._layers[id].getType(),
+              type: self._editableLayers[id].getType(),
               editing: true
             };
           session.start(options);
         } else {
-          // altrimenti recupero le features secondo quell'opzione
-          session.getFeatures(options);
+          // altrimenti recupero le features secondo quell'opzione solo nel caso dei vettoriali
+          if (self._editableLayers[id].getType() == Layer.LayerTypes.VECTOR)
+            session.getFeatures(options);
         }
       else {
         // altrimenti per quel layer la devo instanziare
@@ -442,6 +443,50 @@ proto.getLayersDependencyFeatures = function(layerId, options) {
       }
     })
   }
+  return d.promise();
+};
+
+proto._applyChangesToRelationsAfterCommit = function(commitItemsRelations, relationsResponse) {
+  var self = this;
+  var layer;
+  var sessionFeaturesStore;
+  var featureStore;
+  var features;
+  _.forEach(relationsResponse, function(relationResponse, layerId) {
+    layer = self.getLayersById(layerId);
+    sessionFeaturesStore = self.getToolBoxById(layerId).getSession().getFeaturesStore();
+    featureStore = layer.getSource();
+    features = _.clone(sessionFeaturesStore.readFeatures());
+    _.forEach(features, function(feature) {
+      feature.clearState();
+    });
+    featureStore.setFeatures(features);
+    layer.applyCommitResponse({
+      response: relationResponse
+    });
+  })
+};
+
+proto.commitDirtyToolBoxes = function(toolboxId) {
+  var self = this;
+  var d = $.Deferred();
+  var toolbox = this.getToolBoxById(toolboxId);
+  if (toolbox.isDirty() && toolbox.hasDependencies()) {
+    this.commit(toolbox)
+      .fail(function() {
+        toolbox.revert()
+          .then(function() {
+            // se ha dpiendenze vado a fare il revert delle modifche fatte
+            _.forEach(toolbox.getDependencies(), function(toolboxId) {
+              self.getToolBoxById(toolboxId).revert();
+            })
+          })
+        })
+      .always(function() {
+        d.resolve(toolbox);
+      })
+  } else
+    d.resolve(null);
   return d.promise();
 };
 
@@ -464,34 +509,38 @@ proto.commit = function(toolbox) {
       // qui probabilmente a seconda del layer se ha dipendenze faccio ogni sessione
       // produrrà i suoi dati post serializzati che pi saranno uniti per un unico commit
       session.commit()
-        .then(function() {
+        .then(function (commitItems, response) {
+          var relationsResponse = response.response.new_relations;
+          var commitItemsRelations = commitItems.relations;
+          self._applyChangesToRelationsAfterCommit(commitItemsRelations, relationsResponse);
           GUI.notify.success("I dati sono stati salvati correttamente");
           self._mapService.refreshMap();
+          workflow.stop();
+          d.resolve(toolbox);
         })
-        .fail(function(err) {
+        .fail(function (err) {
           var error_message = "";
           function traverseErrorMessage(obj) {
             _.forIn(obj, function (val, key) {
-              if (_.isArray(val)) {
+              if(_.isArray(val)) {
                 error_message = val[0];
               }
-              if (_.isObject(val)) {
+              if(_.isObject(val)) {
                 traverseErrorMessage(obj[key]);
               }
-              if (error_message) {
+              if(error_message) {
                 return false;
               }
             });
           }
-          if (err) {
+
+          if(err) {
             traverseErrorMessage(err.error.data);
             GUI.notify.error("<h4>Errore nel salvataggio sul server</h4>" +
-              "<h5>" + error_message  + "</h5>");
+              "<h5>" + error_message + "</h5>");
           } else {
             GUI.notify.error("Errore nel salvataggio sul server");
           }
-        }).
-        always(function() {
           workflow.stop();
           d.resolve(toolbox);
         })

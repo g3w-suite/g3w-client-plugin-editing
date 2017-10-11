@@ -3,53 +3,53 @@ var GUI = g3wsdk.gui.GUI;
 var EditToolsFactory = require('./toolsfactory');
 var ToolBox = require('./toolbox');
 
-
 // classe costruttrice di ToolBoxes
 function EditorToolBoxesFactory() {
   this._mapService = GUI.getComponent('map').getService();
   // metodo adibito alla costruzione dell'Editor Control
   // e dei tasks associati
-  this.build = function(editor) {
+  // il layer è il layer di editing originale da cui tutte le feature
+  // verranno chiamate tramite il featuresstore provider
+  this.build = function(layer) {
     // estraggo il layer dell'editor
-    var layer = editor.getLayer();
-    var editLayer;
+    var editor = layer.getEditor();
     // estraggo il tipo di layer
     var layerType = layer.getType();
     var layerId = layer.getId();
     // definisce il layer che sarà assegnato al toolbox e ai tools
+    var editingLayer;
     var tools;
     switch (layerType) {
-      // caso layer vettoriale
+      // caso layer editabile vettoriale
       case Layer.LayerTypes.VECTOR:
         var geometryType = layer.getGeometryType();
         // vado a recuperare il layer (ol.Layer) della mappa
         // su cui tutti i tool agiranno
-        editLayer = this._mapService.getLayerById(layerId);
+        editingLayer = this._mapService.getLayerById(layerId);
         tools = EditToolsFactory.build({
           type: layerType,
-          layer: editLayer,
+          layer: editingLayer,
           geometryType: geometryType
         });
         break;
       // caso layer tabellare da mettere in piedi
       case Layer.LayerTypes.TABLE:
-        editLayer = layer; // qui da definire
+        editingLayer = layer;
         tools = EditToolsFactory.build({
           type: layerType,
-          layer: editLayer
+          layer: editingLayer
         });
         break;
       default:
         tools = [];
         break;
     }
-    
     return new ToolBox({
       id: layer.getId(),
       color: layer.getColor(),
       type: layerType,
       editor: editor,
-      layer: editLayer,
+      layer: editingLayer,
       tools: tools,
       title: "Edit " + layer.getName()
     })

@@ -6,7 +6,6 @@ var Component = g3wsdk.gui.vue.Component;
 var EditingService = require('../editingservice');
 var EditingTemplate = require('./editing.html');
 var ToolboxComponent = require('./components/toolbox');
-var editingEventsBus = require('./editingeventbus');
 
 var vueComponentOptions = {
   template: EditingTemplate,
@@ -53,19 +52,26 @@ var vueComponentOptions = {
       var toolbox = this._getToolBoxById(toolboxId);
       toolbox.save();
     },
-    startActiveTool: function(toolId, toolboxId) {
-      console.log('start active tool');
-      var tool;
+    _setActiveToolOfToolbooxSelected: function(toolId, toolboxId) {
       var toolbox = this._getToolBoxById(toolboxId);
-      // vado a verificare se l'id dell too attivo è diverso o meno da quello premuto
-      if (this.state.toolboxidactivetool && toolboxId != this.state.toolboxidactivetool) {
-        this._checkDirtyToolBoxes(this.state.toolboxidactivetool);
-        // vado a stoppare l'eventuale tool attivo del precedente toolbox
-        this._getToolBoxById(this.state.toolboxidactivetool).stopActiveTool();
-      }
       this.state.toolboxidactivetool = toolboxId;
-      tool = toolbox.getToolById(toolId);
+      var tool = toolbox.getToolById(toolId);
       toolbox.setActiveTool(tool);
+    },
+    startActiveTool: function(toolId, toolboxId) {
+      var self = this;
+      // vado a verificare se l'id dell toolbox attivo è diverso o meno da quello premuto
+      if (this.state.toolboxidactivetool && toolboxId != this.state.toolboxidactivetool) {
+        this._checkDirtyToolBoxes(this.state.toolboxidactivetool)
+          .then(function(toolbox) {
+            // vado a stoppare l'eventuale tool attivo del precedente toolbox
+            if (toolbox)
+              toolbox.stopActiveTool();
+            self._setActiveToolOfToolbooxSelected(toolId, toolboxId);
+          })
+      } else {
+        this._setActiveToolOfToolbooxSelected(toolId, toolboxId);
+      }
     },
     stopActiveTool: function(toolboxId) {
       var toolbox = this._getToolBoxById(toolboxId);
@@ -90,7 +96,7 @@ var vueComponentOptions = {
       }
     },
     _checkDirtyToolBoxes: function(toolboxId) {
-      this.$options.service.commitDirtyToolBoxes(toolboxId);
+      return this.$options.service.commitDirtyToolBoxes(toolboxId);
     },
     // funzione che mi va a aprendere dal service il toolbox in base al suo id
     _getToolBoxById: function(toolboxId) {
@@ -117,15 +123,6 @@ var vueComponentOptions = {
       var toolbox = this.state.toolboxselected;
       return !_.isNull(toolbox) && toolbox.state.editing.history.redo;
     }
-  },
-  mounted: function() {
-    // tutti gli eventi dei toolboxes
-    editingEventsBus.$on('setselectedtoolbox', this.setSelectedToolbox);
-    editingEventsBus.$on('starttoolbox', this.startToolBox);
-    editingEventsBus.$on('stoptoolbox', this.stopToolBox);
-    editingEventsBus.$on('savetoolbox', this.saveToolBox);
-    editingEventsBus.$on('setactivetool', this.startActiveTool);
-    editingEventsBus.$on('stopactivetool', this.stopActiveTool);
   }
 };
 

@@ -77,7 +77,6 @@ proto.run = function(inputs, context) {
         // verifico se la pk è editabile o meno
         layer.isPkEditable() ?  feature.setNew() : feature.setTemporaryId();
         // lo setto come add feature lo state
-
         // vado a aggiungerla
         source.addFeature(feature);
         //source.readFeatures().push(feature);

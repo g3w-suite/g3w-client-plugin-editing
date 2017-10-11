@@ -2,7 +2,6 @@ var inherit = g3wsdk.core.utils.inherit;
 var base =  g3wsdk.core.utils.base;
 var GUI = g3wsdk.gui.GUI;
 var EditingTask = require('./editingtask');
-var EditingFormComponent = require('../../../form/editingform');
 
 function OpenFormTask(options) {
 
@@ -22,7 +21,8 @@ var proto = OpenFormTask.prototype;
 // metodo eseguito all'avvio del tool
 proto.run = function(inputs, context) {
   var self = this;
-  this._isChild = context.isChild;
+  var EditingFormComponent = require('../../../form/editingform');
+  this._isChild = context.isChild || GUI.getContentLength();
   console.log('Open Table Form Task task run.......');
   var d = $.Deferred();
   var session = context.session;
@@ -39,7 +39,7 @@ proto.run = function(inputs, context) {
   var layerName = layer.getName();
   var formService = showForm({
     formComponent: EditingFormComponent,
-    title: 'Edit Feature',
+    title: "Edita attributi "+ layerName,
     name: "Edita attributi "+ layerName,
     id: self._generateFormId(layerName),
     dataid: layerName,
@@ -53,22 +53,28 @@ proto.run = function(inputs, context) {
     },
     modal: true,
     push: this._isChild, // indica se posso aggiungere form
-    showgoback: !this._isChild, // se è figlo evito di visualizzare il go back
+    showgoback: false, // se è figlo evito di visualizzare il go back
     buttons:[{
         title: "Salva",
         type: "save",
         class: "btn-success",
         cbk: function(fields) {
-          console.log(feature);
           // vado a settare per quel layer i valori ai campi
           layer.setFieldsWithValues(feature, fields);
           // verifico se non è nuovo
           if (!feature.isNew()) {
             session.pushUpdate(layerId, feature, originalFeature);
-            d.resolve(inputs);
           }  else {
+            //vado ad aggiungere la feature
+            if (layer.isPkEditable())
+              _.forEach(fields, function(field) {
+                if (field.name == feature.getPk())
+                  feature.set(feature.getPk(), field.value);
+              });
+            self._isChild ? layer.getSource().addFeature(feature) : session.getFeaturesStore().addFeature(feature);
             session.pushAdd(layerId, feature);
           }
+          inputs.features.length ? null : inputs.features.push(feature);
           GUI.setModal(false);
           d.resolve(inputs);
         }
