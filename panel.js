@@ -6,6 +6,7 @@ function EditingPluginComponent(options) {
   options = options || {};
   // editortoolsbars
   options.id = "editing-panel";
+  options.title = "Editing dati";
   options.name = "Gestione dati EDITING";
   options.toolboxes = options.toolboxes || null;
   base(this, options)

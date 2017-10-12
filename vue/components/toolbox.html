@@ -2,7 +2,7 @@
   <div :class="{'disableddiv' : !isLayerReady }" :id="'id_toolbox_'+ state.id">
     <div @click="select" class="panel panel-primary" :class="{ 'toolboxselected': state.selected }">
       <div  class="panel-heading"  style="position:relative; height: 40px;" :style="{ background: state.color}" >
-        <div v-if="father" style="margin-right:5px;display: inline-block" class="enabled editbtn dropdown">
+        <div v-if="father" style="margin-right:5px;display: inline-block" class="enabled dropdown">
           <img  height="20px" width="20px" class="dropbtn" data-toggle="dropdown" :src="resourcesurl + 'images/relation.png'"/>
           <div class="dropdown-content" style="padding: 5px;">
             <div v-for="dependency in state.editing.dependencies" style="color: black" >{{ dependency }}</div>

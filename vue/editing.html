@@ -6,11 +6,27 @@
     <div class="editbtn pull-right" :class="{'enabled' : canRedo }">
       <img height="30px" @click="canRedo ? redo(): null" width="30px" :src="resourcesurl + 'images/redo.png'"/>
     </div>
+
     <div class="editbtn pull-right" @click="canUndo ? undo(): null" :class="{'enabled' : canUndo }">
       <img height="30px" width="30px" :src="resourcesurl + 'images/undo.png'"/>
     </div>
+
+    <div class="navbar-custom-menu pull-right">
+      <ul class="nav navbar-nav">
+        <!-- Messages: style can be found in dropdown.less-->
+        <li class="dropdown messages-menu">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+            <i class="fa fa-envelope-o"></i>
+            <span v-if="state.message" class="label label-info">1</span>
+          </a>
+          <div v-if="state.message" class="dropdown-menu" style="left:-120px !important; padding:5px;">
+              <div class="warning-message" v-html="state.message"></div>
+          </div>
+        </li>
+
+      </ul>
+    </div>
   </div>
-  <div class="warning-message" v-html="state.message"></div>
   <toolbox
     :state="toolboxstate"
     :resourcesurl="resourcesurl"

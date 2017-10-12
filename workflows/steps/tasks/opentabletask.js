@@ -30,6 +30,7 @@ proto.run = function(inputs, context) {
   var features = this._isChild ? layer.getSource().readFeatures() :  session.getFeaturesStore().readFeatures();
   GUI.showContent({
     content: new TableComponent({
+      title: 'Edita ' + layer.getName(),
       features: features,
       promise: d,
       isrelation: self._isChild,

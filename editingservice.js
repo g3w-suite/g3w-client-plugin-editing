@@ -39,20 +39,7 @@ function EditingService() {
   // Mi verranno estratti tutti i layer editabili anche quelli presenti nell'albero del catalogo
   // come per esempio il caso di layers relazionati
   this.init = function(config) {
-    // set di colori
-    var COLORS = [
-      '#ff790d',
-      '#62bdff',
-      '#7aff54',
-      '#00ffbf',
-      '#00bfff',
-      '#0040ff',
-      '#8000ff',
-      '#ff00ff',
-      '#331909',
-      '#234d20',
-      '#7f3e16'
-    ];
+
     // setto la configurazione del plugin
     this.config = config;
     // contiene tutti i toolbox
@@ -73,20 +60,16 @@ function EditingService() {
       // estrarre la versione editabile del layer di partenza (es. da imagelayer a vector layer, table layer/tablelayer etc..)
       editableLayer = layer.getLayerForEditing();
       // se di tipo table assesgno sempre un solo colore
-      color = layer.getType() == Layer.LayerTypes.TABLE ? "#cc3300" : COLORS.splice(0,1).pop();
+      //color = layer.getType() == Layer.LayerTypes.TABLE ? "#cc3300" : COLORS.splice(0,1).pop();
       // setto il colore che mi servrà per colorarare si il vettoriale che il toolbox
-      editableLayer.setColor(color);
+      //editableLayer.setColor(color);
       // vado ad aggiungere ai layer editabili
       self._editableLayers[layerId] = editableLayer;
-      //aggiungo il layer al layersstore
-      self._layersstore.addLayer(editableLayer);
       // aggiungo all'array dei vectorlayers se per caso mi servisse
       self._sessions[layer.getId()] = null;
     });
-    // vado a creare i toolboxes
-    this._buildToolBoxes();
-    // creo l'albero delle dipendenze padre figlio per ogni toolbox
-    this._createToolBoxDependencies();
+    // vao a settare i colori dei layere e delle toolbox
+    this.setLayersColor();
     // disabilito l'eventuale tool attivo se viene attivata
     // un'interazione di tipo pointerInteractionSet sulla mappa
     this._mapService.on('mapcontrol:active', function(interaction) {
@@ -95,12 +78,107 @@ function EditingService() {
         toolboxselected.getActiveTool().stop();
       }
     });
+    _.forEach(this._editableLayers, function(layer) {
+      //aggiungo il layer al layersstore
+      self._layersstore.addLayer(layer);
+    });
+    // vado a creare i toolboxes
+    this._buildToolBoxes();
+    // creo l'albero delle dipendenze padre figlio per ogni toolbox
+    this._createToolBoxDependencies();
   }
 }
 
 inherit(EditingService, PluginService);
 
 var proto = EditingService.prototype;
+
+proto.setLayersColor = function() {
+  var RELATIONS_COLORS = [
+    ["#656F94",
+      "#485584",
+      "#303E73",
+      "#1B2B63",
+      "#0C1B53"],
+
+    ["#CF858F",
+      "#B95A67",
+      "#A23645",
+      "#8B1929",
+      "#740313"],
+
+    ["#86B976",
+      "#64A450",
+      "#479030",
+      "#2F7C16",
+      "#1B6803"],
+
+    ["#DAC28C",
+      "#C2A45E",
+      "#AA8739",
+      "#926E1A",
+      "#7A5603"]
+  ];
+
+  var COLORS = [
+    "#AFEE30",
+    "#96C735",
+    "#7B9F35",
+    "#5F772F",
+    "#414F25",
+
+    "#4138B2",
+    "#3E3794",
+    "#373276",
+    "#2E2B59",
+    "#22203B",
+
+    "#FFD033",
+    "#D5B139",
+    "#AA9039",
+    "#7F6E33",
+    "#544A27",
+
+    "#CD2986",
+    "#AB2E74",
+    "#882D61",
+    "#66294B",
+    "#431F34"
+  ];
+  var self = this;
+  var fatherLayers = {};
+  var color;
+  var relationLayers = [];
+  _.forEach(this._editableLayers, function(layer, layerId) {
+    if (layer.isFather() && self._layerChildrenRelationInEditing(layer).length)
+      fatherLayers[layerId] = self._layerChildrenRelationInEditing(layer);
+  });
+  _.forEach(fatherLayers, function(children, fatherLayerId) {
+    color = RELATIONS_COLORS.splice(0,1).pop().reverse();
+    relationLayers.push(fatherLayerId);
+    self._editableLayers[fatherLayerId].setColor(color.splice(0,1).pop());
+    _.forEach(children, function(childId) {
+      relationLayers.push(childId);
+      !self._editableLayers[childId].getColor() ? self._editableLayers[childId].setColor(color.splice(0,1).pop()): null;
+    })
+  });
+  _.forEach(this._editableLayers, function(layer, layerId) {
+    if (relationLayers.indexOf(layerId) == -1) {
+      layer.setColor(COLORS.splice(0,1).pop());
+    }
+  })
+};
+
+proto._layerChildrenRelationInEditing = function(layer) {
+  var self = this;
+  var relations = layer.getChildren();
+  var childrenrealtioninediting = [];
+  _.forEach(relations, function(relation) {
+    if (self._editableLayers[relation])
+      childrenrealtioninediting.push(relation);
+  });
+  return childrenrealtioninediting;
+};
 
 // udo delle relazioni
 proto.undoRelations = function(undoItems) {
@@ -350,7 +428,6 @@ proto.getRelationsInEditing = function(relations, feature, isNew) {
         valid:true
       };
       relationsinediting.push(relationinediting);
-
     }
   });
   return relationsinediting;
@@ -486,25 +563,54 @@ proto.commitDirtyToolBoxes = function(toolboxId) {
         d.resolve(toolbox);
       })
   } else
-    d.resolve(null);
+    d.resolve(toolbox);
   return d.promise();
+};
+
+proto._createCommitMessage = function(commitItems) {
+  function create_changes_list_dom_element(add, update, del) {
+    var changeIds = {
+      Aggiunte: _.map(add, 'id').join(','),
+      Modificate:  _.map(update, 'id').join(','),
+      Cancellate:  _.map(del, 'id').join(',')
+    };
+    var dom = "<ul>";
+    _.forEach(changeIds, function(ids, action) {
+      dom += "<li>" + action + ": [" + ids + "]</li>";
+    });
+
+    dom += "</ul>";
+    return dom;
+  }
+
+  var message = "";
+  message += create_changes_list_dom_element(commitItems.add, commitItems.update, commitItems.delete);
+  if (!_.isEmpty(commitItems.relations)) {
+    message += "<h5>Relazioni Modificate</h5>";
+    _.forEach(commitItems.relations, function(commits, relationName) {
+      message +=  "<div><span style='font-weight: bold'>" + relationName + "</span></div>";
+      message += create_changes_list_dom_element(commits.add, commits.update, commits.delete);
+    })
+  }
+  return message;
 };
 
 proto.commit = function(toolbox) {
   var self = this;
   var d = $.Deferred();
   toolbox = toolbox || this.state.toolboxselected;
+  var session = toolbox.getSession();
   var layer = toolbox.getLayer();
   var workflow = new CommitFeaturesWorkflow({
     type:  'commit'
   });
   workflow.start({
     inputs: {
-      layer: layer
+      layer: layer,
+      message: this._createCommitMessage(session.getCommitItems())
     }
   })
     .then(function() {
-      var session = toolbox.getSession();
       // funzione che serve a fare il commit della sessione legata al tool
       // qui probabilmente a seconda del layer se ha dipendenze faccio ogni sessione
       // produrrà i suoi dati post serializzati che pi saranno uniti per un unico commit

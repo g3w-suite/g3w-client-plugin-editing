@@ -21,8 +21,8 @@ var Dialogs = {
     fnc: function(inputs) {
       var d = $.Deferred();
       GUI.dialog.dialog({
-        message: "Vuoi salvare definitivamente le modifiche?",
-        title: "Salvataggio modifica " + inputs.layer.getName(),
+        message: inputs.message,
+        title: "Vuoi salvare definitivamente le modifiche " + inputs.layer.getName() + "?",
         buttons: {
           SAVE: {
             label: "Salva",

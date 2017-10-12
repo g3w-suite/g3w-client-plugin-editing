@@ -45,7 +45,7 @@ proto.run = function(inputs, context) {
       // specificando il layer sul quale le feature aggiunte devono essere messe
       var source = this._layer.getSource();
       var attributes = _.filter(layer.getFields(), function(field) {
-        return field.editable;
+        return field.editable && field.name != layer.getPk() ;
       });
       // creo una source temporanea
       var temporarySource = new ol.source.Vector();

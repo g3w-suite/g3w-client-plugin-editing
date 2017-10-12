@@ -53,7 +53,8 @@ var TableComponent = function(options) {
     inputs: options.inputs,
     isrelation: options.isrelation,
     fatherValue: options.fatherValue,
-    foreignKey: options.foreignKey
+    foreignKey: options.foreignKey,
+    title: options.title
   });
   var headers = options.headers || [];
   // istanzio il componente interno

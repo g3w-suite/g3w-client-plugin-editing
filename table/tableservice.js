@@ -11,7 +11,8 @@ var TableService = function(options) {
   this._foreignKey = options.foreignKey;
   this.state = {
     features: [],
-    isrelation: options.isrelation // parametro che veine settato per visualizzare  o meno l'ambiente relzione o feature a se
+    isrelation: options.isrelation, // parametro che veine settato per visualizzare  o meno l'ambiente relzione o feature a se
+    title: options.title
   };
   //vado a scrivere le feature (oggetti)
   this._addFeatures(this._Features);

@@ -33,7 +33,8 @@ proto.run = function(inputs, context) {
   var feature = inputs.features.length ? inputs.features[inputs.features.length - 1] : layer.createNewFeature();
   var originalFeature = feature ? feature.clone() : null;
   var fields = layer.getFieldsWithValues(feature, {
-    exclude: excludeFields
+    exclude: excludeFields,
+    pkeditable: feature.isNew()
   });
   var showForm  = GUI.showContentFactory('form');
   var layerName = layer.getName();
