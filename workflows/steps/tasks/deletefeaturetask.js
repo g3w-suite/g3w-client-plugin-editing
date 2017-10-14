@@ -6,7 +6,6 @@ var EditingTask = require('./editingtask');
 function DeleteFeatureTask(options) {
   this.drawInteraction = null;
   this._selectInteraction = null;
-  this._layer = null;
   base(this, options);
 }
 
@@ -99,13 +98,13 @@ proto.run = function(inputs, context) {
   console.log('Delete task run.......');
   var self = this;
   var d = $.Deferred();
-  this._layer = inputs.layer;
-  var layer = context.layer;
-  var layerId = layer.getId();
+  var editingLayer = inputs.layer;
+  var originaLayer = context.layer;
+  var layerId = originaLayer.getId();
   //recupero la sessione dal context
   var session = context.session;
   this._selectInteraction = new ol.interaction.Select({
-    layers: [this._layer],
+    layers: [editigLayer],
     condition: ol.events.condition.click,
     style: function(feature) {
       var style = styles[feature.getGeometry().getType()];
@@ -115,13 +114,13 @@ proto.run = function(inputs, context) {
   this.addInteraction(this._selectInteraction);
   this._deleteInteraction = new DeleteInteraction({
     features: this._selectInteraction.getFeatures(), // passo le features selezionate
-    layer: this._layer // il layer appartenente
+    layer: editingLayer // il layer appartenente
   });
   this.addInteraction(this._deleteInteraction);
   this._deleteInteraction.on('deleteend', function(e) {
     var feature = e.features.getArray()[0];
     // vado a cancellare dalla source la feature selezionata
-    self._layer.getSource().removeFeature(feature);
+    editingLayer.getSource().removeFeature(feature);
     self._selectInteraction.getFeatures().remove(feature);
     // dico di cancellarla (la feature non viene cancellatata ma aggiornato il suo stato
     session.pushDelete(layerId, feature);

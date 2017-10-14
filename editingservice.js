@@ -145,27 +145,23 @@ proto.setLayersColor = function() {
     "#66294B",
     "#431F34"
   ];
+
   var self = this;
-  var fatherLayers = {};
   var color;
-  var relationLayers = [];
-  _.forEach(this._editableLayers, function(layer, layerId) {
-    if (layer.isFather() && self._layerChildrenRelationInEditing(layer).length)
-      fatherLayers[layerId] = self._layerChildrenRelationInEditing(layer);
-  });
-  _.forEach(fatherLayers, function(children, fatherLayerId) {
-    color = RELATIONS_COLORS.splice(0,1).pop().reverse();
-    relationLayers.push(fatherLayerId);
-    self._editableLayers[fatherLayerId].setColor(color.splice(0,1).pop());
-    _.forEach(children, function(childId) {
-      relationLayers.push(childId);
-      !self._editableLayers[childId].getColor() ? self._editableLayers[childId].setColor(color.splice(0,1).pop()): null;
-    })
-  });
-  _.forEach(this._editableLayers, function(layer, layerId) {
-    if (relationLayers.indexOf(layerId) == -1) {
-      layer.setColor(COLORS.splice(0,1).pop());
+  var childrenLayers;
+  _.forEach(this._editableLayers, function(layer) {
+    // verifico se è un layer è padre e se ha figli in editing
+    childrenLayers = self._layerChildrenRelationInEditing(layer);
+    if (layer.isFather() && childrenLayers.length) {
+      color = RELATIONS_COLORS.splice(0,1).pop().reverse();
+      !layer.getColor() ? layer.setColor(color.splice(0,1).pop()): null;
+      _.forEach(childrenLayers, function(layerId) {
+        !self._editableLayers[layerId].getColor() ? self._editableLayers[layerId].setColor(color.splice(0,1).pop()): null;
+      });
     }
+  });
+  _.forEach(this._editableLayers, function(layer, layerId) {
+    !self._editableLayers[layerId].getColor() ? layer.setColor(COLORS.splice(0,1).pop()): null;
   })
 };
 
@@ -486,22 +482,33 @@ proto.getLayersDependencyFeatures = function(layerId, options) {
     * */
     //cerco prima tra i toolbox se presente
     var session;
+    var toolbox;
     // cliclo sulle dipendenze create
     _.forEach(relationLayers, function(id) {
       session = self._sessions[id];
       //verifico che ci sia la sessione
       if (session)
         if (!session.isStarted()) {
+          toolbox = self.getToolBoxById(id);
+          toolbox.startLoading();
           if (options.type != self._editableLayers[id].getType())
             options = {
               type: self._editableLayers[id].getType(),
               editing: true
             };
-          session.start(options);
+          session.start(options)
+            .always(function() {
+              toolbox.stopLoading();
+            })
         } else {
           // altrimenti recupero le features secondo quell'opzione solo nel caso dei vettoriali
-          if (self._editableLayers[id].getType() == Layer.LayerTypes.VECTOR)
-            session.getFeatures(options);
+          if (self._editableLayers[id].getType() == Layer.LayerTypes.VECTOR) {
+            toolbox.startLoading();
+            session.getFeatures(options)
+              .always(function() {
+                toolbox.stopLoading();
+              })
+          }
         }
       else {
         // altrimenti per quel layer la devo instanziare
@@ -574,7 +581,7 @@ proto._createCommitMessage = function(commitItems) {
       Modificate:  _.map(update, 'id').join(','),
       Cancellate:  _.map(del, 'id').join(',')
     };
-    var dom = "<ul>";
+    var dom = "<ul style='border-bottom-color: #f4f4f4;'>";
     _.forEach(changeIds, function(ids, action) {
       dom += "<li>" + action + ": [" + ids + "]</li>";
     });
@@ -586,7 +593,8 @@ proto._createCommitMessage = function(commitItems) {
   var message = "";
   message += create_changes_list_dom_element(commitItems.add, commitItems.update, commitItems.delete);
   if (!_.isEmpty(commitItems.relations)) {
-    message += "<h5>Relazioni Modificate</h5>";
+    message += "<div style='height:1px; background:#f4f4f4;border-bottom:1px solid #f4f4f4;'></div>";
+    message += "<div style='margin-left: 40%'><h4>Relazioni</h4></div>";
     _.forEach(commitItems.relations, function(commits, relationName) {
       message +=  "<div><span style='font-weight: bold'>" + relationName + "</span></div>";
       message += create_changes_list_dom_element(commits.add, commits.update, commits.delete);

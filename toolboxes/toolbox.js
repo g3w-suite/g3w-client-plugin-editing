@@ -75,6 +75,12 @@ function ToolBox(options) {
     var EditingService = require('../editingservice');
     EditingService.stopSessionChildren(self.state.id);
   });
+  
+  this._session.onafter('start', function() {
+    var EditingService = require('../editingservice');
+    // passo id del toolbox e le opzioni per far partire la sessione
+    EditingService.getLayersDependencyFeatures(self.state.id, self._getFeaturesOption);// dove le opzioni possono essere il filtro;
+  });
 
   // mapservice mi servirà per fare richieste al server sulle features (bbox) quando agisco sull mappa
   this._mapService = GUI.getComponent('map').getService();
@@ -195,9 +201,6 @@ proto.start = function() {
               self.setEditing(true);
               // vado a registrare l'evento getFeatiure
               self._registerGetFeaturesEvent(self._getFeaturesOption);
-              var EditingService = require('../editingservice');
-              // passo id del toolbox e le opzioni per far partire la sessione
-              EditingService.getLayersDependencyFeatures(self.state.id, self._getFeaturesOption);// dove le opzioni possono essere il filtro;
               d.resolve(features);
             })
             .fail(function(err) {
@@ -213,6 +216,15 @@ proto.start = function() {
   }
   return d.promise();
 };
+
+proto.startLoading = function() {
+  this.state.loading = true;
+};
+
+proto.stopLoading = function() {
+  this.state.loading = false;
+};
+
 
 proto.getFeaturesOption = function() {
   return this._getFeaturesOption;

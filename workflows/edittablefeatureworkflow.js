@@ -1,11 +1,11 @@
 var inherit = g3wsdk.core.utils.inherit;
 var base =  g3wsdk.core.utils.base;
 var EditingWorkflow = require('./editingworkflow');
-var AddTableFeatureStep = require('./steps/addtablefeaturestep');
+var OpenFormStep = require('./steps/openformstep');
 
 function EditTableFeatureWorflow(options) {
   options = options || {};
-  options.steps = [new AddTableFeatureStep()];
+  options.steps = [new OpenFormStep()];
   base(this, options);
 }
 

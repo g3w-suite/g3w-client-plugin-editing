@@ -33,6 +33,7 @@ function EditorToolsFactory() {
                 name: "Inserisci feature",
                 icon: "addPoint.png",
                 layer: layer,
+                type: type,
                 op: AddFeatureWorkflow
               }),
               new Tool({
@@ -40,6 +41,7 @@ function EditorToolsFactory() {
                 name: "Sposta feature",
                 icon: "movePoint.png",
                 layer: layer,
+                type: type,
                 op: MoveFeatureWorkflow
               }),
               new Tool({
@@ -47,6 +49,7 @@ function EditorToolsFactory() {
                 name: "Elimina feature",
                 icon: "deletePoint.png",
                 layer: layer,
+                type: type,
                 op: DeleteFeatureWorkflow
               }),
               new Tool({
@@ -54,6 +57,7 @@ function EditorToolsFactory() {
                 name: "Modifica attributi",
                 icon: "editAttributes.png",
                 layer: layer,
+                type: type,
                 op: EditFeatureAttributesWorkflow
               })
             ];
@@ -66,6 +70,7 @@ function EditorToolsFactory() {
                 name: "Inserisci feature",
                 icon: "addLine.png",
                 layer: layer,
+                type: type,
                 op: AddFeatureWorkflow
               }),
               new Tool({
@@ -73,6 +78,7 @@ function EditorToolsFactory() {
                 name: "Modifica vertice",
                 icon: "moveVertex.png",
                 layer: layer,
+                type: type,
                 op: ModifyGeometryVertexWorkflow
               }),
               new Tool({
@@ -80,6 +86,7 @@ function EditorToolsFactory() {
                 name: "Elimina feature",
                 icon: "deleteLine.png",
                 layer: layer,
+                type: type,
                 op: DeleteFeatureWorkflow
               }),
               new Tool({
@@ -87,6 +94,7 @@ function EditorToolsFactory() {
                 name: "Modifica attributi",
                 icon: "editAttributes.png",
                 layer: layer,
+                type: type,
                 op: EditFeatureAttributesWorkflow
               })
             ];
@@ -99,6 +107,7 @@ function EditorToolsFactory() {
                 name: "Inserisci feature",
                 icon: "AddPolygon.png",
                 layer: layer,
+                type: type,
                 op: AddFeatureWorkflow
               }),
               new Tool({
@@ -113,6 +122,7 @@ function EditorToolsFactory() {
                 name: "Modifica vertice",
                 icon: "MovePolygonVertex.png",
                 layer: layer,
+                type: type,
                 op: ModifyGeometryVertexWorkflow
               }),
               new Tool({
@@ -120,6 +130,7 @@ function EditorToolsFactory() {
                 name: "Elimina feature",
                 icon: "deletePolygon.png",
                 layer: layer,
+                type: type,
                 op: DeleteFeatureWorkflow
               }),
               new Tool({
@@ -127,6 +138,7 @@ function EditorToolsFactory() {
                 name: "Modifica attributi",
                 icon: "editAttributes.png",
                 layer: layer,
+                type: type,
                 op: EditFeatureAttributesWorkflow
               })
             ];
@@ -141,6 +153,7 @@ function EditorToolsFactory() {
             name: "Inserisci feature",
             icon: "addTableRow.png",
             layer: layer,
+            type: type,
             op: AddTableFeatureWorflow
           }),
           new Tool({
@@ -148,6 +161,7 @@ function EditorToolsFactory() {
             name: "Modifica attributi",
             icon: "editAttributes.png",
             layer: layer,
+            type: type,
             op: EditTableFeaturesWorkflow
           })
         ];

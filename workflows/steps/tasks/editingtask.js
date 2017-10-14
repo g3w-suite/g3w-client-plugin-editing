@@ -21,4 +21,12 @@ inherit(EditingTask, Task);
 
 var proto = EditingTask.prototype;
 
+proto.run = function(inputs, context) {
+  //TODO
+};
+
+proto.stop = function() {
+  //TODO
+};
+
 module.exports = EditingTask;

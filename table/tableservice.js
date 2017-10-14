@@ -1,5 +1,4 @@
 var GUI = g3wsdk.gui.GUI;
-var EditTableFeatureWorkflow = require('../workflows/edittablefeatureworkflow');
 
 var TableService = function(options) {
   options = options || {};
@@ -55,6 +54,7 @@ proto.deleteFeature = function(index) {
 proto.editFeature = function(index) {
   var self = this;
   var feature = this._Features[index];
+  var EditTableFeatureWorkflow = require('../workflows/edittablefeatureworkflow');
   var workflow = new EditTableFeatureWorkflow();
   var inputs = this._inputs;
   inputs.features.push(feature);

@@ -1,13 +1,14 @@
 var inherit = g3wsdk.core.utils.inherit;
 var base =  g3wsdk.core.utils.base;
 var G3WObject = g3wsdk.core.G3WObject;
+var Layer = g3wsdk.core.layer.Layer;
 
 // Calsse che rappresenta di fatto
 // il bottone all'interno dell'editor control per l'editing
 function Tool(options) {
   base(this);
   options = options || {};
-  // ma mi servirà? la sessione non sarà gestita dal toolbox
+  this._type = options.type;
   this._session = options.session;
   // prendo il layer
   this._layer = options.layer;
@@ -38,7 +39,7 @@ proto.start = function() {
   // come inpust al tool e di conseguenza al worflow
   // passo il layer e features
   options.inputs = {
-    layer: this._layer,
+    layer: this._type == Layer.LayerTypes.TABLE ? this._session : this._layer,
     features: []
   };
   //passo al context la sessione

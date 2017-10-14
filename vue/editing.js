@@ -91,8 +91,7 @@ var vueComponentOptions = {
       this.state.toolboxselected = toolbox;
       if (toolbox.getDependencies().length) {
         this.state.message = "<div>\n" +
-          "    <i class=\"fa fa-info-circle\"></i>\n" +
-          "    Layer in relazione. Prima di passare ad altri editing è obbligatorio salvare le modifiche correnti.\n" +
+          "Layer in relazione. Prima di passare ad altri editing è obbligatorio salvare le modifiche correnti.\n" +
           "</div>"
       } else {
         this.state.message = null;

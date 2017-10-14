@@ -3,7 +3,6 @@ var base =  g3wsdk.core.utils.base;
 var EditingTask = require('./editingtask');
 
 function MoveFeatureTask(options){
-  this._layer = null;
   this.drawInteraction = null;
   base(this, options);
 }
@@ -16,7 +15,11 @@ proto.run = function(inputs, context) {
   var d = $.Deferred();
   var session = context.session;
   var originalFeature = null;
-  var originalStyle = inputs.layer.getStyle();
+  var editingLayer = inputs.layer;
+  var feature = inputs.features[0];
+  var originalLayer = context.layer;
+  var layerId = originalLayer.getId();
+  var originalStyle = editingLayer.getStyle();
   var style = new ol.style.Style({
     fill: new ol.style.Fill({
       color: 'rgba(255, 255, 255, 0.2)'
@@ -33,9 +36,7 @@ proto.run = function(inputs, context) {
     })
   });
   var features = new ol.Collection(inputs.features);
-  var feature = inputs.features[0];
-  var layer = context.layer;
-  var layerId = layer.getId();
+
   feature.setStyle(style);
   this._translateInteraction = new ol.interaction.Translate({
     features: features,

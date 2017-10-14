@@ -1,5 +1,4 @@
 var GUI = g3wsdk.gui.GUI;
-var EditTableFeatureWorkflow = require('../../../workflows/edittablefeatureworkflow');
 
 var RELATIONTOOLS = {
   'table' : [],
@@ -150,6 +149,7 @@ proto.startTableTool = function(relationtool, index) {
     });
   }
   if (relationtool.state.id == 'editattributes') {
+    var EditTableFeatureWorkflow = require('../../../workflows/edittablefeatureworkflow');
     workflow = new EditTableFeatureWorkflow();
     var percContent = this._bindEscKeyUp(workflow,  function() {});
     workflow.start(options)
@@ -414,7 +414,6 @@ proto._createWorkflowOptions = function(options) {
   var options = {
     context: {
       session: this.getCurrentWorkflow().session,
-      isChild: options.isChild || true,
       layer: this.getLayer(),
       excludeFields: [this.relation.childField],
       fatherValue: this._curentFeatureFatherFieldValue
