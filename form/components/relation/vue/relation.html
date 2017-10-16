@@ -1,11 +1,15 @@
 <div style="border: 2px solid rgba(60, 141, 188, 0.1); margin-bottom: 5px; border-radius: 3px;">
   <div class="box-header with-border" style="margin-button:3px; background-color: #ffffff; ">
-    <div class="col-md-8">
-      <h4>{{ relation.name }}</h4>
-    </div>
-    <div class="col-md-4" v-show="showAddLinkButtons()">
-      <i style="padding:5px; border:2px solid #3c8dbc; border-radius:20px; color:#3c8dbc; font-size: 20px; background-color: #ffffff" class="fa fa-plus pull-right" @click="addRelationAndLink" aria-hidden="true"></i>
-      <i style="padding:5px; border:2px solid #3c8dbc; border-radius:25px; color:#3c8dbc; font-size: 20px; background-color: #ffffff" class="fa fa-link pull-right" @click="linkRelation" aria-hidden="true"></i>
+    <div class="container" style="width:100%">
+      <div class="row">
+        <div class="col-md-8">
+          <h4>{{ relation.name }}</h4>
+        </div>
+        <div class="col-md-4" v-show="showAddLinkButtons()">
+          <i style="padding:5px; border:2px solid #3c8dbc; border-radius:20px; color:#3c8dbc; font-size: 20px; background-color: #ffffff" class="fa fa-plus pull-right" @click="addRelationAndLink" aria-hidden="true"></i>
+          <i style="padding:5px; border:2px solid #3c8dbc; border-radius:25px; color:#3c8dbc; font-size: 20px; background-color: #ffffff" class="fa fa-link pull-right" @click="linkRelation" aria-hidden="true"></i>
+        </div>
+      </div>
     </div>
   </div>
   <div class="box-body"style="padding:0px;">

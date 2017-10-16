@@ -241,12 +241,12 @@ proto.startVectorTool = function(relationtool, index) {
   return d.promise()
 };
 
-// ritorna il layer dell'editor
+// ritorna il layer editable estartto dal layer del catalogo
 proto.getLayer = function() {
-  return this.getEditingService().getLayersById(this.relation.child);
+  return this.getEditingService().getLayerById(this.relation.child);
 };
 
-// ritorna il layer che è effettivamente in editing
+// ritorna il layer che è effettivamente in editing utilizzato dai task
 proto.getEditingLayer = function() {
   return this.getEditingService().getEditingLayer(this.relation.child);
 };

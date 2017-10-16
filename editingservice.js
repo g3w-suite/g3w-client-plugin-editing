@@ -9,6 +9,7 @@ var LayersStore = g3wsdk.core.layer.LayersStore;
 var Session = g3wsdk.core.editing.Session;
 var Layer = g3wsdk.core.layer.Layer;
 var GUI = g3wsdk.gui.GUI;
+var serverErrorParser= g3wsdk.core.errors.parsers.Server;
 var ToolBoxesFactory = require('./toolboxes/toolboxesfactory');
 var CommitFeaturesWorkflow = require('./workflows/commitfeaturesworkflow');
 
@@ -48,7 +49,6 @@ function EditingService() {
     this.state.toolboxes = [];
     var editableLayer;
     var layerId;
-    var color;
     // sono i layer originali caricati dal progetto e messi nel catalogo
     var layers = this._getEditableLayersFromCatalog();
     //vado ad aggiungere il layersstore alla maplayerssotreregistry
@@ -212,6 +212,8 @@ proto.redoRelations = function(redoItems) {
   })
 };
 
+// restituisce il layer che viene utilizzato dai task per fare le modifiche 
+// ol.vector nel cso dei vettoriali, tableLayer nel caso delle tabelle
 proto.getEditingLayer = function(id) {
   var toolbox = this.getToolBoxById(id);
   return toolbox.getEditingLayer();
@@ -346,7 +348,9 @@ proto.getLayers = function() {
   return this._editableLayers;
 };
 
-proto.getLayersById = function(layerId) {
+// funzione che restituisce l'editing layer estratto dal layer del catalogo
+// vectorLayer lel caso di un imageLayere e tablelayer  nel cso di un table lauer
+proto.getLayerById = function(layerId) {
   return this._editableLayers[layerId];
 };
 
@@ -537,7 +541,7 @@ proto._applyChangesToRelationsAfterCommit = function(commitItemsRelations, relat
   var featureStore;
   var features;
   _.forEach(relationsResponse, function(relationResponse, layerId) {
-    layer = self.getLayersById(layerId);
+    layer = self.getLayerById(layerId);
     sessionFeaturesStore = self.getToolBoxById(layerId).getSession().getFeaturesStore();
     featureStore = layer.getSource();
     features = _.clone(sessionFeaturesStore.readFeatures());
@@ -579,7 +583,7 @@ proto._createCommitMessage = function(commitItems) {
     var changeIds = {
       Aggiunte: _.map(add, 'id').join(','),
       Modificate:  _.map(update, 'id').join(','),
-      Cancellate:  _.map(del, 'id').join(',')
+      Cancellate:  del.join(',')
     };
     var dom = "<ul style='border-bottom-color: #f4f4f4;'>";
     _.forEach(changeIds, function(ids, action) {
@@ -596,6 +600,7 @@ proto._createCommitMessage = function(commitItems) {
     message += "<div style='height:1px; background:#f4f4f4;border-bottom:1px solid #f4f4f4;'></div>";
     message += "<div style='margin-left: 40%'><h4>Relazioni</h4></div>";
     _.forEach(commitItems.relations, function(commits, relationName) {
+      console.log(relationName);
       message +=  "<div><span style='font-weight: bold'>" + relationName + "</span></div>";
       message += create_changes_list_dom_element(commits.add, commits.update, commits.delete);
     })
@@ -632,29 +637,12 @@ proto.commit = function(toolbox) {
           workflow.stop();
           d.resolve(toolbox);
         })
-        .fail(function (err) {
-          var error_message = "";
-          function traverseErrorMessage(obj) {
-            _.forIn(obj, function (val, key) {
-              if(_.isArray(val)) {
-                error_message = val[0];
-              }
-              if(_.isObject(val)) {
-                traverseErrorMessage(obj[key]);
-              }
-              if(error_message) {
-                return false;
-              }
-            });
-          }
-
-          if(err) {
-            traverseErrorMessage(err.error.data);
-            GUI.notify.error("<h4>Errore nel salvataggio sul server</h4>" +
-              "<h5>" + error_message + "</h5>");
-          } else {
-            GUI.notify.error("Errore nel salvataggio sul server");
-          }
+        .fail(function (error) {
+          var parser = new serverErrorParser({
+            error: error
+          });
+          var message = parser.parse();
+          GUI.notify.error(message);
           workflow.stop();
           d.resolve(toolbox);
         })

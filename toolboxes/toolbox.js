@@ -155,14 +155,17 @@ proto.addDependency = function(dependency) {
 proto._setEditingLayerSource = function() {
   // vado a prendere
   var featuresstore = this._session.getFeaturesStore();
+  var source;
   // questo ritorna come promessa l'array di features del featuresstore
   // vado  a settare il source del layer
   if (this._layerType == Layer.LayerTypes.VECTOR) {
-    var source = new ol.source.Vector({features: featuresstore.getFeaturesCollection() });
-    //setto come source del layer l'array / collection feature del features sotre della sessione
-    // il layer deve implementare anche un setSource
-    this._editingLayer.setSource(source);
+    source = new ol.source.Vector({features: featuresstore.getFeaturesCollection() });
+  } else {
+    source  = featuresstore;
   }
+  //setto come source del layer l'array / collection feature del features sotre della sessione
+  // il layer deve implementare anche un setSource
+  this._editingLayer.setSource(source);
 };
 
 // funzione che fa in modo di attivare tutti i tasks associati

@@ -27,17 +27,18 @@ function EditorToolBoxesFactory() {
         // su cui tutti i tool agiranno
         editingLayer = this._mapService.getLayerById(layerId);
         tools = EditToolsFactory.build({
-          type: layerType,
           layer: editingLayer,
-          geometryType: geometryType
+          geometryType: geometryType,
+          tyep: layerType
         });
         break;
       // caso layer tabellare da mettere in piedi
       case Layer.LayerTypes.TABLE:
-        editingLayer = layer;
+        // vado a clonar il layer per utilizzarlo nei vari task
+        editingLayer = _.cloneDeep(layer);
         tools = EditToolsFactory.build({
-          type: layerType,
-          layer: editingLayer
+          layer: editingLayer,
+          type: layerType
         });
         break;
       default:

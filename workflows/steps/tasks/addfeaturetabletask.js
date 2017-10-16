@@ -16,13 +16,15 @@ proto.run = function(inputs, context) {
   var d = $.Deferred();
   var originalLayer = context.layer;
   var layerId = originalLayer.getId();
+  // l'etiing layer in realtà è la session per i layer tabellari
   var editingLayer = inputs.layer;
   var session = context.session;
+  // nella creazione della nuova feature utilizzo l'editing layer originale (TableLayer)
   var feature = originalLayer.createNewFeature();
   session.pushAdd(layerId, feature);
-  editingLayer.getFeaturesStore().addFeature(feature);
+  editingLayer.getSource().addFeature(feature);
   inputs.features.push(feature);
-  return d.resolve(inputs);
+  d.resolve(inputs);
   return d.promise();
 };
 

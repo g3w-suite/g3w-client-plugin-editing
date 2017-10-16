@@ -26,6 +26,15 @@ var InternalComponent = Vue.extend({
     },
     linkFeature: function(index) {
      this.$options.service.linkFeature(index);
+    },
+    _setLayout: function() {
+      var editing_table_content_height = $('#editing_table').height();
+      var height_85 = (editing_table_content_height * 85) / 100;
+      var table_editing_height = $('#editing_table table').height();
+      if (table_editing_height > editing_table_content_height) {
+        $("#editing_table .nano").height(height_85);
+      }
+      $("#editing_table .nano").nanoScroller();
     }
   },
   watch: {
@@ -38,7 +47,19 @@ var InternalComponent = Vue.extend({
   mounted: function() {
     var self = this;
     this.$nextTick(function() {
-      $(".nano").nanoScroller();
+      $('#editing_table table').DataTable({
+        "pageLength": 25,
+        "bLengthChange": false,
+        "order": [ 0, 'asc' ],
+        "dom": '<"top"pfl><"clear">',
+        columnDefs: [
+          { orderable: false, targets: [-1, -2] }
+        ]
+      });
+      $('.dataTables_paginate').on('click', function() {
+        self._setLayout();
+      });
+      self._setLayout();
     });
   }
 });

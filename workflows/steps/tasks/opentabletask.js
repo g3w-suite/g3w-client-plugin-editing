@@ -29,7 +29,7 @@ proto.run = function(inputs, context) {
   var foreignKey = this._isContentChild ? context.excludeFields[0] :  null;
   // vado a recuperare i
   var editingLayer = inputs.layer;
-  var features = this._isContentChild ? originalLayer.getSource().readFeatures() :  editingLayer.getFeaturesStore().readFeatures();
+  var features = editingLayer.getSource().readFeatures();
   GUI.showContent({
     content: new TableComponent({
       title: 'Edita ' + layerName,
@@ -43,6 +43,7 @@ proto.run = function(inputs, context) {
       foreignKey: foreignKey
     }),
     push: this._isContentChild,
+    showgoback: false,
     closable: false
   });
   return d.promise();
