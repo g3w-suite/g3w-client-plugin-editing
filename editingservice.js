@@ -329,7 +329,7 @@ proto.getRelationsByFeature = function(relation, feature, layerType) {
   var featureValue = feature.get(relationFatherField);
   var toolbox = this.getToolBoxById(toolboxId);
   var editingLayer = toolbox.getEditingLayer();
-  var features = layerType == 'vector' ? editingLayer.getSource().getFeatures() : toolbox.getSession().getFeaturesStore().readFeatures() ;
+  var features = layerType == 'vector' ? editingLayer.getSource().getFeatures() : editingLayer.getSource().readFeatures() ;
   var relations = [];
   _.forEach(features, function(feature) {
     if (feature.get(relationChildField) == featureValue) {
