@@ -28,13 +28,7 @@ var InternalComponent = Vue.extend({
      this.$options.service.linkFeature(index);
     },
     _setLayout: function() {
-      var editing_table_content_height = $('#editing_table').height();
-      var height_85 = (editing_table_content_height * 85) / 100;
-      var table_editing_height = $('#editing_table table').height();
-      if (table_editing_height > editing_table_content_height) {
-        $("#editing_table .nano").height(height_85);
-      }
-      $("#editing_table .nano").nanoScroller();
+      this.$options.service._setLayout();
     }
   },
   watch: {
@@ -86,8 +80,13 @@ var TableComponent = function(options) {
   });
   this.setInternalComponent(internalComponent);
   internalComponent.state = service.state;
+  
   this.unmount = function() {
     return base(this, 'unmount');
+  };
+
+  this.layout = function() {
+    this.getService()._setLayout();
   }
 };
 

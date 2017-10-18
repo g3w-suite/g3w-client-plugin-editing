@@ -83,5 +83,16 @@ proto.linkFeature = function(index) {
     });
 };
 
+proto._setLayout = function() {
+  var editing_table_content_height = $('#editing_table').height();
+  var height_85 = (editing_table_content_height * 85) / 100;
+  var table_editing_height = $('#editing_table table').height();
+  if (table_editing_height > editing_table_content_height) {
+    $("#editing_table .nano").height(height_85);
+  }
+  $("#editing_table .nano").nanoScroller();
+};
+
+
 
 module.exports = TableService;
