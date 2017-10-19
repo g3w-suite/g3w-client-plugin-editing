@@ -58,7 +58,6 @@ proto._saveFnc = function(promise, inputs) {
     var layerId = this._originalLayer.getId();
     // vado a settare per quel layer i valori ai campi
     this._originalLayer.setFieldsWithValues(newFeature, fields);
-    console.log(newFeature);
     // verifico se non è nuovo
     if (!newFeature.isNew()) {
       this._session.pushUpdate(layerId, newFeature, this._originalFeature);
