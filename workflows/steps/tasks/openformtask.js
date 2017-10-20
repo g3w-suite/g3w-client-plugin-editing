@@ -29,6 +29,35 @@ module.exports = OpenFormTask;
 
 var proto = OpenFormTask.prototype;
 
+
+proto._getFieldUniqueValuesFromServer = function(layer, uniqueFields) {
+  var fieldsName = _.map(uniqueFields, function(field) {
+    return field.name
+  });
+  layer.getWidgetData({
+    type: 'unique',
+    fields: fieldsName.join()
+  }).then(function(response) {
+    var data = response.data;
+    _.forEach(data, function(values, fieldName) {
+      _.forEach(values, function(value) {
+        uniqueFields[fieldName].input.options.values.push(value);
+      })
+    })
+  }).fail(function(){
+    console.log('errore')
+  })
+};
+
+proto._getUniqueFieldsType = function(fields) {
+  var uniqueFields = {};
+  _.forEach(fields, function(field) {
+     if (field.input.type == 'unique')
+       uniqueFields[field.name] = field;
+  });
+  return uniqueFields;
+};
+
 proto._getForm = function(inputs, context) {
   this._isContentChild = !!(WorkflowsStack.getLength() > 1);
   this._session = context.session;
@@ -44,6 +73,8 @@ proto._getForm = function(inputs, context) {
   this._fields = this._originalLayer.getFieldsWithValues(this._feature, {
     exclude: excludeFields
   });
+  var uniqueFields = this._getUniqueFieldsType(this._fields);
+  this._getFieldUniqueValuesFromServer(this._originalLayer, uniqueFields);
   return GUI.showContentFactory('form');
 };
 
