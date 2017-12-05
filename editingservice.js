@@ -20,7 +20,8 @@ function EditingService() {
   this._sessions = {};
   // layersStore del plugin editing che conterrà tutti i layer di editing
   this._layersstore = new LayersStore({
-    id: 'editing'
+    id: 'editing',
+    queryable: false // lo setto a false così che quando faccio la query (controllo) non prendo anche questi
   });
   // oggetto contenente tutti i layers in editing
   this._editableLayers = {};
@@ -40,7 +41,6 @@ function EditingService() {
   // Mi verranno estratti tutti i layer editabili anche quelli presenti nell'albero del catalogo
   // come per esempio il caso di layers relazionati
   this.init = function(config) {
-
     // setto la configurazione del plugin
     this.config = config;
     // contiene tutti i toolbox
@@ -212,7 +212,7 @@ proto.redoRelations = function(redoItems) {
   })
 };
 
-// restituisce il layer che viene utilizzato dai task per fare le modifiche 
+// restituisce il layer che viene utilizzato dai task per fare le modifiche
 // ol.vector nel cso dei vettoriali, tableLayer nel caso delle tabelle
 proto.getEditingLayer = function(id) {
   var toolbox = this.getToolBoxById(id);
@@ -280,7 +280,7 @@ proto.handleToolboxDependencies = function(toolbox) {
   var dependecyToolBox;
   if (toolbox.isFather())
   // verifico se le feature delle dipendenze sono state caricate
-    this.getLayersDependencyFeatures(toolbox.getId(), toolbox.getFeaturesOption());
+    this.getLayersDependencyFeatures(toolbox.getId());
   _.forEach(toolbox.getDependencies(), function(toolboxId) {
     dependecyToolBox = self.getToolBoxById(toolboxId);
     // disabilito visivamente l'editing
@@ -390,6 +390,7 @@ proto.stop = function() {
       commitpromises.push(self.commit(toolbox));
     }
   });
+
   // prima di stoppare tutto e chidere panello
   $.when.apply(this, commitpromises).
     always(function() {
@@ -422,7 +423,7 @@ proto.getRelationsInEditing = function(relations, feature, isNew) {
       // aggiungo lo state della relazione
       relationinediting = {
         relation:relation.getState(),
-        relations: !isNew ? self.getRelationsAttributesByFeature(relation, feature): {} // le relazioni esistenti
+        relations: !isNew ? self.getRelationsAttributesByFeature(relation, feature): [] // le relazioni esistenti
       };
       relationinediting.validate = {
         valid:true
@@ -462,24 +463,39 @@ proto.fatherInEditing = function(layerId) {
   return inEditing;
 };
 
+// prendo come opzione il tipo di layer
+proto.createEditingDataOptions = function(layerType) {
+  var options = {
+    editing: true,
+    type: layerType
+  };
+  // verifico se layer vettoriale
+  if(layerType == Layer.LayerTypes.VECTOR) {
+    // aggiungo il filto bbox
+    var bbox = this._mapService.getMapBBOX();
+    options.filter = {
+      bbox: bbox
+    }
+  }
+  // ritorno opzione
+  return options
+};
+
 // fa lo start di tutte le dipendenze del layer legato alla toolbox che si è avviato
-proto.getLayersDependencyFeatures = function(layerId, options) {
+proto.getLayersDependencyFeatures = function(layerId) {
   var self = this;
   var d = $.Deferred();
-  //magari le options lo posso usare per passare il tipo di filtro da passare
-  // allo start della sessione
-  options = options || options;
   // vado a recuperare le relazioni (figli al momento) di quel paricolare layer
   /*
 
   IMPORTANTE: PER EVITARE PROBLEMI È IMPORTANTE CHE I LAYER DIPENDENTI SIANO A SUA VOLTA EDITABILI
 
    */
-  var relationLayers = _.filter(this._editableLayers[layerId].getChildren(), function(id) {
+  var relationChildLayers = _.filter(this._editableLayers[layerId].getChildren(), function(id) {
     return !!self._editableLayers[id];
   });
-  // se ci sono
-  if (relationLayers) {
+  // se ci sono layer figli dipendenti
+  if (!_.isNil(relationChildLayers) && relationChildLayers.length) {
     /*
     * qui andrò a verificare se stata istanziata la sessione altrimenti vienne creata
     * se la sessione è attiva altrimenti viene attivata
@@ -487,33 +503,29 @@ proto.getLayersDependencyFeatures = function(layerId, options) {
     //cerco prima tra i toolbox se presente
     var session;
     var toolbox;
+    var options;
     // cliclo sulle dipendenze create
-    _.forEach(relationLayers, function(id) {
+    _.forEach(relationChildLayers, function(id) {
+      options = self.createEditingDataOptions(self._editableLayers[id].getType());
       session = self._sessions[id];
+      toolbox = self.getToolBoxById(id);
+      //setto la proprietà a loading
+      toolbox.startLoading();
       //verifico che ci sia la sessione
-      if (session)
+      if (session) {
         if (!session.isStarted()) {
-          toolbox = self.getToolBoxById(id);
-          toolbox.startLoading();
-          if (options.type != self._editableLayers[id].getType())
-            options = {
-              type: self._editableLayers[id].getType(),
-              editing: true
-            };
           session.start(options)
             .always(function() {
+              // setto la proprià a stop loading sempre
               toolbox.stopLoading();
             })
         } else {
-          // altrimenti recupero le features secondo quell'opzione solo nel caso dei vettoriali
-          if (self._editableLayers[id].getType() == Layer.LayerTypes.VECTOR) {
-            toolbox.startLoading();
-            session.getFeatures(options)
-              .always(function() {
-                toolbox.stopLoading();
-              })
-          }
+          session.getFeatures(options)
+            .always(function() {
+              toolbox.stopLoading();
+            })
         }
+      }
       else {
         // altrimenti per quel layer la devo instanziare
         try {
@@ -600,7 +612,6 @@ proto._createCommitMessage = function(commitItems) {
     message += "<div style='height:1px; background:#f4f4f4;border-bottom:1px solid #f4f4f4;'></div>";
     message += "<div style='margin-left: 40%'><h4>Relazioni</h4></div>";
     _.forEach(commitItems.relations, function(commits, relationName) {
-      console.log(relationName);
       message +=  "<div><span style='font-weight: bold'>" + relationName + "</span></div>";
       message += create_changes_list_dom_element(commits.add, commits.update, commits.delete);
     })

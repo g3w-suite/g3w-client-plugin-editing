@@ -54,9 +54,6 @@ var RelationComponent = Vue.extend({
     },
     getRelationTools: function() {
       return this._service.getRelationTools();
-    },
-    showAddLinkButtons: function() {
-      return !this.relations.length || (this.relations.length && this.relation.type != 'ONE');
     }
   },
   computed: {
@@ -65,6 +62,9 @@ var RelationComponent = Vue.extend({
     },
     fieldrequired: function() {
       return this._service.isRequired();
+    },
+    enableAddLinkButtons: function() {
+      return !this.relations.length || (this.relations.length && this.relation.type != 'ONE');
     }
   },
   watch: {

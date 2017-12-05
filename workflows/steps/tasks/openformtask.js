@@ -74,7 +74,8 @@ proto._getForm = function(inputs, context) {
     exclude: excludeFields
   });
   var uniqueFields = this._getUniqueFieldsType(this._fields);
-  this._getFieldUniqueValuesFromServer(this._originalLayer, uniqueFields);
+  if (!_.isEmpty(uniqueFields))
+    this._getFieldUniqueValuesFromServer(this._originalLayer, uniqueFields);
   return GUI.showContentFactory('form');
 };
 

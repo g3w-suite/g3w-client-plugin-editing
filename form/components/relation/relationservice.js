@@ -21,7 +21,8 @@ var RelationService = function(options) {
   this._relationTools = [];
   this._add_link_workflow = null; // sono i workflow link e adda che verranmno settati in base al tipo di layer
   this._isExternalFieldRequired = this._checkIfExternalFieldRequired();
-  this._curentFeatureFatherFieldValue = this.getCurrentWorkflow().feature.get(this.relation.fatherField);
+  // prendo il campo se eseiste come proprietà altrimenti prendo la chiave primaria
+  this._curentFeatureFatherFieldValue = this.getCurrentWorkflow().feature.get(this.relation.fatherField) || this.getCurrentWorkflow().feature.getId();
   var relationLayerType = this.getLayer().getType() == 'vector' ? this.getLayer().getGeometryType() : 'table';
   var allrelationtools;
   if (relationLayerType == 'table') {

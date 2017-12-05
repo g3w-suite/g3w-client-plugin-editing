@@ -2,13 +2,17 @@ var inherit = g3wsdk.core.utils.inherit;
 var base = g3wsdk.core.utils.base;
 var Plugin = g3wsdk.core.plugin.Plugin;
 var GUI = g3wsdk.gui.GUI;
+var i18nService = g3wsdk.core.i18n;
 var Service = require('./editingservice');
+var g3wediting = require('editing');
 var EditingPanel = require('./panel');
 
 var _Plugin = function(){
   base(this);
   this.name = 'editing';
   this.init = function() {
+    // inizializzo la variabile globale g3wediting
+    window.g3wediting = g3wediting;
     //setto il servizio
     this.setService(Service);
     //recupero configurazione del plugin
@@ -29,13 +33,15 @@ var _Plugin = function(){
   };
   //metto su l'interfaccia del plugin
   this.setupGui = function() {
+    if (_.isBoolean(this.config.visible) && !this.config.visible)
+      return false;
     var self = this;
     var toolsComponent = GUI.getComponent('tools');
     var toolsService = toolsComponent.getService();
     //add Tools (ordine, Nome gruppo, tasks)
     toolsService.addTools(0, 'EDITING', [
       {
-        name: "Editing dati",
+        name: i18nService.t("editing_data"),
         action: _.bind(self.showEditingPanel, this)
       }
     ])

@@ -1,29 +1,26 @@
 <div class="g3w-editing-panel">
-  <div style="margin-bottom: 10px; margin-top:5px;">
-    <div class="editbtn" @click="canCommit ? commit(): null" :class="{'enabled' : canCommit }">
-      <img height="30px" width="30px" :src="resourcesurl + 'images/saveedit.png'"/>
+  <div>
+    <div class="editbtn pull-right"  @click="canRedo ? redo(): null" :class="{'enabled' : canRedo }">
+     <span class="g3w-icon g3w-redo"></span>
     </div>
-    <div class="editbtn pull-right" :class="{'enabled' : canRedo }">
-      <img height="30px" @click="canRedo ? redo(): null" width="30px" :src="resourcesurl + 'images/redo.png'"/>
-    </div>
-
     <div class="editbtn pull-right" @click="canUndo ? undo(): null" :class="{'enabled' : canUndo }">
-      <img height="30px" width="30px" :src="resourcesurl + 'images/undo.png'"/>
+      <span class="g3w-icon g3w-undo"></span>
     </div>
-
-    <div class="navbar-custom-menu pull-right">
+    <div class="editbtn pull-right" @click="canCommit ? commit(): null" :class="{'enabled' : canCommit }">
+      <span class="g3w-icon g3w-saveedit"></span>
+    </div>
+    <div style="display:inline-block">
       <ul class="nav navbar-nav">
         <!-- Messages: style can be found in dropdown.less-->
         <li class="dropdown messages-menu">
           <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-            <i class="fa fa-envelope-o"></i>
+            <span class="g3w-icon g3w-envelop"></span>
             <span v-if="state.message" class="label label-info">1</span>
           </a>
-          <div v-if="state.message" class="dropdown-menu" style="left:-150px !important; width: 305px; padding:5px;">
+          <div v-if="state.message" class="dropdown-menu" style="width: 320px;min-height: 100px; padding:5px;">
               <div class="warning-message" v-html="state.message"></div>
           </div>
         </li>
-
       </ul>
     </div>
   </div>

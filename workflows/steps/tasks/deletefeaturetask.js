@@ -89,7 +89,7 @@ styles[ol.geom.GeometryType.GEOMETRY_COLLECTION] = styles[ol.geom.GeometryType.P
 styles[ol.geom.GeometryType.POLYGON] = _.concat(styles[ol.geom.GeometryType.POLYGON],styles[ol.geom.GeometryType.LINE_STRING]);
 
 styles[ol.geom.GeometryType.GEOMETRY_COLLECTION] = _.concat(styles[ol.geom.GeometryType.GEOMETRY_COLLECTION],styles[ol.geom.GeometryType.LINE_STRING]);
-    
+
 /* FINE BRUTTISSIMO! */
 
 // run del tool di delete feature
@@ -104,7 +104,7 @@ proto.run = function(inputs, context) {
   //recupero la sessione dal context
   var session = context.session;
   this._selectInteraction = new ol.interaction.Select({
-    layers: [editigLayer],
+    layers: [editingLayer],
     condition: ol.events.condition.click,
     style: function(feature) {
       var style = styles[feature.getGeometry().getType()];

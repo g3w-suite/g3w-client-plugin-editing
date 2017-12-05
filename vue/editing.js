@@ -162,6 +162,7 @@ function PanelComponent(options) {
   this.unmount = function() {
     var self = this;
     var d = $.Deferred();
+    //vado a fare lo stop del servizio che fa un po di pulizia
     this._service.stop()
       .then(function() {
         //vado a riscrivere la proprietà

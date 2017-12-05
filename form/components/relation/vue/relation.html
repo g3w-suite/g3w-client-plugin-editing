@@ -5,14 +5,18 @@
         <div class="col-md-8">
           <h4>{{ relation.name }}</h4>
         </div>
-        <div class="col-md-4" v-show="showAddLinkButtons()">
-          <i style="padding:5px; border:2px solid #3c8dbc; border-radius:20px; color:#3c8dbc; font-size: 20px; background-color: #ffffff" class="fa fa-plus pull-right" @click="addRelationAndLink" aria-hidden="true"></i>
-          <i style="padding:5px; border:2px solid #3c8dbc; border-radius:25px; color:#3c8dbc; font-size: 20px; background-color: #ffffff" class="fa fa-link pull-right" @click="linkRelation" aria-hidden="true"></i>
+        <div class="col-md-4">
+          <div class="relation-editbtn pull-right"  @click="enableAddLinkButtons ? addRelationAndLink() : null" :class="{'enabled' : enableAddLinkButtons }">
+            <span  class="g3w-icon g3w-plus" style="font-size:20px;"></span>
+          </div>
+          <div class="relation-editbtn pull-right"  @click="enableAddLinkButtons ? linkRelation() : null" :class="{'enabled' : enableAddLinkButtons }">
+            <span  class="g3w-icon g3w-link" style="font-size:20px;"></span>
+          </div>
         </div>
       </div>
     </div>
   </div>
-  <div class="box-body"style="padding:0px;">
+  <div class="box-body" style="padding:0px;">
     <template v-if="relationsLength">
       <table class="table table-striped">
         <thead>
@@ -41,24 +45,27 @@
                 </table>
               </td>
               <td class="action-cell">
-                <span @click="showAllRelationFields(index)"
-                      style="color:#3c8dbc; cursor:pointer;" class="fa link morelink"
-                      :class="[showallfieldsindex == index ? 'fa-minus': 'fa-ellipsis-h' ]">
+                <span
+                  @click="showAllRelationFields(index)"
+                  style="color:#3c8dbc; cursor:pointer;" class="fa link morelink"
+                  :class="[showallfieldsindex == index ? 'fa-minus': 'fa-ellipsis-h' ]">
                 </span>
               </td>
               <td>
-                <i v-if="!fieldrequired" style="color:#3c8dbc; cursor:pointer; font-size:10px; padding:5px; border:2px solid #3c8dbc; border-radius:15px;" class="fa fa-chain-broken pull-right" @click="unlinkRelation(index)" aria-hidden="true"></i>
+                <span
+                  v-if="!fieldrequired"
+                   class="g3w-mini-relation-icon g3w-icon g3w-cogs pull-right "
+                   @click="unlinkRelation(index)"
+                   aria-hidden="true">
+                </span>
               </td>
               <td>
                 <div class="dropup">
-                  <i style="color:#3c8dbc;
-                      cursor:pointer; font-size:10px;
-                      padding:5px; border:2px solid #3c8dbc;
-                        border-radius:15px;"
+                  <span
                      data-toggle="dropdown"
                      aria-haspopup="true" aria-expanded="false"
-                     class="dropdown-toggle fa fa-cogs pull-right"
-                     aria-hidden="true"></i>
+                     class="dropdown-toggle g3w-icon g3w-mini-relation-icon g3w-cogs pull-right"
+                     aria-hidden="true"></span>
                   <div class="dropdown-menu pull-right" style="margin-bottom:5px; box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.5) !important;" :style="{'min-width': getRelationTools().length*40 + 'px !important' }">
                     <div @click="startTool(relationtool, index)" v-for="relationtool in getRelationTools()" class="editbtn enabled" style="display:inline-block">
                       <img height="20px" width="20px"

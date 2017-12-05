@@ -1,18 +1,18 @@
 <div class="toolbox">
   <div :class="{'disableddiv' : !isLayerReady }" :id="'id_toolbox_'+ state.id">
     <div @click="select" class="panel panel-primary" :class="{ 'toolboxselected': state.selected }">
-      <div  class="panel-heading"  style="position:relative; height: 40px;" :style="{ background: state.color}" >
-        <div v-if="father" style="margin-right:5px;display: inline-block" class="enabled dropdown">
+      <div class="panel-heading container" style="width:100%;" :style="{ background: state.color}" >
+        <div v-if="father" style="margin-right:5px;" class="pull-left enabled dropdown">
           <img  height="20px" width="20px" class="dropbtn" data-toggle="dropdown" :src="resourcesurl + 'images/relation.png'"/>
           <div class="dropdown-content" style="padding: 5px;">
             <div v-for="dependency in state.editing.dependencies" style="color: black" >{{ dependency }}</div>
           </div>
         </div>
-        <h3 class="panel-title" style="display: inline-block;">
+        <div class="panel-title" :class="[father ? 'col-md-6' : 'col-md-8']">
           {{ state.title }}
-        </h3>
-        <div @click="toggleEditing" class="editbtn" style="position:absolute; right:0;" :class="{'enabled' : isLayerReady,  toggled : state.editing.on}" >
-          <img height="20px" width="20px"  :src="resourcesurl + 'images/edit.png'"/>
+        </div>
+        <div @click="toggleEditing" class="editbtn pull-right" :class="{'enabled' : isLayerReady,  'g3w-icon-toggled' : state.editing.on}" >
+          <span style="font-size: 15px;" class="g3w-icon g3w-edit"></span>
         </div>
       </div>
       <div class="panel-body">

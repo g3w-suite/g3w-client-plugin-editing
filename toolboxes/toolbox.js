@@ -21,6 +21,8 @@ function ToolBox(options) {
   // recupero il tipo di toolbox
   this._layerType = options.type || 'vector';
   this._tools = options.tools;
+  // optioni per il recupero delle feature
+  this._getFeaturesOption = {};
   // popolo gl'array degli state del tools appartenenti al toobox
   var toolsstate = [];
   _.forEach(this._tools, function(tool) {
@@ -73,13 +75,19 @@ function ToolBox(options) {
   // vado ad associare le features del suo featuresstore al ol.layer.Vector
   this._session.onafter('stop', function() {
     var EditingService = require('../editingservice');
+    //vado a fermare la sessione dei figli
     EditingService.stopSessionChildren(self.state.id);
+    // vado a unregistrare gli eventi
+    self._unregisterGetFeaturesEvent();
   });
   
-  this._session.onafter('start', function() {
+  this._session.onafter('start', function(options) {
+    self._getFeaturesOption = options;
     var EditingService = require('../editingservice');
     // passo id del toolbox e le opzioni per far partire la sessione
-    EditingService.getLayersDependencyFeatures(self.state.id, self._getFeaturesOption);// dove le opzioni possono essere il filtro;
+    EditingService.getLayersDependencyFeatures(self.state.id);// dove le opzioni possono essere il filtro;
+    // vado a registrare l'evento getFeature
+    self._registerGetFeaturesEvent(self._getFeaturesOption);
   });
 
   // mapservice mi servirà per fare richieste al server sulle features (bbox) quando agisco sull mappa
@@ -92,7 +100,6 @@ function ToolBox(options) {
       extent: null
     }
   };
-  this._loadedExtent = null;
   // vado a settare il source all'editing layer
   this._setEditingLayerSource();
 }
@@ -174,23 +181,10 @@ proto._setEditingLayerSource = function() {
 // inoltre farà uno start e stop dell'editor
 proto.start = function() {
   var self = this;
+  var EditingService = require('../editingservice');
   var d = $.Deferred();
-  // caso vettoriale
-  if (this._layerType == Layer.LayerTypes.VECTOR) {
-    var bbox = this._loadedExtent = this._mapService.getMapBBOX();
-    this._getFeaturesOption = {
-      editing: true,
-      type: this._layerType,
-      filter: {
-        bbox: bbox
-      }
-    };
-  } else {
-    this._getFeaturesOption = {
-      type: this._layerType,
-      editing: true
-    };
-  }
+  // vado a recuperare l'oggetto opzioni data per poter richiedere le feature al provider
+  this._getFeaturesOption = EditingService.createEditingDataOptions(this._layerType);
   // se non è stata avviata da altri allora faccio avvio sessione
   if (this._session) {
     if (!this._session.isStarted()) {
@@ -202,8 +196,6 @@ proto.start = function() {
             .then(function (features) {
               self.state.loading = false;
               self.setEditing(true);
-              // vado a registrare l'evento getFeatiure
-              self._registerGetFeaturesEvent(self._getFeaturesOption);
               d.resolve(features);
             })
             .fail(function(err) {
@@ -213,8 +205,6 @@ proto.start = function() {
         })
     } else {
       self.setEditing(true);
-      self.state.loading = false;
-      self._registerGetFeaturesEvent(this._getFeaturesOption);
     }
   }
   return d.promise();
@@ -254,7 +244,6 @@ proto.stop = function() {
           // seci sono tool attivi vado a spengere
           self._setToolsEnabled(false);
           self.clearToolboxMessages();
-          self._unregisterGetFeaturesEvent();
           d.resolve(true)
         })
         .fail(function(err) {
@@ -298,14 +287,14 @@ proto._unregisterGetFeaturesEvent = function() {
 proto._registerGetFeaturesEvent = function(options) {
   // le sessioni dipendenti per poter eseguier l'editing
   switch(this._layerType) {
-    case 'Layer.LayerTypes.VECTOR':
-      var fnc = _.bind(function (options) {
+    case Layer.LayerTypes.VECTOR:
+      var fnc = _.bind(function(options) {
         var bbox = this._mapService.getMapBBOX();
         var extent = this._getFeaturesEvent.options.extent;
         if (extent && ol.extent.containsExtent(extent, bbox)) {
           return;
         }
-        this._getFeaturesEvent.options.extent = extent ? ol.extent.extend(extent, bbox) : extent = bbox;
+        this._getFeaturesEvent.options.extent = extent ? ol.extent.extend(extent, bbox) :  bbox;
         options.filter.bbox = bbox;
         this._session.getFeatures(options);
       }, this, options);
