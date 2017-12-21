@@ -54,7 +54,7 @@
               <td>
                 <span
                   v-if="!fieldrequired"
-                   class="g3w-mini-relation-icon g3w-icon g3w-cogs pull-right "
+                   class="g3w-mini-relation-icon g3w-icon g3w-unlink pull-right "
                    @click="unlinkRelation(index)"
                    aria-hidden="true">
                 </span>
@@ -68,10 +68,7 @@
                      aria-hidden="true"></span>
                   <div class="dropdown-menu pull-right" style="margin-bottom:5px; box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.5) !important;" :style="{'min-width': getRelationTools().length*40 + 'px !important' }">
                     <div @click="startTool(relationtool, index)" v-for="relationtool in getRelationTools()" class="editbtn enabled" style="display:inline-block">
-                      <img height="20px" width="20px"
-                           :alt="relationtool.state.name"
-                           :title="relationtool.state.name"
-                           :src="resourcesurl + 'images/'+ relationtool.state.icon"/>
+                      <img height="20px" width="20px" :alt="relationtool.state.name" :title="relationtool.state.name" :src="resourcesurl + 'images/'+ relationtool.state.icon"/>
                     </div>
                   </div>
                 </div>

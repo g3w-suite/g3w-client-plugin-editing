@@ -7,7 +7,7 @@ var Service = require('./editingservice');
 var g3wediting = require('editing');
 var EditingPanel = require('./panel');
 
-var _Plugin = function(){
+var _Plugin = function() {
   base(this);
   this.name = 'editing';
   this.init = function() {
@@ -20,7 +20,7 @@ var _Plugin = function(){
     // verifico se ci sono layer editabili
     if (this.service.loadPlugin()) {
       // inizializzo l'editing
-      this.service.init(this.config);
+     this.service.init(this.config);
       //regitro il plugin
       if (this.registerPlugin(this.config.gid)) {
         if (!GUI.ready) {
