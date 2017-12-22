@@ -1,19 +1,39 @@
 {
   "name": "g3w-client-plugin-editing",
   "version": "1.0.0",
-  "description": "Editing Plugin g3w-client",
+  "description": "editing plugin",
   "main": "index.js",
-  "repository": "https://volterra79@bitbucket.org/gis3w/g3w-client-plugin-editing.git",
-  "author": "volterra79 <francescoboccacci@libero.it>",
-  "license": "MIT",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "karma": "karma start test/karma.conf.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://volterra79@bitbucket.org/gis3w/g3w-client-plugin-editing.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "homepage": "https://bitbucket.org/gis3w/g3w-client-plugin-editing#readme",
   "devDependencies": {
-    "jasmine-core": "^2.8.0",
-    "karma": "^1.7.1",
+    "dotenv": "^4.0.0",
+    "eslint": "^4.13.1",
+    "expect.js": "^0.3.1",
+    "karma": "^2.0.0",
     "karma-chrome-launcher": "^2.2.0",
-    "karma-cli": "^1.0.1",
     "karma-firefox-launcher": "^1.1.0",
-    "karma-ie-launcher": "^1.0.0",
-    "karma-jasmine": "^1.1.1",
-    "karma-requirejs": "^1.1.0"
+    "karma-htmlfile-reporter": "^0.3.5",
+    "karma-mocha": "^1.3.0",
+    "karma-phantomjs-launcher": "^1.0.4",
+    "karma-requirejs": "^1.1.0",
+    "karma-webpack": "^2.0.9",
+    "lodash": "^4.17.4",
+    "mocha": "^4.0.1",
+    "webpack": "^3.10.0"
+  },
+  "dependencies": {
+    "requirejs": "^2.3.5"
   }
 }

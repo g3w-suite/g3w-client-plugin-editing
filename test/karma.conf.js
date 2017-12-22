@@ -1,5 +1,9 @@
 // Karma configuration
-// Generated on Thu Dec 21 2017 12:17:26 GMT+0100 (CET)
+// Generated on Fri Dec 22 2017 10:44:47 GMT+0100 (CET)
+
+var path = require('path');
+var webpack = require('webpack');
+require('dotenv').config();
 
 module.exports = function(config) {
   config.set({
@@ -10,25 +14,51 @@ module.exports = function(config) {
 
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['jasmine'],
+    frameworks: ['mocha'],
 
 
     // list of files / patterns to load in the browser
     files: [
-      'test/*.js'
+      process.env.G3WCLIENT_LIBRARIES + '/sdk.ext.1513957083930.min.js',
+      process.env.G3WCLIENT_LIBRARIES + '/template.ext.1513957083930.min.js',
+      process.env.G3WCLIENT_LIBRARIES + '/app.1513957083930.min.js',
+      {
+        pattern: path.resolve(__dirname, require.resolve('expect.js/index.js')),
+        watched: false
+      },
+
+     'specs/**/*.js'
     ],
 
 
-    // list of files to exclude
+    // list of files / patterns to exclude
     exclude: [
     ],
-
 
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
+      'specs/**/*.js': ['webpack']
     },
 
+    webpack: {
+      resolve: {
+        modules: [
+          '/home/volterra79/PROGETTI/g3w-client/src/libs/plugins/editing'
+        ]
+      },
+      module: {
+        loaders: [
+          {
+            test: /\.(html)$/,
+            use: {
+              loader: 'html-loader'
+            }
+          }
+        ]
+      }
+
+    },
 
     // test results reporter to use
     // possible values: 'dots', 'progress'
@@ -50,20 +80,22 @@ module.exports = function(config) {
 
 
     // enable / disable watching file and executing tests whenever any file changes
-    autoWatch: true,
+    autoWatch: false,
 
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['Chrome', 'Firefox'],
+    browsers: ['Chrome'],
 
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
-    singleRun: false,
+    singleRun: true,
 
     // Concurrency level
     // how many browser should be started simultaneous
     concurrency: Infinity
+
+
   })
-}
+};
