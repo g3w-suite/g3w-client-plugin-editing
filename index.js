@@ -5,7 +5,8 @@ var GUI = g3wsdk.gui.GUI;
 var i18nService = g3wsdk.core.i18n;
 var Service = require('./editingservice');
 var g3wediting = require('editing');
-var EditingPanel = require('./panel');
+
+import {EditingPanelComponent as EditingPanel}  from './panel';
 
 var _Plugin = function() {
   base(this);

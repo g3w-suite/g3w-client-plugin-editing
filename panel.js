@@ -3,7 +3,7 @@ var inherit = g3wsdk.core.utils.inherit;
 var i18nService = g3wsdk.core.i18n;
 var EditingComponent = require('./vue/editing');
 
-function EditingPluginComponent(options) {
+export function EditingPanelComponent(options) {
   options = options || {};
   // editortoolsbars
   options.id = "editing-panel";
@@ -13,6 +13,6 @@ function EditingPluginComponent(options) {
   base(this, options)
 }
 
-inherit(EditingPluginComponent, EditingComponent);
+inherit(EditingPanelComponent, EditingComponent);
 
-module.exports = EditingPluginComponent;
+

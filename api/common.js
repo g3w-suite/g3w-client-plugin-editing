@@ -11,4 +11,5 @@ function CommonApi(options) {
 }
 
 inherit(CommonApi, G3WObject);
+
 module.export = CommonApi;

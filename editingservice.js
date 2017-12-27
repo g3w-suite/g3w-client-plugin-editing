@@ -1,20 +1,20 @@
-var inherit = g3wsdk.core.utils.inherit;
-var base =  g3wsdk.core.utils.base;
+let inherit = g3wsdk.core.utils.inherit;
+let base =  g3wsdk.core.utils.base;
 //prendo il plugin service di core
-var WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
-var PluginService = g3wsdk.core.plugin.PluginService;
-var CatalogLayersStoresRegistry = g3wsdk.core.catalog.CatalogLayersStoresRegistry;
-var MapLayersStoreRegistry = g3wsdk.core.map.MapLayersStoreRegistry;
-var LayersStore = g3wsdk.core.layer.LayersStore;
-var Session = g3wsdk.core.editing.Session;
-var Layer = g3wsdk.core.layer.Layer;
-var GUI = g3wsdk.gui.GUI;
-var serverErrorParser= g3wsdk.core.errors.parsers.Server;
-var ToolBoxesFactory = require('./toolboxes/toolboxesfactory');
-var CommitFeaturesWorkflow = require('./workflows/commitfeaturesworkflow');
+let WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
+let PluginService = g3wsdk.core.plugin.PluginService;
+let CatalogLayersStoresRegistry = g3wsdk.core.catalog.CatalogLayersStoresRegistry;
+let MapLayersStoreRegistry = g3wsdk.core.map.MapLayersStoreRegistry;
+let LayersStore = g3wsdk.core.layer.LayersStore;
+let Session = g3wsdk.core.editing.Session;
+let Layer = g3wsdk.core.layer.Layer;
+let GUI = g3wsdk.gui.GUI;
+let serverErrorParser= g3wsdk.core.errors.parsers.Server;
+let ToolBoxesFactory = require('./toolboxes/toolboxesfactory');
+let CommitFeaturesWorkflow = require('./workflows/commitfeaturesworkflow');
 
 function EditingService() {
-  var self = this;
+  let self = this;
   base(this);
   // proprietà che contiene tutte le sessioni legati ai layer e quindi ai toolbox
   this._sessions = {};
@@ -47,14 +47,14 @@ function EditingService() {
     this._toolboxes = [];
     // restto
     this.state.toolboxes = [];
-    var editableLayer;
-    var layerId;
+    let editableLayer;
+    let layerId;
     // sono i layer originali caricati dal progetto e messi nel catalogo
-    var layers = this._getEditableLayersFromCatalog();
+    let layers = this._getEditableLayersFromCatalog();
     //vado ad aggiungere il layersstore alla maplayerssotreregistry
     MapLayersStoreRegistry.addLayersStore(this._layersstore);
     //ciclo su ogni layers editiabile
-    _.forEach(layers, function(layer) {
+    layers.forEach((layer) => {
       layerId = layer.getId();
       // vado a chiamare la funzione che mi permette di
       // estrarre la versione editabile del layer di partenza (es. da imagelayer a vector layer, table layer/tablelayer etc..)
@@ -64,23 +64,23 @@ function EditingService() {
       // setto il colore che mi servrà per colorarare si il vettoriale che il toolbox
       //editableLayer.setColor(color);
       // vado ad aggiungere ai layer editabili
-      self._editableLayers[layerId] = editableLayer;
+      this._editableLayers[layerId] = editableLayer;
       // aggiungo all'array dei vectorlayers se per caso mi servisse
-      self._sessions[layer.getId()] = null;
+      this._sessions[layer.getId()] = null;
     });
     // vao a settare i colori dei layere e delle toolbox
     this.setLayersColor();
     // disabilito l'eventuale tool attivo se viene attivata
     // un'interazione di tipo pointerInteractionSet sulla mappa
     this._mapService.on('mapcontrol:active', function(interaction) {
-      var toolboxselected = self.state.toolboxselected;
+      let toolboxselected = self.state.toolboxselected;
       if ( toolboxselected && toolboxselected.getActiveTool()) {
         toolboxselected.getActiveTool().stop();
       }
     });
-    _.forEach(this._editableLayers, function(layer) {
+    _.forEach(this._editableLayers, (layer) => {
       //aggiungo il layer al layersstore
-      self._layersstore.addLayer(layer);
+      this._layersstore.addLayer(layer);
     });
     // vado a creare i toolboxes
     this._buildToolBoxes();
@@ -91,10 +91,10 @@ function EditingService() {
 
 inherit(EditingService, PluginService);
 
-var proto = EditingService.prototype;
+let proto = EditingService.prototype;
 
 proto.setLayersColor = function() {
-  var RELATIONS_COLORS = [
+  let RELATIONS_COLORS = [
     ["#656F94",
       "#485584",
       "#303E73",
@@ -120,7 +120,7 @@ proto.setLayersColor = function() {
       "#7A5603"]
   ];
 
-  var COLORS = [
+  let COLORS = [
     "#AFEE30",
     "#96C735",
     "#7B9F35",
@@ -146,31 +146,29 @@ proto.setLayersColor = function() {
     "#431F34"
   ];
 
-  var self = this;
-  var color;
-  var childrenLayers;
-  _.forEach(this._editableLayers, function(layer) {
+  let color;
+  let childrenLayers;
+  _.forEach(this._editableLayers, (layer) => {
     // verifico se è un layer è padre e se ha figli in editing
-    childrenLayers = self._layerChildrenRelationInEditing(layer);
+    childrenLayers = this._layerChildrenRelationInEditing(layer);
     if (layer.isFather() && childrenLayers.length) {
       color = RELATIONS_COLORS.splice(0,1).pop().reverse();
       !layer.getColor() ? layer.setColor(color.splice(0,1).pop()): null;
-      _.forEach(childrenLayers, function(layerId) {
-        !self._editableLayers[layerId].getColor() ? self._editableLayers[layerId].setColor(color.splice(0,1).pop()): null;
+      childrenLayers.forEach((layerId) => {
+        !this._editableLayers[layerId].getColor() ? this._editableLayers[layerId].setColor(color.splice(0,1).pop()): null;
       });
     }
   });
-  _.forEach(this._editableLayers, function(layer, layerId) {
-    !self._editableLayers[layerId].getColor() ? layer.setColor(COLORS.splice(0,1).pop()): null;
+  _.forEach(this._editableLayers, (layer, layerId) => {
+    !this._editableLayers[layerId].getColor() ? layer.setColor(COLORS.splice(0,1).pop()): null;
   })
 };
 
 proto._layerChildrenRelationInEditing = function(layer) {
-  var self = this;
-  var relations = layer.getChildren();
-  var childrenrealtioninediting = [];
-  _.forEach(relations, function(relation) {
-    if (self._editableLayers[relation])
+  let relations = layer.getChildren();
+  let childrenrealtioninediting = [];
+  relations.forEach((relation) => {
+    if (this._editableLayers[relation])
       childrenrealtioninediting.push(relation);
   });
   return childrenrealtioninediting;
@@ -178,11 +176,10 @@ proto._layerChildrenRelationInEditing = function(layer) {
 
 // udo delle relazioni
 proto.undoRelations = function(undoItems) {
-  var self = this;
-  var session;
-  var toolbox;
-  _.forEach(undoItems, function(items, toolboxId) {
-    toolbox = self.getToolBoxById(toolboxId);
+  let session;
+  let toolbox;
+  undoItems.forEach((items, toolboxId) => {
+    toolbox = this.getToolBoxById(toolboxId);
     session = toolbox.getSession();
     session.undo(items);
   })
@@ -190,11 +187,10 @@ proto.undoRelations = function(undoItems) {
 
 // undo delle relazioni
 proto.rollbackRelations = function(rollbackItems) {
-  var self = this;
-  var session;
-  var toolbox;
-  _.forEach(rollbackItems, function(items, toolboxId) {
-    toolbox = self.getToolBoxById(toolboxId);
+  let session;
+  let toolbox;
+  rollbackItems.forEach((items, toolboxId) => {
+    toolbox = this.getToolBoxById(toolboxId);
     session = toolbox.getSession();
     session.rollback(items);
   })
@@ -202,11 +198,10 @@ proto.rollbackRelations = function(rollbackItems) {
 
 // redo delle relazioni
 proto.redoRelations = function(redoItems) {
-  var self = this;
-  var session;
-  var toolbox;
-  _.forEach(redoItems, function(items, toolboxId) {
-    toolbox = self.getToolBoxById(toolboxId);
+  let session;
+  let toolbox;
+  redoItems.forEach((items, toolboxId) => {
+    toolbox = this.getToolBoxById(toolboxId);
     session = toolbox.getSession();
     session.redo(items);
   })
@@ -215,19 +210,18 @@ proto.redoRelations = function(redoItems) {
 // restituisce il layer che viene utilizzato dai task per fare le modifiche
 // ol.vector nel cso dei vettoriali, tableLayer nel caso delle tabelle
 proto.getEditingLayer = function(id) {
-  var toolbox = this.getToolBoxById(id);
+  let toolbox = this.getToolBoxById(id);
   return toolbox.getEditingLayer();
 };
 
 proto._buildToolBoxes = function() {
-  var self = this;
-  var toolbox;
-  _.forEach(this._editableLayers, function(layer) {
+  let toolbox;
+  _.forEach(this._editableLayers, (layer) => {
     // la toolboxes costruirà il toolboxex adatto per quel layer
     // assegnadogli le icone dei bottonii etc ..
     toolbox = ToolBoxesFactory.build(layer);
     // vado ad aggiungere la toolbox
-    self.addToolBox(toolbox);
+    this.addToolBox(toolbox);
   })
 };
 
@@ -241,14 +235,13 @@ proto.addToolBox = function(toolbox) {
 
 // funzione che crea le dipendenze
 proto._createToolBoxDependencies = function() {
-  var self = this;
-  var layer;
-  _.forEach(this._toolboxes, function(toolbox, toolboxId) {
+  let layer;
+  this._toolboxes.forEach((toolbox, toolboxId) => {
     layer = toolbox.getLayer();
     toolbox.setFather(layer.isFather());
-    toolbox.state.editing.dependencies = self._getToolBoxEditingDependencies(layer);
+    toolbox.state.editing.dependencies = this._getToolBoxEditingDependencies(layer);
     if (layer.isFather() && toolbox.hasDependencies() ) {
-      _.forEach(layer.getRelations().getRelations(), function(relation) {
+      _.forEach(layer.getRelations().getRelations(), (relation) => {
         toolbox.addRelation(relation);
       })
     }
@@ -260,43 +253,41 @@ proto.isFieldRequired = function(layerId, fieldName) {
 };
 
 proto._getToolBoxEditingDependencies = function(layer) {
-  var self = this;
-  var relationLayers = _.merge(layer.getChildren(), layer.getFathers());
-  var toolboxesIds = _.filter(relationLayers, function(layerName) {
-    return !!self._editableLayers[layerName]
+  let relationLayers = _.merge(layer.getChildren(), layer.getFathers());
+  let toolboxesIds = relationLayers.filter((layerName) => {
+    return !!this._editableLayers[layerName]
   });
   return toolboxesIds;
 };
 
 // verifico se le sue diendenza sono legate a layer effettivamente in editing o no
 proto._hasEditingDependencies = function(layer) {
-  var toolboxesIds = this._getToolBoxEditingDependencies(layer);
+  let toolboxesIds = this._getToolBoxEditingDependencies(layer);
   return !!toolboxesIds.length;
 };
 
 // funzione che serve a manageggia
 proto.handleToolboxDependencies = function(toolbox) {
-  var self = this;
-  var dependecyToolBox;
+  let dependecyToolBox;
   if (toolbox.isFather())
   // verifico se le feature delle dipendenze sono state caricate
     this.getLayersDependencyFeatures(toolbox.getId());
-  _.forEach(toolbox.getDependencies(), function(toolboxId) {
-    dependecyToolBox = self.getToolBoxById(toolboxId);
+  toolbox.getDependencies().forEach((toolboxId) => {
+    dependecyToolBox = this.getToolBoxById(toolboxId);
     // disabilito visivamente l'editing
     dependecyToolBox.setEditing(false);
   })
 };
 
 proto._getEditableLayersFromCatalog = function() {
-  var layers = CatalogLayersStoresRegistry.getLayers({
+  let layers = CatalogLayersStoresRegistry.getLayers({
     EDITABLE: true
   });
   return layers;
 };
 
 proto.getCurrentWorflow = function() {
-  var currentWorkFlow = WorkflowsStack.getLast();
+  let currentWorkFlow = WorkflowsStack.getLast();
   return {
     session: currentWorkFlow.getSession(),
     inputs: currentWorkFlow.getInputs(),
@@ -307,12 +298,12 @@ proto.getCurrentWorflow = function() {
 };
 
 proto.getRelationsAttributesByFeature = function(relation, feature) {
-  var relationsattributes = [];
-  var toolboxId = relation.getChild();
-  var layer = this.getToolBoxById(toolboxId).getLayer();
-  var relations = this.getRelationsByFeature(relation, feature, layer.getType());
-  var fields;
-  _.forEach(relations, function(relation) {
+  let relationsattributes = [];
+  let toolboxId = relation.getChild();
+  let layer = this.getToolBoxById(toolboxId).getLayer();
+  let relations = this.getRelationsByFeature(relation, feature, layer.getType());
+  let fields;
+  relations.forEach((relation) => {
     fields = layer.getFieldsWithValues(relation);
     relationsattributes.push({
       fields: fields,
@@ -323,15 +314,15 @@ proto.getRelationsAttributesByFeature = function(relation, feature) {
 };
 
 proto.getRelationsByFeature = function(relation, feature, layerType) {
-  var toolboxId = relation.getChild();
-  var relationChildField = relation.getChildField();
-  var relationFatherField= relation.getFatherField();
-  var featureValue = feature.get(relationFatherField);
-  var toolbox = this.getToolBoxById(toolboxId);
-  var editingLayer = toolbox.getEditingLayer();
-  var features = layerType == 'vector' ? editingLayer.getSource().getFeatures() : editingLayer.getSource().readFeatures() ;
-  var relations = [];
-  _.forEach(features, function(feature) {
+  let toolboxId = relation.getChild();
+  let relationChildField = relation.getChildField();
+  let relationFatherField= relation.getFatherField();
+  let featureValue = feature.get(relationFatherField);
+  let toolbox = this.getToolBoxById(toolboxId);
+  let editingLayer = toolbox.getEditingLayer();
+  let features = layerType == 'vector' ? editingLayer.getSource().getFeatures() : editingLayer.getSource().readFeatures() ;
+  let relations = [];
+  features.forEach((feature) => {
     if (feature.get(relationChildField) == featureValue) {
       relations.push(feature);
     }
@@ -356,8 +347,8 @@ proto.getLayerById = function(layerId) {
 
 // vado a recuperare il toolbox a seconda del suo id
 proto.getToolBoxById = function(toolboxId) {
-  var toolBox = null;
-  _.forEach(this._toolboxes, function(toolbox) {
+  let toolBox = null;
+  this._toolboxes.forEach((toolbox) => {
     if (toolbox.getId() == toolboxId) {
       toolBox = toolbox;
       return false;
@@ -379,29 +370,28 @@ proto._cancelOrSave = function(){
 };
 
 proto.stop = function() {
-  var d = $.Deferred();
-  var self = this;
-  var commitpromises = [];
+  let d = $.Deferred();
+  let commitpromises = [];
   // vado a chiamare lo stop di ogni toolbox
-  _.forEach(this._toolboxes, function(toolbox) {
+  this._toolboxes.forEach((toolbox) => {
     // vado a verificare se c'è una sessione sporca e quindi
     // chiedere se salvare
     if (toolbox.getSession().getHistory().state.commit) {
-      commitpromises.push(self.commit(toolbox));
+      commitpromises.push(this.commit(toolbox));
     }
   });
 
   // prima di stoppare tutto e chidere panello
   $.when.apply(this, commitpromises).
-    always(function() {
-    self._mapService.refreshMap();
-      _.forEach(self._toolboxes, function(toolbox) {
+    always(() => {
+    this._mapService.refreshMap();
+    this._toolboxes.forEach((toolbox) => {
         // vado a stoppare tutti le toolbox
         toolbox.stop();
         // vado a deselzionare eventuali toolbox
         toolbox.setSelected(false);
       });
-      self.clearState();
+      this.clearState();
       d.resolve();
     });
   return d.promise();
@@ -415,15 +405,14 @@ proto.clearState = function() {
 
 // funzione che filtra le relazioni in base a quelle presenti in editing
 proto.getRelationsInEditing = function(relations, feature, isNew) {
-  var self = this;
-  var relationsinediting = [];
-  var relationinediting;
-  _.forEach(relations, function(relation) {
-    if (self._editableLayers[relation.getChild()]) {
+  let relationsinediting = [];
+  let relationinediting;
+  relations.forEach((relation) => {
+    if (this._editableLayers[relation.getChild()]) {
       // aggiungo lo state della relazione
       relationinediting = {
         relation:relation.getState(),
-        relations: !isNew ? self.getRelationsAttributesByFeature(relation, feature): [] // le relazioni esistenti
+        relations: !isNew ? this.getRelationsAttributesByFeature(relation, feature): [] // le relazioni esistenti
       };
       relationinediting.validate = {
         valid:true
@@ -436,25 +425,23 @@ proto.getRelationsInEditing = function(relations, feature, isNew) {
 
 // qui devo verificare sia l condizione del padre che del figlio
 proto.stopSessionChildren = function(layerId) {
-  var self = this;
   // caso padre verifico se i figli sono in editing o meno
-  var relationLayerChildren = this._editableLayers[layerId].getChildren();
-  var toolbox;
-  _.forEach(relationLayerChildren, function(id) {
-    toolbox = self.getToolBoxById(id);
+  let relationLayerChildren = this._editableLayers[layerId].getChildren();
+  let toolbox;
+  relationLayerChildren.forEach((id) => {
+    toolbox = this.getToolBoxById(id);
     if (toolbox && !toolbox.inEditing())
-      self._sessions[id].stop();
+      this._sessions[id].stop();
   });
 };
 
 proto.fatherInEditing = function(layerId) {
-  var self = this;
-  var inEditing = false;
-  var toolbox;
+  let inEditing = false;
+  let toolbox;
   // caso padre verifico se ci sono padri in editing o meno
-  var relationLayerFathers = this._editableLayers[layerId].getFathers();
-  _.forEach(relationLayerFathers, function(id) {
-    toolbox = self.getToolBoxById(id);
+  let relationLayerFathers = this._editableLayers[layerId].getFathers();
+  relationLayerFathers.forEach((id) => {
+    toolbox = this.getToolBoxById(id);
     if (toolbox && toolbox.inEditing()) {
       inEditing = true;
       return false;
@@ -465,14 +452,14 @@ proto.fatherInEditing = function(layerId) {
 
 // prendo come opzione il tipo di layer
 proto.createEditingDataOptions = function(layerType) {
-  var options = {
+  let options = {
     editing: true,
     type: layerType
   };
   // verifico se layer vettoriale
   if(layerType == Layer.LayerTypes.VECTOR) {
     // aggiungo il filto bbox
-    var bbox = this._mapService.getMapBBOX();
+    let bbox = this._mapService.getMapBBOX();
     options.filter = {
       bbox: bbox
     }
@@ -483,16 +470,16 @@ proto.createEditingDataOptions = function(layerType) {
 
 // fa lo start di tutte le dipendenze del layer legato alla toolbox che si è avviato
 proto.getLayersDependencyFeatures = function(layerId) {
-  var self = this;
-  var d = $.Deferred();
+  let d = $.Deferred();
   // vado a recuperare le relazioni (figli al momento) di quel paricolare layer
   /*
 
   IMPORTANTE: PER EVITARE PROBLEMI È IMPORTANTE CHE I LAYER DIPENDENTI SIANO A SUA VOLTA EDITABILI
 
    */
-  var relationChildLayers = _.filter(this._editableLayers[layerId].getChildren(), function(id) {
-    return !!self._editableLayers[id];
+  let children = this._editableLayers[layerId].getChildren();
+  let relationChildLayers = children.filter((id) => {
+    return !!this._editableLayers[id];
   });
   // se ci sono layer figli dipendenti
   if (!_.isNil(relationChildLayers) && relationChildLayers.length) {
@@ -501,27 +488,27 @@ proto.getLayersDependencyFeatures = function(layerId) {
     * se la sessione è attiva altrimenti viene attivata
     * */
     //cerco prima tra i toolbox se presente
-    var session;
-    var toolbox;
-    var options;
+    let session;
+    let toolbox;
+    let options;
     // cliclo sulle dipendenze create
-    _.forEach(relationChildLayers, function(id) {
-      options = self.createEditingDataOptions(self._editableLayers[id].getType());
-      session = self._sessions[id];
-      toolbox = self.getToolBoxById(id);
+    relationChildLayers.forEach((id) => {
+      options = this.createEditingDataOptions(this._editableLayers[id].getType());
+      session = this._sessions[id];
+      toolbox = this.getToolBoxById(id);
       //setto la proprietà a loading
       toolbox.startLoading();
       //verifico che ci sia la sessione
       if (session) {
         if (!session.isStarted()) {
           session.start(options)
-            .always(function() {
+            .always(() => {
               // setto la proprià a stop loading sempre
               toolbox.stopLoading();
             })
         } else {
           session.getFeatures(options)
-            .always(function() {
+            .always(() => {
               toolbox.stopLoading();
             })
         }
@@ -529,12 +516,12 @@ proto.getLayersDependencyFeatures = function(layerId) {
       else {
         // altrimenti per quel layer la devo instanziare
         try {
-          var layer = self._layersstore.getLayerById(id);
-          var editor = layer.getEditor();
+          let layer = this._layersstore.getLayerById(id);
+          let editor = layer.getEditor();
           session = new Session({
             editor: editor
           });
-          self._sessions[id] = session;
+          this._sessions[id] = session;
           session.start();
         }
         catch(err) {
@@ -547,17 +534,16 @@ proto.getLayersDependencyFeatures = function(layerId) {
 };
 
 proto._applyChangesToRelationsAfterCommit = function(commitItemsRelations, relationsResponse) {
-  var self = this;
-  var layer;
-  var sessionFeaturesStore;
-  var featureStore;
-  var features;
-  _.forEach(relationsResponse, function(relationResponse, layerId) {
-    layer = self.getLayerById(layerId);
-    sessionFeaturesStore = self.getToolBoxById(layerId).getSession().getFeaturesStore();
+  let layer;
+  let sessionFeaturesStore;
+  let featureStore;
+  let features;
+  relationsResponse.forEach((relationResponse, layerId) => {
+    layer = this.getLayerById(layerId);
+    sessionFeaturesStore = this.getToolBoxById(layerId).getSession().getFeaturesStore();
     featureStore = layer.getSource();
     features = _.clone(sessionFeaturesStore.readFeatures());
-    _.forEach(features, function(feature) {
+    features.forEach((feature) => {
       feature.clearState();
     });
     featureStore.setFeatures(features);
@@ -568,21 +554,20 @@ proto._applyChangesToRelationsAfterCommit = function(commitItemsRelations, relat
 };
 
 proto.commitDirtyToolBoxes = function(toolboxId) {
-  var self = this;
-  var d = $.Deferred();
-  var toolbox = this.getToolBoxById(toolboxId);
+  let d = $.Deferred();
+  let toolbox = this.getToolBoxById(toolboxId);
   if (toolbox.isDirty() && toolbox.hasDependencies()) {
     this.commit(toolbox)
-      .fail(function() {
+      .fail(() => {
         toolbox.revert()
-          .then(function() {
+          .then(() => {
             // se ha dpiendenze vado a fare il revert delle modifche fatte
-            _.forEach(toolbox.getDependencies(), function(toolboxId) {
-              self.getToolBoxById(toolboxId).revert();
+            toolbox.getDependencies().forEach((toolboxId) => {
+              this.getToolBoxById(toolboxId).revert();
             })
           })
         })
-      .always(function() {
+      .always(() => {
         d.resolve(toolbox);
       })
   } else
@@ -592,13 +577,13 @@ proto.commitDirtyToolBoxes = function(toolboxId) {
 
 proto._createCommitMessage = function(commitItems) {
   function create_changes_list_dom_element(add, update, del) {
-    var changeIds = {
+    let changeIds = {
       Aggiunte: _.map(add, 'id').join(','),
       Modificate:  _.map(update, 'id').join(','),
       Cancellate:  del.join(',')
     };
-    var dom = "<ul style='border-bottom-color: #f4f4f4;'>";
-    _.forEach(changeIds, function(ids, action) {
+    let dom = "<ul style='border-bottom-color: #f4f4f4;'>";
+    changeIds.forEach(function(ids, action) {
       dom += "<li>" + action + ": [" + ids + "]</li>";
     });
 
@@ -606,12 +591,12 @@ proto._createCommitMessage = function(commitItems) {
     return dom;
   }
 
-  var message = "";
+  let message = "";
   message += create_changes_list_dom_element(commitItems.add, commitItems.update, commitItems.delete);
   if (!_.isEmpty(commitItems.relations)) {
     message += "<div style='height:1px; background:#f4f4f4;border-bottom:1px solid #f4f4f4;'></div>";
     message += "<div style='margin-left: 40%'><h4>Relazioni</h4></div>";
-    _.forEach(commitItems.relations, function(commits, relationName) {
+    _.forEach(commitItems.relations, (commits, relationName) => {
       message +=  "<div><span style='font-weight: bold'>" + relationName + "</span></div>";
       message += create_changes_list_dom_element(commits.add, commits.update, commits.delete);
     })
@@ -620,12 +605,11 @@ proto._createCommitMessage = function(commitItems) {
 };
 
 proto.commit = function(toolbox) {
-  var self = this;
-  var d = $.Deferred();
+  let d = $.Deferred();
   toolbox = toolbox || this.state.toolboxselected;
-  var session = toolbox.getSession();
-  var layer = toolbox.getLayer();
-  var workflow = new CommitFeaturesWorkflow({
+  let session = toolbox.getSession();
+  let layer = toolbox.getLayer();
+  let workflow = new CommitFeaturesWorkflow({
     type:  'commit'
   });
   workflow.start({
@@ -634,31 +618,31 @@ proto.commit = function(toolbox) {
       message: this._createCommitMessage(session.getCommitItems())
     }
   })
-    .then(function() {
+    .then(() => {
       // funzione che serve a fare il commit della sessione legata al tool
       // qui probabilmente a seconda del layer se ha dipendenze faccio ogni sessione
       // produrrà i suoi dati post serializzati che pi saranno uniti per un unico commit
       session.commit()
-        .then(function (commitItems, response) {
-          var relationsResponse = response.response.new_relations;
-          var commitItemsRelations = commitItems.relations;
-          self._applyChangesToRelationsAfterCommit(commitItemsRelations, relationsResponse);
+        .then( (commitItems, response) => {
+          let relationsResponse = response.response.new_relations;
+          let commitItemsRelations = commitItems.relations;
+          this._applyChangesToRelationsAfterCommit(commitItemsRelations, relationsResponse);
           GUI.notify.success("I dati sono stati salvati correttamente");
-          self._mapService.refreshMap();
+          this._mapService.refreshMap();
           workflow.stop();
           d.resolve(toolbox);
         })
-        .fail(function (error) {
-          var parser = new serverErrorParser({
+        .fail( (error) => {
+          let parser = new serverErrorParser({
             error: error
           });
-          var message = parser.parse();
+          let message = parser.parse();
           GUI.notify.error(message);
           workflow.stop();
           d.resolve(toolbox);
         })
     })
-    .fail(function() {
+    .fail(() => {
       workflow.stop();
       d.reject(toolbox);
     });

@@ -18,6 +18,9 @@
   "license": "ISC",
   "homepage": "https://bitbucket.org/gis3w/g3w-client-plugin-editing#readme",
   "devDependencies": {
+    "babel-plugin-transform-remove-strict-mode": "0.0.2",
+    "babel-preset-env": "^1.6.1",
+    "babelify": "^8.0.0",
     "dotenv": "^4.0.0",
     "eslint": "^4.13.1",
     "expect.js": "^0.3.1",

@@ -18,6 +18,7 @@ var gutil = require("gulp-util");
 var less = require('gulp-less');
 var jshint = require('gulp-jshint');
 var browserify = require('browserify');
+var babelify = require('babelify');
 var watchify = require('watchify');
 var stringify = require('stringify');
 var sourcemaps = require('gulp-sourcemaps');
@@ -37,6 +38,9 @@ gulp.task('browserify', [], function() {
   if (!production) {
     bundler = watchify(bundler);
   }
+  bundler.transform(babelify, {
+    babelrc: true
+  });
   bundler.transform(stringify, {
     appliesTo: { includeExtensions: ['.html'] }
   });
