@@ -370,31 +370,31 @@ proto._cancelOrSave = function(){
 };
 
 proto.stop = function() {
-  let d = $.Deferred();
-  let commitpromises = [];
-  // vado a chiamare lo stop di ogni toolbox
-  this._toolboxes.forEach((toolbox) => {
-    // vado a verificare se c'è una sessione sporca e quindi
-    // chiedere se salvare
-    if (toolbox.getSession().getHistory().state.commit) {
-      commitpromises.push(this.commit(toolbox));
-    }
-  });
-
-  // prima di stoppare tutto e chidere panello
-  $.when.apply(this, commitpromises).
-    always(() => {
-    this._mapService.refreshMap();
+  return new Promise((resolve, reject) => {
+    let commitpromises = [];
+    // vado a chiamare lo stop di ogni toolbox
     this._toolboxes.forEach((toolbox) => {
-        // vado a stoppare tutti le toolbox
-        toolbox.stop();
-        // vado a deselzionare eventuali toolbox
-        toolbox.setSelected(false);
-      });
-      this.clearState();
-      d.resolve();
+      // vado a verificare se c'è una sessione sporca e quindi
+      // chiedere se salvare
+      if (toolbox.getSession().getHistory().state.commit) {
+        commitpromises.push(this.commit(toolbox));
+      }
     });
-  return d.promise();
+
+    // prima di stoppare tutto e chidere panello
+    Promise.all(commitpromises)
+      .finally(() => {
+        this._mapService.refreshMap();
+        this._toolboxes.forEach((toolbox) => {
+          // vado a stoppare tutti le toolbox
+          toolbox.stop();
+          // vado a deselzionare eventuali toolbox
+          toolbox.setSelected(false);
+        });
+        this.clearState();
+        resolve();
+    });
+  });
 };
 
 proto.clearState = function() {
@@ -470,12 +470,9 @@ proto.createEditingDataOptions = function(layerType) {
 
 // fa lo start di tutte le dipendenze del layer legato alla toolbox che si è avviato
 proto.getLayersDependencyFeatures = function(layerId) {
-  let d = $.Deferred();
   // vado a recuperare le relazioni (figli al momento) di quel paricolare layer
   /*
-
-  IMPORTANTE: PER EVITARE PROBLEMI È IMPORTANTE CHE I LAYER DIPENDENTI SIANO A SUA VOLTA EDITABILI
-
+   IMPORTANTE: PER EVITARE PROBLEMI È IMPORTANTE CHE I LAYER DIPENDENTI SIANO A SUA VOLTA EDITABILI
    */
   let children = this._editableLayers[layerId].getChildren();
   let relationChildLayers = children.filter((id) => {
@@ -484,9 +481,9 @@ proto.getLayersDependencyFeatures = function(layerId) {
   // se ci sono layer figli dipendenti
   if (!_.isNil(relationChildLayers) && relationChildLayers.length) {
     /*
-    * qui andrò a verificare se stata istanziata la sessione altrimenti vienne creata
-    * se la sessione è attiva altrimenti viene attivata
-    * */
+     * qui andrò a verificare se stata istanziata la sessione altrimenti vienne creata
+     * se la sessione è attiva altrimenti viene attivata
+     * */
     //cerco prima tra i toolbox se presente
     let session;
     let toolbox;
@@ -512,8 +509,7 @@ proto.getLayersDependencyFeatures = function(layerId) {
               toolbox.stopLoading();
             })
         }
-      }
-      else {
+      } else {
         // altrimenti per quel layer la devo instanziare
         try {
           let layer = this._layersstore.getLayerById(id);
@@ -530,7 +526,6 @@ proto.getLayersDependencyFeatures = function(layerId) {
       }
     })
   }
-  return d.promise();
 };
 
 proto._applyChangesToRelationsAfterCommit = function(commitItemsRelations, relationsResponse) {
@@ -538,7 +533,8 @@ proto._applyChangesToRelationsAfterCommit = function(commitItemsRelations, relat
   let sessionFeaturesStore;
   let featureStore;
   let features;
-  relationsResponse.forEach((relationResponse, layerId) => {
+
+  for (const [layerId, relationResponse] of Object.entries(relationsResponse)) {
     layer = this.getLayerById(layerId);
     sessionFeaturesStore = this.getToolBoxById(layerId).getSession().getFeaturesStore();
     featureStore = layer.getSource();
@@ -550,29 +546,29 @@ proto._applyChangesToRelationsAfterCommit = function(commitItemsRelations, relat
     layer.applyCommitResponse({
       response: relationResponse
     });
-  })
+  }
 };
 
 proto.commitDirtyToolBoxes = function(toolboxId) {
-  let d = $.Deferred();
-  let toolbox = this.getToolBoxById(toolboxId);
-  if (toolbox.isDirty() && toolbox.hasDependencies()) {
-    this.commit(toolbox)
-      .fail(() => {
-        toolbox.revert()
-          .then(() => {
-            // se ha dpiendenze vado a fare il revert delle modifche fatte
-            toolbox.getDependencies().forEach((toolboxId) => {
-              this.getToolBoxById(toolboxId).revert();
+  return new Promise((resolve, reject) => {
+    let toolbox = this.getToolBoxById(toolboxId);
+    if (toolbox.isDirty() && toolbox.hasDependencies()) {
+      this.commit(toolbox)
+        .fail(() => {
+          toolbox.revert()
+            .then(() => {
+              // se ha dipendenze vado a fare il revert delle modifiche fatte
+              toolbox.getDependencies().forEach((toolboxId) => {
+                this.getToolBoxById(toolboxId).revert();
+              })
             })
-          })
         })
-      .always(() => {
-        d.resolve(toolbox);
-      })
-  } else
-    d.resolve(toolbox);
-  return d.promise();
+        .always(() => {
+          resolve(toolbox);
+        })
+    } else
+      resolve(toolbox);
+  });
 };
 
 proto._createCommitMessage = function(commitItems) {
@@ -583,10 +579,9 @@ proto._createCommitMessage = function(commitItems) {
       Cancellate:  del.join(',')
     };
     let dom = "<ul style='border-bottom-color: #f4f4f4;'>";
-    changeIds.forEach(function(ids, action) {
+    Object.entries(changeIds).forEach(([action, ids]) => {
       dom += "<li>" + action + ": [" + ids + "]</li>";
     });
-
     dom += "</ul>";
     return dom;
   }
@@ -605,48 +600,48 @@ proto._createCommitMessage = function(commitItems) {
 };
 
 proto.commit = function(toolbox) {
-  let d = $.Deferred();
-  toolbox = toolbox || this.state.toolboxselected;
-  let session = toolbox.getSession();
-  let layer = toolbox.getLayer();
-  let workflow = new CommitFeaturesWorkflow({
-    type:  'commit'
-  });
-  workflow.start({
-    inputs: {
-      layer: layer,
-      message: this._createCommitMessage(session.getCommitItems())
-    }
-  })
-    .then(() => {
-      // funzione che serve a fare il commit della sessione legata al tool
-      // qui probabilmente a seconda del layer se ha dipendenze faccio ogni sessione
-      // produrrà i suoi dati post serializzati che pi saranno uniti per un unico commit
-      session.commit()
-        .then( (commitItems, response) => {
-          let relationsResponse = response.response.new_relations;
-          let commitItemsRelations = commitItems.relations;
-          this._applyChangesToRelationsAfterCommit(commitItemsRelations, relationsResponse);
-          GUI.notify.success("I dati sono stati salvati correttamente");
-          this._mapService.refreshMap();
-          workflow.stop();
-          d.resolve(toolbox);
-        })
-        .fail( (error) => {
-          let parser = new serverErrorParser({
-            error: error
-          });
-          let message = parser.parse();
-          GUI.notify.error(message);
-          workflow.stop();
-          d.resolve(toolbox);
-        })
-    })
-    .fail(() => {
-      workflow.stop();
-      d.reject(toolbox);
+  return new Promise((resolve, reject) => {
+    toolbox = toolbox || this.state.toolboxselected;
+    let session = toolbox.getSession();
+    let layer = toolbox.getLayer();
+    let workflow = new CommitFeaturesWorkflow({
+      type:  'commit'
     });
-  return d.promise();
+    workflow.start({
+      inputs: {
+        layer: layer,
+        message: this._createCommitMessage(session.getCommitItems())
+      }
+    })
+      .then(() => {
+        // funzione che serve a fare il commit della sessione legata al tool
+        // qui probabilmente a seconda del layer se ha dipendenze faccio ogni sessione
+        // produrrà i suoi dati post serializzati che pi saranno uniti per un unico commit
+        session.commit()
+          .then( (commitItems, response) => {
+            let relationsResponse = response.response.new_relations;
+            let commitItemsRelations = commitItems.relations;
+            this._applyChangesToRelationsAfterCommit(commitItemsRelations, relationsResponse);
+            GUI.notify.success("I dati sono stati salvati correttamente");
+            this._mapService.refreshMap();
+            workflow.stop();
+            resolve(toolbox);
+          })
+          .fail( (error) => {
+            let parser = new serverErrorParser({
+              error: error
+            });
+            let message = parser.parse();
+            GUI.notify.error(message);
+            workflow.stop();
+            resolve(toolbox);
+          })
+      })
+      .fail(() => {
+        workflow.stop();
+        reject(toolbox);
+      });
+  });
 };
 
 module.exports = new EditingService;
