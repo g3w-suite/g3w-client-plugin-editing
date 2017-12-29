@@ -12,6 +12,4 @@ function AddFeatureWorflow(options) {
 
 inherit(AddFeatureWorflow, EditingWorkflow);
 
-var proto = AddFeatureWorflow.prototype;
-
 module.exports = AddFeatureWorflow;

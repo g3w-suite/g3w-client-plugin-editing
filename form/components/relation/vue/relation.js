@@ -1,4 +1,4 @@
-var RelationService = require('../relationservice');
+var RelationService = require('../../../../services/relationservice');
 var maxSubsetLength = 3;
 var RelationComponent = Vue.extend({
   template: require('./relation.html'),

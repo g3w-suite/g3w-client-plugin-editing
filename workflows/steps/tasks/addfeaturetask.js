@@ -1,10 +1,9 @@
-var inherit = g3wsdk.core.utils.inherit;
-var Layer = g3wsdk.core.layer.Layer;
-var Geometry = g3wsdk.core.geometry.Geometry;
-var base =  g3wsdk.core.utils.base;
-var EditingTask = require('./editingtask');
-var Feature = g3wsdk.core.layer.features.Feature;
-var GUI = g3wsdk.gui.GUI;
+const inherit = g3wsdk.core.utils.inherit;
+const Layer = g3wsdk.core.layer.Layer;
+const Geometry = g3wsdk.core.geometry.Geometry;
+const base =  g3wsdk.core.utils.base;
+const EditingTask = require('./editingtask');
+const Feature = g3wsdk.core.layer.features.Feature;
 
 // classe  per l'aggiuntadi feature
 // eridita dalla classe padre EditingTool
@@ -25,7 +24,7 @@ function AddFeatureTask(options) {
 
 inherit(AddFeatureTask, EditingTask);
 
-var proto = AddFeatureTask.prototype;
+const proto = AddFeatureTask.prototype;
 
 // metodo eseguito all'avvio del tool
 proto.run = function(inputs, context) {
@@ -44,7 +43,7 @@ proto.run = function(inputs, context) {
   // qui vado a valutare il tipo di layer
   switch (originalLayer.getType()) {
     case Layer.LayerTypes.VECTOR:
-      var geometryType; 
+      var geometryType;
       if (originalLayer.getEditingGeometryType() == Geometry.GeometryTypes.LINESTRING)
         geometryType = 'LineString';
       else if (originalLayer.getEditingGeometryType() == Geometry.GeometryTypes.MULTILINESTRING)
@@ -105,7 +104,6 @@ proto.run = function(inputs, context) {
       }
       break;
   }
-
   return d.promise();
 };
 

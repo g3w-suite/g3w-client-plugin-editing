@@ -1,9 +1,9 @@
-var inherit = g3wsdk.core.utils.inherit;
-var base =  g3wsdk.core.utils.base;
-var GUI = g3wsdk.gui.GUI;
-var WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
-var EditingTask = require('./editingtask');
-var EditingFormComponent = require('../../../form/editingform');
+const inherit = g3wsdk.core.utils.inherit;
+const base =  g3wsdk.core.utils.base;
+const GUI = g3wsdk.gui.GUI;
+const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
+const EditingTask = require('./editingtask');
+const EditingFormComponent = require('../../../form/editingform');
 
 function OpenFormTask(options) {
 
@@ -27,7 +27,7 @@ inherit(OpenFormTask, EditingTask);
 
 module.exports = OpenFormTask;
 
-var proto = OpenFormTask.prototype;
+const proto = OpenFormTask.prototype;
 
 
 proto._getFieldUniqueValuesFromServer = function(layer, uniqueFields) {
@@ -68,7 +68,7 @@ proto._getForm = function(inputs, context) {
   this._layerName = this._originalLayer.getName();
   var excludeFields = context.excludeFields;
   // vado a prendere l'ultima feature
-  this._feature = inputs.features[inputs.features.length - 1]; 
+  this._feature = inputs.features[inputs.features.length - 1];
   this._originalFeature = this._feature.clone();
   this._fields = this._originalLayer.getFieldsWithValues(this._feature, {
     exclude: excludeFields

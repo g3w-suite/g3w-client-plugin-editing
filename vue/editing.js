@@ -3,7 +3,7 @@ var base =  g3wsdk.core.utils.base;
 var merge =  g3wsdk.core.utils.merge;
 var GUI = g3wsdk.gui.GUI;
 var Component = g3wsdk.gui.vue.Component;
-var EditingService = require('../editingservice');
+var EditingService = require('../services/editingservice');
 var EditingTemplate = require('./editing.html');
 var ToolboxComponent = require('./components/toolbox');
 

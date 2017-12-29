@@ -1,14 +1,14 @@
-var inherit = g3wsdk.core.utils.inherit;
-var base = g3wsdk.core.utils.base;
-var Plugin = g3wsdk.core.plugin.Plugin;
-var GUI = g3wsdk.gui.GUI;
-var i18nService = g3wsdk.core.i18n;
-var Service = require('./editingservice');
-var g3wediting = require('editing');
+const inherit = g3wsdk.core.utils.inherit;
+const base = g3wsdk.core.utils.base;
+const Plugin = g3wsdk.core.plugin.Plugin;
+const GUI = g3wsdk.gui.GUI;
+const i18nService = g3wsdk.core.i18n;
+const Service = require('./services/editingservice');
+const g3wediting = require('editing');
 
 import {EditingPanelComponent as EditingPanel}  from './panel';
 
-var _Plugin = function() {
+const _Plugin = function() {
   base(this);
   this.name = 'editing';
   this.init = function() {
@@ -36,9 +36,9 @@ var _Plugin = function() {
   this.setupGui = function() {
     if (_.isBoolean(this.config.visible) && !this.config.visible)
       return false;
-    var self = this;
-    var toolsComponent = GUI.getComponent('tools');
-    var toolsService = toolsComponent.getService();
+    let self = this;
+    let toolsComponent = GUI.getComponent('tools');
+    let toolsService = toolsComponent.getService();
     //add Tools (ordine, Nome gruppo, tasks)
     toolsService.addTools(0, 'EDITING', [
       {
@@ -50,7 +50,7 @@ var _Plugin = function() {
 
   //funzione che mostra il pannello dell'editing
   this.showEditingPanel = function() {
-    var panel = new EditingPanel();
+    const panel = new EditingPanel();
     GUI.showPanel(panel);
   };
 

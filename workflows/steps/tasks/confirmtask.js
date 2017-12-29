@@ -1,13 +1,13 @@
-var inherit = g3wsdk.core.utils.inherit;
-var base =  g3wsdk.core.utils.base;
-var GUI = g3wsdk.gui.GUI;
-var EditingTask = require('./editingtask');
+let inherit = g3wsdk.core.utils.inherit;
+let base =  g3wsdk.core.utils.base;
+let GUI = g3wsdk.gui.GUI;
+let EditingTask = require('./editingtask');
 
 // oggetto che contiene tutte le timpologie di dialog, confirm etc ...
-var Dialogs = {
+let Dialogs = {
   delete: {
     fnc: function(inputs) {
-      var d = $.Deferred();
+      let d = $.Deferred();
       GUI.dialog.confirm("Vuoi eliminare l'elemento selezionato?", function(result) {
         if (result)
           d.resolve(inputs);
@@ -19,7 +19,7 @@ var Dialogs = {
   },
   commit: {
     fnc: function(inputs) {
-      var d = $.Deferred();
+      let d = $.Deferred();
       GUI.dialog.dialog({
         message: inputs.message,
         title: "Vuoi salvare definitivamente le modifiche " + inputs.layer.getName() + "?",
@@ -35,7 +35,7 @@ var Dialogs = {
             label: "Annulla",
             className: "btn-primary",
             callback: function () {
-              d.reject('');
+              d.reject();
             }
           }
         }
@@ -46,14 +46,14 @@ var Dialogs = {
 };
 
 function ConfirmTask(options) {
-  var type = options.type || "default";
+  let type = options.type || "default";
   this._dialog = Dialogs[type];
   base(this, options);
 }
 
 inherit(ConfirmTask, EditingTask);
 
-var proto = ConfirmTask.prototype;
+let proto = ConfirmTask.prototype;
 
 // metodo eseguito all'avvio del tool
 proto.run = function(inputs, context) {

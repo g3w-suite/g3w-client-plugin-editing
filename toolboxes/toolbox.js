@@ -74,16 +74,16 @@ function ToolBox(options) {
   // in ascolto dell'onafter start della sessione così se avviata
   // vado ad associare le features del suo featuresstore al ol.layer.Vector
   this._session.onafter('stop', function() {
-    var EditingService = require('../editingservice');
+    var EditingService = require('../services/editingservice');
     //vado a fermare la sessione dei figli
     EditingService.stopSessionChildren(self.state.id);
     // vado a unregistrare gli eventi
     self._unregisterGetFeaturesEvent();
   });
-  
+
   this._session.onafter('start', function(options) {
     self._getFeaturesOption = options;
-    var EditingService = require('../editingservice');
+    var EditingService = require('../services/editingservice');
     // passo id del toolbox e le opzioni per far partire la sessione
     EditingService.getLayersDependencyFeatures(self.state.id);// dove le opzioni possono essere il filtro;
     // vado a registrare l'evento getFeature
@@ -181,7 +181,7 @@ proto._setEditingLayerSource = function() {
 // inoltre farà uno start e stop dell'editor
 proto.start = function() {
   var self = this;
-  var EditingService = require('../editingservice');
+  var EditingService = require('../services/editingservice');
   var d = $.Deferred();
   // vado a recuperare l'oggetto opzioni data per poter richiedere le feature al provider
   this._getFeaturesOption = EditingService.createEditingDataOptions(this._layerType);
@@ -230,7 +230,7 @@ proto.stop = function() {
   var d = $.Deferred();
   if (this._session && this._session.isStarted()) {
     //vado a verificare se  c'è un padre in editing
-    var EditingService = require('../editingservice');
+    var EditingService = require('../services/editingservice');
     var is_there_a_father_in_editing = EditingService.fatherInEditing(self.state.id);
     if (!is_there_a_father_in_editing) {
       this._session.stop()

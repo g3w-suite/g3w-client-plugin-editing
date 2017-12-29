@@ -60,12 +60,12 @@ var proto = RelationService.prototype;
 proto._setAddLinkWorkflow = function() {
   var add_link_workflow = {
     vector: {
-      link: require('../../../workflows/linkrelationworkflow'),
-      add: require('../../../workflows/addfeatureworkflow')
+      link: require('../workflows/linkrelationworkflow'),
+      add: require('../workflows/addfeatureworkflow')
     },
     table: {
-      link: require('../../../workflows/edittableworkflow'),
-      add: require('../../../workflows/addtablefeatureworkflow')
+      link: require('../workflows/edittableworkflow'),
+      add: require('../workflows/addtablefeatureworkflow')
     }
   };
   this._add_link_workflow = add_link_workflow[this._layerType];
@@ -150,7 +150,7 @@ proto.startTableTool = function(relationtool, index) {
     });
   }
   if (relationtool.state.id == 'editattributes') {
-    var EditTableFeatureWorkflow = require('../../../workflows/edittablefeatureworkflow');
+    var EditTableFeatureWorkflow = require('../workflows/edittablefeatureworkflow');
     workflow = new EditTableFeatureWorkflow();
     var percContent = this._bindEscKeyUp(workflow,  function() {});
     workflow.start(options)
@@ -183,10 +183,10 @@ proto.startVectorTool = function(relationtool, index) {
   var relationfeature = this._getRelationFeature(relation.id); // relation feature
   GUI.setModal(false);
   var workflows = {
-    ModifyGeometryVertexWorkflow: require('../../../workflows/modifygeometryvertexworkflow'),
-    MoveFeatureWorkflow : require('../../../workflows/movefeatureworkflow'),
-    DeleteFeatureWorkflow : require('../../../workflows/deletefeatureworkflow'),
-    EditFeatureAttributesWorkflow : require('../../../workflows/editfeatureattributesworkflow')
+    ModifyGeometryVertexWorkflow: require('../workflows/modifygeometryvertexworkflow'),
+    MoveFeatureWorkflow : require('../workflows/movefeatureworkflow'),
+    DeleteFeatureWorkflow : require('../workflows/deletefeatureworkflow'),
+    EditFeatureAttributesWorkflow : require('../workflows/editfeatureattributesworkflow')
   };
   var workflow;
   _.forEach(workflows, function(classworkflow, key) {
@@ -253,7 +253,7 @@ proto.getEditingLayer = function() {
 };
 
 proto.getEditingService = function() {
-  var EditingService = require('../../../editingservice');
+  var EditingService = require('./editingservice');
   return EditingService;
 };
 
@@ -405,6 +405,7 @@ proto.unlinkRelation = function(index) {
   this.getCurrentWorkflow().session.pushUpdate(this._layerId, relation, originalRelation);
   this.relations.splice(index, 1);
 };
+
 
 proto.getCurrentWorkflow = function() {
   return this.getEditingService().getCurrentWorflow();

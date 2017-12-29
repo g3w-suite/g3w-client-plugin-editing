@@ -59,7 +59,7 @@ proto.start = function() {
       .fail(function() {
         // in caso di mancato successo faccio il rollback
         // della sessione da vedere se li
-        var EditingService = require('../editingservice');
+        var EditingService = require('../services/editingservice');
         self._session.rollback()
           .then(function(relationsChanges) {
             EditingService.rollbackRelations(relationsChanges);
@@ -174,7 +174,7 @@ proto.setMessage = function(message) {
 };
 
 proto.clearMessage = function() {
-  this.state.message = null;  
+  this.state.message = null;
 };
 
 module.exports = Tool;

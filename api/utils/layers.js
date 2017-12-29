@@ -1,4 +1,4 @@
-var EditingService = require('../../editingservice');
+var EditingService = require('../../services/editingservice');
 
 module.exports = {
 

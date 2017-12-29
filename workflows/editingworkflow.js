@@ -28,6 +28,7 @@ proto.getCurrentFeature = function() {
   return features[length -1];
 };
 
+
 proto.getLayer = function() {
   return this.getSession().getEditor().getLayer()
 };

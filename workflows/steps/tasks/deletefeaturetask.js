@@ -1,7 +1,7 @@
-var inherit = g3wsdk.core.utils.inherit;
-var base =  g3wsdk.core.utils.base;
-var DeleteInteraction = g3wsdk.ol3.interactions.DeleteFeatureInteraction;
-var EditingTask = require('./editingtask');
+const inherit = g3wsdk.core.utils.inherit;
+const base =  g3wsdk.core.utils.base;
+const DeleteInteraction = g3wsdk.ol3.interactions.DeleteFeatureInteraction;
+const EditingTask = require('./editingtask');
 
 function DeleteFeatureTask(options) {
   this.drawInteraction = null;
@@ -12,7 +12,7 @@ function DeleteFeatureTask(options) {
 inherit(DeleteFeatureTask, EditingTask);
 
 
-var proto = DeleteFeatureTask.prototype;
+const proto = DeleteFeatureTask.prototype;
 
 /* BRUTTISSIMO! Tocca ridefinire tutte le parti internet di OL3 non esposte dalle API */
 
@@ -29,12 +29,12 @@ ol.geom.GeometryType = {
 };
 
 
-var white = [255, 255, 255, 1];
-var red = [255, 0, 0, 1];
-var width = 3;
+const white = [255, 255, 255, 1];
+const red = [255, 0, 0, 1];
+const width = 3;
 
 //vado a definre lo stile della feature selezionata per essere cancellata
-var styles = {};
+const styles = {};
 styles[ol.geom.GeometryType.POLYGON] = [
   new ol.style.Style({
     stroke: new ol.style.Stroke({
@@ -118,7 +118,29 @@ proto.run = function(inputs, context) {
   });
   this.addInteraction(this._deleteInteraction);
   this._deleteInteraction.on('deleteend', function(e) {
-    var feature = e.features.getArray()[0];
+    const feature = e.features.getArray()[0];
+    const EditingService = require('../../../services/editingservice');
+    const RelationService = require('../../../services/relationservice');
+    const relations = originaLayer.getRelations().getArray();
+    const relationsInEditing = EditingService.getRelationsInEditing(relations, feature, feature.isNew());
+    inputs.features = [feature];
+    relationsInEditing.forEach((relation) => {
+      let updateRelation = true;
+      let relationService = new RelationService({
+        relation: relation.relation,
+        relations: relation.relations
+      });
+      EditingService.getLayerById(relation.relation.child).getFields().forEach((field) => {
+        if (field.name == relation.relation.childField && field.validate.required)
+          updateRelation = false;
+      });
+      if (updateRelation) {
+        const relationsLength = relation.relations.length;
+        for (let index = 0; index < relationsLength ; index++) {
+          relationService.unlinkRelation(0)
+        }
+      }
+    });
     // vado a cancellare dalla source la feature selezionata
     editingLayer.getSource().removeFeature(feature);
     self._selectInteraction.getFeatures().remove(feature);
@@ -134,16 +156,17 @@ proto.run = function(inputs, context) {
 
 proto.stop = function() {
   console.log('Stop delete task ....');
-  var d = $.Deferred();
-  this._selectInteraction.getFeatures().clear();
-  this.removeInteraction(this._selectInteraction);
-  this._selectInteraction = null;
-  // funzione che mi fa il resete di tuttle le modalità inserite dall'interazione
-  this._deleteInteraction.clear();
-  this.removeInteraction(this._deleteInteraction);
-  this._deleteInteraction = null;
-  d.resolve(true);
-  return d.promise();
+  return new Promise((resolve, reject) => {
+    this._selectInteraction.getFeatures().clear();
+    this.removeInteraction(this._selectInteraction);
+    this._selectInteraction = null;
+    // funzione che mi fa il resete di tuttle le modalità inserite dall'interazione
+    this._deleteInteraction.clear();
+    this.removeInteraction(this._deleteInteraction);
+    this._deleteInteraction = null;
+    resolve(true);
+  })
+
 };
 
 
