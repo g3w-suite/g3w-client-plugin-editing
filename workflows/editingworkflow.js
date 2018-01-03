@@ -1,6 +1,6 @@
-var inherit = g3wsdk.core.utils.inherit;
-var base =  g3wsdk.core.utils.base;
-var Workflow = g3wsdk.core.workflow.Workflow;
+const inherit = g3wsdk.core.utils.inherit;
+const base =  g3wsdk.core.utils.base;
+const Workflow = g3wsdk.core.workflow.Workflow;
 
 
 function EditingWorkflow(options) {
@@ -10,21 +10,21 @@ function EditingWorkflow(options) {
 
 inherit(EditingWorkflow, Workflow);
 
-var proto = EditingWorkflow.prototype;
+const proto = EditingWorkflow.prototype;
 
 proto.getFeatures = function() {
   return this.getInputs().features;
 };
 
 proto.startFromLastStep = function(options) {
-  var steps = this.getSteps();
+  let steps = this.getSteps();
   this.setSteps([steps.pop()]);
   return this.start(options);
 };
 
 proto.getCurrentFeature = function() {
-  var features = this.getFeatures();
-  var length = this.getFeatures().length;
+  const features = this.getFeatures();
+  const length = this.getFeatures().length;
   return features[length -1];
 };
 

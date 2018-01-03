@@ -1,11 +1,19 @@
-var RelationService = require('../../../../services/relationservice');
-var maxSubsetLength = 3;
-var RelationComponent = Vue.extend({
+const t = g3wsdk.core.i18n.t;
+const RelationService = require('../../../../services/relationservice');
+const maxSubsetLength = 3;
+
+ RelationComponent = Vue.extend({
   template: require('./relation.html'),
   props: ['relation', 'relations', 'resourcesurl', 'formeventbus'],
   data: function() {
     return {
-      showallfieldsindex: null
+      showallfieldsindex: null,
+      tooltips: {
+        add_relation: t("form.relations.tooltips.add_relation"),
+        link_relation: t("form.relations.tooltips.link_relation"),
+        open_relation_tool: t("form.relations.tooltips.open_relation_tools"),
+        unlink_relation: t("form.relations.tooltips.unlink_relation")
+      }
     }
   },
   methods: {
@@ -87,7 +95,8 @@ var RelationComponent = Vue.extend({
   mounted: function() {
     this._service.showRelationStyle();
     this.formeventbus.$on('changeinput', this.updateExternalKeyValueRelations);
-    this.formeventbus.$emit('addtovalidate', this.validate)
+    this.formeventbus.$emit('addtovalidate', this.validate);
+    $('[data-toggle="tooltip"]').tooltip();
   },
   destroyed: function() {
     this._service.hideRelationStyle();
