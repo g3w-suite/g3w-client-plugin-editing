@@ -1,13 +1,14 @@
-var Layer = g3wsdk.core.layer.Layer;
-var Geometry = g3wsdk.core.geometry.Geometry;
-var Tool = require('./tool');
-var AddFeatureWorkflow = require('../workflows/addfeatureworkflow');
-var ModifyGeometryVertexWorkflow = require('../workflows/modifygeometryvertexworkflow');
-var MoveFeatureWorkflow = require('../workflows/movefeatureworkflow');
-var DeleteFeatureWorkflow = require('../workflows/deletefeatureworkflow');
-var EditFeatureAttributesWorkflow = require('../workflows/editfeatureattributesworkflow');
-var EditTableFeaturesWorkflow = require('../workflows/edittableworkflow');
-var AddTableFeatureWorflow = require('../workflows/addtablefeatureworkflow');
+const Layer = g3wsdk.core.layer.Layer;
+const Geometry = g3wsdk.core.geometry.Geometry;
+const t = g3wsdk.core.i18n.t;
+const Tool = require('./tool');
+const AddFeatureWorkflow = require('../workflows/addfeatureworkflow');
+const ModifyGeometryVertexWorkflow = require('../workflows/modifygeometryvertexworkflow');
+const MoveFeatureWorkflow = require('../workflows/movefeatureworkflow');
+const DeleteFeatureWorkflow = require('../workflows/deletefeatureworkflow');
+const EditFeatureAttributesWorkflow = require('../workflows/editfeatureattributesworkflow');
+const EditTableFeaturesWorkflow = require('../workflows/edittableworkflow');
+const AddTableFeatureWorflow = require('../workflows/addtablefeatureworkflow');
 
 // classe costruttrice di Tools
 function EditorToolsFactory() {
@@ -18,26 +19,26 @@ function EditorToolsFactory() {
   // e dei tasks associati
   this.build = function(options) {
     options = options || {};
-    var type = options.type || Layer.LayerTypes.VECTOR;
-    var layer = options.layer;
-    var tools;
+    const type = options.type || Layer.LayerTypes.VECTOR;
+    const layer = options.layer;
+    let tools;
     switch (type) {
       case Layer.LayerTypes.VECTOR:
-        var geometryType = options.geometryType;
+        const geometryType = options.geometryType;
         switch (geometryType) {
           case Geometry.GeometryTypes.POINT:
           case Geometry.GeometryTypes.MULTIPOINT:
             tools = [
               new Tool({
                 id: 'addfeature',
-                name: "Inserisci feature",
+                name: t("editing.tools.add_feature"),
                 icon: "addPoint.png",
                 layer: layer,
                 op: AddFeatureWorkflow
               }),
               new Tool({
                 id: 'movefeature',
-                name: "Sposta feature",
+                name: t("editing.tools.move_feature"),
                 icon: "movePoint.png",
                 layer: layer,
                 type: type,
@@ -45,14 +46,14 @@ function EditorToolsFactory() {
               }),
               new Tool({
                 id: 'deletefeature',
-                name: "Elimina feature",
+                name: t("editing.tools.delete_feature"),
                 icon: "deletePoint.png",
                 layer: layer,
                 op: DeleteFeatureWorkflow
               }),
               new Tool({
                 id: 'editattributes',
-                name: "Modifica attributi",
+                name: t("editing.tools.update_feature"),
                 icon: "editAttributes.png",
                 layer: layer,
                 op: EditFeatureAttributesWorkflow
@@ -64,7 +65,7 @@ function EditorToolsFactory() {
             tools = [
               new Tool({
                 id: 'addfeature',
-                name: "Inserisci feature",
+                name: t("editing.tools.add_feature"),
                 icon: "addLine.png",
                 layer: layer,
                 type: type,
@@ -72,21 +73,21 @@ function EditorToolsFactory() {
               }),
               new Tool({
                 id: 'movevertex',
-                name: "Modifica vertice",
+                name: t("editing.tools.update_vertex"),
                 icon: "moveVertex.png",
                 layer: layer,
                 op: ModifyGeometryVertexWorkflow
               }),
               new Tool({
                 id: 'deletefeature',
-                name: "Elimina feature",
+                name: t("editing.tools.delete_feature"),
                 icon: "deleteLine.png",
                 layer: layer,
                 op: DeleteFeatureWorkflow
               }),
               new Tool({
                 id: 'editattributes',
-                name: "Modifica attributi",
+                name: t("editing.tools.update_feature"),
                 icon: "editAttributes.png",
                 layer: layer,
                 op: EditFeatureAttributesWorkflow
@@ -98,35 +99,35 @@ function EditorToolsFactory() {
             tools = [
               new Tool({
                 id: 'addfeature',
-                name: "Inserisci feature",
+                name: t("editing.tools.add_feature"),
                 icon: "AddPolygon.png",
                 layer: layer,
                 op: AddFeatureWorkflow
               }),
               new Tool({
                 id: 'movefeature',
-                name: "Muovi feature",
+                name: t("editing.tools.move_feature"),
                 icon: "MovePolygon.png",
                 layer: layer,
                 op: MoveFeatureWorkflow
               }),
               new Tool({
                 id: 'movevertex',
-                name: "Modifica vertice",
+                name: t("editing.tools.update_vertex"),
                 icon: "MovePolygonVertex.png",
                 layer: layer,
                 op: ModifyGeometryVertexWorkflow
               }),
               new Tool({
                 id: 'deletefeature',
-                name: "Elimina feature",
+                name: t("editing.tools.delete_feature"),
                 icon: "deletePolygon.png",
                 layer: layer,
                 op: DeleteFeatureWorkflow
               }),
               new Tool({
                 id: 'editattributes',
-                name: "Modifica attributi",
+                name: t("editing.tools.update_feature"),
                 icon: "editAttributes.png",
                 layer: layer,
                 op: EditFeatureAttributesWorkflow
@@ -140,14 +141,14 @@ function EditorToolsFactory() {
         tools = [
           new Tool({
             id: 'addfeature',
-            name: "Inserisci feature",
+            name: t("editing.tools.add_feature"),
             icon: "addTableRow.png",
             layer: layer,
             op: AddTableFeatureWorflow
           }),
           new Tool({
             id: 'edittable',
-            name: "Modifica attributi",
+            name: t("editing.tools.update_feature"),
             icon: "editAttributes.png",
             layer: layer,
             op: EditTableFeaturesWorkflow

@@ -69,15 +69,18 @@
               <td>
                 <div class="dropup">
                   <span
-                     data-toggle="dropdown"
-                     aria-haspopup="true" aria-expanded="false"
-                     class="dropdown-toggle g3w-icon g3w-mini-relation-icon g3w-cogs pull-right"
-                     data-toggle="tooltip" data-placement="bottom" :title="tooltips.open_relation_tool"
-                     aria-hidden="true">
+                    data-toggle="dropdown" data-placement="bottom" :title="tooltips.open_relation_tool"
+                    aria-haspopup="true" aria-expanded="false"
+                    class="dropdown-toggle g3w-icon g3w-mini-relation-icon g3w-cogs pull-right g3w-relation-tools"
+                    aria-hidden="true">
                   </span>
                   <div class="dropdown-menu pull-right" style="margin-bottom:5px; box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.5) !important;" :style="{'min-width': getRelationTools().length*40 + 'px !important' }">
-                    <div @click="startTool(relationtool, index)" v-for="relationtool in getRelationTools()" class="editbtn enabled" style="display:inline-block">
-                      <img height="20px" width="20px" :alt="relationtool.state.name" :title="relationtool.state.name" :src="resourcesurl + 'images/'+ relationtool.state.icon"/>
+                    <div @click="startTool(relationtool, index)"
+                         v-for="relationtool in getRelationTools()"
+                         data-toggle="tooltip"
+                         data-placement="bottom" :title="relationtool.state.name"
+                         class="editbtn enabled" style="display:inline-block">
+                      <img height="20px" width="20px" :src="resourcesurl + 'images/'+ relationtool.state.icon"/>
                     </div>
                   </div>
                 </div>

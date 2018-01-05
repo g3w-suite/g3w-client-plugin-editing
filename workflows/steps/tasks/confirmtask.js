@@ -1,14 +1,15 @@
-let inherit = g3wsdk.core.utils.inherit;
-let base =  g3wsdk.core.utils.base;
-let GUI = g3wsdk.gui.GUI;
-let EditingTask = require('./editingtask');
+const inherit = g3wsdk.core.utils.inherit;
+const base =  g3wsdk.core.utils.base;
+const GUI = g3wsdk.gui.GUI;
+const t = g3wsdk.core.i18n.t;
+const EditingTask = require('./editingtask');
 
 // oggetto che contiene tutte le timpologie di dialog, confirm etc ...
 let Dialogs = {
   delete: {
     fnc: function(inputs) {
       let d = $.Deferred();
-      GUI.dialog.confirm("Vuoi eliminare l'elemento selezionato?", function(result) {
+      GUI.dialog.confirm(t("editing.messages.delete_feature"), function(result) {
         if (result)
           d.resolve(inputs);
         else
@@ -22,7 +23,7 @@ let Dialogs = {
       let d = $.Deferred();
       GUI.dialog.dialog({
         message: inputs.message,
-        title: "Vuoi salvare definitivamente le modifiche " + inputs.layer.getName() + "?",
+        title: t("editing.messages.commit") + " " +inputs.layer.getName() + "?",
         buttons: {
           SAVE: {
             label: "Salva",
