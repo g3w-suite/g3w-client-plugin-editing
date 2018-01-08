@@ -1,10 +1,10 @@
-var inherit = g3wsdk.core.utils.inherit;
-var base =  g3wsdk.core.utils.base;
-var Step = g3wsdk.core.workflow.Step;
-var OpenFormTask = require('./tasks/openformtask');
+const inherit = g3wsdk.core.utils.inherit;
+const base =  g3wsdk.core.utils.base;
+const Step = g3wsdk.core.workflow.Step;
+const OpenFormTask = require('./tasks/openformtask');
 
 //creato uno step per apriore il form
-var OpenFormStep = function(options) {
+const OpenFormStep = function(options) {
   options = options || {};
   options.task = new OpenFormTask();
   options.help = "Inserisci gli attributi della feature";

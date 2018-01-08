@@ -31,14 +31,14 @@ const proto = OpenFormTask.prototype;
 
 
 proto._getFieldUniqueValuesFromServer = function(layer, uniqueFields) {
-  var fieldsName = _.map(uniqueFields, function(field) {
+  const fieldsName = _.map(uniqueFields, function(field) {
     return field.name
   });
   layer.getWidgetData({
     type: 'unique',
     fields: fieldsName.join()
   }).then(function(response) {
-    var data = response.data;
+    const data = response.data;
     _.forEach(data, function(values, fieldName) {
       _.forEach(values, function(value) {
         uniqueFields[fieldName].input.options.values.push(value);
@@ -50,7 +50,7 @@ proto._getFieldUniqueValuesFromServer = function(layer, uniqueFields) {
 };
 
 proto._getUniqueFieldsType = function(fields) {
-  var uniqueFields = {};
+  const uniqueFields = {};
   _.forEach(fields, function(field) {
      if (field.input.type == 'unique')
        uniqueFields[field.name] = field;
@@ -59,6 +59,7 @@ proto._getUniqueFieldsType = function(fields) {
 };
 
 proto._getForm = function(inputs, context) {
+  const excludeFields = context.excludeFields;
   this._isContentChild = !!(WorkflowsStack.getLength() > 1);
   this._session = context.session;
   // vado a recuperare i
@@ -66,14 +67,14 @@ proto._getForm = function(inputs, context) {
   this._editingLayer = inputs.layer;
   this._pk = this._originalLayer.getPk();
   this._layerName = this._originalLayer.getName();
-  var excludeFields = context.excludeFields;
+
   // vado a prendere l'ultima feature
   this._feature = inputs.features[inputs.features.length - 1];
   this._originalFeature = this._feature.clone();
   this._fields = this._originalLayer.getFieldsWithValues(this._feature, {
     exclude: excludeFields
   });
-  var uniqueFields = this._getUniqueFieldsType(this._fields);
+  const uniqueFields = this._getUniqueFieldsType(this._fields);
   if (!_.isEmpty(uniqueFields))
     this._getFieldUniqueValuesFromServer(this._originalLayer, uniqueFields);
   return GUI.showContentFactory('form');
@@ -86,8 +87,8 @@ proto._cancelFnc = function(promise, inputs) {
 
 proto._saveFnc = function(promise, inputs) {
   return function(fields) {
-    var newFeature = this._feature;
-    var layerId = this._originalLayer.getId();
+    const newFeature = this._feature;
+    const layerId = this._originalLayer.getId();
     // vado a settare per quel layer i valori ai campi
     this._originalLayer.setFieldsWithValues(newFeature, fields);
     // verifico se non è nuovo
@@ -107,14 +108,14 @@ proto._saveFnc = function(promise, inputs) {
 };
 
 proto.startForm = function(options) {
+  const self = this;
   options = options || {};
-  var self = this;
-  var inputs = options.inputs;
-  var context = options.context;
-  var promise = options.promise;
-  var formComponent = options.formComponent || EditingFormComponent;
-  var Form = this._getForm(inputs, context);
-  var formService = Form({
+  const inputs = options.inputs;
+  const context = options.context;
+  const promise = options.promise;
+  const formComponent = options.formComponent || EditingFormComponent;
+  const Form = this._getForm(inputs, context);
+  const formService = Form({
     formComponent: formComponent,
     title: "Edita attributi "+ this._layerName,
     name: "Edita attributi "+ this._layerName,
@@ -135,12 +136,12 @@ proto.startForm = function(options) {
       title: "Salva",
       type: "save",
       class: "btn-success",
-      cbk: _.bind(self._saveFnc(promise, inputs), self)
+      cbk: _.bind(this._saveFnc(promise, inputs), this)
     }, {
       title: "Cancella",
       type: "cancel",
       class: "btn-primary",
-      cbk: _.bind(self._cancelFnc, self, promise, inputs)
+      cbk: _.bind(this._cancelFnc, this, promise, inputs)
     }]
   });
   context.formService = formService;
@@ -148,7 +149,7 @@ proto.startForm = function(options) {
 
 // metodo eseguito all'avvio del tool
 proto.run = function(inputs, context) {
-  var d = $.Deferred();
+  const d = $.Deferred();
   this.startForm({
     inputs: inputs,
     context: context,

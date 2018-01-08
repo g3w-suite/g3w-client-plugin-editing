@@ -1,7 +1,7 @@
-var inherit = g3wsdk.core.utils.inherit;
-var base =  g3wsdk.core.utils.base;
-var GUI = g3wsdk.gui.GUI;
-var Task = g3wsdk.core.workflow.Task;
+const inherit = g3wsdk.core.utils.inherit;
+const base =  g3wsdk.core.utils.base;
+const GUI = g3wsdk.gui.GUI;
+const Task = g3wsdk.core.workflow.Task;
 
 function EditingTask(options) {
   options = options || {};
@@ -19,7 +19,7 @@ function EditingTask(options) {
 
 inherit(EditingTask, Task);
 
-var proto = EditingTask.prototype;
+const proto = EditingTask.prototype;
 
 proto.run = function(inputs, context) {
   //TODO

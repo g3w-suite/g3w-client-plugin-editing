@@ -189,7 +189,7 @@ proto.undoRelations = function(undoItems) {
 proto.rollbackRelations = function(rollbackItems) {
   let session;
   let toolbox;
-  Object.entries(rollbackItems).forEach(([toolboxId,items]) => {
+  Object.entries(rollbackItems).forEach(([toolboxId, items]) => {
     toolbox = this.getToolBoxById(toolboxId);
     session = toolbox.getSession();
     session.rollback(items);

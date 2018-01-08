@@ -1,6 +1,6 @@
-var inherit = g3wsdk.core.utils.inherit;
-var base =  g3wsdk.core.utils.base;
-var G3WObject = g3wsdk.core.G3WObject;
+const inherit = g3wsdk.core.utils.inherit;
+const base =  g3wsdk.core.utils.base;
+const G3WObject = g3wsdk.core.G3WObject;
 
 // Calsse che rappresenta di fatto
 // il bottone all'interno dell'editor control per l'editing
@@ -28,12 +28,11 @@ function Tool(options) {
 
 inherit(Tool, G3WObject);
 
-var proto = Tool.prototype;
+const proto = Tool.prototype;
 
 // funzione che al click del bottone lancio
 proto.start = function() {
-  var self = this;
-  var options = {};
+  const options = {};
   // come inpust al tool e di conseguenza al worflow
   // passo il layer e features
   options.inputs = {
@@ -47,30 +46,30 @@ proto.start = function() {
   };
   // funzione che mi permette di far ripartire
   // l'operatore o workflow qaundo è arrivato alla fine
-  function startOp(options) {
-    self._op.start(options)
-      .then(function(outputs) {
+  const startOp = (options) => {
+    this._op.start(options)
+      .then((outputs) => {
         // vado a salvare la sessione
-        self._session.save()
-          .then(function() {
+        this._session.save()
+          .then(() => {
             //TODO
           });
       })
-      .fail(function() {
+      .fail(() => {
         // in caso di mancato successo faccio il rollback
         // della sessione da vedere se li
-        var EditingService = require('../services/editingservice');
-        self._session.rollback()
-          .then(function(relationsChanges) {
+        const EditingService = require('../services/editingservice');
+        this._session.rollback()
+          .then((relationsChanges) => {
             EditingService.rollbackRelations(relationsChanges);
           })
       })
-      .always(function() {
+      .always(() =>{
         options.inputs.features = [];
-        if (self._session.getEditor().getLayer().getType() != 'table')
+        if (this._session.getEditor().getLayer().getType() != 'table')
           startOp(options);
         else
-          self.stop();
+          this.stop();
       })
   }
   // verifico che sia definito l'operatore
@@ -84,19 +83,18 @@ proto.start = function() {
 
 //fa lo stop del tool
 proto.stop = function() {
-  var self = this;
   console.log('Stopping Tool ... ');
   if (this._op) {
     this._op.stop()
-      .then(function() {
+      .then(() => {
         //TODO
       })
-      .fail(function(err) {
+      .fail((err) => {
         //in caso di errore faccio un rollback della sessione
-        self._session.rollback();
+        this._session.rollback();
       })
-      .always(function() {
-        self.state.active = false;
+      .always(() => {
+        this.state.active = false;
       })
   }
 };
@@ -165,7 +163,7 @@ proto.clear = function() {
 };
 
 proto.getMessage = function() {
-  var operator = this.getOperator();
+  const operator = this.getOperator();
   return operator.getRunningStep() ? operator.getRunningStep().getHelp() : null;
 };
 

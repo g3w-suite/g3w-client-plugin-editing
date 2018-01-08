@@ -1,27 +1,27 @@
-var inherit = g3wsdk.core.utils.inherit;
-var base =  g3wsdk.core.utils.base;
-var PickFeatureInteraction = g3wsdk.ol3.interactions.PickFeatureInteraction;
+const inherit = g3wsdk.core.utils.inherit;
+const base =  g3wsdk.core.utils.base;
+const PickFeatureInteraction = g3wsdk.ol3.interactions.PickFeatureInteraction;
 
-var EditingTask = require('./editingtask');
+const EditingTask = require('./editingtask');
 
 function ModifyFeatureTask(options){
-  var self = this;
   options = options || {};
   this.editor = editor;
   this.drawInteraction = null;
   this._deleteCondition = options.deleteCondition || undefined;
   this._snap = options.snap || null;
   this._snapInteraction = null;
-  
+
   base(this,editor);
 }
+
 inherit(ModifyFeatureTask, EditingTask);
 
 
-var proto = ModifyFeatureTask.prototype;
+const proto = ModifyFeatureTask.prototype;
 
 proto.run = function() {
-  var self = this;
+  let origGeometry = null;
   this.pickedFeatures = new ol.Collection;
   this._pickInteraction = new PickFeatureInteraction({
     layers: [this.layer]
@@ -29,43 +29,42 @@ proto.run = function() {
 
   this.addInteraction(this._pickInteraction);
 
-  this._pickInteraction.on('picked', function(e) {
-    self.pickedFeatures.clear();
-    self.pickedFeatures.push(e.feature);
+  this._pickInteraction.on('picked', (e) =>{
+    this.pickedFeatures.clear();
+    this.pickedFeatures.push(e.feature);
   });
 
   this._modifyInteraction = new ol.interaction.Modify({
     features: this.pickedFeatures,
     deleteCondition: this._deleteCondition
   });
-  
+
   this.addInteraction(this._modifyInteraction);
-  var origGeometry = null;
-  
-  this._modifyInteraction.on('modifystart',function(e) {
-    var feature = e.features.getArray()[0];
+
+  this._modifyInteraction.on('modifystart', (e) => {
+    const feature = e.features.getArray()[0];
     origGeometry = feature.getGeometry().clone();
   });
-  
-  this._modifyInteraction.on('modifyend',function(e){
-    var feature = e.features.getArray()[0];
-    var isNew = feature.isNew();
+
+  this._modifyInteraction.on('modifyend', (e) => {
+    const feature = e.features.getArray()[0];
+    const isNew = feature.isNew();
     //try {
-      if (!self._busy) {
-        self._busy = true;
-        self.pause(true);
-        self.modifyFeature(feature, isNew)
-        .fail(function(){
+      if (!this._busy) {
+        this._busy = true;
+        this.pause(true);
+        this.modifyFeature(feature, isNew)
+        .fail(() => {
           feature.setGeometry(origGeometry);
         })
-        .always(function(){
-          self._busy = false;
-          self.pause(false);
+        .always(() => {
+          this._busy = false;
+          this.pause(false);
         })
       }
   });
-  
-  if (this._snap){
+
+  if (this._snap) {
     this._snapInteraction = new ol.interaction.Snap({
       source: this._snap.vectorLayer.getSource()
     });
@@ -111,7 +110,7 @@ proto._modifyFeature = function(feature, isNew){
   return true;
 };
 
-proto.removePoint = function(coordinate){
+proto.removePoint = function(){
   if (this._modifyInteraction){
     // provo a rimuovere l'ultimo punto. Nel caso non esista la geometria gestisco silenziosamente l'errore
     try{
