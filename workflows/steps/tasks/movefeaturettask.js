@@ -1,6 +1,6 @@
-var inherit = g3wsdk.core.utils.inherit;
-var base =  g3wsdk.core.utils.base;
-var EditingTask = require('./editingtask');
+const inherit = g3wsdk.core.utils.inherit;
+const base =  g3wsdk.core.utils.base;
+const EditingTask = require('./editingtask');
 
 function MoveFeatureTask(options){
   this.drawInteraction = null;
@@ -9,18 +9,17 @@ function MoveFeatureTask(options){
 
 inherit(MoveFeatureTask, EditingTask);
 
-var proto = MoveFeatureTask.prototype;
+const proto = MoveFeatureTask.prototype;
 
 proto.run = function(inputs, context) {
-  var d = $.Deferred();
-  var session = context.session;
-  var originalFeature = null;
-  var editingLayer = inputs.layer;
-  var feature = inputs.features[0];
-  var originalLayer = context.layer;
-  var layerId = originalLayer.getId();
-  var originalStyle = editingLayer.getStyle();
-  var style = new ol.style.Style({
+  const d = $.Deferred();
+  const session = context.session;
+  const editingLayer = inputs.layer;
+  const feature = inputs.features[0];
+  const originalLayer = context.layer;
+  const layerId = originalLayer.getId();
+  const originalStyle = editingLayer.getStyle();
+  const style = new ol.style.Style({
     fill: new ol.style.Fill({
       color: 'rgba(255, 255, 255, 0.2)'
     }),
@@ -35,8 +34,8 @@ proto.run = function(inputs, context) {
       })
     })
   });
-  var features = new ol.Collection(inputs.features);
-
+  const features = new ol.Collection(inputs.features);
+  let originalFeature = null;
   feature.setStyle(style);
   this._translateInteraction = new ol.interaction.Translate({
     features: features,
@@ -45,14 +44,14 @@ proto.run = function(inputs, context) {
   this.addInteraction(this._translateInteraction);
 
   this._translateInteraction.on('translatestart',function(e){
-    var feature = e.features.getArray()[0];
+    const feature = e.features.getArray()[0];
     // repndo la feature di partenza
     originalFeature = feature.clone();
   });
   
   this._translateInteraction.on('translateend',function(e) {
-    var feature = e.features.getArray()[0];
-    var newFeature = feature.clone();
+    const feature = e.features.getArray()[0];
+    const newFeature = feature.clone();
     session.pushUpdate(layerId, newFeature, originalFeature);
     // ritorno come output l'input layer che sarà modificato
     inputs.features.push(newFeature);
@@ -64,7 +63,7 @@ proto.run = function(inputs, context) {
 
 
 proto.stop = function() {
-  var d = $.Deferred();
+  const d = $.Deferred();
   this.removeInteraction(this._translateInteraction);
   this._translateInteraction = null;
   d.resolve();

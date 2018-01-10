@@ -62,6 +62,8 @@ function EditorToolsFactory() {
             break;
           case Geometry.GeometryTypes.LINESTRING:
           case Geometry.GeometryTypes.MULTILINESTRING:
+          case Geometry.GeometryTypes.LINE:
+          case Geometry.GeometryTypes.MULTILINE:
             tools = [
               new Tool({
                 id: 'addfeature',

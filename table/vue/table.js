@@ -1,9 +1,9 @@
-var inherit = g3wsdk.core.utils.inherit;
-var base =  g3wsdk.core.utils.base;
-var Component = g3wsdk.gui.vue.Component;
-var TableService = require('../tableservice');
+const inherit = g3wsdk.core.utils.inherit;
+const base =  g3wsdk.core.utils.base;
+const Component = g3wsdk.gui.vue.Component;
+const TableService = require('../tableservice');
 
-var InternalComponent = Vue.extend({
+const InternalComponent = Vue.extend({
   template: require('./table.html'),
   data: function() {
     return {
@@ -39,8 +39,7 @@ var InternalComponent = Vue.extend({
     }
   },
   mounted: function() {
-    var self = this;
-    this.$nextTick(function() {
+    this.$nextTick(() => {
       $('#editing_table table').DataTable({
         "pageLength": 25,
         "bLengthChange": false,
@@ -50,18 +49,18 @@ var InternalComponent = Vue.extend({
           { orderable: false, targets: [-1, -2] }
         ]
       });
-      $('.dataTables_paginate').on('click', function() {
-        self._setLayout();
+      $('.dataTables_paginate').on('click', () => {
+        this._setLayout();
       });
-      self._setLayout();
+      this._setLayout();
     });
   }
 });
 
-var TableComponent = function(options) {
+const TableComponent = function(options) {
   base(this);
-  var options = options || {};
-  var service = options.service || new TableService({
+  options = options || {};
+  const service = options.service || new TableService({
     features: options.features,
     promise: options.promise,
     context: options.context,
@@ -71,16 +70,16 @@ var TableComponent = function(options) {
     foreignKey: options.foreignKey,
     title: options.title
   });
-  var headers = options.headers || [];
+  const headers = options.headers || [];
   // istanzio il componente interno
   this.setService(service);
-  var internalComponent = new InternalComponent({
+  const internalComponent = new InternalComponent({
     service: service,
     headers: headers
   });
   this.setInternalComponent(internalComponent);
   internalComponent.state = service.state;
-  
+
   this.unmount = function() {
     return base(this, 'unmount');
   };

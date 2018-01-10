@@ -32,32 +32,32 @@ proto.run = function(inputs, context) {
     originalLayer : è il layer di editing originale
     editingLayer: è il layer, in questo caso ol.layer.Vector con cui gli strumenti interagiscono
    */
-  var d = $.Deferred();
-  var editingLayer = inputs.layer;
+  const d = $.Deferred();
+  const editingLayer = inputs.layer;
   //recupero la sessione dal context
-  var session = context.session;
-  var originalLayer = context.layer;
-  var layerId = originalLayer.getId();
+  const session = context.session;
+  const originalLayer = context.layer;
+  const layerId = originalLayer.getId();
   // vado a rrecuperare la primary key del layer
-  var pk = originalLayer.getPk();
+  const pk = originalLayer.getPk();
   // qui vado a valutare il tipo di layer
   switch (originalLayer.getType()) {
     case Layer.LayerTypes.VECTOR:
-      var geometryType;
-      if (originalLayer.getEditingGeometryType() == Geometry.GeometryTypes.LINESTRING)
+      let geometryType;
+      if (originalLayer.getEditingGeometryType() == Geometry.GeometryTypes.LINE)
         geometryType = 'LineString';
-      else if (originalLayer.getEditingGeometryType() == Geometry.GeometryTypes.MULTILINESTRING)
+      else if (originalLayer.getEditingGeometryType() == Geometry.GeometryTypes.MULTILINE)
         geometryType = 'MultiLineString';
       else
         geometryType = originalLayer.getEditingGeometryType();
       //definisce l'interazione che deve essere aggiunta
       // specificando il layer sul quale le feature aggiunte devono essere messe
-      var source = editingLayer.getSource();
-      var attributes = _.filter(originalLayer.getFields(), function(field) {
+      const source = editingLayer.getSource();
+      const attributes = _.filter(originalLayer.getFields(), function(field) {
         return field.editable && field.name != originalLayer.getPk() ;
       });
       // creo una source temporanea
-      var temporarySource = new ol.source.Vector();
+      const temporarySource = new ol.source.Vector();
       this.drawInteraction = new ol.interaction.Draw({
         type: geometryType, // il tipo lo prende dal geometry type dell'editing vetor layer che a sua volta lo prende dal tipo si geometry del vector layer originale
         source: temporarySource, // lo faccio scrivere su una source temporanea (non vado a modificare il source featuresstore)
@@ -79,7 +79,7 @@ proto.run = function(inputs, context) {
         _.forEach(attributes, function(attribute) {
           e.feature.set(attribute.name, null);
         });
-        var feature = new Feature({
+        const feature = new Feature({
           feature: e.feature,
           pk: pk // passo la pk della feature
         });

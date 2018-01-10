@@ -1,6 +1,6 @@
-var GUI = g3wsdk.gui.GUI;
+const GUI = g3wsdk.gui.GUI;
 
-var TableService = function(options) {
+const TableService = function(options) {
   options = options || {};
   this._Features = options.features || []; // sono le features originali
   this._promise = options.promise;
@@ -17,15 +17,14 @@ var TableService = function(options) {
   this._addFeatures(this._Features);
 };
 
-var proto = TableService.prototype;
+const proto = TableService.prototype;
 
 proto._addFeatures = function(features) {
-  var self = this;
-  var features = !this.state.isrelation ? features : _.filter(features, function(feature) {
+  features = !this.state.isrelation ? features : _.filter(features, function(feature) {
     return feature.get(self._foreignKey) != self._fatherValue
   });
-  _.forEach(features, function(feature) {
-    self.state.features.push(feature.getProperties());
+  features.forEach((feature) => {
+    this.state.features.push(feature.getProperties());
   })
 };
 
@@ -38,55 +37,51 @@ proto.cancel = function() {
 };
 
 proto.deleteFeature = function(index) {
-  var self = this;
-  GUI.dialog.confirm("Vuoi eliminare l'elemento selezionato?", function(result) {
+  GUI.dialog.confirm("Vuoi eliminare l'elemento selezionato?", (result) => {
     if (result) {
-      var feature = self._Features[index];
-      var session = self._context.session;
-      var layerId = self._inputs.layer.getId();
+      const feature = this._Features[index];
+      const session = this._context.session;
+      const layerId = this._inputs.layer.getId();
       session.pushDelete(layerId, feature);
-      self.state.features.splice(index, 1);
-      self._Features.splice(index, 1);
+      this.state.features.splice(index, 1);
+      this._Features.splice(index, 1);
     }
   });
 };
 
 proto.editFeature = function(index) {
-  var self = this;
-  var feature = this._Features[index];
-  var EditTableFeatureWorkflow = require('../workflows/edittablefeatureworkflow');
-  var workflow = new EditTableFeatureWorkflow();
-  var inputs = this._inputs;
+  const feature = this._Features[index];
+  const EditTableFeatureWorkflow = require('../workflows/edittablefeatureworkflow');
+  const workflow = new EditTableFeatureWorkflow();
+  const inputs = this._inputs;
   inputs.features.push(feature);
-  var options = {
+  const options = {
     context: this._context,
     inputs: inputs
   };
   workflow.start(options)
-    .then(function(outputs) {
-      var feature = outputs.features[0];
-      _.forEach(self.state.features[index], function(value, key) {
-        self.state.features[index][key] = feature.get(key);
+    .then((outputs) => {
+      const feature = outputs.features[0];
+      Object.entries(self.state.features[index]).forEach(([key, value]) => {
+        this.state.features[index][key] = feature.get(key);
       });
-      var pk = feature.getPk();
-      self.state.features[index][pk] = feature.getId();
+      const pk = feature.getPk();
+      this.state.features[index][pk] = feature.getId();
     })
-    .fail(function() {
-      
-    })
+    .fail((err) => {})
 };
 
 proto.linkFeature = function(index) {
-  var feature = this._Features[index];
+  const feature = this._Features[index];
   this._promise.resolve({
       features: [feature]
     });
 };
 
 proto._setLayout = function() {
-  var editing_table_content_height = $('#editing_table').height();
-  var height_85 = (editing_table_content_height * 85) / 100;
-  var table_editing_height = $('#editing_table table').height();
+  const editing_table_content_height = $('#editing_table').height();
+  const height_85 = (editing_table_content_height * 85) / 100;
+  const table_editing_height = $('#editing_table table').height();
   if (table_editing_height > editing_table_content_height) {
     $("#editing_table .nano").height(height_85);
   }
