@@ -178,7 +178,7 @@ proto._layerChildrenRelationInEditing = function(layer) {
 proto.undoRelations = function(undoItems) {
   let session;
   let toolbox;
-  undoItems.forEach((items, toolboxId) => {
+  Object.entries(undoItems).forEach(([toolboxId, items]) => {
     toolbox = this.getToolBoxById(toolboxId);
     session = toolbox.getSession();
     session.undo(items);
@@ -317,7 +317,7 @@ proto.getRelationsByFeature = function(relation, feature, layerType) {
   let toolboxId = relation.getChild();
   let relationChildField = relation.getChildField();
   let relationFatherField= relation.getFatherField();
-  let featureValue = feature.get(relationFatherField);
+  let featureValue = feature.isPk(relationFatherField) ? feature.getId() : feature.get(relationFatherField);
   let toolbox = this.getToolBoxById(toolboxId);
   let editingLayer = toolbox.getEditingLayer();
   let features = layerType == 'vector' ? editingLayer.getSource().getFeatures() : editingLayer.getSource().readFeatures() ;

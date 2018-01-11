@@ -20,8 +20,8 @@ const TableService = function(options) {
 const proto = TableService.prototype;
 
 proto._addFeatures = function(features) {
-  features = !this.state.isrelation ? features : _.filter(features, function(feature) {
-    return feature.get(self._foreignKey) != self._fatherValue
+  features = !this.state.isrelation ? features : features.filter((feature) => {
+    return feature.get(this._foreignKey) != this._fatherValue
   });
   features.forEach((feature) => {
     this.state.features.push(feature.getProperties());

@@ -108,7 +108,6 @@ proto._saveFnc = function(promise, inputs) {
 };
 
 proto.startForm = function(options) {
-  const self = this;
   options = options || {};
   const inputs = options.inputs;
   const context = options.context;
@@ -119,7 +118,7 @@ proto.startForm = function(options) {
     formComponent: formComponent,
     title: "Edita attributi "+ this._layerName,
     name: "Edita attributi "+ this._layerName,
-    id: self._generateFormId(this._layerName),
+    id: this._generateFormId(this._layerName),
     dataid: this._layerName,
     layer: this._originalLayer,
     pk: this._pk,

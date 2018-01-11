@@ -29,9 +29,10 @@ proto.run = function(inputs, context) {
   // vado a recuperare i
   const editingLayer = inputs.layer;
   const features = editingLayer.getSource().readFeatures();
+  const action = this._isContentChild ? 'Link ' :  'Edita ';
   GUI.showContent({
     content: new TableComponent({
-      title: 'Edita ' + layerName,
+      title:  action + layerName,
       features: features,
       promise: d,
       isrelation: this._isContentChild,
@@ -42,7 +43,7 @@ proto.run = function(inputs, context) {
       foreignKey: foreignKey
     }),
     push: this._isContentChild,
-    showgoback: false,
+    showgoback: !features.length, // if no features show back button
     closable: false
   });
   return d.promise();
