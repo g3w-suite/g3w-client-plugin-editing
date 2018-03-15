@@ -32,17 +32,16 @@ const vueComponentOptions = {
       this.$options.service.commit(toolbox)
     },
     saveAll: function() {
-      //TODO dovrebbe igessere legata alla possibilità di salvare tutte le modifiche di tutti i layer
+      //TODO
     },
     startToolBox: function(toolboxId) {
-      var toolbox = this._getToolBoxById(toolboxId);
+      const toolbox = this._getToolBoxById(toolboxId);
       toolbox.start();
     },
     stopToolBox: function(toolboxId) {
       const toolbox = this._getToolBoxById(toolboxId);
       if (toolbox.state.editing.history.commit)
         this.$options.service.commit()
-        // in ogni caso chiamo lo stop del toolbox
           .always(function() {
             toolbox.stop()
           });
@@ -102,8 +101,8 @@ const vueComponentOptions = {
     },
     // funzione che mi va a aprendere dal service il toolbox in base al suo id
     _getToolBoxById: function(toolboxId) {
-      var service = this.$options.service;
-      var toolbox = service.getToolBoxById(toolboxId);
+      const service = this.$options.service;
+      const toolbox = service.getToolBoxById(toolboxId);
       return toolbox;
     }
   },
@@ -111,25 +110,29 @@ const vueComponentOptions = {
     // messaggio generale dell'editing esempio comunicando che il layer
     // che stiamo editindo è padre e quindi i figli sono disabilitati
     message: function() {
-      var message = "";
+      const message = "";
       return message;
     },
     canCommit: function() {
       return this.state.toolboxselected && this.state.toolboxselected.state.editing.history.commit;
     },
     canUndo: function() {
-      var toolbox = this.state.toolboxselected;
+      const toolbox = this.state.toolboxselected;
       return !_.isNull(toolbox) &&  toolbox.state.editing.history.undo;
     },
     canRedo: function() {
-      var toolbox = this.state.toolboxselected;
+      const toolbox = this.state.toolboxselected;
       return !_.isNull(toolbox) && toolbox.state.editing.history.redo;
     }
+  },
+  mounted() {
+    this.$nextTick(() => {
+      $('#toolboxes').perfectScrollbar();
+    })
   }
 };
 
 function PanelComponent(options) {
-  var self = this;
   // proprietà necessarie. In futuro le mettermo in una classe Panel
   // da cui deriveranno tutti i pannelli che vogliono essere mostrati nella sidebar
   base(this, options);
@@ -142,14 +145,14 @@ function PanelComponent(options) {
   this._resourcesUrl = options.resourcesUrl || GUI.getResourcesUrl();
   this._service = options.service || EditingService;
   // setto il componente interno
-  var InternalComponent = Vue.extend(this.vueComponent);
+  const InternalComponent = Vue.extend(this.vueComponent);
   this.internalComponent = new InternalComponent({
     service: this._service,
-    data: function() {
+    data: () => {
       return {
         //lo state è quello del servizio in quanto è lui che va a modificare operare sui dati
-        state: self._service.state,
-        resourcesurl: self._resourcesUrl
+        state: this._service.state,
+        resourcesurl: this._resourcesUrl
       }
     }
   });
@@ -160,19 +163,18 @@ function PanelComponent(options) {
   };
 
   this.unmount = function() {
-    var self = this;
-    var d = $.Deferred();
+    const d = $.Deferred();
     //vado a fare lo stop del servizio che fa un po di pulizia
     this._service.stop()
-      .then(function() {
+      .then(() => {
         //vado a riscrivere la proprietà
-        self.unmount = function() {
-          base(self, 'unmount')
-            .then(function() {
+        this.unmount = function() {
+          base(this, 'unmount')
+            .then(() => {
               d.resolve()
             });
         };
-        self.unmount();
+        this.unmount();
       });
     return d.promise();
   };

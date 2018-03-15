@@ -1,14 +1,13 @@
-var inherit = g3wsdk.core.utils.inherit;
-var base =  g3wsdk.core.utils.base;
-var G3WObject = g3wsdk.core.G3WObject;
-var GUI = g3wsdk.gui.GUI;
-var Layer = g3wsdk.core.layer.Layer;
-var Session = g3wsdk.core.editing.Session;
-var OlFeaturesStore = g3wsdk.core.layer.features.OlFeaturesStore;
-var FeaturesStore = g3wsdk.core.layer.features.FeaturesStore;
+const inherit = g3wsdk.core.utils.inherit;
+const base =  g3wsdk.core.utils.base;
+const G3WObject = g3wsdk.core.G3WObject;
+const GUI = g3wsdk.gui.GUI;
+const Layer = g3wsdk.core.layer.Layer;
+const Session = g3wsdk.core.editing.Session;
+const OlFeaturesStore = g3wsdk.core.layer.features.OlFeaturesStore;
+const FeaturesStore = g3wsdk.core.layer.features.FeaturesStore;
 
 function ToolBox(options) {
-  var self = this;
   base(this);
   options = options || {};
   // editor del Layer che permette di interagire con il layer
@@ -20,12 +19,13 @@ function ToolBox(options) {
   this._editingLayer = options.layer;
   // recupero il tipo di toolbox
   this._layerType = options.type || 'vector';
+  this._loadedExtent = null;
   this._tools = options.tools;
   // optioni per il recupero delle feature
   this._getFeaturesOption = {};
   // popolo gl'array degli state del tools appartenenti al toobox
-  var toolsstate = [];
-  _.forEach(this._tools, function(tool) {
+  const toolsstate = [];
+  this._tools.forEach((tool) => {
     toolsstate.push(tool.getState())
   });
   //sessione che permette di gestire tutti i movimenti da parte
@@ -39,8 +39,8 @@ function ToolBox(options) {
   // opzione per recuperare le feature
   this._getFeaturesOption = {};
   // stato della history
-  var historystate = this._session.getHistory().state;
-  var sessionstate = this._session.state;
+  const historystate = this._session.getHistory().state;
+  const sessionstate = this._session.state;
   // stato del toolbox;
   this.state = {
     id: options.id,
@@ -67,27 +67,27 @@ function ToolBox(options) {
   };
   //vado a settare la sessione ad ogni tool di quel toolbox
   // e lo stesso toolbox
-  _.forEach(this._tools, function(tool) {
-    tool.setSession(self._session);
+  this._tools.forEach((tool) => {
+    tool.setSession(this._session);
   });
 
   // in ascolto dell'onafter start della sessione così se avviata
   // vado ad associare le features del suo featuresstore al ol.layer.Vector
-  this._session.onafter('stop', function() {
-    var EditingService = require('../services/editingservice');
+  this._session.onafter('stop', () => {
+    const EditingService = require('../services/editingservice');
     //vado a fermare la sessione dei figli
-    EditingService.stopSessionChildren(self.state.id);
+    EditingService.stopSessionChildren(this.state.id);
     // vado a unregistrare gli eventi
-    self._unregisterGetFeaturesEvent();
+    this._unregisterGetFeaturesEvent();
   });
 
-  this._session.onafter('start', function(options) {
-    self._getFeaturesOption = options;
-    var EditingService = require('../services/editingservice');
+  this._session.onafter('start', (options) => {
+    this._getFeaturesOption = options;
+    const EditingService = require('../services/editingservice');
     // passo id del toolbox e le opzioni per far partire la sessione
-    EditingService.getLayersDependencyFeatures(self.state.id);// dove le opzioni possono essere il filtro;
+    EditingService.getLayersDependencyFeatures(this.state.id);// dove le opzioni possono essere il filtro;
     // vado a registrare l'evento getFeature
-    self._registerGetFeaturesEvent(self._getFeaturesOption);
+    this._registerGetFeaturesEvent(this._getFeaturesOption);
   });
 
   // mapservice mi servirà per fare richieste al server sulle features (bbox) quando agisco sull mappa
@@ -106,7 +106,7 @@ function ToolBox(options) {
 
 inherit(ToolBox, G3WObject);
 
-var proto = ToolBox.prototype;
+const proto = ToolBox.prototype;
 
 proto.getLayer = function() {
   return this._layer;
@@ -125,9 +125,8 @@ proto.isFather = function() {
 };
 
 proto.addRelations = function(relations) {
-  var self = this;
-  _.forEach(relations, function(relation) {
-    self.addRelation(relation);
+  relations.forEach((relation) => {
+    this.addRelation(relation);
   })
 };
 
@@ -148,8 +147,8 @@ proto.hasDependencies = function() {
 };
 
 proto.addDependencies = function(dependencies) {
-  _.forEach(dependencies, function(dependency) {
-    self.addDependency(dependency);
+  dependencies.forEach((dependency) => {
+    this.addDependency(dependency);
   })
 };
 
@@ -161,8 +160,8 @@ proto.addDependency = function(dependency) {
 // collezioni di features per quanto riguarda il vector layer e da vedere per il table layer (forse array) al table layer
 proto._setEditingLayerSource = function() {
   // vado a prendere
-  var featuresstore = this._session.getFeaturesStore();
-  var source;
+  const featuresstore = this._session.getFeaturesStore();
+  let source;
   // questo ritorna come promessa l'array di features del featuresstore
   // vado  a settare il source del layer
   if (this._layerType == Layer.LayerTypes.VECTOR) {
@@ -180,31 +179,30 @@ proto._setEditingLayerSource = function() {
 // o quando schiacchio il bottone generale Avvia editing
 // inoltre farà uno start e stop dell'editor
 proto.start = function() {
-  var self = this;
-  var EditingService = require('../services/editingservice');
-  var d = $.Deferred();
+  const EditingService = require('../services/editingservice');
+  const d = $.Deferred();
   // vado a recuperare l'oggetto opzioni data per poter richiedere le feature al provider
   this._getFeaturesOption = EditingService.createEditingDataOptions(this._layerType);
   // se non è stata avviata da altri allora faccio avvio sessione
   if (this._session) {
     if (!this._session.isStarted()) {
       // setto il loding dei dati a true
-      self.state.loading = true;
+      this.state.loading = true;
       this._session.start(this._getFeaturesOption)
-        .then(function(promise) {
+        .then((promise) => {
           promise
-            .then(function (features) {
-              self.state.loading = false;
-              self.setEditing(true);
-              d.resolve(features);
+            .then((features) => {
+              this.state.loading = false;
+              this.setEditing(true);
             })
-            .fail(function(err) {
-              self.stop();
+            .fail((err) => {
+              console.log(err)
+              this.stop();
               d.reject(err);
             })
         })
     } else {
-      self.setEditing(true);
+      this.setEditing(true);
     }
   }
   return d.promise();
@@ -225,40 +223,39 @@ proto.getFeaturesOption = function() {
 
 // funzione che disabiliterà
 proto.stop = function() {
-  var self = this;
   // le sessioni dipendenti per poter eseguier l'editing
-  var d = $.Deferred();
+  const d = $.Deferred();
   if (this._session && this._session.isStarted()) {
     //vado a verificare se  c'è un padre in editing
-    var EditingService = require('../services/editingservice');
-    var is_there_a_father_in_editing = EditingService.fatherInEditing(self.state.id);
+    const EditingService = require('../services/editingservice');
+    const is_there_a_father_in_editing = EditingService.fatherInEditing(this.state.id);
     if (!is_there_a_father_in_editing) {
       this._session.stop()
-        .then(function() {
-          self.state.editing.on = false;
-          self.state.enabled = false;
-          self.state.loading = false;
-          self._getFeaturesOption = {};
+        .then(() => {
+          this.state.editing.on = false;
+          this.state.enabled = false;
+          this.state.loading = false;
+          this._getFeaturesOption = {};
           // spengo il tool attivo
-          self.stopActiveTool();
+          this.stopActiveTool();
           // seci sono tool attivi vado a spengere
-          self._setToolsEnabled(false);
-          self.clearToolboxMessages();
+          this._setToolsEnabled(false);
+          this.clearToolboxMessages();
           d.resolve(true)
         })
-        .fail(function(err) {
+        .fail((err) => {
           // mostro un errore a video o tramite un messaggio nel pannello
           d.reject(err)
         });
     } else {
       // spengo il tool attivo
-      self.stopActiveTool();
+      this.stopActiveTool();
       // seci sono tool attivi vado a spengere
-      self.state.editing.on = false;
-      self._setToolsEnabled(false);
-      self.clearToolboxMessages();
-      self._unregisterGetFeaturesEvent();
-      EditingService.stopSessionChildren(self.state.id);
+      this.state.editing.on = false;
+      this._setToolsEnabled(false);
+      this.clearToolboxMessages();
+      this._unregisterGetFeaturesEvent();
+      EditingService.stopSessionChildren(this.state.id);
     }
   } else {
     d.resolve(true)
@@ -288,13 +285,18 @@ proto._registerGetFeaturesEvent = function(options) {
   // le sessioni dipendenti per poter eseguier l'editing
   switch(this._layerType) {
     case Layer.LayerTypes.VECTOR:
-      var fnc = _.bind(function(options) {
-        var bbox = this._mapService.getMapBBOX();
-        var extent = this._getFeaturesEvent.options.extent;
-        if (extent && ol.extent.containsExtent(extent, bbox)) {
+      const fnc = _.bind(function(options) {
+        // get current map extent bbox
+        const bbox = this._mapService.getMapBBOX();
+        // get loadedExtent
+        if (this._getFeaturesEvent.options.extent && ol.extent.containsExtent(this._getFeaturesEvent.options.extent, bbox)) {
           return;
         }
-        this._getFeaturesEvent.options.extent = extent ? ol.extent.extend(extent, bbox) :  bbox;
+        if (!this._getFeaturesEvent.options.extent) {
+          this._getFeaturesEvent.options.extent = bbox;
+        } else {
+          this._getFeaturesEvent.options.extent = ol.extent.extend(this._getFeaturesEvent.options.extent, bbox);
+        }
         options.filter.bbox = bbox;
         this._session.getFeatures(options);
       }, this, options);
@@ -308,7 +310,7 @@ proto._registerGetFeaturesEvent = function(options) {
 };
 
 proto._setToolsEnabled = function(bool) {
-  _.forEach(this._tools, function(tool) {
+  this._tools.forEach((tool) => {
     tool.setEnabled(bool);
     if (!bool)
       tool.setActive(bool);
@@ -392,8 +394,8 @@ proto.getTools = function() {
 };
 
 proto.getToolById = function(toolId) {
-  var Tool = null;
-  _.forEach(this._tools, function(tool) {
+  let Tool = null;
+  this._tools.forEach((tool) => {
     if (toolId == tool.getId()) {
       Tool = tool;
       return false
@@ -403,7 +405,7 @@ proto.getToolById = function(toolId) {
 };
 
 proto.enableTools = function(bool) {
-  _.forEach(this._tools, function(tool) {
+  this._tools.forEach((tool) => {
     tool.setEnabled(bool);
   })
 };
@@ -415,7 +417,7 @@ proto.setActiveTool = function(tool) {
   // faccio partire lo start del tool
   this.state.activetool = tool;
   tool.start();
-  var message = this.getToolMessage();
+  const message = this.getToolMessage();
   this.setToolMessage(message);
 };
 
@@ -424,7 +426,7 @@ proto.getActiveTool = function() {
 };
 
 proto.stopActiveTool = function(tool) {
-  var activeTool = this.getActiveTool();
+  const activeTool = this.getActiveTool();
   if (activeTool && activeTool != tool) {
     activeTool.stop();
     this.clearToolMessage();
@@ -437,7 +439,7 @@ proto.clearToolMessage = function() {
 };
 
 proto.getToolMessage = function() {
-  var tool = this.getActiveTool();
+  const tool = this.getActiveTool();
   return tool.getMessage();
 };
 

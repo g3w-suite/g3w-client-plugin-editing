@@ -37,7 +37,8 @@ const maxSubsetLength = 3;
     },
     relationAttributesSubset: function(relation) {
       let attributes = [];
-      _.forEach(relation.fields, function (field) {
+      const fields = this.relationsFields(relation)
+      fields.forEach((field) => {
         if (_.isArray(field.value)) return;
         attributes.push({label: field.label, value: field.value})
       });
@@ -48,10 +49,7 @@ const maxSubsetLength = 3;
       return this.relationAttributesSubset(relation).length;
     },
     relationsFields: function(relation) {
-      let attributes = [];
-      _.forEach(relation.fields, function (field) {
-        attributes.push({label: field.label, value: field.value})
-      });
+      let attributes = this._service.relationFields(relation);
       return attributes;
     },
     showAllRelationFields: function(index) {

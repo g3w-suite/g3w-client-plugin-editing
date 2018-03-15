@@ -1,6 +1,5 @@
 let inherit = g3wsdk.core.utils.inherit;
 let base =  g3wsdk.core.utils.base;
-//prendo il plugin service di core
 let WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 let PluginService = g3wsdk.core.plugin.PluginService;
 let CatalogLayersStoresRegistry = g3wsdk.core.catalog.CatalogLayersStoresRegistry;
@@ -23,8 +22,6 @@ function EditingService() {
     id: 'editing',
     queryable: false // lo setto a false così che quando faccio la query (controllo) non prendo anche questi
   });
-  // oggetto contenente tutti i layers in editing
-  this._editableLayers = {};
   // STATO GENERALE DEL EDITNG SERVICE
   // CHE CONTERRÀ TUTTI GLI STATI DEI VARI PEZZI UTILI A FAR REAGIRE L'INTERFACCIA
   this.state = {
@@ -43,6 +40,8 @@ function EditingService() {
   this.init = function(config) {
     // setto la configurazione del plugin
     this.config = config;
+    // oggetto contenente tutti i layers in editing
+    this._editableLayers = {};
     // contiene tutti i toolbox
     this._toolboxes = [];
     // restto
@@ -51,6 +50,8 @@ function EditingService() {
     let layerId;
     // sono i layer originali caricati dal progetto e messi nel catalogo
     let layers = this._getEditableLayersFromCatalog();
+    //removeLayers from layersore
+    this._layersstore.removeLayers()
     //vado ad aggiungere il layersstore alla maplayerssotreregistry
     MapLayersStoreRegistry.addLayersStore(this._layersstore);
     //ciclo su ogni layers editiabile
@@ -94,7 +95,8 @@ inherit(EditingService, PluginService);
 let proto = EditingService.prototype;
 
 proto.setLayersColor = function() {
-  let RELATIONS_COLORS = [
+
+  const RELATIONS_COLOR = [
     ["#656F94",
       "#485584",
       "#303E73",
@@ -120,7 +122,7 @@ proto.setLayersColor = function() {
       "#7A5603"]
   ];
 
-  let COLORS = [
+  const LAYERS_COLOR = [
     "#AFEE30",
     "#96C735",
     "#7B9F35",
@@ -145,14 +147,13 @@ proto.setLayersColor = function() {
     "#66294B",
     "#431F34"
   ];
-
   let color;
   let childrenLayers;
   _.forEach(this._editableLayers, (layer) => {
     // verifico se è un layer è padre e se ha figli in editing
     childrenLayers = this._layerChildrenRelationInEditing(layer);
     if (layer.isFather() && childrenLayers.length) {
-      color = RELATIONS_COLORS.splice(0,1).pop().reverse();
+      color = RELATIONS_COLOR.splice(0,1).pop().reverse();
       !layer.getColor() ? layer.setColor(color.splice(0,1).pop()): null;
       childrenLayers.forEach((layerId) => {
         !this._editableLayers[layerId].getColor() ? this._editableLayers[layerId].setColor(color.splice(0,1).pop()): null;
@@ -160,7 +161,7 @@ proto.setLayersColor = function() {
     }
   });
   _.forEach(this._editableLayers, (layer, layerId) => {
-    !this._editableLayers[layerId].getColor() ? layer.setColor(COLORS.splice(0,1).pop()): null;
+    !this._editableLayers[layerId].getColor() ? layer.setColor(LAYERS_COLOR.splice(0,1).pop()): null;
   })
 };
 
@@ -377,7 +378,8 @@ proto.stop = function() {
       // vado a verificare se c'è una sessione sporca e quindi
       // chiedere se salvare
       if (toolbox.getSession().getHistory().state.commit) {
-        commitpromises.push(this.commit(toolbox));
+        // ask to commit before exit, sdet true to close
+        commitpromises.push(this.commit(toolbox, true));
       }
     });
 
@@ -599,7 +601,7 @@ proto._createCommitMessage = function(commitItems) {
   return message;
 };
 
-proto.commit = function(toolbox) {
+proto.commit = function(toolbox, close=false) {
   let d = $.Deferred();
   toolbox = toolbox || this.state.toolboxselected;
   let session = toolbox.getSession();
@@ -610,7 +612,8 @@ proto.commit = function(toolbox) {
   workflow.start({
     inputs: {
       layer: layer,
-      message: this._createCommitMessage(session.getCommitItems())
+      message: this._createCommitMessage(session.getCommitItems()),
+      close: close
     }})
     .then(() => {
       // funzione che serve a fare il commit della sessione legata al tool
@@ -642,5 +645,6 @@ proto.commit = function(toolbox) {
     });
   return d.promise();
 };
+
 
 module.exports = new EditingService;

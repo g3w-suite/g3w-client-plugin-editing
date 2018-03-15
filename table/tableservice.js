@@ -62,7 +62,7 @@ proto.editFeature = function(index) {
   workflow.start(options)
     .then((outputs) => {
       const feature = outputs.features[0];
-      Object.entries(self.state.features[index]).forEach(([key, value]) => {
+      Object.entries(this.state.features[index]).forEach(([key, value]) => {
         this.state.features[index][key] = feature.get(key);
       });
       const pk = feature.getPk();

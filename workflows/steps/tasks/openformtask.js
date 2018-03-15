@@ -1,5 +1,6 @@
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
+const t = g3wsdk.core.i18n.t;
 const GUI = g3wsdk.gui.GUI;
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 const EditingTask = require('./editingtask');
@@ -116,8 +117,8 @@ proto.startForm = function(options) {
   const Form = this._getForm(inputs, context);
   const formService = Form({
     formComponent: formComponent,
-    title: "Edita attributi "+ this._layerName,
-    name: "Edita attributi "+ this._layerName,
+    title: t("editing_attributes") + " " + this._layerName,
+    name: t("editing_attributes") + " " + this._layerName,
     id: this._generateFormId(this._layerName),
     dataid: this._layerName,
     layer: this._originalLayer,
@@ -132,12 +133,12 @@ proto.startForm = function(options) {
     push: this._isContentChild, // indica se posso aggiungere form
     showgoback: !this._isContentChild, // se è figlo evito di visualizzare il go back
     buttons:[{
-      title: "Salva",
+      title: t("save"),
       type: "save",
       class: "btn-success",
       cbk: _.bind(this._saveFnc(promise, inputs), this)
     }, {
-      title: "Cancella",
+      title: t("cancel"),
       type: "cancel",
       class: "btn-primary",
       cbk: _.bind(this._cancelFnc, this, promise, inputs)

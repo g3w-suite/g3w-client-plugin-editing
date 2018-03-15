@@ -24,15 +24,17 @@
       </ul>
     </div>
   </div>
-  <toolbox
-    :state="toolboxstate"
-    :resourcesurl="resourcesurl"
-    @setselectedtoolbox="setSelectedToolbox"
-    @starttoolbox="startToolBox"
-    @stoptoolbox="stopToolBox"
-    @savetoolbox="saveToolBox"
-    @setactivetool="startActiveTool"
-    @stopactivetool="stopActiveTool"
-    v-for="toolboxstate in state.toolboxes">
-  </toolbox>
+  <div id="toolboxes">
+    <toolbox
+      :state="toolboxstate"
+      :resourcesurl="resourcesurl"
+      @setselectedtoolbox="setSelectedToolbox"
+      @starttoolbox="startToolBox"
+      @stoptoolbox="stopToolBox"
+      @savetoolbox="saveToolBox"
+      @setactivetool="startActiveTool"
+      @stopactivetool="stopActiveTool"
+      v-for="toolboxstate in state.toolboxes">
+    </toolbox>
+  </div>
 </div>

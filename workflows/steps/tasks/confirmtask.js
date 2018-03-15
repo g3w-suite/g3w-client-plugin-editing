@@ -21,25 +21,28 @@ let Dialogs = {
   commit: {
     fnc: function(inputs) {
       let d = $.Deferred();
+      let close = inputs.close;
+      const buttons = {
+          SAVE: {
+            label: t("save"),
+            className: "btn-success",
+            callback: function () {
+            d.resolve(inputs);
+          }
+        },
+        CANCEL: {
+          label: close ? t("exitnosave") : t("annul"),
+          className: "btn-primary",
+          callback: function () {
+            d.reject();
+          }
+        }
+      };
+      // NOW I HAVE TO IMPLEMENT WHAT HAPPEND ID NO ACTION HAPPEND
       GUI.dialog.dialog({
         message: inputs.message,
         title: t("editing.messages.commit") + " " +inputs.layer.getName() + "?",
-        buttons: {
-          SAVE: {
-            label: "Salva",
-            className: "btn-success",
-            callback: function () {
-              d.resolve(inputs);
-            }
-          },
-          CANCEL: {
-            label: "Annulla",
-            className: "btn-primary",
-            callback: function () {
-              d.reject();
-            }
-          }
-        }
+        buttons: buttons
       });
       return d.promise()
     }

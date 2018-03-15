@@ -1,7 +1,7 @@
-var GUI = g3wsdk.gui.GUI;
-var RelationsComponentObj = require('./components/relations/vue/relations');
-var EdtingFormService = function(options) {
-  var EditingService = require('../services/editingservice');
+const GUI = g3wsdk.gui.GUI;
+const RelationsComponentObj = require('./components/relations/vue/relations');
+const EdtingFormService = function(options) {
+  const EditingService = require('../services/editingservice');
   options = options || {};
   this.state = {
     relations: []
@@ -13,9 +13,9 @@ var EdtingFormService = function(options) {
   // riceve l'event bus del form pricipale
   this._formEventBus = options.formEventBus || null;
   // sono le relazioni effettive presenti
-  var relations = [];
-  var formLayer = this._context.layer;
-  var formFeature = this._inputs.features[this._inputs.features.length - 1];
+  let relations = [];
+  const formLayer = this._context.layer;
+  const formFeature = this._inputs.features[this._inputs.features.length - 1];
   if (formLayer.isFather()) {
     // recupero l'array delle relazioni
     relations = formLayer.getRelations().getArray();
