@@ -1,16 +1,16 @@
-let inherit = g3wsdk.core.utils.inherit;
-let base =  g3wsdk.core.utils.base;
-let WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
-let PluginService = g3wsdk.core.plugin.PluginService;
-let CatalogLayersStoresRegistry = g3wsdk.core.catalog.CatalogLayersStoresRegistry;
-let MapLayersStoreRegistry = g3wsdk.core.map.MapLayersStoreRegistry;
-let LayersStore = g3wsdk.core.layer.LayersStore;
-let Session = g3wsdk.core.editing.Session;
-let Layer = g3wsdk.core.layer.Layer;
-let GUI = g3wsdk.gui.GUI;
-let serverErrorParser= g3wsdk.core.errors.parsers.Server;
-let ToolBoxesFactory = require('../toolboxes/toolboxesfactory');
-let CommitFeaturesWorkflow = require('../workflows/commitfeaturesworkflow');
+const inherit = g3wsdk.core.utils.inherit;
+const base =  g3wsdk.core.utils.base;
+const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
+const PluginService = g3wsdk.core.plugin.PluginService;
+const CatalogLayersStoresRegistry = g3wsdk.core.catalog.CatalogLayersStoresRegistry;
+const MapLayersStoreRegistry = g3wsdk.core.map.MapLayersStoreRegistry;
+const LayersStore = g3wsdk.core.layer.LayersStore;
+const Session = g3wsdk.core.editing.Session;
+const Layer = g3wsdk.core.layer.Layer;
+const GUI = g3wsdk.gui.GUI;
+const serverErrorParser= g3wsdk.core.errors.parsers.Server;
+const ToolBoxesFactory = require('../toolboxes/toolboxesfactory');
+const CommitFeaturesWorkflow = require('../workflows/commitfeaturesworkflow');
 
 function EditingService() {
   let self = this;
