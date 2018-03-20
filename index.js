@@ -4,24 +4,19 @@ const Plugin = g3wsdk.core.plugin.Plugin;
 const GUI = g3wsdk.gui.GUI;
 const i18nService = g3wsdk.core.i18n;
 const Service = require('./services/editingservice');
-const g3wediting = require('editing');
-const  EditingPanel = require('./panel');
+const EditingPanel = require('./panel');
 
 const _Plugin = function() {
   base(this);
   this.name = 'editing';
   this.init = function() {
-    // inizializzo la variabile globale g3wediting
-    window.g3wediting = g3wediting;
-    //setto il servizio
     this.setService(Service);
-    //recupero configurazione del plugin
     this.config = this.getConfig();
-    // verifico se ci sono layer editabili
+    // check if exist any layer to edit
     if (this.service.loadPlugin()) {
-      // inizializzo l'editing
+      //inizialize service
      this.service.init(this.config);
-      //regitro il plugin
+      //plugin registry
       if (this.registerPlugin(this.config.gid)) {
         if (!GUI.ready) {
           GUI.on('ready',_.bind(this.setupGui, this));
@@ -31,14 +26,13 @@ const _Plugin = function() {
       }
     }
   };
-  //metto su l'interfaccia del plugin
+  //setup plugin interface
   this.setupGui = function() {
     if (_.isBoolean(this.config.visible) && !this.config.visible)
       return false;
     let self = this;
     let toolsComponent = GUI.getComponent('tools');
     let toolsService = toolsComponent.getService();
-    //add Tools (ordine, Nome gruppo, tasks)
     toolsService.addTools(0, 'EDITING', [
       {
         name: i18nService.t("editing_data"),
@@ -47,7 +41,7 @@ const _Plugin = function() {
     ])
   };
 
-  //funzione che mostra il pannello dell'editing
+  //method to show editing panel
   this.showEditingPanel = function() {
     const panel = new EditingPanel();
     GUI.showPanel(panel);
