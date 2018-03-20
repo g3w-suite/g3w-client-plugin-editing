@@ -17,11 +17,6 @@ function EditingService() {
   base(this);
   // proprietà che contiene tutte le sessioni legati ai layer e quindi ai toolbox
   this._sessions = {};
-  // layersStore del plugin editing che conterrà tutti i layer di editing
-  this._layersstore = new LayersStore({
-    id: 'editing',
-    queryable: false // lo setto a false così che quando faccio la query (controllo) non prendo anche questi
-  });
   // STATO GENERALE DEL EDITNG SERVICE
   // CHE CONTERRÀ TUTTI GLI STATI DEI VARI PEZZI UTILI A FAR REAGIRE L'INTERFACCIA
   this.state = {
@@ -37,7 +32,11 @@ function EditingService() {
   // all'interno dei Layerstore del catalog registry con caratteristica editabili.
   // Mi verranno estratti tutti i layer editabili anche quelli presenti nell'albero del catalogo
   // come per esempio il caso di layers relazionati
-  this.init = function(config) {
+  this.init = function(config) {// layersStore del plugin editing che conterrà tutti i layer di editing
+    this._layersstore = new LayersStore({
+      id: 'editing',
+      queryable: false // lo setto a false così che quando faccio la query (controllo) non prendo anche questi
+    });
     // setto la configurazione del plugin
     this.config = config;
     // oggetto contenente tutti i layers in editing
@@ -50,10 +49,6 @@ function EditingService() {
     let layerId;
     // sono i layer originali caricati dal progetto e messi nel catalogo
     let layers = this._getEditableLayersFromCatalog();
-    //removeLayers from layersore
-    this._layersstore.removeLayers()
-    //vado ad aggiungere il layersstore alla maplayerssotreregistry
-    MapLayersStoreRegistry.addLayersStore(this._layersstore);
     //ciclo su ogni layers editiabile
     layers.forEach((layer) => {
       layerId = layer.getId();
@@ -83,6 +78,8 @@ function EditingService() {
       //aggiungo il layer al layersstore
       this._layersstore.addLayer(layer);
     });
+    //vado ad aggiungere il layersstore alla maplayerssotreregistry
+    MapLayersStoreRegistry.addLayersStore(this._layersstore);
     // vado a creare i toolboxes
     this._buildToolBoxes();
     // creo l'albero delle dipendenze padre figlio per ogni toolbox
@@ -397,6 +394,10 @@ proto.stop = function() {
         resolve();
     });
   });
+};
+
+proto.clear = function() {
+  MapLayersStoreRegistry.removeLayersStore(this._layersstore);
 };
 
 proto.clearState = function() {

@@ -30,18 +30,19 @@ proto.run = function(inputs, context) {
   const editingLayer = inputs.layer;
   const features = editingLayer.getSource().readFeatures();
   const action = this._isContentChild ? 'Link ' :  'Edita ';
+  const content = new TableComponent({
+    title:  action + layerName,
+    features: features,
+    promise: d,
+    isrelation: this._isContentChild,
+    headers: originalLayer.getFieldsLabel(),
+    context: context,
+    inputs: inputs,
+    fatherValue: context.fatherValue,
+    foreignKey: foreignKey
+  });
   GUI.showContent({
-    content: new TableComponent({
-      title:  action + layerName,
-      features: features,
-      promise: d,
-      isrelation: this._isContentChild,
-      headers: originalLayer.getFieldsLabel(),
-      context: context,
-      inputs: inputs,
-      fatherValue: context.fatherValue,
-      foreignKey: foreignKey
-    }),
+    content,
     push: this._isContentChild,
     showgoback: !features.length, // if no features show back button
     closable: false

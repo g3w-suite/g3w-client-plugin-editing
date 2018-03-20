@@ -5,8 +5,7 @@ const GUI = g3wsdk.gui.GUI;
 const i18nService = g3wsdk.core.i18n;
 const Service = require('./services/editingservice');
 const g3wediting = require('editing');
-
-import {EditingPanelComponent as EditingPanel}  from './panel';
+const  EditingPanel = require('./panel');
 
 const _Plugin = function() {
   base(this);
@@ -56,6 +55,10 @@ const _Plugin = function() {
 
   this.load = function() {
     this.init();
+  };
+
+  this.unload = function() {
+    this.service.clear()
   }
 };
 

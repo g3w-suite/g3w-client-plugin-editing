@@ -24,8 +24,9 @@ proto._addFeatures = function(features) {
     return feature.get(this._foreignKey) != this._fatherValue
   });
   features.forEach((feature) => {
-    this.state.features.push(feature.getProperties());
-  })
+    const properties = feature.getProperties();
+    this.state.features.push(properties);
+  });
 };
 
 proto.save = function() {

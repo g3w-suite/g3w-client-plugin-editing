@@ -61,6 +61,7 @@ const TableComponent = function(options) {
   base(this);
   options = options || {};
   const service = options.service || new TableService({
+    headers: options.headers,
     features: options.features,
     promise: options.promise,
     context: options.context,
