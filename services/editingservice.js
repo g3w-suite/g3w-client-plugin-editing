@@ -396,6 +396,7 @@ proto.stop = function() {
   });
 };
 
+// remove Editing LayersStore
 proto.clear = function() {
   MapLayersStoreRegistry.removeLayersStore(this._layersstore);
 };

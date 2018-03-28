@@ -1,5 +1,5 @@
-var RelationComponent = require('../../relation/vue/relation');
-var RelationsComponentObj = {
+const RelationComponent = require('../../relation/vue/relation');
+const RelationsComponentObj = {
   template: require('./relations.html'),
   components: {
     'relation': RelationComponent

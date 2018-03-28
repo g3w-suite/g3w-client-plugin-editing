@@ -37,7 +37,7 @@ const maxSubsetLength = 3;
     },
     relationAttributesSubset: function(relation) {
       let attributes = [];
-      const fields = this.relationsFields(relation)
+      const fields = this.relationsFields(relation);
       fields.forEach((field) => {
         if (_.isArray(field.value)) return;
         attributes.push({label: field.label, value: field.value})

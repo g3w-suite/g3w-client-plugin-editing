@@ -1,6 +1,7 @@
 const path = require("path");
 module.exports = {
   entry: ["./index.js"],
+  devtool: 'source-map',
   output: {
     filename: "plugin.js",
     path: __dirname

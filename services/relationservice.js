@@ -1,17 +1,17 @@
 const GUI = g3wsdk.gui.GUI;
 const t = g3wsdk.core.i18n.t;
 
+// what we can do with each type of relation element
 const RELATIONTOOLS = {
+  default: ['editattributes', 'deletefeature'],
   'table' : [],
   'Point': ['movefeature'],
   'LineString': ['movevertex'],
-  'Polygon': ['movefeature', 'movevertex'],
-  default: ['editattributes', 'deletefeature']
+  'Polygon': ['movefeature', 'movevertex']
 };
 
-
 // servizio che in base alle relazioni (configurazione)
-const RelationService = function(options) {
+const RelationService = function(options = {}) {
   this.relation = options.relation;
   this.relations = options.relations;
   this._relationTools = [];
@@ -23,25 +23,25 @@ const RelationService = function(options) {
   this._isExternalFieldRequired = this._checkIfExternalFieldRequired();
   // prendo il valore del campo se esiste come proprietà altrimenti prendo il valore della chiave primaria
   this._currentFeatureFatherFieldValue = this.relation.fatherField in this.getCurrentWorkflow().feature.getProperties() ? this.getCurrentWorkflow().feature.get(this.relation.fatherField) : this.getCurrentWorkflow().feature.getId();
-  var relationLayerType = this.getLayer().getType() == 'vector' ? this.getLayer().getGeometryType() : 'table';
-  var allrelationtools;
+  //get type of relation
+  const relationLayerType = this.getLayer().getType() == 'vector' ? this.getLayer().getGeometryType() : 'table';
+  let allrelationtools;
   if (relationLayerType == 'table') {
     this._relationTools.push({
       state: {
         icon: 'deleteTableRow.png',
         id: 'deletefeature',
-        name: "Elimina feature"
+        name: t("editing.tools.delete_feature")
       }
     });
     this._relationTools.push({
       state: {
         icon: 'editAttributes.png',
         id: 'editattributes',
-        name: "Modifica attributi"
+        name: t("editing.tools.update_feature")
 
       }
     })
-
   } else {
     allrelationtools = this.getEditingService().getToolBoxById(this.relation.child).getTools();
     allrelationtools.forEach((tool) => {

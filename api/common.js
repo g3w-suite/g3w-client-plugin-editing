@@ -1,7 +1,7 @@
-var inherit = g3wsdk.core.utils.inherit;
-var base =  g3wsdk.core.utils.base;
-var G3WObject = g3wsdk.core.G3WObject;
-var Session = g3wsdk.core.editing.Session;
+const inherit = g3wsdk.core.utils.inherit;
+const base =  g3wsdk.core.utils.base;
+const G3WObject = g3wsdk.core.G3WObject;
+const Session = g3wsdk.core.editing.Session;
 
 function CommonApi(options) {
   options = options || {};

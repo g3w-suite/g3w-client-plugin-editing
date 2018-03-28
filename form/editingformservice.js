@@ -27,7 +27,7 @@ const EdtingFormService = function(options) {
   // funzione che mi serve per costruire il componente vue da innestare dentro il form
   // come componente relations
   this.buildRelationsComponents = function() {
-    var self = this;
+    const self = this;
     return Vue.extend({
       mixins: [RelationsComponentObj],
       methods: {
