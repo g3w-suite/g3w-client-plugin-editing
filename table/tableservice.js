@@ -1,33 +1,35 @@
 const GUI = g3wsdk.gui.GUI;
+const t = g3wsdk.core.i18n.t;
 
-const TableService = function(options) {
-  options = options || {};
-  this._Features = options.features || []; // sono le features originali
+const TableService = function(options = {}) {
+  this._features = options.features || []; // original features
   this._promise = options.promise;
   this._context = options.context;
   this._inputs = options.inputs;
   this._fatherValue = options.fatherValue;
   this._foreignKey = options.foreignKey;
+  this._workflow = null;
   this.state = {
     features: [],
-    isrelation: options.isrelation, // parametro che veine settato per visualizzare  o meno l'ambiente relzione o feature a se
-    title: options.title
+    isrelation: options.isrelation || false, //
+    title: options.title || 'Link relation'
   };
-  //vado a scrivere le feature (oggetti)
-  this._addFeatures(this._Features);
+  this.init = function() {
+    //filter the original feature based on if is a relation
+    this._features = !this.state.isrelation ? this._features : this._features.filter((feature) => {
+      return feature.get(this._foreignKey) != this._fatherValue
+    });
+    this._features.forEach((feature) => {
+      const properties = feature.getProperties();
+      this.state.features.push(properties);
+    });
+  };
+
+  this.init();
 };
 
 const proto = TableService.prototype;
 
-proto._addFeatures = function(features) {
-  features = !this.state.isrelation ? features : features.filter((feature) => {
-    return feature.get(this._foreignKey) != this._fatherValue
-  });
-  features.forEach((feature) => {
-    const properties = feature.getProperties();
-    this.state.features.push(properties);
-  });
-};
 
 proto.save = function() {
   this._promise.resolve();
@@ -38,29 +40,29 @@ proto.cancel = function() {
 };
 
 proto.deleteFeature = function(index) {
-  GUI.dialog.confirm("Vuoi eliminare l'elemento selezionato?", (result) => {
+  GUI.dialog.confirm(t('editing.messages.delete_feature'), (result) => {
     if (result) {
-      const feature = this._Features[index];
+      const feature = this._features[index];
       const session = this._context.session;
       const layerId = this._inputs.layer.getId();
       session.pushDelete(layerId, feature);
       this.state.features.splice(index, 1);
-      this._Features.splice(index, 1);
+      this._features.splice(index, 1);
     }
   });
 };
 
 proto.editFeature = function(index) {
-  const feature = this._Features[index];
+  const feature = this._features[index];
   const EditTableFeatureWorkflow = require('../workflows/edittablefeatureworkflow');
-  const workflow = new EditTableFeatureWorkflow();
+  this._workflow = new EditTableFeatureWorkflow();
   const inputs = this._inputs;
   inputs.features.push(feature);
   const options = {
     context: this._context,
     inputs: inputs
   };
-  workflow.start(options)
+  this._workflow.start(options)
     .then((outputs) => {
       const feature = outputs.features[0];
       Object.entries(this.state.features[index]).forEach(([key, value]) => {
@@ -73,7 +75,7 @@ proto.editFeature = function(index) {
 };
 
 proto.linkFeature = function(index) {
-  const feature = this._Features[index];
+  const feature = this._features[index];
   this._promise.resolve({
       features: [feature]
     });

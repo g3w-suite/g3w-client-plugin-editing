@@ -196,7 +196,7 @@ proto.start = function() {
               this.setEditing(true);
             })
             .fail((err) => {
-              console.log(err)
+              console.log(err);
               this.stop();
               d.reject(err);
             })

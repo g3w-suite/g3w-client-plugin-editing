@@ -13,12 +13,10 @@ const ToolBoxesFactory = require('../toolboxes/toolboxesfactory');
 const CommitFeaturesWorkflow = require('../workflows/commitfeaturesworkflow');
 
 function EditingService() {
-  let self = this;
   base(this);
-  // proprietà che contiene tutte le sessioni legati ai layer e quindi ai toolbox
+  // contains alla sessions
   this._sessions = {};
-  // STATO GENERALE DEL EDITNG SERVICE
-  // CHE CONTERRÀ TUTTI GLI STATI DEI VARI PEZZI UTILI A FAR REAGIRE L'INTERFACCIA
+  // state of editing
   this.state = {
     toolboxes: [], // contiene tutti gli stati delle toolbox in editing
     toolboxselected: null, // tiene riferimento alla toolbox selezionata
@@ -28,6 +26,13 @@ function EditingService() {
   };
   //mapservice
   this._mapService = GUI.getComponent('map').getService();
+  // disable active tool on wehena a control is activated
+  this._mapService.on('mapcontrol:active', (interaction) => {
+    let toolboxselected = this.state.toolboxselected;
+    if ( toolboxselected && toolboxselected.getActiveTool()) {
+      toolboxselected.getActiveTool().stop();
+    }
+  });
   // prendo tutti i layers del progetto corrente che si trovano
   // all'interno dei Layerstore del catalog registry con caratteristica editabili.
   // Mi verranno estratti tutti i layer editabili anche quelli presenti nell'albero del catalogo
@@ -37,6 +42,8 @@ function EditingService() {
       id: 'editing',
       queryable: false // lo setto a false così che quando faccio la query (controllo) non prendo anche questi
     });
+    //add edting layer store to mapstoreregistry
+    MapLayersStoreRegistry.addLayersStore(this._layersstore);
     // setto la configurazione del plugin
     this.config = config;
     // oggetto contenente tutti i layers in editing
@@ -62,27 +69,15 @@ function EditingService() {
       // vado ad aggiungere ai layer editabili
       this._editableLayers[layerId] = editableLayer;
       // aggiungo all'array dei vectorlayers se per caso mi servisse
-      this._sessions[layer.getId()] = null;
+      this._sessions[layerId] = null;
     });
-    // vao a settare i colori dei layere e delle toolbox
+    // set toolbox colors
     this.setLayersColor();
-    // disabilito l'eventuale tool attivo se viene attivata
-    // un'interazione di tipo pointerInteractionSet sulla mappa
-    this._mapService.on('mapcontrol:active', function(interaction) {
-      let toolboxselected = self.state.toolboxselected;
-      if ( toolboxselected && toolboxselected.getActiveTool()) {
-        toolboxselected.getActiveTool().stop();
-      }
-    });
-    _.forEach(this._editableLayers, (layer) => {
-      //aggiungo il layer al layersstore
-      this._layersstore.addLayer(layer);
-    });
-    //vado ad aggiungere il layersstore alla maplayerssotreregistry
-    MapLayersStoreRegistry.addLayersStore(this._layersstore);
+    // after sadd layers to layerstore
+    this._layersstore.addLayers(Object.values(this._editableLayers));
     // vado a creare i toolboxes
     this._buildToolBoxes();
-    // creo l'albero delle dipendenze padre figlio per ogni toolbox
+    // create a dependencies tree
     this._createToolBoxDependencies();
   }
 }
@@ -146,7 +141,7 @@ proto.setLayersColor = function() {
   ];
   let color;
   let childrenLayers;
-  _.forEach(this._editableLayers, (layer) => {
+  Object.entries(this._editableLayers).forEach(([layerId, layer]) => {
     // verifico se è un layer è padre e se ha figli in editing
     childrenLayers = this._layerChildrenRelationInEditing(layer);
     if (layer.isFather() && childrenLayers.length) {
@@ -157,7 +152,7 @@ proto.setLayersColor = function() {
       });
     }
   });
-  _.forEach(this._editableLayers, (layer, layerId) => {
+  Object.entries(this._editableLayers).forEach(([layerId, layer]) => {
     !this._editableLayers[layerId].getColor() ? layer.setColor(LAYERS_COLOR.splice(0,1).pop()): null;
   })
 };

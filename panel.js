@@ -15,6 +15,6 @@ function EditingPanelComponent(options) {
 
 inherit(EditingPanelComponent, EditingComponent);
 
-module.exports = EditingPanelComponent
+module.exports = EditingPanelComponent;
 
 

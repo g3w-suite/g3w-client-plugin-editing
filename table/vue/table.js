@@ -12,6 +12,9 @@ const InternalComponent = Vue.extend({
     }
   },
   methods: {
+    stop: function() {
+      this.$options.service.cancel();
+    },
     save: function() {
       this.$options.service.save();
     },

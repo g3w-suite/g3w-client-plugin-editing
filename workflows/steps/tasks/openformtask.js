@@ -82,8 +82,8 @@ proto._getForm = function(inputs, context) {
 };
 
 proto._cancelFnc = function(promise, inputs) {
-    GUI.setModal(false);
-    promise.reject(inputs);
+  GUI.setModal(false);
+  promise.reject(inputs);
 };
 
 proto._saveFnc = function(promise, inputs) {

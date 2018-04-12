@@ -365,12 +365,12 @@ proto.linkRelation = function() {
         }
       });
       if (!relationAlreadyLinked) {
-        const originalRelation = relation;
+        const originalRelation = relation.clone();
         relation.set(this.relation.childField, this._currentFeatureFatherFieldValue);
         this.getCurrentWorkflow().session.pushUpdate(this._layerId , relation, originalRelation);
         this.relations.push(this._createRelationObj(relation));
       } else {
-        GUI.notify.warning('Relazione già presente');
+        GUI.notify.warning(t('relation_already_added'));
       }
     })
     .fail((err) => {
@@ -501,7 +501,7 @@ proto.relationFields = function(relation) {
     attributes.push({label: field.label, value: value})
   });
   return attributes
-}
+};
 
 
 

@@ -127,7 +127,6 @@ const vueComponentOptions = {
   },
   mounted() {
     this.$nextTick(() => {
-      $('#toolboxes').perfectScrollbar();
     })
   }
 };

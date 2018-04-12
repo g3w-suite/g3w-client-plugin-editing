@@ -1,7 +1,7 @@
-var Layer = g3wsdk.core.layer.Layer;
-var GUI = g3wsdk.gui.GUI;
-var EditToolsFactory = require('./toolsfactory');
-var ToolBox = require('./toolbox');
+const Layer = g3wsdk.core.layer.Layer;
+const GUI = g3wsdk.gui.GUI;
+const EditToolsFactory = require('./toolsfactory');
+const ToolBox = require('./toolbox');
 
 // classe costruttrice di ToolBoxes
 function EditorToolBoxesFactory() {
@@ -12,17 +12,17 @@ function EditorToolBoxesFactory() {
   // verranno chiamate tramite il featuresstore provider
   this.build = function(layer) {
     // estraggo il layer dell'editor
-    var editor = layer.getEditor();
+    const editor = layer.getEditor();
     // estraggo il tipo di layer
-    var layerType = layer.getType();
-    var layerId = layer.getId();
+    const layerType = layer.getType();
+    const layerId = layer.getId();
     // definisce il layer che sarà assegnato al toolbox e ai tools
-    var editingLayer;
-    var tools;
+    let editingLayer;
+    let tools;
     switch (layerType) {
       // caso layer editabile vettoriale
       case Layer.LayerTypes.VECTOR:
-        var geometryType = layer.getGeometryType();
+        const geometryType = layer.getGeometryType();
         // vado a recuperare il layer (ol.Layer) della mappa
         // su cui tutti i tool agiranno
         editingLayer = this._mapService.getLayerById(layerId);

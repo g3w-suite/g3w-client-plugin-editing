@@ -1,6 +1,6 @@
-var ToolComponent = require('./tool');
+const ToolComponent = require('./tool');
 
-var ToolboxComponent = Vue.extend({
+const ToolboxComponent = Vue.extend({
   template: require('./toolbox.html'),
   props: ['state', 'resourcesurl'],
   data: function() {
