@@ -374,7 +374,6 @@ proto.stop = function() {
         commitpromises.push(this.commit(toolbox, true));
       }
     });
-
     // prima di stoppare tutto e chidere panello
     $.when.apply(this, commitpromises)
       .always(() => {
@@ -618,11 +617,16 @@ proto.commit = function(toolbox, close=false) {
       // produrrà i suoi dati post serializzati che pi saranno uniti per un unico commit
       session.commit()
         .then( (commitItems, response) => {
-          let relationsResponse = response.response.new_relations;
-          let commitItemsRelations = commitItems.relations;
-          this._applyChangesToRelationsAfterCommit(commitItemsRelations, relationsResponse);
-          GUI.notify.success("I dati sono stati salvati correttamente");
-          this._mapService.refreshMap();
+          if (response.result) {
+            let relationsResponse = response.response.new_relations;
+            let commitItemsRelations = commitItems.relations;
+            this._applyChangesToRelationsAfterCommit(commitItemsRelations, relationsResponse);
+            GUI.notify.success("I dati sono stati salvati correttamente");
+            this._mapService.refreshMap();
+          } else {
+            const message = response.errors;
+            GUI.notify.error(message);
+          }
           workflow.stop();
           d.resolve(toolbox);
         })
