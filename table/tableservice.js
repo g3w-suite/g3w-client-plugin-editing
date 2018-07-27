@@ -6,6 +6,7 @@ const TableService = function(options = {}) {
   this._promise = options.promise;
   this._context = options.context;
   this._inputs = options.inputs;
+  this._headers = options.headers;
   this._fatherValue = options.fatherValue;
   this._foreignKey = options.foreignKey;
   this._workflow = null;
@@ -19,6 +20,7 @@ const TableService = function(options = {}) {
     this._features = !this.state.isrelation ? this._features : this._features.filter((feature) => {
       return feature.get(this._foreignKey) != this._fatherValue
     });
+    // set values
     this._features.forEach((feature) => {
       const properties = feature.getProperties();
       this.state.features.push(properties);
@@ -83,12 +85,8 @@ proto.linkFeature = function(index) {
 
 proto._setLayout = function() {
   const editing_table_content_height = $('#editing_table').height();
-  const height_85 = (editing_table_content_height * 85) / 100;
-  const table_editing_height = $('#editing_table table').height();
-  if (table_editing_height > editing_table_content_height) {
-    $("#editing_table .nano").height(height_85);
-  }
-  $("#editing_table .nano").nanoScroller();
+  let height_70 = (editing_table_content_height * 70) / 100;
+  return height_70
 };
 
 

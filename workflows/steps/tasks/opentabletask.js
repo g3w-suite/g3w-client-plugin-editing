@@ -24,6 +24,7 @@ proto.run = function(inputs, context) {
   const d = $.Deferred();
   const originalLayer = context.layer;
   const layerName = originalLayer.getName();
+  const headers = originalLayer.getEditingFields();
   this._isContentChild = !!(WorkflowsStack.getLength() > 1);
   const foreignKey = this._isContentChild ? context.excludeFields[0] :  null;
   // vado a recuperare i
@@ -32,14 +33,14 @@ proto.run = function(inputs, context) {
   const action = this._isContentChild ? 'Link ' :  'Edita ';
   const content = new TableComponent({
     title:  action + layerName,
-    features: features,
+    features,
     promise: d,
     isrelation: this._isContentChild,
-    headers: originalLayer.getFieldsLabel(),
-    context: context,
-    inputs: inputs,
+    headers,
+    context,
+    inputs,
     fatherValue: context.fatherValue,
-    foreignKey: foreignKey
+    foreignKey
   });
   GUI.showContent({
     content,

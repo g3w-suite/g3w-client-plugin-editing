@@ -12,6 +12,11 @@ const InternalComponent = Vue.extend({
     }
   },
   methods: {
+    showValue(key) {
+      return !!this.headers.find((header) => {
+        return header.name == key
+      })
+    },
     stop: function() {
       this.$options.service.cancel();
     },
@@ -31,7 +36,7 @@ const InternalComponent = Vue.extend({
      this.$options.service.linkFeature(index);
     },
     _setLayout: function() {
-      this.$options.service._setLayout();
+      return this.$options.service._setLayout();
     }
   },
   watch: {
@@ -43,19 +48,17 @@ const InternalComponent = Vue.extend({
   },
   mounted: function() {
     this.$nextTick(() => {
+      const maxHeightTable = this._setLayout();
       $('#editing_table table').DataTable({
-        "pageLength": 25,
-        "bLengthChange": false,
+        "pageLength": 10,
+        "scrollX": true,
+        "scrollY": maxHeightTable + 'px',
+        "scrollCollapse": true,
         "order": [ 0, 'asc' ],
-        "dom": '<"top"pfl><"clear">',
         columnDefs: [
           { orderable: false, targets: [-1, -2] }
         ]
       });
-      $('.dataTables_paginate').on('click', () => {
-        this._setLayout();
-      });
-      this._setLayout();
     });
   }
 });
@@ -89,7 +92,8 @@ const TableComponent = function(options) {
   };
 
   this.layout = function() {
-    this.getService()._setLayout();
+    const maxHeightTable = this.getService()._setLayout();
+    $('#editing_table div.dataTables_scrollBody').height( maxHeightTable );
   }
 };
 
