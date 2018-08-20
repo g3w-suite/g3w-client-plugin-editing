@@ -10,6 +10,7 @@ const Layer = g3wsdk.core.layer.Layer;
 const GUI = g3wsdk.gui.GUI;
 const serverErrorParser= g3wsdk.core.errors.parsers.Server;
 const ToolBoxesFactory = require('../toolboxes/toolboxesfactory');
+const t = g3wsdk.core.i18n.t;
 const CommitFeaturesWorkflow = require('../workflows/commitfeaturesworkflow');
 
 function EditingService() {
@@ -602,6 +603,7 @@ proto.commit = function(toolbox, close=false) {
   toolbox = toolbox || this.state.toolboxselected;
   let session = toolbox.getSession();
   let layer = toolbox.getLayer();
+  const layerType = layer.getType();
   let workflow = new CommitFeaturesWorkflow({
     type:  'commit'
   });
@@ -614,15 +616,16 @@ proto.commit = function(toolbox, close=false) {
     .then(() => {
       // funzione che serve a fare il commit della sessione legata al tool
       // qui probabilmente a seconda del layer se ha dipendenze faccio ogni sessione
-      // produrrà i suoi dati post serializzati che pi saranno uniti per un unico commit
+      // produrrà i suoi dati post serializzati che poi saranno uniti per un unico commit
       session.commit()
         .then( (commitItems, response) => {
           if (response.result) {
             let relationsResponse = response.response.new_relations;
             let commitItemsRelations = commitItems.relations;
             this._applyChangesToRelationsAfterCommit(commitItemsRelations, relationsResponse);
-            GUI.notify.success("I dati sono stati salvati correttamente");
-            this._mapService.refreshMap();
+            GUI.notify.success(t("editing.messages.saved"));
+            if (layerType === 'vector')
+              this._mapService.refreshMap({force: true});
           } else {
             const message = response.errors;
             GUI.notify.error(message);
