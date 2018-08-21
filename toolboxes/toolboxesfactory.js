@@ -29,7 +29,7 @@ function EditorToolBoxesFactory() {
         tools = EditToolsFactory.build({
           layer: editingLayer,
           geometryType: geometryType,
-          tyep: layerType
+          type: layerType
         });
         break;
       // caso layer tabellare da mettere in piedi

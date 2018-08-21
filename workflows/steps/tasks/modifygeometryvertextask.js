@@ -3,13 +3,12 @@ var base =  g3wsdk.core.utils.base;
 
 var EditingTask = require('./editingtask');
 
-function ModifyGeometryVertexTask(options){
-  options = options || {};
+function ModifyGeometryVertexTask(options={}){
   this.drawInteraction = null;
   this._originalStyle = null;
   this._feature = null;
   this._deleteCondition = options.deleteCondition || undefined;
-  this._snap = options.snap || null;
+  this._snap = options.snap === false ? false : true;
   this._snapInteraction = null;
   base(this, options);
 }
@@ -56,14 +55,14 @@ proto.run = function(inputs, context) {
     features: features,
     deleteCondition: this._deleteCondition
   });
-  
+
   this.addInteraction(this._modifyInteraction);
-  
+
   this._modifyInteraction.on('modifystart', function(e) {
     var feature = e.features.getArray()[0];
     originalFeature = feature.clone();
   });
-  
+
   this._modifyInteraction.on('modifyend',function(e){
     var feature = e.features.getArray()[0];
     if (feature.getGeometry().getExtent() != originalFeature.getGeometry().getExtent()) {
@@ -75,10 +74,10 @@ proto.run = function(inputs, context) {
       d.resolve(inputs);
     }
   });
-  
+
   if (this._snap) {
     this._snapInteraction = new ol.interaction.Snap({
-      source: this._snap.vectorLayer.getSource()
+      source: editingLayer.getSource()
     });
     this.addInteraction(this._snapInteraction);
   }
@@ -87,7 +86,7 @@ proto.run = function(inputs, context) {
 
 
 proto.stop = function(){
-  if (this._snapInteraction){
+  if (this._snapInteraction) {
      this.removeInteraction(this._snapInteraction);
      this._snapInteraction = null;
   }

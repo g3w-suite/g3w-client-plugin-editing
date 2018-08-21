@@ -7,7 +7,7 @@ const OpenTableTask = require('./tasks/opentabletask');
 const OpenTableStep = function(options) {
   options = options || {};
   options.task = new OpenTableTask();
-  options.help = "Edita le features della tabella";
+  options.help = "editing.steps.help.edit_table";
   base(this, options)
 };
 

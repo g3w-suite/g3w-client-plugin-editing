@@ -43,6 +43,9 @@ const ToolboxComponent = Vue.extend({
   computed: {
     father: function() {
       return this.state.editing.father && !!this.state.editing.dependencies.length;
+    },
+    toolhelpmessage() {
+      return this.state.toolmessages.help;
     }
   }
 });

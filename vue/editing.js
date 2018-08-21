@@ -30,6 +30,9 @@ const vueComponentOptions = {
     commit: function(toolboxId) {
       const toolbox = this.$options.service.getToolBoxById(toolboxId);
       this.$options.service.commit(toolbox)
+        .always((toolbox) => {
+          toolbox.restartActiveTool()
+        })
     },
     saveAll: function() {
       //TODO
@@ -126,8 +129,7 @@ const vueComponentOptions = {
     }
   },
   mounted() {
-    this.$nextTick(() => {
-    })
+    this.$nextTick(() => {})
   }
 };
 

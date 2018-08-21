@@ -7,14 +7,12 @@ const Feature = g3wsdk.core.layer.features.Feature;
 
 // classe  per l'aggiuntadi feature
 // eridita dalla classe padre EditingTool
-function AddFeatureTask(options) {
-
-  options = options || {};
+function AddFeatureTask(options={}) {
   this._busy = false;
   // source del layer di editing
   // la drw interaction per disegnare la feature
   this.drawInteraction = null;
-  this._snap = options.snap || null;
+  this._snap = options.snap===false ? false : true;
   this._snapInteraction = null;
   this._finishCondition = options.finishCondition || _.constant(true);
   this._condition = options.condition || _.constant(true);
@@ -98,7 +96,7 @@ proto.run = function(inputs, context) {
       //snapping
       if (this._snap) {
         this._snapInteraction = new ol.interaction.Snap({
-          source: this._snap.vectorLayer.getSource()
+          source: editingLayer.getSource()
         });
         this.addInteraction(this._snapInteraction);
       }

@@ -25,8 +25,8 @@
         </tool>
         <div class="message" style="margin-top: 5px;" :id="'id_toolbox_messages_'+ state.id">
           <div v-html="state.message"></div>
-          <div v-html="state.toolmessage"></div>
-          <div v-show="state.loading" >Caricamento dati  <img :src="resourcesurl + '/images/loader.svg'"></div>
+          <div v-html="toolhelpmessage"></div>
+          <div v-t="'editing.messages.loading_data'" v-show="state.loading"><img style="padding-left: 3px;" :src="resourcesurl + '/images/loader.svg'"></div>
         </div>
       </div>
     </div>

@@ -6,7 +6,7 @@ var EditFeatureTask = require('./tasks/editattributestask');
 var EditFeatureStep = function(options) {
   options = options || {};
   options.task = new EditFeatureTask();
-  options.help = "Mosta il form della feature per poter editare gli attributi";
+  options.help = "editing.steps.help.show_edit_feature_form";
   base(this, options)
 };
 

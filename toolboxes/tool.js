@@ -22,7 +22,8 @@ function Tool(options) {
     enabled: false,
     active: false,
     icon: options.icon,
-    message: null
+    message: null,
+    messages: this._op.getMessages()
   };
 }
 
@@ -45,7 +46,7 @@ proto.start = function() {
     layer: this._session.getEditor().getLayer()
   };
   // funzione che mi permette di far ripartire
-  // l'operatore o workflow qaundo è arrivato alla fine
+  // l'operatore o workflow quando è arrivato alla fine
   const startOp = (options) => {
     this._op.start(options)
       .then((outputs) => {
@@ -83,7 +84,7 @@ proto.start = function() {
 
 //fa lo stop del tool
 proto.stop = function() {
-  console.log('Stopping Tool ... ');
+  //console.log('Stopping Tool ... ');
   if (this._op) {
     this._op.stop()
       .then(() => {
@@ -164,7 +165,7 @@ proto.clear = function() {
 
 proto.getMessage = function() {
   const operator = this.getOperator();
-  return operator.getRunningStep() ? operator.getRunningStep().getHelp() : null;
+  return operator.getRunningStep() ? this.state.messages : null;
 };
 
 proto.setMessage = function(message) {

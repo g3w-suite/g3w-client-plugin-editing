@@ -6,7 +6,7 @@ var ConfirmTask = require('./tasks/confirmtask');
 var ConfirmStep = function(options) {
   options = options || {};
   options.task = new ConfirmTask(options);
-  options.help = "Conferma Azione";
+  //options.help = "editing.steps.help.action_confirm";
   base(this, options)
 };
 

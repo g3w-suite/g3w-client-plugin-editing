@@ -7,7 +7,7 @@ var AddFeatureTableTask = require('./tasks/addfeaturetabletask');
 var AddTableFeatureStep = function(options) {
   options = options || {};
   options.task = new AddFeatureTableTask();
-  options.help = "Creo una nuova feature";
+  options.help = "editing.steps.help.new";
   base(this, options)
 };
 

@@ -51,7 +51,9 @@ function ToolBox(options) {
     loading: false,
     enabled: false,
     message: null,
-    toolmessage: null,
+    toolmessages: {
+      help: null
+    },
     tools: toolsstate,
     selected: false, //proprieà che mi server per switchare tra un toolbox e un altro
     activetool: null, // tiene conto del tool attivo corrente
@@ -425,6 +427,12 @@ proto.getActiveTool = function() {
   return this.state.activetool;
 };
 
+proto.restartActiveTool = function() {
+  const activeTool = this.getActiveTool();
+  this.stopActiveTool();
+  this.setActiveTool(activeTool);
+};
+
 proto.stopActiveTool = function(tool) {
   const activeTool = this.getActiveTool();
   if (activeTool && activeTool != tool) {
@@ -443,8 +451,8 @@ proto.getToolMessage = function() {
   return tool.getMessage();
 };
 
-proto.setToolMessage = function(message) {
-  this.state.toolmessage = message;
+proto.setToolMessage = function(messages) {
+  this.state.toolmessages = messages;
 };
 
 proto.getSession = function() {

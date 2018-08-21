@@ -6,7 +6,7 @@ var LinkRelationTask = require('./tasks/linkrelationtask');
 var LinkRelationStep = function(options) {
   options = options || {};
   options.task = new LinkRelationTask();
-  options.help = "Seleziona la feature che vuoi mettere in relazione";
+  options.help = "editing.steps.help.select_feature_to_relation";
   base(this, options)
 };
 

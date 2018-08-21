@@ -3,10 +3,9 @@ var base =  g3wsdk.core.utils.base;
 var EditingStep = require('./editingstep');
 var ModifyGeometryVertexTask = require('./tasks/modifygeometryvertextask');
 
-var ModifyGeometryVertexStep = function(options) {
-  options = options || {};
-  options.task = new ModifyGeometryVertexTask();
-  options.help = "Modifica o aggiungi un vertice alla feature selezionata";
+var ModifyGeometryVertexStep = function(options={snap: true}) {
+  options.task = new ModifyGeometryVertexTask(options);
+  options.help = "editing.steps.help.edit_feature_vertex";
   base(this, options)
 };
 

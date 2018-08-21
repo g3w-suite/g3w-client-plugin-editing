@@ -230,7 +230,7 @@ proto.addToolBox = function(toolbox) {
 // funzione che crea le dipendenze
 proto._createToolBoxDependencies = function() {
   let layer;
-  this._toolboxes.forEach((toolbox, toolboxId) => {
+  this._toolboxes.forEach((toolbox) => {
     layer = toolbox.getLayer();
     toolbox.setFather(layer.isFather());
     toolbox.state.editing.dependencies = this._getToolBoxEditingDependencies(layer);
