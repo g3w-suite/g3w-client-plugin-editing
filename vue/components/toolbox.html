@@ -25,8 +25,13 @@
         </tool>
         <div class="message" style="margin-top: 5px;" :id="'id_toolbox_messages_'+ state.id">
           <div v-html="state.message"></div>
-          <div v-html="toolhelpmessage"></div>
-          <div v-t="'editing.messages.loading_data'" v-show="state.loading"><img style="padding-left: 3px;" :src="resourcesurl + '/images/loader.svg'"></div>
+          <transition name="fade">
+            <toolsoftool v-if="showtoolsoftool" :tools="state.toolsoftool"></toolsoftool>
+          </transition>
+          <div class="toolbox_help_message" v-html="toolhelpmessage"></div>
+          <div v-t="'editing.messages.loading_data'" v-show="state.loading">
+            <img style="padding-left: 3px;" :src="resourcesurl + '/images/loader.svg'">
+          </div>
         </div>
       </div>
     </div>

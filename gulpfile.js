@@ -9,6 +9,7 @@ const gutil = require("gulp-util");
 const browserify = require('browserify');
 const babelify = require('babelify');
 const watchify = require('watchify');
+const vueify = require('vueify');
 const stringify = require('stringify');
 const sourcemaps = require('gulp-sourcemaps');
 
@@ -24,7 +25,8 @@ gulp.task('browserify', [], function() {
   if (!production) {
     bundler = watchify(bundler);
   }
-  bundler.transform(babelify, {
+  bundler.transform(vueify)
+  .transform(babelify, {
     babelrc: true
   });
   bundler.transform(stringify, {

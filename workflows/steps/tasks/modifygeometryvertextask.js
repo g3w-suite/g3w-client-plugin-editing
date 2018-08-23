@@ -75,12 +75,13 @@ proto.run = function(inputs, context) {
     }
   });
 
-  if (this._snap) {
+  /*if (this._snap) {
     this._snapInteraction = new ol.interaction.Snap({
       source: editingLayer.getSource()
     });
     this.addInteraction(this._snapInteraction);
-  }
+  }*/
+
   return d.promise();
 };
 
@@ -96,7 +97,6 @@ proto.stop = function(){
   return true;
 };
 
-
 proto.removePoint = function(coordinate){
   if (this._modifyInteraction) {
     // provo a rimuovere l'ultimo punto. Nel caso non esista la geometria gestisco silenziosamente l'errore
@@ -108,8 +108,6 @@ proto.removePoint = function(coordinate){
     }
   }
 };
-
-
 
 proto._isNew = function(feature){
   return (!_.isNil(this.editingLayer.getSource().getFeatureById(feature.getId())));

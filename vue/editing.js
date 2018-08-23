@@ -34,9 +34,7 @@ const vueComponentOptions = {
           toolbox.restartActiveTool()
         })
     },
-    saveAll: function() {
-      //TODO
-    },
+    saveAll: function() {},
     startToolBox: function(toolboxId) {
       const toolbox = this._getToolBoxById(toolboxId);
       toolbox.start();

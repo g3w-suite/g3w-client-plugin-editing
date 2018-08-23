@@ -1,15 +1,18 @@
 const ToolComponent = require('./tool');
+const ToolsOfToolComponent = require('./toolsoftool');
 
 const ToolboxComponent = Vue.extend({
   template: require('./toolbox.html'),
   props: ['state', 'resourcesurl'],
   data: function() {
     return {
-      active: false
+      active: false,
+      showtoolsoftool: true
     }
   },
   components: {
-    'tool': ToolComponent
+    'tool': ToolComponent,
+    'toolsoftool': ToolsOfToolComponent
   },
   methods: {
     select: function() {
@@ -19,24 +22,24 @@ const ToolboxComponent = Vue.extend({
         this.$emit('setselectedtoolbox', this.state.id);
       }
     },
-    toggleEditing: function() {
+    toggleEditing() {
       //se il toolbox non è ancora abilitato non faccio niente
       if (!this.state.layerstate.editing.ready)
         return;
       this.state.editing.on ? this.$emit('stoptoolbox', this.state.id): this.$emit('starttoolbox', this.state.id);
     },
-    saveEdits: function() {
+    saveEdits() {
       this.$emit('savetoolbox', this.state.id);
     },
     // funzione che visualizza il toolbox appena sono disponibili le configurazioni
     // fields (passato dal metodo perchè in grado di ricevere parametri)
-    isLayerReady: function() {
+    isLayerReady() {
       return this.state.layerstate.editing.ready;
     },
-    stopActiveTool:function() {
+    stopActiveTool() {
       this.$emit('stopactivetool', this.state.id);
     },
-    setActiveTool: function(toolId) {
+    setActiveTool(toolId) {
       this.$emit('setactivetool', toolId, this.state.id);
     }
   },
@@ -46,6 +49,9 @@ const ToolboxComponent = Vue.extend({
     },
     toolhelpmessage() {
       return this.state.toolmessages.help;
+    },
+    showtoolsoftool() {
+      return !!this.state.toolsoftool.length;
     }
   }
 });

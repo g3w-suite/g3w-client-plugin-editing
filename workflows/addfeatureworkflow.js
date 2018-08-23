@@ -6,7 +6,25 @@ var OpenFormStep = require('./steps/openformstep');
 
 function AddFeatureWorflow(options) {
   options = options || {};
-  options.steps = [new AddFeatureStep(), new OpenFormStep()];
+  const addfeaturestep = new AddFeatureStep(options);
+  const openformstep = new OpenFormStep(options);
+  let snapTool;
+  addfeaturestep.on('run', ({inputs, context}) => {
+    const layer = inputs.layer;
+    snapTool = {
+      type: 'snap',
+      options: {
+        source: layer.getSource(),
+        active: true
+      }
+    };
+    this.emit('settoolsoftool', [snapTool]);
+  });
+  addfeaturestep.on('stop', () => {
+    snapTool.options.active = false;
+  });
+
+  options.steps = [addfeaturestep, openformstep];
   base(this, options);
 }
 

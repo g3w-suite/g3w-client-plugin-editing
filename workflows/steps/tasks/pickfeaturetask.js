@@ -6,6 +6,7 @@ var EditingTask = require('./editingtask');
 function PickFeatureTask(options) {
   this.pickFeatureInteraction = null;
   this._busy = false;
+  this._tools = options.tools || [];
   base(this, options);
 }
 

@@ -46,15 +46,22 @@ proto.start = function() {
     layer: this._session.getEditor().getLayer()
   };
   // funzione che mi permette di far ripartire
-  // l'operatore o workflow quando è arrivato alla fine
+  // l'operatore/workflow quando è arrivato alla fine
   const startOp = (options) => {
+    this._op.once('settoolsoftool', (tools) => {
+      this.emit('settoolsoftool', tools);
+    });
+    this._op.once('active', (index) => {
+      this.emit('active', index)
+    });
+    this._op.once('deactive', (index) => {
+      this.emit('deactive', index)
+    });
     this._op.start(options)
       .then((outputs) => {
         // vado a salvare la sessione
         this._session.save()
-          .then(() => {
-            //TODO
-          });
+          .then(() => {});
       })
       .fail(() =>  {
         // in caso di mancato successo faccio il rollback
@@ -84,11 +91,11 @@ proto.start = function() {
 
 //fa lo stop del tool
 proto.stop = function() {
+  const d = $.Deferred();
   //console.log('Stopping Tool ... ');
   if (this._op) {
     this._op.stop()
       .then(() => {
-        //TODO
       })
       .fail((err) => {
         //in caso di errore faccio un rollback della sessione
@@ -96,8 +103,11 @@ proto.stop = function() {
       })
       .always(() => {
         this.state.active = false;
+        this.emit('stop');
+        d.resolve();
       })
   }
+  return d.promise();
 };
 
 proto.getState = function() {

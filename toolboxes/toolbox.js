@@ -7,9 +7,8 @@ const Session = g3wsdk.core.editing.Session;
 const OlFeaturesStore = g3wsdk.core.layer.features.OlFeaturesStore;
 const FeaturesStore = g3wsdk.core.layer.features.FeaturesStore;
 
-function ToolBox(options) {
+function ToolBox(options={}) {
   base(this);
-  options = options || {};
   // editor del Layer che permette di interagire con il layer
   // save, etc ...
   this._editor = options.editor;
@@ -54,6 +53,7 @@ function ToolBox(options) {
     toolmessages: {
       help: null
     },
+    toolsoftool: [], // tools to show when a task request this
     tools: toolsstate,
     selected: false, //proprieà che mi server per switchare tra un toolbox e un altro
     activetool: null, // tiene conto del tool attivo corrente
@@ -198,7 +198,6 @@ proto.start = function() {
               this.setEditing(true);
             })
             .fail((err) => {
-              console.log(err);
               this.stop();
               d.reject(err);
             })
@@ -415,12 +414,41 @@ proto.enableTools = function(bool) {
 // funzione che attiva il tool
 proto.setActiveTool = function(tool) {
   // prima stoppo l'eventuale active tool
-  this.stopActiveTool(tool);
-  // faccio partire lo start del tool
-  this.state.activetool = tool;
-  tool.start();
-  const message = this.getToolMessage();
-  this.setToolMessage(message);
+  this.stopActiveTool(tool)
+    .then(() => {
+      this.clearToolsOfTool();
+      // faccio partire lo start del tool
+      this.state.activetool = tool;
+      // registro l'evento sul workflow
+      tool.once('settoolsoftool', (tools) => {
+        tools.forEach((tool) => {
+          this.state.toolsoftool.push(tool);
+        })
+      });
+
+      const _activedeactivetooloftools = (activetools, active) => {
+        this.state.toolsoftool.forEach((tooloftool) => {
+          if (activetools.indexOf(tooloftool.type) !== -1)
+            tooloftool.options.active = active;
+        });
+      };
+
+      tool.on('active', (activetools=[]) => {
+        _activedeactivetooloftools(activetools, true);
+      });
+
+      tool.on('deactive', (activetools=[]) => {
+        _activedeactivetooloftools(activetools, false);
+      });
+
+      tool.start();
+      const message = this.getToolMessage();
+      this.setToolMessage(message);
+    });
+};
+
+proto.clearToolsOfTool = function() {
+  this.state.toolsoftool.splice(0);
 };
 
 proto.getActiveTool = function() {
@@ -434,12 +462,24 @@ proto.restartActiveTool = function() {
 };
 
 proto.stopActiveTool = function(tool) {
+  const d = $.Deferred();
   const activeTool = this.getActiveTool();
   if (activeTool && activeTool != tool) {
-    activeTool.stop();
-    this.clearToolMessage();
-    this.state.activetool = null;
+    activeTool.removeAllListeners();
+    activeTool.stop()
+      .then(() => {
+        this.clearToolsOfTool();
+        this.clearToolMessage();
+        this.state.activetool = null;
+        requestAnimationFrame(() => {
+          d.resolve();
+        })
+      })
+  } else {
+    tool.removeAllListeners();
+    d.resolve()
   }
+  return d.promise();
 };
 
 proto.clearToolMessage = function() {

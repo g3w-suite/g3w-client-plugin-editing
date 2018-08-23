@@ -94,12 +94,12 @@ proto.run = function(inputs, context) {
         d.resolve(inputs);
       });
       //snapping
-      if (this._snap) {
+      /*if (this._snap) {
         this._snapInteraction = new ol.interaction.Snap({
           source: editingLayer.getSource()
         });
         this.addInteraction(this._snapInteraction);
-      }
+      }*/
       break;
   }
   return d.promise();

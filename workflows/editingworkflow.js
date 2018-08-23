@@ -3,9 +3,9 @@ const base =  g3wsdk.core.utils.base;
 const Workflow = g3wsdk.core.workflow.Workflow;
 
 
-function EditingWorkflow(options) {
-  options = options || {};
+function EditingWorkflow(options={}) {
   base(this, options);
+  this._toolsoftool = [];
 }
 
 inherit(EditingWorkflow, Workflow);
@@ -14,6 +14,10 @@ const proto = EditingWorkflow.prototype;
 
 proto.getFeatures = function() {
   return this.getInputs().features;
+};
+
+proto.setToolsOfTool = function(tools=[]) {
+  this._toolsoftool = [tools]
 };
 
 proto.startFromLastStep = function(options) {
