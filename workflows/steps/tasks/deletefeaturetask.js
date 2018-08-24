@@ -130,8 +130,9 @@ proto.run = function(inputs, context) {
         relation: relation.relation,
         relations: relation.relations
       });
-      EditingService.getLayerById(relation.relation.child).getFields().forEach((field) => {
-        if (field.name == relation.relation.childField && field.validate.required)
+      const relationLayer = EditingService.getLayerById(relation.relation.child);
+      relationLayer.getEditingFields().forEach((field) => {
+        if (field.name === relation.relation.childField && field.validate.required)
           updateRelation = false;
       });
       if (updateRelation) {

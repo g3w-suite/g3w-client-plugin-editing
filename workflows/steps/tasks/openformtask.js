@@ -6,9 +6,7 @@ const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 const EditingTask = require('./editingtask');
 const EditingFormComponent = require('../../../form/editingform');
 
-function OpenFormTask(options) {
-
-  options = options || {};
+function OpenFormTask(options={}) {
   // prefisso delle nuove  feature
   this._formIdPrefix = 'form_';
   this._isContentChild = false;
@@ -20,8 +18,8 @@ function OpenFormTask(options) {
   this._pk;
   this._fields;
   this._session;
+  this._editorFormStructure;
   base(this, options);
-
 }
 
 inherit(OpenFormTask, EditingTask);
@@ -75,6 +73,7 @@ proto._getForm = function(inputs, context) {
   this._fields = this._originalLayer.getFieldsWithValues(this._feature, {
     exclude: excludeFields
   });
+  this._editorFormStructure = this._originalLayer.getEditorFormStructure();
   const uniqueFields = this._getUniqueFieldsType(this._fields);
   if (!_.isEmpty(uniqueFields))
     this._getFieldUniqueValuesFromServer(this._originalLayer, uniqueFields);
@@ -129,7 +128,9 @@ proto.startForm = function(options) {
       context: context,
       inputs: inputs
     },
+    formStructure: this._editorFormStructure,
     modal: true,
+    perc: this._editorFormStructure ? 100 : null,
     push: this._isContentChild, // indica se posso aggiungere form
     showgoback: !this._isContentChild, // se è figlo evito di visualizzare il go back
     buttons:[{
