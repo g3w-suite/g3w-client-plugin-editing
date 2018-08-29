@@ -58,7 +58,7 @@ function EditingService() {
     // sono i layer originali caricati dal progetto e messi nel catalogo
     let layers = this._getEditableLayersFromCatalog();
     //ciclo su ogni layers editiabile
-    layers.forEach((layer) => {
+    for (const layer of layers) {
       layerId = layer.getId();
       // vado a chiamare la funzione che mi permette di
       // estrarre la versione editabile del layer di partenza (es. da imagelayer a vector layer, table layer/tablelayer etc..)
@@ -71,7 +71,7 @@ function EditingService() {
       this._editableLayers[layerId] = editableLayer;
       // aggiungo all'array dei vectorlayers se per caso mi servisse
       this._sessions[layerId] = null;
-    });
+    }
     // set toolbox colors
     this.setLayersColor();
     // after sadd layers to layerstore

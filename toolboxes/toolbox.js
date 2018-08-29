@@ -476,7 +476,7 @@ proto.stopActiveTool = function(tool) {
         })
       })
   } else {
-    tool.removeAllListeners();
+    tool ? tool.removeAllListeners(): null;
     d.resolve()
   }
   return d.promise();

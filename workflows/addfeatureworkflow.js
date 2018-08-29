@@ -20,8 +20,11 @@ function AddFeatureWorflow(options) {
     };
     this.emit('settoolsoftool', [snapTool]);
   });
+  addfeaturestep.on('run', () => {
+    this.emit('active', ['snap']);
+  });
   addfeaturestep.on('stop', () => {
-    snapTool.options.active = false;
+    this.emit('deactive', ['snap']);
   });
 
   options.steps = [addfeaturestep, openformstep];
