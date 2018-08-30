@@ -23,10 +23,10 @@ let Dialogs = {
       let d = $.Deferred();
       let close = inputs.close;
       const buttons = {
-          SAVE: {
-            label: t("save"),
-            className: "btn-success",
-            callback: function () {
+        SAVE: {
+          label: t("save"),
+          className: "btn-success",
+          callback: function () {
             d.resolve(inputs);
           }
         },
@@ -49,7 +49,7 @@ let Dialogs = {
   }
 };
 
-function ConfirmTask(options) {
+function ConfirmTask(options = {}) {
   let type = options.type || "default";
   this._dialog = Dialogs[type];
   base(this, options);
@@ -66,7 +66,7 @@ proto.run = function(inputs, context) {
 };
 
 // metodo eseguito alla disattivazione del tool
-proto.stop = function(){
+proto.stop = function() {
   return true;
 };
 

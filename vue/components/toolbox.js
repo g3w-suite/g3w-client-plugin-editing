@@ -16,7 +16,7 @@ const ToolboxComponent = Vue.extend({
   },
   methods: {
     select: function() {
-      if (!this.isLayerReady())
+      if (!this.isLayerReady)
         return;
       if (!this.state.selected) {
         this.$emit('setselectedtoolbox', this.state.id);
@@ -30,11 +30,6 @@ const ToolboxComponent = Vue.extend({
     },
     saveEdits() {
       this.$emit('savetoolbox', this.state.id);
-    },
-    // funzione che visualizza il toolbox appena sono disponibili le configurazioni
-    // fields (passato dal metodo perchè in grado di ricevere parametri)
-    isLayerReady() {
-      return this.state.layerstate.editing.ready;
     },
     stopActiveTool() {
       this.$emit('stopactivetool', this.state.id);
@@ -52,6 +47,9 @@ const ToolboxComponent = Vue.extend({
     },
     showtoolsoftool() {
       return !!this.state.toolsoftool.length;
+    },
+    isLayerReady() {
+      return this.state.layerstate.editing.ready;
     }
   }
 });

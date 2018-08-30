@@ -614,6 +614,11 @@ proto.commit = function(toolbox, close=false) {
       close: close
     }})
     .then(() => {
+      const dialog = GUI.dialog.dialog({
+        message: `<h4 class="text-center"><i style="margin-right: 5px;" class="fa fa-spin fa-spinner"></i>${t('editing.messages.saving')}</h4>`,
+        closeButton: false
+      });
+
       // funzione che serve a fare il commit della sessione legata al tool
       // qui probabilmente a seconda del layer se ha dipendenze faccio ogni sessione
       // produrrà i suoi dati post serializzati che poi saranno uniti per un unico commit
@@ -641,6 +646,9 @@ proto.commit = function(toolbox, close=false) {
           GUI.notify.error(message);
           workflow.stop();
           d.resolve(toolbox);
+        })
+        .always(() => {
+          dialog.modal('hide');
         })
     })
     .fail(() => {

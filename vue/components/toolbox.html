@@ -1,6 +1,7 @@
 <div class="toolbox">
   <div :class="{'disableddiv' : !isLayerReady }" :id="'id_toolbox_'+ state.id">
     <div @click="select" class="panel panel-primary" :class="{ 'toolboxselected': state.selected }">
+      <div v-show="!isLayerReady" class="bar-loader"></div>
       <div class="panel-heading container" style="width:100%;" :style="{ background: state.color}" >
         <div v-if="father" style="margin-right:5px;" class="pull-left enabled dropdown">
           <img  height="20px" width="20px" class="dropbtn" data-toggle="dropdown" :src="resourcesurl + 'images/relation.png'"/>
