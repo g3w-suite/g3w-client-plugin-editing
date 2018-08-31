@@ -3,8 +3,7 @@ const base =  g3wsdk.core.utils.base;
 const FormComponent = g3wsdk.gui.vue.FormComponent;
 const EditingFormService = require('./editingformservice');
 
-function EditingFormComponent(options) {
-  options = options || {};
+function EditingFormComponent(options={}) {
   base(this, options);
   // solo tutte le informazini relative alle relazioni di quella toolbox/layer
   const relationsOptions = options.relationsOptions;
@@ -15,7 +14,8 @@ function EditingFormComponent(options) {
   // mi restituisce il componente Vue da passare al form
   const RelationsComponent = service.buildRelationsComponents();
   // qui vado ad aggiungere il componente relations
-  this.addComponentAfterBody(RelationsComponent);
+  if (service.hasRelations())
+    this.addComponentAfterBody(RelationsComponent);
 }
 
 inherit(EditingFormComponent, FormComponent);

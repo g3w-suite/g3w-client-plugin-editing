@@ -24,6 +24,10 @@ const EdtingFormService = function(options) {
     // le relazioni in questione sono oggetti Realtion che contengono le informazioni nello stato delle composizione della relazione
   }
 
+  this.hasRelations = function() {
+    return !!relations.length;
+  };
+
   // funzione che mi serve per costruire il componente vue da innestare dentro il form
   // come componente relations
   this.buildRelationsComponents = function() {
