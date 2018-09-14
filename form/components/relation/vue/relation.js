@@ -1,6 +1,6 @@
 const t = g3wsdk.core.i18n.t;
 const RelationService = require('../../../../services/relationservice');
-const maxSubsetLength = 3;
+const maxSubsetLength = 5;
 
  RelationComponent = Vue.extend({
   template: require('./relation.html'),
@@ -60,6 +60,12 @@ const maxSubsetLength = 3;
     },
     getRelationTools: function() {
       return this._service.getRelationTools();
+    },
+    getValue(value) {
+      if (value && typeof  value === 'object' && value.constructor === Object) {
+        value = value.value;
+      }
+      return value;
     }
   },
   computed: {

@@ -15,7 +15,7 @@
         </thead>
         <tbody>
           <tr @click="state.isrelation ? linkFeature(index) : null" v-for="(feature, index) in state.features" :key="index">
-            <td v-if ="showValue(key)" v-for="(value, key) in feature"> {{ value }}</td>
+            <td v-if ="showValue(key)" v-for="(value, key) in feature"> {{ getValue(value) }}</td>
             <td v-show="!state.isrelation">
               <i class="fa fa-trash-o" style="cursor: pointer; color:red;" aria-hidden="true" @click="deleteFeature(index)"></i>
             </td>

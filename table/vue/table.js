@@ -37,6 +37,12 @@ const InternalComponent = Vue.extend({
     },
     _setLayout: function() {
       return this.$options.service._setLayout();
+    },
+    getValue(value) {
+       if (value && typeof  value === 'object' && value.constructor === Object) {
+         value = value.value;
+       }
+       return value;
     }
   },
   watch: {
