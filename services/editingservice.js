@@ -411,7 +411,7 @@ proto.getRelationsInEditing = function(relations, feature, isNew) {
       // aggiungo lo state della relazione
       relationinediting = {
         relation:relation.getState(),
-        relations: !isNew ? this.getRelationsAttributesByFeature(relation, feature): [] // le relazioni esistenti
+        relations: this.getRelationsAttributesByFeature(relation, feature) // le relazioni esistenti
       };
       relationinediting.validate = {
         valid:true
@@ -527,23 +527,20 @@ proto.getLayersDependencyFeatures = function(layerId) {
   }
 };
 
-proto._applyChangesToRelationsAfterCommit = function(commitItemsRelations, relationsResponse) {
-  let layer;
-  let sessionFeaturesStore;
-  let featureStore;
-  let features;
-
-  for (const [layerId, relationResponse] of Object.entries(relationsResponse)) {
-    layer = this.getLayerById(layerId);
-    sessionFeaturesStore = this.getToolBoxById(layerId).getSession().getFeaturesStore();
-    featureStore = layer.getSource();
-    features = _.clone(sessionFeaturesStore.readFeatures());
+proto._applyChangesToNewRelationsAfterCommit = function(relationsResponse) {
+  for (relationLayerId in relationsResponse) {
+    const response = relationsResponse[relationLayerId];
+    const layer = this.getLayerById(relationLayerId);
+    const sessionFeaturesStore = this.getToolBoxById(relationLayerId).getSession().getFeaturesStore();
+    const featureStore = layer.getSource();
+    const features = _.clone(sessionFeaturesStore.readFeatures());
     features.forEach((feature) => {
       feature.clearState();
     });
     featureStore.setFeatures(features);
     layer.applyCommitResponse({
-      response: relationResponse
+      response,
+      result: true
     });
   }
 };
@@ -572,11 +569,10 @@ proto.commitDirtyToolBoxes = function(toolboxId) {
 
 proto._createCommitMessage = function(commitItems) {
   function create_changes_list_dom_element(add, update, del) {
-    let changeIds = {
-      Aggiunte: _.map(add, 'id').join(','),
-      Modificate:  _.map(update, 'id').join(','),
-      Cancellate:  del.join(',')
-    };
+    const changeIds = {};
+    changeIds[`${t('editing.messages.commit.add')}`] = _.map(add, 'id').join(',');
+    changeIds[`${t('editing.messages.commit.update')}`] = _.map(update, 'id').join(',');
+    changeIds[`${t('editing.messages.commit.delete')}`] = del.join(',');
     let dom = "<ul style='border-bottom-color: #f4f4f4;'>";
     Object.entries(changeIds).forEach(([action, ids]) => {
       dom += "<li>" + action + ": [" + ids + "]</li>";
@@ -615,7 +611,7 @@ proto.commit = function(toolbox, close=false) {
     }})
     .then(() => {
       const dialog = GUI.dialog.dialog({
-        message: `<h4 class="text-center"><i style="margin-right: 5px;" class="fa fa-spin fa-spinner"></i>${t('editing.messages.saving')}</h4>`,
+        message: `<h4 class="text-center"><i style="margin-right: 5px;" class=${GUI.getFontClass('spinner')}></i>${t('editing.messages.saving')}</h4>`,
         closeButton: false
       });
 
@@ -626,8 +622,9 @@ proto.commit = function(toolbox, close=false) {
         .then( (commitItems, response) => {
           if (response.result) {
             let relationsResponse = response.response.new_relations;
-            let commitItemsRelations = commitItems.relations;
-            this._applyChangesToRelationsAfterCommit(commitItemsRelations, relationsResponse);
+            if (relationsResponse) {
+              this._applyChangesToNewRelationsAfterCommit(relationsResponse);
+            }
             GUI.notify.success(t("editing.messages.saved"));
             if (layerType === 'vector')
               this._mapService.refreshMap({force: true});

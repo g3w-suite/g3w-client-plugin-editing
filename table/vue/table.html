@@ -1,8 +1,10 @@
 <div id="editing_table" class="g3w-editing-table">
-  <div class="box-header with-border">
-    <h3 class="box-title">{{ state.title }}</h3>
-    <div v-if="state.isrelation" style="margin-left: auto">
-      <button @click="stop" class="glyphicon glyphicon-remove pull-right close-panel-button"></button>
+  <div class="editing_table_header">
+    <div @click="stop"  v-if="state.isrelation" style="margin-left: auto">
+      <button :class="g3wtemplate.font['close']" class="pull-right close-panel-button"></button>
+    </div>
+    <h3 class="editing_table_title">{{ state.title }}</h3>
+    <div class="editing_table_relation_messagge"  v-if="state.isrelation" v-t="'editing.relation.table.info'">
     </div>
   </div>
   <table class="display" style="width:100%">
@@ -17,10 +19,10 @@
           <tr @click="state.isrelation ? linkFeature(index) : null" v-for="(feature, index) in state.features" :key="index">
             <td v-if ="showValue(key)" v-for="(value, key) in feature"> {{ getValue(value) }}</td>
             <td v-show="!state.isrelation">
-              <i class="fa fa-trash-o" style="cursor: pointer; color:red;" aria-hidden="true" @click="deleteFeature(index)"></i>
+              <i :class="g3wtemplate.font['trash-o']" class="g3w-icon" style="color:red;" aria-hidden="true" @click="deleteFeature(index)"></i>
             </td>
             <td v-show="!state.isrelation">
-              <i class="fa fa-pencil" style="cursor: pointer; color:#3c8dbc;" aria-hidden="true" @click="editFeature(index)"></i>
+              <i :class="g3wtemplate.font['pencil']" class="g3w-icon" style="color:#008d4c;" aria-hidden="true" @click="editFeature(index)"></i>
             </td>
           </tr>
         </tbody>

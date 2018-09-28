@@ -1,8 +1,10 @@
 const t = g3wsdk.core.i18n.t;
 const RelationService = require('../../../../services/relationservice');
+const MediaMixin = g3wsdk.gui.vue.mixins.mediaMixin;
 const maxSubsetLength = 5;
 
  RelationComponent = Vue.extend({
+  mixins: [MediaMixin],
   template: require('./relation.html'),
   props: ['relation', 'relations', 'resourcesurl', 'formeventbus'],
   data: function() {
@@ -13,7 +15,8 @@ const maxSubsetLength = 5;
         link_relation: t("form.relations.tooltips.link_relation"),
         open_relation_tool: t("form.relations.tooltips.open_relation_tools"),
         unlink_relation: t("form.relations.tooltips.unlink_relation")
-      }
+      },
+      value: null
     }
   },
   methods: {
@@ -65,7 +68,14 @@ const maxSubsetLength = 5;
       if (value && typeof  value === 'object' && value.constructor === Object) {
         value = value.value;
       }
+      this.value = value;
       return value;
+    },
+    isMedia(value) {
+      if (value && typeof  value === 'object' && value.constructor === Object) {
+        return !!value.mime_type;
+      }
+      return false;
     }
   },
   computed: {
@@ -101,9 +111,8 @@ const maxSubsetLength = 5;
     this.formeventbus.$on('changeinput', this.updateExternalKeyValueRelations);
     this.formeventbus.$emit('addtovalidate', this.validate);
     Vue.nextTick(function() {
-      $('.g3w-form-component_relations [data-toggle="tooltip"], .g3w-relation-tools').tooltip();
+      $('.g3w-form-component_relations .g3w-icon[data-toggle="dropdown"]').tooltip();
     })
-
   },
   destroyed: function() {
     this._service.hideRelationStyle();

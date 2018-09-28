@@ -15,7 +15,10 @@ function EditingFormComponent(options={}) {
   const RelationsComponent = service.buildRelationsComponents();
   // qui vado ad aggiungere il componente relations
   if (service.hasRelations())
-    this.addComponentAfterBody(RelationsComponent);
+    this.addComponentAfterBody({
+      id: "relations",
+      component:RelationsComponent
+    });
 }
 
 inherit(EditingFormComponent, FormComponent);

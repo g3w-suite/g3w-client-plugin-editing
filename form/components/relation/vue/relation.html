@@ -1,24 +1,27 @@
-<div style="border: 2px solid rgba(60, 141, 188, 0.1); margin-bottom: 5px; border-radius: 3px;">
+<div style="margin-bottom: 5px;">
   <div class="box-header with-border" style="margin-button:3px; background-color: #ffffff; ">
     <div class="container" style="width:100%">
       <div class="row">
-        <div class="col-lg-10 col-sm-12">
+        <div class="col-sm-10">
           <h5 class="relation_title">{{ relation.name }}</h5>
         </div>
-        <div class="col-lg-1 col-sm-6 add-link"
-               data-toggle="tooltip" data-placement="bottom"
-               :title="tooltips.add_relation" @click="enableAddLinkButtons ? addRelationAndLink() : null">
-            <span  class="g3w-icon g3w-plus"  :class="{'disabled' : !enableAddLinkButtons }"></span>
-          </div>
-        <div class="col-md-1 col-sm-6 add-link"
-               data-toggle="tooltip" data-placement="bottom"
-               :title="tooltips.link_relation" @click="enableAddLinkButtons ? linkRelation() : null">
-            <span  class="g3w-icon g3w-link" style="font-size:20px;" :class="{'disabled': !enableAddLinkButtons}"></span>
-          </div>
+        <div class="col-sm-2" style="padding:0">
+          <span class="g3w-icon add-link pull-right" align="center"
+                data-toggle="tooltip" data-placement="bottom"
+                :title="tooltips.link_relation" @click="enableAddLinkButtons ? linkRelation() : null"
+                :class="[{'disabled': !enableAddLinkButtons}, g3wtemplate.font['link']]">
+          </span>
+          <span data-toggle="tooltip" data-placement="bottom"
+                 :title="tooltips.add_relation"
+                 @click="enableAddLinkButtons ? addRelationAndLink() : null"
+                 class="g3w-icon add-link pull-right"
+                 :class="[{'disabled' : !enableAddLinkButtons}, g3wtemplate.font['plus']]">
+          </span>
+        </div>
       </div>
     </div>
   </div>
-  <div class="box-body" style="padding:0px;">
+  <div class="box-body" style="padding:0;">
     <template v-if="relationsLength">
       <table class="table table-striped">
         <thead>
@@ -34,14 +37,23 @@
           <tbody>
             <tr v-for="(relation, index) in relations" class="featurebox-header">
               <td v-show="!showAllFieds(index)" v-for="attribute in relationAttributesSubset(relation)">
-                <span>{{ getValue(attribute.value) }}</span>
+                <template v-if="isMedia(attribute.value) && getValue(attribute.value)">
+                  <div class="preview">
+                    <a :href="getValue(attribute.value)" target="_blank">
+                      <div class="previewtype" :class="getMediaType(attribute.value.mime_type).type">
+                        <i class="fa-2x" :class="g3wtemplate.font[getMediaType(attribute.value.mime_type).type]"></i>
+                      </div>
+                    </a>
+                  </div>
+                </template>
+                <span v-else>{{ getValue(attribute.value) }}</span>
               </td>
               <td v-show="showAllFieds(index)" :colspan="relationsAttributesSubsetLength(relation)">
                 <table style="background:none !important;">
                   <tr v-for="field in relationsFields(relation)">
                     <td class="attr-label">{{field.label}}</td>
                     <td class="attr-value">
-                      <span>{{ getValue(field.value) }}</span>
+                      <span v-else>{{ getValue(field.value) }}</span>
                   </td>
                   </tr>
                 </table>
@@ -49,26 +61,27 @@
               <td class="action-cell">
                 <span
                   @click="showAllRelationFields(index)"
-                  style="color:#3c8dbc; cursor:pointer;" class="fa link morelink"
-                  :class="[showallfieldsindex == index ? 'fa-minus': 'fa-ellipsis-h' ]">
+                  style="color:#3c8dbc; cursor:pointer;" :class="g3wtemplate.font['link']"
+                  :class="[showallfieldsindex == index ? g3wtemplate.font['minus'] : g3wtemplate.font['ellipsis-h'] ]">
                 </span>
               </td>
               <td>
                 <span
                   v-if="!fieldrequired"
-                  class="g3w-mini-relation-icon g3w-icon g3w-unlink pull-right "
+                  class="g3w-mini-relation-icon g3w-icon pull-right " :class="g3wtemplate.font['unlink']"
                   @click="unlinkRelation(index)"
                   data-toggle="tooltip" data-placement="bottom" :title="tooltips.unlink_relation"
                   aria-hidden="true">
                 </span>
               </td>
               <td>
-                <div class="dropup">
-                  <span
-                    data-toggle="dropdown" data-placement="bottom" :title="tooltips.open_relation_tool"
+                <div class="dropup" style="width: 100%">
+                  <span style="width: 40px; height: 40px;"
+                    data-toggle="dropdown" data-placement="left" :title="tooltips.open_relation_tool"
                     aria-haspopup="true" aria-expanded="false"
-                    class="dropdown-toggle g3w-icon g3w-mini-relation-icon g3w-cogs pull-right g3w-relation-tools"
+                    class="dropdown-toggle g3w-icon pull-right"
                     aria-hidden="true">
+                    <i style="padding: 5px; padding-top: 7px;" :class="g3wtemplate.font['tools']"></i>
                   </span>
                   <div class="dropdown-menu pull-right" style="margin-bottom:5px; box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.5) !important;" :style="{'min-width': getRelationTools().length*40 + 'px !important' }">
                     <div @click="startTool(relationtool, index)"

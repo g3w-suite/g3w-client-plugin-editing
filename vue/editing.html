@@ -1,20 +1,20 @@
 <div class="g3w-editing-panel">
   <div>
     <div class="editbtn pull-right"  @click="canRedo ? redo(): null" :class="{'enabled' : canRedo }">
-     <span class="g3w-icon g3w-redo"></span>
+     <span class="editing-icon" :class="g3wtemplate.font['arrow-right']"></span>
     </div>
     <div class="editbtn pull-right" @click="canUndo ? undo(): null" :class="{'enabled' : canUndo }">
-      <span class="g3w-icon g3w-undo"></span>
+      <span class="editing-icon" :class="g3wtemplate.font['arrow-left']"></span>
     </div>
     <div class="editbtn pull-right" @click="canCommit ? commit(): null" :class="{'enabled' : canCommit }">
-      <span class="g3w-icon g3w-saveedit"></span>
+      <span class="editing-icon" :class="g3wtemplate.font['save']"></span>
     </div>
     <div style="display:inline-block">
       <ul class="nav navbar-nav">
         <!-- Messages: style can be found in dropdown.less-->
         <li class="dropdown messages-menu">
           <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-            <span class="g3w-icon g3w-envelop"></span>
+            <span class="g3w-icon" :class="g3wtemplate.font['mail']"></span>
             <span v-if="state.message" class="label label-info">1</span>
           </a>
           <div v-if="state.message" class="dropdown-menu" style="width: 320px;min-height: 100px; padding:5px;">

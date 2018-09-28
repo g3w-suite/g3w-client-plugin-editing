@@ -1,5 +1,6 @@
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
+const t = g3wsdk.core.i18n.t;
 const GUI = g3wsdk.gui.GUI;
 const TableComponent = require('../../../table/vue/table');
 const EditingTask = require('./editingtask');
@@ -30,9 +31,9 @@ proto.run = function(inputs, context) {
   // vado a recuperare i
   const editingLayer = inputs.layer;
   const features = editingLayer.getSource().readFeatures();
-  const action = this._isContentChild ? 'Link ' :  'Edita ';
+  const action = this._isContentChild ? t('editing.relation.table.link.title') : t('editing.relation.table.edit.title') ;
   const content = new TableComponent({
-    title:  action + layerName,
+    title: `${layerName}`,
     features,
     promise: d,
     isrelation: this._isContentChild,

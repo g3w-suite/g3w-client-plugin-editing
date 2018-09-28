@@ -483,7 +483,7 @@ proto.stopActiveTool = function(tool) {
 };
 
 proto.clearToolMessage = function() {
-  this.state.toolmessage = null;
+  this.state.toolmessages.help = null;
 };
 
 proto.getToolMessage = function() {
@@ -492,7 +492,7 @@ proto.getToolMessage = function() {
 };
 
 proto.setToolMessage = function(messages) {
-  this.state.toolmessages = messages;
+  this.state.toolmessages.help = messages.help;
 };
 
 proto.getSession = function() {
