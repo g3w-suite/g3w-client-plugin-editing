@@ -1,8 +1,8 @@
 const GUI = g3wsdk.gui.GUI;
-const RelationsComponentObj = require('./components/relations/vue/relations');
-const EdtingFormService = function(options) {
+const t = g3wsdk.core.i18n.t;
+const RelationsComponent = require('./components/relations/vue/relations');
+const EdtingFormService = function(options={}) {
   const EditingService = require('../services/editingservice');
-  options = options || {};
   this.state = {
     relations: []
   };
@@ -23,30 +23,37 @@ const EdtingFormService = function(options) {
     relations = EditingService.getRelationsInEditing(relations, formFeature, formFeature.isNew());
     // le relazioni in questione sono oggetti Realtion che contengono le informazioni nello stato delle composizione della relazione
   }
-
   this.hasRelations = function() {
     return !!relations.length;
   };
-
   // funzione che mi serve per costruire il componente vue da innestare dentro il form
   // come componente relations
-  this.buildRelationsComponents = function() {
+  this.buildRelationComponents = function() {
     const self = this;
-    return Vue.extend({
-      mixins: [RelationsComponentObj],
-      methods: {
-        getService: function() {
-          return self._relationsService;
+    const relationComponents = [];
+    for (const relation of relations) {
+      const relationComponent = Vue.extend({
+        mixins: [RelationsComponent],
+        name: relation.relation.name,
+        methods: {
+          getService: function() {
+            return self._relationsService;
+          }
+        },
+        data: function() {
+          return {
+            relation: relation,
+            resourcesurl: GUI.getResourcesUrl(),
+            formeventbus: self._formEventBus
+          }
         }
-      },
-      data: function() {
-        return {
-          relations: relations,
-          resourcesurl: GUI.getResourcesUrl(),
-          formeventbus: self._formEventBus
-        }
-      }
-    })
+      });
+      relationComponents.push({
+        id: `${t("editing.edit_relation")} ${relation.relation.name}`,
+        component: relationComponent
+      })
+    }
+    return relationComponents;
   };
 };
 

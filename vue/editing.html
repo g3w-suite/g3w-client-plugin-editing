@@ -1,28 +1,28 @@
 <div class="g3w-editing-panel">
-  <div>
-    <div class="editbtn pull-right"  @click="canRedo ? redo(): null" :class="{'enabled' : canRedo }">
-     <span class="editing-icon" :class="g3wtemplate.font['arrow-right']"></span>
-    </div>
-    <div class="editbtn pull-right" @click="canUndo ? undo(): null" :class="{'enabled' : canUndo }">
-      <span class="editing-icon" :class="g3wtemplate.font['arrow-left']"></span>
-    </div>
-    <div class="editbtn pull-right" @click="canCommit ? commit(): null" :class="{'enabled' : canCommit }">
+  <div style="display: flex; justify-content: flex-end; margin-bottom: 5px">
+    <div style="margin-right: auto;" class="editing-button" @click="canCommit ? commit(): null" :class="{'enabled' : canCommit }">
       <span class="editing-icon" :class="g3wtemplate.font['save']"></span>
     </div>
-    <div style="display:inline-block">
-      <ul class="nav navbar-nav">
-        <!-- Messages: style can be found in dropdown.less-->
-        <li class="dropdown messages-menu">
-          <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-            <span class="g3w-icon" :class="g3wtemplate.font['mail']"></span>
-            <span v-if="state.message" class="label label-info">1</span>
-          </a>
-          <div v-if="state.message" class="dropdown-menu" style="width: 320px;min-height: 100px; padding:5px;">
-              <div class="warning-message" v-html="state.message"></div>
-          </div>
-        </li>
-      </ul>
+    <div class="editing-button " @click="canUndo ? undo(): null" :class="{'enabled' : canUndo }">
+      <span class="editing-icon" :class="g3wtemplate.font['arrow-left']"></span>
     </div>
+    <div class="editing-button "  @click="canRedo ? redo(): null" :class="{'enabled' : canRedo }">
+      <span class="editing-icon" :class="g3wtemplate.font['arrow-right']"></span>
+    </div>
+    <!--<div style="display:inline-block">-->
+      <!--<ul class="nav navbar-nav">-->
+        <!--&lt;!&ndash; Messages: style can be found in dropdown.less&ndash;&gt;-->
+        <!--<li class="dropdown messages-menu">-->
+          <!--<a href="#" class="dropdown-toggle" data-toggle="dropdown">-->
+            <!--<span class="g3w-icon" :class="g3wtemplate.font['mail']"></span>-->
+            <!--<span v-if="state.message" class="label label-info">1</span>-->
+          <!--</a>-->
+          <!--<div v-if="state.message" class="dropdown-menu" style="width: 320px;min-height: 100px; padding:5px;">-->
+              <!--<div class="warning-message" v-html="state.message"></div>-->
+          <!--</div>-->
+        <!--</li>-->
+      <!--</ul>-->
+    <!--</div>-->
   </div>
   <div id="toolboxes">
     <toolbox

@@ -17,13 +17,15 @@
         </div>
       </div>
       <div class="panel-body">
-        <tool
-          :state="toolstate"
-          :resourcesurl="resourcesurl"
-          @stopactivetool="stopActiveTool"
-          @setactivetool="setActiveTool"
-          v-for="toolstate in state.tools">
-        </tool>
+        <div style="display: flex; justify-content: flex-start">
+          <tool
+            :state="toolstate"
+            :resourcesurl="resourcesurl"
+            @stopactivetool="stopActiveTool"
+            @setactivetool="setActiveTool"
+            v-for="toolstate in state.tools">
+          </tool>
+        </div>
         <div class="message" style="margin-top: 5px;" :id="'id_toolbox_messages_'+ state.id">
           <div v-html="state.message"></div>
           <transition name="fade">
