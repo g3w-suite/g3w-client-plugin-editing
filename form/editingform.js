@@ -12,13 +12,11 @@ function EditingFormComponent(options={}) {
   // vado a creare il servizio delle relazioni
   const service = new EditingFormService(relationsOptions);
   // mi restituisce il componente Vue da passare al form
-  const RelationsComponent = service.buildRelationsComponents();
+  const RelationComponents = service.buildRelationComponents();
   // qui vado ad aggiungere il componente relations
   if (service.hasRelations())
-    this.addComponentAfterBody({
-      id: "relations",
-      component:RelationsComponent
-    });
+    this.addFormComponents(RelationComponents);
+
 }
 
 inherit(EditingFormComponent, FormComponent);

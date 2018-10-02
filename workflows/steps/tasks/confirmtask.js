@@ -32,16 +32,25 @@ let Dialogs = {
         },
         CANCEL: {
           label: close ? t("exitnosave") : t("annul"),
-          className: "btn-primary",
+          className: close ? "btn-danger" : "btn-primary",
           callback: function () {
             d.reject();
           }
         }
       };
+      if (close) {
+        buttons.CLOSEMODAL = {
+          label:  t("annul"),
+          className: "btn-primary",
+          callback: function () {
+            dialog.modal('hide');
+          }
+        }
+      }
       // NOW I HAVE TO IMPLEMENT WHAT HAPPEND ID NO ACTION HAPPEND
-      GUI.dialog.dialog({
+      const dialog = GUI.dialog.dialog({
         message: inputs.message,
-        title: t("editing.messages.commit") + " " +inputs.layer.getName() + "?",
+        title: t("editing.messages.commit_feature") + " " +inputs.layer.getName() + "?",
         buttons: buttons
       });
       return d.promise()

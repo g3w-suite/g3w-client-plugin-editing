@@ -1,9 +1,8 @@
-<div id="feature_relations_form"  v-if="relations.length">
+<div id="feature_relations_form">
   <relation
     :relation="relation.relation"
     :relations="relation.relations"
     :resourcesurl="resourcesurl"
-    :formeventbus="formeventbus"
-    v-for="relation in relations" :key="relation.id">
+    :formeventbus="formeventbus">
   </relation>
 </div>

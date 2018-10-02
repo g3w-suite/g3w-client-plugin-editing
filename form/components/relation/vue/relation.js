@@ -109,14 +109,15 @@ const maxSubsetLength = 5;
   mounted: function() {
     this._service.showRelationStyle();
     this.formeventbus.$on('changeinput', this.updateExternalKeyValueRelations);
-    this.formeventbus.$emit('addtovalidate', this.validate);
+    //this.formeventbus.$emit('addtovalidate', this.validate);
     Vue.nextTick(function() {
-      $('.g3w-form-component_relations .g3w-icon[data-toggle="dropdown"]').tooltip();
+      $('.g3w-icon[data-toggle="dropdown"]').tooltip();
     })
   },
   destroyed: function() {
     this._service.hideRelationStyle();
   }
  });
+
 
 module.exports = RelationComponent;

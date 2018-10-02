@@ -1,9 +1,9 @@
 const RelationComponent = require('../../relation/vue/relation');
-const RelationsComponentObj = {
+const RelationsComponent = {
   template: require('./relations.html'),
   components: {
     'relation': RelationComponent
   }
 };
 
-module.exports = RelationsComponentObj;
+module.exports = RelationsComponent;
