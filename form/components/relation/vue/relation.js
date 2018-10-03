@@ -6,7 +6,6 @@ const maxSubsetLength = 5;
  RelationComponent = Vue.extend({
   mixins: [MediaMixin],
   template: require('./relation.html'),
-  props: ['relation', 'relations', 'resourcesurl', 'formeventbus'],
   data: function() {
     return {
       showallfieldsindex: null,
@@ -16,7 +15,8 @@ const maxSubsetLength = 5;
         open_relation_tool: t("form.relations.tooltips.open_relation_tools"),
         unlink_relation: t("form.relations.tooltips.unlink_relation")
       },
-      value: null
+      value: null,
+      placeholdersearch: `${t('dosearch')} ...`
     }
   },
   methods: {
@@ -112,6 +112,17 @@ const maxSubsetLength = 5;
     //this.formeventbus.$emit('addtovalidate', this.validate);
     Vue.nextTick(function() {
       $('.g3w-icon[data-toggle="dropdown"]').tooltip();
+      const relationsTable = $('.g3wform-relation-table').DataTable({
+        "order": [ 0, 'asc' ],
+        columnDefs: [
+          { orderable: false, targets: [-1, -2, -3] }
+        ]
+      });
+      $(".dataTables_filter, .dataTables_length").hide();
+      $('#filterRelation').keyup(function() {
+        relationsTable.search($(this).val()).draw() ;
+      })
+
     })
   },
   destroyed: function() {

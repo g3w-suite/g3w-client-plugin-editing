@@ -1,6 +1,6 @@
 const GUI = g3wsdk.gui.GUI;
 const t = g3wsdk.core.i18n.t;
-const RelationsComponent = require('./components/relations/vue/relations');
+const RelationComponent = require('./components/relation/vue/relation');
 const EdtingFormService = function(options={}) {
   const EditingService = require('../services/editingservice');
   this.state = {
@@ -33,7 +33,7 @@ const EdtingFormService = function(options={}) {
     const relationComponents = [];
     for (const relation of relations) {
       const relationComponent = Vue.extend({
-        mixins: [RelationsComponent],
+        mixins: [RelationComponent],
         name: relation.relation.name,
         methods: {
           getService: function() {
@@ -42,7 +42,8 @@ const EdtingFormService = function(options={}) {
         },
         data: function() {
           return {
-            relation: relation,
+            relation: relation.relation,
+            relations: relation.relations,
             resourcesurl: GUI.getResourcesUrl(),
             formeventbus: self._formEventBus
           }

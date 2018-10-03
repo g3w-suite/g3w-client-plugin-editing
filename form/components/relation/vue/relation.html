@@ -2,10 +2,10 @@
   <div class="box-header with-border" style="margin-button:3px; background-color: #ffffff; ">
     <div class="container" style="width:100%">
       <div class="row">
-        <div class="col-sm-10">
-          <h5 class="relation_title">{{ relation.name }}</h5>
+        <div class="col-sm-4" id="search-box">
+          <input type="text" class="form-control" id="filterRelation" :placeholder="placeholdersearch">
         </div>
-        <div class="col-sm-2" style="padding:0">
+        <div class="col-sm-2 pull-right" style="padding:0">
           <span class="g3w-icon add-link pull-right" align="center"
                 data-toggle="tooltip" data-placement="bottom"
                 :title="tooltips.link_relation" @click="enableAddLinkButtons ? linkRelation() : null"
@@ -30,8 +30,7 @@
               {{attribute.label}}
             </th>
             <th></th>
-            <th></th>
-            <th></th>
+            <th v-t="'tools'"></th>
           </tr>
           </thead>
           <tbody>
@@ -48,49 +47,22 @@
                 </template>
                 <span v-else>{{ getValue(attribute.value) }}</span>
               </td>
-              <td v-show="showAllFieds(index)" :colspan="relationsAttributesSubsetLength(relation)">
-                <table style="background:none !important;">
-                  <tr v-for="field in relationsFields(relation)">
-                    <td class="attr-label">{{field.label}}</td>
-                    <td class="attr-value">
-                      <span v-else>{{ getValue(field.value) }}</span>
-                  </td>
-                  </tr>
-                </table>
-              </td>
               <td class="action-cell">
-                <span
-                  @click="showAllRelationFields(index)"
-                  style="color:#3c8dbc; cursor:pointer;" :class="g3wtemplate.font['link']"
-                  :class="[showallfieldsindex == index ? g3wtemplate.font['minus'] : g3wtemplate.font['ellipsis-h'] ]">
-                </span>
-              </td>
-              <td>
-                <span
+                <div
                   v-if="!fieldrequired"
-                  class="g3w-mini-relation-icon g3w-icon pull-right " :class="g3wtemplate.font['unlink']"
+                  class="g3w-mini-relation-icon g3w-icon" :class="g3wtemplate.font['unlink']"
                   @click="unlinkRelation(index)"
                   data-toggle="tooltip" data-placement="bottom" :title="tooltips.unlink_relation"
                   aria-hidden="true">
-                </span>
+                </div>
               </td>
               <td>
-                <div class="dropup" style="width: 100%">
-                  <span style="width: 40px; height: 40px;"
-                    data-toggle="dropdown" data-placement="bottom" :title="tooltips.open_relation_tool"
-                    aria-haspopup="true" aria-expanded="false"
-                    class="dropdown-toggle g3w-icon pull-right"
-                    aria-hidden="true">
-                    <i style="padding: 5px; padding-top: 7px;" :class="g3wtemplate.font['tools']"></i>
-                  </span>
-                  <div class="dropdown-menu pull-right" style="margin-bottom:5px; box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.5) !important;" :style="{'min-width': getRelationTools().length*40 + 'px !important' }">
-                    <div @click="startTool(relationtool, index)"
-                         v-for="relationtool in getRelationTools()"
-                         data-toggle="tooltip"
-                         data-placement="bottom" :title="relationtool.state.name"
-                         class="editbtn enabled" style="display:inline-block">
-                      <img height="20px" width="20px" :src="resourcesurl + 'images/'+ relationtool.state.icon"/>
-                    </div>
+                <div style="display: flex">
+                  <div class="relation_tool" @click="startTool(relationtool, index)"
+                       v-for="relationtool in getRelationTools()" :key="relationtool.state.name"
+                       data-toggle="tooltip"
+                       data-placement="bottom" :title="relationtool.state.name">
+                    <img height="30px" width="30px" :src="resourcesurl + 'images/'+ relationtool.state.icon"/>
                   </div>
                 </div>
               </td>

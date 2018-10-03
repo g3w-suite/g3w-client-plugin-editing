@@ -14,7 +14,6 @@ const RELATIONTOOLS = {
 const RelationService = function(options = {}) {
   this.relation = options.relation;
   this.relations = options.relations;
-  this._relationTools = [];
   this._isExternalFieldRequired = false;
   this._layerId = this.relation.child;
   this._layerType = this.getLayer().getType();

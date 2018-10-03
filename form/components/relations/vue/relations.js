@@ -3,7 +3,8 @@ const RelationsComponent = {
   template: require('./relations.html'),
   components: {
     'relation': RelationComponent
-  }
+  },
+
 };
 
 module.exports = RelationsComponent;
