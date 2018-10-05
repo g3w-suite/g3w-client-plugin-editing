@@ -87,6 +87,10 @@ inherit(EditingService, PluginService);
 
 let proto = EditingService.prototype;
 
+proto.activeQueryInfo = function() {
+  this._mapService.activeMapControl('query');
+};
+
 proto.setLayersColor = function() {
 
   const RELATIONS_COLOR = [

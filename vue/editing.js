@@ -170,6 +170,7 @@ function PanelComponent(options) {
         this.unmount = function() {
           base(this, 'unmount')
             .then(() => {
+              this._service.activeQueryInfo();
               d.resolve()
             });
         };

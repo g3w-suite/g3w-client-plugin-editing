@@ -5,6 +5,7 @@ const maxSubsetLength = 5;
 
  RelationComponent = Vue.extend({
   mixins: [MediaMixin],
+  name: 'g3w-relation',
   template: require('./relation.html'),
   data: function() {
     return {
@@ -71,11 +72,8 @@ const maxSubsetLength = 5;
       this.value = value;
       return value;
     },
-    isMedia(value) {
-      if (value && typeof  value === 'object' && value.constructor === Object) {
-        return !!value.mime_type;
-      }
-      return false;
+    getFileName(value) {
+      return this.getValue(value).split('/').pop();
     }
   },
   computed: {
@@ -106,13 +104,14 @@ const maxSubsetLength = 5;
       relations: this.relations
     })
   },
+  activated() {},
   mounted: function() {
     this._service.showRelationStyle();
     this.formeventbus.$on('changeinput', this.updateExternalKeyValueRelations);
-    //this.formeventbus.$emit('addtovalidate', this.validate);
-    Vue.nextTick(function() {
+    this.$nextTick(() => {
       $('.g3w-icon[data-toggle="dropdown"]').tooltip();
       const relationsTable = $('.g3wform-relation-table').DataTable({
+        "scrollX": true,
         "order": [ 0, 'asc' ],
         columnDefs: [
           { orderable: false, targets: [-1, -2, -3] }
@@ -122,8 +121,8 @@ const maxSubsetLength = 5;
       $('#filterRelation').keyup(function() {
         relationsTable.search($(this).val()).draw() ;
       })
-
     })
+    //this.formeventbus.$emit('addtovalidate', this.validate);
   },
   destroyed: function() {
     this._service.hideRelationStyle();
