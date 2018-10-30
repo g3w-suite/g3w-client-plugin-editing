@@ -1,0 +1,42 @@
+<div class="toolbox">
+  <div :class="{'disableddiv' : !isLayerReady }" :id="'id_toolbox_'+ state.id">
+    <div @click="select" class="panel panel-primary" :class="{ 'toolboxselected': state.selected }">
+      <div v-show="!isLayerReady" class="bar-loader"></div>
+      <div class="panel-heading container" style="width:100%;" :style="{ background: state.color}" >
+        <div v-if="father" style="margin-right:5px;" class="pull-left enabled dropdown">
+          <span class="g3w-icon" :class="g3wtemplate.font['relation']"></span>
+          <div class="dropdown-content" style="padding: 5px;">
+            <div v-for="dependency in state.editing.dependencies" style="color: black" >{{ dependency }}</div>
+          </div>
+        </div>
+        <div class="panel-title" :class="[father ? 'col-md-6' : 'col-md-8']">
+          {{ state.title }}
+        </div>
+        <div @click="toggleEditing" class="editbtn pull-right" :class="{'enabled' : isLayerReady,  'g3w-icon-toggled' : state.editing.on}" >
+          <span style="font-size: 1.1em; padding: 5px;"  :class="g3wtemplate.font['pencil']"></span>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div style="display: flex; justify-content: flex-start">
+          <tool
+            :state="toolstate"
+            :resourcesurl="resourcesurl"
+            @stopactivetool="stopActiveTool"
+            @setactivetool="setActiveTool"
+            v-for="toolstate in state.tools">
+          </tool>
+        </div>
+        <div class="message" style="margin-top: 5px;" :id="'id_toolbox_messages_'+ state.id">
+          <div v-html="state.message"></div>
+          <transition name="fade">
+            <toolsoftool v-if="showtoolsoftool" :tools="state.toolsoftool"></toolsoftool>
+          </transition>
+          <div class="toolbox_help_message" v-html="toolhelpmessage"></div>
+          <div v-t="'editing.messages.loading_data'" v-show="state.loading">
+            <img style="padding-left: 3px;" :src="resourcesurl + '/images/loader.svg'">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

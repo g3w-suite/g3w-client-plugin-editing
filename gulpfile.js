@@ -1,32 +1,20 @@
-var path = require('path');
 //Gulp
-var gulp   = require('gulp');
-var concat = require('gulp-concat');
-var streamify = require('gulp-streamify');
-var rename = require('gulp-rename');
-var source = require('vinyl-source-stream');
-var buffer = require('vinyl-buffer');
-var flatten = require('gulp-flatten');
-var useref = require('gulp-useref');
-var filter = require('gulp-filter');
-var gulpif = require('gulp-if');
-var uglify = require('gulp-uglify');
-var chalk = require('chalk');
-var watch = require('gulp-watch');
-var cleanCSS = require('gulp-clean-css');
-var gutil = require("gulp-util");
-var less = require('gulp-less');
-var jshint = require('gulp-jshint');
-var browserify = require('browserify');
-var watchify = require('watchify');
-var stringify = require('stringify');
-var sourcemaps = require('gulp-sourcemaps');
-var browserSync = require('browser-sync');
-
-process.env.NODE_PATH = '../../../node_modules/';
-var production = false;
+const gulp   = require('gulp');
+const rename = require('gulp-rename');
+const source = require('vinyl-source-stream');
+const buffer = require('vinyl-buffer');
+const gulpif = require('gulp-if');
+const uglify = require('gulp-uglify');
+const gutil = require("gulp-util");
+const browserify = require('browserify');
+const babelify = require('babelify');
+const watchify = require('watchify');
+const vueify = require('vueify');
+const stringify = require('stringify');
+const sourcemaps = require('gulp-sourcemaps');
 
 gulp.task('browserify', [], function() {
+  var production = false;
   var bundler = browserify('./index.js', {
     basedir: "./",
     paths: ["./"],
@@ -37,6 +25,10 @@ gulp.task('browserify', [], function() {
   if (!production) {
     bundler = watchify(bundler);
   }
+  bundler.transform(vueify)
+  .transform(babelify, {
+    babelrc: true
+  });
   bundler.transform(stringify, {
     appliesTo: { includeExtensions: ['.html'] }
   });

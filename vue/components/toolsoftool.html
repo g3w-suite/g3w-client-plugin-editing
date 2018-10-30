@@ -1,0 +1,11 @@
+<div id="toolsoftoolcontainer" style="display: flex;
+    margin: 5px;
+    padding: 5px;
+    border-radius: 5px;">
+    <component v-for="tool in tools"
+      :key="tool.type"
+      :is="tool.type"
+      :options="tool.options">
+    </component>
+  </div>
+</div>

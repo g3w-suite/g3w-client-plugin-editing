@@ -1,31 +1,20 @@
 var base = g3wsdk.core.utils.base;
 var inherit = g3wsdk.core.utils.inherit;
-var EditingComponent = g3wsdk.gui.vue.EditingComponent;
+var i18nService = g3wsdk.core.i18n;
+var EditingComponent = require('./vue/editing');
 
-function EditingPluginComponent(options) {
-  var options = options || {};
-  //configurazione dei layer che mi serve per poter creare la configurazione
-  // del panello generla editing
-  var layerConfig = options.layersConfig;
+function EditingPanelComponent(options) {
+  options = options || {};
   // editortoolsbars
   options.id = "editing-panel";
+  options.title = i18nService.t("editing_data");
   options.name = "Gestione dati EDITING";
-  options.editorsToolBars = layerConfig.editorsToolBars;
-  // oggetto ozioni che deve essere passato al service dell'editing component
-  options.serviceOptions = {
-    layerCodes: layerConfig.layerCodes,
-    layers: layerConfig.layers,
-    editorClass: layerConfig.editorClass,
-    editingConstraints: {
-      resolution: 20 // vincolo di risoluzione massima
-    },
-    // attributo che permette di stabilire qual campo del layer deve essere preso per
-    // essere passato all'api url editing per fare config, vector data e unlock
-    editingApiField: 'id'
-  };
+  options.toolboxes = options.toolboxes || null;
   base(this, options)
 }
 
-inherit(EditingPluginComponent, EditingComponent);
+inherit(EditingPanelComponent, EditingComponent);
 
-module.exports = EditingPluginComponent;
+module.exports = EditingPanelComponent;
+
+
