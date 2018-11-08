@@ -93,7 +93,6 @@ const maxSubsetLength = 5;
       this._service.showRelationStyle();
       Vue.nextTick(function() {
         // con l'aggiunta di relazioni vado a fare il nano scroll
-        $(".g3w-form-component_relations .nano").nanoScroller();
       })
     }
   },

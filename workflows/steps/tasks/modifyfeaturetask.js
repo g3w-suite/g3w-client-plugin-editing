@@ -1,6 +1,6 @@
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
-const PickFeatureInteraction = g3wsdk.ol3.interactions.PickFeatureInteraction;
+const PickFeatureInteraction = g3wsdk.ol.interactions.PickFeatureInteraction;
 
 const EditingTask = require('./editingtask');
 

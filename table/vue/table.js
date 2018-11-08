@@ -48,7 +48,6 @@ const InternalComponent = Vue.extend({
   watch: {
     'state.relations' : function() {
       this.$nextTick(function() {
-        $(".nano").nanoScroller();
       });
     }
   },

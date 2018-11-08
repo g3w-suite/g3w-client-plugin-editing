@@ -1,6 +1,6 @@
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
-const DeleteInteraction = g3wsdk.ol3.interactions.DeleteFeatureInteraction;
+const DeleteInteraction = g3wsdk.ol.interactions.DeleteFeatureInteraction;
 const EditingTask = require('./editingtask');
 
 function DeleteFeatureTask(options) {

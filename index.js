@@ -30,15 +30,12 @@ const _Plugin = function() {
   this.setupGui = function() {
     if (_.isBoolean(this.config.visible) && !this.config.visible)
       return false;
-    let self = this;
     let toolsComponent = GUI.getComponent('tools');
     let toolsService = toolsComponent.getService();
-    toolsService.addTools(0, 'EDITING', [
-      {
-        name: i18nService.t("editing_data"),
-        action: _.bind(self.showEditingPanel, this)
-      }
-    ])
+    toolsService.addTools(0, 'EDITING', [{
+      name: i18nService.t("editing_data"),
+      action: _.bind(this.showEditingPanel, this)
+    }])
   };
 
   //method to show editing panel
