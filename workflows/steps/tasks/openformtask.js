@@ -30,7 +30,7 @@ const proto = OpenFormTask.prototype;
 
 
 proto._getFieldUniqueValuesFromServer = function(layer, uniqueFields) {
-  const fieldsName = _.map(uniqueFields, function(field) {
+  const fieldsName = _.map(uniqueFields, (field) => {
     return field.name
   });
   layer.getWidgetData({
@@ -66,7 +66,6 @@ proto._getForm = function(inputs, context) {
   this._editingLayer = inputs.layer;
   this._pk = this._originalLayer.getPk();
   this._layerName = this._originalLayer.getName();
-
   // vado a prendere l'ultima feature
   this._feature = inputs.features[inputs.features.length - 1];
   this._originalFeature = this._feature.clone();

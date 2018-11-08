@@ -15,15 +15,17 @@ const _Plugin = function() {
     // check if exist any layer to edit
     if (this.service.loadPlugin()) {
       //inizialize service
-     this.service.init(this.config);
-      //plugin registry
-      if (this.registerPlugin(this.config.gid)) {
-        if (!GUI.ready) {
-          GUI.on('ready',_.bind(this.setupGui, this));
-        } else {
-          this.setupGui();
+      this.service.init(this.config);
+      this.service.on('ready', () => {
+        //plugin registry
+        if (this.registerPlugin(this.config.gid)) {
+          if (!GUI.ready) {
+            GUI.on('ready',_.bind(this.setupGui, this));
+          } else {
+            this.setupGui();
+          }
         }
-      }
+      })
     }
   };
   //setup plugin interface

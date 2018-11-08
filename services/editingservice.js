@@ -1,4 +1,5 @@
 const inherit = g3wsdk.core.utils.inherit;
+const XHR = g3wsdk.core.utils.XHR;
 const base =  g3wsdk.core.utils.base;
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 const PluginService = g3wsdk.core.plugin.PluginService;
@@ -48,38 +49,48 @@ function EditingService() {
     // setto la configurazione del plugin
     this.config = config;
     // oggetto contenente tutti i layers in editing
-    this._editableLayers = {};
+    this._editableLayers = {
+      [Symbol.for('layersarray')]: []
+    };
     // contiene tutti i toolbox
     this._toolboxes = [];
     // restto
     this.state.toolboxes = [];
-    let editableLayer;
-    let layerId;
     // sono i layer originali caricati dal progetto e messi nel catalogo
     let layers = this._getEditableLayersFromCatalog();
+    let editingLayersLenght = layers.length;
     //ciclo su ogni layers editiabile
     for (const layer of layers) {
-      layerId = layer.getId();
+      const layerId = layer.getId();
+      this._editableLayers[layerId] = {};
       // vado a chiamare la funzione che mi permette di
       // estrarre la versione editabile del layer di partenza (es. da imagelayer a vector layer, table layer/tablelayer etc..)
-      editableLayer = layer.getLayerForEditing();
-      // se di tipo table assesgno sempre un solo colore
-      //color = layer.getType() == Layer.LayerTypes.TABLE ? "#cc3300" : COLORS.splice(0,1).pop();
-      // setto il colore che mi servrà per colorarare si il vettoriale che il toolbox
-      //editableLayer.setColor(color);
+      const editableLayer = layer.getLayerForEditing();
+      if (editableLayer.isReady()) {
+        editingLayersLenght-=1;
+        this._checkLayerWidgets(editableLayer);
+      }
+      editableLayer.on('layer-config-ready', () => {
+        this._checkLayerWidgets(editableLayer);
+        editingLayersLenght-=1;
+        if (editingLayersLenght === 0) {
+          // set toolbox colors
+          this.setLayersColor();
+          // after sadd layers to layerstore
+          this._layersstore.addLayers(this.getLayers());
+          // vado a creare i toolboxes
+          this._buildToolBoxes();
+          // create a dependencies tree
+          this._createToolBoxDependencies();
+          this.emit('ready');
+        }
+      });
       // vado ad aggiungere ai layer editabili
       this._editableLayers[layerId] = editableLayer;
+      this._editableLayers[Symbol.for('layersarray')].push(editableLayer);
       // aggiungo all'array dei vectorlayers se per caso mi servisse
       this._sessions[layerId] = null;
     }
-    // set toolbox colors
-    this.setLayersColor();
-    // after sadd layers to layerstore
-    this._layersstore.addLayers(Object.values(this._editableLayers));
-    // vado a creare i toolboxes
-    this._buildToolBoxes();
-    // create a dependencies tree
-    this._createToolBoxDependencies();
   }
 }
 
@@ -90,6 +101,7 @@ let proto = EditingService.prototype;
 proto.activeQueryInfo = function() {
   this._mapService.activeMapControl('query');
 };
+
 
 proto.setLayersColor = function() {
 
@@ -146,27 +158,28 @@ proto.setLayersColor = function() {
   ];
   let color;
   let childrenLayers;
-  Object.entries(this._editableLayers).forEach(([layerId, layer]) => {
+  for (const layer of this.getLayers()) {
     // verifico se è un layer è padre e se ha figli in editing
     childrenLayers = this._layerChildrenRelationInEditing(layer);
     if (layer.isFather() && childrenLayers.length) {
       color = RELATIONS_COLOR.splice(0,1).pop().reverse();
       !layer.getColor() ? layer.setColor(color.splice(0,1).pop()): null;
       childrenLayers.forEach((layerId) => {
-        !this._editableLayers[layerId].getColor() ? this._editableLayers[layerId].setColor(color.splice(0,1).pop()): null;
+        const layer = this.getLayerById(layerId);
+        !layer.getColor() ? layer.setColor(color.splice(0,1).pop()): null;
       });
     }
-  });
-  Object.entries(this._editableLayers).forEach(([layerId, layer]) => {
-    !this._editableLayers[layerId].getColor() ? layer.setColor(LAYERS_COLOR.splice(0,1).pop()): null;
-  })
+  }
+  for (const layer of this.getLayers()) {
+    !layer.getColor() ? layer.setColor(LAYERS_COLOR.splice(0,1).pop()): null;
+  }
 };
 
 proto._layerChildrenRelationInEditing = function(layer) {
   let relations = layer.getChildren();
   let childrenrealtioninediting = [];
   relations.forEach((relation) => {
-    if (this._editableLayers[relation])
+    if (this.getLayerById(relation))
       childrenrealtioninediting.push(relation);
   });
   return childrenrealtioninediting;
@@ -213,14 +226,13 @@ proto.getEditingLayer = function(id) {
 };
 
 proto._buildToolBoxes = function() {
-  let toolbox;
-  _.forEach(this._editableLayers, (layer) => {
+  for (const layer of this.getLayers()) {
     // la toolboxes costruirà il toolboxex adatto per quel layer
     // assegnadogli le icone dei bottonii etc ..
-    toolbox = ToolBoxesFactory.build(layer);
+    const toolbox = ToolBoxesFactory.build(layer);
     // vado ad aggiungere la toolbox
     this.addToolBox(toolbox);
-  })
+  }
 };
 
 //funzione che server per aggiungere un editor
@@ -231,29 +243,38 @@ proto.addToolBox = function(toolbox) {
   this.state.toolboxes.push(toolbox.state);
 };
 
+proto._checkLayerWidgets = function(layer) {
+  const fields = layer.getEditingFields();
+  for (let i=0; i < fields.length; i++) {
+    console.log(fields[i].input.type)
+  }
+  //console.log(EditingService.EDITING_FIELDS_TYPE)
+};
+
 // funzione che crea le dipendenze
 proto._createToolBoxDependencies = function() {
-  let layer;
   this._toolboxes.forEach((toolbox) => {
-    layer = toolbox.getLayer();
+    const layer = toolbox.getLayer();
     toolbox.setFather(layer.isFather());
     toolbox.state.editing.dependencies = this._getToolBoxEditingDependencies(layer);
     if (layer.isFather() && toolbox.hasDependencies() ) {
-      _.forEach(layer.getRelations().getRelations(), (relation) => {
+      const layerRelations = layer.getRelations().getRelations();
+      for (const relationName in layerRelations) {
+        const relation = layerRelations[relationName];
         toolbox.addRelation(relation);
-      })
+      }
     }
   })
 };
 
 proto.isFieldRequired = function(layerId, fieldName) {
-  return this._editableLayers[layerId].isFieldRequired(fieldName);
+  return this.getLayerById(layerId).isFieldRequired(fieldName);
 };
 
 proto._getToolBoxEditingDependencies = function(layer) {
   let relationLayers = _.merge(layer.getChildren(), layer.getFathers());
   let toolboxesIds = relationLayers.filter((layerName) => {
-    return !!this._editableLayers[layerName]
+    return !!this.getLayerById(layerName);
   });
   return toolboxesIds;
 };
@@ -282,6 +303,10 @@ proto._getEditableLayersFromCatalog = function() {
     EDITABLE: true
   });
   return layers;
+};
+
+proto.getLayers = function() {
+  return this._editableLayers[Symbol.for('layersarray')];
 };
 
 proto.getCurrentWorflow = function() {
@@ -332,15 +357,22 @@ proto.loadPlugin = function() {
   return this._load = !!this._getEditableLayersFromCatalog().length; // mi dice se ci sono layer in editing e quindi da caricare il plugin
 };
 
-// ritorna i layer editabili presenti nel layerstore dell'editing
-proto.getLayers = function() {
-  return this._editableLayers;
-};
-
 // funzione che restituisce l'editing layer estratto dal layer del catalogo
 // vectorLayer lel caso di un imageLayere e tablelayer  nel cso di un table lauer
 proto.getLayerById = function(layerId) {
   return this._editableLayers[layerId];
+};
+
+proto.beforeEditingStart = function({id} = {}) {
+  return new Promise((resolve, reject) => {
+    resolve()
+  })
+};
+
+proto.afterEditingStart = function({id}= {}) {
+  return new Promise((resolve, reject) => {
+    resolve()
+  })
 };
 
 // vado a recuperare il toolbox a seconda del suo id
@@ -411,7 +443,7 @@ proto.getRelationsInEditing = function(relations, feature, isNew) {
   let relationsinediting = [];
   let relationinediting;
   relations.forEach((relation) => {
-    if (this._editableLayers[relation.getChild()]) {
+    if (this.getLayerById(relation.getChild())) {
       // aggiungo lo state della relazione
       relationinediting = {
         relation:relation.getState(),
@@ -429,7 +461,7 @@ proto.getRelationsInEditing = function(relations, feature, isNew) {
 // qui devo verificare sia l condizione del padre che del figlio
 proto.stopSessionChildren = function(layerId) {
   // caso padre verifico se i figli sono in editing o meno
-  let relationLayerChildren = this._editableLayers[layerId].getChildren();
+  let relationLayerChildren = this.getLayerById(layerId).getChildren();
   let toolbox;
   relationLayerChildren.forEach((id) => {
     toolbox = this.getToolBoxById(id);
@@ -442,7 +474,7 @@ proto.fatherInEditing = function(layerId) {
   let inEditing = false;
   let toolbox;
   // caso padre verifico se ci sono padri in editing o meno
-  let relationLayerFathers = this._editableLayers[layerId].getFathers();
+  let relationLayerFathers = this.getLayerById(layerId).getFathers();
   relationLayerFathers.forEach((id) => {
     toolbox = this.getToolBoxById(id);
     if (toolbox && toolbox.inEditing()) {
@@ -477,9 +509,9 @@ proto.getLayersDependencyFeatures = function(layerId) {
   /*
    IMPORTANTE: PER EVITARE PROBLEMI È IMPORTANTE CHE I LAYER DIPENDENTI SIANO A SUA VOLTA EDITABILI
    */
-  let children = this._editableLayers[layerId].getChildren();
+  let children = this.getLayerById(layerId).getChildren();
   let relationChildLayers = children.filter((id) => {
-    return !!this._editableLayers[id];
+    return !!this.getLayerById(id);
   });
   // se ci sono layer figli dipendenti
   if (!_.isNil(relationChildLayers) && relationChildLayers.length) {
@@ -493,7 +525,7 @@ proto.getLayersDependencyFeatures = function(layerId) {
     let options;
     // cliclo sulle dipendenze create
     relationChildLayers.forEach((id) => {
-      options = this.createEditingDataOptions(this._editableLayers[id].getType());
+      options = this.createEditingDataOptions(this.getLayerById(id).getType());
       session = this._sessions[id];
       toolbox = this.getToolBoxById(id);
       //setto la proprietà a loading
@@ -658,6 +690,8 @@ proto.commit = function(toolbox, close=false) {
     });
   return d.promise();
 };
+
+EditingService.EDITING_FIELDS_TYPE = ['unique'];
 
 
 module.exports = new EditingService;
