@@ -2,7 +2,7 @@ const inherit = g3wsdk.core.utils.inherit;
 const base = g3wsdk.core.utils.base;
 const Plugin = g3wsdk.core.plugin.Plugin;
 const GUI = g3wsdk.gui.GUI;
-const i18nService = g3wsdk.core.i18n;
+const t = g3wsdk.core.i18n.t;
 const Service = require('./services/editingservice');
 const EditingPanel = require('./panel');
 
@@ -32,12 +32,13 @@ const _Plugin = function() {
   this.setupGui = function() {
     if (_.isBoolean(this.config.visible) && !this.config.visible)
       return false;
-    let toolsComponent = GUI.getComponent('tools');
-    let toolsService = toolsComponent.getService();
-    toolsService.addTools(0, 'EDITING', [{
-      name: i18nService.t("editing_data"),
-      action: _.bind(this.showEditingPanel, this)
-    }])
+    this.config.name = this.config.name ||  t("editing_data");
+    this.addTools({
+        action: this.showEditingPanel
+      }, {
+        position: 0,
+        title: 'EDITING'
+      })
   };
 
   //method to show editing panel
@@ -51,6 +52,7 @@ const _Plugin = function() {
   };
 
   this.unload = function() {
+    this.removeTools();
     this.service.clear()
   }
 };
