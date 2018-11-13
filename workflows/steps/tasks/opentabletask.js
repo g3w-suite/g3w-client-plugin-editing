@@ -1,6 +1,6 @@
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
-const t = g3wsdk.core.i18n.t;
+const t = g3wsdk.core.i18n.tPlugin;
 const GUI = g3wsdk.gui.GUI;
 const TableComponent = require('../../../table/vue/table');
 const EditingTask = require('./editingtask');
@@ -21,7 +21,7 @@ const proto = OpenTableTask.prototype;
 
 // metodo eseguito all'avvio del tool
 proto.run = function(inputs, context) {
-  console.log('Open Table Task task run.......');
+  //console.log('Open Table Task task run.......');
   const d = $.Deferred();
   const originalLayer = context.layer;
   const layerName = originalLayer.getName();
@@ -59,7 +59,7 @@ proto._generateFormId = function(layerName) {
 
 // metodo eseguito alla disattivazione del tool
 proto.stop = function() {
-  console.log('stop open table task ...');
+  //console.log('stop open table task ...');
   this._isContentChild ? GUI.popContent() : GUI.closeForm();
   return true;
 };

@@ -1,12 +1,13 @@
-var inherit = g3wsdk.core.utils.inherit;
-var base =  g3wsdk.core.utils.base;
-var EditingStep = require('./editingstep');
-var LinkRelationTask = require('./tasks/linkrelationtask');
+const inherit = g3wsdk.core.utils.inherit;
+const base =  g3wsdk.core.utils.base;
+const t = g3wsdk.core.i18n.tPlugin;
+const EditingStep = require('./editingstep');
+const LinkRelationTask = require('./tasks/linkrelationtask');
 
-var LinkRelationStep = function(options) {
+const LinkRelationStep = function(options) {
   options = options || {};
   options.task = new LinkRelationTask();
-  options.help = "editing.steps.help.select_feature_to_relation";
+  options.help = t("editing.steps.help.select_feature_to_relation");
   base(this, options)
 };
 

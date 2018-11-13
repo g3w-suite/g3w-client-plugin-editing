@@ -32,7 +32,7 @@
             <toolsoftool v-if="showtoolsoftool" :tools="state.toolsoftool"></toolsoftool>
           </transition>
           <div class="toolbox_help_message" v-html="toolhelpmessage"></div>
-          <div v-t="'editing.messages.loading_data'" v-show="state.loading">
+          <div v-t-plugin="'editing.messages.loading_data'" v-show="state.loading">
             <img style="padding-left: 3px;" :src="resourcesurl + '/images/loader.svg'">
           </div>
         </div>

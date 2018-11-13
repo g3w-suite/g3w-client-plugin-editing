@@ -1,5 +1,5 @@
 const GUI = g3wsdk.gui.GUI;
-const t = g3wsdk.core.i18n.t;
+const t = g3wsdk.core.i18n.tPlugin;
 
 const TableService = function(options = {}) {
   this._features = options.features || []; // original features

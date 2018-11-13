@@ -1,12 +1,13 @@
-var inherit = g3wsdk.core.utils.inherit;
-var base =  g3wsdk.core.utils.base;
-var EditingStep = require('./editingstep');
-var ModifyGeometryVertexTask = require('./tasks/modifygeometryvertextask');
+const inherit = g3wsdk.core.utils.inherit;
+const base =  g3wsdk.core.utils.base;
+const t = g3wsdk.core.i18n.tPlugin;
+const EditingStep = require('./editingstep');
+const ModifyGeometryVertexTask = require('./tasks/modifygeometryvertextask');
 
-var ModifyGeometryVertexStep = function(options={snap: true}) {
+const ModifyGeometryVertexStep = function(options={snap: true}) {
   const task = new ModifyGeometryVertexTask(options);
   options.task = task;
-  options.help = "editing.steps.help.edit_feature_vertex";
+  options.help = t("editing.steps.help.edit_feature_vertex");
   base(this, options)
 };
 

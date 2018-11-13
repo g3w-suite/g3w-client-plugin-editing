@@ -2,8 +2,8 @@
   <div class="box-header with-border" style="margin-button:3px; background-color: #ffffff; ">
     <div class="container" style="width:100%">
       <div class="row">
-        <div class="col-sm-4" id="search-box">
-          <input type="text" class="form-control" id="filterRelation" :placeholder="placeholdersearch">
+        <div class="col-sm-4" id="search-box" >
+          <input v-if="relationsLength" type="text" class="form-control" id="filterRelation" :placeholder="placeholdersearch">
         </div>
         <div class="col-sm-2 pull-right" style="padding:0">
           <span class="g3w-icon add-link pull-right" align="center"
@@ -51,18 +51,18 @@
               <td class="action-cell">
                 <div
                   v-if="!fieldrequired"
-                  class="g3w-mini-relation-icon g3w-icon" :class="g3wtemplate.font['unlink']"
+                  class="g3w-mini-relation-icon skin-tooltip-left g3w-icon" :class="g3wtemplate.font['unlink']"
                   @click="unlinkRelation(index)"
-                  data-toggle="tooltip" data-placement="bottom" :title="tooltips.unlink_relation"
+                  data-toggle="tooltip" data-placement="left" :title="tooltips.unlink_relation"
                   aria-hidden="true">
                 </div>
               </td>
               <td>
                 <div style="display: flex">
-                  <div class="editbtn enabled" @click="startTool(relationtool, index)"
+                  <div class="skin-tooltip-left editbtn enabled" @click="startTool(relationtool, index)"
                        v-for="relationtool in getRelationTools()" :key="relationtool.state.name"
                        data-toggle="tooltip"
-                       data-placement="bottom" :title="relationtool.state.name">
+                       data-placement="left" :title="relationtool.state.name">
                     <img height="20px" width="20px" :src="resourcesurl + 'images/'+ relationtool.state.icon"/>
                   </div>
                 </div>

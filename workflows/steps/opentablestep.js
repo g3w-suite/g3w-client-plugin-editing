@@ -1,5 +1,6 @@
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
+const t = g3wsdk.core.i18n.tPlugin;
 const Step = g3wsdk.core.workflow.Step;
 const OpenTableTask = require('./tasks/opentabletask');
 
@@ -7,7 +8,7 @@ const OpenTableTask = require('./tasks/opentabletask');
 const OpenTableStep = function(options) {
   options = options || {};
   options.task = new OpenTableTask();
-  options.help = "editing.steps.help.edit_table";
+  options.help = t("editing.steps.help.edit_table");
   base(this, options)
 };
 

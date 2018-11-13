@@ -72,7 +72,7 @@ proto.run = function(inputs, context) {
       });
       // viene settato l'evento drawend
       this.drawInteraction.on('drawend', function(e) {
-        console.log('Drawend .......');
+        //console.log('Drawend .......');
         // vado ad assegnare le proprià del layer alla nuova feature
         _.forEach(attributes, function(attribute) {
           e.feature.set(attribute.name, null);
@@ -108,7 +108,7 @@ proto.run = function(inputs, context) {
 
 // metodo eseguito alla disattivazione del tool
 proto.stop = function() {
-  console.log('stop add task ...');
+  //console.log('stop add task ...');
   //rimuove e setta a null la _snapInteraction
   if (this._snapInteraction) {
      this.removeInteraction(this._snapInteraction);

@@ -14,7 +14,7 @@ inherit(DeleteFeatureTask, EditingTask);
 
 const proto = DeleteFeatureTask.prototype;
 
-/* BRUTTISSIMO! Tocca ridefinire tutte le parti internet di OL3 non esposte dalle API */
+/* BRUTTISSIMO! */
 
 ol.geom.GeometryType = {
   POINT: 'Point',
@@ -95,7 +95,7 @@ styles[ol.geom.GeometryType.GEOMETRY_COLLECTION] = _.concat(styles[ol.geom.Geome
 // run del tool di delete feature
 // che ritorna una promessa
 proto.run = function(inputs, context) {
-  console.log('Delete task run.......');
+  //console.log('Delete task run.......');
   var self = this;
   var d = $.Deferred();
   var editingLayer = inputs.layer;
@@ -156,7 +156,7 @@ proto.run = function(inputs, context) {
 };
 
 proto.stop = function() {
-  console.log('Stop delete task ....');
+  //console.log('Stop delete task ....');
   return new Promise((resolve, reject) => {
     this._selectInteraction.getFeatures().clear();
     this.removeInteraction(this._selectInteraction);

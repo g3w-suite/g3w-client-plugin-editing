@@ -1,5 +1,5 @@
 const GUI = g3wsdk.gui.GUI;
-const t = g3wsdk.core.i18n.t;
+const t = g3wsdk.core.i18n.tPlugin;
 const RelationComponent = require('./components/relation/vue/relation');
 const EdtingFormService = function(options={}) {
   const EditingService = require('../services/editingservice');

@@ -1,6 +1,6 @@
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
-const t = g3wsdk.core.i18n.t;
+const t = g3wsdk.core.i18n.tPlugin;
 const GUI = g3wsdk.gui.GUI;
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 const EditingTask = require('./editingtask');
@@ -80,22 +80,21 @@ proto._getForm = function(inputs, context) {
   return GUI.showContentFactory('form');
 };
 
-proto._cancelFnc = function(promise, inputs) {
-  GUI.setModal(false);
-  promise.reject(inputs);
+proto._cancelFnc = function(promise) {
+  return function() {
+    GUI.setModal(false);
+    promise.reject();
+  }
 };
 
 proto._saveFnc = function(promise, inputs) {
   return function(fields) {
     const newFeature = this._feature;
     const layerId = this._originalLayer.getId();
-    // vado a settare per quel layer i valori ai campi
     this._originalLayer.setFieldsWithValues(newFeature, fields);
-    // verifico se non è nuovo
     if (!newFeature.isNew()) {
       this._session.pushUpdate(layerId, newFeature, this._originalFeature);
     } else {
-      //vado ad aggiungere la feature
       if (this._originalLayer.isPkEditable())
         _.forEach(fields, function (field) {
           if (field.name == newFeature.getPk())
@@ -115,8 +114,8 @@ proto.startForm = function(options = {}) {
   const Form = this._getForm(inputs, context);
   const formService = Form({
     formComponent: formComponent,
-    title: t("editing_attributes") + " " + this._layerName,
-    name: t("editing_attributes") + " " + this._layerName,
+    title: t("editing.editing_attributes") + " " + this._layerName,
+    name: t("editing.editing_attributes") + " " + this._layerName,
     id: this._generateFormId(this._layerName),
     dataid: this._layerName,
     layer: this._originalLayer,
@@ -133,18 +132,18 @@ proto.startForm = function(options = {}) {
     push: this._isContentChild, // indica se posso aggiungere form
     showgoback: !this._isContentChild, // se è figlo evito di visualizzare il go back
     buttons:[{
-      title: t("save"),
+      title: t("editing.form.buttons.save"),
       type: "save",
       class: "btn-success",
       cbk: _.bind(this._saveFnc(promise, inputs), this)
     }, {
-      title: t("cancel"),
+      title: t("editing.form.buttons.cancel"),
       type: "cancel",
       class: "btn-primary",
-      cbk: _.bind(this._cancelFnc, this, promise, inputs)
+      cbk: _.bind(this._cancelFnc(promise),this)
     }]
   });
-  context.formService = formService;
+  WorkflowsStack.getCurrent().setContextService(formService);
 };
 
 // metodo eseguito all'avvio del tool

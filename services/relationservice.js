@@ -1,5 +1,5 @@
 const GUI = g3wsdk.gui.GUI;
-const t = g3wsdk.core.i18n.t;
+const t = g3wsdk.core.i18n.tPlugin;
 
 // what we can do with each type of relation element
 const RELATIONTOOLS = {
@@ -18,10 +18,11 @@ const RelationService = function(options = {}) {
   this._layerId = this.relation.child;
   this._layerType = this.getLayer().getType();
   this._relationTools = [];
-  this._add_link_workflow = null; // sono i workflow link e adda che verranmno settati in base al tipo di layer
+  this._parentWorkFlow = this.getCurrentWorkflow();
+  this._add_link_workflow = null; // sono i workflow link e add che verranmno settati in base al tipo di layer
   this._isExternalFieldRequired = this._checkIfExternalFieldRequired();
   // prendo il valore del campo se esiste come proprietà altrimenti prendo il valore della chiave primaria
-  this._currentFeatureFatherFieldValue = this.relation.fatherField in this.getCurrentWorkflow().feature.getProperties() ? this.getCurrentWorkflow().feature.get(this.relation.fatherField) : this.getCurrentWorkflow().feature.getId();
+  this._currentFeatureFatherFieldValue = this.relation.fatherField in this.getCurrentWorkflowData().feature.getProperties() ? this.getCurrentWorkflowData().feature.get(this.relation.fatherField) : this.getCurrentWorkflowData().feature.getId();
   //get type of relation
   const relationLayerType = this.getLayer().getType() == 'vector' ? this.getLayer().getGeometryType() : 'table';
   let allrelationtools;
@@ -119,12 +120,17 @@ proto._highlightRelationSelect = function(relation) {
 
 // funzione che lachia la funzione in base al tipo di layer
 proto.startTool = function(relationtool, index) {
-  if (this._layerType == 'vector') {
-    return this.startVectorTool(relationtool, index);
-  }
-  if (this._layerType == 'table') {
-    return this.startTableTool(relationtool, index);
-  }
+  return new Promise((resolve, reject) => {
+    const toolPromise = (this._layerType === 'vector') && this.startVectorTool(relationtool, index) ||
+      (this._layerType === 'table') && this.startTableTool(relationtool, index);
+    toolPromise.then(() => {
+      this.emitEventToParentWorkFlow();
+      resolve();
+    }).fail((err) => {
+      reject(err)
+    })
+  })
+  
 };
 
 proto.startTableTool = function(relationtool, index) {
@@ -137,14 +143,18 @@ proto.startTableTool = function(relationtool, index) {
     features: [relationfeature]
   });
   let workflow;
+  // delete feature
   if (relationtool.state.id == 'deletefeature') {
     GUI.dialog.confirm(t("editing.messages.delete_feature"), (result) => {
       if (result) {
-        this.getCurrentWorkflow().session.pushDelete(this._layerId, relationfeature);
+        this.getCurrentWorkflowData().session.pushDelete(this._layerId, relationfeature);
         this.relations.splice(index, 1);
         featurestore.removeFeature(relationfeature);
+        d.resolve(result);
+      } else {
+        d.reject(result);
       }
-      d.resolve();
+
     });
   }
   if (relationtool.state.id == 'editattributes') {
@@ -160,10 +170,10 @@ proto.startTableTool = function(relationtool, index) {
               field.value = _field.value;
           })
         });
-        d.resolve(output);
+        d.resolve(true);
       })
       .fail((err) => {
-        d.reject(err)
+        d.reject(false)
       })
       .always(() => {
         workflow.stop();
@@ -185,15 +195,11 @@ proto.startVectorTool = function(relationtool, index) {
     DeleteFeatureWorkflow : require('../workflows/deletefeatureworkflow'),
     EditFeatureAttributesWorkflow : require('../workflows/editfeatureattributesworkflow')
   };
-  let workflow;
-  let start;
+
   GUI.setModal(false);
 
-  Object.entries(workflows).forEach(([key, classworkflow]) => {
-    if (relationtool.getOperator() instanceof classworkflow) {
-      workflow = new classworkflow();
-      return false;
-    }
+  const workflow = Object.entries(workflows).find(([key, classworkflow]) => {
+    return relationtool.getOperator() instanceof classworkflow
   });
 
   const options = this._createWorkflowOptions({
@@ -206,16 +212,14 @@ proto.startVectorTool = function(relationtool, index) {
     relation.setStyle(this._originalLayerStyle);
   });
 
-  if (workflow instanceof workflows.DeleteFeatureWorkflow || workflow instanceof workflows.EditFeatureAttributesWorkflow )
-    start  = workflow.startFromLastStep(options);
-  else
-    start = workflow.start(options);
+  const start =(workflow instanceof workflows.DeleteFeatureWorkflow || workflow instanceof workflows.EditFeatureAttributesWorkflow ) && workflow.startFromLastStep(options)
+    || workflow.start(options);
   start.then((outputs) => {
       if (relationtool.getId() == 'deletefeature') {
         // vado a cambiarli lo style
         relationfeature.setStyle(this._originalLayerStyle);
         this.getEditingLayer().getSource().removeFeature(relationfeature);
-        this.getCurrentWorkflow().session.pushDelete(this._layerId, relationfeature);
+        this.getCurrentWorkflowData().session.pushDelete(this._layerId, relationfeature);
         this.relations.splice(index, 1)
       }
       if (relationtool.getId() == 'editattributes') {
@@ -320,19 +324,26 @@ proto._createRelationObj = function(relation) {
   }
 };
 
+proto.emitEventToParentWorkFlow = function(type='set-main-component', options={}) {
+  this._parentWorkFlow.getContextService().getEventBus().$emit(type, options)
+};
+
 proto.addRelation = function() {
   GUI.setModal(false);
   const workflow = this._getAddFeatureWorkflow();
   const percContent = this._bindEscKeyUp(workflow);
   const options = this._createWorkflowOptions();
+  const session = options.context.session;
   workflow.start(options)
     .then((outputs) => {
       const relation = outputs.features[outputs.features.length - 1]; // vado a prende l'ultima inserrita
       // vado a settare il valore
       relation.set(this.relation.childField, this._currentFeatureFatherFieldValue);
       this.relations.push(this._createRelationObj(relation));
+      this.emitEventToParentWorkFlow()
     })
     .fail((err) => {
+      session.rollback();
     })
     .always(() =>{
       GUI.hideContent(false, percContent);
@@ -353,6 +364,7 @@ proto.linkRelation = function() {
   const workflow = this._getLinkFeatureWorkflow();
   const percContent = this._bindEscKeyUp(workflow);
   const options = this._createWorkflowOptions();
+  const session = options.context.session;
   workflow.start(options)
     .then((outputs) => {
       const relation = outputs.features[0];
@@ -366,13 +378,15 @@ proto.linkRelation = function() {
       if (!relationAlreadyLinked) {
         const originalRelation = relation.clone();
         relation.set(this.relation.childField, this._currentFeatureFatherFieldValue);
-        this.getCurrentWorkflow().session.pushUpdate(this._layerId , relation, originalRelation);
+        this.getCurrentWorkflowData().session.pushUpdate(this._layerId , relation, originalRelation);
         this.relations.push(this._createRelationObj(relation));
+        this.emitEventToParentWorkFlow();
       } else {
-        GUI.notify.warning(t('relation_already_added'));
+        GUI.notify.warning(t("editing.relation_already_added"));
       }
     })
     .fail((err) => {
+      session.rollback();
     })
     .always(() =>{
       workflow.stop();
@@ -402,20 +416,23 @@ proto.unlinkRelation = function(index) {
   relation = this.getEditingLayer().getSource().getFeatureById(relation.id);
   const originalRelation = relation.clone();
   relation.set(this.relation.childField, null);
-  this.getCurrentWorkflow().session.pushUpdate(this._layerId, relation, originalRelation);
+  this.getCurrentWorkflowData().session.pushUpdate(this._layerId, relation, originalRelation);
   this.relations.splice(index, 1);
 };
 
-
 proto.getCurrentWorkflow = function() {
-  return this.getEditingService().getCurrentWorflow();
+  return this.getEditingService().getCurrentWorkflow();
+};
+
+proto.getCurrentWorkflowData = function() {
+  return this.getEditingService().getCurrentWorkflowData();
 };
 
 proto._createWorkflowOptions = function(options) {
   options = options || {};
   const workflow_options = {
     context: {
-      session: this.getCurrentWorkflow().session,
+      session: this.getCurrentWorkflowData().session,
       layer: this.getLayer(),
       excludeFields: [this.relation.childField],
       fatherValue: this._currentFeatureFatherFieldValue

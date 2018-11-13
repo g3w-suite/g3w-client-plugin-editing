@@ -9,10 +9,10 @@ let Dialogs = {
   delete: {
     fnc: function(inputs) {
       let d = $.Deferred();
-      GUI.dialog.confirm(t("editing.messages.delete_feature"), function(result) {
-        if (result)
+      GUI.dialog.confirm(t("plugins.editing.messages.delete_feature"), function(result) {
+        if (result) {
           d.resolve(inputs);
-        else
+        } else
           d.reject(inputs);
       });
       return d.promise();
@@ -70,7 +70,7 @@ let proto = ConfirmTask.prototype;
 
 // metodo eseguito all'avvio del tool
 proto.run = function(inputs, context) {
-  console.log('Confirm Feature Task run ....');
+  //console.log('Confirm Feature Task run ....');
   return this._dialog.fnc(inputs);
 };
 

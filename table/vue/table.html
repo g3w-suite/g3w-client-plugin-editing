@@ -4,7 +4,7 @@
       <button :class="g3wtemplate.font['close']" class="pull-right close-panel-button"></button>
     </div>
     <h3 class="editing_table_title">{{ state.title }}</h3>
-    <div class="editing_table_relation_messagge"  v-if="state.isrelation" v-t="'editing.relation.table.info'">
+    <div class="editing_table_relation_messagge"  v-if="state.isrelation" v-t-plugin="'editing.relation.table.info'">
     </div>
   </div>
   <table class="display" style="width:100%">
@@ -29,8 +29,8 @@
       </table>
   <div id="buttons" v-show="!state.isrelation" style="display:flex; justify-content: center;">
     <div>
-      <button v-t="'save'" class="btn btn-success" style="margin-right: 10px" @click="save"></button>
-      <button v-t="'cancel'" class="btn btn-primary" @click="cancel"></button>
+      <button v-t-plugin="'editing.form.buttons.save'" class="btn btn-success" style="margin-right: 10px" @click="save"></button>
+      <button v-t-plugin="'editing.form.buttons.cancel'" class="btn btn-primary" @click="cancel"></button>
     </div>
   </div>
 </div>

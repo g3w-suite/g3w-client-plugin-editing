@@ -6,7 +6,6 @@ const Task = g3wsdk.core.workflow.Task;
 function EditingTask(options) {
   options = options || {};
   base(this, options);
-  // da vedere meglio
   this._mapService = GUI.getComponent('map').getService();
   this.addInteraction = function(interaction) {
     this._mapService.addInteraction(interaction);
