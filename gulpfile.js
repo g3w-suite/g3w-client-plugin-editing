@@ -35,6 +35,10 @@ gulp.task('browserify', [], function() {
 
   var bundle = function(){
     return bundler.bundle()
+      .on('error', function(err){
+        console.log(err);
+        process.exit();
+      })
       .pipe(source('build.js'))
       .pipe(buffer())
       .pipe(gulpif(!production,sourcemaps.init({ loadMaps: true })))

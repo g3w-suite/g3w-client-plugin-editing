@@ -246,9 +246,30 @@ proto.addToolBox = function(toolbox) {
 proto._checkLayerWidgets = function(layer) {
   const fields = layer.getEditingFields();
   for (let i=0; i < fields.length; i++) {
-    console.log(fields[i].input.type)
+    const field = fields[i];
+    if (field.input.type === 'select_autocomplete') {
+      const options = field.input.options;
+      const values = options.values;
+      const key = options.key;
+      const value = options.value;
+      if (!options.usecompleter) {
+        const layer = CatalogLayersStoresRegistry.getLayerById(options.layer_id);
+        layer.getDataTable()
+          .then((response) => {
+            if (response && response.features) {
+              const features = response.features;
+              for (let i=0; i< features.length; i++) {
+                values.push({
+                  key: features[i].properties[key],
+                  value: features[i].properties[value]
+                })
+              }
+            }
+          });
+      }
+
+    }
   }
-  //console.log(EditingService.EDITING_FIELDS_TYPE)
 };
 
 // funzione che crea le dipendenze
@@ -360,11 +381,6 @@ proto.getRelationsByFeature = function(relation, feature, layerType) {
 
 proto.loadPlugin = function() {
   return this._load = !!this._getEditableLayersFromCatalog().length; // mi dice se ci sono layer in editing e quindi da caricare il plugin
-};
-
-// ritorna i layer editabili presenti nel layerstore dell'editing
-proto.getLayers = function() {
-  return this._editableLayers;
 };
 
 // funzione che restituisce l'editing layer estratto dal layer del catalogo
