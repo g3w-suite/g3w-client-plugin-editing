@@ -1,12 +1,13 @@
-var inherit = g3wsdk.core.utils.inherit;
-var base =  g3wsdk.core.utils.base;
-var EditingStep = require('./editingstep');
-var MoveFeatureTask = require('./tasks/movefeaturettask');
+const inherit = g3wsdk.core.utils.inherit;
+const base =  g3wsdk.core.utils.base;
+const t = g3wsdk.core.i18n.tPlugin;
+const EditingStep = require('./editingstep');
+const MoveFeatureTask = require('./tasks/movefeaturettask');
 
-var MoveFeatureStep = function(options) {
+const MoveFeatureStep = function(options) {
   options = options || {};
   options.task = new MoveFeatureTask();
-  options.help = "editing.steps.help.move";
+  options.help = t("editing.steps.help.move");
   base(this, options)
 };
 

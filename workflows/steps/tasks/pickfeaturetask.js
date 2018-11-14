@@ -16,7 +16,7 @@ var proto = PickFeatureTask.prototype;
 
 // metodo eseguito all'avvio del tool
 proto.run = function(inputs, context) {
-  console.log('Pick Feature Task run ....');
+  //console.log('Pick Feature Task run ....');
   var d = $.Deferred();
   //var style = this.editor._editingVectorStyle ? this.editor._editingVectorStyle.edit : null;
   // vado a settare i layers su cui faccio l'interacion agisce
@@ -40,7 +40,7 @@ proto.run = function(inputs, context) {
 
 // metodo eseguito alla disattivazione del tool
 proto.stop = function() {
-  console.log('Stop pick feature');
+  //console.log('Stop pick feature');
   this.removeInteraction(this.pickFeatureInteraction);
   this.pickFeatureInteraction = null;
   return true;

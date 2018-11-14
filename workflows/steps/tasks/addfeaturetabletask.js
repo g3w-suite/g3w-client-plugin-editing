@@ -28,5 +28,9 @@ proto.run = function(inputs, context) {
   return d.promise();
 };
 
+proto.stop = function() {
+
+};
+
 
 module.exports = AddFeatureTableTask;

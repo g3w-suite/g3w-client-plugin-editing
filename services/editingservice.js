@@ -11,7 +11,7 @@ const Layer = g3wsdk.core.layer.Layer;
 const GUI = g3wsdk.gui.GUI;
 const serverErrorParser= g3wsdk.core.errors.parsers.Server;
 const ToolBoxesFactory = require('../toolboxes/toolboxesfactory');
-const t = g3wsdk.core.i18n.t;
+const t = g3wsdk.core.i18n.tPlugin;
 const CommitFeaturesWorkflow = require('../workflows/commitfeaturesworkflow');
 
 function EditingService() {
@@ -305,12 +305,17 @@ proto._getEditableLayersFromCatalog = function() {
   return layers;
 };
 
+
 proto.getLayers = function() {
   return this._editableLayers[Symbol.for('layersarray')];
 };
 
-proto.getCurrentWorflow = function() {
-  let currentWorkFlow = WorkflowsStack.getLast();
+proto.getCurrentWorkflow = function() {
+  return WorkflowsStack.getCurrent();
+};
+
+proto.getCurrentWorkflowData = function() {
+  let currentWorkFlow = WorkflowsStack.getCurrent();
   return {
     session: currentWorkFlow.getSession(),
     inputs: currentWorkFlow.getInputs(),
@@ -355,6 +360,11 @@ proto.getRelationsByFeature = function(relation, feature, layerType) {
 
 proto.loadPlugin = function() {
   return this._load = !!this._getEditableLayersFromCatalog().length; // mi dice se ci sono layer in editing e quindi da caricare il plugin
+};
+
+// ritorna i layer editabili presenti nel layerstore dell'editing
+proto.getLayers = function() {
+  return this._editableLayers;
 };
 
 // funzione che restituisce l'editing layer estratto dal layer del catalogo
@@ -621,7 +631,7 @@ proto._createCommitMessage = function(commitItems) {
   message += create_changes_list_dom_element(commitItems.add, commitItems.update, commitItems.delete);
   if (!_.isEmpty(commitItems.relations)) {
     message += "<div style='height:1px; background:#f4f4f4;border-bottom:1px solid #f4f4f4;'></div>";
-    message += "<div style='margin-left: 40%'><h4>Relazioni</h4></div>";
+    message += "<div style='margin-left: 40%'><h4>"+ t('editing.relations') +"</h4></div>";
     Object.entries(commitItems.relations).forEach(([ relationName, commits]) => {
       message +=  "<div><span style='font-weight: bold'>" + relationName + "</span></div>";
       message += create_changes_list_dom_element(commits.add, commits.update, commits.delete);
