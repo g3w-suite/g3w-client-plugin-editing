@@ -74,15 +74,7 @@ function EditingService() {
         this._checkLayerWidgets(editableLayer);
         editingLayersLenght-=1;
         if (editingLayersLenght === 0) {
-          // set toolbox colors
-          this.setLayersColor();
-          // after sadd layers to layerstore
-          this._layersstore.addLayers(this.getLayers());
-          // vado a creare i toolboxes
-          this._buildToolBoxes();
-          // create a dependencies tree
-          this._createToolBoxDependencies();
-          this.emit('ready');
+          this._ready();
         }
       });
       // vado ad aggiungere ai layer editabili
@@ -91,6 +83,17 @@ function EditingService() {
       // aggiungo all'array dei vectorlayers se per caso mi servisse
       this._sessions[layerId] = null;
     }
+  };
+  this._ready = function() {
+    // set toolbox colors
+    this.setLayersColor();
+    // after sadd layers to layerstore
+    this._layersstore.addLayers(this.getLayers());
+    // vado a creare i toolboxes
+    this._buildToolBoxes();
+    // create a dependencies tree
+    this._createToolBoxDependencies();
+    this.emit('ready');
   }
 }
 
@@ -245,29 +248,51 @@ proto.addToolBox = function(toolbox) {
 
 proto._checkLayerWidgets = function(layer) {
   const fields = layer.getEditingFields();
+  //used to cache already ajax call;
+  let _cached = {};
   for (let i=0; i < fields.length; i++) {
     const field = fields[i];
     if (field.input.type === 'select_autocomplete') {
       const options = field.input.options;
-      const values = options.values;
-      const key = options.key;
-      const value = options.value;
-      if (!options.usecompleter) {
-        const layer = CatalogLayersStoresRegistry.getLayerById(options.layer_id);
-        layer.getDataTable()
-          .then((response) => {
-            if (response && response.features) {
-              const features = response.features;
-              for (let i=0; i< features.length; i++) {
-                values.push({
-                  key: features[i].properties[key],
-                  value: features[i].properties[value]
-                })
+      const {key, values, value, usecompleter} = options;
+      if (!usecompleter) {
+        const _cacheKey = `${key}${value}`;
+        const customOption = layer.addEditingConfigFieldOption({
+          field,
+          key: 'loading',
+          value: {
+            state: 'loading'
+          }
+        });
+        if (!_cached[_cacheKey]) {
+          const layer = CatalogLayersStoresRegistry.getLayerById(options.layer_id);
+          layer.getDataTable()
+            .then((response) => {
+              if (response && response.features) {
+                const features = response.features;
+                for (let i=0; i< features.length; i++) {
+                  values.push({
+                    key: features[i].properties[key],
+                    value: features[i].properties[value]
+                  })
+                }
+                customOption.state = 'ready';
+                _cached[_cacheKey] = values;
               }
-            }
-          });
+            }).fail((error) => {
+              customOption.state = 'error'
+            });
+        } else {
+          const _values = _cached[_cacheKey];
+          for (let i=0; i< _values.length; i++) {
+            values.push({
+              key: _values[i].key,
+              value: _values[i].value
+            })
+          }
+          customOption.state = 'ready';
+        }
       }
-
     }
   }
 };

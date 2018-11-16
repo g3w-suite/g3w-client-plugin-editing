@@ -10,6 +10,11 @@ const addI18nPlugin = g3wsdk.core.i18n.addI18nPlugin;
 
 const _Plugin = function() {
   base(this);
+  const pluginGroupTool = {
+    position: 0,
+    title: 'EDITING'
+  };
+
   this.name = 'editing';
   this.init = function() {
     // add i18n of the plugin
@@ -23,6 +28,10 @@ const _Plugin = function() {
     if (this.service.loadPlugin()) {
       //inizialize service
       this.service.init(this.config);
+      this.addToolGroup(pluginGroupTool);
+      this.setHookLoading({
+        loading: true
+      });
       this.service.on('ready', () => {
         //plugin registry
         if (this.registerPlugin(this.config.gid)) {
@@ -32,6 +41,9 @@ const _Plugin = function() {
             this.setupGui();
           }
         }
+        this.setHookLoading({
+           loading: false
+        });
       })
     }
   };
@@ -42,10 +54,7 @@ const _Plugin = function() {
     this.config.name = this.config.name ||  t("editing.editing_data");
     this.addTools({
         action: this.showEditingPanel
-      }, {
-        position: 0,
-        title: 'EDITING'
-      })
+      }, pluginGroupTool)
   };
 
   //method to show editing panel
