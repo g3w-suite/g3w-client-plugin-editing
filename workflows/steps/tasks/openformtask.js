@@ -3,6 +3,7 @@ const base =  g3wsdk.core.utils.base;
 const t = g3wsdk.core.i18n.tPlugin;
 const GUI = g3wsdk.gui.GUI;
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
+const EditingService = require('../../../services/editingservice');
 const EditingTask = require('./editingtask');
 const EditingFormComponent = require('../../../form/editingform');
 
@@ -76,6 +77,7 @@ proto._getForm = function(inputs, context) {
   const uniqueFields = this._getUniqueFieldsType(this._fields);
   if (!_.isEmpty(uniqueFields))
     this._getFieldUniqueValuesFromServer(this._originalLayer, uniqueFields);
+  // restituisce il service del form
   return GUI.showContentFactory('form');
 };
 
@@ -112,7 +114,7 @@ proto.startForm = function(options = {}) {
   const formComponent = options.formComponent || EditingFormComponent;
   const Form = this._getForm(inputs, context);
   const formService = Form({
-    formComponent: formComponent,
+    formComponent,
     title: t("editing.editing_attributes") + " " + this._layerName,
     name: t("editing.editing_attributes") + " " + this._layerName,
     id: this._generateFormId(this._layerName),

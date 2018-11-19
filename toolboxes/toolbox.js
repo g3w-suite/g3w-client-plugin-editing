@@ -183,32 +183,46 @@ proto._setEditingLayerSource = function() {
 proto.start = function() {
   const EditingService = require('../services/editingservice');
   const d = $.Deferred();
-  EditingService.beforeEditingStart({id: this.getId()})
-    .then(() => {
-      // vado a recuperare l'oggetto opzioni data per poter richiedere le feature al provider
-      this._getFeaturesOption = EditingService.createEditingDataOptions(this._layerType);
-      // se non è stata avviata da altri allora faccio avvio sessione
-      if (this._session) {
-        if (!this._session.isStarted()) {
-          // setto il loding dei dati a true
-          this.state.loading = true;
-          this._session.start(this._getFeaturesOption)
-            .then((promise) => {
-              promise
-                .then((features) => {
-                  this.state.loading = false;
-                  this.setEditing(true);
-                })
-                .fail((err) => {
-                  this.stop();
-                  d.reject(err);
-                })
+  const id = this.getId();
+  // vado a recuperare l'oggetto opzioni data per poter richiedere le feature al provider
+  this._getFeaturesOption = EditingService.createEditingDataOptions(this._layerType);
+  // se non è stata avviata da altri allora faccio avvio sessione
+  if (this._session) {
+    if (!this._session.isStarted()) {
+      // setto il loding dei dati a true
+      this.state.loading = true;
+      this._session.start(this._getFeaturesOption)
+        .then((promise) => {
+          EditingService.runEventHandler({
+            type: 'start-editing',
+            id
+          });
+          promise
+            .then((features) => {
+              this.state.loading = false;
+              this.setEditing(true);
+              EditingService.runEventHandler({
+                type: 'get-features-editing',
+                id,
+                options: {
+                  features
+                }
+              });
             })
-        } else {
-          this.setEditing(true);
-        }
-      }
-    });
+            .fail((error) => {
+              EditingService.runEventHandler({
+                type: 'error-editing',
+                id,
+                error
+              });
+              this.stop();
+              d.reject(error);
+            })
+        })
+    } else {
+      this.setEditing(true);
+    }
+  }
   return d.promise();
 };
 

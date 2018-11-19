@@ -1,5 +1,4 @@
 const inherit = g3wsdk.core.utils.inherit;
-const XHR = g3wsdk.core.utils.XHR;
 const base =  g3wsdk.core.utils.base;
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 const PluginService = g3wsdk.core.plugin.PluginService;
@@ -13,11 +12,21 @@ const serverErrorParser= g3wsdk.core.errors.parsers.Server;
 const ToolBoxesFactory = require('../toolboxes/toolboxesfactory');
 const t = g3wsdk.core.i18n.tPlugin;
 const CommitFeaturesWorkflow = require('../workflows/commitfeaturesworkflow');
+import API from '../api'
 
 function EditingService() {
   base(this);
   // contains alla sessions
   this._sessions = {};
+  // events
+  this._events = {
+    layer: {
+      start_editing: {
+        before: {},
+        after: {}
+      }
+    }
+  };
   // state of editing
   this.state = {
     toolboxes: [], // contiene tutti gli stati delle toolbox in editing
@@ -35,6 +44,8 @@ function EditingService() {
       toolboxselected.getActiveTool().stop();
     }
   });
+  //plugin components
+  this._formComponents = {};
   // prendo tutti i layers del progetto corrente che si trovano
   // all'interno dei Layerstore del catalog registry con caratteristica editabili.
   // Mi verranno estratti tutti i layer editabili anche quelli presenti nell'albero del catalogo
@@ -68,11 +79,10 @@ function EditingService() {
       const editableLayer = layer.getLayerForEditing();
       if (editableLayer.isReady()) {
         editingLayersLenght-=1;
-        this._checkLayerWidgets(editableLayer);
       }
       editableLayer.on('layer-config-ready', () => {
-        this._checkLayerWidgets(editableLayer);
         editingLayersLenght-=1;
+        this._attachLayerWidgetsEvent(editableLayer);
         if (editingLayersLenght === 0) {
           this._ready();
         }
@@ -93,6 +103,12 @@ function EditingService() {
     this._buildToolBoxes();
     // create a dependencies tree
     this._createToolBoxDependencies();
+    //setApi
+    this.setApi({
+      api: new API({
+        service:this
+      })
+    });
     this.emit('ready');
   }
 }
@@ -101,10 +117,28 @@ inherit(EditingService, PluginService);
 
 let proto = EditingService.prototype;
 
+proto.getFormComponentsById = function(layerId) {
+  return this._formComponents[layerId] || [];
+};
+
+proto.getFormComponents = function() {
+  return this._formComponents;
+};
+
+proto.addFormComponents = function({layerId, components= []} = {}) {
+  if (!this._formComponents[layerId])
+    this._formComponents[layerId] = [];
+  for (let i=0; i < components.length; i++) {
+    const component = components[i];
+    this._formComponents[layerId].push(component)
+  }
+};
+
+// END API
+
 proto.activeQueryInfo = function() {
   this._mapService.activeMapControl('query');
 };
-
 
 proto.setLayersColor = function() {
 
@@ -246,52 +280,54 @@ proto.addToolBox = function(toolbox) {
   this.state.toolboxes.push(toolbox.state);
 };
 
-proto._checkLayerWidgets = function(layer) {
+proto.addEvent = function({type, id, fnc}) {
+  if (!this._events[type])
+    this._events[type] = {};
+  if (!this._events[type][id])
+    this._events[type][id] = [];
+  this._events[type][id].push(fnc);
+};
+
+proto.runEventHandler = function({type, id} = {}) {
+  this._events[type] && this._events[type][id] && this._events[type][id].forEach((fnc) => {
+    fnc();
+  });
+};
+
+proto._attachLayerWidgetsEvent = function(layer) {
   const fields = layer.getEditingFields();
-  //used to cache already ajax call;
-  let _cached = {};
   for (let i=0; i < fields.length; i++) {
     const field = fields[i];
-    if (field.input.type === 'select_autocomplete') {
+    if(field.input.type === 'select_autocomplete') {
       const options = field.input.options;
-      const {key, values, value, usecompleter} = options;
+      const {key, values, value, usecompleter, layer_id, loading} = options;
       if (!usecompleter) {
-        const _cacheKey = `${key}${value}`;
-        const customOption = layer.addEditingConfigFieldOption({
-          field,
-          key: 'loading',
-          value: {
-            state: 'loading'
-          }
-        });
-        if (!_cached[_cacheKey]) {
-          const layer = CatalogLayersStoresRegistry.getLayerById(options.layer_id);
-          layer.getDataTable()
-            .then((response) => {
-              if (response && response.features) {
+        this.addEvent({
+          type: 'start-editing',
+          id: layer.getId(),
+          fnc() {
+            // remove all values
+            loading.state = 'loading';
+            values.splice(0);
+            const relationLayer = CatalogLayersStoresRegistry.getLayerById(layer_id);
+            relationLayer.getDataTable({
+              ordering: key
+            }).then((response) => {
+              if(response && response.features) {
                 const features = response.features;
-                for (let i=0; i< features.length; i++) {
+                for (let i = 0; i < features.length; i++) {
                   values.push({
                     key: features[i].properties[key],
                     value: features[i].properties[value]
                   })
                 }
-                customOption.state = 'ready';
-                _cached[_cacheKey] = values;
+                loading.state = 'ready';
               }
             }).fail((error) => {
-              customOption.state = 'error'
+              loading.state = 'error'
             });
-        } else {
-          const _values = _cached[_cacheKey];
-          for (let i=0; i< _values.length; i++) {
-            values.push({
-              key: _values[i].key,
-              value: _values[i].value
-            })
           }
-          customOption.state = 'ready';
-        }
+        })
       }
     }
   }
@@ -414,16 +450,12 @@ proto.getLayerById = function(layerId) {
   return this._editableLayers[layerId];
 };
 
-proto.beforeEditingStart = function({id} = {}) {
-  return new Promise((resolve, reject) => {
-    resolve()
-  })
+proto.beforeEditingStart = function({layer} = {}) {
+  this._checkLayerWidgets(layer);
 };
 
-proto.afterEditingStart = function({id}= {}) {
-  return new Promise((resolve, reject) => {
-    resolve()
-  })
+proto.afterEditingStart = function({layer}= {}) {
+  //TODO
 };
 
 // vado a recuperare il toolbox a seconda del suo id
