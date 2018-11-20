@@ -44,6 +44,9 @@ const _Plugin = function() {
         this.setHookLoading({
            loading: false
         });
+        const api = this.service.getApi();
+        this.setApi(api);
+        this.setReady(true);
       })
     }
   };

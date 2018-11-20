@@ -13,10 +13,14 @@ function EditingFormComponent(options={}) {
   const service = new EditingFormService(relationsOptions);
   // mi restituisce il componente Vue da passare al form
   const RelationComponents = service.buildRelationComponents();
+  const layerId = options.layer.getId();
+  const EditingService = require('../services/editingservice');
+  const customFormComponents = EditingService.getFormComponentsById(layerId);
   // qui vado ad aggiungere il componente relations
-  if (service.hasRelations())
+  if (customFormComponents.length)
+    this.addFormComponents(customFormComponents);
+  if (RelationComponents.length)
     this.addFormComponents(RelationComponents);
-
 }
 
 inherit(EditingFormComponent, FormComponent);
