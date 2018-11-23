@@ -130,7 +130,7 @@ proto.startTool = function(relationtool, index) {
       reject(err)
     })
   })
-  
+
 };
 
 proto.startTableTool = function(relationtool, index) {
@@ -324,6 +324,7 @@ proto._createRelationObj = function(relation) {
   }
 };
 
+// mi server per comunicare al padre un evento
 proto.emitEventToParentWorkFlow = function(type='set-main-component', options={}) {
   this._parentWorkFlow.getContextService().getEventBus().$emit(type, options)
 };
@@ -336,10 +337,13 @@ proto.addRelation = function() {
   const session = options.context.session;
   workflow.start(options)
     .then((outputs) => {
-      const relation = outputs.features[outputs.features.length - 1]; // vado a prende l'ultima inserrita
-      // vado a settare il valore
+      // sono le features e il layer editato
+      const relation = outputs.features.pop(); // vado a prende l'ultima inserrita
+      // vado a settare il valore della relazione che è legato al padre
       relation.set(this.relation.childField, this._currentFeatureFatherFieldValue);
-      this.relations.push(this._createRelationObj(relation));
+      //vado a aggiungere una nuova relazione
+      const newRelation = this._createRelationObj(relation);
+      this.relations.push(newRelation);
       this.emitEventToParentWorkFlow()
     })
     .fail((err) => {
@@ -428,8 +432,9 @@ proto.getCurrentWorkflowData = function() {
   return this.getEditingService().getCurrentWorkflowData();
 };
 
-proto._createWorkflowOptions = function(options) {
-  options = options || {};
+// mi server per avere un riferimento al worflow attuale
+// così da poter inserire le modifiche della relazione al current workflow
+proto._createWorkflowOptions = function(options={}) {
   const workflow_options = {
     context: {
       session: this.getCurrentWorkflowData().session,
@@ -442,6 +447,7 @@ proto._createWorkflowOptions = function(options) {
       layer: this.getEditingLayer()
     }
   };
+  console.log(workflow_options);
   return workflow_options;
 };
 

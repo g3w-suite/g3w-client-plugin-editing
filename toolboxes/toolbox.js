@@ -259,6 +259,7 @@ proto.stop = function() {
           // seci sono tool attivi vado a spengere
           this._setToolsEnabled(false);
           this.clearToolboxMessages();
+          this.setSelected(false);
           d.resolve(true)
         })
         .fail((err) => {

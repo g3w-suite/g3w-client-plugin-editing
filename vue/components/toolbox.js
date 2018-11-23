@@ -24,7 +24,7 @@ const ToolboxComponent = Vue.extend({
     },
     toggleEditing() {
       //se il toolbox non è ancora abilitato non faccio niente
-      if (!this.state.layerstate.editing.ready)
+      if (!this.state.layerstate.editing.ready || this.state.loading)
         return;
       this.state.editing.on ? this.$emit('stoptoolbox', this.state.id): this.$emit('starttoolbox', this.state.id);
     },

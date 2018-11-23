@@ -3,7 +3,16 @@ const API = function({service} = {}) {
     service.addFormComponents({
       layerId,
       components
-    })
+    });
+    return this;
+  };
+  
+  this.getSession = function(options = {}) {
+    return service.getSession(options)
+  };
+
+  this.getFeature = function(options = {}) {
+    return service.getFeature(options)
   }
 };
 

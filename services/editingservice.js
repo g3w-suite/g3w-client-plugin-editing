@@ -46,6 +46,8 @@ function EditingService() {
   });
   //plugin components
   this._formComponents = {};
+  // oggetto che server per ascoltare editing da parte di plugin
+  this._subscribes = {};
   // prendo tutti i layers del progetto corrente che si trovano
   // all'interno dei Layerstore del catalog registry con caratteristica editabili.
   // Mi verranno estratti tutti i layer editabili anche quelli presenti nell'albero del catalogo
@@ -132,6 +134,17 @@ proto.addFormComponents = function({layerId, components= []} = {}) {
     const component = components[i];
     this._formComponents[layerId].push(component)
   }
+};
+
+proto.getSession = function({layerId} = {}) {
+  const toolbox = this.getToolBoxById(layerId);
+  return toolbox.getSession();
+};
+
+proto.getFeature = function({layerId} = {}) {
+  const toolbox = this.getToolBoxById(layerId);
+  const tool = toolbox.getActiveTool();
+  return tool.getFeature();
 };
 
 // END API
@@ -397,7 +410,7 @@ proto.getCurrentWorkflow = function() {
 };
 
 proto.getCurrentWorkflowData = function() {
-  let currentWorkFlow = WorkflowsStack.getCurrent();
+  const currentWorkFlow = WorkflowsStack.getCurrent();
   return {
     session: currentWorkFlow.getSession(),
     inputs: currentWorkFlow.getInputs(),
@@ -490,21 +503,21 @@ proto.stop = function() {
       // vado a verificare se c'è una sessione sporca e quindi
       // chiedere se salvare
       if (toolbox.getSession().getHistory().state.commit) {
-        // ask to commit before exit, sdet true to close
+        // ask to commit before exit
         commitpromises.push(this.commit(toolbox, true));
       }
     });
     // prima di stoppare tutto e chidere panello
     $.when.apply(this, commitpromises)
       .always(() => {
-        this._mapService.refreshMap();
         this._toolboxes.forEach((toolbox) => {
-          // vado a stoppare tutti le toolbox
+          // stop toolbox
           toolbox.stop();
-          // vado a deselzionare eventuali toolbox
-          toolbox.setSelected(false);
         });
         this.clearState();
+        this.activeQueryInfo();
+        // serve per poter aggiornare ae applicare le modifice ai layer wms
+        this._mapService.refreshMap();
         resolve();
     });
   });
@@ -733,7 +746,6 @@ proto.commit = function(toolbox, close=false) {
         message: `<h4 class="text-center"><i style="margin-right: 5px;" class=${GUI.getFontClass('spinner')}></i>${t('editing.messages.saving')}</h4>`,
         closeButton: false
       });
-
       // funzione che serve a fare il commit della sessione legata al tool
       // qui probabilmente a seconda del layer se ha dipendenze faccio ogni sessione
       // produrrà i suoi dati post serializzati che poi saranno uniti per un unico commit

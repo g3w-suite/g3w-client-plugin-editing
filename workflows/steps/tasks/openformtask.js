@@ -8,7 +8,6 @@ const EditingTask = require('./editingtask');
 const EditingFormComponent = require('../../../form/editingform');
 
 function OpenFormTask(options={}) {
-  // prefisso delle nuove  feature
   this._formIdPrefix = 'form_';
   this._isContentChild = false;
   this._feature;
@@ -51,7 +50,7 @@ proto._getFieldUniqueValuesFromServer = function(layer, uniqueFields) {
 
 proto._getUniqueFieldsType = function(fields) {
   const uniqueFields = {};
-  _.forEach(fields, function(field) {
+  fields.forEach((field) => {
      if (field.input.type == 'unique')
        uniqueFields[field.name] = field;
   });
@@ -62,7 +61,6 @@ proto._getForm = function(inputs, context) {
   const excludeFields = context.excludeFields;
   this._isContentChild = !!(WorkflowsStack.getLength() > 1);
   this._session = context.session;
-  // vado a recuperare i
   this._originalLayer = context.layer;
   this._editingLayer = inputs.layer;
   this._pk = this._originalLayer.getPk();
@@ -97,7 +95,7 @@ proto._saveFnc = function(promise, inputs) {
       this._session.pushUpdate(layerId, newFeature, this._originalFeature);
     } else {
       if (this._originalLayer.isPkEditable())
-        _.forEach(fields, function (field) {
+        fields.forEach((field) => {
           if (field.name == newFeature.getPk())
             newFeature.set(newFeature.getPk(), field.value);
         });
@@ -123,9 +121,9 @@ proto.startForm = function(options = {}) {
     pk: this._pk,
     isnew: this._originalFeature.isNew(),
     fields: this._fields,
-    relationsOptions:  {
-      context: context,
-      inputs: inputs
+    context_inputs:  {
+      context,
+      inputs
     },
     formStructure: this._editorFormStructure,
     modal: true,
@@ -158,7 +156,7 @@ proto.run = function(inputs, context) {
   return d.promise();
 };
 
-
+// genera il from id
 proto._generateFormId = function(layerName) {
   return this._formIdPrefix + layerName;
 };

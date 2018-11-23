@@ -79,7 +79,7 @@ proto.run = function(inputs, context) {
         });
         const feature = new Feature({
           feature: e.feature,
-          pk: pk // passo la pk della feature
+          pk// passo la pk della feature
         });
         // verifico se la pk è editabile o meno
         originalLayer.isPkEditable() ?  feature.setNew() : feature.setTemporaryId();
