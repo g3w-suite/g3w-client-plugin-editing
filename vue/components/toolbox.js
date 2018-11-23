@@ -6,8 +6,7 @@ const ToolboxComponent = Vue.extend({
   props: ['state', 'resourcesurl'],
   data: function() {
     return {
-      active: false,
-      showtoolsoftool: true
+      active: false
     }
   },
   components: {

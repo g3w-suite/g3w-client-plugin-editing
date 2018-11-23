@@ -119,6 +119,8 @@ inherit(EditingService, PluginService);
 
 let proto = EditingService.prototype;
 
+//api methods
+
 proto.getFormComponentsById = function(layerId) {
   return this._formComponents[layerId] || [];
 };
@@ -145,6 +147,16 @@ proto.getFeature = function({layerId} = {}) {
   const toolbox = this.getToolBoxById(layerId);
   const tool = toolbox.getActiveTool();
   return tool.getFeature();
+};
+
+proto.subscribe = function({event, layerId}={}) {
+  let observable;
+  switch (event) {
+    case 'editing':
+      observable = this.getToolBoxById(layerId);
+      break;
+  }
+  return observable;
 };
 
 // END API

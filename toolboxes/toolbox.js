@@ -182,6 +182,7 @@ proto._setEditingLayerSource = function() {
 // inoltre farà uno start e stop dell'editor
 proto.start = function() {
   const EditingService = require('../services/editingservice');
+  const EventName = 'start-editing';
   const d = $.Deferred();
   const id = this.getId();
   // vado a recuperare l'oggetto opzioni data per poter richiedere le feature al provider
@@ -193,8 +194,9 @@ proto.start = function() {
       this.state.loading = true;
       this._session.start(this._getFeaturesOption)
         .then((promise) => {
+          this.emit(EventName);
           EditingService.runEventHandler({
-            type: 'start-editing',
+            type: EventName,
             id
           });
           promise
@@ -241,6 +243,7 @@ proto.getFeaturesOption = function() {
 
 // funzione che disabiliterà
 proto.stop = function() {
+  const EventName  = 'stop-editing';
   // le sessioni dipendenti per poter eseguier l'editing
   const d = $.Deferred();
   if (this._session && this._session.isStarted()) {
@@ -260,6 +263,7 @@ proto.stop = function() {
           this._setToolsEnabled(false);
           this.clearToolboxMessages();
           this.setSelected(false);
+          this.emit(EventName);
           d.resolve(true)
         })
         .fail((err) => {

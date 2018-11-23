@@ -24,7 +24,7 @@
             :resourcesurl="resourcesurl"
             @stopactivetool="stopActiveTool"
             @setactivetool="setActiveTool"
-            v-for="toolstate in state.tools">
+            v-for="toolstate in state.tools" :key="toolstate.id">
           </tool>
         </div>
         <div class="message" style="margin-top: 5px;" :id="'id_toolbox_messages_'+ state.id">

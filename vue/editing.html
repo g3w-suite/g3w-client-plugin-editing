@@ -20,7 +20,7 @@
       @savetoolbox="saveToolBox"
       @setactivetool="startActiveTool"
       @stopactivetool="stopActiveTool"
-      v-for="toolboxstate in state.toolboxes">
+      v-for="toolboxstate in state.toolboxes" :key="toolboxstate.id">
     </toolbox>
   </div>
 </div>
