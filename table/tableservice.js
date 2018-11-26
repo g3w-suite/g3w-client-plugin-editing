@@ -32,6 +32,17 @@ const TableService = function(options = {}) {
 
 const proto = TableService.prototype;
 
+proto.isMediaField = function(name) {
+  let isMedia = false;
+  for (let i=0; i < this._headers.length; i++) {
+    const header = this._headers[i];
+    if (header.name === name && header.input.type === 'media' ) {
+      isMedia = true;
+      break;
+    }
+  }
+  return isMedia;
+};
 
 proto.save = function() {
   this._promise.resolve();

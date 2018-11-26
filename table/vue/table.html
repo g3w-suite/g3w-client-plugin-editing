@@ -17,7 +17,10 @@
         </thead>
         <tbody>
           <tr @click="state.isrelation ? linkFeature(index) : null" v-for="(feature, index) in state.features" :key="index">
-            <td v-if ="showValue(key)" v-for="(value, key) in feature"> {{ getValue(value) }}</td>
+            <td v-if ="showValue(key)" v-for="(value, key) in feature">
+              <g3w-media v-if=" getValue(value) && isMediaField(key)" :state="value"></g3w-media>
+              <p v-else>{{ getValue(value) }}</p>
+            </td>
             <td v-show="!state.isrelation">
               <i :class="g3wtemplate.font['trash-o']" class="g3w-icon" style="color:red;" aria-hidden="true" @click="deleteFeature(index)"></i>
             </td>
