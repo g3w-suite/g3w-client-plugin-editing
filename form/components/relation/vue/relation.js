@@ -1,6 +1,6 @@
 const t = g3wsdk.core.i18n.tPlugin;
 const RelationService = require('../../../../services/relationservice');
-const MediaMixin = g3wsdk.gui.vue.mixins.mediaMixin;
+const MediaMixin = g3wsdk.gui.vue.Mixins.mediaMixin;
 const maxSubsetLength = 5;
 let relationsTable;
 
@@ -34,7 +34,7 @@ let relationsTable;
 
         })
         .catch((error) => {
-          
+
         })
     },
     linkRelation: function() {

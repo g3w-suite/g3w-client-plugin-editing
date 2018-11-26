@@ -1,10 +1,14 @@
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
 const Component = g3wsdk.gui.vue.Component;
+const Media_Field = g3wsdk.gui.vue.Fields.media_field;
 const TableService = require('../tableservice');
 
 const InternalComponent = Vue.extend({
   template: require('./table.html'),
+  components: {
+    'g3w-media': Media_Field
+  },
   data: function() {
     return {
       headers: this.$options.headers,
@@ -14,8 +18,11 @@ const InternalComponent = Vue.extend({
   methods: {
     showValue(key) {
       return !!this.headers.find((header) => {
-        return header.name == key
+        return header.name === key
       })
+    },
+    isMediaField(name) {
+      return this.$options.service.isMediaField(name)
     },
     stop: function() {
       this.$options.service.cancel();
@@ -51,6 +58,7 @@ const InternalComponent = Vue.extend({
       });
     }
   },
+  created() {},
   mounted: function() {
     this.$nextTick(() => {
       const maxHeightTable = this._setLayout();
