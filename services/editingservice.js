@@ -335,22 +335,26 @@ proto._attachLayerWidgetsEvent = function(layer) {
             loading.state = 'loading';
             values.splice(0);
             const relationLayer = CatalogLayersStoresRegistry.getLayerById(layer_id);
-            relationLayer.getDataTable({
-              ordering: key
-            }).then((response) => {
-              if(response && response.features) {
-                const features = response.features;
-                for (let i = 0; i < features.length; i++) {
-                  values.push({
-                    key: features[i].properties[key],
-                    value: features[i].properties[value]
-                  })
+            if (relationLayer) {
+              relationLayer.getDataTable({
+                ordering: key
+              }).then((response) => {
+                if(response && response.features) {
+                  const features = response.features;
+                  for (let i = 0; i < features.length; i++) {
+                    values.push({
+                      key: features[i].properties[key],
+                      value: features[i].properties[value]
+                    })
+                  }
+                  loading.state = 'ready';
                 }
-                loading.state = 'ready';
-              }
-            }).fail((error) => {
+              }).fail((error) => {
+                loading.state = 'error'
+              });
+            } else {
               loading.state = 'error'
-            });
+            }
           }
         })
       }
