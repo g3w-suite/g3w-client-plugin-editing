@@ -10,6 +10,7 @@ const InternalComponent = Vue.extend({
     'g3w-media': Media_Field
   },
   data: function() {
+    this.dataTable = null;
     return {
       headers: this.$options.headers,
       state: null
@@ -58,11 +59,10 @@ const InternalComponent = Vue.extend({
       });
     }
   },
-  created() {},
   mounted: function() {
     this.$nextTick(() => {
       const maxHeightTable = this._setLayout();
-      $('#editing_table table').DataTable({
+      this.dataTable = $('#editing_table table').DataTable({
         "pageLength": 10,
         "scrollX": true,
         "scrollY": maxHeightTable + 'px',
@@ -73,6 +73,9 @@ const InternalComponent = Vue.extend({
         ]
       });
     });
+  },
+  beforeDestroy() {
+    this.dataTable.destroy();
   }
 });
 

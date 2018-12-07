@@ -13,7 +13,6 @@ const vueComponentOptions = {
   data: null,
   components: {
     'toolbox': ToolboxComponent //componente toolbox
-
   },
   transitions: {'addremovetransition': 'showhide'},
   methods: {

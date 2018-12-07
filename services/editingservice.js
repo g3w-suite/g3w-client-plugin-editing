@@ -249,33 +249,27 @@ proto._layerChildrenRelationInEditing = function(layer) {
 
 // udo delle relazioni
 proto.undoRelations = function(undoItems) {
-  let session;
-  let toolbox;
   Object.entries(undoItems).forEach(([toolboxId, items]) => {
-    toolbox = this.getToolBoxById(toolboxId);
-    session = toolbox.getSession();
+    const toolbox = this.getToolBoxById(toolboxId);
+    const session = toolbox.getSession();
     session.undo(items);
   })
 };
 
 // undo delle relazioni
 proto.rollbackRelations = function(rollbackItems) {
-  let session;
-  let toolbox;
   Object.entries(rollbackItems).forEach(([toolboxId, items]) => {
-    toolbox = this.getToolBoxById(toolboxId);
-    session = toolbox.getSession();
+    const toolbox = this.getToolBoxById(toolboxId);
+    const session = toolbox.getSession();
     session.rollback(items);
   })
 };
 
 // redo delle relazioni
 proto.redoRelations = function(redoItems) {
-  let session;
-  let toolbox;
   Object.entries(redoItems).forEach(([toolboxId, items]) => {
-    toolbox = this.getToolBoxById(toolboxId);
-    session = toolbox.getSession();
+    const toolbox = this.getToolBoxById(toolboxId);
+    const session = toolbox.getSession();
     session.redo(items);
   })
 };
@@ -443,7 +437,9 @@ proto.getRelationsAttributesByFeature = function(relation, feature) {
   let relations = this.getRelationsByFeature(relation, feature, layer.getType());
   let fields;
   relations.forEach((relation) => {
-    fields = layer.getFieldsWithValues(relation);
+    fields = layer.getFieldsWithValues(relation, {
+      relation: true
+    });
     relationsattributes.push({
       fields: fields,
       id: relation.getId()

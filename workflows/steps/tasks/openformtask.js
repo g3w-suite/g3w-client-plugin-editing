@@ -3,7 +3,6 @@ const base =  g3wsdk.core.utils.base;
 const t = g3wsdk.core.i18n.tPlugin;
 const GUI = g3wsdk.gui.GUI;
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
-const EditingService = require('../../../services/editingservice');
 const EditingTask = require('./editingtask');
 const EditingFormComponent = require('../../../form/editingform');
 

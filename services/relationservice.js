@@ -324,7 +324,6 @@ proto._createRelationObj = function(relation) {
   }
 };
 
-// mi server per comunicare al padre un evento
 proto.emitEventToParentWorkFlow = function(type='set-main-component', options={}) {
   this._parentWorkFlow.getContextService().getEventBus().$emit(type, options)
 };
@@ -447,7 +446,6 @@ proto._createWorkflowOptions = function(options={}) {
       layer: this.getEditingLayer()
     }
   };
-  console.log(workflow_options);
   return workflow_options;
 };
 
@@ -515,10 +513,10 @@ proto.hideRelationStyle = function() {
 
 proto.relationFields = function(relation) {
   const attributes = [];
-  const originaRelation = this._getRelationFeature(relation.id);
-  _.forEach(relation.fields, function (field) {
+  const originalRelation = this._getRelationFeature(relation.id);
+  relation.fields.forEach((field) => {
     let value = field.value;
-    if (field.name == originaRelation.getPk() && originaRelation.isNew() && !field.editable)
+    if (field.name == originalRelation.getPk() && originalRelation.isNew() && !field.editable)
       value = null;
     attributes.push({label: field.label, value: value})
   });

@@ -3,8 +3,7 @@ const base =  g3wsdk.core.utils.base;
 const GUI = g3wsdk.gui.GUI;
 const Task = g3wsdk.core.workflow.Task;
 
-function EditingTask(options) {
-  options = options || {};
+function EditingTask(options = {}) {
   base(this, options);
   this._mapService = GUI.getComponent('map').getService();
   this.addInteraction = function(interaction) {
