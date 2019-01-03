@@ -12,10 +12,10 @@ function AddFeatureTask(options={}) {
   // source del layer di editing
   // la drw interaction per disegnare la feature
   this.drawInteraction = null;
-  this._snap = options.snap===false ? false : true;
   this._snapInteraction = null;
   this._finishCondition = options.finishCondition || _.constant(true);
   this._condition = options.condition || _.constant(true);
+  this._constraints = options.constraints || {};
 
   base(this, options);
 }
@@ -31,6 +31,7 @@ proto.run = function(inputs, context) {
     editingLayer: è il layer, in questo caso ol.layer.Vector con cui gli strumenti interagiscono
    */
   const d = $.Deferred();
+  let canDraw = false;
   const editingLayer = inputs.layer;
   //recupero la sessione dal context
   const session = context.session;
@@ -54,12 +55,23 @@ proto.run = function(inputs, context) {
       const attributes = _.filter(originalLayer.getFields(), function(field) {
         return field.editable && field.name != originalLayer.getPk() ;
       });
+      this._condition = function({coordinate}) {
+        const features = source.getFeatures();
+        if ((geometryType === 'LineString' || geometryType === 'MultiLineString') && features.length === 0)
+          return true;
+        else {
+          return canDraw || !!source.getFeatures().find((feature) => {
+            return feature.getGeometry().getCoordinates()[0].toString() === coordinate.toString() || feature.getGeometry().getCoordinates()[1].toString() === coordinate.toString();
+          })
+        }
+      };
       // creo una source temporanea
       const temporarySource = new ol.source.Vector();
       this.drawInteraction = new ol.interaction.Draw({
         type: geometryType, // il tipo lo prende dal geometry type dell'editing vetor layer che a sua volta lo prende dal tipo si geometry del vector layer originale
         source: temporarySource, // lo faccio scrivere su una source temporanea (non vado a modificare il source featuresstore)
         condition: this._condition,
+        ...this._constraints,
         finishCondition: this._finishCondition // disponibile da https://github.com/openlayers/ol3/commit/d425f75bea05cb77559923e494f54156c6690c0b
       });
       //aggiunge l'interazione tramite il metodo generale di editor.js
@@ -67,14 +79,21 @@ proto.run = function(inputs, context) {
       this.addInteraction(this.drawInteraction);
       //setta attiva l'interazione
       this.drawInteraction.setActive(true);
+      this._snapInteraction = new ol.interaction.Snap({
+        source,
+        edge: false
+      });
+      this.addInteraction(this._snapInteraction);
+      this._snapInteraction.setActive(true);
       // viene settato sull'inizio del draw l'evento drawstart dell'editor
       this.drawInteraction.on('drawstart',function(e) {
+        canDraw = true;
       });
       // viene settato l'evento drawend
       this.drawInteraction.on('drawend', function(e) {
         //console.log('Drawend .......');
         // vado ad assegnare le proprià del layer alla nuova feature
-        _.forEach(attributes, function(attribute) {
+        attributes.forEach((attribute) => {
           e.feature.set(attribute.name, null);
         });
         const feature = new Feature({
@@ -93,13 +112,6 @@ proto.run = function(inputs, context) {
         inputs.features.push(feature);
         d.resolve(inputs);
       });
-      //snapping
-      /*if (this._snap) {
-        this._snapInteraction = new ol.interaction.Snap({
-          source: editingLayer.getSource()
-        });
-        this.addInteraction(this._snapInteraction);
-      }*/
       break;
   }
   return d.promise();
@@ -117,7 +129,6 @@ proto.stop = function() {
   //rimove l'interazione e setta a null drawInteracion
   this.removeInteraction(this.drawInteraction);
   this.drawInteraction = null;
-  // rtirna semprte true
   return true;
 };
 

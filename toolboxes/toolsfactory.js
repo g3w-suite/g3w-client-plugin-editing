@@ -71,7 +71,11 @@ function EditorToolsFactory() {
                 icon: "addLine.png",
                 layer: layer,
                 type: type,
-                op: AddFeatureWorkflow
+                op: AddFeatureWorkflow,
+                constraints: {
+                  minPoints: 2,
+                  maxPoints: 2
+                }
               }),
               new Tool({
                 id: 'movevertex',

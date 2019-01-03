@@ -6,7 +6,7 @@ var EditingTask = require('./editingtask');
 function ModifyGeometryVertexTask(options={}){
   this.drawInteraction = null;
   this._originalStyle = null;
-  this._feature = null;
+  this._features = null;
   this._deleteCondition = options.deleteCondition || undefined;
   this._snap = options.snap === false ? false : true;
   this._snapInteraction = null;
@@ -21,12 +21,12 @@ var proto = ModifyGeometryVertexTask.prototype;
 proto.run = function(inputs, context) {
   var d = $.Deferred();
   var editingLayer = inputs.layer;
+  this._features = inputs.features;
   var session = context.session;
   var originalLayer = context.layer;
   var layerId = originalLayer.getId();
   var originalFeature,
     newFeature;
-  var feature = this._feature = inputs.features[0];
   this._originalStyle = editingLayer.getStyle();
   var style = [
     new ol.style.Style({
@@ -49,10 +49,13 @@ proto.run = function(inputs, context) {
       }
     })
   ];
-  feature.setStyle(style);
+  this._features.forEach((feature) => {
+    feature.setStyle(style)
+  });
   var features = new ol.Collection(inputs.features);
   this._modifyInteraction = new ol.interaction.Modify({
     features: features,
+    insertVertexCondition: () => false ,
     deleteCondition: this._deleteCondition
   });
 
@@ -91,7 +94,9 @@ proto.stop = function(){
      this.removeInteraction(this._snapInteraction);
      this._snapInteraction = null;
   }
-  this._feature.setStyle(this._originalStyle);
+  this._features.forEach((feature) => {
+    feature.setStyle(this._originalStyle);
+  });
   this.removeInteraction(this._modifyInteraction);
   this._modifyInteraction = null;
   return true;

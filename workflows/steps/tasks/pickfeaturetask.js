@@ -17,11 +17,9 @@ var proto = PickFeatureTask.prototype;
 // metodo eseguito all'avvio del tool
 proto.run = function(inputs, context) {
   //console.log('Pick Feature Task run ....');
-  var d = $.Deferred();
-  //var style = this.editor._editingVectorStyle ? this.editor._editingVectorStyle.edit : null;
-  // vado a settare i layers su cui faccio l'interacion agisce
-  var layers = [inputs.layer];
-  var features = inputs.features.length ? inputs.features : null;
+  const d = $.Deferred();
+  const layers = [inputs.layer];
+  const features = inputs.features.length ? inputs.features : null;
   this.pickFeatureInteraction = new PickFeatureInteraction({
     layers: layers,
     features: features
@@ -30,9 +28,25 @@ proto.run = function(inputs, context) {
   this.addInteraction(this.pickFeatureInteraction);
   // gestisco l'evento
   this.pickFeatureInteraction.on('picked', function(e) {
-    var feature = e.feature;
-    if (!features)
-      inputs.features.push(feature);
+    const feature = e.feature;
+    const feature_coordinates = [];
+    const allfeatures = inputs.layer.getSource().getFeatures();
+    const coordinates = feature.getGeometry().getCoordinates();
+    coordinates.forEach((coordinate) => {
+      feature_coordinates.push(coordinate.toString())
+    });
+    for (let i = 0; i < allfeatures.length; i ++) {
+      const _feature = allfeatures[i];
+      const coordinates = _feature.getGeometry().getCoordinates();
+      coordinates.forEach((coordinate) => {
+        const find = feature_coordinates.find((feature_coordinate) => {
+          return coordinate.toString() === (feature_coordinate);
+        });
+        if (!!find)
+          inputs.features.push(_feature)
+
+      });
+    }
     d.resolve(inputs);
   });
   return d.promise()

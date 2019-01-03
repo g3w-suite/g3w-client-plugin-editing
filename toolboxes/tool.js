@@ -6,14 +6,13 @@ const G3WObject = g3wsdk.core.G3WObject;
 // il bottone all'interno dell'editor control per l'editing
 function Tool(options = {}) {
   base(this);
-  this._options = null;
   this._session = options.session;
   // prendo il layer
   this._layer = options.layer;
   // gli viene passato l'operatore
   // l'oggeto che si occuperà materialmente di gestire l'editazione del layer
   // verosimilmente sarà un oggetto workflow
-  this._op = new options.op();
+  this._op = new options.op(options);
   //stato dell'oggetto tool
   // reattivo
   this.state = {
