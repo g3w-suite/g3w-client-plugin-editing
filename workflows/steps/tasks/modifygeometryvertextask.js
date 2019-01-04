@@ -24,7 +24,8 @@ proto.run = function(inputs, context) {
   const session = context.session;
   const originalLayer = context.layer;
   const layerId = originalLayer.getId();
-  let originalFeature, startKey, newFeature;
+  const originalFeatures = [];
+  let startKey;
   this._originalStyle = editingLayer.getStyle();
   const style = [
     new ol.style.Style({
@@ -61,10 +62,7 @@ proto.run = function(inputs, context) {
   this.addInteraction(this._modifyInteraction);
 
   this._modifyInteraction.on('modifystart', function(evt) {
-    const feature = evt.features.getArray()[0];
-    feature.on('change', function(evt) {
-      console.log(evt)
-    })
+    const features = evt.features;
     if (dependencyFeatures.length) {
 
       const map = this.getMap();
@@ -93,20 +91,26 @@ proto.run = function(inputs, context) {
           })
         });
     }
-    originalFeature = feature.clone();
+    features.forEach((feature) => {
+      originalFeatures.push(feature.clone())
+    })
   });
 
   this._modifyInteraction.on('modifyend',function(e){
-    var feature = e.features.getArray()[0];
-    if (feature.getGeometry().getExtent() != originalFeature.getGeometry().getExtent()) {
-      newFeature = feature.clone();
-      session.pushUpdate(layerId, newFeature, originalFeature);
-      //self._selectInteraction.getFeatures().clear();
-      inputs.features.push(newFeature);
-      // ritorno come outpu l'input layer che sarà modificato
-      ol.Observable.unByKey(startKey);
-      d.resolve(inputs);
+    const features = e.features;
+    for (let i = 0; i < features.length; i++) {
+      const feature = features[i];
+      const originalFeature = originalFeatures[i];
+      if (feature.getGeometry().getExtent() !== originalFeature.getGeometry().getExtent()) {
+        const newFeature = feature.clone();
+        session.pushUpdate(layerId, newFeature, originalFeature);
+        //self._selectInteraction.getFeatures().clear();
+        inputs.features.push(newFeature);
+      }
     }
+      // ritorno come outpu l'input layer che sarà modificato
+    ol.Observable.unByKey(startKey);
+    d.resolve(inputs);
   });
 
   /*if (this._snap) {
