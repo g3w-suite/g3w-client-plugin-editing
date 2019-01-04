@@ -10,7 +10,7 @@ function EditorToolBoxesFactory() {
   // e dei tasks associati
   // il layer è il layer di editing originale da cui tutte le feature
   // verranno chiamate tramite il featuresstore provider
-  this.build = function(layer) {
+  this.build = function({layer, dependency}) {
     // estraggo il layer dell'editor
     const editor = layer.getEditor();
     // estraggo il tipo di layer
@@ -28,6 +28,7 @@ function EditorToolBoxesFactory() {
         editingLayer = this._mapService.getLayerById(layerId);
         tools = EditToolsFactory.build({
           layer: editingLayer,
+          dependency: dependency ? this._mapService.getLayerById(dependency.getId()) : dependency ,
           geometryType: geometryType,
           type: layerType
         });

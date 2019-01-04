@@ -16,7 +16,7 @@ function AddFeatureTask(options={}) {
   this._finishCondition = options.finishCondition || _.constant(true);
   this._condition = options.condition || _.constant(true);
   this._constraints = options.constraints || {};
-
+  this._dependency = options.dependency || null;
   base(this, options);
 }
 
@@ -31,7 +31,6 @@ proto.run = function(inputs, context) {
     editingLayer: è il layer, in questo caso ol.layer.Vector con cui gli strumenti interagiscono
    */
   const d = $.Deferred();
-  let canDraw = false;
   const editingLayer = inputs.layer;
   //recupero la sessione dal context
   const session = context.session;
@@ -43,28 +42,25 @@ proto.run = function(inputs, context) {
   switch (originalLayer.getType()) {
     case Layer.LayerTypes.VECTOR:
       let geometryType;
-      if (originalLayer.getEditingGeometryType() == Geometry.GeometryTypes.LINE)
+      if (originalLayer.getEditingGeometryType() === Geometry.GeometryTypes.LINE)
         geometryType = 'LineString';
-      else if (originalLayer.getEditingGeometryType() == Geometry.GeometryTypes.MULTILINE)
+      else if (originalLayer.getEditingGeometryType() === Geometry.GeometryTypes.MULTILINE)
         geometryType = 'MultiLineString';
       else
         geometryType = originalLayer.getEditingGeometryType();
       //definisce l'interazione che deve essere aggiunta
       // specificando il layer sul quale le feature aggiunte devono essere messe
       const source = editingLayer.getSource();
+      const dependencySource = this._dependency.getSource();
+      const options = {
+        source,
+        canDraw: false,
+        dependency: this._dependency
+      };
       const attributes = _.filter(originalLayer.getFields(), function(field) {
         return field.editable && field.name != originalLayer.getPk() ;
       });
-      this._condition = function({coordinate}) {
-        const features = source.getFeatures();
-        if ((geometryType === 'LineString' || geometryType === 'MultiLineString') && features.length === 0)
-          return true;
-        else {
-          return canDraw || !!source.getFeatures().find((feature) => {
-            return feature.getGeometry().getCoordinates()[0].toString() === coordinate.toString() || feature.getGeometry().getCoordinates()[1].toString() === coordinate.toString();
-          })
-        }
-      };
+      this._condition = AddFeatureTask.CONDITIONS[geometryType](options);
       // creo una source temporanea
       const temporarySource = new ol.source.Vector();
       this.drawInteraction = new ol.interaction.Draw({
@@ -80,14 +76,13 @@ proto.run = function(inputs, context) {
       //setta attiva l'interazione
       this.drawInteraction.setActive(true);
       this._snapInteraction = new ol.interaction.Snap({
-        source,
-        edge: false
+        source: geometryType === 'LineString' || geometryType == 'MultiLineString' ? source : dependencySource,
+        edge: geometryType === 'LineString' || geometryType == 'MultiLineString' ? false: true
       });
       this.addInteraction(this._snapInteraction);
       this._snapInteraction.setActive(true);
-      // viene settato sull'inizio del draw l'evento drawstart dell'editor
-      this.drawInteraction.on('drawstart',function(e) {
-        canDraw = true;
+      this.drawInteraction.on('drawstart', function(e) {
+        options.canDraw = true;
       });
       // viene settato l'evento drawend
       this.drawInteraction.on('drawend', function(e) {
@@ -135,11 +130,46 @@ proto.stop = function() {
 proto._removeLastPoint = function() {
   if (this.drawInteraction) {
     // provo a rimuovere l'ultimo punto. Nel caso non esista la geometria gestisco silenziosamente l'errore
-    try{
+    try {
       this.drawInteraction.removeLastPoint();
     }
     catch (e) {
       //
+    }
+  }
+};
+
+AddFeatureTask.CONDITIONS = {
+  'LineString': function(options) {
+    // viene settato sull'inizio del draw l'evento drawstart dell'editor
+    return function({coordinate}) {
+      const source = options.source;
+      const features = source.getFeatures();
+      if (features.length === 0)
+        return true;
+      else {
+        return options.canDraw || !!source.getFeatures().find((feature) => {
+          return feature.getGeometry().getCoordinates()[0].toString() === coordinate.toString() || feature.getGeometry().getCoordinates()[1].toString() === coordinate.toString();
+        })
+      }
+    }
+  },
+  'Point': function({ dependency, source }) {
+    const features = dependency.getSource().getFeatures();
+    return function({coordinate, pixel}) {
+      return features.length &&
+        !!features.find((feature) => {
+          return !!this.getMap().forEachFeatureAtPixel(pixel, function(_feature) {
+            return feature === _feature;
+          }, {
+            layerFilter: function(layer) {
+              return layer === dependency
+            }
+          });
+        }) &&
+        !source.getFeatures().find((feature) => {
+          return feature.getGeometry().getCoordinates().toString() === coordinate.toString() ;
+        })
     }
   }
 };

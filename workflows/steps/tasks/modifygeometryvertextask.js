@@ -1,7 +1,6 @@
-var inherit = g3wsdk.core.utils.inherit;
-var base =  g3wsdk.core.utils.base;
-
-var EditingTask = require('./editingtask');
+const inherit = g3wsdk.core.utils.inherit;
+const base =  g3wsdk.core.utils.base;
+const EditingTask = require('./editingtask');
 
 function ModifyGeometryVertexTask(options={}){
   this.drawInteraction = null;
@@ -10,25 +9,24 @@ function ModifyGeometryVertexTask(options={}){
   this._deleteCondition = options.deleteCondition || undefined;
   this._snap = options.snap === false ? false : true;
   this._snapInteraction = null;
+  this._dependency = options.dependency;
   base(this, options);
 }
 
 inherit(ModifyGeometryVertexTask, EditingTask);
 
-
-var proto = ModifyGeometryVertexTask.prototype;
+const proto = ModifyGeometryVertexTask.prototype;
 
 proto.run = function(inputs, context) {
-  var d = $.Deferred();
-  var editingLayer = inputs.layer;
+  const d = $.Deferred();
+  const editingLayer = inputs.layer;
   this._features = inputs.features;
-  var session = context.session;
-  var originalLayer = context.layer;
-  var layerId = originalLayer.getId();
-  var originalFeature,
-    newFeature;
+  const session = context.session;
+  const originalLayer = context.layer;
+  const layerId = originalLayer.getId();
+  let originalFeature, startKey, newFeature;
   this._originalStyle = editingLayer.getStyle();
-  var style = [
+  const style = [
     new ol.style.Style({
       stroke : new ol.style.Stroke({
         color : "grey",
@@ -52,17 +50,49 @@ proto.run = function(inputs, context) {
   this._features.forEach((feature) => {
     feature.setStyle(style)
   });
-  var features = new ol.Collection(inputs.features);
+  const features = new ol.Collection(inputs.features);
+  const dependencyFeatures = this._dependency.getSource().getFeatures();
   this._modifyInteraction = new ol.interaction.Modify({
-    features: features,
-    insertVertexCondition: () => false ,
+    features,
+    insertVertexCondition: () => false,
     deleteCondition: this._deleteCondition
   });
 
   this.addInteraction(this._modifyInteraction);
 
-  this._modifyInteraction.on('modifystart', function(e) {
-    var feature = e.features.getArray()[0];
+  this._modifyInteraction.on('modifystart', function(evt) {
+    const feature = evt.features.getArray()[0];
+    feature.on('change', function(evt) {
+      console.log(evt)
+    })
+    if (dependencyFeatures.length) {
+
+      const map = this.getMap();
+      const intersectFeatures = [];
+      for (let i = 0; i < dependencyFeatures.length; i++) {
+        const depfeature = dependencyFeatures[i];
+        const pixel = map.getPixelFromCoordinate(depfeature.getGeometry().getCoordinates());
+        map.forEachFeatureAtPixel(pixel, (_feature) => {
+          if (feature === _feature)
+            intersectFeatures.push(_feature)
+        }, {
+          layerFilter: (layer) => {
+            return layer === editingLayer
+          }
+        });
+      }
+
+      if (intersectFeatures.length) {
+        const traslate = new ol.interaction.Translate({
+          features: intersectFeatures
+        })
+      }
+        startKey = map.on('pointerdrag', function (evt) {
+          intersectFeatures.forEach((feature) => {
+            feature.getGeometry().setCoordinates(evt.coordinate)
+          })
+        });
+    }
     originalFeature = feature.clone();
   });
 
@@ -74,6 +104,7 @@ proto.run = function(inputs, context) {
       //self._selectInteraction.getFeatures().clear();
       inputs.features.push(newFeature);
       // ritorno come outpu l'input layer che sarà modificato
+      ol.Observable.unByKey(startKey);
       d.resolve(inputs);
     }
   });
@@ -87,6 +118,7 @@ proto.run = function(inputs, context) {
 
   return d.promise();
 };
+
 
 
 proto.stop = function(){

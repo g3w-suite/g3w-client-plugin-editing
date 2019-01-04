@@ -6,7 +6,7 @@ var ModifyGeometryVertexStep = require('./steps/modifygeometryvertexstep');
 
 function ModifyGeometryVertexWorflow(options={}) {
   const pickstep = new PickFeatureStep(options);
-  const modifyvertex = new ModifyGeometryVertexStep();
+  const modifyvertex = new ModifyGeometryVertexStep(options);
   options.steps = [pickstep, modifyvertex];
   base(this, options);
 }

@@ -69,6 +69,7 @@ proto.start = function() {
           .then(() => {});
       })
       .fail((error) =>  {
+        console.log(error)
         // in caso di mancato successo faccio il rollback
         // della sessione da vedere se li
         const EditingService = require('../services/editingservice');
@@ -79,7 +80,7 @@ proto.start = function() {
       })
       .always(() => {
         options.inputs.features = [];
-        if (this._session.getEditor().getLayer().getType() != 'table')
+        if (this._session.getEditor().getLayer().getType() !== 'table')
           startOp(options);
         else
           this.stop();

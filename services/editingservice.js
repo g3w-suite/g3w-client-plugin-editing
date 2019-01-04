@@ -73,7 +73,8 @@ function EditingService() {
     let layers = this._getEditableLayersFromCatalog();
     let editingLayersLenght = layers.length;
     //ciclo su ogni layers editiabile
-    for (const layer of layers) {
+    for (let i =0; i < layers.length; i++) {
+      const layer = layers[i];
       const layerId = layer.getId();
       this._editableLayers[layerId] = {};
       // vado a chiamare la funzione che mi permette di
@@ -91,7 +92,10 @@ function EditingService() {
       });
       // vado ad aggiungere ai layer editabili
       this._editableLayers[layerId] = editableLayer;
-      this._editableLayers[Symbol.for('layersarray')].push(editableLayer);
+      this._editableLayers[Symbol.for('layersarray')].push({
+        layer: editableLayer,
+        dependency: i === 0 ? layers[1] : layers[0]
+      });
       // aggiungo all'array dei vectorlayers se per caso mi servisse
       this._sessions[layerId] = null;
     }
@@ -282,10 +286,14 @@ proto.getEditingLayer = function(id) {
 };
 
 proto._buildToolBoxes = function() {
-  for (const layer of this.getLayers()) {
+  for (const {layer, dependency} of this.getLayersWithDependecy()) {
     // la toolboxes costruirà il toolboxex adatto per quel layer
     // assegnadogli le icone dei bottonii etc ..
-    const toolbox = ToolBoxesFactory.build(layer);
+
+    const toolbox = ToolBoxesFactory.build({
+      layer,
+      dependency
+    });
     // vado ad aggiungere la toolbox
     this.addToolBox(toolbox);
   }
@@ -412,7 +420,13 @@ proto._getEditableLayersFromCatalog = function() {
 
 
 proto.getLayers = function() {
-  return this._editableLayers[Symbol.for('layersarray')];
+  return this._editableLayers[Symbol.for('layersarray')].map((layerObject) => {
+    return layerObject.layer;
+  });
+};
+
+proto.getLayersWithDependecy = function() {
+  return this._editableLayers[Symbol.for('layersarray')]
 };
 
 proto.getCurrentWorkflow = function() {

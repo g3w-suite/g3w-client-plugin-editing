@@ -21,6 +21,7 @@ function EditorToolsFactory() {
     options = options || {};
     const type = options.type || Layer.LayerTypes.VECTOR;
     const layer = options.layer;
+    const dependency = options.dependency;
     let tools;
     switch (type) {
       case Layer.LayerTypes.VECTOR:
@@ -33,29 +34,33 @@ function EditorToolsFactory() {
                 id: 'addfeature',
                 name: t("editing.tools.add_feature"),
                 icon: "addPoint.png",
-                layer: layer,
+                layer,
+                dependency,
                 op: AddFeatureWorkflow
               }),
               new Tool({
                 id: 'movefeature',
                 name: t("editing.tools.move_feature"),
                 icon: "movePoint.png",
-                layer: layer,
-                type: type,
+                layer,
+                type,
+                dependency,
                 op: MoveFeatureWorkflow
               }),
               new Tool({
                 id: 'deletefeature',
                 name: t("editing.tools.delete_feature"),
                 icon: "deletePoint.png",
-                layer: layer,
+                layer,
+                dependency,
                 op: DeleteFeatureWorkflow
               }),
               new Tool({
                 id: 'editattributes',
                 name: t("editing.tools.update_feature"),
                 icon: "editAttributes.png",
-                layer: layer,
+                layer,
+                dependency,
                 op: EditFeatureAttributesWorkflow
               })
             ];
@@ -69,8 +74,9 @@ function EditorToolsFactory() {
                 id: 'addfeature',
                 name: t("editing.tools.add_feature"),
                 icon: "addLine.png",
-                layer: layer,
-                type: type,
+                layer,
+                dependency,
+                type,
                 op: AddFeatureWorkflow,
                 constraints: {
                   minPoints: 2,
@@ -81,21 +87,24 @@ function EditorToolsFactory() {
                 id: 'movevertex',
                 name: t("editing.tools.update_vertex"),
                 icon: "moveVertex.png",
-                layer: layer,
+                layer,
+                dependency,
                 op: ModifyGeometryVertexWorkflow
               }),
-              new Tool({
-                id: 'deletefeature',
-                name: t("editing.tools.delete_feature"),
-                icon: "deleteLine.png",
-                layer: layer,
-                op: DeleteFeatureWorkflow
-              }),
+              // new Tool({
+              //   id: 'deletefeature',
+              //   name: t("editing.tools.delete_feature"),
+              //   icon: "deleteLine.png",
+              //   layer,
+              //   dependency,
+              //   op: DeleteFeatureWorkflow
+              // }),
               new Tool({
                 id: 'editattributes',
                 name: t("editing.tools.update_feature"),
                 icon: "editAttributes.png",
                 layer: layer,
+                dependency,
                 op: EditFeatureAttributesWorkflow
               })
             ];
