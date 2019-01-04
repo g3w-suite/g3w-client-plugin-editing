@@ -4,9 +4,8 @@ const t = g3wsdk.core.i18n.tPlugin;
 const EditingStep = require('./editingstep');
 const MoveFeatureTask = require('./tasks/movefeaturettask');
 
-const MoveFeatureStep = function(options) {
-  options = options || {};
-  options.task = new MoveFeatureTask();
+const MoveFeatureStep = function(options={}) {
+  options.task = new MoveFeatureTask(options);
   options.help = t("editing.steps.help.move");
   base(this, options)
 };

@@ -3,7 +3,9 @@ const base =  g3wsdk.core.utils.base;
 const EditingTask = require('./editingtask');
 
 function MoveFeatureTask(options){
-  this.drawInteraction = null;
+  this._modifyInteraction = null;
+  this._snapingInteraction = null;
+  this._dependency = options.dependency;
   base(this, options);
 }
 
@@ -12,6 +14,7 @@ inherit(MoveFeatureTask, EditingTask);
 const proto = MoveFeatureTask.prototype;
 
 proto.run = function(inputs, context) {
+  const self = this;
   const d = $.Deferred();
   const session = context.session;
   const editingLayer = inputs.layer;
@@ -37,25 +40,42 @@ proto.run = function(inputs, context) {
   const features = new ol.Collection(inputs.features);
   let originalFeature = null;
   feature.setStyle(style);
-  this._translateInteraction = new ol.interaction.Translate({
-    features: features,
-    hitTolerance: (isMobile && isMobile.any) ? 10 : 0
+  this._modifyInteraction = new ol.interaction.Modify({
+    features,
   });
-  this.addInteraction(this._translateInteraction);
 
-  this._translateInteraction.on('translatestart',function(e){
+  this.addInteraction(this._modifyInteraction);
+  this._snapingInteraction = new ol.interaction.Snap({
+    source: this._dependency.getSource()
+  });
+
+  this.addInteraction(this._snapingInteraction);
+  this._modifyInteraction.on('modifystart',function(e){
     const feature = e.features.getArray()[0];
     // repndo la feature di partenza
     originalFeature = feature.clone();
   });
-  
-  this._translateInteraction.on('translateend',function(e) {
-    const feature = e.features.getArray()[0];
-    const newFeature = feature.clone();
-    session.pushUpdate(layerId, newFeature, originalFeature);
-    // ritorno come output l'input layer che sarà modificato
-    inputs.features.push(newFeature);
-    feature.setStyle(originalStyle);
+
+  this._modifyInteraction.on('modifyend',function(evt) {
+    const pixel = evt.mapBrowserEvent.pixel;
+    const feature = evt.features.getArray()[0];
+    const map = this.getMap();
+    const dependencyFeature = map.forEachFeatureAtPixel(pixel, (feature) => {
+      return feature;
+      }, {
+      layerFilter: (layer) => {
+        return layer === self._dependency
+      }
+    });
+    if (dependencyFeature) {
+      const newFeature = feature.clone();
+      session.pushUpdate(layerId, newFeature, originalFeature);
+      // ritorno come output l'input layer che sarà modificato
+      inputs.features.push(newFeature);
+      feature.setStyle(originalStyle);
+    } else {
+      feature.setGeometry(originalFeature.getGeometry());
+    }
     d.resolve(inputs);
   });
   return d.promise()
@@ -64,8 +84,9 @@ proto.run = function(inputs, context) {
 
 proto.stop = function() {
   const d = $.Deferred();
-  this.removeInteraction(this._translateInteraction);
-  this._translateInteraction = null;
+  this.removeInteraction(this._snapingInteraction);
+  this.removeInteraction(this._modifyInteraction);
+  this._modifyInteraction = null;
   d.resolve();
   return d.promise();
 };

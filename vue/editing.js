@@ -16,6 +16,13 @@ const vueComponentOptions = {
   },
   transitions: {'addremovetransition': 'showhide'},
   methods: {
+    startEditing() {
+      const toolBoxIds = this.$options.service.getToolBoxes().map((toolbox) => {
+        return toolbox.getId()
+      });
+      !this.editing ? this.startToolBox(toolBoxIds) : this.stopToolBox(toolBoxIds);
+      this.editing = !this.editing;
+    },
     undo: function() {
       const session = this.state.toolboxselected.getSession();
       const undoItems = session.undo(); // questi solo le feature (cambiamenti) che devo applicare al features stores dei singoli layers coinvolti
@@ -34,11 +41,13 @@ const vueComponentOptions = {
         })
     },
     saveAll: function() {},
-    startToolBox: function(toolboxId) {
-      const toolbox = this._getToolBoxById(toolboxId);
-      toolbox.start();
+    startToolBox: function(toolboxIds) {
+      toolboxIds.forEach((toolboxId) => {
+        const toolbox = this._getToolBoxById(toolboxId);
+        toolbox.start();
+      })
     },
-    stopToolBox: function(toolboxId) {
+    stopToolBox: function(toolboxIds) {
       const toolbox = this._getToolBoxById(toolboxId);
       if (toolbox.state.editing.history.commit)
         this.$options.service.commit()
@@ -150,7 +159,8 @@ function PanelComponent(options) {
       return {
         //lo state è quello del servizio in quanto è lui che va a modificare operare sui dati
         state: this._service.state,
-        resourcesurl: this._resourcesUrl
+        resourcesurl: this._resourcesUrl,
+        editing: false
       }
     }
   });

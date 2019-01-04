@@ -1,7 +1,10 @@
 <div class="g3w-editing-panel">
   <div style="display: flex; margin-bottom: 5px">
+    <div style="margin-right: auto;" class="editing-button enabled" @click="startEditing" :class="{'g3w-icon-toggled' : editing }">
+      <span style="align-self:flex-start" class="editing-icon" :class="g3wtemplate.font['pencil']"></span>
+    </div>
     <div style="margin-right: auto;" class="editing-button" @click="canCommit ? commit(): null" :class="{'enabled' : canCommit }">
-      <span class="editing-icon" :class="g3wtemplate.font['save']"></span>
+      <span style="align-self:flex-start" class="editing-icon" :class="g3wtemplate.font['save']"></span>
     </div>
     <div class="editing-button " @click="canUndo ? undo(): null" :class="{'enabled' : canUndo }">
       <span class="editing-icon" :class="g3wtemplate.font['arrow-left']"></span>

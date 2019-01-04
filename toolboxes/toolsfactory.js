@@ -4,6 +4,7 @@ const t = g3wsdk.core.i18n.tPlugin;
 const Tool = require('./tool');
 const AddFeatureWorkflow = require('../workflows/addfeatureworkflow');
 const ModifyGeometryVertexWorkflow = require('../workflows/modifygeometryvertexworkflow');
+const ModifyLineGeometryVertexWorkflow = require('../workflows/modifylinegeometryvertexworkflow');
 const MoveFeatureWorkflow = require('../workflows/movefeatureworkflow');
 const DeleteFeatureWorkflow = require('../workflows/deletefeatureworkflow');
 const EditFeatureAttributesWorkflow = require('../workflows/editfeatureattributesworkflow');
@@ -89,7 +90,7 @@ function EditorToolsFactory() {
                 icon: "moveVertex.png",
                 layer,
                 dependency,
-                op: ModifyGeometryVertexWorkflow
+                op: ModifyLineGeometryVertexWorkflow
               }),
               // new Tool({
               //   id: 'deletefeature',
