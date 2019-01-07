@@ -25,13 +25,11 @@ const vueComponentOptions = {
     },
     undo: function() {
       const session = this.state.toolboxselected.getSession();
-      const undoItems = session.undo(); // questi solo le feature (cambiamenti) che devo applicare al features stores dei singoli layers coinvolti
-      this.$options.service.undoRelations(undoItems)
+      session.undo();
     },
     redo: function() {
       const session = this.state.toolboxselected.getSession();
-      const redoItems = session.redo();
-      this.$options.service.redoRelations(redoItems)
+      session.redo();
     },
     commit: function() {
       this.$options.service.getToolBoxes().forEach( async (toolbox) => {
@@ -115,14 +113,14 @@ const vueComponentOptions = {
     }
   },
   computed: {
-    // messaggio generale dell'editing esempio comunicando che il layer
-    // che stiamo editindo è padre e quindi i figli sono disabilitati
     message: function() {
       const message = "";
       return message;
     },
     canCommit: function() {
-      return this.state.toolboxselected && this.state.toolboxselected.state.editing.history.commit;
+      return this.state.toolboxes.reduce((canCommit,toolbox) => {
+        return toolbox.editing.history.commit || canCommit
+      }, false)
     },
     canUndo: function() {
       const toolbox = this.state.toolboxselected;
@@ -132,6 +130,8 @@ const vueComponentOptions = {
       const toolbox = this.state.toolboxselected;
       return !_.isNull(toolbox) && toolbox.state.editing.history.redo;
     }
+  },
+  created() {
   },
   mounted() {
     this.$nextTick(() => {})

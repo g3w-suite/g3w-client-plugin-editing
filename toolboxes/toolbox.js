@@ -446,31 +446,7 @@ proto.setActiveTool = function(tool) {
   // prima stoppo l'eventuale active tool
   this.stopActiveTool(tool)
     .then(() => {
-      this.clearToolsOfTool();
-      // faccio partire lo start del tool
       this.state.activetool = tool;
-      // registro l'evento sul workflow
-      tool.once('settoolsoftool', (tools) => {
-        tools.forEach((tool) => {
-          this.state.toolsoftool.push(tool);
-        })
-      });
-
-      const _activedeactivetooloftools = (activetools, active) => {
-        this.state.toolsoftool.forEach((tooloftool) => {
-          if (activetools.indexOf(tooloftool.type) !== -1)
-            tooloftool.options.active = active;
-        });
-      };
-
-      tool.on('active', (activetools=[]) => {
-        _activedeactivetooloftools(activetools, true);
-      });
-
-      tool.on('deactive', (activetools=[]) => {
-        _activedeactivetooloftools(activetools, false);
-      });
-
       tool.start();
       const message = this.getToolMessage();
       this.setToolMessage(message);

@@ -1,5 +1,4 @@
 const ToolComponent = require('./tool');
-const ToolsOfToolComponent = require('./toolsoftool');
 
 const ToolboxComponent = Vue.extend({
   template: require('./toolbox.html'),
@@ -11,7 +10,6 @@ const ToolboxComponent = Vue.extend({
   },
   components: {
     'tool': ToolComponent,
-    'toolsoftool': ToolsOfToolComponent
   },
   methods: {
     select: function() {
@@ -20,12 +18,6 @@ const ToolboxComponent = Vue.extend({
       if (!this.state.selected) {
         this.$emit('setselectedtoolbox', this.state.id);
       }
-    },
-    toggleEditing() {
-      //se il toolbox non è ancora abilitato non faccio niente
-      if (!this.state.layerstate.editing.ready || this.state.loading)
-        return;
-      this.state.editing.on ? this.$emit('stoptoolbox', this.state.id): this.$emit('starttoolbox', this.state.id);
     },
     saveEdits() {
       this.$emit('savetoolbox', this.state.id);
@@ -43,9 +35,6 @@ const ToolboxComponent = Vue.extend({
     },
     toolhelpmessage() {
       return this.state.toolmessages.help;
-    },
-    showtoolsoftool() {
-      return !!this.state.toolsoftool.length;
     },
     isLayerReady() {
       return this.state.layerstate.editing.ready;

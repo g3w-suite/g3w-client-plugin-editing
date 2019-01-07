@@ -26,9 +26,6 @@
         </div>
         <div class="message" style="margin-top: 5px;" :id="'id_toolbox_messages_'+ state.id">
           <div v-html="state.message"></div>
-          <transition name="fade">
-            <toolsoftool v-if="showtoolsoftool" :tools="state.toolsoftool"></toolsoftool>
-          </transition>
           <div class="toolbox_help_message" v-html="toolhelpmessage"></div>
         </div>
       </div>
