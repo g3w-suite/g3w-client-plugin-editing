@@ -286,17 +286,30 @@ proto.getEditingLayer = function(id) {
 };
 
 proto._buildToolBoxes = function() {
+  const dependencyToolboxSession = {};
   for (const {layer, dependency} of this.getLayersWithDependecy()) {
     // la toolboxes costruirà il toolboxex adatto per quel layer
     // assegnadogli le icone dei bottonii etc ..
-
     const toolbox = ToolBoxesFactory.build({
       layer,
       dependency
     });
+    dependencyToolboxSession[dependency.getId()] = toolbox.getSession();
     // vado ad aggiungere la toolbox
     this.addToolBox(toolbox);
   }
+
+  for (const toolBoxId in dependencyToolboxSession) {
+    this._setDependencyToolboxSession({
+      toolBoxId,
+      dependencySession: dependencyToolboxSession[toolBoxId]
+    })
+  }
+};
+
+proto._setDependencyToolboxSession = function({toolBoxId, dependencySession}) {
+  const toolbox = this.getToolBoxById(toolBoxId);
+  toolbox && toolbox.setDependencySession(dependencySession);
 };
 
 //funzione che server per aggiungere un editor
@@ -753,63 +766,63 @@ proto._createCommitMessage = function(commitItems) {
 };
 
 proto.commit = function(toolbox, close=false) {
-  let d = $.Deferred();
-  toolbox = toolbox || this.state.toolboxselected;
-  let session = toolbox.getSession();
-  let layer = toolbox.getLayer();
-  const layerType = layer.getType();
-  let workflow = new CommitFeaturesWorkflow({
-    type:  'commit'
-  });
-  workflow.start({
-    inputs: {
-      layer: layer,
-      message: this._createCommitMessage(session.getCommitItems()),
-      close: close
-    }})
-    .then(() => {
-      const dialog = GUI.dialog.dialog({
-        message: `<h4 class="text-center"><i style="margin-right: 5px;" class=${GUI.getFontClass('spinner')}></i>${t('editing.messages.saving')}</h4>`,
-        closeButton: false
-      });
-      // funzione che serve a fare il commit della sessione legata al tool
-      // qui probabilmente a seconda del layer se ha dipendenze faccio ogni sessione
-      // produrrà i suoi dati post serializzati che poi saranno uniti per un unico commit
-      session.commit()
-        .then( (commitItems, response) => {
-          if (response.result) {
-            let relationsResponse = response.response.new_relations;
-            if (relationsResponse) {
-              this._applyChangesToNewRelationsAfterCommit(relationsResponse);
-            }
-            GUI.notify.success(t("editing.messages.saved"));
-            if (layerType === 'vector')
-              this._mapService.refreshMap({force: true});
-          } else {
-            const message = response.errors;
-            GUI.notify.error(message);
-          }
-          workflow.stop();
-          d.resolve(toolbox);
-        })
-        .fail( (error) => {
-          let parser = new serverErrorParser({
-            error: error
-          });
-          let message = parser.parse();
-          GUI.notify.error(message);
-          workflow.stop();
-          d.resolve(toolbox);
-        })
-        .always(() => {
-          dialog.modal('hide');
-        })
-    })
-    .fail(() => {
-      workflow.stop();
-      d.reject(toolbox);
+  return new Promise((resolve, reject) => {
+    toolbox = toolbox || this.state.toolboxselected;
+    let session = toolbox.getSession();
+    let layer = toolbox.getLayer();
+    const layerType = layer.getType();
+    let workflow = new CommitFeaturesWorkflow({
+      type:  'commit'
     });
-  return d.promise();
+    workflow.start({
+      inputs: {
+        layer: layer,
+        message: this._createCommitMessage(session.getCommitItems()),
+        close: close
+      }})
+      .then(() => {
+        const dialog = GUI.dialog.dialog({
+          message: `<h4 class="text-center">
+                      <i style="margin-right: 5px;" class=${GUI.getFontClass('spinner')}></i>
+                      ${t('editing.messages.saving')}
+                    </h4>`,
+          closeButton: false
+        });
+        session.commit()
+          .then( (commitItems, response) => {
+            if (response.result) {
+              let relationsResponse = response.response.new_relations;
+              if (relationsResponse) {
+                this._applyChangesToNewRelationsAfterCommit(relationsResponse);
+              }
+              GUI.notify.success(t("editing.messages.saved"));
+              if (layerType === 'vector')
+                this._mapService.refreshMap({force: true});
+            } else {
+              const message = response.errors;
+              GUI.notify.error(message);
+            }
+            workflow.stop();
+            resolve(toolbox);
+          })
+          .fail( (error) => {
+            let parser = new serverErrorParser({
+              error: error
+            });
+            let message = parser.parse();
+            GUI.notify.error(message);
+            workflow.stop();
+            resolve(toolbox);
+          })
+          .always(() => {
+            dialog.modal('hide');
+          })
+      })
+      .fail(() => {
+        workflow.stop();
+        reject(toolbox);
+      });
+  })
 };
 
 EditingService.EDITING_FIELDS_TYPE = ['unique'];

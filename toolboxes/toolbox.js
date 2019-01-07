@@ -35,6 +35,7 @@ function ToolBox(options={}) {
     editor: this._editor,
     featuresstore: this._layerType == Layer.LayerTypes.VECTOR ? new OlFeaturesStore(): new FeaturesStore()
   });
+  this._dependencySession = null;
   // opzione per recuperare le feature
   this._getFeaturesOption = {};
   // stato della history
@@ -109,6 +110,13 @@ function ToolBox(options={}) {
 inherit(ToolBox, G3WObject);
 
 const proto = ToolBox.prototype;
+
+proto.setDependencySession = function(session) {
+  this._dependencySession = session;
+  this._tools.forEach((tool) => {
+    tool.setDependencySession(session);
+  });
+};
 
 proto.getLayer = function() {
   return this._layer;

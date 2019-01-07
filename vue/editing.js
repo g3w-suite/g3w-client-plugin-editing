@@ -17,10 +17,10 @@ const vueComponentOptions = {
   transitions: {'addremovetransition': 'showhide'},
   methods: {
     startEditing() {
-      const toolBoxIds = this.$options.service.getToolBoxes().map((toolbox) => {
-        return toolbox.getId()
+      const toolBoxes= this.$options.service.getToolBoxes().map((toolbox) => {
+        return toolbox
       });
-      !this.editing ? this.startToolBox(toolBoxIds) : this.stopToolBox(toolBoxIds);
+      !this.editing ? this.startToolBox(toolBoxes) : this.stopToolBox(toolBoxes);
       this.editing = !this.editing;
     },
     undo: function() {
@@ -33,29 +33,28 @@ const vueComponentOptions = {
       const redoItems = session.redo();
       this.$options.service.redoRelations(redoItems)
     },
-    commit: function(toolboxId) {
-      const toolbox = this.$options.service.getToolBoxById(toolboxId);
-      this.$options.service.commit(toolbox)
-        .always((toolbox) => {
-          toolbox.restartActiveTool()
-        })
+    commit: function() {
+      this.$options.service.getToolBoxes().forEach( async (toolbox) => {
+        toolbox.state.editing.history.commit && await this.$options.service.commit(toolbox);
+        toolbox.restartActiveTool()
+      })
     },
     saveAll: function() {},
-    startToolBox: function(toolboxIds) {
-      toolboxIds.forEach((toolboxId) => {
-        const toolbox = this._getToolBoxById(toolboxId);
+    startToolBox: function(toolBoxes) {
+      toolBoxes.forEach((toolbox) => {
         toolbox.start();
       })
     },
-    stopToolBox: function(toolboxIds) {
-      const toolbox = this._getToolBoxById(toolboxId);
-      if (toolbox.state.editing.history.commit)
-        this.$options.service.commit()
-          .always(function() {
-            toolbox.stop()
-          });
-      else
-        toolbox.stop();
+    stopToolBox: function(toolBoxes) {
+      toolBoxes.forEach(async (toolbox) => {
+        try {
+          toolbox.state.editing.history.commit && await this.$options.service.commit(toolbox);
+        } catch(error) {
+          console.log(error)
+        } finally {
+          toolbox.stop();
+        }
+      })
     },
     saveToolBox: function(toolboxId) {
       const toolbox = this._getToolBoxById(toolboxId);

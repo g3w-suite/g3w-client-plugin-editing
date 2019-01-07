@@ -7,6 +7,7 @@ const G3WObject = g3wsdk.core.G3WObject;
 function Tool(options = {}) {
   base(this);
   this._session = options.session;
+  this._dependencySession = null;
   // prendo il layer
   this._layer = options.layer;
   // gli viene passato l'operatore
@@ -46,7 +47,10 @@ proto.start = function() {
   //passo al context la sessione
   options.context = {
     session: this._session,
-    layer: this._session.getEditor().getLayer()
+    layer: this._session.getEditor().getLayer(),
+    dependency: {
+      session: this._dependencySession
+    }
   };
 
   this._options = options;
@@ -69,7 +73,6 @@ proto.start = function() {
           .then(() => {});
       })
       .fail((error) =>  {
-        console.log(error)
         // in caso di mancato successo faccio il rollback
         // della sessione da vedere se li
         const EditingService = require('../services/editingservice');
@@ -176,6 +179,14 @@ proto.getSession = function() {
 //setta la sessione
 proto.setSession = function(session) {
   this._session = session;
+};
+
+proto.setDependencySession = function(session) {
+  this._dependencySession = session;
+};
+
+proto.getDependencySession = function() {
+  return this._dependencySession;
 };
 
 proto.clear = function() {

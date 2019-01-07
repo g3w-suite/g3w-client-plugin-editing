@@ -25,7 +25,10 @@ proto.run = function(inputs, context) {
   const session = context.session;
   const originalLayer = context.layer;
   const layerId = originalLayer.getId();
+  const dependencySession = context.dependency.session;
   const originalFeatures = [];
+  let dependencyOriginalFeature;
+  let dependencyFeature;
   let startKey;
   this._originalStyle = editingLayer.getStyle();
   const style = [
@@ -67,17 +70,19 @@ proto.run = function(inputs, context) {
     const features = evt.features.getArray();
     if (dependencyFeatures.length) {
       const map = this.getMap();
-      const dependencyFeature = map.forEachFeatureAtPixel(pixel, (feature) => {
+      dependencyFeature = map.forEachFeatureAtPixel(pixel, (feature) => {
         return feature;
       }, {
         layerFilter: (layer) => {
           return layer === self._dependency
         }
       });
-      if (dependencyFeature)
+      if (dependencyFeature) {
+        dependencyOriginalFeature = dependencyFeature.clone();
         startKey = map.on('pointerdrag', (evt) => {
           dependencyFeature.getGeometry().setCoordinates(evt.coordinate)
-      })
+        })
+      }
     }
     features.forEach((feature) => {
       originalFeatures.push(feature.clone())
@@ -96,6 +101,7 @@ proto.run = function(inputs, context) {
         inputs.features.push(newFeature);
       }
     }
+    dependencyFeature && dependencySession.pushUpdate(dependencySession.getId(), dependencyFeature, dependencyOriginalFeature);
     ol.Observable.unByKey(startKey);
     d.resolve(inputs);
   });
