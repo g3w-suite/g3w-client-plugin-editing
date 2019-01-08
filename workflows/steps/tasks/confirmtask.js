@@ -48,11 +48,10 @@ let Dialogs = {
           }
         }
       }
-      // NOW I HAVE TO IMPLEMENT WHAT HAPPEND ID NO ACTION HAPPEND
       const dialog = GUI.dialog.dialog({
         message: inputs.message,
-        title: tPlugin("editing.messages.commit_feature") + " " +inputs.layer.getName() + "?",
-        buttons: buttons
+        title: `${tPlugin("editing.messages.commit_feature")}?`,
+        buttons
       });
       return d.promise()
     }

@@ -25,17 +25,16 @@ const vueComponentOptions = {
     },
     undo: function() {
       const session = this.state.toolboxselected.getSession();
-      session.undo();
+      const undoItems = session.undo();
+      this.$options.service.undoRelations(undoItems)
     },
     redo: function() {
       const session = this.state.toolboxselected.getSession();
-      session.redo();
+      const redoItems = session.redo();
+      this.$options.service.redoRelations(redoItems)
     },
     commit: function() {
-      this.$options.service.getToolBoxes().forEach( async (toolbox) => {
-        toolbox.state.editing.history.commit && await this.$options.service.commit(toolbox);
-        toolbox.restartActiveTool()
-      })
+      this.$options.service.commit();
     },
     saveAll: function() {},
     startToolBox: function(toolBoxes) {

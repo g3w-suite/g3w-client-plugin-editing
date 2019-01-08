@@ -55,6 +55,7 @@ proto.run = function(inputs, context) {
   this._features.forEach((feature) => {
     feature.setStyle(style)
   });
+
   const features = new ol.Collection(inputs.features);
   const dependencyFeatures = this._dependency.getSource().getFeatures();
   this._modifyInteraction = new ol.interaction.Modify({
@@ -89,8 +90,8 @@ proto.run = function(inputs, context) {
     })
   });
 
-  this._modifyInteraction.on('modifyend',function(e) {
-    const features = e.features.getArray();
+  this._modifyInteraction.on('modifyend',function(evt) {
+    const features = evt.features.getArray();
     const featuresLength = features.length;
     for (let i = 0; i < featuresLength; i++) {
       const feature = features[i];
@@ -101,7 +102,7 @@ proto.run = function(inputs, context) {
         inputs.features.push(newFeature);
       }
     }
-    dependencyFeature && dependencySession.pushUpdate(dependencySession.getId(), dependencyFeature, dependencyOriginalFeature);
+    dependencyFeature && session.pushUpdate(dependencySession.getId(), dependencyFeature, dependencyOriginalFeature);
     ol.Observable.unByKey(startKey);
     d.resolve(inputs);
   });

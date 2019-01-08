@@ -21,8 +21,8 @@ proto.run = function(inputs, context) {
   const layers = [inputs.layer];
   const features = inputs.features.length ? inputs.features : null;
   this.pickFeatureInteraction = new PickFeatureInteraction({
-    layers: layers,
-    features: features
+    layers,
+    features
   });
   // aggiungo
   this.addInteraction(this.pickFeatureInteraction);
@@ -31,6 +31,7 @@ proto.run = function(inputs, context) {
     const feature = e.feature;
     const feature_coordinates = [];
     const allfeatures = inputs.layer.getSource().getFeatures();
+    // get coordinates of feature
     const coordinates = feature.getGeometry().getCoordinates();
     coordinates.forEach((coordinate) => {
       feature_coordinates.push(coordinate.toString())
@@ -38,14 +39,14 @@ proto.run = function(inputs, context) {
     for (let i = 0; i < allfeatures.length; i ++) {
       const _feature = allfeatures[i];
       const coordinates = _feature.getGeometry().getCoordinates();
-      coordinates.forEach((coordinate) => {
-        const find = feature_coordinates.find((feature_coordinate) => {
+      let find = false;
+      find = coordinates.find((coordinate) => {
+        return !!feature_coordinates.find((feature_coordinate) => {
           return coordinate.toString() === (feature_coordinate);
         });
-        if (!!find)
-          inputs.features.push(_feature)
-
       });
+      if (!!find)
+        inputs.features.push(_feature)
     }
     d.resolve(inputs);
   });

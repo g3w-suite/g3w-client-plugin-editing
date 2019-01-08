@@ -111,6 +111,10 @@ inherit(ToolBox, G3WObject);
 
 const proto = ToolBox.prototype;
 
+proto.canCommit = function() {
+  return this.state.editing.history.commit;
+};
+
 proto.setDependencySession = function(session) {
   this._dependencySession = session;
   this._tools.forEach((tool) => {

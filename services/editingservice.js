@@ -738,47 +738,59 @@ proto.commitDirtyToolBoxes = function(toolboxId) {
   });
 };
 
-proto._createCommitMessage = function(commitItems) {
-  function create_changes_list_dom_element(add, update, del) {
+proto._createCommitMessage = function(sessions) {
+  function create_changes_list_dom_element({layerName, add, update, del}) {
     const changeIds = {};
     changeIds[`${t('editing.messages.commit.add')}`] = _.map(add, 'id').join(',');
     changeIds[`${t('editing.messages.commit.update')}`] = _.map(update, 'id').join(',');
     changeIds[`${t('editing.messages.commit.delete')}`] = del.join(',');
-    let dom = "<ul style='border-bottom-color: #f4f4f4;'>";
+    let dom = `<h4 style="font-weight: bold;">${layerName}</h4><ul style='border-bottom-color: #f4f4f4;'>`;
     Object.entries(changeIds).forEach(([action, ids]) => {
-      dom += "<li>" + action + ": [" + ids + "]</li>";
+      dom += `<li>${action} : [${ids}]</li>`;
     });
     dom += "</ul>";
     return dom;
   }
 
   let message = "";
-  message += create_changes_list_dom_element(commitItems.add, commitItems.update, commitItems.delete);
-  if (!_.isEmpty(commitItems.relations)) {
-    message += "<div style='height:1px; background:#f4f4f4;border-bottom:1px solid #f4f4f4;'></div>";
-    message += "<div style='margin-left: 40%'><h4>"+ t('editing.relations') +"</h4></div>";
-    Object.entries(commitItems.relations).forEach(([ relationName, commits]) => {
-      message +=  "<div><span style='font-weight: bold'>" + relationName + "</span></div>";
-      message += create_changes_list_dom_element(commits.add, commits.update, commits.delete);
-    })
+  for (let i = 0; i < sessions.length; i++) {
+    const session = sessions[i];
+    const commitItems = session.getCommitItems();
+    const {add, update, delete:del} = commitItems;
+    const layerName = this.getLayerById(session.getId()).getName();
+    message += create_changes_list_dom_element({
+      layerName,
+      add,
+      update,
+      del
+    });
   }
+
   return message;
 };
 
-proto.commit = function(toolbox, close=false) {
+proto.commit = function() {
   return new Promise((resolve, reject) => {
-    toolbox = toolbox || this.state.toolboxselected;
-    let session = toolbox.getSession();
-    let layer = toolbox.getLayer();
-    const layerType = layer.getType();
+    const commitObject = {
+      layers: [],
+      sessions: []
+    };
+
+    this.getToolBoxes().forEach((toolbox) => {
+      if (toolbox.canCommit()) {
+        commitObject.sessions.push(toolbox.getSession());
+        commitObject.layers.push(toolbox.getLayer());
+      }
+    });
     let workflow = new CommitFeaturesWorkflow({
       type:  'commit'
     });
+
+    const message = this._createCommitMessage(commitObject.sessions);
     workflow.start({
       inputs: {
-        layer: layer,
-        message: this._createCommitMessage(session.getCommitItems()),
-        close: close
+        layers: commitObject.layers,
+        message
       }})
       .then(() => {
         const dialog = GUI.dialog.dialog({
@@ -788,41 +800,86 @@ proto.commit = function(toolbox, close=false) {
                     </h4>`,
           closeButton: false
         });
-        session.commit()
-          .then( (commitItems, response) => {
-            if (response.result) {
-              let relationsResponse = response.response.new_relations;
-              if (relationsResponse) {
-                this._applyChangesToNewRelationsAfterCommit(relationsResponse);
-              }
-              GUI.notify.success(t("editing.messages.saved"));
-              if (layerType === 'vector')
-                this._mapService.refreshMap({force: true});
-            } else {
-              const message = response.errors;
-              GUI.notify.error(message);
-            }
+        const sessionCommit = commitObject.sessions.map((session) => {
+          return session.commit();
+        });
+
+        $.when(sessionCommit)
+          .then(() => {
+            console.log(arguments);
             workflow.stop();
-            resolve(toolbox);
-          })
-          .fail( (error) => {
-            let parser = new serverErrorParser({
-              error: error
-            });
-            let message = parser.parse();
-            GUI.notify.error(message);
-            workflow.stop();
-            resolve(toolbox);
-          })
-          .always(() => {
-            dialog.modal('hide');
-          })
+            resolve();
+
+          }).always(() => {
+          dialog.modal('hide');
+        })
+
       })
-      .fail(() => {
-        workflow.stop();
-        reject(toolbox);
+      .fail((err) => {
+        console.log(err)
+      })
+
+
+    /*
+    return new Promise((resolve, reject) => {
+      let session = toolbox.getSession();
+      let layer = toolbox.getLayer();
+      const layerType = layer.getType();
+      let workflow = new CommitFeaturesWorkflow({
+        type:  'commit'
       });
+      workflow.start({
+        inputs: {
+          layer: layer,
+          message: this._createCommitMessage(session.getCommitItems()),
+          close: close
+        }})
+        .then(() => {
+          const dialog = GUI.dialog.dialog({
+            message: `<h4 class="text-center">
+                        <i style="margin-right: 5px;" class=${GUI.getFontClass('spinner')}></i>
+                        ${t('editing.messages.saving')}
+                      </h4>`,
+            closeButton: false
+          });
+          session.commit()
+            .then( (commitItems, response) => {
+              if (response.result) {
+                let relationsResponse = response.response.new_relations;
+                if (relationsResponse) {
+                  this._applyChangesToNewRelationsAfterCommit(relationsResponse);
+                }
+                GUI.notify.success(t("editing.messages.saved"));
+                if (layerType === 'vector')
+                  this._mapService.refreshMap({force: true});
+              } else {
+                const message = response.errors;
+                GUI.notify.error(message);
+              }
+              workflow.stop();
+              resolve(toolbox);
+            })
+            .fail( (error) => {
+              let parser = new serverErrorParser({
+                error: error
+              });
+              let message = parser.parse();
+              GUI.notify.error(message);
+              workflow.stop();
+              resolve(toolbox);
+            })
+            .always(() => {
+              dialog.modal('hide');
+            })
+        })
+        .fail(() => {
+          workflow.stop();
+          reject(toolbox);
+        });
+    })
+    */
   })
+
 };
 
 EditingService.EDITING_FIELDS_TYPE = ['unique'];
