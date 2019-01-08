@@ -95,9 +95,10 @@ proto._saveFnc = function(promise, inputs) {
     } else {
       if (this._originalLayer.isPkEditable())
         fields.forEach((field) => {
-          if (field.name == newFeature.getPk())
+          if (field.name === newFeature.getPk())
             newFeature.set(newFeature.getPk(), field.value);
         });
+      this._session.updateTemporaryChanges(newFeature);
     }
     GUI.setModal(false);
     promise.resolve(inputs);

@@ -804,13 +804,16 @@ proto.commit = function() {
           return session.commit();
         });
 
-        $.when(sessionCommit)
+        $.when(...sessionCommit)
           .then(() => {
-            console.log(arguments);
+            console.log(arguments)
             workflow.stop();
             resolve();
-
-          }).always(() => {
+          })
+          .fail((error) => {
+            console.log(error)
+          })
+          .always(() => {
           dialog.modal('hide');
         })
 
