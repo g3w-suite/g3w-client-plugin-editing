@@ -806,7 +806,6 @@ proto.commit = function() {
 
         $.when(...sessionCommit)
           .then(() => {
-            console.log(arguments)
             workflow.stop();
             resolve();
           })
