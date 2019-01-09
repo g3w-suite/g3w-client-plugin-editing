@@ -28,6 +28,7 @@ function EditingService() {
       }
     }
   };
+  this._orphanNodes = [];
   // state of editing
   this.state = {
     toolboxes: [], // contiene tutti gli stati delle toolbox in editing
@@ -165,6 +166,25 @@ proto.subscribe = function({event, layerId}={}) {
 };
 
 // END API
+
+proto.setOrphanNodes = function(nodes) {
+  this._orphanNodes = nodes;
+  this._orphanNodes.forEach((node) => {
+    node.setStyle(new ol.style.Style({
+      image: new ol.style.Circle({
+        radius: 7,
+        fill: new ol.style.Fill({color: 'black'}),
+        stroke: new ol.style.Stroke({
+          color: [255,0,0], width: 2
+        })
+      })
+    }))
+  });
+};
+
+proto.getOrphanNodes = function() {
+  return this._orphanNodes;
+};
 
 proto.activeQueryInfo = function() {
   this._mapService.activeMapControl('query');
@@ -771,12 +791,34 @@ proto._createCommitMessage = function(sessions) {
 };
 
 // metyhod to get
-proto.checkOrphanNodes = function() {
-  return [];
+proto.checkOrphanNodes = function(layer1, layernode) {
+  const nodes = layernode.getSource().getFeatures();
+  const orphannodes = nodes.filter((node) => {
+    const coordinate = node.getGeometry().getCoordinates();
+    const map = this._mapService.getMap();
+    const pixel = map.getPixelFromCoordinate(coordinate);
+    return !map.forEachFeatureAtPixel(pixel, (feature) => {
+      return feature;
+    }, {
+      layerFilter: (layer) => {
+        return layer === layer1
+      }
+    });
+  });
+  orphannodes.forEach((node) => {
+    node.setStyle(new ol.style.Style({
+      image: new ol.style.Circle({
+        radius: 7,
+        fill: new ol.style.Fill({color: 'black'}),
+        stroke: new ol.style.Stroke({
+          color: [255,0,0], width: 2
+        })
+      })
+    }))
+  })
 };
 
 proto.commit = function() {
-  const nodes = this.checkOrphanNodes();
   return new Promise((resolve, reject) => {
     const commitObject = {
       sessions: []

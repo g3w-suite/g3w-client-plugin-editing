@@ -75,6 +75,7 @@ proto.run = function(inputs, context) {
     } else {
       feature.setGeometry(originalFeature.getGeometry());
     }
+    self.checkOrphanNodes(self._dependency, editingLayer);
     d.resolve(inputs);
   });
   return d.promise()

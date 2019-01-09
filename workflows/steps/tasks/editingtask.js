@@ -22,4 +22,23 @@ proto.run = function(inputs, context) {};
 
 proto.stop = function() {};
 
+proto.checkOrphanNodes = function(layer1, layernode) {
+  const EditingService = require('../../../services/editingservice');
+  const nodes = layernode.getSource().getFeatures();
+  const orphannodes = nodes.filter((node) => {
+    const coordinate = node.getGeometry().getCoordinates();
+    const map = this._mapService.getMap();
+    const pixel = map.getPixelFromCoordinate(coordinate);
+    return !map.forEachFeatureAtPixel(pixel, (feature) => {
+      return feature;
+    }, {
+      layerFilter: (layer) => {
+        return layer === layer1
+      }
+    });
+  });
+  
+  EditingService.setOrphanNodes(orphannodes);
+};
+
 module.exports = EditingTask;
