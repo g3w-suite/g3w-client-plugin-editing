@@ -8,6 +8,7 @@ const LayersStore = g3wsdk.core.layer.LayersStore;
 const Session = g3wsdk.core.editing.Session;
 const Layer = g3wsdk.core.layer.Layer;
 const GUI = g3wsdk.gui.GUI;
+const SessionsRegistry = g3wsdk.core.editing.SessionsRegistry;
 const serverErrorParser= g3wsdk.core.errors.parsers.Server;
 const ToolBoxesFactory = require('../toolboxes/toolboxesfactory');
 const t = g3wsdk.core.i18n.tPlugin;
@@ -769,17 +770,25 @@ proto._createCommitMessage = function(sessions) {
   return message;
 };
 
+// metyhod to get
+proto.checkOrphanNodes = function() {
+  return [];
+};
+
 proto.commit = function() {
+  const nodes = this.checkOrphanNodes();
   return new Promise((resolve, reject) => {
     const commitObject = {
-      layers: [],
       sessions: []
     };
-
     this.getToolBoxes().forEach((toolbox) => {
       if (toolbox.canCommit()) {
-        commitObject.sessions.push(toolbox.getSession());
-        commitObject.layers.push(toolbox.getLayer());
+        const session = toolbox.getSession();
+        const relationsSessions = session.getCommitItems().relations;
+        for (let relationSessionId in relationsSessions) {
+          console.log(SessionsRegistry.getSession(relationSessionId))
+        }
+        commitObject.sessions.push(session);
       }
     });
     let workflow = new CommitFeaturesWorkflow({
@@ -789,7 +798,6 @@ proto.commit = function() {
     const message = this._createCommitMessage(commitObject.sessions);
     workflow.start({
       inputs: {
-        layers: commitObject.layers,
         message
       }})
       .then(() => {
@@ -805,15 +813,34 @@ proto.commit = function() {
         });
 
         $.when(...sessionCommit)
-          .then(() => {
-            workflow.stop();
-            resolve();
-          })
-          .fail((error) => {
-            console.log(error)
+          .then((...args) => {
+            const handleResponse = (data) => {
+              const [commitItems, response] = data;
+              if (response.result) {
+                let relationsResponse = response.response.new_relations;
+                if (relationsResponse) {
+                  this._applyChangesToNewRelationsAfterCommit(relationsResponse);
+                }
+                GUI.notify.success(t("editing.messages.saved"));
+                this._mapService.refreshMap({force: true});
+              } else {
+                const message = response.errors;
+                GUI.notify.error(message);
+              }
+            };
+            if (sessionCommit.length > 1) {
+              for (let arg of args) {
+                handleResponse(arg)
+              }
+            } else
+              handleResponse(args);
+            resolve()
+          }, (error) => {
+              console.log(error)
           })
           .always(() => {
-          dialog.modal('hide');
+            workflow.stop();
+            dialog.modal('hide');
         })
 
       })

@@ -70,7 +70,6 @@ proto.run = function(inputs, context) {
     if (dependencyFeature) {
       const newFeature = feature.clone();
       session.pushUpdate(layerId, newFeature, originalFeature);
-      // ritorno come output l'input layer che sarà modificato
       inputs.features.push(newFeature);
       feature.setStyle(originalStyle);
     } else {

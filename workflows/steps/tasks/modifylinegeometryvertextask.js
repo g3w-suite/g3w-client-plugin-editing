@@ -96,23 +96,18 @@ proto.run = function(inputs, context) {
     for (let i = 0; i < featuresLength; i++) {
       const feature = features[i];
       const originalFeature = originalFeatures[i];
-      if (feature.getGeometry().getExtent() !== originalFeature.getGeometry().getExtent()) {
+      if (feature.getGeometry().getCoordinates().toString() !== originalFeature.getGeometry().getCoordinates().toString()) {
         const newFeature = feature.clone();
         session.pushUpdate(layerId, newFeature, originalFeature);
         inputs.features.push(newFeature);
       }
     }
-    dependencyFeature && session.pushUpdate(dependencySession.getId(), dependencyFeature, dependencyOriginalFeature);
+    if (dependencyFeature) {
+      session.pushUpdate(dependencySession.getId(), dependencyFeature, dependencyOriginalFeature);
+    }
     ol.Observable.unByKey(startKey);
     d.resolve(inputs);
   });
-
-  /*if (this._snap) {
-    this._snapInteraction = new ol.interaction.Snap({
-      source: editingLayer.getSource()
-    });
-    this.addInteraction(this._snapInteraction);
-  }*/
 
   return d.promise();
 };

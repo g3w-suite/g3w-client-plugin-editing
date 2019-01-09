@@ -1,6 +1,6 @@
 <div class="g3w-editing-panel">
   <div style="display: flex; margin-bottom: 5px">
-    <div style="margin-right: auto;" class="editing-button enabled" @click="startEditing" :class="{'g3w-icon-toggled' : editing }">
+    <div style="margin-right: auto; border-radius: 50%;" class="editing-button enabled" @click="startEditing" :class="{'g3w-icon-toggled' : editing }">
       <span class="editing-icon" :class="g3wtemplate.font['pencil']"></span>
     </div>
     <div style="margin-right: auto;" class="editing-button" @click="canCommit ? commit(): null" :class="{'enabled' : canCommit }">
