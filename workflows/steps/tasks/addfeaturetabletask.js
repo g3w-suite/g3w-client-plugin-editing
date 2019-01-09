@@ -1,6 +1,6 @@
-var inherit = g3wsdk.core.utils.inherit;
-var base =  g3wsdk.core.utils.base;
-var EditingTask = require('./editingtask');
+const inherit = g3wsdk.core.utils.inherit;
+const base =  g3wsdk.core.utils.base;
+const EditingTask = require('./editingtask');
 
 function AddFeatureTableTask(options) {
   options = options || {};
@@ -9,28 +9,23 @@ function AddFeatureTableTask(options) {
 
 inherit(AddFeatureTableTask, EditingTask);
 
-var proto = AddFeatureTableTask.prototype;
+const proto = AddFeatureTableTask.prototype;
 
 // metodo eseguito all'avvio del tool
 proto.run = function(inputs, context) {
-  var d = $.Deferred();
-  var originalLayer = context.layer;
-  var layerId = originalLayer.getId();
+  const d = $.Deferred();
+  const originalLayer = context.layer;
   // l'etiing layer in realtà è la session per i layer tabellari
-  var editingLayer = inputs.layer;
-  var session = context.session;
+  const editingLayer = inputs.layer;
   // nella creazione della nuova feature utilizzo l'editing layer originale (TableLayer)
-  var feature = originalLayer.createNewFeature();
-  session.pushAdd(layerId, feature);
+  const feature = originalLayer.createNewFeature();
   editingLayer.getSource().addFeature(feature);
   inputs.features.push(feature);
   d.resolve(inputs);
   return d.promise();
 };
 
-proto.stop = function() {
-
-};
+proto.stop = function() {};
 
 
 module.exports = AddFeatureTableTask;

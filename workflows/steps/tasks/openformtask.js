@@ -98,7 +98,7 @@ proto._saveFnc = function(promise, inputs) {
           if (field.name === newFeature.getPk())
             newFeature.set(newFeature.getPk(), field.value);
         });
-      this._session.updateTemporaryChanges(newFeature);
+      this._session.pushAdd(layerId, newFeature);
     }
     GUI.setModal(false);
     promise.resolve(inputs);
