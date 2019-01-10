@@ -8,7 +8,6 @@ const LayersStore = g3wsdk.core.layer.LayersStore;
 const Session = g3wsdk.core.editing.Session;
 const Layer = g3wsdk.core.layer.Layer;
 const GUI = g3wsdk.gui.GUI;
-const SessionsRegistry = g3wsdk.core.editing.SessionsRegistry;
 const serverErrorParser= g3wsdk.core.errors.parsers.Server;
 const ToolBoxesFactory = require('../toolboxes/toolboxesfactory');
 const t = g3wsdk.core.i18n.tPlugin;
@@ -29,6 +28,7 @@ function EditingService() {
     }
   };
   this._orphanNodes = [];
+  this._nodelayerId = null;
   // state of editing
   this.state = {
     toolboxes: [], // contiene tutti gli stati delle toolbox in editing
@@ -82,6 +82,8 @@ function EditingService() {
       // vado a chiamare la funzione che mi permette di
       // estrarre la versione editabile del layer di partenza (es. da imagelayer a vector layer, table layer/tablelayer etc..)
       const editableLayer = layer.getLayerForEditing();
+      if (editableLayer.getGeometryType() === 'Point')
+        this._nodelayerId = editableLayer.getId();
       if (editableLayer.isReady()) {
         editingLayersLenght-=1;
       }
@@ -167,6 +169,8 @@ proto.subscribe = function({event, layerId}={}) {
 
 // END API
 
+
+// method to get and syle orphans nodes
 proto.setOrphanNodes = function(nodes) {
   this._orphanNodes = nodes;
   this._orphanNodes.forEach((node) => {
@@ -772,8 +776,11 @@ proto._createCommitMessage = function(sessions) {
     dom += "</ul>";
     return dom;
   }
-
   let message = "";
+  if (this._orphanNodes.length) {
+    message+="<h4 style='color:red;'>Trovati Nodi orfani. Se si decide di continuare verranno eliminati automaticamente</h4>"
+  }
+
   for (let i = 0; i < sessions.length; i++) {
     const session = sessions[i];
     const commitItems = session.getCommitItems();
@@ -818,25 +825,48 @@ proto.checkOrphanNodes = function(layer1, layernode) {
   })
 };
 
+proto._preCommit = function() {
+  const commitObject = {
+    sessions: []
+  };
+
+  this.getToolBoxes().forEach((toolbox) => {
+    if (toolbox.canCommit()) {
+      const session = toolbox.getSession();
+      session.moveRelationStatesOwnSession();
+      commitObject.sessions.push(session);
+    }
+  });
+  if (commitObject.sessions.length > 1 ) {
+    const session = commitObject.sessions.find((session) => {
+      return session.getId() === this._nodelayerId;
+    });
+    for  (let i = 0; i < this._orphanNodes.length; i++) {
+      const orphannode = this._orphanNodes[i];
+      session.pushDelete(this._nodelayerId, orphannode);
+      session.save();
+    }
+
+  } else if (this._orphanNodes.length) {
+    const toolbox = this.getToolBoxById(this._nodelayerId);
+    const session = toolbox.getSession();
+    for  (let i = 0; i < this._orphanNodes.length; i++) {
+      const orphannode = this._orphanNodes[i];
+      session.pushDelete(this._nodelayerId, orphannode);
+      session.save();
+    }
+    commitObject.sessions.push(session);
+  }
+  return commitObject;
+};
+
 proto.commit = function() {
   return new Promise((resolve, reject) => {
-    const commitObject = {
-      sessions: []
-    };
-    this.getToolBoxes().forEach((toolbox) => {
-      if (toolbox.canCommit()) {
-        const session = toolbox.getSession();
-        const relationsSessions = session.getCommitItems().relations;
-        for (let relationSessionId in relationsSessions) {
-          console.log(SessionsRegistry.getSession(relationSessionId))
-        }
-        commitObject.sessions.push(session);
-      }
-    });
+    const deleteOrphanNodes = !!this._orphanNodes.length;
+    const commitObject = this._preCommit();
     let workflow = new CommitFeaturesWorkflow({
       type:  'commit'
     });
-
     const message = this._createCommitMessage(commitObject.sessions);
     workflow.start({
       inputs: {
@@ -859,10 +889,6 @@ proto.commit = function() {
             const handleResponse = (data) => {
               const [commitItems, response] = data;
               if (response.result) {
-                let relationsResponse = response.response.new_relations;
-                if (relationsResponse) {
-                  this._applyChangesToNewRelationsAfterCommit(relationsResponse);
-                }
                 GUI.notify.success(t("editing.messages.saved"));
                 this._mapService.refreshMap({force: true});
               } else {
@@ -876,6 +902,13 @@ proto.commit = function() {
               }
             } else
               handleResponse(args);
+            if (deleteOrphanNodes){
+              const toolbox = this.getToolBoxById(this._nodelayerId);
+              const editingLayer = toolbox.getEditingLayer();
+              for (let i=0; i < this._orphanNodes.length; i++) {
+                editingLayer.getSource().removeFeature(this._orphanNodes[i]);
+              }
+            }
             resolve()
           }, (error) => {
               console.log(error)
