@@ -3,7 +3,8 @@ var base =  g3wsdk.core.utils.base;
 var PickFeatureInteraction = g3wsdk.ol.interactions.PickFeatureInteraction;
 var EditingTask = require('./editingtask');
 
-function PickFeatureTask(options) {
+function PickFeatureTask(options={}) {
+  this._one = options.one || false;
   this.pickFeatureInteraction = null;
   this._busy = false;
   this._tools = options.tools || [];
@@ -30,23 +31,27 @@ proto.run = function(inputs, context) {
   this.pickFeatureInteraction.on('picked', function(e) {
     const feature = e.feature;
     const feature_coordinates = [];
-    const allfeatures = inputs.layer.getSource().getFeatures();
-    // get coordinates of feature
-    const coordinates = feature.getGeometry().getCoordinates();
-    coordinates.forEach((coordinate) => {
-      feature_coordinates.push(coordinate.toString())
-    });
-    for (let i = 0; i < allfeatures.length; i ++) {
-      const _feature = allfeatures[i];
-      const coordinates = _feature.getGeometry().getCoordinates();
-      let find = false;
-      find = coordinates.find((coordinate) => {
-        return !!feature_coordinates.find((feature_coordinate) => {
-          return coordinate.toString() === (feature_coordinate);
-        });
+    if (!this._one) {
+      const allfeatures = inputs.layer.getSource().getFeatures();
+      // get coordinates of feature
+      const coordinates = feature.getGeometry().getCoordinates();
+      coordinates.forEach((coordinate) => {
+        feature_coordinates.push(coordinate.toString())
       });
-      if (!!find)
-        inputs.features.push(_feature)
+      for (let i = 0; i < allfeatures.length; i ++) {
+        const _feature = allfeatures[i];
+        const coordinates = _feature.getGeometry().getCoordinates();
+        let find = false;
+        find = coordinates.find((coordinate) => {
+          return !!feature_coordinates.find((feature_coordinate) => {
+            return coordinate.toString() === (feature_coordinate);
+          });
+        });
+        if (!!find)
+          inputs.features.push(_feature);
+      }
+    } else {
+      inputs.features.push(feature);
     }
     d.resolve(inputs);
   });

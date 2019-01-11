@@ -140,7 +140,7 @@ proto._removeLastPoint = function() {
 };
 
 AddFeatureTask.CONDITIONS = {
-  'LineString': function(options) {
+  'LineString': function(options={}) {
     // viene settato sull'inizio del draw l'evento drawstart dell'editor
     return function({coordinate}) {
       const source = options.source;

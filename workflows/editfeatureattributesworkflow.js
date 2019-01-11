@@ -9,7 +9,9 @@ function EditFeatureAttributesWorkflow(options) {
   // workflow composto da due steps:
   // Il primo servre per fare selezionare la feature
   // il secondo per aprire il form
-  options.steps = [new PickFeatureStep(), new OpenFormStep()];
+  options.steps = [new PickFeatureStep({
+    one: true
+  }), new OpenFormStep()];
   base(this, options);
 }
 
