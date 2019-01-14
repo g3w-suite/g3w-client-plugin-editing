@@ -92,14 +92,14 @@ function EditorToolsFactory() {
                 dependency,
                 op: ModifyLineGeometryVertexWorkflow
               }),
-              // new Tool({
-              //   id: 'deletefeature',
-              //   name: t("editing.tools.delete_feature"),
-              //   icon: "deleteLine.png",
-              //   layer,
-              //   dependency,
-              //   op: DeleteFeatureWorkflow
-              // }),
+              new Tool({
+                id: 'deletefeature',
+                name: t("editing.tools.delete_feature"),
+                icon: "deleteLine.png",
+                layer,
+                dependency,
+                op: DeleteFeatureWorkflow
+              }),
               new Tool({
                 id: 'editattributes',
                 name: t("editing.tools.update_feature"),

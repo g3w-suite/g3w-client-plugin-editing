@@ -37,7 +37,6 @@ proto.checkOrphanNodes = function(layer1, layernode) {
       }
     });
   });
-  
   EditingService.setOrphanNodes(orphannodes);
 };
 

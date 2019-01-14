@@ -17,12 +17,14 @@ function AddFeatureTask(options={}) {
   this._condition = options.condition || _.constant(true);
   this._constraints = options.constraints || {};
   this._dependency = options.dependency || null;
+  this._removeLastPoint = this.removeLastPoint.bind(this);
   base(this, options);
 }
 
 inherit(AddFeatureTask, EditingTask);
 
 const proto = AddFeatureTask.prototype;
+
 
 // metodo eseguito all'avvio del tool
 proto.run = function(inputs, context) {
@@ -81,7 +83,8 @@ proto.run = function(inputs, context) {
       });
       this.addInteraction(this._snapInteraction);
       this._snapInteraction.setActive(true);
-      this.drawInteraction.on('drawstart', function(e) {
+      this.drawInteraction.on('drawstart', () => {
+        document.addEventListener('keydown', this._removeLastPoint);
         options.canDraw = true;
       });
       // viene settato l'evento drawend
@@ -103,7 +106,7 @@ proto.run = function(inputs, context) {
         //source.readFeatures().push(feature);
         // devo creare un clone per evitare che quando eventualmente sposto la feature appena aggiunta
         // questa non sovrascriva le feature nuova originale del primo update
-        //session.pushAdd(layerId, feature);
+        session.pushAdd(layerId, feature);
         inputs.features.push(feature);
         d.resolve(inputs);
       });
@@ -124,18 +127,13 @@ proto.stop = function() {
   //rimove l'interazione e setta a null drawInteracion
   this.removeInteraction(this.drawInteraction);
   this.drawInteraction = null;
+  document.removeEventListener('keydown', this._removeLastPoint);
   return true;
 };
 
-proto._removeLastPoint = function() {
-  if (this.drawInteraction) {
-    // provo a rimuovere l'ultimo punto. Nel caso non esista la geometria gestisco silenziosamente l'errore
-    try {
-      this.drawInteraction.removeLastPoint();
-    }
-    catch (e) {
-      //
-    }
+proto.removeLastPoint = function(evt) {
+  if (evt.which === 27) {
+    this.drawInteraction.removeLastPoint();
   }
 };
 

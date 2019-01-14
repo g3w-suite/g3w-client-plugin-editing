@@ -59,8 +59,9 @@ let Dialogs = {
 };
 
 function ConfirmTask(options = {}) {
-  let type = options.type || "default";
-  this._dialog = Dialogs[type];
+  this.type = options.type || "default";
+  this._dependency = options.dependency;
+  this._dialog = Dialogs[this.type];
   base(this, options);
 }
 
@@ -70,8 +71,12 @@ let proto = ConfirmTask.prototype;
 
 // metodo eseguito all'avvio del tool
 proto.run = function(inputs, context) {
+  const geometryType = inputs.features ? inputs.features[0].getGeometry().getType(): null;
   //console.log('Confirm Feature Task run ....');
-  return this._dialog.fnc(inputs);
+  return this._dialog.fnc(inputs).then(() => {
+    if (this.type === 'delete' && geometryType === 'LineString')
+      this.checkOrphanNodes(inputs.layer, this._dependency)
+  })
 };
 
 // metodo eseguito alla disattivazione del tool

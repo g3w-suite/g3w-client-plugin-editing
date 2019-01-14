@@ -4,11 +4,11 @@ const EditingWorkflow = require('./editingworkflow');
 const DeleteFeatureStep = require('./steps/deletefeaturestep');
 const ConfirmStep = require('./steps/confirmstep');
 
-function DeleteFeatureWorflow(options) {
-  options = options || {};
-  options.steps = [new DeleteFeatureStep(), new ConfirmStep({
-    type: 'delete'}
-    )];
+function DeleteFeatureWorflow(options={}) {
+  options.steps = [new DeleteFeatureStep(options), new ConfirmStep({
+    type: 'delete',
+    dependency: options.dependency
+  })];
   base(this, options);
 }
 

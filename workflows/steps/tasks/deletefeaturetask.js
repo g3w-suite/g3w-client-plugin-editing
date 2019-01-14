@@ -3,9 +3,10 @@ const base =  g3wsdk.core.utils.base;
 const DeleteInteraction = g3wsdk.ol.interactions.DeleteFeatureInteraction;
 const EditingTask = require('./editingtask');
 
-function DeleteFeatureTask(options) {
+function DeleteFeatureTask(options={}) {
   this.drawInteraction = null;
   this._selectInteraction = null;
+  this._dependency = options.dependency;
   base(this, options);
 }
 
@@ -18,6 +19,7 @@ const proto = DeleteFeatureTask.prototype;
 
 ol.geom.GeometryType = {
   POINT: 'Point',
+  LINE: 'Line',
   LINE_STRING: 'LineString',
   LINEAR_RING: 'LinearRing',
   POLYGON: 'Polygon',
@@ -48,7 +50,7 @@ styles[ol.geom.GeometryType.POLYGON] = [
 ];
 styles[ol.geom.GeometryType.MULTI_POLYGON] = styles[ol.geom.GeometryType.POLYGON];
 
-styles[ol.geom.GeometryType.LINE_STRING] = [
+styles[ol.geom.GeometryType.LINE] = styles[ol.geom.GeometryType.LINE_STRING] = [
   new ol.style.Style({
     stroke: new ol.style.Stroke({
       color: white,
@@ -96,19 +98,37 @@ styles[ol.geom.GeometryType.GEOMETRY_COLLECTION] = _.concat(styles[ol.geom.Geome
 // che ritorna una promessa
 proto.run = function(inputs, context) {
   //console.log('Delete task run.......');
-  var self = this;
-  var d = $.Deferred();
-  var editingLayer = inputs.layer;
-  var originaLayer = context.layer;
-  var layerId = originaLayer.getId();
+  const d = $.Deferred();
+  const editingLayer = inputs.layer;
+  const features = editingLayer.getSource().getFeatures();
+  const originaLayer = context.layer;
+  const layerId = originaLayer.getId();
+  const geometryType = originaLayer.getGeometryType();
   //recupero la sessione dal context
-  var session = context.session;
+  const session = context.session;
   this._selectInteraction = new ol.interaction.Select({
     layers: [editingLayer],
     condition: ol.events.condition.click,
-    style: function(feature) {
-      var style = styles[feature.getGeometry().getType()];
-      return style;
+    filter: geometryType === 'Line'? (feature) => {
+      const coordinate = feature.getGeometry().getCoordinates();
+      let coordinateString = [coordinate[0].toString(), coordinate[1].toString()];
+      for (let i = 0; i < features.length; i++ ) {
+        const _feature = features[i];
+        if (feature !== _feature) {
+          const _coordinate = _feature.getGeometry().getCoordinates();
+          const foundIndex = coordinateString.findIndex((StringCoordinate) => {
+            return StringCoordinate === _coordinate[0].toString() ||  StringCoordinate === _coordinate[1].toString();
+          });
+          if (foundIndex !== -1) {
+            coordinateString.splice(foundIndex, 1);
+            if (!coordinateString.length) break;
+          }
+        }
+      }
+      return !!coordinateString.length ? ol.events.condition.click: false;
+    }: false,
+    style: function() {
+      return styles[geometryType];
     }
   });
   this.addInteraction(this._selectInteraction);
@@ -117,7 +137,7 @@ proto.run = function(inputs, context) {
     layer: editingLayer // il layer appartenente
   });
   this.addInteraction(this._deleteInteraction);
-  this._deleteInteraction.on('deleteend', function(e) {
+  this._deleteInteraction.on('deleteend', (e) => {
     const feature = e.features.getArray()[0];
     const EditingService = require('../../../services/editingservice');
     const RelationService = require('../../../services/relationservice');
@@ -144,7 +164,7 @@ proto.run = function(inputs, context) {
     });
     // vado a cancellare dalla source la feature selezionata
     editingLayer.getSource().removeFeature(feature);
-    self._selectInteraction.getFeatures().remove(feature);
+    this._selectInteraction.getFeatures().remove(feature);
     // dico di cancellarla (la feature non viene cancellatata ma aggiornato il suo stato
     session.pushDelete(layerId, feature);
     //dovrei aggiungere qui qualcosa per salvare temporaneamente quesa modifica sulla sessione al fine di
