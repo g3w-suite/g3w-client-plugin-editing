@@ -89,7 +89,7 @@ proto.run = function(inputs, context) {
         //source.readFeatures().push(feature);
         // devo creare un clone per evitare che quando eventualmente sposto la feature appena aggiunta
         // questa non sovrascriva le feature nuova originale del primo update
-        //session.pushAdd(layerId, feature);
+        session.pushAdd(layerId, feature);
         inputs.features.push(feature);
         d.resolve(inputs);
       });
