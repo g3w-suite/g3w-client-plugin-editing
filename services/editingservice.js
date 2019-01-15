@@ -919,9 +919,7 @@ proto.commit = function() {
         })
 
       })
-      .fail((err) => {
-        console.log(err)
-      })
+      .fail((err) => {})
 
 
     /*
