@@ -74,8 +74,9 @@ proto.run = function(inputs, context) {
   const geometryType = inputs.features ? inputs.features[0].getGeometry().getType(): null;
   //console.log('Confirm Feature Task run ....');
   return this._dialog.fnc(inputs).then(() => {
-    if (this.type === 'delete' && geometryType === 'LineString')
-      this.checkOrphanNodes(inputs.layer, this._dependency)
+    if (this.type === 'delete' && geometryType === 'LineString') {
+      this.checkOrphanNodes(inputs.layer, this._dependency);
+    }
   })
 };
 

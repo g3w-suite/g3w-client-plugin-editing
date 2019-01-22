@@ -195,7 +195,6 @@ proto.activeQueryInfo = function() {
 };
 
 proto.setLayersColor = function() {
-
   const RELATIONS_COLOR = [
     ["#656F94",
       "#485584",
@@ -262,7 +261,8 @@ proto.setLayersColor = function() {
     }
   }
   for (const layer of this.getLayers()) {
-    !layer.getColor() ? layer.setColor(LAYERS_COLOR.splice(0,1).pop()): null;
+    const color = !layer.getColor() && LAYERS_COLOR.splice(0,1).pop();
+    layer.setColor(color)
   }
 };
 
@@ -310,6 +310,48 @@ proto.getEditingLayer = function(id) {
   return toolbox.getEditingLayer();
 };
 
+proto.setLineStyle = function({color, editingLayer}) {
+  const styleFnc = function (feature, resolution) {
+    const geometry = feature.getGeometry();
+    const styles = [
+      // linestring
+      new ol.style.Style({
+        stroke: new ol.style.Stroke({
+          color,
+          width: 2
+        })
+      })
+    ];
+    const center = ol.extent.getCenter(geometry.getExtent());
+    const arrowLength = resolution * 5;
+    geometry.forEachSegment(function (start, end) {
+      const dx = end[0] - start[0];
+      const dy = end[1] - start[1];
+      const rotation = Math.atan2(dy, dx);
+
+      const lineStr1 = new ol.geom.LineString([center, [center[0] - arrowLength, center[1] + arrowLength]]);
+      lineStr1.rotate(rotation, center);
+      const lineStr2 = new ol.geom.LineString([center, [center[0] - arrowLength, center[1] - arrowLength]]);
+      lineStr2.rotate(rotation, center);
+      const stroke = new ol.style.Stroke({
+        color,
+        width: 5
+      });
+
+      styles.push(new ol.style.Style({
+        geometry: lineStr1,
+        stroke: stroke
+      }));
+      styles.push(new ol.style.Style({
+        geometry: lineStr2,
+        stroke: stroke
+      }));
+    });
+    return styles;
+  };
+  editingLayer.setStyle(styleFnc)
+};
+
 proto._buildToolBoxes = function() {
   const dependencyToolboxSession = {};
   for (const {layer, dependency} of this.getLayersWithDependecy()) {
@@ -322,6 +364,12 @@ proto._buildToolBoxes = function() {
     dependencyToolboxSession[dependency.getId()] = toolbox.getSession();
     // vado ad aggiungere la toolbox
     this.addToolBox(toolbox);
+    if (layer.getGeometryType() === 'Line') {
+      this.setLineStyle({
+        color: layer.getColor(),
+        editingLayer: toolbox.getEditingLayer()
+      })
+    }
   }
 
   for (const toolBoxId in dependencyToolboxSession) {
@@ -829,7 +877,6 @@ proto._preCommit = function() {
   const commitObject = {
     sessions: []
   };
-
   this.getToolBoxes().forEach((toolbox) => {
     if (toolbox.canCommit()) {
       const session = toolbox.getSession();
@@ -864,6 +911,7 @@ proto.commit = function() {
   return new Promise((resolve, reject) => {
     const deleteOrphanNodes = !!this._orphanNodes.length;
     const commitObject = this._preCommit();
+    console.log(commitObject)
     let workflow = new CommitFeaturesWorkflow({
       type:  'commit'
     });
@@ -883,7 +931,6 @@ proto.commit = function() {
         const sessionCommit = commitObject.sessions.map((session) => {
           return session.commit();
         });
-
         $.when(...sessionCommit)
           .then((...args) => {
             const handleResponse = (data) => {
@@ -909,6 +956,10 @@ proto.commit = function() {
                 editingLayer.getSource().removeFeature(this._orphanNodes[i]);
               }
             }
+            commitObject.sessions.forEach((session) => {
+              const toolbox = this.getToolBoxById(session.getId());
+              toolbox.setCommit();
+            });
             resolve()
           }, (error) => {
               console.log(error)
@@ -920,66 +971,6 @@ proto.commit = function() {
 
       })
       .fail((err) => {})
-
-
-    /*
-    return new Promise((resolve, reject) => {
-      let session = toolbox.getSession();
-      let layer = toolbox.getLayer();
-      const layerType = layer.getType();
-      let workflow = new CommitFeaturesWorkflow({
-        type:  'commit'
-      });
-      workflow.start({
-        inputs: {
-          layer: layer,
-          message: this._createCommitMessage(session.getCommitItems()),
-          close: close
-        }})
-        .then(() => {
-          const dialog = GUI.dialog.dialog({
-            message: `<h4 class="text-center">
-                        <i style="margin-right: 5px;" class=${GUI.getFontClass('spinner')}></i>
-                        ${t('editing.messages.saving')}
-                      </h4>`,
-            closeButton: false
-          });
-          session.commit()
-            .then( (commitItems, response) => {
-              if (response.result) {
-                let relationsResponse = response.response.new_relations;
-                if (relationsResponse) {
-                  this._applyChangesToNewRelationsAfterCommit(relationsResponse);
-                }
-                GUI.notify.success(t("editing.messages.saved"));
-                if (layerType === 'vector')
-                  this._mapService.refreshMap({force: true});
-              } else {
-                const message = response.errors;
-                GUI.notify.error(message);
-              }
-              workflow.stop();
-              resolve(toolbox);
-            })
-            .fail( (error) => {
-              let parser = new serverErrorParser({
-                error: error
-              });
-              let message = parser.parse();
-              GUI.notify.error(message);
-              workflow.stop();
-              resolve(toolbox);
-            })
-            .always(() => {
-              dialog.modal('hide');
-            })
-        })
-        .fail(() => {
-          workflow.stop();
-          reject(toolbox);
-        });
-    })
-    */
   })
 
 };

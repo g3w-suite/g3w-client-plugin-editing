@@ -13,7 +13,11 @@ function AddFeatureTask(options={}) {
   // la drw interaction per disegnare la feature
   this.drawInteraction = null;
   this._snapInteraction = null;
-  this._finishCondition = options.finishCondition || _.constant(true);
+  this._finishCondition = function(evt) {
+    console.log(evt);
+    return true
+  };
+  //options.finishCondition || _.constant(true);
   this._condition = options.condition || _.constant(true);
   this._constraints = options.constraints || {};
   this._dependency = options.dependency || null;
@@ -147,9 +151,14 @@ AddFeatureTask.CONDITIONS = {
         return true;
       else {
         return options.canDraw || !!source.getFeatures().find((feature) => {
-          return feature.getGeometry().getCoordinates()[0].toString() === coordinate.toString() || feature.getGeometry().getCoordinates()[1].toString() === coordinate.toString();
+          return feature.getGeometry().getCoordinates()[1].toString() === coordinate.toString();
         })
       }
+      // else {
+      //   return options.canDraw || !!source.getFeatures().find((feature) => {
+      //     return feature.getGeometry().getCoordinates()[0].toString() === coordinate.toString() || feature.getGeometry().getCoordinates()[1].toString() === coordinate.toString();
+      //   })
+      // }
     }
   },
   'Point': function({ dependency, source }) {

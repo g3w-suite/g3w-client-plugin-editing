@@ -29,6 +29,7 @@ export default {
         select_feature_to_relation: "Seleziona la feature che vuoi mettere in relazione",
         show_edit_feature_form:  "Mostra il form della feature per poter editare gli attributi",
         pick_feature: "Clicca su una feature per poterla modificare",
+        switch_direction: "Clicca sul branch per invertire la direzione",
         insert_attributes_feature: "Inserisci gli attributi della feature"
       }
     },
@@ -106,6 +107,7 @@ export default {
         select_feature_to_relation: "Select feature that you bind relation",
         show_edit_feature_form:  "Show feature form to edit attributes",
         pick_feature: "Click on feature to modify",
+        switch_direction: "Click on branch to invert direction",
         insert_attributes_feature: "Insert attributes of the feature"
       }
     },

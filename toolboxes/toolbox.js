@@ -6,6 +6,7 @@ const Layer = g3wsdk.core.layer.Layer;
 const Session = g3wsdk.core.editing.Session;
 const OlFeaturesStore = g3wsdk.core.layer.features.OlFeaturesStore;
 const FeaturesStore = g3wsdk.core.layer.features.FeaturesStore;
+const validationLine = require('../utils/utils').validation.line;
 
 function ToolBox(options={}) {
   base(this);
@@ -59,6 +60,7 @@ function ToolBox(options={}) {
     selected: false, //proprieà che mi server per switchare tra un toolbox e un altro
     activetool: null, // tiene conto del tool attivo corrente
     editing: {
+      canCommit: false,
       session: sessionstate, // STATE DELLA SESSIONE
       history: historystate,// assegno lo state della history
       on: false,
@@ -110,6 +112,16 @@ function ToolBox(options={}) {
 inherit(ToolBox, G3WObject);
 
 const proto = ToolBox.prototype;
+
+proto.setCommit = function() {
+  if (this._layer.getGeometryType() === 'Line') {
+    const features = this._editingLayer.getSource().getFeatures();
+    this.state.editing.canCommit = this.state.editing.history.commit && validationLine.commit({
+      features
+    })
+  } else
+    this.state.editing.canCommit = this.state.editing.history.commit;
+};
 
 proto.canCommit = function() {
   return this.state.editing.history.commit;

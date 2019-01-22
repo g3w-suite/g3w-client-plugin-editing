@@ -4,7 +4,7 @@ var PickFeatureInteraction = g3wsdk.ol.interactions.PickFeatureInteraction;
 var EditingTask = require('./editingtask');
 
 function PickFeatureTask(options={}) {
-  this._one = options.one || false;
+  this._one = options.one || false; // if one feature or not
   this.pickFeatureInteraction = null;
   this._busy = false;
   this._tools = options.tools || [];
@@ -28,7 +28,7 @@ proto.run = function(inputs, context) {
   // aggiungo
   this.addInteraction(this.pickFeatureInteraction);
   // gestisco l'evento
-  this.pickFeatureInteraction.on('picked', function(e) {
+  this.pickFeatureInteraction.on('picked', (e) => {
     const feature = e.feature;
     const feature_coordinates = [];
     if (!this._one) {

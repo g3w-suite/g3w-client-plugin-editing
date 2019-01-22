@@ -70,7 +70,11 @@ proto.start = function() {
       .then((outputs) => {
         // vado a salvare la sessione
         this._session.save()
-          .then(() => {});
+          .then(() => {
+            const EditingService = require('../services/editingservice');
+            const toolbox = EditingService.getToolBoxById(this._session.getId());
+            toolbox.setCommit();
+          });
       })
       .fail((error) =>  {
         // in caso di mancato successo faccio il rollback

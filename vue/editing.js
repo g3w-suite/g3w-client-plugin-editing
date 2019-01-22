@@ -23,18 +23,25 @@ const vueComponentOptions = {
       !this.editing ? this.startToolBox(toolBoxes) : this.stopToolBox(toolBoxes);
       this.editing = !this.editing;
     },
-    undo: function() {
+    undo() {
       const session = this.state.toolboxselected.getSession();
       const undoItems = session.undo();
+      this._setCommitToolbox(session);
       this.$options.service.undoRelations(undoItems)
     },
-    redo: function() {
+    redo() {
       const session = this.state.toolboxselected.getSession();
       const redoItems = session.redo();
+      this._setCommitToolbox(session);
       this.$options.service.redoRelations(redoItems)
     },
+    _setCommitToolbox(session) {
+      const toolbox = this.$options.service.getToolBoxById(session.getId());
+      toolbox.setCommit();
+    },
     commit: function() {
-      this.$options.service.commit();
+      this.$options.service.commit().then(()=> {
+      });
     },
     saveAll: function() {},
     startToolBox: function(toolBoxes) {
@@ -117,8 +124,8 @@ const vueComponentOptions = {
       return message;
     },
     canCommit: function() {
-      return this.state.toolboxes.reduce((canCommit,toolbox) => {
-        return toolbox.editing.history.commit || canCommit
+      return this.state.toolboxes.reduce((canCommit, toolbox) => {
+        return toolbox.editing.canCommit || canCommit
       }, false)
     },
     canUndo: function() {

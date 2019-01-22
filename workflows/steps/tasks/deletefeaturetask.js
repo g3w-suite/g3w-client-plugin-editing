@@ -127,7 +127,7 @@ proto.run = function(inputs, context) {
       }
       return !!coordinateString.length ? ol.events.condition.click: false;
     }: false,
-    style: function() {
+    style() {
       return styles[geometryType];
     }
   });
@@ -187,7 +187,6 @@ proto.stop = function() {
     this._deleteInteraction = null;
     resolve(true);
   })
-
 };
 
 

@@ -10,6 +10,7 @@ const DeleteFeatureWorkflow = require('../workflows/deletefeatureworkflow');
 const EditFeatureAttributesWorkflow = require('../workflows/editfeatureattributesworkflow');
 const EditTableFeaturesWorkflow = require('../workflows/edittableworkflow');
 const AddTableFeatureWorflow = require('../workflows/addtablefeatureworkflow');
+const SwitchLineDirectionWorkflow = require('../workflows/switchlinedirectionworkflow');
 
 // classe costruttrice di Tools
 function EditorToolsFactory() {
@@ -107,7 +108,16 @@ function EditorToolsFactory() {
                 layer: layer,
                 dependency,
                 op: EditFeatureAttributesWorkflow
-              })
+              }),
+              new Tool({
+                id: 'switch',
+                name: t("editing.tools.add_feature"),
+                icon: "switch.png",
+                layer,
+                dependency,
+                type,
+                op: SwitchLineDirectionWorkflow
+              }),
             ];
             break;
           case Geometry.GeometryTypes.POLYGON:
