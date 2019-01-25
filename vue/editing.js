@@ -17,27 +17,17 @@ const vueComponentOptions = {
   transitions: {'addremovetransition': 'showhide'},
   methods: {
     startEditing() {
-      const toolBoxes= this.$options.service.getToolBoxes().map((toolbox) => {
-        return toolbox
-      });
+      const toolBoxes = this.$options.service.getToolBoxes();
       !this.editing ? this.startToolBox(toolBoxes) : this.stopToolBox(toolBoxes);
       this.editing = !this.editing;
     },
     undo() {
       const session = this.state.toolboxselected.getSession();
-      const undoItems = session.undo();
-      this._setCommitToolbox(session);
-      this.$options.service.undoRelations(undoItems)
+      this.$options.service.undo(session);
     },
     redo() {
       const session = this.state.toolboxselected.getSession();
-      const redoItems = session.redo();
-      this._setCommitToolbox(session);
-      this.$options.service.redoRelations(redoItems)
-    },
-    _setCommitToolbox(session) {
-      const toolbox = this.$options.service.getToolBoxById(session.getId());
-      toolbox.setCommit();
+      this.$options.service.redo(session);
     },
     commit: function() {
       this.$options.service.commit().then(()=> {
@@ -50,14 +40,10 @@ const vueComponentOptions = {
       })
     },
     stopToolBox: function(toolBoxes) {
-      toolBoxes.forEach(async (toolbox) => {
-        try {
-          toolbox.state.editing.history.commit && await this.$options.service.commit(toolbox);
-        } catch(error) {
-          console.log(error)
-        } finally {
+      this.$options.service.commit().then(() => {
+        toolBoxes.forEach((toolbox) => {
           toolbox.stop();
-        }
+        })
       })
     },
     saveToolBox: function(toolboxId) {

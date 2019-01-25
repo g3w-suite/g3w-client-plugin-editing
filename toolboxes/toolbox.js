@@ -34,7 +34,7 @@ function ToolBox(options={}) {
   this._session = new Session({
     id: options.id, // contiene l'id del layer
     editor: this._editor,
-    featuresstore: this._layerType == Layer.LayerTypes.VECTOR ? new OlFeaturesStore(): new FeaturesStore()
+    featuresstore: this._layerType === Layer.LayerTypes.VECTOR ? new OlFeaturesStore(): new FeaturesStore()
   });
   this._dependencySession = null;
   // opzione per recuperare le feature
@@ -86,7 +86,7 @@ function ToolBox(options={}) {
     this._unregisterGetFeaturesEvent();
   });
 
-  this._session.onafter('start', (options) => {
+  this._session.onafter('start', (options={}) => {
     this._getFeaturesOption = options;
     const EditingService = require('../services/editingservice');
     // passo id del toolbox e le opzioni per far partire la sessione

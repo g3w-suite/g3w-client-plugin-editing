@@ -22,6 +22,7 @@ function EditorToolsFactory() {
   this.build = function(options) {
     options = options || {};
     const type = options.type || Layer.LayerTypes.VECTOR;
+    //editing layer
     const layer = options.layer;
     const dependency = options.dependency;
     let tools;

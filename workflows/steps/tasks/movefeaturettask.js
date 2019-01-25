@@ -72,10 +72,11 @@ proto.run = function(inputs, context) {
       session.pushUpdate(layerId, newFeature, originalFeature);
       inputs.features.push(newFeature);
       feature.setStyle(originalStyle);
+      self.removeFromOrphanNodes(originalFeature.getId())
     } else {
       feature.setGeometry(originalFeature.getGeometry());
     }
-    self.checkOrphanNodes(self._dependency, editingLayer);
+    //self.checkOrphanNodes(self._dependency, editingLayer);
     d.resolve(inputs);
   });
   return d.promise()

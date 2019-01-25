@@ -22,22 +22,18 @@ proto.run = function(inputs, context) {};
 
 proto.stop = function() {};
 
-proto.checkOrphanNodes = function(layer1, layernode) {
+proto.removeFromOrphanNodes = function(id) {
   const EditingService = require('../../../services/editingservice');
-  const nodes = layernode.getSource().getFeatures();
-  const orphannodes = nodes.filter((node) => {
-    const coordinate = node.getGeometry().getCoordinates();
-    const map = this._mapService.getMap();
-    const pixel = map.getPixelFromCoordinate(coordinate);
-    return !map.forEachFeatureAtPixel(pixel, (feature) => {
-      return feature;
-    }, {
-      layerFilter: (layer) => {
-        return layer === layer1
-      }
-    });
+  const orphannodes = EditingService.getOrphanNodes();
+  const filterednodes = orphannodes.filter((node) => {
+    return node.getId() !== id;
   });
-  EditingService.setOrphanNodes(orphannodes);
+  EditingService.setOrphanNodes(filterednodes);
+};
+
+proto.checkOrphanNodes = function() {
+  const EditingService = require('../../../services/editingservice');
+  EditingService.checkOrphanNodes();
 };
 
 module.exports = EditingTask;

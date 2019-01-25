@@ -106,7 +106,7 @@ proto.run = function(inputs, context) {
       session.pushUpdate(dependencySession.getId(), dependencyFeature, dependencyOriginalFeature);
     }
     ol.Observable.unByKey(startKey);
-    self.checkOrphanNodes(editingLayer, self._dependency);
+    self.checkOrphanNodes();
     d.resolve(inputs);
   });
   return d.promise();
