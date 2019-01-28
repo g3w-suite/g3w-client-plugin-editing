@@ -42,7 +42,7 @@ proto._getFieldUniqueValuesFromServer = function(layer, uniqueFields) {
         uniqueFields[fieldName].input.options.values.push(value);
       })
     })
-  }).fail(function(){
+  }).fail(() => {
     console.log('errore')
   })
 };
@@ -50,7 +50,7 @@ proto._getFieldUniqueValuesFromServer = function(layer, uniqueFields) {
 proto._getUniqueFieldsType = function(fields) {
   const uniqueFields = {};
   fields.forEach((field) => {
-     if (field.input.type == 'unique')
+     if (field.input && field.input.type === 'unique')
        uniqueFields[field.name] = field;
   });
   return uniqueFields;
@@ -70,6 +70,41 @@ proto._getForm = function(inputs, context) {
   this._fields = this._originalLayer.getFieldsWithValues(this._feature, {
     exclude: excludeFields
   });
+  // child fields
+  const child_field = {
+    type: 'child',
+    name: 'pipe_properties',
+    label: 'Pipe',
+    fields: [{
+      editable: true,
+      input: {
+        options: {},
+        type: 'text'
+      },
+      label: "project_id",
+      name: "project_id",
+      type: "integer",
+      validate: {
+        message: null,
+        required: true
+      }
+    },
+      {
+        editable: true,
+        input: {
+          options: {},
+          type: 'text'
+        },
+        label: "pippo",
+        name: "pippo",
+        type: "integer",
+        validate: {
+          message: null,
+          required: false
+        }
+      }]
+  };
+  this._fields.push(child_field);
   this._editorFormStructure = this._originalLayer.getEditorFormStructure();
   const uniqueFields = this._getUniqueFieldsType(this._fields);
   if (!_.isEmpty(uniqueFields))
