@@ -142,6 +142,16 @@ proto.startForm = function(options = {}) {
   const context = options.context;
   const promise = options.promise;
   const formComponent = options.formComponent || EditingFormComponent;
+  const addons = [
+    {
+      id: 'graph',
+      title: 'Grafico',
+      fontClass: 'fas fa-chart-bar',
+      fnc :() => {
+        console.log('ciao')
+      }
+    }
+  ];
   const Form = this._getForm(inputs, context);
   const formService = Form({
     formComponent,
@@ -153,6 +163,7 @@ proto.startForm = function(options = {}) {
     pk: this._pk,
     isnew: this._originalFeature.isNew(),
     fields: this._fields,
+    addons,
     context_inputs:  {
       context,
       inputs
