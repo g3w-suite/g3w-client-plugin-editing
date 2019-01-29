@@ -450,7 +450,7 @@ proto._attachLayerWidgetsEvent = function(layer) {
   const fields = layer.getEditingFields();
   for (let i=0; i < fields.length; i++) {
     const field = fields[i];
-    if(field.input.type === 'select_autocomplete') {
+    if(field.type !== 'child' && field.input.type === 'select_autocomplete') {
       const options = field.input.options;
       const {key, values, value, usecompleter, layer_id, loading} = options;
       if (!usecompleter) {

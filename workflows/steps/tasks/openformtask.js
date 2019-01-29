@@ -3,6 +3,7 @@ const base =  g3wsdk.core.utils.base;
 const t = g3wsdk.core.i18n.tPlugin;
 const GUI = g3wsdk.gui.GUI;
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
+const ComponentsFactory = g3wsdk.gui.ComponentsFactory;
 const EditingTask = require('./editingtask');
 const EditingFormComponent = require('../../../form/editingform');
 
@@ -70,46 +71,10 @@ proto._getForm = function(inputs, context) {
   this._fields = this._originalLayer.getFieldsWithValues(this._feature, {
     exclude: excludeFields
   });
-  // child fields
-  const child_field = {
-    type: 'child',
-    name: 'pipe_properties',
-    label: 'Pipe',
-    fields: [{
-      editable: true,
-      input: {
-        options: {},
-        type: 'text'
-      },
-      label: "project_id",
-      name: "project_id",
-      type: "integer",
-      validate: {
-        message: null,
-        required: true
-      }
-    },
-      {
-        editable: true,
-        input: {
-          options: {},
-          type: 'text'
-        },
-        label: "pippo",
-        name: "pippo",
-        type: "integer",
-        validate: {
-          message: null,
-          required: false
-        }
-      }]
-  };
-  this._fields.push(child_field);
   this._editorFormStructure = this._originalLayer.getEditorFormStructure();
   const uniqueFields = this._getUniqueFieldsType(this._fields);
   if (!_.isEmpty(uniqueFields))
     this._getFieldUniqueValuesFromServer(this._originalLayer, uniqueFields);
-  // restituisce il service del form
   return GUI.showContentFactory('form');
 };
 
@@ -142,16 +107,6 @@ proto.startForm = function(options = {}) {
   const context = options.context;
   const promise = options.promise;
   const formComponent = options.formComponent || EditingFormComponent;
-  const addons = [
-    {
-      id: 'graph',
-      title: 'Grafico',
-      fontClass: 'fas fa-chart-bar',
-      fnc :() => {
-        console.log('ciao')
-      }
-    }
-  ];
   const Form = this._getForm(inputs, context);
   const formService = Form({
     formComponent,
@@ -163,7 +118,6 @@ proto.startForm = function(options = {}) {
     pk: this._pk,
     isnew: this._originalFeature.isNew(),
     fields: this._fields,
-    addons,
     context_inputs:  {
       context,
       inputs
@@ -184,6 +138,23 @@ proto.startForm = function(options = {}) {
       class: "btn-primary",
       cbk: _.bind(this._cancelFnc(promise),this)
     }]
+  });
+  const graphComponent = ComponentsFactory.build({
+    type: 'graph',
+    options: {
+      type:'z',
+      xhr: {
+        url: "/progeo/api/profile/3/",
+        data: {
+          id: 13
+        }
+      }
+
+    }
+  });
+  formService.addComponent({
+    id: "Profilo",
+    component: graphComponent._vueInternalComponent
   });
   WorkflowsStack.getCurrent().setContextService(formService);
 };
