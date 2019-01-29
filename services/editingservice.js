@@ -1,5 +1,6 @@
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
+const XHR = g3wsdk.core.utils.XHR;
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 const PluginService = g3wsdk.core.plugin.PluginService;
 const CatalogLayersStoresRegistry = g3wsdk.core.catalog.CatalogLayersStoresRegistry;
@@ -11,6 +12,7 @@ const GUI = g3wsdk.gui.GUI;
 const ToolBoxesFactory = require('../toolboxes/toolboxesfactory');
 const t = g3wsdk.core.i18n.tPlugin;
 const CommitFeaturesWorkflow = require('../workflows/commitfeaturesworkflow');
+const GraphsFactory = g3wsdk.gui.vue.Graphs.GraphsFactory;
 import API from '../api'
 
 function EditingService() {
@@ -172,6 +174,82 @@ proto.subscribe = function({event, layerId}={}) {
 
 // END API
 
+proto.getProfileUrl = function() {
+  return this.config.urls.profile;
+};
+
+proto.createProfileGraphComponent = async function({feature}) {
+  const geometry = JSON.stringify(new ol.format.GeoJSON().writeFeatureObject(feature).geometry);
+  const url = this.getProfileUrl();
+  try {
+    const response = await XHR.post({
+      url,
+      data: {
+        geometry
+      }
+    });
+    if (response.result) {
+      const data = JSON.parse(response.profile);
+      const graphData = {
+        data: [''],
+        axis: {
+          x: {
+            label: {
+              text: 'Distance(m)',
+              position: 'outer-center'
+            },
+            tick: {
+              count:10
+            }
+          },
+          y: {
+            label: {
+              text: 'z(m)',
+              position: 'outer-middle'
+            }
+          }
+        }
+      };
+      for (let i=0; i < data.length; i++) {
+        const _data = data[i];
+        graphData.data.push(_data[2]);
+        //graphData.axis.x.tick.values.push(_data[3]);
+      }
+      const self = this;
+      return GraphsFactory.build({
+        type: 'line',
+        hooks: {
+          created() {
+            this.data = graphData.data;
+            this.click = function({index}) {
+              const [x, y] = data[index];
+              const point_geom = new ol.geom.Point(
+                [x, y]
+              );
+              self._mapService.highlightGeometry(point_geom, {
+                zoom: false,
+                style: new ol.style.Style({
+                  image: new ol.style.RegularShape({
+                    stroke: new ol.style.Stroke({color: 'black', width: 4}),
+                    points: 4,
+                    radius: 10,
+                    radius2: 0,
+                    angle: 0
+                  })
+                })
+              });
+            };
+            this.axis = {
+              x: graphData.axis.x,
+              y: graphData.axis.y
+            }
+          }
+        }
+      });
+    }
+  } catch (err) {
+    return {}
+  }};
 
 proto.registerOrphanNodes = function() {
   const toolboxes = this.getToolBoxes();
@@ -914,7 +992,6 @@ proto.checkOrphanNodes = function() {
 };
 
 proto._preCommit = function() {
-
   const deleteOrphanNodes = (session) => {
     for  (let i = 0; i < this._orphanNodes.length; i++) {
       const orphannode = this._orphanNodes[i];
@@ -922,7 +999,6 @@ proto._preCommit = function() {
       session.save();
     }
   };
-
   const commitObject = {
     sessions: []
   };
@@ -966,81 +1042,84 @@ proto.commit = function(close=false) {
   return new Promise((resolve, reject) => {
     const deleteOrphanNodes = !!this._orphanNodes.length;
     const commitObject = this._preCommit();
-    if (!commitObject.sessions.length)
+    if (!commitObject.sessions.length) {
       resolve();
-    let workflow = new CommitFeaturesWorkflow({
-      type:  'commit'
-    });
-    const message = this._createCommitMessage(commitObject.sessions);
-    workflow.start({
-      inputs: {
-        close,
-        message
-      }})
-      .then(() => {
-        const dialog = GUI.dialog.dialog({
-          message: `<h4 class="text-center">
+    } else {
+      let workflow = new CommitFeaturesWorkflow({
+        type:  'commit'
+      });
+      const message = this._createCommitMessage(commitObject.sessions);
+      workflow.start({
+        inputs: {
+          close,
+          message
+        }})
+        .then(() => {
+          const dialog = GUI.dialog.dialog({
+            message: `<h4 class="text-center">
                       <i style="margin-right: 5px;" class=${GUI.getFontClass('spinner')}></i>
                       ${t('editing.messages.saving')}
                     </h4>`,
-          closeButton: false
-        });
-        const sessionCommit = commitObject.sessions.map((session) => {
-          return session.commit();
-        });
-        $.when(...sessionCommit)
-          .then((...args) => {
-            const handleResponse = (data) => {
-              const [commitItems, response] = data;
-              if (response.result) {
-                GUI.notify.success(t("editing.messages.saved"));
-                this._mapService.refreshMap({force: true});
-              } else {
-                const message = response.errors;
-                GUI.notify.error(message);
-                this._removeStatesFromDependency();
+            closeButton: false
+          });
+          const sessionCommit = commitObject.sessions.map((session) => {
+            return session.commit();
+          });
+          $.when(...sessionCommit)
+            .then((...args) => {
+              const handleResponse = (data) => {
+                const [commitItems, response] = data;
+                if (response.result) {
+                  GUI.notify.success(t("editing.messages.saved"));
+                  this._mapService.refreshMap({force: true});
+                } else {
+                  const message = response.errors;
+                  GUI.notify.error(message);
+                  this._removeStatesFromDependency();
+                }
+              };
+              if (sessionCommit.length > 1) {
+                for (let arg of args) {
+                  handleResponse(arg)
+                }
+              } else
+                handleResponse(args);
+              if (deleteOrphanNodes){
+                const toolbox = this.getToolBoxById(this._nodelayerId);
+                const editingLayer = toolbox.getEditingLayer();
+                for (let i=0; i < this._orphanNodes.length; i++) {
+                  editingLayer.getSource().removeFeature(this._orphanNodes[i]);
+                }
+                this._orphanNodes = [];
               }
-            };
-            if (sessionCommit.length > 1) {
-              for (let arg of args) {
-                handleResponse(arg)
-              }
-            } else
-              handleResponse(args);
-            if (deleteOrphanNodes){
-              const toolbox = this.getToolBoxById(this._nodelayerId);
-              const editingLayer = toolbox.getEditingLayer();
-              for (let i=0; i < this._orphanNodes.length; i++) {
-                editingLayer.getSource().removeFeature(this._orphanNodes[i]);
-              }
-              this._orphanNodes = [];
-            }
-            commitObject.sessions.forEach((session) => {
-              const toolbox = this.getToolBoxById(session.getId());
+              commitObject.sessions.forEach((session) => {
+                const toolbox = this.getToolBoxById(session.getId());
+                toolbox.setCommit();
+              });
+              resolve()
+            }, (error) => {
+              console.log(error)
+            })
+            .always(() => {
+              workflow.stop();
+              dialog.modal('hide');
+            })
+
+        })
+        .fail((err) => {
+          workflow.stop();
+          this._removeStatesFromDependency();
+          if (close) {
+            const toolboxes = this.getToolBoxes();
+            toolboxes.forEach((toolbox) => {
+              toolbox.stop();
               toolbox.setCommit();
             });
-            resolve()
-          }, (error) => {
-              console.log(error)
-          })
-          .always(() => {
-            workflow.stop();
-            dialog.modal('hide');
+            resolve();
+          }
         })
+    }
 
-      })
-      .fail((err) => {
-        workflow.stop();
-        this._removeStatesFromDependency();
-        if (close) {
-          const toolboxes = this.getToolBoxes();
-          toolboxes.forEach((toolbox) => {
-            toolbox.stop();
-            toolbox.setCommit();
-          });
-          resolve();
-        }
-      })
   })
 };
 

@@ -139,23 +139,16 @@ proto.startForm = function(options = {}) {
       cbk: _.bind(this._cancelFnc(promise),this)
     }]
   });
-  const graphComponent = ComponentsFactory.build({
-    type: 'graph',
-    options: {
-      type:'z',
-      xhr: {
-        url: "/progeo/api/profile/3/",
-        data: {
-          id: 13
-        }
-      }
-
-    }
-  });
-  formService.addComponent({
-    id: "Profilo",
-    component: graphComponent._vueInternalComponent
-  });
+  if (this._originalLayer.getGeometryType() === 'Line') {
+    const component = this.createProfileGraphComponent({
+      feature: this._feature
+    }).then((component) => {
+      formService.addComponent({
+        id: "Profilo",
+        component,
+      });
+    })
+  }
   WorkflowsStack.getCurrent().setContextService(formService);
 };
 

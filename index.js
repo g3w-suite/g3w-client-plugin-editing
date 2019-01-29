@@ -7,6 +7,7 @@ const Service = require('./services/editingservice');
 const EditingPanel = require('./panel');
 import pluginConfig from './config';
 const addI18nPlugin = g3wsdk.core.i18n.addI18nPlugin;
+const ProjectRegistry = g3wsdk.core.project.ProjectsRegistry;
 
 const _Plugin = function() {
   base(this);
@@ -23,7 +24,9 @@ const _Plugin = function() {
       config: pluginConfig.i18n
     });
     this.setService(Service);
+    const currentProject = ProjectRegistry.getCurrentProject();
     this.config = this.getConfig();
+    this.config.urls = currentProject.state.urls;
     // check if exist any layer to edit
     if (this.service.loadPlugin()) {
       //inizialize service

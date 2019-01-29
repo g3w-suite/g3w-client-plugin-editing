@@ -22,6 +22,11 @@ proto.run = function(inputs, context) {};
 
 proto.stop = function() {};
 
+proto.createProfileGraphComponent = function({feature}={}) {
+  const EditingService = require('../../../services/editingservice');
+  return EditingService.createProfileGraphComponent({feature});
+};
+
 proto.removeFromOrphanNodes = function(id) {
   const EditingService = require('../../../services/editingservice');
   const orphannodes = EditingService.getOrphanNodes();
