@@ -1,6 +1,5 @@
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
-const XHR = g3wsdk.core.utils.XHR;
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 const PluginService = g3wsdk.core.plugin.PluginService;
 const CatalogLayersStoresRegistry = g3wsdk.core.catalog.CatalogLayersStoresRegistry;
@@ -12,7 +11,6 @@ const GUI = g3wsdk.gui.GUI;
 const ToolBoxesFactory = require('../toolboxes/toolboxesfactory');
 const t = g3wsdk.core.i18n.tPlugin;
 const CommitFeaturesWorkflow = require('../workflows/commitfeaturesworkflow');
-const GraphsFactory = g3wsdk.gui.vue.Graphs.GraphsFactory;
 import API from '../api'
 
 function EditingService() {
@@ -32,6 +30,7 @@ function EditingService() {
   this._movedRelationChanges = [];
   this._beforeCommitstateIds = [];
   this._nodelayerId = null;
+  this.progeoApi = {};
   // state of editing
   this.state = {
     toolboxes: [], // contiene tutti gli stati delle toolbox in editing
@@ -174,82 +173,16 @@ proto.subscribe = function({event, layerId}={}) {
 
 // END API
 
-proto.getProfileUrl = function() {
-  return this.config.urls.profile;
+proto.setProgeoApi = function(api) {
+  this.progeoApi = api;
 };
 
-proto.createProfileGraphComponent = async function({feature}) {
-  const geometry = JSON.stringify(new ol.format.GeoJSON().writeFeatureObject(feature).geometry);
-  const url = this.getProfileUrl();
-  try {
-    const response = await XHR.post({
-      url,
-      data: {
-        geometry
-      }
-    });
-    if (response.result) {
-      const data = JSON.parse(response.profile);
-      const graphData = {
-        data: [''],
-        axis: {
-          x: {
-            label: {
-              text: 'Distance(m)',
-              position: 'outer-center'
-            },
-            tick: {
-              count:10
-            }
-          },
-          y: {
-            label: {
-              text: 'z(m)',
-              position: 'outer-middle'
-            }
-          }
-        }
-      };
-      for (let i=0; i < data.length; i++) {
-        const _data = data[i];
-        graphData.data.push(_data[2]);
-        //graphData.axis.x.tick.values.push(_data[3]);
-      }
-      const self = this;
-      return GraphsFactory.build({
-        type: 'line',
-        hooks: {
-          created() {
-            this.data = graphData.data;
-            this.click = function({index}) {
-              const [x, y] = data[index];
-              const point_geom = new ol.geom.Point(
-                [x, y]
-              );
-              self._mapService.highlightGeometry(point_geom, {
-                zoom: false,
-                style: new ol.style.Style({
-                  image: new ol.style.RegularShape({
-                    stroke: new ol.style.Stroke({color: 'black', width: 4}),
-                    points: 4,
-                    radius: 10,
-                    radius2: 0,
-                    angle: 0
-                  })
-                })
-              });
-            };
-            this.axis = {
-              x: graphData.axis.x,
-              y: graphData.axis.y
-            }
-          }
-        }
-      });
-    }
-  } catch (err) {
-    return {}
-  }};
+proto.runProgeoApiMethod = function({name, options={}}={}) {
+  if (this.progeoApi[name])
+    return this.progeoApi[name](options);
+  else
+    return false
+};
 
 proto.registerOrphanNodes = function() {
   const toolboxes = this.getToolBoxes();

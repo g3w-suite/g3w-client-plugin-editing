@@ -31,7 +31,6 @@ proto.run = function(inputs, context) {
   // vado a recuperare i
   const editingLayer = inputs.layer;
   const features = editingLayer.getSource().readFeatures();
-  const action = this._isContentChild ? t('editing.relation.table.link.title') : t('editing.relation.table.edit.title') ;
   const content = new TableComponent({
     title: `${layerName}`,
     features,

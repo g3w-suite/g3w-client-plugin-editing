@@ -24,6 +24,13 @@ const _Plugin = function() {
       config: pluginConfig.i18n
     });
     this.setService(Service);
+    this.getDependencyPlugin('progeo')
+      .then((api) => {
+        this.service.setProgeoApi(api);
+      })
+      .catch((err)=> {
+        console.log(err);
+      });
     const currentProject = ProjectRegistry.getCurrentProject();
     this.config = this.getConfig();
     this.config.urls = currentProject.state.urls;

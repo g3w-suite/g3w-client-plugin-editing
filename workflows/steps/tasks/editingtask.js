@@ -22,9 +22,14 @@ proto.run = function(inputs, context) {};
 
 proto.stop = function() {};
 
-proto.createProfileGraphComponent = function({feature}={}) {
+proto.getChartComponent = function({feature}={}) {
   const EditingService = require('../../../services/editingservice');
-  return EditingService.createProfileGraphComponent({feature});
+  return EditingService.runProgeoApiMethod({
+    name:'getChartComponent',
+    options: {
+      feature
+    }
+  });
 };
 
 proto.removeFromOrphanNodes = function(id) {

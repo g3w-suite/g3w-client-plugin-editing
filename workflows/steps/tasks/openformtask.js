@@ -3,7 +3,6 @@ const base =  g3wsdk.core.utils.base;
 const t = g3wsdk.core.i18n.tPlugin;
 const GUI = g3wsdk.gui.GUI;
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
-const ComponentsFactory = g3wsdk.gui.ComponentsFactory;
 const EditingTask = require('./editingtask');
 const EditingFormComponent = require('../../../form/editingform');
 
@@ -140,13 +139,18 @@ proto.startForm = function(options = {}) {
     }]
   });
   if (this._originalLayer.getGeometryType() === 'Line') {
-    const component = this.createProfileGraphComponent({
+    formService.setLoading(true);
+    this.getChartComponent({
       feature: this._feature
-    }).then((component) => {
-      formService.addComponent({
-        id: "Profilo",
-        component,
-      });
+    }).then(({id, component, error}) => {
+      if (!error)
+        formService.addComponent({
+          id: id,
+          component,
+          icon: GUI.getFontClass('chart')
+        });
+    }).finally(() => {
+      formService.setLoading(false);
     })
   }
   WorkflowsStack.getCurrent().setContextService(formService);

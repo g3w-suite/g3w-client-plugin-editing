@@ -17,6 +17,13 @@ export default {
       update_vertex: "Aggiorna vertici feature",
       update_feature: "Modifica feature"
     },
+    graph: {
+      title: 'Profilo Altimetrico',
+      labels: {
+        x: 'Distanza (m)',
+        y:'Altezza (m)'
+      }
+    },
     steps: {
       help: {
         new: "Creo una nuova feature",
@@ -95,6 +102,14 @@ export default {
       update_vertex: "Update feature vertex",
       update_feature: "Update feature"
     },
+    graph: {
+      title: 'Altimetry',
+      labels: {
+        x: 'Distance (m)',
+        y:'Height (m)'
+      }
+    },
+
     steps: {
       help: {
         new: "Create new feature",
