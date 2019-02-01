@@ -317,7 +317,7 @@ proto._attachLayerWidgetsEvent = function(layer) {
   const fields = layer.getEditingFields();
   for (let i=0; i < fields.length; i++) {
     const field = fields[i];
-    if(field.input.type === 'select_autocomplete') {
+    if(field.input && field.input.type === 'select_autocomplete') {
       const options = field.input.options;
       const {key, values, value, usecompleter, layer_id, loading} = options;
       if (!usecompleter) {
@@ -714,12 +714,12 @@ proto.commitDirtyToolBoxes = function(toolboxId) {
 proto._createCommitMessage = function(commitItems) {
   function create_changes_list_dom_element(add, update, del) {
     const changeIds = {};
-    changeIds[`${t('editing.messages.commit.add')}`] = _.map(add, 'id').join(',');
-    changeIds[`${t('editing.messages.commit.update')}`] = _.map(update, 'id').join(',');
-    changeIds[`${t('editing.messages.commit.delete')}`] = del.join(',');
+    changeIds[`${t('editing.messages.commit.add')}`] = add.length;
+    changeIds[`${t('editing.messages.commit.update')}`] = `[${update.map((item)=> item.id).join(',')}]`;
+    changeIds[`${t('editing.messages.commit.delete')}`] = `[${del.join(',')}]`;
     let dom = "<ul style='border-bottom-color: #f4f4f4;'>";
     Object.entries(changeIds).forEach(([action, ids]) => {
-      dom += "<li>" + action + ": [" + ids + "]</li>";
+      dom += `<li>${action} : ${ids} </li>`;
     });
     dom += "</ul>";
     return dom;
