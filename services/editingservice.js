@@ -863,7 +863,7 @@ proto._createCommitMessage = function(sessions) {
   }
   let message = "";
   if (this._orphanNodes.length) {
-    message+="<h4 style='color:red;'>Trovati Nodi orfani. Se si decide di continuare verranno eliminati automaticamente</h4>"
+    message+=`<h4 style='color:red;'>${t('editing.messages.orphan_nodes')}</h4>`
   }
 
   for (let i = 0; i < sessions.length; i++) {
