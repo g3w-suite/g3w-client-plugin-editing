@@ -30,7 +30,7 @@ const vueComponentOptions = {
       const toolbox = this.$options.service.getToolBoxById(toolboxId);
       this.$options.service.commit(toolbox)
         .always((toolbox) => {
-          toolbox.restartActiveTool()
+          //toolbox.restartActiveTool()
         })
     },
     saveAll: function() {},
@@ -104,6 +104,9 @@ const vueComponentOptions = {
       const service = this.$options.service;
       const toolbox = service.getToolBoxById(toolboxId);
       return toolbox;
+    },
+    _enableEditingButtons(bool) {
+      this.editingButtonsEnabled = !bool;
     }
   },
   computed: {
@@ -114,19 +117,27 @@ const vueComponentOptions = {
       return message;
     },
     canCommit: function() {
-      return this.state.toolboxselected && this.state.toolboxselected.state.editing.history.commit;
+      return this.state.toolboxselected && this.state.toolboxselected.state.editing.history.commit && this.editingButtonsEnabled;
     },
     canUndo: function() {
       const toolbox = this.state.toolboxselected;
-      return !_.isNull(toolbox) &&  toolbox.state.editing.history.undo;
+      return toolbox &&  toolbox.state.editing.history.undo && this.editingButtonsEnabled;
     },
     canRedo: function() {
       const toolbox = this.state.toolboxselected;
-      return !_.isNull(toolbox) && toolbox.state.editing.history.redo;
+      return toolbox && toolbox.state.editing.history.redo && this.editingButtonsEnabled;
     }
+  },
+  created() {
+    GUI.on('opencontent', this._enableEditingButtons);
+    GUI.on('closeform', this._enableEditingButtons);
   },
   mounted() {
     this.$nextTick(() => {})
+  },
+  beforeDestroy() {
+    GUI.off('opencontent', this._enableEditingButtons);
+    GUI.off('closeform', this._enableEditingButtons);
   }
 };
 
@@ -150,7 +161,8 @@ function PanelComponent(options) {
       return {
         //lo state è quello del servizio in quanto è lui che va a modificare operare sui dati
         state: this._service.state,
-        resourcesurl: this._resourcesUrl
+        resourcesurl: this._resourcesUrl,
+        editingButtonsEnabled: true
       }
     }
   });
