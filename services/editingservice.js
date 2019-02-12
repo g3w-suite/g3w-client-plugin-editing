@@ -85,7 +85,7 @@ function EditingService() {
       // vado a chiamare la funzione che mi permette di
       // estrarre la versione editabile del layer di partenza (es. da imagelayer a vector layer, table layer/tablelayer etc..)
       const editableLayer = layer.getLayerForEditing();
-      if (editableLayer.getGeometryType() === 'Point')
+      if (editableLayer.getGeometryType && editableLayer.getGeometryType() === 'Point')
         this._nodelayerId = editableLayer.getId();
       if (editableLayer.isReady()) {
         editingLayersLenght-=1;
