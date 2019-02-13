@@ -42,7 +42,7 @@ proto._getFieldUniqueValuesFromServer = function(layer, uniqueFields) {
         uniqueFields[fieldName].input.options.values.push(value);
       })
     })
-  }).fail(function(){
+  }).fail(() => {
     console.log('errore')
   })
 };
@@ -50,7 +50,7 @@ proto._getFieldUniqueValuesFromServer = function(layer, uniqueFields) {
 proto._getUniqueFieldsType = function(fields) {
   const uniqueFields = {};
   fields.forEach((field) => {
-     if (field.input.type == 'unique')
+     if (field.input && field.input.type === 'unique')
        uniqueFields[field.name] = field;
   });
   return uniqueFields;
@@ -70,11 +70,10 @@ proto._getForm = function(inputs, context) {
   this._fields = this._originalLayer.getFieldsWithValues(this._feature, {
     exclude: excludeFields
   });
-  this._editorFormStructure = this._originalLayer.getEditorFormStructure();
+  this._editorFormStructure = this._originalLayer.hasFormStructure() ? this._originalLayer.getEditorFormStructure() : null ;
   const uniqueFields = this._getUniqueFieldsType(this._fields);
   if (!_.isEmpty(uniqueFields))
     this._getFieldUniqueValuesFromServer(this._originalLayer, uniqueFields);
-  // restituisce il service del form
   return GUI.showContentFactory('form');
 };
 
