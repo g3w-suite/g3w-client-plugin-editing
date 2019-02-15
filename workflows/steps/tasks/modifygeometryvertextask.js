@@ -61,7 +61,6 @@ proto.run = function(inputs, context) {
   this._modifyInteraction = new ol.interaction.Modify({
     features,
     condition: function(evt) {
-      console.log(evt);
       return true
     },
     deleteCondition: this._deleteCondition
