@@ -57,7 +57,7 @@ proto.run = function(inputs, context) {
   });
 
   const features = new ol.Collection(inputs.features);
-  const dependencyFeatures = this._dependency.getSource().getFeatures();
+  const dependencyFeatures = this.getDependencyFeatures(this._dependency);
   this._modifyInteraction = new ol.interaction.Modify({
     features,
     insertVertexCondition: () => false,
@@ -75,7 +75,7 @@ proto.run = function(inputs, context) {
         return feature;
       }, {
         layerFilter: (layer) => {
-          return layer === self._dependency
+          return !!self._dependency.find((dependency) => layer === dependency)
         }
       });
       if (dependencyFeature) {

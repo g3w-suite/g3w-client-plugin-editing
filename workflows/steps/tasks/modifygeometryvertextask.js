@@ -42,7 +42,7 @@ proto.run = function(inputs, context) {
       }),
       geometry: function(feature) {
         // return the coordinates of the first ring of the polygon
-        var coordinates = feature.getGeometry().getCoordinates()[0];
+        const coordinates = feature.getGeometry().getCoordinates()[0];
         return new ol.geom.MultiPoint(coordinates);
       }
     })
@@ -51,8 +51,8 @@ proto.run = function(inputs, context) {
     feature.setStyle(style)
   });
 
-  this._snapInteraction = new ol.interaction.Snap({
-    source: this._dependency.getSource()
+  this._snapInteraction = this.createSnapInteraction({
+    dependency: this._dependency
   });
 
   this.addInteraction(this._snapInteraction);

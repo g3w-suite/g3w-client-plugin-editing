@@ -45,8 +45,8 @@ proto.run = function(inputs, context) {
   });
 
   this.addInteraction(this._modifyInteraction);
-  this._snapingInteraction = new ol.interaction.Snap({
-    source: this._dependency.getSource()
+  this._snapingInteraction = this.createSnapInteraction({
+    dependency: this._dependency
   });
 
   this.addInteraction(this._snapingInteraction);
@@ -64,7 +64,7 @@ proto.run = function(inputs, context) {
       return feature;
       }, {
       layerFilter: (layer) => {
-        return layer === self._dependency
+        return !!self._dependency.find((dependency) => layer === dependency)
       }
     });
     if (dependencyFeature) {
@@ -72,7 +72,10 @@ proto.run = function(inputs, context) {
       session.pushUpdate(layerId, newFeature, originalFeature);
       inputs.features.push(newFeature);
       feature.setStyle(originalStyle);
-      self.removeFromOrphanNodes(originalFeature.getId())
+      self.removeFromOrphanNodes({
+        layerId,
+        id:originalFeature.getId()
+      })
     } else {
       feature.setGeometry(originalFeature.getGeometry());
     }

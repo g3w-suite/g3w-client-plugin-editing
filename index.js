@@ -27,38 +27,38 @@ const _Plugin = function() {
     this.getDependencyPlugin('progeo')
       .then((api) => {
         this.service.setProgeoApi(api);
+        const currentProject = ProjectRegistry.getCurrentProject();
+        this.config = this.getConfig();
+        this.config.urls = currentProject.state.urls;
+        // check if exist any layer to edit
+        if (this.service.loadPlugin()) {
+          //inizialize service
+          this.service.init(this.config);
+          this.addToolGroup(pluginGroupTool);
+          this.setHookLoading({
+            loading: true
+          });
+        }
       })
       .catch((err)=> {
         console.log(err);
       });
-    const currentProject = ProjectRegistry.getCurrentProject();
-    this.config = this.getConfig();
-    this.config.urls = currentProject.state.urls;
-    // check if exist any layer to edit
-    if (this.service.loadPlugin()) {
-      //inizialize service
-      this.service.init(this.config);
-      this.addToolGroup(pluginGroupTool);
-      this.setHookLoading({
-        loading: true
-      });
-      this.service.on('ready', () => {
-        //plugin registry
-        if (this.registerPlugin(this.config.gid)) {
-          if (!GUI.ready) {
-            GUI.on('ready',_.bind(this.setupGui, this));
-          } else {
-            this.setupGui();
-          }
+    this.service.on('ready', () => {
+      //plugin registry
+      if (this.registerPlugin(this.config.gid)) {
+        if (!GUI.ready) {
+          GUI.on('ready',_.bind(this.setupGui, this));
+        } else {
+          this.setupGui();
         }
-        this.setHookLoading({
-           loading: false
-        });
-        const api = this.service.getApi();
-        this.setApi(api);
-        this.setReady(true);
-      })
-    }
+      }
+      this.setHookLoading({
+        loading: false
+      });
+      const api = this.service.getApi();
+      this.setApi(api);
+      this.setReady(true);
+    })
   };
   //setup plugin interface
   this.setupGui = function() {

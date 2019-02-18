@@ -22,6 +22,11 @@ proto.run = function(inputs, context) {};
 
 proto.stop = function() {};
 
+proto.isBranchLayer = function(layerId) {
+  const EditingService = require('../../../services/editingservice');
+  return EditingService.isBranchLayer(layerId);
+};
+
 proto.getChartComponent = function({feature}={}) {
   const EditingService = require('../../../services/editingservice');
   return EditingService.runProgeoApiMethod({
@@ -32,13 +37,28 @@ proto.getChartComponent = function({feature}={}) {
   });
 };
 
-proto.removeFromOrphanNodes = function(id) {
+proto.createSnapInteraction = function({dependency=[]}) {
+  const dependencyFeatures = this.getDependencyFeatures(dependency);
+  return new ol.interaction.Snap({
+    features: new ol.Collection(dependencyFeatures)
+  });
+};
+
+proto.getDependencyFeatures = function(dependency) {
+  return dependency.flatMap((_dependency) => _dependency.getSource().getFeatures());
+
+};
+
+proto.removeFromOrphanNodes = function({layerId, id}) {
   const EditingService = require('../../../services/editingservice');
   const orphannodes = EditingService.getOrphanNodes();
   const filterednodes = orphannodes.filter((node) => {
     return node.getId() !== id;
   });
-  EditingService.setOrphanNodes(filterednodes);
+  EditingService.setOrphanNodes({
+    layerId,
+    nodes: filterednodes
+  });
 };
 
 proto.checkOrphanNodes = function() {

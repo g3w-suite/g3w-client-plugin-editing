@@ -14,7 +14,6 @@ function AddFeatureTask(options={}) {
   this.drawInteraction = null;
   this._snapInteraction = null;
   this._finishCondition = function(evt) {
-    console.log(evt);
     return true
   };
   //options.finishCondition || _.constant(true);
@@ -42,6 +41,7 @@ proto.run = function(inputs, context) {
   const session = context.session;
   const originalLayer = context.layer;
   const layerId = originalLayer.getId();
+  const isBranchLayer = this.isBranchLayer(layerId);
   // vado a rrecuperare la primary key del layer
   const pk = originalLayer.getPk();
   // qui vado a valutare il tipo di layer
@@ -52,16 +52,19 @@ proto.run = function(inputs, context) {
         geometryType = 'LineString';
       else if (originalLayer.getEditingGeometryType() === Geometry.GeometryTypes.MULTILINE)
         geometryType = 'MultiLineString';
+      else if (originalLayer.getEditingGeometryType() === 'PointZ')
+        geometryType = 'Point';
       else
         geometryType = originalLayer.getEditingGeometryType();
       //definisce l'interazione che deve essere aggiunta
       // specificando il layer sul quale le feature aggiunte devono essere messe
       const source = editingLayer.getSource();
-      const dependencySource = this._dependency.getSource();
+      const dependencyFeatures = this.getDependencyFeatures(this._dependency);
       const options = {
         source,
         canDraw: false,
-        dependency: this._dependency
+        dependency: this._dependency,
+        dependencyFeatures
       };
       const attributes = _.filter(originalLayer.getFields(), function(field) {
         return field.editable && field.name != originalLayer.getPk() ;
@@ -73,8 +76,7 @@ proto.run = function(inputs, context) {
         type: geometryType, // il tipo lo prende dal geometry type dell'editing vetor layer che a sua volta lo prende dal tipo si geometry del vector layer originale
         source: temporarySource, // lo faccio scrivere su una source temporanea (non vado a modificare il source featuresstore)
         condition: this._condition,
-        ...this._constraints,
-        finishCondition: this._finishCondition // disponibile da https://github.com/openlayers/ol3/commit/d425f75bea05cb77559923e494f54156c6690c0b
+        ...this._constraints
       });
       //aggiunge l'interazione tramite il metodo generale di editor.js
       // che non fa altro che chaimare il mapservice
@@ -82,8 +84,8 @@ proto.run = function(inputs, context) {
       //setta attiva l'interazione
       this.drawInteraction.setActive(true);
       this._snapInteraction = new ol.interaction.Snap({
-        source: geometryType === 'LineString' || geometryType == 'MultiLineString' ? source : dependencySource,
-        edge: geometryType === 'LineString' || geometryType == 'MultiLineString' ? false: true
+        features:  isBranchLayer ? new ol.Collection(source.getFeatures()) : new ol.Collection(dependencyFeatures),
+        edge: !isBranchLayer,
       });
       this.addInteraction(this._snapInteraction);
       this._snapInteraction.setActive(true);
@@ -154,23 +156,19 @@ AddFeatureTask.CONDITIONS = {
           return feature.getGeometry().getCoordinates()[1].toString() === coordinate.toString();
         })
       }
-      // else {
-      //   return options.canDraw || !!source.getFeatures().find((feature) => {
-      //     return feature.getGeometry().getCoordinates()[0].toString() === coordinate.toString() || feature.getGeometry().getCoordinates()[1].toString() === coordinate.toString();
-      //   })
-      // }
     }
   },
-  'Point': function({ dependency, source }) {
-    const features = dependency.getSource().getFeatures();
+  'Point': function({ dependency, dependencyFeatures, source }) {
     return function({coordinate, pixel}) {
-      return features.length &&
-        !!features.find((feature) => {
+      return dependencyFeatures.length &&
+        !!dependencyFeatures.find((feature) => {
           return !!this.getMap().forEachFeatureAtPixel(pixel, function(_feature) {
             return feature === _feature;
           }, {
             layerFilter: function(layer) {
-              return layer === dependency
+              return !!dependency.find((_dependency) => {
+                return _dependency === layer
+              })
             }
           });
         }) &&

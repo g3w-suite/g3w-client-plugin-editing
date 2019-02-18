@@ -11,7 +11,6 @@ const GUI = g3wsdk.gui.GUI;
 const ToolBoxesFactory = require('../toolboxes/toolboxesfactory');
 const t = g3wsdk.core.i18n.tPlugin;
 const CommitFeaturesWorkflow = require('../workflows/commitfeaturesworkflow');
-import API from '../api'
 
 function EditingService() {
   base(this);
@@ -26,10 +25,11 @@ function EditingService() {
       }
     }
   };
-  this._orphanNodes = [];
+  this._orphanNodes = {};
   this._movedRelationChanges = [];
   this._beforeCommitstateIds = [];
-  this._nodelayerId = null;
+  this._nodelayerIds = [];
+  this._branchLayerId = null;
   this.progeoApi = {};
   // state of editing
   this.state = {
@@ -74,19 +74,30 @@ function EditingService() {
     this._toolboxes = [];
     // restto
     this.state.toolboxes = [];
+    const _dependencies = {
+      branch: [],
+      nodes: []
+    };
+    this._branchLayerId = this.progeoApi.getBranchLayerId();
     // sono i layer originali caricati dal progetto e messi nel catalogo
-    let layers = this._getEditableLayersFromCatalog();
+    const layers = this._getEditableLayersFromCatalog();
     let editingLayersLenght = layers.length;
     //ciclo su ogni layers editiabile
     for (let i =0; i < layers.length; i++) {
       const layer = layers[i];
       const layerId = layer.getId();
+      if (layerId === this._branchLayerId)
+        _dependencies.nodes.push(layer);
+      else {
+        this._orphanNodes[layerId] = [];
+        _dependencies.branch.push(layer);
+      }
       this._editableLayers[layerId] = {};
       // vado a chiamare la funzione che mi permette di
       // estrarre la versione editabile del layer di partenza (es. da imagelayer a vector layer, table layer/tablelayer etc..)
       const editableLayer = layer.getLayerForEditing();
-      if (editableLayer.getGeometryType && editableLayer.getGeometryType() === 'Point')
-        this._nodelayerId = editableLayer.getId();
+      if (!this.isBranchLayer(layerId))
+        this._nodelayerIds.push(editableLayer.getId());
       if (editableLayer.isReady()) {
         editingLayersLenght-=1;
       }
@@ -101,12 +112,17 @@ function EditingService() {
       this._editableLayers[layerId] = editableLayer;
       this._editableLayers[Symbol.for('layersarray')].push({
         layer: editableLayer,
-        dependency: i === 0 ? layers[1] : layers[0]
+        dependency: layerId === this._branchLayerId ? _dependencies.branch : _dependencies.nodes
       });
       // aggiungo all'array dei vectorlayers se per caso mi servisse
       this._sessions[layerId] = null;
     }
   };
+
+  this.isBranchLayer = function(layerId) {
+    return layerId === this._branchLayerId
+  };
+
   this._ready = function() {
     // set toolbox colors
     this.setLayersColor();
@@ -114,14 +130,6 @@ function EditingService() {
     this._layersstore.addLayers(this.getLayers());
     // vado a creare i toolboxes
     this._buildToolBoxes();
-    // create a dependencies tree
-    this._createToolBoxDependencies();
-    //setApi
-    this.setApi({
-      api: new API({
-        service:this
-      })
-    });
     this.registerOrphanNodes();
     this.emit('ready');
   }
@@ -185,10 +193,7 @@ proto.runProgeoApiMethod = function({name, options={}}={}) {
 };
 
 proto.registerOrphanNodes = function() {
-  const toolboxes = this.getToolBoxes();
-  const linetoolbox = toolboxes.find((toolbox) => {
-    return toolbox.getId() !== this._nodelayerId;
-  });
+  const linetoolbox = this.getToolBoxById(this._branchLayerId);
   linetoolbox.getSession().getFeaturesStore().getFeaturesCollection().on('change', () => {
     setTimeout(() => {
       this.checkOrphanNodes();
@@ -198,9 +203,9 @@ proto.registerOrphanNodes = function() {
 
 
 // method to get and syle orphans nodes
-proto.setOrphanNodes = function(nodes) {
-  this._orphanNodes = nodes;
-  this._orphanNodes.forEach((node) => {
+proto.setOrphanNodes = function({layerId , nodes}) {
+  this._orphanNodes[layerId] = nodes;
+  nodes.forEach((node) => {
     node.setStyle(new ol.style.Style({
       image: new ol.style.Circle({
         radius: 7,
@@ -215,6 +220,10 @@ proto.setOrphanNodes = function(nodes) {
 
 proto.getOrphanNodes = function() {
   return this._orphanNodes;
+};
+
+proto.getOrphanNodesById = function(layerId) {
+  return this._orphanNodes[layerId] || [];
 };
 
 proto.activeQueryInfo = function() {
@@ -411,7 +420,7 @@ proto._buildToolBoxes = function() {
       layer,
       dependency
     });
-    dependencyToolboxSession[dependency.getId()] = toolbox.getSession();
+    dependency.forEach((_dependency) => dependencyToolboxSession[_dependency.getId()] = toolbox.getSession());
     // vado ad aggiungere la toolbox
     this.addToolBox(toolbox);
     if (layer.getGeometryType() === 'Line') {
@@ -847,6 +856,14 @@ proto.commitDirtyToolBoxes = function(toolboxId) {
   });
 };
 
+proto._isThereOrphanNodes = function() {
+  return !!this._nodelayerIds.find((nodeLayerId) => {
+    return this._orphanNodes[nodeLayerId].length;
+  })
+};
+
+
+
 proto._createCommitMessage = function(sessions) {
   function create_changes_list_dom_element({layerName, add, update, del}) {
     const changeIds = {};
@@ -862,7 +879,7 @@ proto._createCommitMessage = function(sessions) {
     return dom;
   }
   let message = "";
-  if (this._orphanNodes.length) {
+  if (this._isThereOrphanNodes()) {
     message+=`<h4 style='color:red;'>${t('editing.messages.orphan_nodes')}</h4>`
   }
 
@@ -885,50 +902,49 @@ proto._createCommitMessage = function(sessions) {
 
 // metyhod to get
 proto.checkOrphanNodes = function() {
-  let layerline, layernode;
-  const toolboxes = this.getToolBoxes();
-  for (let i = 0; i < toolboxes.length; i++) {
-    const toolbox = toolboxes[i];
-    if (toolbox.getId() === this._nodelayerId)
-      layernode = toolbox.getEditingLayer();
-    else
-      layerline = toolbox.getEditingLayer();
-  }
-  const nodes = layernode.getSource().getFeatures();
-  const nodeStyle = layernode.getStyle();
-  layernode.getSource().forEachFeature((node) =>{
-    node.setStyle(nodeStyle)
-  });
-  this._orphanNodes = nodes.filter((node) => {
-    const coordinate = node.getGeometry().getCoordinates();
-    const map = this._mapService.getMap();
-    const pixel = map.getPixelFromCoordinate(coordinate);
-    return !map.forEachFeatureAtPixel(pixel, (feature) => {
-      return feature;
-    }, {
-      layerFilter: (layer) => {
-        return layer === layerline
-      }
+  const layerline = this.getToolBoxById(this._branchLayerId).getEditingLayer();
+  this._nodelayerIds.forEach((layerId) => {
+    const layernode = this.getToolBoxById(layerId).getEditingLayer();
+    const nodes = layernode.getSource().getFeatures();
+    const nodeStyle = layernode.getStyle();
+    layernode.getSource().forEachFeature((node) =>{
+      node.setStyle(nodeStyle)
     });
-  });
-  this._orphanNodes.forEach((node) => {
-    node.setStyle(new ol.style.Style({
-      image: new ol.style.Circle({
-        radius: 7,
-        fill: new ol.style.Fill({color: 'orange'}),
-        stroke: new ol.style.Stroke({
-          color: [255,0,0], width: 2
+    this._orphanNodes[layerId] = nodes.filter((node) => {
+      const coordinate = node.getGeometry().getCoordinates();
+      const map = this._mapService.getMap();
+      const pixel = map.getPixelFromCoordinate(coordinate);
+      return !map.forEachFeatureAtPixel(pixel, (feature) => {
+        return feature;
+      }, {
+        layerFilter: (layer) => {
+          return layer === layerline
+        }
+      });
+    });
+    this._orphanNodes[layerId].forEach((node) => {
+      node.setStyle(new ol.style.Style({
+        image: new ol.style.Circle({
+          radius: 7,
+          fill: new ol.style.Fill({color: 'orange'}),
+          stroke: new ol.style.Stroke({
+            color: [255,0,0], width: 2
+          })
         })
-      })
-    }))
+      }))
+    })
   })
+
+
 };
 
 proto._preCommit = function() {
   const deleteOrphanNodes = (session) => {
-    for  (let i = 0; i < this._orphanNodes.length; i++) {
-      const orphannode = this._orphanNodes[i];
-      session.pushDelete(this._nodelayerId, orphannode);
+    const layerId = session.getId();
+    const orphanNodes = this._orphanNodes[layerId];
+    for  (let i = 0; i < orphanNodes.length; i++) {
+      const orphannode = orphanNodes[i];
+      session.pushDelete(layerId, orphannode);
       session.save();
     }
   };
@@ -937,9 +953,10 @@ proto._preCommit = function() {
   };
   const toolboxes = this.getToolBoxes();
   toolboxes.forEach((toolbox) => {
-    if (toolbox.canCommit() && toolbox.getId() !== this._nodelayerId) {
+    const toolBoxId = toolbox.getId();
+    if (toolbox.canCommit() && toolBoxId === this._branchLayerId) {
       const session = toolbox.getSession();
-      this._beforeCommitstateIds = session.moveRelationStatesOwnSession()[this._nodelayerId] || [];
+      this._beforeCommitstateIds = session.moveRelationStatesOwnSession()[toolBoxId] || [];
     }
   });
 
@@ -950,14 +967,18 @@ proto._preCommit = function() {
 
   if (commitObject.sessions.length > 1 ) {
     const session = commitObject.sessions.find((session) => {
-      return session.getId() === this._nodelayerId;
+      return session.getId() !== this._branchLayerId;
     });
     deleteOrphanNodes(session);
-  } else if (this._orphanNodes.length) {
-    const toolbox = this.getToolBoxById(this._nodelayerId);
-    const session = toolbox.getSession();
-    deleteOrphanNodes(session);
-    commitObject.sessions.push(session);
+  } else {
+    this._nodelayerIds.forEach((nodeLayerId) => {
+      if (this._orphanNodes[nodeLayerId].length) {
+        const toolbox = this.getToolBoxById(nodeLayerId);
+        const session = toolbox.getSession();
+        deleteOrphanNodes(session);
+        commitObject.sessions.push(session)
+      }
+    });
   }
   return commitObject;
 };
@@ -973,7 +994,7 @@ proto._removeStatesFromDependency = function() {
 
 proto.commit = function(close=false) {
   return new Promise((resolve, reject) => {
-    const deleteOrphanNodes = !!this._orphanNodes.length;
+    const deleteOrphanNodes = this._isThereOrphanNodes();
     const commitObject = this._preCommit();
     if (!commitObject.sessions.length) {
       resolve();
@@ -1017,13 +1038,17 @@ proto.commit = function(close=false) {
                 }
               } else
                 handleResponse(args);
-              if (deleteOrphanNodes){
-                const toolbox = this.getToolBoxById(this._nodelayerId);
-                const editingLayer = toolbox.getEditingLayer();
-                for (let i=0; i < this._orphanNodes.length; i++) {
-                  editingLayer.getSource().removeFeature(this._orphanNodes[i]);
-                }
-                this._orphanNodes = [];
+              if (deleteOrphanNodes) {
+                this._nodelayerIds.forEach((nodeLayerId) => {
+                  const toolbox = this.getToolBoxById(nodeLayerId);
+                  const editingLayer = toolbox.getEditingLayer();
+                  const orphanNodes = this._orphanNodes[nodeLayerId];
+                  for (let i=0; i < orphanNodes.length; i++) {
+                    editingLayer.getSource().removeFeature(orphanNodes[i]);
+                  }
+                  this._orphanNodes[nodeLayerId] = [];
+                })
+
               }
               commitObject.sessions.forEach((session) => {
                 const toolbox = this.getToolBoxById(session.getId());
