@@ -10,7 +10,11 @@ const ToolboxComponent = require('./components/toolbox');
 
 const vueComponentOptions = {
   template: EditingTemplate,
-  data: null,
+  data() {
+    return {
+      height:0
+    }
+  },
   components: {
     'toolbox': ToolboxComponent //componente toolbox
   },
@@ -123,8 +127,7 @@ const vueComponentOptions = {
       return !_.isNull(toolbox) && toolbox.state.editing.history.redo;
     }
   },
-  created() {
-  },
+  created() {},
   mounted() {
     this.$nextTick(() => {})
   }
@@ -177,7 +180,6 @@ function PanelComponent(options) {
       });
     return d.promise();
   };
-
 }
 
 inherit(PanelComponent, Component);

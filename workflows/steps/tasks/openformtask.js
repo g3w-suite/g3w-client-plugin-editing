@@ -149,7 +149,10 @@ proto.startForm = function(options = {}) {
           component,
           icon: GUI.getFontClass('chart')
         });
-    }).finally(() => {
+    }).catch((err)=>{
+      console.log(err)
+    })
+      .finally(() => {
       formService.setLoading(false);
     })
   }

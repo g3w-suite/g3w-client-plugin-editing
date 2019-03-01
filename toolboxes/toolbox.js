@@ -52,6 +52,7 @@ function ToolBox(options={}) {
     loading: false,
     enabled: false,
     message: null,
+    icon: options.icon || null,
     toolmessages: {
       help: null
     },

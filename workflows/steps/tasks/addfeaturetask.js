@@ -4,6 +4,7 @@ const Geometry = g3wsdk.core.geometry.Geometry;
 const base =  g3wsdk.core.utils.base;
 const EditingTask = require('./editingtask');
 const Feature = g3wsdk.core.layer.features.Feature;
+import angle from '@turf/angle';
 
 // classe  per l'aggiuntadi feature
 // eridita dalla classe padre EditingTool
@@ -44,6 +45,15 @@ proto.run = function(inputs, context) {
   const isBranchLayer = this.isBranchLayer(layerId);
   // vado a rrecuperare la primary key del layer
   const pk = originalLayer.getPk();
+  this._optionscondition = {
+    vertex: 0,
+    canDraw: false,
+    snapFeatures: {
+      0: null,
+      1: null
+    },
+    start: false
+  };
   // qui vado a valutare il tipo di layer
   switch (originalLayer.getType()) {
     case Layer.LayerTypes.VECTOR:
@@ -64,7 +74,8 @@ proto.run = function(inputs, context) {
         source,
         canDraw: false,
         dependency: this._dependency,
-        dependencyFeatures
+        dependencyFeatures,
+        optionscondition: this._optionscondition
       };
       const attributes = _.filter(originalLayer.getFields(), function(field) {
         return field.editable && field.name != originalLayer.getPk() ;
@@ -90,15 +101,24 @@ proto.run = function(inputs, context) {
       this.addInteraction(this._snapInteraction);
       this._snapInteraction.setActive(true);
       this.drawInteraction.on('drawstart', () => {
+        this._optionscondition.start = true;
         document.addEventListener('keydown', this._removeLastPoint);
         options.canDraw = true;
       });
       // viene settato l'evento drawend
-      this.drawInteraction.on('drawend', function(e) {
+      this.drawInteraction.on('drawend', (e) => {
+        this._optionscondition.start = false;
+        const _feature = e.feature;
         //console.log('Drawend .......');
         // vado ad assegnare le proprià del layer alla nuova feature
+        if (!isBranchLayer) {
+          this.setBranchId({
+            feature: _feature,
+            dependency: this._dependency
+          });
+        }
         attributes.forEach((attribute) => {
-          e.feature.set(attribute.name, null);
+          _feature.set(attribute.name, null);
         });
         const feature = new Feature({
           feature: e.feature,
@@ -109,11 +129,41 @@ proto.run = function(inputs, context) {
         // lo setto come add feature lo state
         // vado a aggiungerla
         source.addFeature(feature);
-        //source.readFeatures().push(feature);
-        // devo creare un clone per evitare che quando eventualmente sposto la feature appena aggiunta
-        // questa non sovrascriva le feature nuova originale del primo update
         session.pushAdd(layerId, feature);
         inputs.features.push(feature);
+        if (isBranchLayer) {
+          const snapFeatures = [];
+          for (let i = 0; i <2; i++) {
+            this._optionscondition.snapFeatures[i] && snapFeatures.push(this._optionscondition.snapFeatures[i])
+          }
+          const featureCoordinate = _feature.getGeometry().getCoordinates();
+          snapFeatures.forEach((snapFeature) => {
+            const indexes = {
+              start: 0,
+              end: 1,
+              snap: 1
+            };
+            const snapFeatureCoordinate = snapFeature.getGeometry().getCoordinates();
+            for (let i = 0; i < 2; i++) {
+              if (featureCoordinate[i].toString() === snapFeatureCoordinate[0].toString()) {
+                indexes.start = i === 0 ? 1: 0;
+                indexes.end = i;
+              }
+              if (featureCoordinate[i].toString() === snapFeatureCoordinate[1].toString()){
+                indexes.start = i === 0 ? 1: 0;
+                indexes.start = i;
+                indexes.snap = 0;
+              }
+            }
+            const degree = angle(featureCoordinate[indexes.start], featureCoordinate[indexes.end], snapFeatureCoordinate[indexes.snap]);
+            this.createLossFeatureWithDegree({
+              coordinate: featureCoordinate[indexes.end],
+              degree,
+              session,
+              branch_id: feature.getId()
+            })
+          })
+        }
         d.resolve(inputs);
       });
       break;
@@ -140,6 +190,7 @@ proto.stop = function() {
 proto.removeLastPoint = function(evt) {
   if (evt.which === 27) {
     this.drawInteraction.removeLastPoint();
+    this._optionscondition.vertex = 0;
   }
 };
 
@@ -149,12 +200,31 @@ AddFeatureTask.CONDITIONS = {
     return function({coordinate}) {
       const source = options.source;
       const features = source.getFeatures();
-      if (features.length === 0)
-        return true;
-      else {
-        return options.canDraw || !!source.getFeatures().find((feature) => {
-          return feature.getGeometry().getCoordinates()[1].toString() === coordinate.toString();
-        })
+      if (features.length === 0) {
+        return true
+      } else {
+        const optionscondition = options.optionscondition;
+        // obbligo a verificare che sia partito lo start draw event
+        optionscondition.vertex = optionscondition.start ? optionscondition.vertex : 0;
+        let canDraw = false;
+        const checkSnapVertex = () => {
+          const branchFeatures = source.getFeatures();
+          for (let i = 0; i < branchFeatures.length; i++) {
+            const feature = branchFeatures[i];
+            if (feature.getGeometry().getCoordinates()[0].toString() === coordinate.toString() || feature.getGeometry().getCoordinates()[1].toString() === coordinate.toString()) {
+              canDraw = true;
+              optionscondition.snapFeatures[optionscondition.vertex] = optionscondition.snapFeatures[optionscondition.vertex] === null ? feature : false;
+            }
+          }
+          if (optionscondition.vertex === 0) {
+            optionscondition.vertex+=1;
+            canDraw = true;
+          } else {
+            canDraw = canDraw || optionscondition.snapFeatures['0'] !== null;
+          }
+        };
+        checkSnapVertex();
+        return canDraw;
       }
     }
   },

@@ -22,24 +22,9 @@ proto.run = function(inputs, context) {
   const originalLayer = context.layer;
   const layerId = originalLayer.getId();
   const originalStyle = editingLayer.getStyle();
-  const style = new ol.style.Style({
-    fill: new ol.style.Fill({
-      color: 'rgba(255, 255, 255, 0.2)'
-    }),
-    stroke: new ol.style.Stroke({
-      color: '#ffcc33',
-      width: 3
-    }),
-    image: new ol.style.Circle({
-      radius: 7,
-      fill: new ol.style.Fill({
-        color: '#ffcc33'
-      })
-    })
-  });
   const features = new ol.Collection(inputs.features);
   let originalFeature = null;
-  feature.setStyle(style);
+  feature.setStyle(originalStyle);
   this._modifyInteraction = new ol.interaction.Modify({
     features,
   });

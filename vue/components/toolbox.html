@@ -2,19 +2,16 @@
   <div :class="{'disableddiv' : !isLayerReady }" :id="'id_toolbox_'+ state.id">
     <div @click="select" class="panel panel-primary" :class="{ 'toolboxselected': state.selected }">
       <div v-show="!isLayerReady" class="bar-loader"></div>
-      <div class="panel-heading container" style="width:100%;" :style="{ background: state.color}" >
-        <div v-if="father" style="margin-right:5px;" class="pull-left enabled dropdown">
-          <span class="g3w-icon" :class="g3wtemplate.font['relation']"></span>
-          <div class="dropdown-content" style="padding: 5px;">
-            <div v-for="dependency in state.editing.dependencies" style="color: black" >{{ dependency }}</div>
-          </div>
-        </div>
-        <div class="panel-title" :class="[father ? 'col-md-6' : 'col-md-8']">
+      <div style="padding: 0 10px 0 10px; width:100%; display: flex; align-items: center; justify-content:space-between" :style="{ background: state.color}" >
+        <div class="panel-title" style="font-size: 1em;" >
           {{ state.title }}
+        </div>
+        <div>
+          <img :src="state.icon">
         </div>
       </div>
       <bar-loader :loading="state.loading"></bar-loader>
-      <div class="panel-body">
+      <div class="panel-body" style="padding:8px;">
         <div style="display: flex; flex-wrap: wrap;">
           <tool
             :state="toolstate"
@@ -26,7 +23,7 @@
         </div>
         <div class="message" style="margin-top: 5px;" :id="'id_toolbox_messages_'+ state.id">
           <div v-html="state.message"></div>
-          <div class="toolbox_help_message" v-html="toolhelpmessage"></div>
+          <div class="toolbox_help_message" style="font-size:0.8em" v-html="toolhelpmessage"></div>
         </div>
       </div>
     </div>

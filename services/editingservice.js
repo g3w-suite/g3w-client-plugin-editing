@@ -30,6 +30,7 @@ function EditingService() {
   this._beforeCommitstateIds = [];
   this._nodelayerIds = [];
   this._branchLayerId = null;
+  this._branchLayersDependenciesFields = {};
   this.progeoApi = {};
   // state of editing
   this.state = {
@@ -79,7 +80,8 @@ function EditingService() {
       nodes: []
     };
     this._branchLayerId = this.progeoApi.getBranchLayerId();
-    // sono i layer originali caricati dal progetto e messi nel catalogo
+    this._branchLayersDependenciesFields = this.progeoApi.getBranchLayersDependenciesFields();
+      // sono i layer originali caricati dal progetto e messi nel catalogo
     const layers = this._getEditableLayersFromCatalog();
     let editingLayersLenght = layers.length;
     //ciclo su ogni layers editiabile
@@ -112,7 +114,8 @@ function EditingService() {
       this._editableLayers[layerId] = editableLayer;
       this._editableLayers[Symbol.for('layersarray')].push({
         layer: editableLayer,
-        dependency: layerId === this._branchLayerId ? _dependencies.branch : _dependencies.nodes
+        dependency: layerId === this._branchLayerId ? _dependencies.branch : _dependencies.nodes,
+        icon: layer.getIconUrlFromLegend()
       });
       // aggiungo all'array dei vectorlayers se per caso mi servisse
       this._sessions[layerId] = null;
@@ -181,6 +184,14 @@ proto.subscribe = function({event, layerId}={}) {
 
 // END API
 
+proto.createFeature = function() {
+
+};
+
+proto.getBranchLayersDependenciesFields = function() {
+  return this._branchLayersDependenciesFields;
+};
+
 proto.setProgeoApi = function(api) {
   this.progeoApi = api;
 };
@@ -231,31 +242,6 @@ proto.activeQueryInfo = function() {
 };
 
 proto.setLayersColor = function() {
-  const RELATIONS_COLOR = [
-    ["#656F94",
-      "#485584",
-      "#303E73",
-      "#1B2B63",
-      "#0C1B53"],
-
-    ["#CF858F",
-      "#B95A67",
-      "#A23645",
-      "#8B1929",
-      "#740313"],
-
-    ["#86B976",
-      "#64A450",
-      "#479030",
-      "#2F7C16",
-      "#1B6803"],
-
-    ["#DAC28C",
-      "#C2A45E",
-      "#AA8739",
-      "#926E1A",
-      "#7A5603"]
-  ];
 
   const LAYERS_COLOR = [
     "#AFEE30",
@@ -282,23 +268,9 @@ proto.setLayersColor = function() {
     "#66294B",
     "#431F34"
   ];
-  let color;
-  let childrenLayers;
-  for (const layer of this.getLayers()) {
-    // verifico se è un layer è padre e se ha figli in editing
-    childrenLayers = this._layerChildrenRelationInEditing(layer);
-    if (layer.isFather() && childrenLayers.length) {
-      color = RELATIONS_COLOR.splice(0,1).pop().reverse();
-      !layer.getColor() ? layer.setColor(color.splice(0,1).pop()): null;
-      childrenLayers.forEach((layerId) => {
-        const layer = this.getLayerById(layerId);
-        !layer.getColor() ? layer.setColor(color.splice(0,1).pop()): null;
-      });
-    }
-  }
   for (const layer of this.getLayers()) {
     const color = !layer.getColor() && LAYERS_COLOR.splice(0,1).pop();
-    layer.setColor(color)
+    layer.setColor(color);
   }
 };
 
@@ -377,7 +349,7 @@ proto.setLineStyle = function({color, editingLayer}) {
       new ol.style.Style({
         stroke: new ol.style.Stroke({
           color,
-          width: 2
+          width: 3
         })
       })
     ];
@@ -410,15 +382,26 @@ proto.setLineStyle = function({color, editingLayer}) {
   };
   editingLayer.setStyle(styleFnc)
 };
-
 proto._buildToolBoxes = function() {
   const dependencyToolboxSession = {};
-  for (const {layer, dependency} of this.getLayersWithDependecy()) {
+  const layerswithdependency = this.getLayersWithDependecy();
+  for (let i =0; i < layerswithdependency.length; i++) {
     // la toolboxes costruirà il toolboxex adatto per quel layer
     // assegnadogli le icone dei bottonii etc ..
+    const {layer, dependency, icon} = layerswithdependency[i];
     const toolbox = ToolBoxesFactory.build({
       layer,
-      dependency
+      dependency,
+      icon,
+      style: layer.getId() !== this._branchLayerId ? new ol.style.Style({
+        image: new ol.style.Icon({
+          src: icon,
+          offset: [-3, 3],
+        }),
+        stroke: new ol.style.Stroke({
+          color: layer.getColor()
+        })
+      }): null
     });
     dependency.forEach((_dependency) => dependencyToolboxSession[_dependency.getId()] = toolbox.getSession());
     // vado ad aggiungere la toolbox
@@ -567,6 +550,15 @@ proto._getEditableLayersFromCatalog = function() {
 proto.getLayers = function() {
   return this._editableLayers[Symbol.for('layersarray')].map((layerObject) => {
     return layerObject.layer;
+  });
+};
+
+proto.getLayersAndIcon = function() {
+  return this._editableLayers[Symbol.for('layersarray')].map((layerObject) => {
+    return {
+      layer: layerObject.layer,
+      icon: layerObject.icon
+    };
   });
 };
 
@@ -949,37 +941,30 @@ proto._preCommit = function() {
     }
   };
   const commitObject = {
+    branch: false,
     sessions: []
   };
-  const toolboxes = this.getToolBoxes();
-  toolboxes.forEach((toolbox) => {
-    const toolBoxId = toolbox.getId();
-    if (toolbox.canCommit() && toolBoxId === this._branchLayerId) {
-      const session = toolbox.getSession();
-      this._beforeCommitstateIds = session.moveRelationStatesOwnSession()[toolBoxId] || [];
-    }
-  });
+  const branch_toolbox = this.getToolBoxById(this._branchLayerId);
+  if (branch_toolbox.canCommit()) {
+    commitObject.branch = true;
+    const session = branch_toolbox.getSession();
+    commitObject.sessions.push(session);
+    this._beforeCommitstateIds = session.moveRelationStatesOwnSession()[this._branchLayerId] || [];
+  }
 
-  toolboxes.forEach((toolbox) => {
-    if (toolbox.canCommit())
+  this.getToolBoxes().forEach((toolbox) => {
+    if (toolbox.getId() !== this._branchLayerId && toolbox.canCommit())
       commitObject.sessions.push(toolbox.getSession());
   });
 
-  if (commitObject.sessions.length > 1 ) {
-    const session = commitObject.sessions.find((session) => {
-      return session.getId() !== this._branchLayerId;
-    });
-    deleteOrphanNodes(session);
-  } else {
-    this._nodelayerIds.forEach((nodeLayerId) => {
-      if (this._orphanNodes[nodeLayerId].length) {
-        const toolbox = this.getToolBoxById(nodeLayerId);
-        const session = toolbox.getSession();
-        deleteOrphanNodes(session);
-        commitObject.sessions.push(session)
-      }
-    });
-  }
+  this._nodelayerIds.forEach((nodeLayerId) => {
+    if (this._orphanNodes[nodeLayerId].length) {
+      const toolbox = this.getToolBoxById(nodeLayerId);
+      const session = toolbox.getSession();
+      deleteOrphanNodes(session);
+      commitObject.sessions.push(session)
+    }
+  });
   return commitObject;
 };
 
@@ -992,9 +977,42 @@ proto._removeStatesFromDependency = function() {
   }
 };
 
+proto._handleCommitsResponse = function({responses, commitObject}) {
+  const deleteOrphanNodes = this._isThereOrphanNodes();
+  const handleResponse = (data) => {
+    const [commitItems, response] = data;
+    if (response.result) {
+      GUI.notify.success(t("editing.messages.saved"));
+      this._mapService.refreshMap({force: true});
+    } else {
+      const message = response.errors;
+      GUI.notify.error(message);
+      this._removeStatesFromDependency();
+    }
+  };
+  for (let response of responses) {
+    handleResponse(response)
+  }
+  if (deleteOrphanNodes) {
+    this._nodelayerIds.forEach((nodeLayerId) => {
+      const toolbox = this.getToolBoxById(nodeLayerId);
+      const editingLayer = toolbox.getEditingLayer();
+      const orphanNodes = this._orphanNodes[nodeLayerId];
+      for (let i=0; i < orphanNodes.length; i++) {
+        editingLayer.getSource().removeFeature(orphanNodes[i]);
+      }
+      this._orphanNodes[nodeLayerId] = [];
+    })
+
+  }
+  commitObject.sessions.forEach((session) => {
+    const toolbox = this.getToolBoxById(session.getId());
+    toolbox.setCommit();
+  });
+};
+
 proto.commit = function(close=false) {
   return new Promise((resolve, reject) => {
-    const deleteOrphanNodes = this._isThereOrphanNodes();
     const commitObject = this._preCommit();
     if (!commitObject.sessions.length) {
       resolve();
@@ -1016,53 +1034,49 @@ proto.commit = function(close=false) {
                     </h4>`,
             closeButton: false
           });
-          const sessionCommit = commitObject.sessions.map((session) => {
-            return session.commit();
-          });
-          $.when(...sessionCommit)
-            .then((...args) => {
-              const handleResponse = (data) => {
-                const [commitItems, response] = data;
-                if (response.result) {
-                  GUI.notify.success(t("editing.messages.saved"));
-                  this._mapService.refreshMap({force: true});
-                } else {
-                  const message = response.errors;
-                  GUI.notify.error(message);
-                  this._removeStatesFromDependency();
-                }
-              };
-              if (sessionCommit.length > 1) {
-                for (let arg of args) {
-                  handleResponse(arg)
-                }
-              } else
-                handleResponse(args);
-              if (deleteOrphanNodes) {
-                this._nodelayerIds.forEach((nodeLayerId) => {
-                  const toolbox = this.getToolBoxById(nodeLayerId);
-                  const editingLayer = toolbox.getEditingLayer();
-                  const orphanNodes = this._orphanNodes[nodeLayerId];
-                  for (let i=0; i < orphanNodes.length; i++) {
-                    editingLayer.getSource().removeFeature(orphanNodes[i]);
-                  }
-                  this._orphanNodes[nodeLayerId] = [];
-                })
-
+          const responses = [];
+          //vado a costruire la funzione per committare i nodi
+          //accetta come argomento lo start (0,1) con 1 significa che ho già committato il branch
+          const commitNodes = (start=0) => {
+            const sessionCommit = commitObject.sessions.slice(start).map((session) => {
+              return session.commit();
+            });
+            $.when(...sessionCommit)
+              .then((...args) => {
+                responses.push(args);
+                this._handleCommitsResponse({
+                  responses,
+                  commitObject
+                });
+                resolve()
+              }, (error) => {
+                console.log(error)
+              })
+              .always(() => {
+                workflow.stop();
+                dialog.modal('hide');
+              })
+          };
+          if (commitObject.branch) {
+            const branch_session = commitObject.sessions[0];
+            branch_session.commit().then((...args) => {
+              responses.push(args);
+              if (commitObject.sessions.length - 1) {
+                commitNodes(start=1)
+              } else {
+                this._handleCommitsResponse({
+                  responses,
+                  commitObject
+                });
+                resolve();
               }
-              commitObject.sessions.forEach((session) => {
-                const toolbox = this.getToolBoxById(session.getId());
-                toolbox.setCommit();
-              });
-              resolve()
-            }, (error) => {
-              console.log(error)
-            })
-            .always(() => {
+            }).always(() => {
               workflow.stop();
               dialog.modal('hide');
             })
-
+          } else {
+            commitNodes(start=0)
+          }
         })
         .fail((err) => {
           workflow.stop();

@@ -92,7 +92,6 @@ styles[ol.geom.GeometryType.POLYGON] = _.concat(styles[ol.geom.GeometryType.POLY
 
 styles[ol.geom.GeometryType.GEOMETRY_COLLECTION] = _.concat(styles[ol.geom.GeometryType.GEOMETRY_COLLECTION],styles[ol.geom.GeometryType.LINE_STRING]);
 
-/* FINE BRUTTISSIMO! */
 
 // run del tool di delete feature
 // che ritorna una promessa
@@ -103,13 +102,14 @@ proto.run = function(inputs, context) {
   const features = editingLayer.getSource().getFeatures();
   const originaLayer = context.layer;
   const layerId = originaLayer.getId();
+  const isBranchLayer = this.isBranchLayer(layerId);
   const geometryType = originaLayer.getGeometryType();
   //recupero la sessione dal context
   const session = context.session;
   this._selectInteraction = new ol.interaction.Select({
     layers: [editingLayer],
     condition: ol.events.condition.click,
-    filter: geometryType === 'Line'? (feature) => {
+    filter: isBranchLayer? (feature) => {
       const coordinate = feature.getGeometry().getCoordinates();
       let coordinateString = [coordinate[0].toString(), coordinate[1].toString()];
       for (let i = 0; i < features.length; i++ ) {

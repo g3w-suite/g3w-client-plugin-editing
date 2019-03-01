@@ -33,18 +33,17 @@ const _Plugin = function() {
         // check if exist any layer to edit
         if (this.service.loadPlugin()) {
           //inizialize service
-          this.service.init(this.config);
           this.addToolGroup(pluginGroupTool);
           this.setHookLoading({
             loading: true
           });
+          this.service.init(this.config);
         }
       })
       .catch((err)=> {
         console.log(err);
       });
     this.service.on('ready', () => {
-      //plugin registry
       if (this.registerPlugin(this.config.gid)) {
         if (!GUI.ready) {
           GUI.on('ready',_.bind(this.setupGui, this));
@@ -55,14 +54,12 @@ const _Plugin = function() {
       this.setHookLoading({
         loading: false
       });
-      const api = this.service.getApi();
-      this.setApi(api);
       this.setReady(true);
     })
   };
   //setup plugin interface
   this.setupGui = function() {
-    if (_.isBoolean(this.config.visible) && !this.config.visible)
+    if (this.config.visible === false)
       return false;
     this.config.name = this.config.name ||  t("editing.editing_data");
     this.addTools({
