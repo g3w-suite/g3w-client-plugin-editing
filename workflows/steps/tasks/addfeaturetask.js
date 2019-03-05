@@ -4,8 +4,6 @@ const Geometry = g3wsdk.core.geometry.Geometry;
 const base =  g3wsdk.core.utils.base;
 const EditingTask = require('./editingtask');
 const Feature = g3wsdk.core.layer.features.Feature;
-import angle from '@turf/angle';
-
 // classe  per l'aggiuntadi feature
 // eridita dalla classe padre EditingTool
 function AddFeatureTask(options={}) {
@@ -47,11 +45,7 @@ proto.run = function(inputs, context) {
   const pk = originalLayer.getPk();
   this._optionscondition = {
     vertex: 0,
-    canDraw: false,
-    snapFeatures: {
-      0: null,
-      1: null
-    },
+    snapFeatures: [],
     start: false
   };
   // qui vado a valutare il tipo di layer
@@ -103,7 +97,6 @@ proto.run = function(inputs, context) {
       this.drawInteraction.on('drawstart', () => {
         this._optionscondition.start = true;
         document.addEventListener('keydown', this._removeLastPoint);
-        options.canDraw = true;
       });
       // viene settato l'evento drawend
       this.drawInteraction.on('drawend', (e) => {
@@ -116,6 +109,11 @@ proto.run = function(inputs, context) {
             feature: _feature,
             dependency: this._dependency
           });
+          this.runNodeMethods({
+            type: 'add',
+            layerId,
+            feature: _feature
+          })
         }
         attributes.forEach((attribute) => {
           _feature.set(attribute.name, null);
@@ -132,35 +130,13 @@ proto.run = function(inputs, context) {
         session.pushAdd(layerId, feature);
         inputs.features.push(feature);
         if (isBranchLayer) {
-          const snapFeatures = [];
-          for (let i = 0; i <2; i++) {
-            this._optionscondition.snapFeatures[i] && snapFeatures.push(this._optionscondition.snapFeatures[i])
-          }
-          const featureCoordinate = _feature.getGeometry().getCoordinates();
-          snapFeatures.forEach((snapFeature) => {
-            const indexes = {
-              start: 0,
-              end: 1,
-              snap: 1
-            };
-            const snapFeatureCoordinate = snapFeature.getGeometry().getCoordinates();
-            for (let i = 0; i < 2; i++) {
-              if (featureCoordinate[i].toString() === snapFeatureCoordinate[0].toString()) {
-                indexes.start = i === 0 ? 1: 0;
-                indexes.end = i;
-              }
-              if (featureCoordinate[i].toString() === snapFeatureCoordinate[1].toString()){
-                indexes.start = i === 0 ? 1: 0;
-                indexes.start = i;
-                indexes.snap = 0;
-              }
-            }
-            const degree = angle(featureCoordinate[indexes.start], featureCoordinate[indexes.end], snapFeatureCoordinate[indexes.snap]);
-            this.createLossFeatureWithDegree({
-              coordinate: featureCoordinate[indexes.end],
-              degree,
-              session,
-              branch_id: feature.getId()
+          this.runBranchMethods({
+            action: 'add',
+            session,
+            feature,
+          }, {
+            snapFeatures: this._optionscondition.snapFeatures.filter(snapFeature => {
+              return snapFeature;
             })
           })
         }
@@ -207,22 +183,25 @@ AddFeatureTask.CONDITIONS = {
         // obbligo a verificare che sia partito lo start draw event
         optionscondition.vertex = optionscondition.start ? optionscondition.vertex : 0;
         let canDraw = false;
+        //funzione per il check
         const checkSnapVertex = () => {
           const branchFeatures = source.getFeatures();
           for (let i = 0; i < branchFeatures.length; i++) {
             const feature = branchFeatures[i];
             if (feature.getGeometry().getCoordinates()[0].toString() === coordinate.toString() || feature.getGeometry().getCoordinates()[1].toString() === coordinate.toString()) {
               canDraw = true;
-              optionscondition.snapFeatures[optionscondition.vertex] = optionscondition.snapFeatures[optionscondition.vertex] === null ? feature : false;
+              optionscondition.snapFeatures[optionscondition.vertex] = optionscondition.snapFeatures[optionscondition.vertex] === undefined ? feature : false;
+              break;
             }
           }
           if (optionscondition.vertex === 0) {
             optionscondition.vertex+=1;
             canDraw = true;
           } else {
-            canDraw = canDraw || optionscondition.snapFeatures['0'] !== null;
+            canDraw = canDraw || optionscondition.snapFeatures[0] !== undefined;
           }
         };
+        /// file nunzione
         checkSnapVertex();
         return canDraw;
       }

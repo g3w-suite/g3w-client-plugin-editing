@@ -13,6 +13,7 @@ function EditingTask(options = {}) {
   this.removeInteraction = function(interaction) {
     this._mapService.removeInteraction(interaction);
   };
+  this._editingService = null;
 }
 
 inherit(EditingTask, Task);
@@ -23,14 +24,18 @@ proto.run = function(inputs, context) {};
 
 proto.stop = function() {};
 
+proto.getEditingService = function() {
+  if (!this._editingService)
+    this._editingService = require('../../../services/editingservice');
+  return this._editingService;
+};
+
 proto.isBranchLayer = function(layerId) {
-  const EditingService = require('../../../services/editingservice');
-  return EditingService.isBranchLayer(layerId);
+  return this.getEditingService().isBranchLayer(layerId);
 };
 
 proto.getChartComponent = function({feature}={}) {
-  const EditingService = require('../../../services/editingservice');
-  return EditingService.runProgeoApiMethod({
+  return this.getEditingService().runProgeoApiMethod({
     name:'getChartComponent',
     options: {
       feature
@@ -38,29 +43,139 @@ proto.getChartComponent = function({feature}={}) {
   });
 };
 
-proto.createLossFeatureWithDegree = function({session, coordinate, degree, branch_id} = {}) {
-  const EditingService = require('../../../services/editingservice');
-  const layerFields = EditingService.getBranchLayersDependenciesFields();
-  for (const layerId in layerFields) {
-    const field = layerFields[layerId][0];
-    const toolbox = EditingService.getToolBoxById(layerId);
-    const pk = toolbox.getLayer().getPk();
-    const geometry = new ol.geom.Point(coordinate);
-    const feature = new Feature({
-      feature: new ol.Feature({
-        geometry,
-      }),
-      pk
+proto.losseLayerSetDegree = function({feature, options={}}) {
+  const field = options.field;
+  const branchLayerId = this.getEditingService().getBranchLayerId();
+  const branchLayer = this.getEditingService().getToolBoxById(branchLayerId).getEditingLayer();
+  const map = this._mapService.getMap();
+  const coordinates = feature.getGeometry().getCoordinates();
+  const pixel = map.getPixelFromCoordinate(coordinates);
+  const branchFeatures = map.getFeaturesAtPixel(pixel, {
+    layerFilter: function(layer) {
+      return layer === branchLayer
+    }
+  });
+  if (branchFeatures && branchFeatures.length === 2) {
+    const [featureA, featureB] = branchFeatures;
+    const {degree} = this._getDegree({
+      featureA,
+      featureB
     });
-    toolbox.getLayer().isPkEditable() ?  feature.setNew() : feature.setTemporaryId();
     feature.set(field, degree);
-    feature.set('branch_id', branch_id);
-    const source = toolbox.getEditingLayer().getSource();
-    source.addFeature(feature);
-    feature.setNew();
-    session.pushAdd(layerId, feature);
+  }
+
+};
+
+proto._getDegree = function({featureA, featureB, decimal=2}) {
+  const featureACoordinates = featureA.getGeometry().getCoordinates();
+  const featureBCoordinates = featureB.getGeometry().getCoordinates();
+  const coordinates = {
+    start: null,
+    middle: null,
+    end: null,
+  };
+  for (let i = 0; i < 2; i++) {
+    if (featureACoordinates[i].toString() === featureBCoordinates[0].toString()) {
+      coordinates.start = featureACoordinates[i ? 0: 1];
+      coordinates.middle = featureBCoordinates[0];
+      coordinates.end = featureBCoordinates[1];
+      break;
+    }
+    if (featureACoordinates[i].toString() === featureBCoordinates[1].toString()){
+      coordinates.start = featureBCoordinates[0];
+      coordinates.middle = featureBCoordinates[1];
+      coordinates.end = featureACoordinates[i ? 0: 1];
+      break;
+    }
+  }
+  const dx1 = coordinates.middle[0] - coordinates.start[0];
+  const dy1 = coordinates.middle[1] - coordinates.start[1];
+  let angle1 =  Math.atan2(dy1, dx1) * 180 / Math.PI;
+  const dx2 = coordinates.middle[0] - coordinates.end[0];
+  const dy2 = coordinates.middle[1] - coordinates.end[1];
+  let angle2 = Math.atan2(dy2, dx2) * 180 / Math.PI;
+  let degree = Math.abs(angle1 - angle2);
+  degree = degree > 180 ? 360 - degree : degree;
+  degree = degree.toFixed(decimal);
+  return {
+    degree,
+    coordinates: coordinates.middle
+  };
+};
+
+proto.branchLayerAddLosse = function({layerId, branchOptions={}, options={}}) {
+  const field = options.fields[0];
+  const {session, feature, snapFeatures=[]} = branchOptions;
+  const toolbox = this.getEditingService().getToolBoxById(layerId);
+  const source = toolbox.getEditingLayer().getSource();
+  const layer =  toolbox.getLayer();
+  const pk = layer.getPk();
+  const branch_id = feature.getId();
+  snapFeatures.forEach((snapFeature) => {
+    if (snapFeature) {
+      const {degree, coordinates} = this._getDegree({
+        featureA: feature,
+        featureB: snapFeature
+      });
+      const geometry = new ol.geom.Point(coordinates);
+      const lossfeature = new Feature({
+        feature: new ol.Feature({
+          geometry,
+        }),
+        pk
+      });
+      layer.isPkEditable() ?  lossfeature.setNew() : lossfeature.setTemporaryId();
+      lossfeature.set(field, degree);
+
+      this.setFetureBranchId({
+        feature: lossfeature,
+        branch_id
+      });
+      source.addFeature(lossfeature);
+      lossfeature.setNew();
+      session.pushAdd(layerId, lossfeature);
+    }
+  })
+};
+
+proto.setFetureBranchId = function({feature, branch_id}) {
+  feature.set('branch_id', branch_id);
+  feature.set('branch', branch_id);
+};
+
+proto.runNodeMethods = function({type, layerId, feature}) {
+  const actions = this.getEditingService().getNodeLayerAction(layerId);
+  if (actions && actions[type]){
+    const methods = actions[type].methods;
+    for (let method in methods) {
+      this[method]({
+        feature,
+        options: methods[method]
+      })
+    }
   }
 };
+
+proto.runBranchMethods = function({action, session, feature}, options={}) {
+  const layerIds = this.getEditingService().getBranchLayerAction(action);
+  for (let layerId in layerIds) {
+    const config = layerIds[layerId];
+    const methods = config.methods;
+    for (let method in methods) {
+      this[method]({
+        layerId,
+        options: methods[method],
+        branchOptions: {
+          session,
+          feature,
+          ...options
+        }
+      })
+    }
+
+  }
+};
+
 
 proto.createSnapInteraction = function({dependency=[]}) {
   const dependencyFeatures = this.getDependencyFeatures(dependency);
@@ -94,12 +209,14 @@ proto.setBranchId = function({feature, dependency}) {
         break;
     }
   }
-  feature.set('branch_id', branch_feature.getId());
+  this.setFetureBranchId({
+    feature,
+    branch_id: branch_feature.getId()
+  });
 };
 
 proto.removeFromOrphanNodes = function({layerId, id}) {
-  const EditingService = require('../../../services/editingservice');
-  const orphannodes = EditingService.getOrphanNodesById({
+  const orphannodes = this.getEditingService().getOrphanNodesById({
     layerId,
     id
   });
@@ -113,13 +230,8 @@ proto.removeFromOrphanNodes = function({layerId, id}) {
 };
 
 proto.checkOrphanNodes = function() {
-  const EditingService = require('../../../services/editingservice');
-  EditingService.checkOrphanNodes();
+  this.getEditingService().checkOrphanNodes();
 };
 
-proto.checkLossesToDelete = function({l}) {
-
-}
-;
 
 module.exports = EditingTask;

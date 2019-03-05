@@ -80,7 +80,6 @@ function EditingService() {
       nodes: []
     };
     this._branchLayerId = this.progeoApi.getBranchLayerId();
-    this._branchLayersDependenciesFields = this.progeoApi.getBranchLayersDependenciesFields();
       // sono i layer originali caricati dal progetto e messi nel catalogo
     const layers = this._getEditableLayersFromCatalog();
     let editingLayersLenght = layers.length;
@@ -188,8 +187,23 @@ proto.createFeature = function() {
 
 };
 
-proto.getBranchLayersDependenciesFields = function() {
-  return this._branchLayersDependenciesFields;
+proto.getBranchLayerId = function() {
+  return this._branchLayerId;
+};
+
+proto.getBranchLayerActions = function() {
+  return this.progeoApi.getBranchLayerActions();
+};
+
+proto.getBranchLayerAction = function(action=null) {
+  if (action && ['add', 'delete', 'update'].indexOf(action) !== -1){
+    return this.progeoApi.getBranchLayerActions()[action]
+  }
+  return null
+};
+
+proto.getNodeLayerAction = function(layerId) {
+  return this.progeoApi.getNodeLayerAction(layerId);
 };
 
 proto.setProgeoApi = function(api) {
