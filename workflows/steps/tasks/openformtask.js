@@ -86,7 +86,7 @@ proto._cancelFnc = function(promise) {
 
 proto._saveFnc = function(promise, inputs) {
   return function(fields) {
-    const newFeature = this._feature;
+    const newFeature = this._feature.clone();
     const layerId = this._originalLayer.getId();
     this._originalLayer.setFieldsWithValues(newFeature, fields);
     if (newFeature.isNew() && this._originalLayer.isPkEditable()) {
