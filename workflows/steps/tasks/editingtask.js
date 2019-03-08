@@ -43,27 +43,38 @@ proto.getChartComponent = function({feature}={}) {
   });
 };
 
-proto.losseLayerSetDegree = function({feature, options={}}) {
+proto.losseLayerSetDegree = function({ nodeOptions, branchOptions, options={}}) {
   const field = options.field;
-  const branchLayerId = this.getEditingService().getBranchLayerId();
-  const branchLayer = this.getEditingService().getToolBoxById(branchLayerId).getEditingLayer();
-  const map = this._mapService.getMap();
-  const coordinates = feature.getGeometry().getCoordinates();
-  const pixel = map.getPixelFromCoordinate(coordinates);
-  const branchFeatures = map.getFeaturesAtPixel(pixel, {
-    layerFilter: function(layer) {
-      return layer === branchLayer
-    }
-  });
-  if (branchFeatures && branchFeatures.length === 2) {
-    const [featureA, featureB] = branchFeatures;
-    const {degree} = this._getDegree({
-      featureA,
-      featureB
+  let feature, branchFeatures;
+  if (nodeOptions) {
+    feature  = nodeOptions.feature;
+    const branchLayerId = this.getEditingService().getBranchLayerId();
+    const branchLayer = this.getEditingService().getToolBoxById(branchLayerId).getEditingLayer();
+    const map = this._mapService.getMap();
+    const coordinates = feature.getGeometry().getCoordinates();
+    const pixel = map.getPixelFromCoordinate(coordinates);
+    branchFeatures = map.getFeaturesAtPixel(pixel, {
+      layerFilter: function(layer) {
+        return layer === branchLayer
+      }
     });
-    feature.set(field, degree);
+    if (branchFeatures && branchFeatures.length !== 2) {
+      return
+    }
+  } else if (branchOptions) {
+    feature = branchOptions.feature;
+    branchFeatures = branchOptions.snapFeatures;
+    if (feature.length === 1)
+      feature = feature[0];
+    else
+      return;
   }
-
+  const [featureA, featureB] = branchFeatures;
+  const {degree} = this._getDegree({
+    featureA,
+    featureB
+  });
+  feature.set(field, degree);
 };
 
 proto._getDegree = function({featureA, featureB, decimal=2}) {
@@ -103,9 +114,24 @@ proto._getDegree = function({featureA, featureB, decimal=2}) {
   };
 };
 
-proto.branchLayerAddLosse = function({layerId, branchOptions={}, options={}}) {
+proto.branchLayerDeleteLosse = function({branchOptions={}, options={}}) {
+  const {layerId, session, feature} = branchOptions;
+  const losselayer = this.getEditingService().getToolBoxById(layerId).getEditingLayer();
+  const branch_id = feature.getId();
+  const lossefeatures = losselayer.getSource().getFeatures();
+  for (let i = 0; i < lossefeatures.length; i++) {
+    const feature = lossefeatures[i];
+    if (feature.get('branch') === branch_id || feature.get('branch_id') === branch_id) {
+      losselayer.getSource().removeFeature(feature);
+      session.pushDelete(layerId, feature);
+      break;
+    }
+  }
+};
+
+proto.branchLayerAddLosse = function({branchOptions={}, options={}}) {
   const field = options.fields[0];
-  const {session, feature, snapFeatures=[]} = branchOptions;
+  const {layerId, session, feature, snapFeatures=[]} = branchOptions;
   const toolbox = this.getEditingService().getToolBoxById(layerId);
   const source = toolbox.getEditingLayer().getSource();
   const layer =  toolbox.getLayer();
@@ -149,23 +175,31 @@ proto.runNodeMethods = function({type, layerId, feature}) {
     const methods = actions[type].methods;
     for (let method in methods) {
       this[method]({
-        feature,
+        nodeOptions: {
+          feature
+        },
         options: methods[method]
       })
     }
   }
 };
 
+
 proto.runBranchMethods = function({action, session, feature}, options={}) {
   const layerIds = this.getEditingService().getBranchLayerAction(action);
   for (let layerId in layerIds) {
     const config = layerIds[layerId];
     const methods = config.methods;
+    feature = feature instanceof Feature ? feature : feature.filter( obj => {
+      return obj.layerId === layerId
+    }).map(obj => {
+      return obj.feature
+    });
     for (let method in methods) {
       this[method]({
-        layerId,
         options: methods[method],
         branchOptions: {
+          layerId,
           session,
           feature,
           ...options
@@ -175,7 +209,6 @@ proto.runBranchMethods = function({action, session, feature}, options={}) {
 
   }
 };
-
 
 proto.createSnapInteraction = function({dependency=[]}) {
   const dependencyFeatures = this.getDependencyFeatures(dependency);
@@ -223,7 +256,7 @@ proto.removeFromOrphanNodes = function({layerId, id}) {
   const filterednodes = orphannodes.filter((node) => {
     return node.getId() !== id;
   });
-  EditingService.setOrphanNodes({
+  this.getEditingService().setOrphanNodes({
     layerId,
     nodes: filterednodes
   });
@@ -232,6 +265,5 @@ proto.removeFromOrphanNodes = function({layerId, id}) {
 proto.checkOrphanNodes = function() {
   this.getEditingService().checkOrphanNodes();
 };
-
 
 module.exports = EditingTask;

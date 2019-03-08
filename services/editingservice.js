@@ -26,11 +26,18 @@ function EditingService() {
     }
   };
   this._orphanNodes = {};
-  this._movedRelationChanges = [];
-  this._beforeCommitstateIds = [];
+  this._allHistory = {
+    currentIndex: 0,
+    history: [],
+    undoRedo: {
+      canUndo: false,
+      canRedo: false
+    }
+  };
+  //oggetto contente i layerId e i relativi stati di commit dovuti al cabiamento (relaionale) con il branch
+  this._nodesLayersCommitStateIdsRelatedToBranchLayer = {};
   this._nodelayerIds = [];
   this._branchLayerId = null;
-  this._branchLayersDependenciesFields = {};
   this.progeoApi = {};
   // state of editing
   this.state = {
@@ -183,8 +190,50 @@ proto.subscribe = function({event, layerId}={}) {
 
 // END API
 
-proto.createFeature = function() {
+proto.getUndoRedo = function() {
+  return this._allHistory.undoRedo;
+};
 
+proto.setUndoRedo = function() {
+  this._allHistory.undoRedo.canUndo = this._allHistory.currentIndex > 0;
+  this._allHistory.undoRedo.canRedo = this._allHistory.currentIndex < this._allHistory.history.length;
+};
+
+
+proto.clearHistory = function() {
+  this._allHistory.history = [];
+  this._allHistory.currentIndex = 0;
+  this.setUndoRedo();
+};
+
+proto.addChangeToHistory = function(session) {
+  const change = {
+    id: session.getLastStateId(),
+    session
+  };
+  if (this._allHistory.currentIndex === this._allHistory.history.length) {
+    this._allHistory.history.push(change);
+    this._allHistory.currentIndex+=1;
+  } else {
+    this._allHistory.history.splice(0, this._allHistory.currentIndex, change);
+    this._allHistory.currentIndex = this._allHistory.history.length;
+  }
+  this.setUndoRedo();
+};
+
+
+proto.undoHistory = function() {
+  this._allHistory.currentIndex-=1;
+  const change = this._allHistory.history[this._allHistory.currentIndex];
+  this.undo(change.session);
+  this.setUndoRedo();
+};
+
+proto.redoHistory = function() {
+  const change = this._allHistory.history[this._allHistory.currentIndex];
+  this._allHistory.currentIndex+=1;
+  this.redo(change.session);
+  this.setUndoRedo();
 };
 
 proto.getBranchLayerId = function() {
@@ -196,10 +245,14 @@ proto.getBranchLayerActions = function() {
 };
 
 proto.getBranchLayerAction = function(action=null) {
-  if (action && ['add', 'delete', 'update'].indexOf(action) !== -1){
+  if (action) {
     return this.progeoApi.getBranchLayerActions()[action]
   }
   return null
+};
+
+proto.getNodeLayerTools = function(layerId) {
+  return this.progeoApi.getNodeLayerTools(layerId);
 };
 
 proto.getNodeLayerAction = function(layerId) {
@@ -225,7 +278,6 @@ proto.registerOrphanNodes = function() {
     }, 0)
   })
 };
-
 
 // method to get and syle orphans nodes
 proto.setOrphanNodes = function({layerId , nodes}) {
@@ -410,7 +462,7 @@ proto._buildToolBoxes = function() {
       style: layer.getId() !== this._branchLayerId ? new ol.style.Style({
         image: new ol.style.Icon({
           src: icon,
-          offset: [-3, 3],
+          offset: [-4, 4],
         }),
         stroke: new ol.style.Stroke({
           color: layer.getColor()
@@ -559,7 +611,6 @@ proto._getEditableLayersFromCatalog = function() {
   });
   return layers;
 };
-
 
 proto.getLayers = function() {
   return this._editableLayers[Symbol.for('layersarray')].map((layerObject) => {
@@ -868,8 +919,6 @@ proto._isThereOrphanNodes = function() {
   })
 };
 
-
-
 proto._createCommitMessage = function(sessions) {
   function create_changes_list_dom_element({layerName, add, update, del}) {
     const changeIds = {};
@@ -910,7 +959,8 @@ proto._createCommitMessage = function(sessions) {
 proto.checkOrphanNodes = function() {
   const layerline = this.getToolBoxById(this._branchLayerId).getEditingLayer();
   this._nodelayerIds.forEach((layerId) => {
-    const layernode = this.getToolBoxById(layerId).getEditingLayer();
+    const toolbox = this.getToolBoxById(layerId);
+    const layernode = toolbox.getEditingLayer();
     const nodes = layernode.getSource().getFeatures();
     const nodeStyle = layernode.getStyle();
     layernode.getSource().forEachFeature((node) =>{
@@ -929,22 +979,28 @@ proto.checkOrphanNodes = function() {
       });
     });
     this._orphanNodes[layerId].forEach((node) => {
-      node.setStyle(new ol.style.Style({
-        image: new ol.style.Circle({
-          radius: 7,
-          fill: new ol.style.Fill({color: 'orange'}),
-          stroke: new ol.style.Stroke({
-            color: [255,0,0], width: 2
+      const styles = [
+        layernode.getStyle(),
+        new ol.style.Style({
+          image: new ol.style.Circle({
+            radius: 15,
+            stroke: new ol.style.Stroke({
+              color: [255, 0, 0], width: 5
+            })
           })
         })
-      }))
+      ];
+      node.setStyle(styles)
     })
   })
-
-
 };
 
 proto._preCommit = function() {
+  this._allHistory.history.splice(0, this._allHistory.currentIndex);
+  this._allHistory.history.forEach((change) => {
+    const {id, session} = change;
+    session.deleteState(id);
+  });
   const deleteOrphanNodes = (session) => {
     const layerId = session.getId();
     const orphanNodes = this._orphanNodes[layerId];
@@ -963,7 +1019,7 @@ proto._preCommit = function() {
     commitObject.branch = true;
     const session = branch_toolbox.getSession();
     commitObject.sessions.push(session);
-    this._beforeCommitstateIds = session.moveRelationStatesOwnSession()[this._branchLayerId] || [];
+    this._nodesLayersCommitStateIdsRelatedToBranchLayer = session.moveRelationStatesOwnSession();
   }
 
   this.getToolBoxes().forEach((toolbox) => {
@@ -982,31 +1038,48 @@ proto._preCommit = function() {
   return commitObject;
 };
 
+proto._removeStateFromDependency = function(layerId) {
+  this._nodesLayersCommitStateIdsRelatedToBranchLayer[layerId];
+  const toolbox = this.getToolBoxById(layerId);
+  const session = toolbox.getSession();
+  session.removeChangesFromHistory(this._nodesLayersCommitStateIdsRelatedToBranchLayer);
+  delete this._nodesLayersCommitStateIdsRelatedToBranchLayer[layerId];
+};
+
 proto._removeStatesFromDependency = function() {
-  if (this._beforeCommitstateIds.length) {
-    const toolbox = this.getToolBoxById(this._nodelayerId);
-    const session = toolbox.getSession();
-    session.removeChangesFromHistory(this._beforeCommitstateIds);
-    this._beforeCommitstateIds = [];
+ for (let layerId in this._nodesLayersCommitStateIdsRelatedToBranchLayer) {
+   this._removeStateFromDependency(layerId)
   }
 };
 
 proto._handleCommitsResponse = function({responses, commitObject}) {
   const deleteOrphanNodes = this._isThereOrphanNodes();
-  const handleResponse = (data) => {
-    const [commitItems, response] = data;
-    if (response.result) {
-      GUI.notify.success(t("editing.messages.saved"));
-      this._mapService.refreshMap({force: true});
-    } else {
-      const message = response.errors;
-      GUI.notify.error(message);
-      this._removeStatesFromDependency();
+  const doWithResponse = {
+    refreshMap: false,
+    message: {
+      successful : 0,
+      fail: []
     }
   };
-  for (let response of responses) {
-    handleResponse(response)
+  for (let i = 0; i < responses.length; i++) {
+    const [commitItems, response] = responses[i];
+    if (response.result) {
+      doWithResponse.message.successful+=1;
+    } else {
+      doWithResponse.message.fail.push(response.errors);
+    }
+    doWithResponse.refreshMap = doWithResponse.refreshMap || response.result;
   }
+  if (doWithResponse.message.successful === responses.length)
+    GUI.notify.success(t("editing.messages.saved"));
+  else {
+    const message = doWithResponse.message.fail.join('\n\n');
+    GUI.notify.error(message);
+  }
+
+  if (doWithResponse.refreshMap)
+    this._mapService.refreshMap({force: true});
+
   if (deleteOrphanNodes) {
     this._nodelayerIds.forEach((nodeLayerId) => {
       const toolbox = this.getToolBoxById(nodeLayerId);
@@ -1017,11 +1090,11 @@ proto._handleCommitsResponse = function({responses, commitObject}) {
       }
       this._orphanNodes[nodeLayerId] = [];
     })
-
   }
   commitObject.sessions.forEach((session) => {
-    const toolbox = this.getToolBoxById(session.getId());
-    toolbox.setCommit();
+    const layerId = session.getId();
+    const toolbox = this.getToolBoxById(layerId);
+    toolbox.setCommit() && this._removeStateFromDependency(layerId);
   });
 };
 
@@ -1048,16 +1121,19 @@ proto.commit = function(close=false) {
                     </h4>`,
             closeButton: false
           });
+          // array di response
           const responses = [];
           //vado a costruire la funzione per committare i nodi
-          //accetta come argomento lo start (0,1) con 1 significa che ho già committato il branch
-          const commitNodes = (start=0) => {
-            const sessionCommit = commitObject.sessions.slice(start).map((session) => {
+          const commitNodes = () => {
+            const sessionCommit = commitObject.sessions.map((session) => {
               return session.commit();
             });
             $.when(...sessionCommit)
               .then((...args) => {
-                responses.push(args);
+                if (commitObject.sessions.length === 1)
+                  responses.push(args);
+                else
+                  args.forEach(arg => responses.push(arg));
                 this._handleCommitsResponse({
                   responses,
                   commitObject
@@ -1071,12 +1147,16 @@ proto.commit = function(close=false) {
                 dialog.modal('hide');
               })
           };
+          //vado a vedere se posso committare il branch
+          // se si lo vado a fare subito prima dei nodi
           if (commitObject.branch) {
-            const branch_session = commitObject.sessions[0];
+            const branch_session = commitObject.sessions.splice(0, 1)[0];
             branch_session.commit().then((...args) => {
               responses.push(args);
-              if (commitObject.sessions.length - 1) {
-                commitNodes(start=1)
+              const toolbox = this.getToolBoxById(branch_session.getId());
+              toolbox.setCommit();
+              if (commitObject.sessions.length) {
+                commitNodes()
               } else {
                 this._handleCommitsResponse({
                   responses,
@@ -1089,10 +1169,11 @@ proto.commit = function(close=false) {
               dialog.modal('hide');
             })
           } else {
-            commitNodes(start=0)
+            commitNodes()
           }
         })
         .fail((err) => {
+          // significa che ho ddetto annulla
           workflow.stop();
           this._removeStatesFromDependency();
           if (close) {

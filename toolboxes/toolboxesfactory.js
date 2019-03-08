@@ -29,23 +29,12 @@ function EditorToolBoxesFactory() {
         if (style)
           editingLayer.setStyle(style);
         tools = EditToolsFactory.build({
+          layerId: layerId,
           layer: editingLayer,
           dependency: dependency.map((_dependency) => this._mapService.getLayerById(_dependency.getId())),
           geometryType: geometryType,
           type: layerType
         });
-        break;
-      // caso layer tabellare da mettere in piedi
-      case Layer.LayerTypes.TABLE:
-        // vado a clonar il layer per utilizzarlo nei vari task
-        editingLayer = _.cloneDeep(layer);
-        tools = EditToolsFactory.build({
-          layer: editingLayer,
-          type: layerType
-        });
-        break;
-      default:
-        tools = [];
         break;
     }
     return new ToolBox({

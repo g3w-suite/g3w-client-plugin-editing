@@ -74,6 +74,7 @@ proto.start = function() {
             const EditingService = require('../services/editingservice');
             const toolbox = EditingService.getToolBoxById(this._session.getId());
             toolbox.setCommit();
+            EditingService.addChangeToHistory(this._session);
           });
       })
       .fail((error) =>  {

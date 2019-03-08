@@ -19,12 +19,8 @@ function EditorToolsFactory() {
     //TODO
   };
   // e dei tasks associati
-  this.build = function(options) {
-    options = options || {};
-    const type = options.type || Layer.LayerTypes.VECTOR;
-    //editing layer
-    const layer = options.layer;
-    const dependency = options.dependency;
+  this.build = function(options={}) {
+    const {type=Layer.LayerTypes.VECTOR, layer, layerId, dependency} = options;
     let tools;
     switch (type) {
       case Layer.LayerTypes.VECTOR:
@@ -67,6 +63,13 @@ function EditorToolsFactory() {
                 op: EditFeatureAttributesWorkflow
               })
             ];
+            const EditingService = require('../services/editingservice');
+            const toolsconfig = EditingService.getNodeLayerTools(layerId);
+            if (toolsconfig && toolsconfig.exclude) {
+              tools = tools.filter((tool) => {
+                return toolsconfig.exclude.indexOf(tool.getId()) === -1;
+              })
+            }
             break;
           case Geometry.GeometryTypes.LINESTRING:
           case Geometry.GeometryTypes.MULTILINESTRING:

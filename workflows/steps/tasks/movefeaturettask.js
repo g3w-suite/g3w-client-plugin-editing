@@ -18,15 +18,14 @@ proto.run = function(inputs, context) {
   const d = $.Deferred();
   const session = context.session;
   const editingLayer = inputs.layer;
-  const feature = inputs.features[0];
   const originalLayer = context.layer;
   const layerId = originalLayer.getId();
   const originalStyle = editingLayer.getStyle();
-  const features = new ol.Collection(inputs.features);
   let originalFeature = null;
-  feature.setStyle(originalStyle);
+  let feature;
+  const features = new ol.Collection(editingLayer.getSource().getFeatures());
   this._modifyInteraction = new ol.interaction.Modify({
-    features,
+    features
   });
 
   this.addInteraction(this._modifyInteraction);
@@ -35,15 +34,21 @@ proto.run = function(inputs, context) {
   });
 
   this.addInteraction(this._snapingInteraction);
-  this._modifyInteraction.on('modifystart',function(e){
-    const feature = e.features.getArray()[0];
-    // repndo la feature di partenza
+  this._modifyInteraction.on('modifystart', function(evt) {
+    const map = this.getMap();
+    const {pixel} = evt.mapBrowserEvent;
+    feature = map.getFeaturesAtPixel(pixel, {
+      layerFilter: (layer) => {
+        return layer === editingLayer
+      },
+      hitTolerance: 3
+    });
+    feature = feature[0];
     originalFeature = feature.clone();
   });
 
   this._modifyInteraction.on('modifyend',function(evt) {
     const pixel = evt.mapBrowserEvent.pixel;
-    const feature = evt.features.getArray()[0];
     const map = this.getMap();
     const dependencyFeature = map.forEachFeatureAtPixel(pixel, (feature) => {
       return feature;
@@ -64,12 +69,11 @@ proto.run = function(inputs, context) {
     } else {
       feature.setGeometry(originalFeature.getGeometry());
     }
-    //self.checkOrphanNodes(self._dependency, editingLayer);
+    self.checkOrphanNodes();
     d.resolve(inputs);
   });
   return d.promise()
 };
-
 
 proto.stop = function() {
   const d = $.Deferred();

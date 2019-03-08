@@ -9,6 +9,7 @@ const EditingFormComponent = require('../../../form/editingform');
 function OpenFormTask(options={}) {
   this._formIdPrefix = 'form_';
   this._isContentChild = false;
+  this.editattribute = options.editattribute;
   this._feature;
   this._originalLayer;
   this._editingLayer;
@@ -86,16 +87,20 @@ proto._cancelFnc = function(promise) {
 
 proto._saveFnc = function(promise, inputs) {
   return function(fields) {
-    const newFeature = this._feature;
+    const newFeature = this._feature.clone();
     const layerId = this._originalLayer.getId();
     this._originalLayer.setFieldsWithValues(newFeature, fields);
-    if (newFeature.isNew() && this._originalLayer.isPkEditable()) {
-        fields.forEach((field) => {
-          if (field.name === newFeature.getPk())
-            newFeature.set(newFeature.getPk(), field.value);
-        });
+    if (newFeature.isNew()) {
+     if (this._originalLayer.isPkEditable()) {
+       fields.forEach((field) => {
+         if(field.name === newFeature.getPk())
+           newFeature.set(newFeature.getPk(), field.value);
+       });
+     }
     }
     this._session.pushUpdate(layerId, newFeature, this._originalFeature);
+    // if (this.editattribute)
+    //   this.addChangeToHistory(this._session);
     GUI.setModal(false);
     promise.resolve(inputs);
   }
@@ -138,7 +143,7 @@ proto.startForm = function(options = {}) {
       cbk: _.bind(this._cancelFnc(promise),this)
     }]
   });
-  if (this._originalLayer.getGeometryType() === 'Line') {
+  if (this.isBranchLayer()) {
     formService.setLoading(true);
     this.getChartComponent({
       feature: this._feature

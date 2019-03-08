@@ -4,14 +4,15 @@ var EditingWorkflow = require('./editingworkflow');
 var PickFeatureStep = require('./steps/pickfeaturestep');
 var OpenFormStep = require('./steps/openformstep');
 
-function EditFeatureAttributesWorkflow(options) {
-  options = options || {};
+function EditFeatureAttributesWorkflow(options={}) {
   // workflow composto da due steps:
   // Il primo servre per fare selezionare la feature
   // il secondo per aprire il form
   options.steps = [new PickFeatureStep({
     one: true
-  }), new OpenFormStep()];
+  }), new OpenFormStep({
+        editattribute: true
+  })];
   base(this, options);
 }
 

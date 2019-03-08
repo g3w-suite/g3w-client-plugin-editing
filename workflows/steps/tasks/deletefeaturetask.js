@@ -139,37 +139,20 @@ proto.run = function(inputs, context) {
   this.addInteraction(this._deleteInteraction);
   this._deleteInteraction.on('deleteend', (e) => {
     const feature = e.features.getArray()[0];
-    const EditingService = require('../../../services/editingservice');
-    const RelationService = require('../../../services/relationservice');
-    const relations = originaLayer.getRelations()? originaLayer.getRelations().getArray() : [];
-    const relationsInEditing = EditingService.getRelationsInEditing(relations, feature, feature.isNew());
     inputs.features = [feature];
-    relationsInEditing.forEach((relation) => {
-      let updateRelation = true;
-      let relationService = new RelationService({
-        relation: relation.relation,
-        relations: relation.relations
-      });
-      const relationLayer = EditingService.getLayerById(relation.relation.child);
-      relationLayer.getEditingFields().forEach((field) => {
-        if (field.name === relation.relation.childField && field.validate.required)
-          updateRelation = false;
-      });
-      if (updateRelation) {
-        const relationsLength = relation.relations.length;
-        for (let index = 0; index < relationsLength ; index++) {
-          relationService.unlinkRelation(0)
-        }
-      }
-    });
     // vado a cancellare dalla source la feature selezionata
     editingLayer.getSource().removeFeature(feature);
     this._selectInteraction.getFeatures().remove(feature);
-    // dico di cancellarla (la feature non viene cancellatata ma aggiornato il suo stato
+    // dico di cancellarla (la feature non viene cancellatata ma aggiornato il suo stato)
     session.pushDelete(layerId, feature);
-    //dovrei aggiungere qui qualcosa per salvare temporaneamente quesa modifica sulla sessione al fine di
-    // portare tutte le modifiche quando viene fatto il save della sessione
-    // ritorno come outpu l'input layer che sarà modificato
+    if (isBranchLayer) {
+      this.runBranchMethods({
+        action: 'delete',
+        layerId,
+        session,
+        feature
+      })
+    }
     d.resolve(inputs);
   });
   return d.promise();

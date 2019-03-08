@@ -122,6 +122,7 @@ proto.setCommit = function() {
     })
   } else
     this.state.editing.canCommit = this.state.editing.history.commit;
+  return this.state.editing.canCommit;
 };
 
 proto.canCommit = function() {

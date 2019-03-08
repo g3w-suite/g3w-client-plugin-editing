@@ -12,7 +12,8 @@ const vueComponentOptions = {
   template: EditingTemplate,
   data() {
     return {
-      height:0
+      height: 0,
+      undoRedo: this.$options.service.getUndoRedo()
     }
   },
   components: {
@@ -26,15 +27,14 @@ const vueComponentOptions = {
       this.editing = !this.editing;
     },
     undo() {
-      const session = this.state.toolboxselected.getSession();
-      this.$options.service.undo(session);
+      this.$options.service.undoHistory();
     },
     redo() {
-      const session = this.state.toolboxselected.getSession();
-      this.$options.service.redo(session);
+      this.$options.service.redoHistory();
     },
     commit: function() {
       this.$options.service.commit().then(()=> {
+        this.$options.service.clearHistory();
       });
     },
     saveAll: function() {},
@@ -47,8 +47,9 @@ const vueComponentOptions = {
       this.$options.service.commit().then(() => {
         toolBoxes.forEach((toolbox) => {
           toolbox.stop();
-        })
-      })
+        });
+        this.$options.service.clearHistory();
+      });
     },
     saveToolBox: function(toolboxId) {
       const toolbox = this._getToolBoxById(toolboxId);
@@ -119,17 +120,11 @@ const vueComponentOptions = {
       }, false)
     },
     canUndo: function() {
-      const toolbox = this.state.toolboxselected;
-      return !_.isNull(toolbox) &&  toolbox.state.editing.history.undo;
+      return this.undoRedo.canUndo;
     },
     canRedo: function() {
-      const toolbox = this.state.toolboxselected;
-      return !_.isNull(toolbox) && toolbox.state.editing.history.redo;
+      return this.undoRedo.canRedo;
     }
-  },
-  created() {},
-  mounted() {
-    this.$nextTick(() => {})
   }
 };
 
@@ -163,12 +158,12 @@ function PanelComponent(options) {
   this.mount = function(parent) {
     return base(this, 'mount', parent, true)
   };
-
   this.unmount = function() {
     const d = $.Deferred();
     //vado a fare lo stop del servizio che fa un po di pulizia
     this._service.stop()
       .then(() => {
+        this._service.clearHistory();
         //vado a riscrivere la proprietà
         this.unmount = function() {
           base(this, 'unmount')
