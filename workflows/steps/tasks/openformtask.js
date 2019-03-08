@@ -86,15 +86,17 @@ proto._cancelFnc = function(promise) {
 
 proto._saveFnc = function(promise, inputs) {
   return function(fields) {
-    const newFeature = this._feature.clone();
     const layerId = this._originalLayer.getId();
-    this._originalLayer.setFieldsWithValues(newFeature, fields);
-    if (newFeature.isNew() && this._originalLayer.isPkEditable()) {
-        fields.forEach((field) => {
-          if (field.name === newFeature.getPk())
-            newFeature.set(newFeature.getPk(), field.value);
-        });
+    this._originalLayer.setFieldsWithValues(this._feature, fields);
+    if (this._feature.isNew()) {
+     if (this._originalLayer.isPkEditable()) {
+       fields.forEach((field) => {
+         if(field.name === this._feature.getPk())
+           this._feature.set(this._feature.getPk(), field.value);
+       });
+     }
     }
+    const newFeature = this._feature.clone();
     this._session.pushUpdate(layerId, newFeature, this._originalFeature);
     GUI.setModal(false);
     promise.resolve(inputs);
