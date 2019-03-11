@@ -172,6 +172,9 @@ function PanelComponent(options) {
             });
         };
         this.unmount();
+      })
+      .catch((err) => {
+        console.log(`Stop unmount editing panel. Reason: ${err}`);
       });
     return d.promise();
   };

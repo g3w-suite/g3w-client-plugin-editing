@@ -269,14 +269,10 @@ proto.getFeaturesOption = function() {
 
 // funzione che disabiliterà
 proto.stop = function() {
-  const EventName  = 'stop-editing';
   // le sessioni dipendenti per poter eseguier l'editing
-  const d = $.Deferred();
-  if (this._session && this._session.isStarted()) {
-    //vado a verificare se  c'è un padre in editing
-    const EditingService = require('../services/editingservice');
-    const is_there_a_father_in_editing = EditingService.fatherInEditing(this.state.id);
-    if (!is_there_a_father_in_editing) {
+  return new Promise((resolve, reject) => {
+    const EventName  = 'stop-editing';
+    if (this._session && this._session.isStarted()) {
       this._session.stop()
         .then(() => {
           this.state.editing.on = false;
@@ -290,26 +286,17 @@ proto.stop = function() {
           this.clearToolboxMessages();
           this.setSelected(false);
           this.emit(EventName);
-          d.resolve(true)
+          resolve(true)
         })
         .fail((err) => {
           // mostro un errore a video o tramite un messaggio nel pannello
-          d.reject(err)
+          reject(err)
         });
     } else {
-      // spengo il tool attivo
-      this.stopActiveTool();
-      // seci sono tool attivi vado a spengere
-      this.state.editing.on = false;
-      this._setToolsEnabled(false);
-      this.clearToolboxMessages();
-      this._unregisterGetFeaturesEvent();
-      EditingService.stopSessionChildren(this.state.id);
+      resolve(true)
     }
-  } else {
-    d.resolve(true)
-  }
-  return d.promise();
+  })
+
 };
 
 //funzione salvataggio modifiche
@@ -488,7 +475,7 @@ proto.restartActiveTool = function() {
 proto.stopActiveTool = function(tool) {
   const d = $.Deferred();
   const activeTool = this.getActiveTool();
-  if (activeTool && activeTool != tool) {
+  if (activeTool && activeTool !== tool) {
     activeTool.removeAllListeners();
     activeTool.stop()
       .then(() => {

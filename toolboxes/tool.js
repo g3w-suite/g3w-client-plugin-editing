@@ -7,6 +7,7 @@ const G3WObject = g3wsdk.core.G3WObject;
 function Tool(options = {}) {
   base(this);
   this._session = options.session;
+  this._editingService;
   this._dependencySession = null;
   // prendo il layer
   this._layer = options.layer;
@@ -30,6 +31,13 @@ function Tool(options = {}) {
 inherit(Tool, G3WObject);
 
 const proto = Tool.prototype;
+
+proto.getEditingService = function() {
+  if (this._editingService)
+    return this._editingService;
+  this._editingService = require('../services/editingservice');
+  return this._editingService;
+};
 
 proto.getFeature = function() {
   return this._options.inputs.features[0];
@@ -71,19 +79,17 @@ proto.start = function() {
         // vado a salvare la sessione
         this._session.save()
           .then(() => {
-            const EditingService = require('../services/editingservice');
-            const toolbox = EditingService.getToolBoxById(this._session.getId());
+            const toolbox = this.getEditingService().getToolBoxById(this._session.getId());
             toolbox.setCommit();
-            EditingService.addChangeToHistory(this._session);
+            this.getEditingService().addChangeToHistory(this._session);
           });
       })
       .fail((error) =>  {
         // in caso di mancato successo faccio il rollback
         // della sessione da vedere se li
-        const EditingService = require('../services/editingservice');
         this._session.rollback()
           .then((relationsChanges) => {
-            EditingService.rollbackRelations(relationsChanges);
+            this.getEditingService().rollbackRelations(relationsChanges);
           })
       })
       .always(() => {

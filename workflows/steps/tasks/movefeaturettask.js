@@ -65,12 +65,13 @@ proto.run = function(inputs, context) {
       self.removeFromOrphanNodes({
         layerId,
         id:originalFeature.getId()
-      })
+      });
+      self.checkOrphanNodes();
+      d.resolve(inputs);
     } else {
       feature.setGeometry(originalFeature.getGeometry());
+      d.reject()
     }
-    self.checkOrphanNodes();
-    d.resolve(inputs);
   });
   return d.promise()
 };

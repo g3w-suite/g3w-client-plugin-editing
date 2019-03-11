@@ -45,33 +45,39 @@ proto.run = function(inputs, context) {
       },
       hitTolerance: 15
     });
-    modifiedBranchFeatures.forEach((feature) => {
-      originalBranchFeatures.push(feature.clone())
-    });
-    map.forEachFeatureAtPixel(pixel, (feature, layer) => {
-      if (layer) {
-        dependencyFeatures.push({
-          layerId: layer.get('id'),
-          feature
-        })
-      }
-    }, {
-        layerFilter: (layer) => {
-          return layer !== editingLayer;
-        },
-        hitTolerance: 10
-      }
-    );
-    if (dependencyFeatures.length) {
-      dependencyFeatures.forEach(dependencyFeature => {
-        dependencyOriginalFeatures.push(dependencyFeature.feature.clone());
+    if (modifiedBranchFeatures) {
+      modifiedBranchFeatures.forEach((feature) => {
+        originalBranchFeatures.push(feature.clone())
       });
-      startKey = map.on('pointerdrag', (evt) => {
+      map.forEachFeatureAtPixel(pixel, (feature, layer) => {
+          if (layer) {
+            dependencyFeatures.push({
+              layerId: layer.get('id'),
+              feature
+            })
+          }
+        }, {
+          layerFilter: (layer) => {
+            return layer !== editingLayer;
+          },
+          hitTolerance: 10
+        }
+      );
+      if (dependencyFeatures.length) {
         dependencyFeatures.forEach(dependencyFeature => {
-          dependencyFeature.feature.getGeometry().setCoordinates(evt.coordinate)
+          dependencyOriginalFeatures.push(dependencyFeature.feature.clone());
+        });
+        startKey = map.on('pointerdrag', (evt) => {
+          dependencyFeatures.forEach(dependencyFeature => {
+            dependencyFeature.feature.getGeometry().setCoordinates(evt.coordinate)
+          })
         })
-      })
+      }
+    } else {
+      d.reject()
     }
+
+
   });
 
   this._modifyInteraction.on('modifyend', (evt) => {

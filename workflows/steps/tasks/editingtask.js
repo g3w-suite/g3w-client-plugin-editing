@@ -35,12 +35,9 @@ proto.isBranchLayer = function(layerId) {
 };
 
 proto.getChartComponent = function({feature}={}) {
-  return this.getEditingService().runProgeoApiMethod({
-    name:'getChartComponent',
-    options: {
-      feature
-    }
-  });
+  return this.getEditingService().getChartComponent({
+    feature
+  })
 };
 
 proto.losseLayerSetDegree = function({ nodeOptions, branchOptions, options={}}) {

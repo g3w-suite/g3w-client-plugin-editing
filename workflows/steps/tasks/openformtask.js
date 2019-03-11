@@ -2,15 +2,16 @@ const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
 const t = g3wsdk.core.i18n.tPlugin;
 const GUI = g3wsdk.gui.GUI;
+const FormComponent = g3wsdk.gui.vue.FormComponent;
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 const EditingTask = require('./editingtask');
-const EditingFormComponent = require('../../../form/editingform');
 
 function OpenFormTask(options={}) {
   this._formIdPrefix = 'form_';
   this._isContentChild = false;
   this.editattribute = options.editattribute;
   this._feature;
+  this._layerId;
   this._originalLayer;
   this._editingLayer;
   this._layerName;
@@ -64,6 +65,7 @@ proto._getForm = function(inputs, context) {
   this._originalLayer = context.layer;
   this._editingLayer = inputs.layer;
   this._pk = this._originalLayer.getPk();
+  this._layerId = this._originalLayer.getId();
   this._layerName = this._originalLayer.getName();
   // vado a prendere l'ultima feature
   this._feature = inputs.features[inputs.features.length - 1];
@@ -108,7 +110,7 @@ proto.startForm = function(options = {}) {
   const inputs = options.inputs;
   const context = options.context;
   const promise = options.promise;
-  const formComponent = options.formComponent || EditingFormComponent;
+  const formComponent = options.formComponent || FormComponent;
   const Form = this._getForm(inputs, context);
   const formService = Form({
     formComponent,
@@ -141,7 +143,7 @@ proto.startForm = function(options = {}) {
       cbk: _.bind(this._cancelFnc(promise),this)
     }]
   });
-  if (this.isBranchLayer()) {
+  if (this.isBranchLayer(this._layerId)) {
     formService.setLoading(true);
     this.getChartComponent({
       feature: this._feature

@@ -221,7 +221,6 @@ proto.addChangeToHistory = function(session) {
   this.setUndoRedo();
 };
 
-
 proto.undoHistory = function() {
   this._allHistory.currentIndex-=1;
   const change = this._allHistory.history[this._allHistory.currentIndex];
@@ -263,11 +262,8 @@ proto.setProgeoApi = function(api) {
   this.progeoApi = api;
 };
 
-proto.runProgeoApiMethod = function({name, options={}}={}) {
-  if (this.progeoApi[name])
-    return this.progeoApi[name](options);
-  else
-    return false
+proto.getChartComponent = function(options={}) {
+  return this.progeoApi.getChartComponent(options);
 };
 
 proto.registerOrphanNodes = function() {
@@ -727,12 +723,16 @@ proto.stop = function() {
   return new Promise((resolve, reject) => {
     this.commit(true).then(() => {
       const toolboxes = this.getToolBoxes();
-      toolboxes.forEach((toolbox) => {
+      const promises = toolboxes.map((toolbox) => {
         toolbox.stop();
       });
-      resolve();
-    }).catch(()=> {
-      reject();
+      Promise.all(promises).then(()=> {
+        resolve()
+      }).catch((err) => {
+        reject(err)
+      })
+    }).catch((err)=> {
+      reject(err);
     })
   })
 };
@@ -1021,12 +1021,10 @@ proto._preCommit = function() {
     commitObject.sessions.push(session);
     this._nodesLayersCommitStateIdsRelatedToBranchLayer = session.moveRelationStatesOwnSession();
   }
-
   this.getToolBoxes().forEach((toolbox) => {
     if (toolbox.getId() !== this._branchLayerId && toolbox.canCommit())
       commitObject.sessions.push(toolbox.getSession());
   });
-
   this._nodelayerIds.forEach((nodeLayerId) => {
     if (this._orphanNodes[nodeLayerId].length) {
       const toolbox = this.getToolBoxById(nodeLayerId);
