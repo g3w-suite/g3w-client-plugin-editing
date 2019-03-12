@@ -109,6 +109,7 @@ proto.run = function(inputs, context) {
   this._selectInteraction = new ol.interaction.Select({
     layers: [editingLayer],
     condition: ol.events.condition.click,
+    //multi: true,
     filter: isBranchLayer? (feature) => {
       const coordinate = feature.getGeometry().getCoordinates();
       let coordinateString = [coordinate[0].toString(), coordinate[1].toString()];
@@ -126,7 +127,7 @@ proto.run = function(inputs, context) {
         }
       }
       return !!coordinateString.length ? ol.events.condition.click: false;
-    }: false,
+    }: true,
     style() {
       return styles[geometryType];
     }

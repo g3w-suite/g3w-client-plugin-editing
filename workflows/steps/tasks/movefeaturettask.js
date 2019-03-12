@@ -41,10 +41,13 @@ proto.run = function(inputs, context) {
       layerFilter: (layer) => {
         return layer === editingLayer
       },
-      hitTolerance: 3
+      hitTolerance: 5
     });
-    feature = feature[0];
-    originalFeature = feature.clone();
+    if (feature) {
+      feature = feature[0];
+      originalFeature = feature.clone();
+    } else
+      reject()
   });
 
   this._modifyInteraction.on('modifyend',function(evt) {
@@ -84,7 +87,5 @@ proto.stop = function() {
   d.resolve();
   return d.promise();
 };
-
-
 
 module.exports = MoveFeatureTask;

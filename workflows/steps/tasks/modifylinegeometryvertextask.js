@@ -5,9 +5,6 @@ const EditingTask = require('./editingtask');
 function ModifyGeometryVertexTask(options={}){
   this.drawInteraction = null;
   this._originalStyle = null;
-  this._features = [];
-  this._deleteCondition = options.deleteCondition || undefined;
-  this._snap = options.snap === false ? false : true;
   this._snapInteraction = null;
   this._dependency = options.dependency;
   base(this, options);
@@ -29,21 +26,32 @@ proto.run = function(inputs, context) {
   let dependencyFeatures = [];
   let startKey;
   const features = new ol.Collection(editingLayer.getSource().getFeatures());
+  let canStartModify = true; // condizione che mi permette di avviare tutta la procedura del modifyfeature
   this._modifyInteraction = new ol.interaction.Modify({
     features,
-    insertVertexCondition: () => false,
-    deleteCondition: this._deleteCondition
+    insertVertexCondition() {
+      canStartModify = false;
+      return ol.events.condition.never()
+    },
+    pixelTolerance: 5
   });
-
   this.addInteraction(this._modifyInteraction);
+  this._snapInteraction = new ol.interaction.Snap({
+    features
+  });
+  this.addInteraction(this._snapInteraction);
   this._modifyInteraction.on('modifystart', function(evt) {
+    if (!canStartModify){
+      d.reject();
+      return;
+    }
     const {pixel} = evt.mapBrowserEvent;
     const map = this.getMap();
     modifiedBranchFeatures = map.getFeaturesAtPixel(pixel, {
       layerFilter: (layer) => {
         return layer === editingLayer;
       },
-      hitTolerance: 15
+      hitTolerance: 10
     });
     if (modifiedBranchFeatures) {
       modifiedBranchFeatures.forEach((feature) => {
@@ -76,8 +84,6 @@ proto.run = function(inputs, context) {
     } else {
       d.reject()
     }
-
-
   });
 
   this._modifyInteraction.on('modifyend', (evt) => {
