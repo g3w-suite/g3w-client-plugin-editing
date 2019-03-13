@@ -25,19 +25,18 @@ proto.run = function(inputs, context) {
   let dependencyOriginalFeatures = [];
   let dependencyFeatures = [];
   let startKey;
-  const features = new ol.Collection(editingLayer.getSource().getFeatures());
+  const source = editingLayer.getSource();
   let canStartModify = true; // condizione che mi permette di avviare tutta la procedura del modifyfeature
   this._modifyInteraction = new ol.interaction.Modify({
-    features,
+    source,
     insertVertexCondition() {
       canStartModify = false;
       return ol.events.condition.never()
-    },
-    pixelTolerance: 5
+    }
   });
   this.addInteraction(this._modifyInteraction);
   this._snapInteraction = new ol.interaction.Snap({
-    features
+    source
   });
   this.addInteraction(this._snapInteraction);
   this._modifyInteraction.on('modifystart', function(evt) {

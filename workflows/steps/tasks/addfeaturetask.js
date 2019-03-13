@@ -147,7 +147,6 @@ proto.run = function(inputs, context) {
   return d.promise();
 };
 
-
 // metodo eseguito alla disattivazione del tool
 proto.stop = function() {
   //console.log('stop add task ...');

@@ -23,9 +23,9 @@ proto.run = function(inputs, context) {
   const originalStyle = editingLayer.getStyle();
   let originalFeature = null;
   let feature;
-  const features = new ol.Collection(editingLayer.getSource().getFeatures());
+  const source = editingLayer.getSource();
   this._modifyInteraction = new ol.interaction.Modify({
-    features
+    source
   });
 
   this.addInteraction(this._modifyInteraction);
@@ -47,7 +47,7 @@ proto.run = function(inputs, context) {
       feature = feature[0];
       originalFeature = feature.clone();
     } else
-      reject()
+      d.reject()
   });
 
   this._modifyInteraction.on('modifyend',function(evt) {
