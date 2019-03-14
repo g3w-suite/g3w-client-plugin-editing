@@ -197,8 +197,8 @@ proto.getUndoRedo = function() {
 proto.setUndoRedo = function() {
   this._allHistory.undoRedo.canUndo = this._allHistory.currentIndex > 0;
   this._allHistory.undoRedo.canRedo = this._allHistory.currentIndex < this._allHistory.history.length;
+  this.checkOrphanNodes();
 };
-
 
 proto.clearHistory = function() {
   this._allHistory.history = [];
@@ -224,15 +224,19 @@ proto.addChangeToHistory = function(session) {
 proto.undoHistory = function() {
   this._allHistory.currentIndex-=1;
   const change = this._allHistory.history[this._allHistory.currentIndex];
-  this.undo(change.session);
-  this.setUndoRedo();
+  this.undo(change.session).then(() => {
+    this.setUndoRedo();
+  });
+
 };
 
 proto.redoHistory = function() {
   const change = this._allHistory.history[this._allHistory.currentIndex];
   this._allHistory.currentIndex+=1;
-  this.redo(change.session);
-  this.setUndoRedo();
+  this.redo(change.session).then(() => {
+    this.setUndoRedo();
+  });
+
 };
 
 proto.getBranchLayerId = function() {
@@ -266,14 +270,6 @@ proto.getChartComponent = function(options={}) {
   return this.progeoApi.getChartComponent(options);
 };
 
-proto.registerOrphanNodes = function() {
-  const linetoolbox = this.getToolBoxById(this._branchLayerId);
-  linetoolbox.getSession().getFeaturesStore().getFeaturesCollection().on('change', () => {
-    setTimeout(() => {
-      this.checkOrphanNodes();
-    }, 0)
-  })
-};
 
 // method to get and syle orphans nodes
 proto.setOrphanNodes = function({layerId , nodes}) {
@@ -352,12 +348,19 @@ proto.toolboxSetCommit = function(toolboxId) {
 };
 
 proto.redo = function(session) {
-  const redoItems = session.redo();
-  this.undoRedoRelations({
-    relationsItems: redoItems,
-    action: 'redo'
+  return new Promise((resolve, reject) => {
+    const redoItems = session.redo();
+    this.undoRedoRelations({
+      relationsItems: redoItems,
+      action: 'redo'
+    });
+    this.toolboxSetCommit(session.getId());
+    // necessario per posporlo ad dopo spostamento della mappa
+    this._mapService.getMap().once('postrender', () => {
+      resolve();
+    });
   });
-  this.toolboxSetCommit(session.getId())
+
 };
 
 // redo delle relazioni
@@ -370,12 +373,18 @@ proto.undoRedoRelations = function({relationsItems, action} = {}) {
 };
 
 proto.undo = function(session) {
-  const undoItems = session.undo();
-  this.undoRedoRelations({
-    relationsItems: undoItems,
-    action: 'undo'
+  return new Promise((resolve, reject) => {
+    const undoItems = session.undo();
+    this.undoRedoRelations({
+      relationsItems: undoItems,
+      action: 'undo'
+    });
+    this.toolboxSetCommit(session.getId());
+    this._mapService.getMap().once('postrender', () => {
+      resolve();
+    });
   });
-  this.toolboxSetCommit(session.getId());
+
 };
 
 // udo delle relazioni
@@ -957,7 +966,7 @@ proto._createCommitMessage = function(sessions) {
 
 // metyhod to get
 proto.checkOrphanNodes = function() {
-  const layerline = this.getToolBoxById(this._branchLayerId).getEditingLayer();
+  const branchLayer = this.getToolBoxById(this._branchLayerId).getEditingLayer();
   this._nodelayerIds.forEach((layerId) => {
     const toolbox = this.getToolBoxById(layerId);
     const layernode = toolbox.getEditingLayer();
@@ -966,17 +975,16 @@ proto.checkOrphanNodes = function() {
     layernode.getSource().forEachFeature((node) =>{
       node.setStyle(nodeStyle)
     });
-    this._orphanNodes[layerId] = nodes.filter((node) => {
+    this._orphanNodes[layerId] = [];
+    nodes.forEach((node) => {
       const coordinate = node.getGeometry().getCoordinates();
       const map = this._mapService.getMap();
       const pixel = map.getPixelFromCoordinate(coordinate);
-      return !map.forEachFeatureAtPixel(pixel, (feature) => {
-        return feature;
-      }, {
+      map.getFeaturesAtPixel(pixel,  {
         layerFilter: (layer) => {
-          return layer === layerline
+          return layer === branchLayer
         }
-      });
+      }) ?  null : this._orphanNodes[layerId].push(node);
     });
     this._orphanNodes[layerId].forEach((node) => {
       const styles = [
