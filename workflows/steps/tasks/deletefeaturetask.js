@@ -110,7 +110,7 @@ proto.run = function(inputs, context) {
     layers: [editingLayer],
     condition: ol.events.condition.click,
     //multi: true,
-    filter: isBranchLayer? (feature) => {
+    filter: isBranchLayer ? (feature) => {
       const coordinate = feature.getGeometry().getCoordinates();
       let coordinateString = [coordinate[0].toString(), coordinate[1].toString()];
       for (let i = 0; i < features.length; i++ ) {
@@ -127,7 +127,7 @@ proto.run = function(inputs, context) {
         }
       }
       return !!coordinateString.length ? ol.events.condition.click: false;
-    }: true,
+    }: ol.events.condition.always,
     style() {
       return styles[geometryType];
     }

@@ -27,7 +27,7 @@ proto.run = function(inputs, context) {
   this._modifyInteraction = new ol.interaction.Modify({
     source
   });
-
+  source.removeEventListener('addfeature');
   this.addInteraction(this._modifyInteraction);
   this._snapingInteraction = this.createSnapInteraction({
     dependency: this._dependency

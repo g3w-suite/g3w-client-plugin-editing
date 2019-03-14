@@ -6,6 +6,7 @@ function ModifyGeometryVertexTask(options={}){
   this.drawInteraction = null;
   this._originalStyle = null;
   this._snapInteraction = null;
+  this._source;
   this._dependency = options.dependency;
   base(this, options);
 }
@@ -30,29 +31,40 @@ proto.run = function(inputs, context) {
   this._modifyInteraction = new ol.interaction.Modify({
     source,
     insertVertexCondition() {
-      canStartModify = false;
       return ol.events.condition.never()
-    }
+    },
+    pixelTolerance: 1
   });
   this.addInteraction(this._modifyInteraction);
   this._snapInteraction = new ol.interaction.Snap({
     source
   });
+  source.removeEventListener('addfeature');
   this.addInteraction(this._snapInteraction);
   this._modifyInteraction.on('modifystart', function(evt) {
-    if (!canStartModify){
-      d.reject();
-      return;
-    }
-    const {pixel} = evt.mapBrowserEvent;
+    const {pixel, coordinate} = evt.mapBrowserEvent;
     const map = this.getMap();
     modifiedBranchFeatures = map.getFeaturesAtPixel(pixel, {
       layerFilter: (layer) => {
         return layer === editingLayer;
       },
-      hitTolerance: 10
+      hitTolerance: 5
     });
     if (modifiedBranchFeatures) {
+      //check if evt coordinate is a vertex of the feature
+      const coordinates = coordinate.toString();
+      let isVertex = false;
+      for (let i =0; i < modifiedBranchFeatures.length; i++) {
+        const modifiedBranchFeatureCoordinates = modifiedBranchFeatures[i].getGeometry().getCoordinates();
+        if (modifiedBranchFeatureCoordinates[0].toString() === coordinates || modifiedBranchFeatureCoordinates[1].toString() === coordinates) {
+          isVertex = true;
+          break;
+        }
+      }
+      if (!isVertex) {
+        d.reject();
+        return;
+      }
       modifiedBranchFeatures.forEach((feature) => {
         originalBranchFeatures.push(feature.clone())
       });
@@ -84,7 +96,6 @@ proto.run = function(inputs, context) {
       d.reject()
     }
   });
-
   this._modifyInteraction.on('modifyend', (evt) => {
     const featuresLength =  modifiedBranchFeatures.length;
     for (let i = 0; i < featuresLength; i++) {

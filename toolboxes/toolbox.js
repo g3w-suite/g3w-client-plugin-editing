@@ -87,15 +87,6 @@ function ToolBox(options={}) {
     this._unregisterGetFeaturesEvent();
   });
 
-  this._session.onafter('start', (options={}) => {
-    this._getFeaturesOption = options;
-    const EditingService = require('../services/editingservice');
-    // passo id del toolbox e le opzioni per far partire la sessione
-    EditingService.getLayersDependencyFeatures(this.state.id);// dove le opzioni possono essere il filtro;
-    // vado a registrare l'evento getFeature
-    this._registerGetFeaturesEvent(this._getFeaturesOption);
-  });
-
   // mapservice mi servirà per fare richieste al server sulle features (bbox) quando agisco sull mappa
   this._mapService = GUI.getComponent('map').getService();
   //eventi per catturare le feature
@@ -115,7 +106,8 @@ inherit(ToolBox, G3WObject);
 const proto = ToolBox.prototype;
 
 proto.setCommit = function() {
-  if (this._layer.getGeometryType() === 'Line') {
+  const EditingService = require('../services/editingservice');
+  if (EditingService.isBranchLayer(this._layer.getId()) === 'Line') {
     const features = this._editingLayer.getSource().getFeatures();
     this.state.editing.canCommit = this.state.editing.history.commit && validationLine.commit({
       features
@@ -279,7 +271,9 @@ proto.stop = function() {
           // seci sono tool attivi vado a spengere
           this._setToolsEnabled(false);
           this.clearToolboxMessages();
+          this._setEditingLayerSource();
           this.setSelected(false);
+
           this.emit(EventName);
           resolve(true)
         })

@@ -139,7 +139,7 @@ function EditingService() {
     this._layersstore.addLayers(this.getLayers());
     // vado a creare i toolboxes
     this._buildToolBoxes();
-    this.registerOrphanNodes();
+    //this.registerOrphanNodes();
     this.emit('ready');
   }
 }

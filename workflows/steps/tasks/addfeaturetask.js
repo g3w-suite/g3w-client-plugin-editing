@@ -71,7 +71,8 @@ proto.run = function(inputs, context) {
         dependencyFeatures,
         optionscondition: this._optionscondition
       };
-      const attributes = _.filter(originalLayer.getFields(), function(field) {
+      const fields = originalLayer.getFields();
+      const attributes = fields.filter((field) => {
         return field.editable && field.name != originalLayer.getPk() ;
       });
       this._condition = AddFeatureTask.CONDITIONS[geometryType](options);
