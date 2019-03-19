@@ -110,6 +110,10 @@ const vueComponentOptions = {
     }
   },
   computed: {
+    allowediting() {
+      this.$options.service.removeAllGeometryTools();
+      return this.state.editing.enabled;
+    },
     message: function() {
       const message = "";
       return message;

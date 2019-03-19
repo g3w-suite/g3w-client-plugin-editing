@@ -418,6 +418,12 @@ proto.getTools = function() {
   return this._tools;
 };
 
+proto.removeGeometryTools = function() {
+  this.getTools().forEach((tool) => {
+    !tool.isEditAttributes() && tool.delete();
+  })
+};
+
 proto.getToolById = function(toolId) {
   let Tool = null;
   this._tools.forEach((tool) => {

@@ -45,7 +45,10 @@ function EditingService() {
     toolboxselected: null, // tiene riferimento alla toolbox selezionata
     toolboxidactivetool: null,
     message: null, // messaggio genarle del pannello di editing
-    relations: [] // relazioni
+    editing: {
+      enabled: true,
+      type: 'all'
+    } // useful fo general editing
   };
   //mapservice
   this._mapService = GUI.getComponent('map').getService();
@@ -65,6 +68,8 @@ function EditingService() {
   // Mi verranno estratti tutti i layer editabili anche quelli presenti nell'albero del catalogo
   // come per esempio il caso di layers relazionati
   this.init = function(config) {
+    // lego il project state dell'editing al project state di progeo
+    this.state.editing = this.progeoApi.getEditingState();
     // layersStore del plugin editing che conterrà tutti i layer di editing
     this._layersstore = new LayersStore({
       id: 'editing',
@@ -236,8 +241,66 @@ proto.redoHistory = function() {
   this.redo(change.session).then(() => {
     this.setUndoRedo();
   });
+};
+
+proto.redo = function(session) {
+  return new Promise((resolve, reject) => {
+    const redoItems = session.redo();
+    this.undoRedoRelations({
+      relationsItems: redoItems,
+      action: 'redo'
+    });
+    this.toolboxSetCommit(session.getId());
+    // necessario per posporlo ad dopo spostamento della mappa
+    this._mapService.getMap().once('postrender', () => {
+      resolve();
+    });
+  });
 
 };
+
+// redo delle relazioni
+proto.undoRedoRelations = function({relationsItems, action} = {}) {
+  Object.entries(relationsItems).forEach(([toolboxId, items]) => {
+    const toolbox = this.getToolBoxById(toolboxId);
+    const session = toolbox.getSession();
+    session[action](items);
+  })
+};
+
+proto.undo = function(session) {
+  return new Promise((resolve, reject) => {
+    const undoItems = session.undo();
+    this.undoRedoRelations({
+      relationsItems: undoItems,
+      action: 'undo'
+    });
+    this.toolboxSetCommit(session.getId());
+    this._mapService.getMap().once('postrender', () => {
+      resolve();
+    });
+  });
+
+};
+
+// udo delle relazioni
+proto.undoRelations = function(undoItems) {
+  Object.entries(undoItems).forEach(([toolboxId, items]) => {
+    const toolbox = this.getToolBoxById(toolboxId);
+    const session = toolbox.getSession();
+    session.undo(items);
+  })
+};
+
+// undo delle relazioni
+proto.rollbackRelations = function(rollbackItems) {
+  Object.entries(rollbackItems).forEach(([toolboxId, items]) => {
+    const toolbox = this.getToolBoxById(toolboxId);
+    const session = toolbox.getSession();
+    session.rollback(items);
+  })
+};
+
 
 proto.getBranchLayerId = function() {
   return this._branchLayerId;
@@ -342,67 +405,18 @@ proto._layerChildrenRelationInEditing = function(layer) {
   return childrenrealtioninediting;
 };
 
+proto.removeAllGeometryTools = function() {
+  if (this.state.editing.type === 'attributes') {
+    const toolboxes = this.getToolBoxes();
+    for (let i= 0; i < toolboxes.length; i++) {
+      toolboxes[i].removeGeometryTools();
+    }
+  }
+};
+
 proto.toolboxSetCommit = function(toolboxId) {
   const toolbox = this.getToolBoxById(toolboxId);
   toolbox.setCommit();
-};
-
-proto.redo = function(session) {
-  return new Promise((resolve, reject) => {
-    const redoItems = session.redo();
-    this.undoRedoRelations({
-      relationsItems: redoItems,
-      action: 'redo'
-    });
-    this.toolboxSetCommit(session.getId());
-    // necessario per posporlo ad dopo spostamento della mappa
-    this._mapService.getMap().once('postrender', () => {
-      resolve();
-    });
-  });
-
-};
-
-// redo delle relazioni
-proto.undoRedoRelations = function({relationsItems, action} = {}) {
-  Object.entries(relationsItems).forEach(([toolboxId, items]) => {
-    const toolbox = this.getToolBoxById(toolboxId);
-    const session = toolbox.getSession();
-    session[action](items);
-  })
-};
-
-proto.undo = function(session) {
-  return new Promise((resolve, reject) => {
-    const undoItems = session.undo();
-    this.undoRedoRelations({
-      relationsItems: undoItems,
-      action: 'undo'
-    });
-    this.toolboxSetCommit(session.getId());
-    this._mapService.getMap().once('postrender', () => {
-      resolve();
-    });
-  });
-
-};
-
-// udo delle relazioni
-proto.undoRelations = function(undoItems) {
-  Object.entries(undoItems).forEach(([toolboxId, items]) => {
-    const toolbox = this.getToolBoxById(toolboxId);
-    const session = toolbox.getSession();
-    session.undo(items);
-  })
-};
-
-// undo delle relazioni
-proto.rollbackRelations = function(rollbackItems) {
-  Object.entries(rollbackItems).forEach(([toolboxId, items]) => {
-    const toolbox = this.getToolBoxById(toolboxId);
-    const session = toolbox.getSession();
-    session.rollback(items);
-  })
 };
 
 // restituisce il layer che viene utilizzato dai task per fare le modifiche

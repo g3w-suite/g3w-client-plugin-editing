@@ -33,7 +33,6 @@ const _Plugin = function() {
         // check if exist any layer to edit
         if (this.service.loadPlugin()) {
           //inizialize service
-          this.addToolGroup(pluginGroupTool);
           this.setHookLoading({
             loading: true
           });
@@ -46,7 +45,9 @@ const _Plugin = function() {
     this.service.on('ready', () => {
       if (this.registerPlugin(this.config.gid)) {
         if (!GUI.ready) {
-          GUI.on('ready',_.bind(this.setupGui, this));
+          GUI.on('ready', () => {
+            this.setupGui()
+          });
         } else {
           this.setupGui();
         }
@@ -61,10 +62,13 @@ const _Plugin = function() {
   this.setupGui = function() {
     if (this.config.visible === false)
       return false;
-    this.config.name = this.config.name ||  t("editing.editing_data");
     this.addTools({
-        action: this.showEditingPanel
-      }, pluginGroupTool)
+      html: {
+        icon: GUI.getFontClass('pencil'),
+        text: t("editing.editing_data")
+      },
+      action: this.showEditingPanel
+    }, pluginGroupTool)
   };
 
   //method to show editing panel

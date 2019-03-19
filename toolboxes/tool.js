@@ -24,13 +24,18 @@ function Tool(options = {}) {
     active: false,
     icon: options.icon,
     message: null,
-    messages: this._op.getMessages()
+    messages: this._op.getMessages(),
+    delete: false
   };
 }
 
 inherit(Tool, G3WObject);
 
 const proto = Tool.prototype;
+
+proto.isEditAttributes = function() {
+  return this.getId() === 'editattributes';
+};
 
 proto.getEditingService = function() {
   if (this._editingService)
@@ -176,6 +181,10 @@ proto.setEnabled = function(bool) {
 
 proto.isEnabled = function() {
   return this.state.enabled;
+};
+
+proto.delete = function() {
+  this.state.delete = true;
 };
 
 proto.getOperator = function() {
