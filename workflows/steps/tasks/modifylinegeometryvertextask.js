@@ -6,7 +6,6 @@ function ModifyGeometryVertexTask(options={}){
   this.drawInteraction = null;
   this._originalStyle = null;
   this._snapInteraction = null;
-  this._source;
   this._dependency = options.dependency;
   base(this, options);
 }
@@ -29,9 +28,7 @@ proto.run = function(inputs, context) {
   const features = editingLayer.getSource().getFeaturesCollection(); // passo la feature collection
   this._modifyInteraction = new ol.interaction.Modify({
     features,
-    insertVertexCondition() {
-      return ol.events.condition.never()
-    },
+    insertVertexCondition: ol.events.condition.never,
     pixelTolerance: 1
   });
   this.addInteraction(this._modifyInteraction);
@@ -61,7 +58,6 @@ proto.run = function(inputs, context) {
         }
       }
       if (!isVertex) {
-        console.log(isVertex)
         d.reject();
         return;
       }
@@ -129,13 +125,14 @@ proto.run = function(inputs, context) {
       })
     }
     ol.Observable.unByKey(startKey);
+    // remove event listeners added by
     this.checkOrphanNodes();
     d.resolve(inputs);
   });
   return d.promise();
 };
 
-proto.stop = function(){
+proto.stop = function() {
   if (this._snapInteraction) {
      this.removeInteraction(this._snapInteraction);
      this._snapInteraction = null;

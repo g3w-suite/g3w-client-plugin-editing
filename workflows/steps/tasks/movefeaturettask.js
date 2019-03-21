@@ -23,11 +23,10 @@ proto.run = function(inputs, context) {
   const originalStyle = editingLayer.getStyle();
   let originalFeature = null;
   let feature;
-  const source = editingLayer.getSource();
+  const features = editingLayer.getSource().getFeaturesCollection();
   this._modifyInteraction = new ol.interaction.Modify({
-    source
+    features
   });
-  source.removeEventListener('addfeature');
   this.addInteraction(this._modifyInteraction);
   this._snapingInteraction = this.createSnapInteraction({
     dependency: this._dependency
