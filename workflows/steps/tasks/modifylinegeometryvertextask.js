@@ -26,10 +26,9 @@ proto.run = function(inputs, context) {
   let dependencyOriginalFeatures = [];
   let dependencyFeatures = [];
   let startKey;
-  const source = editingLayer.getSource();
-  let canStartModify = true; // condizione che mi permette di avviare tutta la procedura del modifyfeature
+  const features = editingLayer.getSource().getFeaturesCollection(); // passo la feature collection
   this._modifyInteraction = new ol.interaction.Modify({
-    source,
+    features,
     insertVertexCondition() {
       return ol.events.condition.never()
     },
@@ -37,9 +36,9 @@ proto.run = function(inputs, context) {
   });
   this.addInteraction(this._modifyInteraction);
   this._snapInteraction = new ol.interaction.Snap({
-    source
+    features,
+    edge: false
   });
-  source.removeEventListener('addfeature');
   this.addInteraction(this._snapInteraction);
   this._modifyInteraction.on('modifystart', function(evt) {
     const {pixel, coordinate} = evt.mapBrowserEvent;
@@ -48,7 +47,7 @@ proto.run = function(inputs, context) {
       layerFilter: (layer) => {
         return layer === editingLayer;
       },
-      hitTolerance: 5
+      hitTolerance: 10
     });
     if (modifiedBranchFeatures) {
       //check if evt coordinate is a vertex of the feature
@@ -62,6 +61,7 @@ proto.run = function(inputs, context) {
         }
       }
       if (!isVertex) {
+        console.log(isVertex)
         d.reject();
         return;
       }
@@ -105,10 +105,16 @@ proto.run = function(inputs, context) {
       session.pushUpdate(layerId, newFeature, originalFeature);
       inputs.features.push(newFeature);
     }
+    let newDependencyFeatures = [];
     if (dependencyFeatures) {
       for (let i = 0; i < dependencyFeatures.length; i++) {
         const {layerId, feature:dependencyFeature} = dependencyFeatures[i];
         const newFeature = dependencyFeature.clone();
+        const newDependecyFeature = {
+          layerId,
+          feature: newFeature
+        };
+        newDependencyFeatures.push(newDependecyFeature);
         session.pushUpdate(layerId, newFeature, dependencyOriginalFeatures[i]);
       }
     }
@@ -116,7 +122,7 @@ proto.run = function(inputs, context) {
     if (featuresLength ===  2) {
       this.runBranchMethods({
         action:'update_geometry',
-        feature: dependencyFeatures,
+        feature: newDependencyFeatures,
         session
       }, {
         snapFeatures: modifiedBranchFeatures

@@ -271,9 +271,7 @@ proto.stop = function() {
           // seci sono tool attivi vado a spengere
           this._setToolsEnabled(false);
           this.clearToolboxMessages();
-          this._setEditingLayerSource();
           this.setSelected(false);
-
           this.emit(EventName);
           resolve(true)
         })

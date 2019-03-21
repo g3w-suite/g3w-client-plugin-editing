@@ -216,11 +216,13 @@ proto.addChangeToHistory = function(session) {
     id: session.getLastStateId(),
     session
   };
+  //vado a verificare se la mima modifica si aggiunge a quella finale ultima
   if (this._allHistory.currentIndex === this._allHistory.history.length) {
     this._allHistory.history.push(change);
     this._allHistory.currentIndex+=1;
   } else {
-    this._allHistory.history.splice(0, this._allHistory.currentIndex, change);
+    // altrimenti
+    this._allHistory.history.splice(this._allHistory.currentIndex, this._allHistory.history.length, change);
     this._allHistory.currentIndex = this._allHistory.history.length;
   }
   this.setUndoRedo();
