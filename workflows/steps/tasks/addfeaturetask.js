@@ -95,7 +95,11 @@ proto.run = function(inputs, context) {
       });
       this.addInteraction(this._snapInteraction);
       this._snapInteraction.setActive(true);
-      this.drawInteraction.on('drawstart', () => {
+      this.drawInteraction.on('drawstart', (evt) => {
+        if (isBranchLayer) {
+          this._createMeasureTooltip();
+          this._registerPointerMoveEvent(evt.feature);
+        }
         this._optionscondition.start = true;
         document.addEventListener('keydown', this._removeLastPoint);
       });
@@ -115,6 +119,8 @@ proto.run = function(inputs, context) {
             layerId,
             feature: _feature
           })
+        } else {
+          this._clearMeasureTooltip();
         }
         attributes.forEach((attribute) => {
           _feature.set(attribute.name, null);
@@ -162,6 +168,7 @@ proto.stop = function() {
   document.removeEventListener('keydown', this._removeLastPoint);
   return true;
 };
+
 
 proto.removeLastPoint = function(evt) {
   if (evt.which === 27) {

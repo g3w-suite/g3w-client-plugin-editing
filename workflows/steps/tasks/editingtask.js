@@ -7,6 +7,9 @@ const Feature = g3wsdk.core.layer.features.Feature;
 function EditingTask(options = {}) {
   base(this, options);
   this._mapService = GUI.getComponent('map').getService();
+  this._measureTooltipElement;
+  this._poinOnMapMoveListener;
+  this._featureGeometryChangelistener;
   this.addInteraction = function(interaction) {
     this._mapService.addInteraction(interaction);
   };
@@ -28,6 +31,10 @@ proto.getEditingService = function() {
   if (!this._editingService)
     this._editingService = require('../../../services/editingservice');
   return this._editingService;
+};
+
+proto.getMap = function() {
+  return this._mapService.getMap();
 };
 
 proto.isBranchLayer = function(layerId) {
@@ -103,7 +110,7 @@ proto._getDegree = function({featureA, featureB, decimal=2}) {
   const dy2 = coordinates.middle[1] - coordinates.end[1];
   let angle2 = Math.atan2(dy2, dx2) * 180 / Math.PI;
   let degree = Math.abs(angle1 - angle2);
-  degree = degree > 180 ? 360 - degree : degree;
+  degree = 180 - (degree > 180 ? 360 - degree : degree);
   degree = degree.toFixed(decimal);
   return {
     degree,
@@ -124,6 +131,46 @@ proto.branchLayerDeleteLosse = function({branchOptions={}, options={}}) {
       break;
     }
   }
+};
+
+proto._registerPointerMoveEvent = function(feature) {
+  const geometry = feature.getGeometry();
+  this._featureGeometryChangelistener = geometry.on('change', (evt) => {
+    const geom = evt.target;
+    const tooltipCoord = geom.getLastCoordinate();
+    const length = Math.round(geometry.getLength() * 100) / 100;
+    const output = (length > 1000) ? `${(Math.round(length / 1000 * 1000) / 1000)} km` : `${(Math.round(length * 100) / 100)} m`;
+    this._measureTooltipElement.innerHTML = output;
+    this._measureTooltip.setPosition(tooltipCoord);
+  });
+};
+
+proto._clearMeasureTooltip = function() {
+  this._measureTooltipElement = null;
+  ol.Observable.unByKey(this._featureGeometryChangelistener);
+  this._featureGeometryChangelistener = null;
+  this.getMap().removeOverlay(this._measureTooltip);
+  this._measureTooltip = null;
+};
+/**
+ * Creates a new measure tooltip
+ */
+proto._createMeasureTooltip = function() {
+  const map = this.getMap();
+  if (this._measureTooltipElement) {
+    this._measureTooltipElement.parentNode.removeChild(this._measureTooltipElement);
+  }
+  if (this._measureTooltip) {
+    map.removeOverlay(this._measureTooltip);
+  }
+  this._measureTooltipElement = document.createElement('div');
+  this._measureTooltipElement.className = 'mtooltip mtooltip-measure';
+  this._measureTooltip = new ol.Overlay({
+    element: this._measureTooltipElement,
+    offset: [0, -15],
+    positioning: 'bottom-center'
+  });
+  map.addOverlay(this._measureTooltip);
 };
 
 proto.branchLayerAddLosse = function({branchOptions={}, options={}}) {

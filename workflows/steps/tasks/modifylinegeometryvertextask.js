@@ -15,6 +15,7 @@ inherit(ModifyGeometryVertexTask, EditingTask);
 const proto = ModifyGeometryVertexTask.prototype;
 
 proto.run = function(inputs, context) {
+  const self = this;
   const d = $.Deferred();
   const editingLayer = inputs.layer;
   const session = context.session;
@@ -64,6 +65,12 @@ proto.run = function(inputs, context) {
       modifiedBranchFeatures.forEach((feature) => {
         originalBranchFeatures.push(feature.clone())
       });
+
+      if (modifiedBranchFeatures.length === 1) {
+        self._createMeasureTooltip();
+        const feature = modifiedBranchFeatures[0];
+        self._registerPointerMoveEvent(feature);
+      }
       map.forEachFeatureAtPixel(pixel, (feature, layer) => {
           if (layer) {
             dependencyFeatures.push({
@@ -94,6 +101,7 @@ proto.run = function(inputs, context) {
   });
   this._modifyInteraction.on('modifyend', (evt) => {
     const featuresLength =  modifiedBranchFeatures.length;
+    this._clearMeasureTooltip();
     for (let i = 0; i < featuresLength; i++) {
       const feature =  modifiedBranchFeatures[i];
       const newFeature = feature.clone();
