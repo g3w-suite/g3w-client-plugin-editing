@@ -21,10 +21,11 @@ proto.run = function(inputs, context) {
   const editingLayer = inputs.layer;
   // nella creazione della nuova feature utilizzo l'editing layer originale (TableLayer)
   const feature = originalLayer.createNewFeature();
+  originalLayer.isPkEditable() ?  feature.setNew() : feature.setTemporaryId();
   editingLayer.getSource().addFeature(feature);
   inputs.features.push(feature);
   session.pushAdd(layerId, feature);
-  d.resolve(inputs);
+  d.resolve(inputs, context);
   return d.promise();
 };
 

@@ -38,7 +38,7 @@ proto._getFieldUniqueValuesFromServer = function(layer, uniqueFields) {
   }).then(function(response) {
     const data = response.data;
     _.forEach(data, function(values, fieldName) {
-      _.forEach(values, function(value) {
+      values.forEach((value) => {
         uniqueFields[fieldName].input.options.values.push(value);
       })
     })
@@ -84,8 +84,9 @@ proto._cancelFnc = function(promise) {
   }
 };
 
-proto._saveFnc = function(promise, inputs) {
+proto._saveFnc = function(promise, context, inputs) {
   return function(fields) {
+    const session = context.session;
     const layerId = this._originalLayer.getId();
     this._originalLayer.setFieldsWithValues(this._feature, fields);
     if (this._feature.isNew()) {
@@ -97,7 +98,7 @@ proto._saveFnc = function(promise, inputs) {
      }
     }
     const newFeature = this._feature.clone();
-    this._session.pushUpdate(layerId, newFeature, this._originalFeature);
+    session.pushUpdate(layerId, newFeature, this._originalFeature);
     GUI.setModal(false);
     promise.resolve(inputs);
   }
@@ -132,7 +133,7 @@ proto.startForm = function(options = {}) {
       title: t("editing.form.buttons.save"),
       type: "save",
       class: "btn-success",
-      cbk: _.bind(this._saveFnc(promise, inputs), this)
+      cbk: _.bind(this._saveFnc(promise, context, inputs), this)
     }, {
       title: t("editing.form.buttons.cancel"),
       type: "cancel",
