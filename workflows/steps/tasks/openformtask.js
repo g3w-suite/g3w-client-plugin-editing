@@ -42,8 +42,8 @@ proto._getFieldUniqueValuesFromServer = function(layer, uniqueFields) {
         uniqueFields[fieldName].input.options.values.push(value);
       })
     })
-  }).fail(() => {
-    console.log('errore')
+  }).fail((err) => {
+    console.log(err)
   })
 };
 
@@ -98,7 +98,14 @@ proto._saveFnc = function(promise, context, inputs) {
      }
     }
     const newFeature = this._feature.clone();
-    session.pushUpdate(layerId, newFeature, this._originalFeature);
+    if (session.getId() === layerId)
+      session.pushUpdate(layerId, newFeature, this._originalFeature);
+    else
+      //is a relation so i i have to put relation feature
+      inputs.relationFeature = {
+        newFeature,
+        originalFeature: this._originalFeature
+      };
     GUI.setModal(false);
     promise.resolve(inputs);
   }

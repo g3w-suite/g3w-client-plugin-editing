@@ -337,12 +337,12 @@ proto.addRelation = function() {
   workflow.start(options)
     .then((outputs) => {
       // sono le features e il layer editato
-      const relation = outputs.features[0]; // vado a prende l'ultima inserrita
+      const {newFeature, originalFeature} = outputs.relationFeature;
       // vado a settare il valore della relazione che è legato al padre
-      relation.set(this.relation.childField, this._currentFeatureFatherFieldValue);
-      session.pushUpdate(this._layerId, relation, relation);
+      newFeature.set(this.relation.childField, this._currentFeatureFatherFieldValue);
+      session.pushUpdate(this._layerId, newFeature, originalFeature);
       //vado a aggiungere una nuova relazione
-      const newRelation = this._createRelationObj(relation);
+      const newRelation = this._createRelationObj(newFeature);
       this.relations.push(newRelation);
       this.emitEventToParentWorkFlow()
     })
