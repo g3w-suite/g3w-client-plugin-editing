@@ -10,8 +10,8 @@ function AddFeatureTask(options={}) {
   this._busy = false;
   // source del layer di editing
   // la drw interaction per disegnare la feature
-  this.drawInteraction = null;
-  this._snapInteraction = null;
+  this.drawInteraction;
+  this._snapInteraction;
   this._finishCondition = function(evt) {
     return true
   };
@@ -46,7 +46,9 @@ proto.run = function(inputs, context) {
   this._optionscondition = {
     vertex: 0,
     snapFeatures: [],
-    start: false
+    start: false,
+    edge:false,
+    edgeCoordinate:[]
   };
   // qui vado a valutare il tipo di layer
   switch (originalLayer.getType()) {
@@ -91,14 +93,17 @@ proto.run = function(inputs, context) {
       this.drawInteraction.setActive(true);
       this._snapInteraction = new ol.interaction.Snap({
         features:  isBranchLayer ? new ol.Collection(source.getFeatures()) : new ol.Collection(dependencyFeatures),
-        edge: !isBranchLayer,
+        //edge: !isBranchLayer,
       });
       this.addInteraction(this._snapInteraction);
       this._snapInteraction.setActive(true);
       this.drawInteraction.on('drawstart', (evt) => {
         if (isBranchLayer) {
           this._createMeasureTooltip();
-          this._registerPointerMoveEvent(evt.feature);
+          this._registerPointerMoveEvent({
+            feature: evt.feature,
+            snapFeatures: this._optionscondition.snapFeatures
+          });
         }
         this._optionscondition.start = true;
         document.addEventListener('keydown', this._removeLastPoint);
@@ -137,21 +142,46 @@ proto.run = function(inputs, context) {
         session.pushAdd(layerId, feature);
         inputs.features.push(feature);
         if (isBranchLayer) {
-          this.runBranchMethods({
-            action: 'add',
-            session,
-            feature,
-          }, {
-            snapFeatures: this._optionscondition.snapFeatures.filter(snapFeature => {
-              return snapFeature;
-            })
-          })
+          if (!this._optionscondition.edge)
+            this.runBranchMethods({
+              action: 'add',
+              session,
+              feature,
+            }, {
+              snapFeatures: this._optionscondition.snapFeatures.filter(snapFeature => {
+                return snapFeature;
+              })
+            });
+          else {
+            const {originalFeature, newFeature, updateFeature} = this._splitSnapFeature();
+            session.pushUpdate(layerId, updateFeature.clone(), originalFeature);
+            session.pushAdd(layerId, newFeature);
+            source.addFeature(newFeature);
+          }
         }
         d.resolve(inputs);
       });
       break;
   }
   return d.promise();
+};
+
+proto._splitSnapFeature = function() {
+  const updateFeature = this._optionscondition.snapFeatures.filter(snapFeature => {
+    return snapFeature;
+  })[0];
+  const originalCoordinates = updateFeature.getGeometry().getCoordinates();
+  const coordinate = this._optionscondition.edgeCoordinate;
+  const originalFeature = updateFeature.clone();
+  const newFeature = updateFeature.clone();
+  newFeature.setTemporaryId();
+  newFeature.getGeometry().setCoordinates([coordinate, originalCoordinates[1]]);
+  updateFeature.getGeometry().setCoordinates([originalCoordinates[0], coordinate]);
+  return {
+    originalFeature,
+    newFeature,
+    updateFeature
+  }
 };
 
 // metodo eseguito alla disattivazione del tool
@@ -169,11 +199,12 @@ proto.stop = function() {
   return true;
 };
 
-
 proto.removeLastPoint = function(evt) {
-  if (evt.which === 27) {
+  if (evt.which === 27 && this._optionscondition.vertex) {
     this.drawInteraction.removeLastPoint();
     this._optionscondition.vertex = 0;
+    this._optionscondition.snapFeatures = [];
+    this._clearMeasureTooltip();
   }
 };
 
@@ -183,6 +214,7 @@ AddFeatureTask.CONDITIONS = {
     return function({coordinate}) {
       const source = options.source;
       const features = source.getFeatures();
+      const coordinateExtent = new ol.geom.Point(coordinate).getExtent();
       if (features.length === 0) {
         return true
       } else {
@@ -195,10 +227,18 @@ AddFeatureTask.CONDITIONS = {
           const branchFeatures = source.getFeatures();
           for (let i = 0; i < branchFeatures.length; i++) {
             const feature = branchFeatures[i];
-            if (feature.getGeometry().getCoordinates()[0].toString() === coordinate.toString() || feature.getGeometry().getCoordinates()[1].toString() === coordinate.toString()) {
-              canDraw = true;
+            const geometry = feature.getGeometry();
+            // check id snapped to vertex
+            if (geometry.intersectsExtent(coordinateExtent)) {
+              optionscondition.edge = true;
+              optionscondition.edgeCoordinate = coordinate;
               optionscondition.snapFeatures[optionscondition.vertex] = optionscondition.snapFeatures[optionscondition.vertex] === undefined ? feature : false;
-              break;
+              canDraw = true;
+              if (geometry.getCoordinates()[0].toString() === coordinate.toString() || geometry.getCoordinates()[1].toString() === coordinate.toString()) {
+                optionscondition.edge = false;
+                optionscondition.edgeCoordinate = [];
+                break;
+              }
             }
           }
           if (optionscondition.vertex === 0) {
@@ -208,7 +248,6 @@ AddFeatureTask.CONDITIONS = {
             canDraw = canDraw || optionscondition.snapFeatures[0] !== undefined;
           }
         };
-        /// file nunzione
         checkSnapVertex();
         return canDraw;
       }

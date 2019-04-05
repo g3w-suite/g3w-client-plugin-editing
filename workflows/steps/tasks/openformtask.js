@@ -5,6 +5,7 @@ const GUI = g3wsdk.gui.GUI;
 const FormComponent = g3wsdk.gui.vue.FormComponent;
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 const EditingTask = require('./editingtask');
+import EditPipes from '../../../vue/components/editing/pipes.vue'
 
 function OpenFormTask(options={}) {
   this._formIdPrefix = 'form_';
@@ -146,14 +147,22 @@ proto.startForm = function(options = {}) {
   if (this.isBranchLayer(this._layerId)) {
     formService.setLoading(true);
     this.getChartComponent({
-      feature: this._feature
+      feature: this._feature,
+      editing: {
+        mode: true,
+        components: [EditPipes],
+        cb: (value) => {
+          console.log(this, value)
+        }
+      }
     }).then(({id, component, error}) => {
-      if (!error)
+      if (!error) {
         formService.addComponent({
           id: id,
           component,
           icon: GUI.getFontClass('chart')
         });
+      }
     }).catch((err)=>{
       console.log(err)
     })

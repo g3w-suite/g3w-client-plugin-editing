@@ -41,9 +41,10 @@ proto.isBranchLayer = function(layerId) {
   return this.getEditingService().isBranchLayer(layerId);
 };
 
-proto.getChartComponent = function({feature}={}) {
+proto.getChartComponent = function({feature, editing}={}) {
   return this.getEditingService().getChartComponent({
-    feature
+    feature,
+    editing
   })
 };
 
@@ -133,13 +134,26 @@ proto.branchLayerDeleteLosse = function({branchOptions={}, options={}}) {
   }
 };
 
-proto._registerPointerMoveEvent = function(feature) {
+proto._registerPointerMoveEvent = function({feature, snapFeatures=[]}) {
+  let degree;
   const geometry = feature.getGeometry();
   this._featureGeometryChangelistener = geometry.on('change', (evt) => {
     const geom = evt.target;
     const tooltipCoord = geom.getLastCoordinate();
     const length = Math.round(geometry.getLength() * 100) / 100;
-    const output = (length > 1000) ? `${(Math.round(length / 1000 * 1000) / 1000)} km` : `${(Math.round(length * 100) / 100)} m`;
+    let output = (length > 1000) ?
+      `${(Math.round(length / 1000 * 1000) / 1000)} km`
+      : `${(Math.round(length * 100) / 100)} m`;
+    if (snapFeatures.length === 1) {
+      try {
+        degree = this._getDegree({
+          featureA:feature,
+          featureB: snapFeatures[0]
+        });
+        output = `${output} \n ${degree.degree}°`
+      } catch(e) {}
+    }
+
     this._measureTooltipElement.innerHTML = output;
     this._measureTooltip.setPosition(tooltipCoord);
   });

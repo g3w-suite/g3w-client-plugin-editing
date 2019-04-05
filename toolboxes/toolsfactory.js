@@ -8,8 +8,6 @@ const ModifyLineGeometryVertexWorkflow = require('../workflows/modifylinegeometr
 const MoveFeatureWorkflow = require('../workflows/movefeatureworkflow');
 const DeleteFeatureWorkflow = require('../workflows/deletefeatureworkflow');
 const EditFeatureAttributesWorkflow = require('../workflows/editfeatureattributesworkflow');
-const EditTableFeaturesWorkflow = require('../workflows/edittableworkflow');
-const AddTableFeatureWorflow = require('../workflows/addtablefeatureworkflow');
 const SwitchLineDirectionWorkflow = require('../workflows/switchlinedirectionworkflow');
 
 // classe costruttrice di Tools
@@ -165,25 +163,6 @@ function EditorToolsFactory() {
             ];
             break;
         }
-        break;
-      // caso layer tabellare da mettere in piedi
-      case Layer.LayerTypes.TABLE:
-        tools = [
-          new Tool({
-            id: 'addfeature',
-            name: t("editing.tools.add_feature"),
-            icon: "addTableRow.png",
-            layer: layer,
-            op: AddTableFeatureWorflow
-          }),
-          new Tool({
-            id: 'edittable',
-            name: t("editing.tools.update_feature"),
-            icon: "editAttributes.png",
-            layer: layer,
-            op: EditTableFeaturesWorkflow
-          })
-        ];
         break;
       default:
         tools = [];
