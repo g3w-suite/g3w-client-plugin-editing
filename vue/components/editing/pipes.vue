@@ -77,6 +77,7 @@
         });
         if (newLength === 0)
           this.setOffsetToZero();
+        document.querySelector('#select_all_pipes').checked = newLength === this.originalvalues.length;
       },
       offset(currentvalue, oldvalue) {
         if (!this.reset)
