@@ -150,7 +150,8 @@ proto._registerPointerMoveEvent = function({feature, snapFeatures=[]}) {
           featureA:feature,
           featureB: snapFeatures[0]
         });
-        output = `${output} \n ${degree.degree}°`
+        output = `<p>Lunghezza: ${output}</p>
+                  <p>Angolo: ${degree.degree}°</p>`
       } catch(e) {}
     }
 

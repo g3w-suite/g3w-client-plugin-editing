@@ -69,7 +69,7 @@ proto.run = function(inputs, context) {
       if (modifiedBranchFeatures.length === 1) {
         self._createMeasureTooltip();
         const feature = modifiedBranchFeatures[0];
-        self._registerPointerMoveEvent(feature);
+        self._registerPointerMoveEvent({feature});
       }
       map.forEachFeatureAtPixel(pixel, (feature, layer) => {
           if (layer) {
