@@ -74,6 +74,11 @@ function ToolBox(options={}) {
   //vado a settare la sessione ad ogni tool di quel toolbox
   // e lo stesso toolbox
   this._tools.forEach((tool) => {
+    tool.getOperator().on('change-help-message', (message)=> {
+      this.setToolMessage({
+        help: message
+      })
+    });
     tool.setSession(this._session);
   });
 
@@ -273,6 +278,9 @@ proto.stop = function() {
           this.clearToolboxMessages();
           this._setEditingLayerSource();
           this.setSelected(false);
+          this.tools.forEach((tool) => {
+            tool.getOperator().off('change-help-message');
+          });
           this.emit(EventName);
           resolve(true)
         })

@@ -1,30 +1,34 @@
 <template>
-  <div class="editing_pipes" :style="{height: height+'px'}">
     <div class="pipes_wapper">
       <table style="width:100%;">
-        <tr style="border-bottom: 2px solid" class="skin-border-color">
-          <th style="padding: 5px;">
-            <input id="select_all_pipes" type="checkbox" class="magic-checkbox" @change="selectUnselectAllItems">
-            <label for="select_all_pipes">TUTTI</label>
-          </th>
-          <th style="display: flex; justify-content:flex-end; padding: 5px; align-items: baseline">
-            <label for="pipes_dtm_offset">OFFSET</label>
-            <input id="pipes_dtm_offset" type="number" style="width: 100px; margin-left: 5px; padding: 5px;" v-model="offset" :disabled="setdisabled">
-            <button style="margin-left: 5px; padding: 3px; font-weight: bold" class="btn skin-button" @click="resetValues" :disabled="setdisabled">RESET</button>
-          </th>
-        </tr>
-        <tr v-for="item in data" style="border-bottom: 1px solid #eeeeee; padding-bottom: 3px;">
-          <td style="padding: 5px;">
-            <input type="checkbox" :id="`id_pipe_${item.index}`" class="magic-checkbox checkbox_pipe" @change="selectUnselectItem($event, item.index)" :index="item.index">
-            <label :for="`id_pipe_${item.index}`" style="padding: 5px"> </label>
-          </td>
-          <td align="right" style="padding: 5px;">
-            <input class="pipe_value" type="number" @change="changeItem(item)" style="padding: 5px; font-weight: bold"  v-model="item.value" :disabled="selectitems.indexOf(item) === -1">
-          </td>
-        </tr>
+        <thead>
+          <tr style="border-bottom: 2px solid;  display:flex; justify-content:space-between; align-items: baseline;" class="skin-border-color">
+            <th style="padding: 5px;">
+              <input id="select_all_pipes" type="checkbox" class="magic-checkbox" @change="selectUnselectAllItems">
+              <label for="select_all_pipes">TUTTI</label>
+            </th>
+            <th style="display: flex; justify-content:flex-end; padding: 5px; align-items: baseline">
+              <label for="pipes_dtm_offset">OFFSET</label>
+              <input id="pipes_dtm_offset" type="number" style="width: 100px; margin-left: 5px; padding: 5px;" v-model="offset" :disabled="setdisabled">
+              <button style="margin-left: 5px; padding: 3px; font-weight: bold" class="btn skin-button" @click="resetValues" :disabled="setdisabled">RESET</button>
+            </th>
+          </tr>
+        </thead>
+        <tbody class="editing_pipes" :style="{height: height + 'px'}">
+          <tr v-for="(item, index) in data" style="border-bottom: 1px solid #eeeeee; padding-bottom: 3px; display:flex; justify-content: space-between; align-items: center">
+            <td style="padding: 5px;">
+              <input type="checkbox" :id="`id_pipe_${item.index}`" class="magic-checkbox checkbox_pipe" @change="selectUnselectItem($event, item.index)" :index="item.index">
+              <label :for="`id_pipe_${item.index}`" style="padding: 5px"></label>
+            </td>
+            <td align="right" style="padding: 5px;">
+              sezione: <input class="pipe_section" type="number" style="width: 80px; padding: 5px; font-weight: bold"  v-model="pipes_data[index].section" :disabled="selectitems.indexOf(item) === -1">
+              altezza: <input class="pipe_height" type="number" @change="changeItem(item)" style="width: 100px; padding: 5px; font-weight: bold"  v-model="item.value" :disabled="selectitems.indexOf(item) === -1">
+            </td>
+          </tr>
+        </tbody>
+
       </table>
     </div>
-  </div>
 </template>
 
 <script>
@@ -89,7 +93,13 @@
           this.reset = false;
       },
       data(data) {
-        this.originalvalues = data.map((item) => item.value)
+        this.originalvalues = data.map((item) => item.value);
+        for (let i=0; i < this.originalvalues.length; i++) {
+          this.pipes_data.push({
+            section: this.pipe_section,
+            height: null
+          });
+        }
       }
     },
     methods: {
@@ -127,6 +137,11 @@
       setUnselectItem(index) {
         this.$emit('unselect-item', index)
       }
+    },
+    beforeDestroy() {
+      for (let i =0; i < this.data.length; i++) {
+        this.pipes_data[i].height = this.data[i].value;
+      }
     }
   }
 </script>
@@ -134,5 +149,7 @@
 <style scoped>
   .editing_pipes {
     overflow-y: auto;
+    display:block;
+    width: 100%;
   }
 </style>

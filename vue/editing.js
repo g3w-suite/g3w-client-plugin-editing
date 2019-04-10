@@ -63,7 +63,7 @@ const vueComponentOptions = {
     },
     startActiveTool: function(toolId, toolboxId) {
       // vado a verificare se l'id dell toolbox attivo è diverso o meno da quello premuto
-      if (this.state.toolboxidactivetool && toolboxId != this.state.toolboxidactivetool) {
+      if (this.state.toolboxidactivetool && toolboxId !== this.state.toolboxidactivetool) {
         this._checkDirtyToolBoxes(this.state.toolboxidactivetool)
           .then((toolbox) => {
             // vado a stoppare l'eventuale tool attivo del precedente toolbox
@@ -119,15 +119,13 @@ const vueComponentOptions = {
       return message;
     },
     canCommit: function() {
-      return this.state.toolboxes.reduce((canCommit, toolbox) => {
-        return toolbox.editing.canCommit || canCommit
-      }, false)
+      return this.canUndo;
     },
     canUndo: function() {
-      return this.undoRedo.canUndo;
+      return this.allowediting && this.undoRedo.canUndo;
     },
     canRedo: function() {
-      return this.undoRedo.canRedo;
+      return this.allowediting && this.undoRedo.canRedo;
     }
   }
 };

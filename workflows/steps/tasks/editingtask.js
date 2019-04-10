@@ -27,10 +27,25 @@ proto.run = function(inputs, context) {};
 
 proto.stop = function() {};
 
+proto.setEnableEditing = function(bool) {
+  const editingService = this.getEditingService();
+  editingService.setEnabledEditing(bool);
+};
+
 proto.getEditingService = function() {
   if (!this._editingService)
     this._editingService = require('../../../services/editingservice');
   return this._editingService;
+};
+
+proto.getBranchLayerSource = function() {
+  const editingService = this.getEditingService();
+  return editingService.getBranchLayerSource();
+};
+
+proto.getLayerSource = function(layerId) {
+  const editingService = this.getEditingService();
+  return editingService.getToolBoxById(layerId).getEditingLayer().getSource();
 };
 
 proto.getMap = function() {
@@ -46,6 +61,11 @@ proto.getChartComponent = function({feature, editing}={}) {
     feature,
     editing
   })
+};
+
+proto.getSessionByLayerId = function(layerId) {
+  const toolbox = this.getEditingService().getToolBoxById(layerId);
+  return toolbox.getSession();
 };
 
 proto.losseLayerSetDegree = function({ nodeOptions, branchOptions, options={}}) {
@@ -212,7 +232,7 @@ proto.branchLayerAddLosse = function({branchOptions={}, options={}}) {
       layer.isPkEditable() ?  lossfeature.setNew() : lossfeature.setTemporaryId();
       lossfeature.set(field, degree);
 
-      this.setFetureBranchId({
+      this.setFeatureBranchId({
         feature: lossfeature,
         branch_id
       });
@@ -223,7 +243,11 @@ proto.branchLayerAddLosse = function({branchOptions={}, options={}}) {
   })
 };
 
-proto.setFetureBranchId = function({feature, branch_id}) {
+proto.getBranchLayerId = function() {
+  return this.getEditingService().getBranchLayerId();
+};
+
+proto.setFeatureBranchId = function({feature, branch_id}) {
   feature.set('branch_id', branch_id);
   feature.set('branch', branch_id);
 };
@@ -301,7 +325,7 @@ proto.setBranchId = function({feature, dependency}) {
         break;
     }
   }
-  this.setFetureBranchId({
+  this.setFeatureBranchId({
     feature,
     branch_id: branch_feature.getId()
   });

@@ -136,15 +136,21 @@ proto.startForm = function(options = {}) {
       title: t("editing.form.buttons.save"),
       type: "save",
       class: "btn-success",
-      cbk: _.bind(this._saveFnc(promise, inputs), this)
+      cbk: this._saveFnc(promise, inputs).bind(this)
     }, {
       title: t("editing.form.buttons.cancel"),
       type: "cancel",
       class: "btn-primary",
-      cbk: _.bind(this._cancelFnc(promise),this)
+      cbk: this._cancelFnc(promise).bind(this)
     }]
   });
   if (this.isBranchLayer(this._layerId)) {
+    const pipes_data = [];
+    const pipe_section = this._feature.get('pipe_section_default');
+    EditPipes.created = function() {
+      this.pipe_section = pipe_section;
+      this.pipes_data = pipes_data;
+    };
     formService.setLoading(true);
     this.getChartComponent({
       feature: this._feature,
@@ -176,6 +182,7 @@ proto.startForm = function(options = {}) {
 // metodo eseguito all'avvio del tool
 proto.run = function(inputs, context) {
   const d = $.Deferred();
+  this.setEnableEditing(false);
   this.startForm({
     inputs: inputs,
     context: context,
@@ -191,6 +198,7 @@ proto._generateFormId = function(layerName) {
 
 // metodo eseguito alla disattivazione del tool
 proto.stop = function() {
+  this.setEnableEditing(true);
   this._isContentChild ? GUI.popContent() : GUI.closeForm();
 };
 

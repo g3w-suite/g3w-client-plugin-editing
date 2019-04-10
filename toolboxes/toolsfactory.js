@@ -9,6 +9,7 @@ const MoveFeatureWorkflow = require('../workflows/movefeatureworkflow');
 const DeleteFeatureWorkflow = require('../workflows/deletefeatureworkflow');
 const EditFeatureAttributesWorkflow = require('../workflows/editfeatureattributesworkflow');
 const SwitchLineDirectionWorkflow = require('../workflows/switchlinedirectionworkflow');
+const SelectAndMoveElementsWorkflow = require('../workflows/selectandmoveelementsworkflow');
 
 // classe costruttrice di Tools
 function EditorToolsFactory() {
@@ -113,12 +114,22 @@ function EditorToolsFactory() {
               }),
               new Tool({
                 id: 'switch',
-                name: t("editing.tools.add_feature"),
+                name: t("editing.tools.switch_feature"),
                 icon: "switch.png",
                 layer,
                 dependency,
                 type,
                 op: SwitchLineDirectionWorkflow
+              }),
+              new Tool({
+                id: 'copypastenetwork',
+                name: t("editing.tools.copy_paste_network"),
+                icon: "copyLineAndNodes.png",
+                layer,
+                dependency,
+                type,
+                confirmsteps: true,
+                op: SelectAndMoveElementsWorkflow
               }),
             ];
             break;

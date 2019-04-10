@@ -15,7 +15,10 @@ export default {
       delete_feature: "Elimina feature",
       move_feature: "Muovi feature",
       update_vertex: "Aggiorna vertici feature",
-      update_feature: "Modifica feature"
+      update_feature: "Modifica feature",
+      switch_feature: "Cambia direzione",
+      copy_paste_network: 'Copia e incolla network'
+
     },
     graph: {
       title: 'Profilo Altimetrico',
@@ -37,7 +40,9 @@ export default {
         show_edit_feature_form:  "Mostra il form della feature per poter editare gli attributi",
         pick_feature: "Clicca su una feature per poterla modificare",
         switch_direction: "Clicca sul branch per invertire la direzione",
-        insert_attributes_feature: "Inserisci gli attributi della feature"
+        insert_attributes_feature: "Inserisci gli attributi della feature",
+        select_elements: "Seleziona gli elementi della rete che vuoi copiare",
+        select_vertex_to_paste: "Seleziona il vertice su cui copiare la selezione"
       }
     },
     messages: {
@@ -101,7 +106,10 @@ export default {
       delete_feature: "Delete feature",
       move_feature: "Move feature",
       update_vertex: "Update feature vertex",
-      update_feature: "Update feature"
+      update_feature: "Update feature",
+      switch_feature: "Switch direction",
+      copy_paste_network: 'Copy and paste network'
+
     },
     graph: {
       title: 'Altimetry',
@@ -124,7 +132,9 @@ export default {
         show_edit_feature_form:  "Show feature form to edit attributes",
         pick_feature: "Click on feature to modify",
         switch_direction: "Click on branch to invert direction",
-        insert_attributes_feature: "Insert attributes of the feature"
+        insert_attributes_feature: "Insert attributes of the feature",
+        select_elements: "Select elements of network to copy",
+        select_vertex_to_paste: "Select vertex where paste the selection network"
       }
     },
     messages: {

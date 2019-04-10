@@ -360,6 +360,12 @@ proto.getOrphanNodesById = function(layerId) {
   return this._orphanNodes[layerId] || [];
 };
 
+proto.getBranchLayerSource = function() {
+  const branchId = this.getBranchLayerId();
+  const toolBox = this.getToolBoxById(branchId);
+  return toolBox.getEditingLayer().getSource();
+};
+
 proto.activeQueryInfo = function() {
   this._mapService.activeMapControl('query');
 };
@@ -405,6 +411,10 @@ proto._layerChildrenRelationInEditing = function(layer) {
       childrenrealtioninediting.push(relation);
   });
   return childrenrealtioninediting;
+};
+
+proto.setEnabledEditing = function(bool){
+  this.state.editing.enabled = bool;
 };
 
 proto.removeAllGeometryTools = function() {
@@ -976,52 +986,54 @@ proto._createCommitMessage = function(sessions) {
         del
       });
   }
-
   return message;
 };
 
 // metyhod to get
 proto.checkOrphanNodes = function() {
-  const branchLayer = this.getToolBoxById(this._branchLayerId).getEditingLayer();
-  this._nodelayerIds.forEach((layerId) => {
-    const toolbox = this.getToolBoxById(layerId);
-    const layernode = toolbox.getEditingLayer();
-    const nodes = layernode.getSource().getFeatures();
-    const nodeStyle = layernode.getStyle();
-    layernode.getSource().forEachFeature((node) =>{
-      node.setStyle(nodeStyle)
-    });
-    this._orphanNodes[layerId] = [];
-    nodes.forEach((node) => {
-      const coordinate = node.getGeometry().getCoordinates();
-      const map = this._mapService.getMap();
-      const pixel = map.getPixelFromCoordinate(coordinate);
-      map.getFeaturesAtPixel(pixel,  {
-        layerFilter: (layer) => {
-          return layer === branchLayer
-        }
-      }) ?  null : this._orphanNodes[layerId].push(node);
-    });
-    this._orphanNodes[layerId].forEach((node) => {
-      const styles = [
-        layernode.getStyle(),
-        new ol.style.Style({
-          image: new ol.style.Circle({
-            radius: 15,
-            stroke: new ol.style.Stroke({
-              color: [255, 0, 0], width: 5
+  const map = this._mapService.getMap();
+  map.once('postrender', () => {
+    const branchLayer = this.getToolBoxById(this._branchLayerId).getEditingLayer();
+    this._nodelayerIds.forEach((layerId) => {
+      const toolbox = this.getToolBoxById(layerId);
+      const layernode = toolbox.getEditingLayer();
+      const nodes = layernode.getSource().getFeatures();
+      const nodeStyle = layernode.getStyle();
+      layernode.getSource().forEachFeature((node) =>{
+        node.setStyle(nodeStyle)
+      });
+      this._orphanNodes[layerId] = [];
+      nodes.forEach((node) => {
+        const coordinate = node.getGeometry().getCoordinates();
+        const pixel = map.getPixelFromCoordinate(coordinate);
+        map.getFeaturesAtPixel(pixel,  {
+          layerFilter: (layer) => {
+            return layer === branchLayer
+          }
+        }) ?  null : this._orphanNodes[layerId].push(node);
+      });
+      this._orphanNodes[layerId].forEach((node) => {
+        const styles = [
+          layernode.getStyle(),
+          new ol.style.Style({
+            image: new ol.style.Circle({
+              radius: 15,
+              stroke: new ol.style.Stroke({
+                color: [255, 0, 0], width: 5
+              })
             })
           })
-        })
-      ];
-      node.setStyle(styles)
+        ];
+        node.setStyle(styles)
+      })
     })
-  })
+  });
 };
 
 proto._preCommit = function() {
-  this._allHistory.history.splice(0, this._allHistory.currentIndex);
-  this._allHistory.history.forEach((change) => {
+  // get all changes that are not part of commit
+  const history = this._allHistory.history.slice(this._allHistory.currentIndex);
+  history.forEach((change) => {
     const {id, session} = change;
     session.deleteState(id);
   });
@@ -1195,7 +1207,7 @@ proto.commit = function(close=false) {
           }
         })
         .fail((err) => {
-          // significa che ho ddetto annulla
+          // significa che ho detto cancella
           workflow.stop();
           this._removeStatesFromDependency();
           if (close) {
@@ -1205,6 +1217,8 @@ proto.commit = function(close=false) {
               toolbox.setCommit();
             });
             resolve();
+          } else {
+            reject();
           }
         })
     }
