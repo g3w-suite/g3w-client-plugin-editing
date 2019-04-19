@@ -69,7 +69,15 @@ proto.run = function(inputs, context) {
       if (modifiedBranchFeatures.length === 1) {
         self._createMeasureTooltip();
         const feature = modifiedBranchFeatures[0];
-        self._registerPointerMoveEvent({feature});
+        const snapFeatures = self.getSnapBrachFeatures({
+          feature
+        });
+        const snapBranchLenth = snapFeatures.length;
+        self._registerPointerMoveEvent({
+          feature,
+          snapFeatures: snapBranchLenth > 1 ? []: [snapFeatures[0].feature]
+        });
+
       }
       map.forEachFeatureAtPixel(pixel, (feature, layer) => {
           if (layer) {
@@ -105,6 +113,10 @@ proto.run = function(inputs, context) {
     for (let i = 0; i < featuresLength; i++) {
       const feature =  modifiedBranchFeatures[i];
       const newFeature = feature.clone();
+      this.setBranchProfileData({
+        feature: newFeature,
+        update:true
+      });
       const originalFeature = originalBranchFeatures[i];
       session.pushUpdate(layerId, newFeature, originalFeature);
       inputs.features.push(newFeature);
@@ -131,6 +143,26 @@ proto.run = function(inputs, context) {
       }, {
         snapFeatures: modifiedBranchFeatures
       })
+    } else if (featuresLength === 1) {
+      const snapFeatures = self.getSnapBrachFeatures({
+        feature: modifiedBranchFeatures[0]
+      });
+
+      if (snapFeatures.length === 1) {
+        const lossfeature = this.getLosseByCoordinatesBeforeRunBranchMethods({
+          coordinates: snapFeatures[0].coordinates,
+          action: 'update_geometry'
+        });
+        if (lossfeature) {
+          this.runBranchMethods({
+            action:'update_geometry',
+            feature: [lossfeature],
+            session
+          }, {
+            snapFeatures: [modifiedBranchFeatures[0], snapFeatures[0].feature]
+          })
+        }
+      }
     }
     ol.Observable.unByKey(startKey);
     // remove event listeners added by

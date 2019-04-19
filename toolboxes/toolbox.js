@@ -278,7 +278,7 @@ proto.stop = function() {
           this.clearToolboxMessages();
           this._setEditingLayerSource();
           this.setSelected(false);
-          this.tools.forEach((tool) => {
+          this._tools.forEach((tool) => {
             tool.getOperator().off('change-help-message');
           });
           this.emit(EventName);

@@ -1030,6 +1030,10 @@ proto.checkOrphanNodes = function() {
   });
 };
 
+proto.getProfileData = function({feature}) {
+  return this.progeoApi.getProfileData({feature});
+};
+
 proto._preCommit = function() {
   // get all changes that are not part of commit
   const history = this._allHistory.history.slice(this._allHistory.currentIndex);
@@ -1086,6 +1090,35 @@ proto._removeStatesFromDependency = function() {
   }
 };
 
+proto.setFeatureBranchId = function({feature, branch_id}) {
+  feature.set('branch_id', branch_id);
+  feature.set('branch', branch_id);
+};
+
+proto._changeBranchIdFromNodesOfNewBranches = function({commitItems, response}) {
+  if (commitItems.add.length) {
+    for (layerNodeId in commitItems.relations) {
+      let numFeatures = commitItems.relations[layerNodeId].add.length + commitItems.relations[layerNodeId].add.update;
+      const features = this.getToolBoxById(layerNodeId).getEditingLayer().getSource().getFeatures();
+      for (let i = features.length; i--; ) {
+        const feature = features[i];
+        for (let i = response.new.length; i--;) {
+          const newBranchObject = response.new[i];
+          if (feature.get('branch_id') === newBranchObject.clientid) {
+            this.setFeatureBranchId({
+              feature,
+              branch_id: newBranchObject.id
+            });
+            numFeatures-=1;
+          }
+          if (numFeatures === 0)
+            break;
+        }
+      }
+    }
+  }
+};
+
 proto._handleCommitsResponse = function({responses, commitObject}) {
   const deleteOrphanNodes = this._isThereOrphanNodes();
   const doWithResponse = {
@@ -1097,6 +1130,11 @@ proto._handleCommitsResponse = function({responses, commitObject}) {
   };
   for (let i = 0; i < responses.length; i++) {
     const [commitItems, response] = responses[i];
+    if (response.branch)
+      this._changeBranchIdFromNodesOfNewBranches({
+        commitItems,
+        response: response.response
+      });
     if (response.result) {
       doWithResponse.message.successful+=1;
     } else {
@@ -1186,6 +1224,8 @@ proto.commit = function(close=false) {
           if (commitObject.branch) {
             const branch_session = commitObject.sessions.splice(0, 1)[0];
             branch_session.commit().then((...args) => {
+              // set as branch
+              args[1].branch = true;
               responses.push(args);
               const toolbox = this.getToolBoxById(branch_session.getId());
               toolbox.setCommit();

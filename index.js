@@ -63,6 +63,7 @@ const _Plugin = function() {
     if (this.config.visible === false)
       return false;
     this.addTools({
+      name: 'progeo_editing',
       html: {
         icon: GUI.getFontClass('pencil'),
         text: t("editing.editing_data")

@@ -109,6 +109,9 @@ const vueComponentOptions = {
       return toolbox;
     }
   },
+  created() {
+    this.startEditing();
+  },
   computed: {
     allowediting() {
       this.$options.service.removeAllGeometryTools();

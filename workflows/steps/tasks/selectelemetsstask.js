@@ -3,7 +3,9 @@ const base =  g3wsdk.core.utils.base;
 const EditingTask = require('./editingtask');
 
 function SelectElementsTask(options={}) {
-  this._bboxSelection = null;
+  this._bboxSelection;
+  this._drawInteraction;
+  this._snapIteraction;
   base(this, options);
 }
 
@@ -39,7 +41,32 @@ proto.run = function(inputs, context) {
   this.getMap().addLayer(this._selectedFeaturesLayer);
   this._ctrlC = (evt) => {
     if ((evt.ctrlKey ||evt.metaKey) && evt.which === 67) {
-      d.resolve(layersFeaturesSelected);
+      this._bboxSelection.setActive(false);
+      const branchLayerFeatures = layersFeaturesSelected[this.getBranchLayerId()];
+      this._snapIteraction = new ol.interaction.Snap({
+        features: new ol.Collection(branchLayerFeatures),
+        edge: false
+      });
+      this._drawIteraction = new ol.interaction.Draw({
+        type: 'Point',
+        features: new ol.Collection(),
+        condition: function(evt) {
+          const coordinates = evt.coordinate;
+          return !!branchLayerFeatures.find((feature) => {
+            const featureCoordinates = feature.getGeometry().getCoordinates();
+            return (featureCoordinates[0].toString() === coordinates.toString() || featureCoordinates[1].toString() === coordinates.toString())
+          })
+        }
+      });
+      this._drawIteraction.on('drawend', (evt)=> {
+        const coordinates = evt.feature.getGeometry().getCoordinates();
+        d.resolve({
+          layersFeaturesSelected,
+          coordinates
+        });
+      });
+      this.addInteraction(this._drawIteraction);
+      this.addInteraction(this._snapIteraction);
     }
   };
 
@@ -87,6 +114,10 @@ proto.run = function(inputs, context) {
 
 proto.stop = function() {
   this.removeInteraction(this._bboxSelection);
+  this.removeInteraction(this._drawIteraction);
+  this.removeInteraction(this._snapIteraction);
+  this._drawInteraction = null;
+  this._snapIteraction = null;
   this._bboxSelection = null;
   document.removeEventListener('keydown', this._ctrlC);
   this._ctrlC = null;

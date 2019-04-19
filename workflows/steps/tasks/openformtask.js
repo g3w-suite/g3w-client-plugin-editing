@@ -101,9 +101,58 @@ proto._saveFnc = function(promise, inputs) {
      }
     }
     const newFeature = this._feature.clone();
+    if (this.isBranchLayer(layerId)) {
+      newFeature.set("pipes", this._chart.pipes.data);
+    }
     this._session.pushUpdate(layerId, newFeature, this._originalFeature);
     GUI.setModal(false);
     promise.resolve(inputs);
+  }
+};
+
+proto._setChartComponent = function() {
+  let default_value_changed = false;
+  const self = this;
+  this._chart = {
+    data: null,
+    pipes: {
+      section: undefined,
+      data: [],
+      originalvalues: []
+    }
+  };
+
+  //Hook
+
+  EditPipes.created = function() {
+    this.pipes = self._chart.pipes;
+  };
+
+  EditPipes.activated = function() {
+   if (default_value_changed) {
+     for (let i = this.pipes.data.length; i--;) {
+       this.pipes.data[i][4] = this.pipes.pipe_section;
+     }
+     this.$forceUpdate()
+   }
+   default_value_changed = false;
+  };
+  //
+
+  this._chart.pipes.pipe_section = this._feature.get('pipe_section_default');
+  for (let i=0, len = this._fields.length; i< len; i++) {
+    if (this._fields[i].name === "pipe_section_default") {
+      this._fields[i] = new Proxy(this._fields[i], {
+        set: (target, property, value) => {
+          value = +value;
+          target[property] = value ;
+          this._chart.pipes.pipe_section = value;
+          default_value_changed = true;
+          return true;
+        }
+      });
+      break;
+    }
   }
 };
 
@@ -113,10 +162,13 @@ proto.startForm = function(options = {}) {
   const promise = options.promise;
   const formComponent = options.formComponent || FormComponent;
   const Form = this._getForm(inputs, context);
+  const isBranchLayer = this.isBranchLayer(this._layerId);
+  if (isBranchLayer)
+    this._setChartComponent();
   const formService = Form({
     formComponent,
-    title: t("editing.editing_attributes") + " " + this._layerName,
-    name: t("editing.editing_attributes") + " " + this._layerName,
+    title: `${t("editing.editing_attributes")} ${this._layerName}`,
+    name: `${t("editing.editing_attributes")} ${this._layerName}`,
     id: this._generateFormId(this._layerName),
     dataid: this._layerName,
     layer: this._originalLayer,
@@ -144,25 +196,19 @@ proto.startForm = function(options = {}) {
       cbk: this._cancelFnc(promise).bind(this)
     }]
   });
-  if (this.isBranchLayer(this._layerId)) {
-    const pipes_data = [];
-    const pipe_section = this._feature.get('pipe_section_default');
-    EditPipes.created = function() {
-      this.pipe_section = pipe_section;
-      this.pipes_data = pipes_data;
-    };
+
+  if (isBranchLayer) {
     formService.setLoading(true);
     this.getChartComponent({
       feature: this._feature,
       editing: {
         mode: true,
-        components: [EditPipes],
-        cb: (value) => {
-          console.log(this, value)
-        }
-      }
-    }).then(({id, component, error}) => {
+        components: [EditPipes]
+      },
+    }).then(({id, component, error, data}) => {
       if (!error) {
+        this._chart.pipes.data = this._originalFeature.isNew()? data : this._feature.get('pipes');
+        this._chart.pipes.originalvalues = data.map((_data) => _data[2]);
         formService.addComponent({
           id: id,
           component,
@@ -199,6 +245,7 @@ proto._generateFormId = function(layerName) {
 // metodo eseguito alla disattivazione del tool
 proto.stop = function() {
   this.setEnableEditing(true);
+  this._chart = null;
   this._isContentChild ? GUI.popContent() : GUI.closeForm();
 };
 

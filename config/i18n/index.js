@@ -52,6 +52,7 @@ export default {
       change_toolbox_relation: "Layer in relazione. Prima di passare ad altri editing è obbligatorio salvare le modifiche correnti.",
       saved: "I dati sono stati salvati correttamente",
       loading_data: "Caricamento dati",
+      delete_branch: "Non è possibile cancellare branches intermedi. Cancellare prima i branches estremi",
       saving: "Salvataggio dati in corso. Attendere ...",
       commit: {
         add: "Aggiunte",
@@ -144,6 +145,7 @@ export default {
       change_toolbox_relation: "Layer has relation/relations. Before switch editing you need to save changes done.",
       saved: "Data saved successfully",
       loading_data: "Loading data",
+      delete_branch: "Can't delete intermediate branches. Must delete external branches before it",
       saving: "Saving data. Please wait ...",
       pdf: "Document preview not available. Please click here ",
       commit: {

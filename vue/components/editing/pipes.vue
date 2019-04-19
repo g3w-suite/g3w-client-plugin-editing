@@ -9,7 +9,7 @@
             </th>
             <th style="display: flex; justify-content:flex-end; padding: 5px; align-items: baseline">
               <label for="pipes_dtm_offset">OFFSET</label>
-              <input id="pipes_dtm_offset" type="number" style="width: 100px; margin-left: 5px; padding: 5px;" v-model="offset" :disabled="setdisabled">
+              <input id="pipes_dtm_offset" type="number" style="width: 100px; margin-left: 5px; padding: 5px;" v-model.number="offset" :disabled="setdisabled">
               <button style="margin-left: 5px; padding: 3px; font-weight: bold" class="btn skin-button" @click="resetValues" :disabled="setdisabled">RESET</button>
             </th>
           </tr>
@@ -21,12 +21,11 @@
               <label :for="`id_pipe_${item.index}`" style="padding: 5px"></label>
             </td>
             <td align="right" style="padding: 5px;">
-              sezione: <input class="pipe_section" type="number" style="width: 80px; padding: 5px; font-weight: bold"  v-model="pipes_data[index].section" :disabled="selectitems.indexOf(item) === -1">
-              altezza: <input class="pipe_height" type="number" @change="changeItem(item)" style="width: 100px; padding: 5px; font-weight: bold"  v-model="item.value" :disabled="selectitems.indexOf(item) === -1">
+              sezione: <input class="pipe_section" type="number" style="width: 80px; padding: 5px; font-weight: bold"  v-model.number="pipes.data[index][4]" :disabled="pipes.data[index][4] === undefined || selectitems.indexOf(item) === -1 ">
+              altezza: <input class="pipe_height" type="number" @change="changeItem(item)" style="width: 100px; padding: 5px; font-weight: bold"  v-model.number="item.value" :disabled="selectitems.indexOf(item) === -1">
             </td>
           </tr>
         </tbody>
-
       </table>
     </div>
 </template>
@@ -49,7 +48,8 @@
       return {
         disabled: true,
         offset: 0,
-        reset: false
+        reset: false,
+        branch_length: 0
       }
     },
     computed: {
@@ -58,7 +58,7 @@
       },
       setdisabled() {
         return !this.selectitems.length;
-      },
+      }
     },
     watch: {
       selectitems(newSelectedItems, oldSelectedItems) {
@@ -81,7 +81,7 @@
         });
         if (newLength === 0)
           this.setOffsetToZero();
-        document.querySelector('#select_all_pipes').checked = newLength === this.originalvalues.length;
+        document.querySelector('#select_all_pipes').checked = newLength === this.pipes.originalvalues.length;
       },
       offset(currentvalue, oldvalue) {
         if (!this.reset)
@@ -91,15 +91,6 @@
           });
         else
           this.reset = false;
-      },
-      data(data) {
-        this.originalvalues = data.map((item) => item.value);
-        for (let i=0; i < this.originalvalues.length; i++) {
-          this.pipes_data.push({
-            section: this.pipe_section,
-            height: null
-          });
-        }
       }
     },
     methods: {
@@ -109,7 +100,7 @@
       },
       resetValues() {
         this.selectitems.forEach((item) => {
-          item.value = this.originalvalues[item.index];
+          item.value = this.pipes.originalvalues[item.index];
           this.changeItem(item);
         });
         this.setOffsetToZero();
@@ -118,8 +109,10 @@
         this.$emit('change-item', {
           item,
           render: true
-        })
+        });
+        this.pipes.data[item.index][2] = +item.value;
       },
+
       selectUnselectAllItems(evt) {
         const checked = evt.target.checked;
         const items = document.querySelectorAll('.checkbox_pipe');
@@ -137,11 +130,6 @@
       setUnselectItem(index) {
         this.$emit('unselect-item', index)
       }
-    },
-    beforeDestroy() {
-      for (let i =0; i < this.data.length; i++) {
-        this.pipes_data[i].height = this.data[i].value;
-      }
     }
   }
 </script>
@@ -151,5 +139,14 @@
     overflow-y: auto;
     display:block;
     width: 100%;
+  }
+  .branch_info {
+    border-bottom: 2px solid #ffffff ;
+    padding-bottom: 5px;
+    margin-bottom: 5px;
+    display: flex;
+    width: 100%;
+    align-content: space-between;
+    background: #ffffff;
   }
 </style>

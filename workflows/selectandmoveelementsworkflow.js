@@ -10,7 +10,6 @@ function SelectcAndMoveElementsWorflow(options={}) {
   options.steps = [selectelementssteps, moveelementssteps];
   options.steps.forEach((step) => {
     step.on('next-step', (message) => {
-      console.log(message)
       this.emit('change-help-message', message)
     });
   });

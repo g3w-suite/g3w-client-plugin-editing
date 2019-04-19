@@ -52,6 +52,13 @@ proto.getMap = function() {
   return this._mapService.getMap();
 };
 
+proto.getMandatoryFields = function(layerId) {
+  const layer = this.getEditingService().getToolBoxById(layerId).getLayer();
+  return layer.getEditingFields(true).map((field) => {
+    return field.name
+  });
+};
+
 proto.isBranchLayer = function(layerId) {
   return this.getEditingService().isBranchLayer(layerId);
 };
@@ -70,8 +77,9 @@ proto.getSessionByLayerId = function(layerId) {
 
 proto.losseLayerSetDegree = function({ nodeOptions, branchOptions, options={}}) {
   const field = options.field;
-  let feature, branchFeatures;
+  let feature, branchFeatures, session;
   if (nodeOptions) {
+    session = nodeOptions.session;
     feature  = nodeOptions.feature;
     const branchLayerId = this.getEditingService().getBranchLayerId();
     const branchLayer = this.getEditingService().getToolBoxById(branchLayerId).getEditingLayer();
@@ -89,6 +97,7 @@ proto.losseLayerSetDegree = function({ nodeOptions, branchOptions, options={}}) 
   } else if (branchOptions) {
     feature = branchOptions.feature;
     branchFeatures = branchOptions.snapFeatures;
+    session = branchOptions.session;
     if (feature.length === 1)
       feature = feature[0];
     else
@@ -99,7 +108,12 @@ proto.losseLayerSetDegree = function({ nodeOptions, branchOptions, options={}}) 
     featureA,
     featureB
   });
-  feature.set(field, degree);
+  if (branchOptions) {
+    const cloneFeature = feature.clone();
+    cloneFeature.set(field, +degree);
+    session.pushUpdate(branchOptions.layerId, cloneFeature, feature);
+  } else
+    feature.set(field, +degree);
 };
 
 proto._getDegree = function({featureA, featureB, decimal=2}) {
@@ -152,6 +166,31 @@ proto.branchLayerDeleteLosse = function({branchOptions={}, options={}}) {
       break;
     }
   }
+};
+
+proto.getSnapBrachFeatures = function({feature}) {
+  const snapFeatures = [];
+  const featureCoordinates = feature.getGeometry().getCoordinates().flat();
+  const branchFeatures = this.getEditingService().getBranchLayerSource().getFeatures();
+  for (let i=branchFeatures.length; i--;) {
+    const branchFeature = branchFeatures[i];
+    if (branchFeature !== feature) {
+      const branchFeatureCoordinates = branchFeature.getGeometry().getCoordinates().flat();
+      const coordinteSet = new Set(featureCoordinates);
+      for (let i = branchFeatureCoordinates.length; i--;) {
+        if (!coordinteSet.has(branchFeatureCoordinates[i]))
+          coordinteSet.add(branchFeatureCoordinates[i]);
+        else {
+          snapFeatures.push({
+            feature: branchFeature,
+            coordinates: [branchFeatureCoordinates[i-1], branchFeatureCoordinates[i]]
+          });
+          break;
+        }
+      }
+    }
+  }
+  return snapFeatures
 };
 
 proto._registerPointerMoveEvent = function({feature, snapFeatures=[]}) {
@@ -208,6 +247,10 @@ proto._createMeasureTooltip = function() {
   map.addOverlay(this._measureTooltip);
 };
 
+proto.getLosseByCoordinates = function(coordinates) {
+  console.log(coordinates)
+};
+
 proto.branchLayerAddLosse = function({branchOptions={}, options={}}) {
   const field = options.fields[0];
   const {layerId, session, feature, snapFeatures=[]} = branchOptions;
@@ -248,8 +291,32 @@ proto.getBranchLayerId = function() {
 };
 
 proto.setFeatureBranchId = function({feature, branch_id}) {
-  feature.set('branch_id', branch_id);
-  feature.set('branch', branch_id);
+  this.getEditingService().setFeatureBranchId({
+    feature, 
+    branch_id
+  })
+};
+
+proto.updateFeatureBranchId = function({feature, branchIds}) {
+  const oldFeatureBranchId = feature.get('branch_id') || feature.get('branch');
+  const newFeatureBrachId = branchIds[oldFeatureBranchId];
+  this.setFeatureBranchId({
+    feature,
+    branch_id: newFeatureBrachId
+  })
+};
+
+
+proto.setBranchProfileData = function({feature, update=false}) {
+  this.getEditingService().getProfileData({feature}).then((response) => {
+    if (response.result) {
+      const profile = JSON.parse(response.profile);
+      for (let i = profile.length; i--; ) {
+        profile[i][4] = feature.get('pipe_section_default');
+      }
+      feature.set('pipes', profile);
+    }
+  });
 };
 
 proto.runNodeMethods = function({type, layerId, feature}) {
@@ -267,6 +334,30 @@ proto.runNodeMethods = function({type, layerId, feature}) {
   }
 };
 
+proto.getLosseByCoordinatesBeforeRunBranchMethods = function({coordinates, action}) {
+  const layerIds = this.getEditingService().getBranchLayerAction(action);
+  let lossfeature;
+  for (let layerId in layerIds) {
+    const lossesFeatures = this.getEditingService()
+      .getToolBoxById(layerId)
+      .getEditingLayer()
+      .getSource()
+      .getFeatures();
+    for (let i = lossesFeatures.length; i--;) {
+      const feature = lossesFeatures[i];
+      const featureCoordinates = feature.getGeometry().getCoordinates().slice(0,2);
+      const coordinatesSet = new Set([...coordinates, ...featureCoordinates]);
+      if (coordinatesSet.size < 4 ) {
+        lossfeature = {
+          layerId,
+          feature
+        };
+        break;
+      }
+    }
+  }
+  return lossfeature;
+};
 
 proto.runBranchMethods = function({action, session, feature}, options={}) {
   const layerIds = this.getEditingService().getBranchLayerAction(action);

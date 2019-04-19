@@ -1,6 +1,8 @@
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
 const DeleteInteraction = g3wsdk.ol.interactions.DeleteFeatureInteraction;
+const GUI = g3wsdk.gui.GUI;
+const t = g3wsdk.core.i18n.tPlugin;
 const EditingTask = require('./editingtask');
 
 function DeleteFeatureTask(options={}) {
@@ -126,7 +128,10 @@ proto.run = function(inputs, context) {
           }
         }
       }
-      return !!coordinateString.length ? ol.events.condition.click: false;
+      const canDeleteBranch = !!coordinateString.length ? ol.events.condition.click: false;
+      if (!canDeleteBranch)
+        GUI.notify.warning(t("editing.messages.delete_branch"),);
+      return canDeleteBranch
     }: ol.events.condition.always,
     style() {
       return styles[geometryType];
