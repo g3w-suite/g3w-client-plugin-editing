@@ -93,10 +93,13 @@ function EditingService() {
     };
     this._branchLayerId = this.progeoApi.getBranchLayerId();
       // sono i layer originali caricati dal progetto e messi nel catalogo
-    const layers = this._getEditableLayersFromCatalog();
+    //const layers = this._getEditableLayersFromCatalog();
+    const layers = this._getEditableLayersFromCatalog().filter((layer) => {
+      return ['Losses', 'Branches'].indexOf(layer.config.name) !== -1;
+    });
     let editingLayersLenght = layers.length;
     //ciclo su ogni layers editiabile
-    for (let i =0; i < layers.length; i++) {
+    for (let i =0; i < editingLayersLenght; i++) {
       const layer = layers[i];
       const layerId = layer.getId();
       if (layerId === this._branchLayerId)
@@ -548,6 +551,16 @@ proto.runEventHandler = function({type, id} = {}) {
 
 proto._attachLayerWidgetsEvent = function(layer) {
   const fields = layer.getEditingFields();
+  ///DEV
+  if (layer.getId() === 'losses1556026755597') {
+    fields[1].validate.required = true;
+    fields[1].validate.mutually = [fields[2].name, fields[3].name];
+    fields[2].validate.required = true;
+    fields[2].validate.mutually = [fields[1].name, fields[3].name];
+    fields[3].validate.required = true;
+    fields[3].validate.mutually = [fields[1].name, fields[2].name];
+  }
+  ////DEV
   for (let i=0; i < fields.length; i++) {
     const field = fields[i];
     if(field.type !== 'child' && field.input.type === 'select_autocomplete') {
@@ -1095,11 +1108,11 @@ proto.setFeatureBranchId = function({feature, branch_id}) {
   feature.set('branch', branch_id);
 };
 
-proto._changeBranchIdFromNodesOfNewBranches = function({commitItems, response}) {
+proto._changeBranchIdFromNodesOfNewBranches = function({commitItems, nodeLayerIds, response}) {
   if (commitItems.add.length) {
-    for (layerNodeId in commitItems.relations) {
-      let numFeatures = commitItems.relations[layerNodeId].add.length + commitItems.relations[layerNodeId].add.update;
-      const features = this.getToolBoxById(layerNodeId).getEditingLayer().getSource().getFeatures();
+    for (i = nodeLayerIds.length; i--; ) {
+      const nodeLayerId = nodeLayerIds[i];
+      const features = this.getToolBoxById(nodeLayerId).getEditingLayer().getSource().getFeatures();
       for (let i = features.length; i--; ) {
         const feature = features[i];
         for (let i = response.new.length; i--;) {
@@ -1109,10 +1122,7 @@ proto._changeBranchIdFromNodesOfNewBranches = function({commitItems, response}) 
               feature,
               branch_id: newBranchObject.id
             });
-            numFeatures-=1;
           }
-          if (numFeatures === 0)
-            break;
         }
       }
     }
@@ -1133,6 +1143,7 @@ proto._handleCommitsResponse = function({responses, commitObject}) {
     if (response.branch)
       this._changeBranchIdFromNodesOfNewBranches({
         commitItems,
+        nodeLayerIds: response.nodeLayerIds,
         response: response.response
       });
     if (response.result) {
@@ -1226,6 +1237,7 @@ proto.commit = function(close=false) {
             branch_session.commit().then((...args) => {
               // set as branch
               args[1].branch = true;
+              args[1].nodeLayerIds = commitObject.sessions.map(session => session.getId());
               responses.push(args);
               const toolbox = this.getToolBoxById(branch_session.getId());
               toolbox.setCommit();

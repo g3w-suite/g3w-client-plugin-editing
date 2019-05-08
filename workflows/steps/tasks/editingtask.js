@@ -292,7 +292,7 @@ proto.getBranchLayerId = function() {
 
 proto.setFeatureBranchId = function({feature, branch_id}) {
   this.getEditingService().setFeatureBranchId({
-    feature, 
+    feature,
     branch_id
   })
 };
@@ -306,8 +306,7 @@ proto.updateFeatureBranchId = function({feature, branchIds}) {
   })
 };
 
-
-proto.setBranchProfileData = function({feature, update=false}) {
+proto.setBranchProfileData = function({feature}) {
   this.getEditingService().getProfileData({feature}).then((response) => {
     if (response.result) {
       const profile = JSON.parse(response.profile);

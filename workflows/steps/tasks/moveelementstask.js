@@ -43,7 +43,14 @@ proto.run = function(inputs) {
         y: y - coordinates[1]
       };
       const oldIdNewIdBranch = {};
-      for (let layerId in layersFeaturesSelected) {
+      let LayerIds = Object.keys(layersFeaturesSelected);
+      // necessito di avere come primo id qeullo dei branches
+      if (LayerIds[0] !== branchLayerId) {
+        LayerIds = LayerIds.filter((id) => !id !== branchLayerId);
+        LayerIds.unshift(branchLayerId)
+      }
+      for (let i= 0, len=LayerIds.length; i < len; i++) {
+        const layerId = LayerIds[i];
         const source = this.getLayerSource(layerId);
         const features = layersFeaturesSelected[layerId];
         for (let i =0; i < features.length; i++) {

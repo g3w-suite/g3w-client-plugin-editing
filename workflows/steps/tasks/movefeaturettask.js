@@ -49,7 +49,7 @@ proto.run = function(inputs, context) {
       d.reject()
   });
 
-  this._modifyInteraction.on('modifyend',function(evt) {
+  this._modifyInteraction.on('modifyend', function(evt) {
     const pixel = evt.mapBrowserEvent.pixel;
     const map = this.getMap();
     const dependencyFeature = map.forEachFeatureAtPixel(pixel, (feature) => {
@@ -61,6 +61,12 @@ proto.run = function(inputs, context) {
     });
     if (dependencyFeature) {
       const newFeature = feature.clone();
+
+      self.setFeatureBranchId({
+        feature: newFeature,
+        branch_id: dependencyFeature.getId()
+      });
+      
       session.pushUpdate(layerId, newFeature, originalFeature);
       inputs.features.push(newFeature);
       feature.setStyle(originalStyle);

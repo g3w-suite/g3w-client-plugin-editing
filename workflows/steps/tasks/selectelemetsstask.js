@@ -16,31 +16,35 @@ const proto = SelectElementsTask.prototype;
 proto.run = function(inputs, context) {
   const d = $.Deferred();
   const layersFeaturesSelected = {};
-  const selectionStyle = new ol.style.Style({
-    stroke: new ol.style.Stroke({
-      color: [255, 255, 0, 1],
-      width: 3
-    }),
-    image: new ol.style.Circle({
-      radius: 6,
-      fill: new ol.style.Fill({
-        color: [255, 255, 0, 1]
-      }),
+  const styles = {
+    'LineString': new ol.style.Style({
       stroke: new ol.style.Stroke({
-        color: [255, 255, 255, 1],
+        color: [255, 255, 0, 1],
         width: 3
       })
+    }),
+    'Point': new ol.style.Style({
+      image: new ol.style.Circle({
+        radius: 5,
+        fill: new ol.style.Fill({
+          color: [255, 255, 0, 1]
+        })
+      })
     })
-  });
+  };
+  const selectionStyleFnc = function(feature) {
+    return styles[feature.getGeometry().getType()]
+  };
 
   this._selectedFeaturesLayer = new ol.layer.Vector({
     source: new ol.source.Vector(),
-    style: selectionStyle
+    style: selectionStyleFnc
   });
 
-  this.getMap().addLayer(this._selectedFeaturesLayer);
+
   this._ctrlC = (evt) => {
     if ((evt.ctrlKey ||evt.metaKey) && evt.which === 67) {
+      if (!this._selectedFeaturesLayer.getSource().getFeatures().length) return;
       this._bboxSelection.setActive(false);
       const branchLayerFeatures = layersFeaturesSelected[this.getBranchLayerId()];
       this._snapIteraction = new ol.interaction.Snap({
@@ -70,45 +74,29 @@ proto.run = function(inputs, context) {
     }
   };
 
-  this._bboxSelection = new ol.interaction.DragBox();
+  this._bboxSelection = new ol.interaction.DragBox({
+    condition: ol.events.condition.shiftKeyOnly
+  });
   this.addInteraction(this._bboxSelection);
+  
   this._bboxSelection.on('boxend', () => {
+    this._selectedFeaturesLayer.getSource().clear();
     const bboxExtent = this._bboxSelection.getGeometry().getExtent();
-    const toolboxes = this.getEditingService().getToolBoxes().reverse();
-    for (let i = 0; i < toolboxes.length; i++) {
+    const toolboxes = this.getEditingService().getToolBoxes();
+    for (let i  = toolboxes.length; i--;) {
       const toolbox = toolboxes[i];
       const layerId = toolbox.getId();
       const layerSource = toolbox.getEditingLayer().getSource();
       let features = layerSource.getFeaturesInExtent(bboxExtent);
-      if (features.length) {
-        if (layersFeaturesSelected[layerId]) {
-          features = features.filter((feature) => {
-            const indexFeature = layersFeaturesSelected[layerId].indexOf(feature);
-            if ( indexFeature === -1)
-              return true;
-            else {
-              this._selectedFeaturesLayer.getSource().removeFeature(feature);
-              layersFeaturesSelected[layerId].splice(indexFeature,1);
-              return false;
-            }
-          });
-          layersFeaturesSelected[layerId] = [...layersFeaturesSelected[layerId], ...features];
-        } else {
-          layersFeaturesSelected[layerId] = features;
-        }
-        features.length && this._selectedFeaturesLayer.getSource().addFeatures(features);
-      } else {
-        if (layersFeaturesSelected[layerId]) {
-          layersFeaturesSelected[layerId].forEach((feature) => {
-            this._selectedFeaturesLayer.getSource().removeFeature(feature);
-          });
-          delete layersFeaturesSelected[layerId];
-        }
+      layersFeaturesSelected[layerId] = features;
+      for( let i = features.length; i--; ){
+        const feature = features[i].clone();
+        this._selectedFeaturesLayer.getSource().addFeature(feature);
       }
     }
-
   });
   document.addEventListener('keydown', this._ctrlC);
+  this.getMap().addLayer(this._selectedFeaturesLayer);
   return d.promise();
 };
 
@@ -121,8 +109,9 @@ proto.stop = function() {
   this._bboxSelection = null;
   document.removeEventListener('keydown', this._ctrlC);
   this._ctrlC = null;
+    this.getMap().removeLayer(this._selectedFeaturesLayer);
   this._selectedFeaturesLayer.getSource().clear();
-  this.getMap().removeLayer(this._selectedFeaturesLayer);
+  this._selectedFeaturesLayer = null;
   return true;
 };
 

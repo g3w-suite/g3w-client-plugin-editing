@@ -108,30 +108,26 @@ proto.run = function(inputs, context) {
   const geometryType = originaLayer.getGeometryType();
   //recupero la sessione dal context
   const session = context.session;
+  let canDeleteBranch = true;
   this._selectInteraction = new ol.interaction.Select({
     layers: [editingLayer],
     condition: ol.events.condition.click,
-    //multi: true,
     filter: isBranchLayer ? (feature) => {
-      const coordinate = feature.getGeometry().getCoordinates();
-      let coordinateString = [coordinate[0].toString(), coordinate[1].toString()];
-      for (let i = 0; i < features.length; i++ ) {
+      let coordinates = feature.getGeometry().getCoordinates().flat();
+      for (let i = features.length; i--; ) {
         const _feature = features[i];
         if (feature !== _feature) {
-          const _coordinate = _feature.getGeometry().getCoordinates();
-          const foundIndex = coordinateString.findIndex((StringCoordinate) => {
-            return StringCoordinate === _coordinate[0].toString() ||  StringCoordinate === _coordinate[1].toString();
-          });
-          if (foundIndex !== -1) {
-            coordinateString.splice(foundIndex, 1);
-            if (!coordinateString.length) break;
-          }
+          const _coordinates = new Set(_feature.getGeometry().getCoordinates().flat());
+          coordinates = new Set(
+            [...coordinates].filter(coordinate => !_coordinates.has(coordinate)));
+          canDeleteBranch = coordinates.size > 0;
+          if (!canDeleteBranch)
+            break;
         }
       }
-      const canDeleteBranch = !!coordinateString.length ? ol.events.condition.click: false;
       if (!canDeleteBranch)
         GUI.notify.warning(t("editing.messages.delete_branch"),);
-      return canDeleteBranch
+      return canDeleteBranch && ol.events.condition.click;
     }: ol.events.condition.always,
     style() {
       return styles[geometryType];
