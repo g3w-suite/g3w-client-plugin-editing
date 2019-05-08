@@ -717,7 +717,10 @@ proto._createCommitMessage = function(commitItems) {
     changeIds[`${t('editing.messages.commit.add')}`] = add.length;
     changeIds[`${t('editing.messages.commit.update')}`] = `[${update.map((item)=> item.id).join(',')}]`;
     changeIds[`${t('editing.messages.commit.delete')}`] = `[${del.join(',')}]`;
-    let dom = "<ul style='border-bottom-color: #f4f4f4;'>";
+    let dom = `<h4>${t('editing.messages.commit.header')}</h4>`;
+    dom+=`<h5>${t('editing.messages.commit.header_add')}</h5>`;
+    dom+=`<h5>${t('editing.messages.commit.header_update_delete')}</h5>`;
+    dom+= "<ul style='border-bottom-color: #f4f4f4;'>";
     Object.entries(changeIds).forEach(([action, ids]) => {
       dom += `<li>${action} : ${ids} </li>`;
     });

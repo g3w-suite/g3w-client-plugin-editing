@@ -40,9 +40,12 @@ export default {
       loading_data: "Caricamento dati",
       saving: "Salvataggio dati in corso. Attendere ...",
       commit: {
-        add: "Aggiunte",
-        delete: "Cancellate",
-        update: "Modificate"
+        header: "La lista sotto riporta tutte le modifiche che verranno salvate.",
+        header_add: "<b>Aggiunte</b> riporta il numero delle features aggiunte",
+        header_update_delete: "<b>Modificate</b> e <b>Cancellate</b> riporta la lista degli id",
+        add: "Aggiunte (n. features)",
+        delete: "Cancellate(id)",
+        update: "Modificate(id)"
       }
     },
     relation: {
@@ -118,9 +121,12 @@ export default {
       saving: "Saving data. Please wait ...",
       pdf: "Document preview not available. Please click here ",
       commit: {
-        add: "Added",
-        delete: "Deleted",
-        update: "Modified"
+        header: "The following list show all changes to commit.",
+        header_add: "<b>Added</b> show the number of features added",
+        header_update_delete: "<b>Modified</b> and <b>Deleted</b> show the list of feautes id",
+        add: "Added(n. features)",
+        delete: "Deleted(id)",
+        update: "Modified(id)"
       }
     },
     relation: {
