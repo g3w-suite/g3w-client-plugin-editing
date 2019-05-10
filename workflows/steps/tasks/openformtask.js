@@ -144,7 +144,7 @@ proto._setChartComponent = function() {
     if (this._fields[i].name === "pipe_section_default") {
       this._fields[i] = new Proxy(this._fields[i], {
         set: (target, property, value) => {
-          value = +value;
+          value = value ? +value: value;
           target[property] = value ;
           this._chart.pipes.pipe_section = value;
           default_value_changed = true;
