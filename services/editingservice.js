@@ -551,23 +551,6 @@ proto.runEventHandler = function({type, id} = {}) {
 
 proto._attachLayerWidgetsEvent = function(layer) {
   const fields = layer.getEditingFields();
-  ///DEV
-  if (layer.getId() === 'losses1556026755597') {
-    fields[1].input.type = 'table';
-    fields[1].type= 'table';
-    fields[1].input.options = {
-      inputs: [
-        fields[2]
-      ]
-    };
-    console.log(fields[1]);
-    fields[1].validate.required = true;
-    // fields[2].validate.required = true;
-    // fields[2].validate.mutually = [fields[3].name];
-    // fields[3].validate.required = true;
-    // fields[3].validate.mutually = [fields[2].name];
-  }
-  ////DEV
   for (let i=0; i < fields.length; i++) {
     const field = fields[i];
     if(field.type !== 'child' && field.input.type === 'select_autocomplete') {
