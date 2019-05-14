@@ -93,46 +93,49 @@ function EditingService() {
     };
     this._branchLayerId = this.progeoApi.getBranchLayerId();
       // sono i layer originali caricati dal progetto e messi nel catalogo
-    //const layers = this._getEditableLayersFromCatalog();
-    const layers = this._getEditableLayersFromCatalog().filter((layer) => {
-      return ['Losses', 'Branches'].indexOf(layer.config.name) !== -1;
+    const layers = this._getEditableLayersFromCatalog({
+      GEOLAYER:true
     });
     let editingLayersLenght = layers.length;
     //ciclo su ogni layers editiabile
     for (let i =0; i < editingLayersLenght; i++) {
       const layer = layers[i];
       const layerId = layer.getId();
-      if (layerId === this._branchLayerId)
-        _dependencies.nodes.push(layer);
-      else {
-        this._orphanNodes[layerId] = [];
-        _dependencies.branch.push(layer);
-      }
-      this._editableLayers[layerId] = {};
-      // vado a chiamare la funzione che mi permette di
-      // estrarre la versione editabile del layer di partenza (es. da imagelayer a vector layer, table layer/tablelayer etc..)
-      const editableLayer = layer.getLayerForEditing();
-      if (!this.isBranchLayer(layerId))
-        this._nodelayerIds.push(editableLayer.getId());
-      if (editableLayer.isReady()) {
-        editingLayersLenght-=1;
-      }
-      editableLayer.on('layer-config-ready', () => {
-        editingLayersLenght-=1;
-        this._attachLayerWidgetsEvent(editableLayer);
-        if (editingLayersLenght === 0) {
-          this._ready();
+      if (layer.getType() !== "table") {
+        if (layerId === this._branchLayerId)
+          _dependencies.nodes.push(layer);
+        else {
+          this._orphanNodes[layerId] = [];
+          _dependencies.branch.push(layer);
         }
-      });
-      // vado ad aggiungere ai layer editabili
-      this._editableLayers[layerId] = editableLayer;
-      this._editableLayers[Symbol.for('layersarray')].push({
-        layer: editableLayer,
-        dependency: layerId === this._branchLayerId ? _dependencies.branch : _dependencies.nodes,
-        icon: layer.getIconUrlFromLegend()
-      });
-      // aggiungo all'array dei vectorlayers se per caso mi servisse
-      this._sessions[layerId] = null;
+        // vado a chiamare la funzione che mi permette di
+        // estrarre la versione editabile del layer di partenza (es. da imagelayer a vector layer, table layer/tablelayer etc..)
+        const editableLayer = layer.getLayerForEditing();
+        if (!this.isBranchLayer(layerId) && layer.getType() !== "table")
+          this._nodelayerIds.push(editableLayer.getId());
+        if (editableLayer.isReady()) {
+          editingLayersLenght-=1;
+        }
+        editableLayer.on('layer-config-ready', () => {
+          editingLayersLenght-=1;
+          this._attachLayerWidgetsEvent(editableLayer);
+          if (editingLayersLenght === 0) {
+            this._ready();
+          }
+        });
+
+        this._editableLayers[layerId] = {};
+        // vado ad aggiungere ai layer editabili
+        this._editableLayers[layerId] = editableLayer;
+        this._editableLayers[Symbol.for('layersarray')].push({
+          layer: editableLayer,
+          dependency: layerId === this._branchLayerId ? _dependencies.branch : _dependencies.nodes,
+          icon: layer.getIconUrlFromLegend()
+        });
+        // aggiungo all'array dei vectorlayers se per caso mi servisse
+        this._sessions[layerId] = null;
+      } else {
+      }
     }
   };
 
@@ -306,7 +309,6 @@ proto.rollbackRelations = function(rollbackItems) {
   })
 };
 
-
 proto.getBranchLayerId = function() {
   return this._branchLayerId;
 };
@@ -316,10 +318,7 @@ proto.getBranchLayerActions = function() {
 };
 
 proto.getBranchLayerAction = function(action=null) {
-  if (action) {
-    return this.progeoApi.getBranchLayerActions()[action]
-  }
-  return null
+  return action ? this.progeoApi.getBranchLayerActions()[action] : action;
 };
 
 proto.getNodeLayerTools = function(layerId) {
@@ -482,6 +481,7 @@ proto.setLineStyle = function({color, editingLayer}) {
   };
   editingLayer.setStyle(styleFnc)
 };
+
 proto._buildToolBoxes = function() {
   const dependencyToolboxSession = {};
   const layerswithdependency = this.getLayersWithDependecy();
@@ -639,11 +639,12 @@ proto.handleToolboxDependencies = function(toolbox) {
   })
 };
 
-proto._getEditableLayersFromCatalog = function() {
-  let layers = CatalogLayersStoresRegistry.getLayers({
-    EDITABLE: true
-  });
-  return layers;
+proto._getEditableLayersFromCatalog = function(options={}) {
+  const filter = {
+    EDITABLE: true,
+    ...options
+  };
+  return CatalogLayersStoresRegistry.getLayers(filter) || [];
 };
 
 proto.getLayers = function() {
@@ -1227,7 +1228,9 @@ proto.commit = function(close=false) {
           // se si lo vado a fare subito prima dei nodi
           if (commitObject.branch) {
             const branch_session = commitObject.sessions.splice(0, 1)[0];
-            branch_session.commit().then((...args) => {
+            branch_session.commit({
+              relations:false
+            }).then((...args) => {
               // set as branch
               args[1].branch = true;
               args[1].nodeLayerIds = commitObject.sessions.map(session => session.getId());
