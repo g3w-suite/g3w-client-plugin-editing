@@ -3,6 +3,7 @@ const base =  g3wsdk.core.utils.base;
 const t = g3wsdk.core.i18n.tPlugin;
 const GUI = g3wsdk.gui.GUI;
 const FormComponent = g3wsdk.gui.vue.FormComponent;
+const EditingFormComponent = require('../../../form/editingform');
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 const EditingTask = require('./editingtask');
 import EditPipes from '../../../vue/components/editing/pipes.vue'
@@ -160,7 +161,7 @@ proto.startForm = function(options = {}) {
   const inputs = options.inputs;
   const context = options.context;
   const promise = options.promise;
-  const formComponent = options.formComponent || FormComponent;
+  const formComponent = options.formComponent || EditingFormComponent;
   const Form = this._getForm(inputs, context);
   const isBranchLayer = this.isBranchLayer(this._layerId);
   if (isBranchLayer)
