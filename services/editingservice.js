@@ -81,7 +81,8 @@ function EditingService() {
     this.config = config;
     // oggetto contenente tutti i layers in editing
     this._editableLayers = {
-      [Symbol.for('layersarray')]: []
+      [Symbol.for('layersarray')]: [],
+      [Symbol.for('tablelayersarray')]: [],
     };
     // contiene tutti i toolbox
     this._toolboxes = [];
@@ -93,54 +94,47 @@ function EditingService() {
     };
     this._branchLayerId = this.progeoApi.getBranchLayerId();
       // sono i layer originali caricati dal progetto e messi nel catalogo
-    const layers = this._getEditableLayersFromCatalog({
-      GEOLAYER:true
-    });
-    let editingLayersLenght = layers.length;
+    const layers = this._getEditableLayersFromCatalog();
+    const editingLayersLenght  = layers.length;
+    let layersNotReady = editingLayersLenght;
     //ciclo su ogni layers editiabile
-    for (let i =0; i < editingLayersLenght; i++) {
+    for (let i = 0; i < editingLayersLenght; i++) {
       const layer = layers[i];
       const layerId = layer.getId();
-      if (layer.getType() !== "table") {
-        if (layerId === this._branchLayerId)
-          _dependencies.nodes.push(layer);
-        else {
-          this._orphanNodes[layerId] = [];
-          _dependencies.branch.push(layer);
-        }
-        // vado a chiamare la funzione che mi permette di
-        // estrarre la versione editabile del layer di partenza (es. da imagelayer a vector layer, table layer/tablelayer etc..)
-        const editableLayer = layer.getLayerForEditing();
-        if (!this.isBranchLayer(layerId) && layer.getType() !== "table")
-          this._nodelayerIds.push(editableLayer.getId());
-        if (editableLayer.isReady()) {
-          editingLayersLenght-=1;
-        }
-        editableLayer.on('layer-config-ready', () => {
-          editingLayersLenght-=1;
-          this._attachLayerWidgetsEvent(editableLayer);
-          if (editingLayersLenght === 0) {
-            this._ready();
-          }
-        });
-
-        this._editableLayers[layerId] = {};
-        // vado ad aggiungere ai layer editabili
-        this._editableLayers[layerId] = editableLayer;
-        this._editableLayers[Symbol.for('layersarray')].push({
-          layer: editableLayer,
-          dependency: layerId === this._branchLayerId ? _dependencies.branch : _dependencies.nodes,
-          icon: layer.getIconUrlFromLegend()
-        });
-        // aggiungo all'array dei vectorlayers se per caso mi servisse
-        this._sessions[layerId] = null;
-      } else {
+      if (layerId === this._branchLayerId)
+        layer.getType() !== "table" && _dependencies.nodes.push(layer);
+      else if (layer.getType() !== "table") {
+        this._orphanNodes[layerId] = [];
+        _dependencies.branch.push(layer);
       }
+      // vado a chiamare la funzione che mi permette di
+      // estrarre la versione editabile del layer di partenza (es. da imagelayer a vector layer, table layer/tablelayer etc..)
+      const editableLayer = layer.getLayerForEditing();
+      if (!this.isBranchLayer(layerId) && layer.getType() !== "table")
+        this._nodelayerIds.push(editableLayer.getId());
+      if (editableLayer.isReady()) {
+        layersNotReady-=1;
+        layersNotReady === 0 && this._ready();
+      } else {
+        editableLayer.on('layer-config-ready', () => {
+          layersNotReady-=1;
+          this._attachLayerWidgetsEvent(editableLayer);
+          layersNotReady === 0 && this._ready();
+        });
+      }
+      this._editableLayers[layerId] = {};
+      // vado ad aggiungere ai layer editabili
+      this._editableLayers[layerId] = editableLayer;
+      layer.getType() !== "table" && this._editableLayers[Symbol.for('layersarray')].push({
+        layer: editableLayer,
+        dependency: layerId === this._branchLayerId ? _dependencies.branch : _dependencies.nodes,
+        icon: layer.getIconUrlFromLegend()
+      }) || this._editableLayers[Symbol.for('tablelayersarray')].push({
+        layer: editableLayer
+      });
+      // aggiungo all'array dei vectorlayers se per caso mi servisse
+      this._sessions[layerId] = null;
     }
-  };
-
-  this.isBranchLayer = function(layerId) {
-    return layerId === this._branchLayerId
   };
 
   this._ready = function() {
@@ -200,6 +194,10 @@ proto.subscribe = function({event, layerId}={}) {
 };
 
 // END API
+
+proto.isBranchLayer = function(layerId) {
+  return layerId === this._branchLayerId;
+};
 
 proto.getUndoRedo = function() {
   return this._allHistory.undoRedo;
@@ -648,7 +646,7 @@ proto._getEditableLayersFromCatalog = function(options={}) {
 };
 
 proto.getLayers = function() {
-  return this._editableLayers[Symbol.for('layersarray')].map((layerObject) => {
+  return [...this._editableLayers[Symbol.for('tablelayersarray')] ,...this._editableLayers[Symbol.for('layersarray')]].map((layerObject) => {
     return layerObject.layer;
   });
 };
@@ -854,62 +852,35 @@ proto.createEditingDataOptions = function(layerType) {
 
 // fa lo start di tutte le dipendenze del layer legato alla toolbox che si è avviato
 proto.getLayersDependencyFeatures = function(layerId) {
-  // vado a recuperare le relazioni (figli al momento) di quel paricolare layer
-  /*
-   IMPORTANTE: PER EVITARE PROBLEMI È IMPORTANTE CHE I LAYER DIPENDENTI SIANO A SUA VOLTA EDITABILI
-   */
-  let children = this.getLayerById(layerId).getChildren();
-  let relationChildLayers = children.filter((id) => {
-    return !!this.getLayerById(id);
-  });
-  // se ci sono layer figli dipendenti
-  if (!_.isNil(relationChildLayers) && relationChildLayers.length) {
-    /*
-     * qui andrò a verificare se stata istanziata la sessione altrimenti vienne creata
-     * se la sessione è attiva altrimenti viene attivata
-     * */
-    //cerco prima tra i toolbox se presente
-    let session;
-    let toolbox;
-    let options;
-    // cliclo sulle dipendenze create
-    relationChildLayers.forEach((id) => {
-      options = this.createEditingDataOptions(this.getLayerById(id).getType());
-      session = this._sessions[id];
-      toolbox = this.getToolBoxById(id);
-      //setto la proprietà a loading
-      toolbox.startLoading();
-      //verifico che ci sia la sessione
-      if (session) {
-        if (!session.isStarted()) {
-          session.start(options)
-            .always(() => {
-              // setto la proprià a stop loading sempre
-              toolbox.stopLoading();
-            })
-        } else {
-          session.getFeatures(options)
-            .always(() => {
-              toolbox.stopLoading();
-            })
-        }
+  const relationChildLayers = this.getLayerById(layerId).getChildren() || [];
+  for (let i = relationChildLayers.length; i--; ) {
+    const relationLayerId = relationChildLayers[i];
+    const options = this.createEditingDataOptions(this.getLayerById(relationLayerId).getType());
+    let session = this._sessions[relationLayerId];
+    //verifico che ci sia la sessione
+    if (session) {
+      if (!session.isStarted()) {
+        session.start(options)
       } else {
-        // altrimenti per quel layer la devo instanziare
-        try {
-          let layer = this._layersstore.getLayerById(id);
-          let editor = layer.getEditor();
-          session = new Session({
-            editor: editor
-          });
-          this._sessions[id] = session;
-          session.start();
-        }
-        catch(err) {
-          console.log(err);
-        }
+        session.getFeatures(options)
       }
-    })
+    } else {
+      // altrimenti per quel layer la devo instanziare
+      try {
+        const layer = this._layersstore.getLayerById(relationLayerId);
+        const editor = layer.getEditor();
+        session = new Session({
+          editor,
+          id: relationLayerId,
+        });
+        this._sessions[relationLayerId] = session;
+        session.start();
+      } catch(err) {
+        console.log(err);
+      }
+    }
   }
+
 };
 
 proto._applyChangesToNewRelationsAfterCommit = function(relationsResponse) {

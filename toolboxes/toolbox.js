@@ -92,6 +92,15 @@ function ToolBox(options={}) {
     this._unregisterGetFeaturesEvent();
   });
 
+  this._session.onafter('start', (options={}) => {
+    this._getFeaturesOption = options;
+    const EditingService = require('../services/editingservice');
+    //passo id del toolbox e le opzioni per far partire la sessione
+    EditingService.getLayersDependencyFeatures(this.state.id);// dove le opzioni possono essere il filtro;
+    // vado a registrare l'evento getFeature
+    this._registerGetFeaturesEvent(this._getFeaturesOption);
+  });
+
   // mapservice mi servirà per fare richieste al server sulle features (bbox) quando agisco sull mappa
   this._mapService = GUI.getComponent('map').getService();
   //eventi per catturare le feature
@@ -313,7 +322,7 @@ proto._unregisterGetFeaturesEvent = function() {
 };
 
 // funzione che ha lo scopo di registrare gli eventi per catturare le feature
-proto._registerGetFeaturesEvent = function(options) {
+proto._registerGetFeaturesEvent = function(options={}) {
   // le sessioni dipendenti per poter eseguier l'editing
   switch(this._layerType) {
     case Layer.LayerTypes.VECTOR:

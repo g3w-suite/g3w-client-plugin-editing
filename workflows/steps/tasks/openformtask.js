@@ -41,12 +41,12 @@ proto._getFieldUniqueValuesFromServer = function(layer, uniqueFields) {
   }).then(function(response) {
     const data = response.data;
     _.forEach(data, function(values, fieldName) {
-      _.forEach(values, function(value) {
+      values.forEach((value) => {
         uniqueFields[fieldName].input.options.values.push(value);
       })
     })
-  }).fail(() => {
-    console.log('errore')
+  }).fail((err) => {
+    console.log(err)
   })
 };
 
