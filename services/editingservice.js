@@ -1,5 +1,6 @@
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
+const {Filter, Expression} = g3wsdk.core.layer.filter;
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 const PluginService = g3wsdk.core.plugin.PluginService;
 const CatalogLayersStoresRegistry = g3wsdk.core.catalog.CatalogLayersStoresRegistry;
@@ -122,9 +123,11 @@ function EditingService() {
           layersNotReady === 0 && this._ready();
         });
       }
-      this._editableLayers[layerId] = {};
       // vado ad aggiungere ai layer editabili
-      this._editableLayers[layerId] = editableLayer;
+      this._editableLayers[layerId] = {
+        editableLayer,
+        getFeatures: layer.getType() === "table" ? layer.search.bind(layer): null
+      };
       layer.getType() !== "table" && this._editableLayers[Symbol.for('layersarray')].push({
         layer: editableLayer,
         dependency: layerId === this._branchLayerId ? _dependencies.branch : _dependencies.nodes,
@@ -173,8 +176,7 @@ proto.addFormComponents = function({layerId, components= []} = {}) {
 };
 
 proto.getSession = function({layerId} = {}) {
-  const toolbox = this.getToolBoxById(layerId);
-  return toolbox.getSession();
+  return this.getToolBoxById(layerId) ? this.getToolBoxById(layerId).getSession() : this._sessions[layerId];
 };
 
 proto.getFeature = function({layerId} = {}) {
@@ -433,9 +435,8 @@ proto.toolboxSetCommit = function(toolboxId) {
 
 // restituisce il layer che viene utilizzato dai task per fare le modifiche
 // ol.vector nel cso dei vettoriali, tableLayer nel caso delle tabelle
-proto.getEditingLayer = function(id) {
-  let toolbox = this.getToolBoxById(id);
-  return toolbox.getEditingLayer();
+proto.getEditingLayer = function(layerId) {
+  return this.getToolBoxById(layerId) && toolbox.getEditingLayer() || this._editableLayers[layerId].editableLayer;
 };
 
 proto.setLineStyle = function({color, editingLayer}) {
@@ -681,8 +682,8 @@ proto.getCurrentWorkflowData = function() {
 
 proto.getRelationsAttributesByFeature = function(relation, feature) {
   let relationsattributes = [];
-  let toolboxId = relation.getChild();
-  let layer = this.getToolBoxById(toolboxId).getLayer();
+  let layerId = relation.getChild();
+  let layer = this._sessions[layerId].getEditor().getLayer();
   let relations = this.getRelationsByFeature(relation, feature, layer.getType());
   let fields;
   relations.forEach((relation) => {
@@ -698,19 +699,24 @@ proto.getRelationsAttributesByFeature = function(relation, feature) {
 };
 
 proto.getRelationsByFeature = function(relation, feature, layerType) {
-  let toolboxId = relation.getChild();
-  let relationChildField = relation.getChildField();
-  let relationFatherField= relation.getFatherField();
-  let featureValue = feature.isPk(relationFatherField) ? feature.getId() : feature.get(relationFatherField);
-  let toolbox = this.getToolBoxById(toolboxId);
-  let editingLayer = toolbox.getEditingLayer();
-  let features = layerType == 'vector' ? editingLayer.getSource().getFeatures() : editingLayer.getSource().readFeatures() ;
-  let relations = [];
-  features.forEach((feature) => {
-    if (feature.get(relationChildField) == featureValue) {
-      relations.push(feature);
-    }
+  const realtionLayerId = relation.getChild();
+  const relationChildField = relation.getChildField();
+  const relationFatherField= relation.getFatherField();
+  const featureValue = feature.isPk(relationFatherField) ? feature.getId() : feature.get(relationFatherField);
+  const filter = new Filter();
+  const expression = new Expression();
+  expression.eq(relationChildField, featureValue);
+  filter.setExpression(expression.get());
+  this._editableLayers[realtionLayerId].getFeatures({
+    filter
+  }).then((features) => {
+    features.forEach((feature) => {
+      if (feature.get(relationChildField) === featureValue) {
+        relations.push(feature);
+      }
+    })
   });
+  const relations = [];
   return relations;
 };
 
@@ -721,7 +727,7 @@ proto.loadPlugin = function() {
 // funzione che restituisce l'editing layer estratto dal layer del catalogo
 // vectorLayer lel caso di un imageLayere e tablelayer  nel cso di un table lauer
 proto.getLayerById = function(layerId) {
-  return this._editableLayers[layerId];
+  return this._editableLayers[layerId].editableLayer;
 };
 
 proto.beforeEditingStart = function({layer} = {}) {
@@ -834,12 +840,12 @@ proto.fatherInEditing = function(layerId) {
 
 // prendo come opzione il tipo di layer
 proto.createEditingDataOptions = function(layerType) {
-  let options = {
+  const options = {
     editing: true,
     type: layerType
   };
   // verifico se layer vettoriale
-  if(layerType == Layer.LayerTypes.VECTOR) {
+  if(layerType === Layer.LayerTypes.VECTOR) {
     // aggiungo il filto bbox
     let bbox = this._mapService.getMapBBOX();
     options.filter = {
@@ -873,8 +879,8 @@ proto.getLayersDependencyFeatures = function(layerId) {
           editor,
           id: relationLayerId,
         });
+        this._editableLayers[relationLayerId].editableLayer.setSource(session.getFeaturesStore());
         this._sessions[relationLayerId] = session;
-        session.start();
       } catch(err) {
         console.log(err);
       }

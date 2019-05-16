@@ -51,7 +51,7 @@ const RelationService = function(options = {}) {
     });
   }
 
-  this._originalLayerStyle = this.getLayer().getType() == 'vector' ? this.getEditingLayer().getStyle() : null;
+  this._originalLayerStyle = this.getLayer().getType() === 'vector' ? this.getEditingLayer().getStyle() : null;
   // vado ad aggiungere i workflow per link relation che add new relation
   this._setAddLinkWorkflow();
 };
@@ -136,7 +136,9 @@ proto.startTool = function(relationtool, index) {
 proto.startTableTool = function(relationtool, index) {
   const d = $.Deferred();
   const relation = this.relations[index]; // oggetto relazione
-  const featurestore = this.getEditingService().getToolBoxById(this._layerId).getSession().getFeaturesStore();
+  const featurestore = this.getEditingService().getSession({
+    layerId: this._layerId
+  }).getFeaturesStore();
   const relationfeature = featurestore.getFeatureById(relation.id); // relation feature
   GUI.setModal(false);
   const options = this._createWorkflowOptions({
@@ -144,7 +146,7 @@ proto.startTableTool = function(relationtool, index) {
   });
   let workflow;
   // delete feature
-  if (relationtool.state.id == 'deletefeature') {
+  if (relationtool.state.id === 'deletefeature') {
     GUI.dialog.confirm(t("editing.messages.delete_feature"), (result) => {
       if (result) {
         this.getCurrentWorkflowData().session.pushDelete(this._layerId, relationfeature);
@@ -156,7 +158,7 @@ proto.startTableTool = function(relationtool, index) {
       }
     });
   }
-  if (relationtool.state.id == 'editattributes') {
+  if (relationtool.state.id === 'editattributes') {
     const EditTableFeatureWorkflow = require('../workflows/edittablefeatureworkflow');
     workflow = new EditTableFeatureWorkflow();
     const percContent = this._bindEscKeyUp(workflow,  function() {});
@@ -452,7 +454,7 @@ proto._createWorkflowOptions = function(options={}) {
 proto.showRelationStyle = function() {
   let style;
   const layerType = this.getLayer().getType();
-  if (layerType == 'table')
+  if (layerType === 'table')
     return;
   const geometryType = this.getLayer().getGeometryType();
   switch (geometryType) {

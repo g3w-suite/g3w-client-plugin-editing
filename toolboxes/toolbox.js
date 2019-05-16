@@ -197,7 +197,7 @@ proto._setEditingLayerSource = function() {
   const featuresstore = this._session.getFeaturesStore();
   // questo ritorna come promessa l'array di features del featuresstore
   // vado  a settare il source del layer
-  const source = this._layerType == Layer.LayerTypes.VECTOR ? new ol.source.Vector({features: featuresstore.getFeaturesCollection()}) :featuresstore;
+  const source = this._layerType === Layer.LayerTypes.VECTOR ? new ol.source.Vector({features: featuresstore.getFeaturesCollection()}) :featuresstore;
   //setto come source del layer l'array / collection feature del features sotre della sessione
   // il layer deve implementare anche un setSource
   this._editingLayer.setSource(source);

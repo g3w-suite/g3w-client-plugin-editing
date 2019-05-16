@@ -30,12 +30,8 @@ let relationsTable;
     },
     startTool: function(relationtool, index) {
       this._service.startTool(relationtool, index)
-        .then(() => {
-
-        })
-        .catch((error) => {
-
-        })
+        .then(() => {})
+        .catch((error) => {})
     },
     linkRelation: function() {
       this._service.linkRelation();

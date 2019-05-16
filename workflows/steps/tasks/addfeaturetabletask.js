@@ -2,8 +2,7 @@ const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
 const EditingTask = require('./editingtask');
 
-function AddFeatureTableTask(options) {
-  options = options || {};
+function AddFeatureTableTask(options={}) {
   base(this, options);
 }
 

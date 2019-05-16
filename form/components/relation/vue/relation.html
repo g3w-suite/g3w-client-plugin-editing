@@ -6,11 +6,6 @@
           <input v-if="relationsLength" type="text" class="form-control" id="filterRelation" :placeholder="placeholdersearch">
         </div>
         <div class="col-sm-2 pull-right" style="padding:0">
-          <span class="g3w-icon add-link pull-right" align="center"
-                data-toggle="tooltip" data-placement="bottom"
-                :title="tooltips.link_relation" @click="enableAddLinkButtons ? linkRelation() : null"
-                :class="[{'disabled': !enableAddLinkButtons}, g3wtemplate.font['link']]">
-          </span>
           <span data-toggle="tooltip" data-placement="bottom"
                  :title="tooltips.add_relation"
                  @click="enableAddLinkButtons ? addRelationAndLink() : null"
@@ -29,7 +24,6 @@
             <th v-for="attribute in relationAttributesSubset(relations[0])">
               {{attribute.label}}
             </th>
-            <th></th>
             <th v-t="'tools'"></th>
           </tr>
           </thead>
@@ -47,15 +41,6 @@
                   </div>
                 </template>
                 <span v-else>{{ getValue(attribute.value) }}</span>
-              </td>
-              <td class="action-cell">
-                <div
-                  v-if="!fieldrequired"
-                  class="g3w-mini-relation-icon skin-tooltip-left g3w-icon" :class="g3wtemplate.font['unlink']"
-                  @click="unlinkRelation(index)"
-                  data-toggle="tooltip" data-placement="left" :title="tooltips.unlink_relation"
-                  aria-hidden="true">
-                </div>
               </td>
               <td>
                 <div style="display: flex">

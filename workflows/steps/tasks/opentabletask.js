@@ -6,9 +6,7 @@ const TableComponent = require('../../../table/vue/table');
 const EditingTask = require('./editingtask');
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 
-function OpenTableTask(options) {
-
-  options = options || {};
+function OpenTableTask(options={}) {
   // prefisso delle nuove  feature
   this._formIdPrefix = 'form_';
   this._isContentChild = false;
@@ -55,7 +53,6 @@ proto.run = function(inputs, context) {
 proto._generateFormId = function(layerName) {
   return this._formIdPrefix + layerName;
 };
-
 
 // metodo eseguito alla disattivazione del tool
 proto.stop = function() {

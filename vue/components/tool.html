@@ -1,4 +1,7 @@
-<div v-if="!state.delete" @click ="state.enabled ? toggletool(): null" class="editbtn" style="padding: 0px" :class="{'enabled' : state.enabled, 'toggled' : state.active}">
+<div v-if="!state.delete" @click ="state.enabled ? toggletool(): null"
+     class="editbtn"
+     style="padding: 0; cursor: pointer;"
+     :class="{'enabled' : state.enabled, 'toggled' : state.active}">
   <img height="20px" width="20px" style="margin:6px;"
     :alt="state.name"
     :title="state.name"

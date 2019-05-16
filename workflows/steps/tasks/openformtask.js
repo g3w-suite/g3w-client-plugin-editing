@@ -2,7 +2,6 @@ const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
 const t = g3wsdk.core.i18n.tPlugin;
 const GUI = g3wsdk.gui.GUI;
-const FormComponent = g3wsdk.gui.vue.FormComponent;
 const EditingFormComponent = require('../../../form/editingform');
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 const EditingTask = require('./editingtask');
@@ -31,9 +30,8 @@ module.exports = OpenFormTask;
 
 const proto = OpenFormTask.prototype;
 
-
 proto._getFieldUniqueValuesFromServer = function(layer, uniqueFields) {
-  const fieldsName = _.map(uniqueFields, (field) => {
+  const fieldsName = uniqueFields.map((field) => {
     return field.name
   });
   layer.getWidgetData({
@@ -62,7 +60,7 @@ proto._getUniqueFieldsType = function(fields) {
 
 proto._getForm = function(inputs, context) {
   const excludeFields = context.excludeFields;
-  this._isContentChild = !!(WorkflowsStack.getLength() > 1);
+  this._isContentChild = WorkflowsStack.getLength() > 1;
   this._session = context.session;
   this._originalLayer = context.layer;
   this._editingLayer = inputs.layer;
@@ -105,6 +103,13 @@ proto._saveFnc = function(promise, inputs) {
     if (this.isBranchLayer(layerId)) {
       newFeature.set("pipes", this._chart.pipes.data);
     }
+
+    if (this._isContentChild)
+      //is a relation so i i have to put relation feature
+      inputs.relationFeature = {
+        newFeature,
+        originalFeature: this._originalFeature
+      };
     this._session.pushUpdate(layerId, newFeature, this._originalFeature);
     GUI.setModal(false);
     promise.resolve(inputs);
@@ -164,8 +169,7 @@ proto.startForm = function(options = {}) {
   const formComponent = options.formComponent || EditingFormComponent;
   const Form = this._getForm(inputs, context);
   const isBranchLayer = this.isBranchLayer(this._layerId);
-  if (isBranchLayer)
-    this._setChartComponent();
+  isBranchLayer &&  this._setChartComponent();
   const formService = Form({
     formComponent,
     title: `${t("editing.editing_attributes")} ${this._layerName}`,
