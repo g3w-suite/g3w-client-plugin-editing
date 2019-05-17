@@ -24,12 +24,11 @@ proto.run = function(inputs, context) {
   const originalLayer = context.layer;
   const layerName = originalLayer.getName();
   const headers = originalLayer.getEditingFields();
-  this._isContentChild = !!(WorkflowsStack.getLength() > 1);
+  this._isContentChild = WorkflowsStack.getLength() > 1;
   const foreignKey = this._isContentChild ? context.excludeFields[0] :  null;
   // vado a recuperare i
   const editingLayer = inputs.layer;
   const features = editingLayer.getSource().readFeatures();
-  const action = this._isContentChild ? t('editing.relation.table.link.title') : t('editing.relation.table.edit.title') ;
   const content = new TableComponent({
     title: `${layerName}`,
     features,

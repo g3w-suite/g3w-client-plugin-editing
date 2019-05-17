@@ -87,7 +87,7 @@ proto._cancelFnc = function(promise) {
   }
 };
 
-proto._saveFnc = function(promise, inputs) {
+proto._saveFnc = function(promise, context, inputs) {
   return function(fields) {
     const layerId = this._originalLayer.getId();
     this._originalLayer.setFieldsWithValues(this._feature, fields);
@@ -107,10 +107,12 @@ proto._saveFnc = function(promise, inputs) {
     if (this._isContentChild)
       //is a relation so i i have to put relation feature
       inputs.relationFeature = {
-        newFeature,
-        originalFeature: this._originalFeature
+        newFeature: this._feature,
+        originalFeature: this._feature
       };
-    this._session.pushUpdate(layerId, newFeature, this._originalFeature);
+    else {
+      this._session.pushUpdate(layerId, newFeature, this._originalFeature);
+    }
     GUI.setModal(false);
     promise.resolve(inputs);
   }
@@ -193,7 +195,7 @@ proto.startForm = function(options = {}) {
       title: t("editing.form.buttons.save"),
       type: "save",
       class: "btn-success",
-      cbk: this._saveFnc(promise, inputs).bind(this)
+      cbk: this._saveFnc(promise, context, inputs).bind(this)
     }, {
       title: t("editing.form.buttons.cancel"),
       type: "cancel",
