@@ -13,18 +13,18 @@ function EditingFormComponent(options={}) {
     // recuprare l'event bus del form
     relationsOptions.formEventBus = this.getService().getEventBus();
     // vado a creare il servizio delle relazioni
-    const service = new EditingFormService(relationsOptions);
-    // mi restituisce il componente Vue da passare al form
-    RelationComponents = service.buildRelationComponents();
+    const service = new EditingFormService();
+    service.init(relationsOptions).then(() => {
+      // mi restituisce il componente Vue da passare al form
+      RelationComponents = service.buildRelationComponents();
+      const layerId = options.layer.getId();
+      const customFormComponents = EditingService.getFormComponentsById(layerId);
+      //vado a vedere se ci sono componeneti custo da aggiungere
+      customFormComponents.length && this.addFormComponents(customFormComponents);
+      // qui vado ad aggiungere il componente relations
+      RelationComponents.length &&  this.addFormComponents(RelationComponents);
+    })
   }
-  const layerId = options.layer.getId();
-  const customFormComponents = EditingService.getFormComponentsById(layerId);
-  //vado a vedere se ci sono componeneti custo da aggiungere
-  if (customFormComponents.length)
-    this.addFormComponents(customFormComponents);
-  // qui vado ad aggiungere il componente relations
-  if (RelationComponents.length)
-    this.addFormComponents(RelationComponents);
 }
 
 inherit(EditingFormComponent, FormComponent);

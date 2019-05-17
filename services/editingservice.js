@@ -680,11 +680,11 @@ proto.getCurrentWorkflowData = function() {
   };
 };
 
-proto.getRelationsAttributesByFeature = function(relation, feature) {
+proto.getRelationsAttributesByFeature = async function(relation, feature) {
   let relationsattributes = [];
   let layerId = relation.getChild();
   let layer = this._sessions[layerId].getEditor().getLayer();
-  let relations = this.getRelationsByFeature(relation, feature, layer.getType());
+  let relations = await this.getRelationsByFeature(relation, feature, layer.getType());
   let fields;
   relations.forEach((relation) => {
     fields = layer.getFieldsWithValues(relation, {
@@ -698,7 +698,7 @@ proto.getRelationsAttributesByFeature = function(relation, feature) {
   return relationsattributes;
 };
 
-proto.getRelationsByFeature = function(relation, feature, layerType) {
+proto.getRelationsByFeature = async function(relation, feature) {
   const realtionLayerId = relation.getChild();
   const relationChildField = relation.getChildField();
   const relationFatherField= relation.getFatherField();
@@ -707,17 +707,22 @@ proto.getRelationsByFeature = function(relation, feature, layerType) {
   const expression = new Expression();
   expression.eq(relationChildField, featureValue);
   filter.setExpression(expression.get());
-  this._editableLayers[realtionLayerId].getFeatures({
-    filter
-  }).then((features) => {
+  try {
+    let features = await this._editableLayers[realtionLayerId].getFeatures({
+      filter
+    });
+    const relations = [];
+    features = [...features, ...this.getLayerById(realtionLayerId).readFeatures()];
     features.forEach((feature) => {
       if (feature.get(relationChildField) === featureValue) {
         relations.push(feature);
       }
-    })
-  });
-  const relations = [];
-  return relations;
+    });
+    return relations;
+  } catch (err) {
+    return [];
+  }
+
 };
 
 proto.loadPlugin = function() {
@@ -792,22 +797,19 @@ proto.clearState = function() {
 };
 
 // funzione che filtra le relazioni in base a quelle presenti in editing
-proto.getRelationsInEditing = function(relations, feature, isNew) {
+proto.getRelationsInEditing = async function({relations, feature, isNew=false}={}) {
   let relationsinediting = [];
-  let relationinediting;
-  relations.forEach((relation) => {
+  for (let i = 0; i < relations.length; i++)  {
+    const relation = relations[i];
     if (this.getLayerById(relation.getChild())) {
-      // aggiungo lo state della relazione
-      relationinediting = {
-        relation:relation.getState(),
-        relations: this.getRelationsAttributesByFeature(relation, feature) // le relazioni esistenti
-      };
-      relationinediting.validate = {
-        valid:true
-      };
-      relationsinediting.push(relationinediting);
+      const relations = await this.getRelationsAttributesByFeature(relation, feature);
+      relationsinediting.push({
+        relation: relation.getState(),
+        relations,
+        validate: {valid: true}
+      });
     }
-  });
+  }
   return relationsinediting;
 };
 
