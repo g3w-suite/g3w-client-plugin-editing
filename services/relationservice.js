@@ -441,6 +441,7 @@ proto._createWorkflowOptions = function(options={}) {
       session: this.getCurrentWorkflowData().session,
       layer: this.getLayer(),
       excludeFields: [this.relation.childField],
+      childField: this.relation.childField,
       fatherValue: this._currentFeatureFatherFieldValue
     },
     inputs: {

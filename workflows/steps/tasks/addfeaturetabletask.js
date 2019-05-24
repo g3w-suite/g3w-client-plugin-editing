@@ -12,6 +12,7 @@ const proto = AddFeatureTableTask.prototype;
 
 // metodo eseguito all'avvio del tool
 proto.run = function(inputs, context) {
+  console.log(inputs, context)
   const d = $.Deferred();
   const session = context.session;
   const originalLayer = context.layer;
@@ -21,6 +22,8 @@ proto.run = function(inputs, context) {
   // nella creazione della nuova feature utilizzo l'editing layer originale (TableLayer)
   const feature = originalLayer.createNewFeature();
   originalLayer.isPkEditable() ?  feature.setNew() : feature.setTemporaryId();
+  //setto il valore del padre sempre
+  feature.set(context.childField, context.fatherValue);
   editingLayer.getSource().addFeature(feature);
   inputs.features.push(feature);
   session.pushAdd(layerId, feature);

@@ -15,13 +15,10 @@ function EditingFormComponent(options={}) {
     // vado a creare il servizio delle relazioni
     const service = new EditingFormService();
     service.init(relationsOptions).then(() => {
-      // mi restituisce il componente Vue da passare al form
       RelationComponents = service.buildRelationComponents();
       const layerId = options.layer.getId();
       const customFormComponents = EditingService.getFormComponentsById(layerId);
-      //vado a vedere se ci sono componeneti custo da aggiungere
       customFormComponents.length && this.addFormComponents(customFormComponents);
-      // qui vado ad aggiungere il componente relations
       RelationComponents.length &&  this.addFormComponents(RelationComponents);
     })
   }
