@@ -130,7 +130,6 @@ proto.startTool = function(relationtool, index) {
       reject(err)
     })
   })
-
 };
 
 proto.startTableTool = function(relationtool, index) {
@@ -266,12 +265,12 @@ proto.getEditingService = function() {
 proto.updateExternalKeyValueRelations = function(input) {
   const session = this.getEditingService().getToolBoxById(this.relation.father).getSession();
   const layerId = this.relation.child;
-  if (input.name == this.relation.fatherField) {
+  if (input.name === this.relation.fatherField) {
     this._currentFeatureFatherFieldValue = input.value;
     this.relations.forEach((relation) => {
       const fields = relation.fields;
       fields.forEach((field) => {
-        if (field.name == this.relation.childField){
+        if (field.name === this.relation.childField){
           field.value = this._currentFeatureFatherFieldValue
         }
       });
@@ -506,7 +505,7 @@ proto.showRelationStyle = function() {
 
 
 proto.hideRelationStyle = function() {
-  if (this._layerType == 'vector') {
+  if (this._layerType === 'vector') {
     this.relations.forEach((relation) => {
       relationfeature = this._getRelationFeature(relation.id);
       relationfeature.setStyle(this._originalLayerStyle);
@@ -516,11 +515,8 @@ proto.hideRelationStyle = function() {
 
 proto.relationFields = function(relation) {
   const attributes = [];
-  const originalRelation = this._getRelationFeature(relation.id);
   relation.fields.forEach((field) => {
-    let value = field.value;
-    if (field.name == originalRelation.getPk() && originalRelation.isNew() && !field.editable)
-      value = null;
+    const value = field.value;
     attributes.push({label: field.label, value: value})
   });
   return attributes

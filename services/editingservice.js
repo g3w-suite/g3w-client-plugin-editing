@@ -7,6 +7,7 @@ const CatalogLayersStoresRegistry = g3wsdk.core.catalog.CatalogLayersStoresRegis
 const MapLayersStoreRegistry = g3wsdk.core.map.MapLayersStoreRegistry;
 const LayersStore = g3wsdk.core.layer.LayersStore;
 const Session = g3wsdk.core.editing.Session;
+const Feature = g3wsdk.core.layer.features.Feature;
 const Layer = g3wsdk.core.layer.Layer;
 const GUI = g3wsdk.gui.GUI;
 const ToolBoxesFactory = require('../toolboxes/toolboxesfactory');
@@ -684,14 +685,13 @@ proto.getRelationsAttributesByFeature = async function(relation, feature) {
   let relationsattributes = [];
   let layerId = relation.getChild();
   let layer = this._sessions[layerId].getEditor().getLayer();
-  let relations = await this.getRelationsByFeature(relation, feature, layer.getType());
-  let fields;
+  const relations = await this.getRelationsByFeature(relation, feature);
   relations.forEach((relation) => {
-    fields = layer.getFieldsWithValues(relation, {
+    const fields = layer.getFieldsWithValues(relation, {
       relation: true
     });
     relationsattributes.push({
-      fields: fields,
+      fields,
       id: relation.getId()
     });
   });
@@ -700,29 +700,41 @@ proto.getRelationsAttributesByFeature = async function(relation, feature) {
 
 proto.getRelationsByFeature = async function(relation, feature) {
   const realtionLayerId = relation.getChild();
+  const layerName = this._editableLayers[realtionLayerId].editableLayer.getWMSLayerName();
   const relationChildField = relation.getChildField();
   const relationFatherField= relation.getFatherField();
   const featureValue = feature.isPk(relationFatherField) ? feature.getId() : feature.get(relationFatherField);
   const filter = new Filter();
-  const expression = new Expression();
+  const expression = new Expression({
+    layerName
+  });
   expression.eq(relationChildField, featureValue);
   filter.setExpression(expression.get());
   try {
-    let features = await this._editableLayers[realtionLayerId].getFeatures({
-      filter
+    return await new Promise((resolve, reject) => {
+      this._editableLayers[realtionLayerId].getFeatures({
+        filter
+      }).then((features) => {
+        features = features.length? features[0].features: [];
+        const relations = [];
+        for (let i = 0; i < features.length; i++) {
+          const feature = features[i];
+          const id = feature.get('id');
+          feature.setId(id);
+          const relation = new Feature({
+            feature
+          });
+          relations.push(relation);
+        }
+        this.getLayerById(realtionLayerId).addFeatures(relations);
+        resolve(relations);
+      }).fail((err) => {
+        reject(err);
+      })
     });
-    const relations = [];
-    features = [...features, ...this.getLayerById(realtionLayerId).readFeatures()];
-    features.forEach((feature) => {
-      if (feature.get(relationChildField) === featureValue) {
-        relations.push(feature);
-      }
-    });
-    return relations;
   } catch (err) {
     return [];
   }
-
 };
 
 proto.loadPlugin = function() {
@@ -797,12 +809,17 @@ proto.clearState = function() {
 };
 
 // funzione che filtra le relazioni in base a quelle presenti in editing
-proto.getRelationsInEditing = async function({relations, feature, isNew=false}={}) {
+proto.getRelationsInEditing = async function({relations, feature}={}) {
   let relationsinediting = [];
   for (let i = 0; i < relations.length; i++)  {
     const relation = relations[i];
     if (this.getLayerById(relation.getChild())) {
-      const relations = await this.getRelationsAttributesByFeature(relation, feature);
+      let relations;
+      try  {
+        relations = await this.getRelationsAttributesByFeature(relation, feature);
+      } catch(err) {
+        relations = []
+      }
       relationsinediting.push({
         relation: relation.getState(),
         relations,

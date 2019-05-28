@@ -165,9 +165,7 @@ proto._setChartComponent = function() {
 };
 
 proto.startForm = function(options = {}) {
-  const inputs = options.inputs;
-  const context = options.context;
-  const promise = options.promise;
+  const {inputs, context, promise } = options;
   const formComponent = options.formComponent || EditingFormComponent;
   const Form = this._getForm(inputs, context);
   const isBranchLayer = this.isBranchLayer(this._layerId);

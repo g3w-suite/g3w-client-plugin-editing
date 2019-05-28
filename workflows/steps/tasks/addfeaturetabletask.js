@@ -12,7 +12,6 @@ const proto = AddFeatureTableTask.prototype;
 
 // metodo eseguito all'avvio del tool
 proto.run = function(inputs, context) {
-  console.log(inputs, context)
   const d = $.Deferred();
   const session = context.session;
   const originalLayer = context.layer;
