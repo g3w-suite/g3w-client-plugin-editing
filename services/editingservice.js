@@ -759,7 +759,7 @@ proto.afterEditingStart = function({layer}= {}) {
 proto.getToolBoxById = function(toolboxId) {
   let toolBox = null;
   this._toolboxes.forEach((toolbox) => {
-    if (toolbox.getId() == toolboxId) {
+    if (toolbox.getId() === toolboxId) {
       toolBox = toolbox;
       return false;
     }

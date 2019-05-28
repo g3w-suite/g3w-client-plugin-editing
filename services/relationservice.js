@@ -166,7 +166,7 @@ proto.startTableTool = function(relationtool, index) {
         const fields = this._getRelationFieldsValue(relationfeature);
         fields.forEach((_field) => {
           relation.fields.forEach((field) => {
-            if (field.name == _field.name)
+            if (field.name === _field.name)
               field.value = _field.value;
           })
         });
