@@ -110,9 +110,7 @@ proto._saveFnc = function(promise, context, inputs) {
         newFeature: this._feature,
         originalFeature: this._feature
       };
-    else {
-      this._session.pushUpdate(layerId, newFeature, this._originalFeature);
-    }
+    this._session.pushUpdate(layerId, newFeature, this._originalFeature);
     GUI.setModal(false);
     promise.resolve(inputs);
   }

@@ -7,6 +7,7 @@ const CatalogLayersStoresRegistry = g3wsdk.core.catalog.CatalogLayersStoresRegis
 const MapLayersStoreRegistry = g3wsdk.core.map.MapLayersStoreRegistry;
 const LayersStore = g3wsdk.core.layer.LayersStore;
 const Session = g3wsdk.core.editing.Session;
+const FeaturesStore = g3wsdk.core.layer.features.FeaturesStore;
 const Feature = g3wsdk.core.layer.features.Feature;
 const Layer = g3wsdk.core.layer.Layer;
 const GUI = g3wsdk.gui.GUI;
@@ -36,6 +37,13 @@ function EditingService() {
       canRedo: false
     }
   };
+  this._editableLayers = {
+    [Symbol.for('layersarray')]: [],
+    [Symbol.for('tablelayersarray')]: [],
+  };
+  // contiene tutti i toolbox
+  this._toolboxes = [];
+  this._featureRelationsLoaded = {};
   //oggetto contente i layerId e i relativi stati di commit dovuti al cabiamento (relaionale) con il branch
   this._nodesLayersCommitStateIdsRelatedToBranchLayer = {};
   this._nodelayerIds = [];
@@ -57,7 +65,7 @@ function EditingService() {
   // disable active tool on wehena a control is activated
   this._mapService.on('mapcontrol:active', (interaction) => {
     let toolboxselected = this.state.toolboxselected;
-    if ( toolboxselected && toolboxselected.getActiveTool()) {
+    if (toolboxselected && toolboxselected.getActiveTool()) {
       toolboxselected.getActiveTool().stop();
     }
   });
@@ -82,12 +90,7 @@ function EditingService() {
     // setto la configurazione del plugin
     this.config = config;
     // oggetto contenente tutti i layers in editing
-    this._editableLayers = {
-      [Symbol.for('layersarray')]: [],
-      [Symbol.for('tablelayersarray')]: [],
-    };
-    // contiene tutti i toolbox
-    this._toolboxes = [];
+
     // restto
     this.state.toolboxes = [];
     const _dependencies = {
@@ -125,10 +128,8 @@ function EditingService() {
         });
       }
       // vado ad aggiungere ai layer editabili
-      this._editableLayers[layerId] = {
-        editableLayer,
-        getFeatures: layer.getType() === "table" ? layer.search.bind(layer): null
-      };
+      this._editableLayers[layerId] = editableLayer;
+      this._featureRelationsLoaded[layerId] = {};
       layer.getType() !== "table" && this._editableLayers[Symbol.for('layersarray')].push({
         layer: editableLayer,
         dependency: layerId === this._branchLayerId ? _dependencies.branch : _dependencies.nodes,
@@ -437,7 +438,7 @@ proto.toolboxSetCommit = function(toolboxId) {
 // restituisce il layer che viene utilizzato dai task per fare le modifiche
 // ol.vector nel cso dei vettoriali, tableLayer nel caso delle tabelle
 proto.getEditingLayer = function(layerId) {
-  return this.getToolBoxById(layerId) && toolbox.getEditingLayer() || this._editableLayers[layerId].editableLayer;
+  return this.getToolBoxById(layerId) && toolbox.getEditingLayer() || this._editableLayers[layerId];
 };
 
 proto.setLineStyle = function({color, editingLayer}) {
@@ -628,15 +629,8 @@ proto._hasEditingDependencies = function(layer) {
 
 // funzione che serve a manageggia
 proto.handleToolboxDependencies = function(toolbox) {
-  let dependecyToolBox;
   if (toolbox.isFather())
-  // verifico se le feature delle dipendenze sono state caricate
     this.getLayersDependencyFeatures(toolbox.getId());
-  toolbox.getDependencies().forEach((toolboxId) => {
-    dependecyToolBox = this.getToolBoxById(toolboxId);
-    // disabilito visivamente l'editing
-    dependecyToolBox.setEditing(false);
-  })
 };
 
 proto._getEditableLayersFromCatalog = function(options={}) {
@@ -699,42 +693,56 @@ proto.getRelationsAttributesByFeature = async function(relation, feature) {
 };
 
 proto.getRelationsByFeature = async function(relation, feature) {
-  const realtionLayerId = relation.getChild();
-  const layerName = this._editableLayers[realtionLayerId].editableLayer.getWMSLayerName();
+  const relationLayerId = relation.getChild();
+  const session = this._sessions[relationLayerId];
   const relationChildField = relation.getChildField();
   const relationFatherField= relation.getFatherField();
   const featureValue = feature.isPk(relationFatherField) ? feature.getId() : feature.get(relationFatherField);
-  const filter = new Filter();
-  const expression = new Expression({
-    layerName
-  });
-  expression.eq(relationChildField, featureValue);
-  filter.setExpression(expression.get());
-  try {
-    return await new Promise((resolve, reject) => {
-      this._editableLayers[realtionLayerId].getFeatures({
-        filter
-      }).then((features) => {
-        features = features.length? features[0].features: [];
-        const relations = [];
-        for (let i = 0; i < features.length; i++) {
-          const feature = features[i];
-          const id = feature.get('id');
-          feature.setId(id);
-          const relation = new Feature({
-            feature
-          });
-          relations.push(relation);
-        }
-        this.getLayerById(realtionLayerId).addFeatures(relations);
-        resolve(relations);
-      }).fail((err) => {
-        reject(err);
-      })
+  const layerFatherId = relation.getFather();
+  if (this._featureRelationsLoaded[layerFatherId][relationLayerId] && this._featureRelationsLoaded[layerFatherId][relationLayerId].indexOf(featureValue) !== -1) {
+    return this.getLayerById(relationLayerId).readFeatures().filter((feature) => {
+      return feature.get(relationChildField) === featureValue;
     });
-  } catch (err) {
-    return [];
+  } else {
+    this._featureRelationsLoaded[layerFatherId][relationLayerId] = Array.isArray(this._featureRelationsLoaded[layerFatherId][relationLayerId]) ? this._featureRelationsLoaded[layerFatherId][relationLayerId] : [];
+    try {
+      return await new Promise((resolve, reject) => {
+        const filter = {};
+        filter[relationChildField] = featureValue;
+        const requestOptions = {
+          editing: true,
+          type: 'table',
+          filter
+        };
+        const sessionRequestFeaturePromise = session.isStarted() ? session.getFeatures(requestOptions) : session.start(requestOptions);
+        sessionRequestFeaturePromise.then((promise) => {
+          promise.then((features) => {
+            const relations = [];
+            if (features) {
+              for (let i = 0; i < features.length; i++) {
+                const feature = features[i];
+                const id = feature.get('id');
+                feature.setId(id);
+                const relation = new Feature({
+                  feature
+                });
+                relations.push(relation);
+              }
+            }
+            this._featureRelationsLoaded[layerFatherId][relationLayerId].push(featureValue);
+            resolve(relations);
+          }).fail((err) => {
+            reject(err);
+          })
+        }).fail((err) => {
+          reject(err);
+        })
+      });
+    } catch (err) {
+      return [];
+    }
   }
+
 };
 
 proto.loadPlugin = function() {
@@ -744,7 +752,7 @@ proto.loadPlugin = function() {
 // funzione che restituisce l'editing layer estratto dal layer del catalogo
 // vectorLayer lel caso di un imageLayere e tablelayer  nel cso di un table lauer
 proto.getLayerById = function(layerId) {
-  return this._editableLayers[layerId].editableLayer;
+  return this._editableLayers[layerId];
 };
 
 proto.beforeEditingStart = function({layer} = {}) {
@@ -868,7 +876,7 @@ proto.createEditingDataOptions = function(layerType) {
     // aggiungo il filto bbox
     let bbox = this._mapService.getMapBBOX();
     options.filter = {
-      bbox: bbox
+      bbox
     }
   }
   // ritorno opzione
@@ -890,22 +898,20 @@ proto.getLayersDependencyFeatures = function(layerId) {
         session.getFeatures(options)
       }
     } else {
-      // altrimenti per quel layer la devo instanziare
       try {
         const layer = this._layersstore.getLayerById(relationLayerId);
         const editor = layer.getEditor();
         session = new Session({
           editor,
           id: relationLayerId,
+          featuresstore: layer.getFeaturesStore()
         });
-        this._editableLayers[relationLayerId].editableLayer.setSource(session.getFeaturesStore());
         this._sessions[relationLayerId] = session;
       } catch(err) {
         console.log(err);
       }
     }
   }
-
 };
 
 proto._applyChangesToNewRelationsAfterCommit = function(relationsResponse) {
