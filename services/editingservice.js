@@ -904,12 +904,12 @@ proto.getLayersDependencyFeatures = function(layerId) {
         session = new Session({
           editor,
           id: relationLayerId,
-          featuresstore: layer.getFeaturesStore()
         });
+        const source = session.getFeaturesStore();
+        source.setProvider(layer.getProvider('data'));
+        this._editableLayers[relationLayerId].setSource(source);
         this._sessions[relationLayerId] = session;
-      } catch(err) {
-        console.log(err);
-      }
+      } catch(err) {}
     }
   }
 };
