@@ -39,8 +39,14 @@ const vueComponentOptions = {
     },
     saveAll: function() {},
     startToolBox: function(toolBoxes) {
+      const asyncStartToolbox = (toolbox) => {
+        toolbox.state.loading = true;
+        setTimeout(() => {
+          toolbox.start();
+        })
+      };
       toolBoxes.forEach((toolbox) => {
-        toolbox.start();
+        asyncStartToolbox(toolbox)
       })
     },
     stopToolBox: function(toolBoxes) {
@@ -110,7 +116,7 @@ const vueComponentOptions = {
     }
   },
   created() {
-    this.startEditing();
+     this.startEditing();
   },
   computed: {
     allowediting() {

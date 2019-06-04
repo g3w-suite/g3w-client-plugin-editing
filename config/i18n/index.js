@@ -81,7 +81,7 @@ export default {
     form: {
       relations: {
         tooltips: {
-          add_relation: "Crea ed aggiungi nuova relazione",
+          add_relation: "Aggiungi una nuova riga",
           link_relation: "Associa una relazione esistente a questa feature",
           open_relation_tools: "Apri strumenti relatione",
           unlink_relation: "Annulla relazione"
@@ -178,7 +178,7 @@ export default {
     form: {
       relations: {
         tooltips: {
-          add_relation: "Create and link new relation",
+          add_relation: "Add new row",
           link_relation: "Join a relation to this feature",
           open_relation_tools: "Show relation tools",
           unlink_relation: "Unlink relation"

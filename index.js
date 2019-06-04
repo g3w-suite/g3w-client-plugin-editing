@@ -73,7 +73,7 @@ const _Plugin = function() {
   };
 
   //method to show editing panel
-  this.showEditingPanel = function() {
+  this.showEditingPanel = function(config, tool) {
     const panel = new EditingPanel();
     GUI.showPanel(panel);
   };

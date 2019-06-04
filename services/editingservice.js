@@ -7,7 +7,6 @@ const CatalogLayersStoresRegistry = g3wsdk.core.catalog.CatalogLayersStoresRegis
 const MapLayersStoreRegistry = g3wsdk.core.map.MapLayersStoreRegistry;
 const LayersStore = g3wsdk.core.layer.LayersStore;
 const Session = g3wsdk.core.editing.Session;
-const FeaturesStore = g3wsdk.core.layer.features.FeaturesStore;
 const Feature = g3wsdk.core.layer.features.Feature;
 const Layer = g3wsdk.core.layer.Layer;
 const GUI = g3wsdk.gui.GUI;
@@ -714,8 +713,8 @@ proto.getRelationsByFeature = async function(relation, feature) {
           type: 'table',
           filter
         };
-        const sessionRequestFeaturePromise = session.isStarted() ? session.getFeatures(requestOptions) : session.start(requestOptions);
-        sessionRequestFeaturePromise.then((promise) => {
+        const sessionPromise = session.isStarted() ? session.getFeatures(requestOptions): session.start(requestOptions);
+        sessionPromise.then((promise) => {
           promise.then((features) => {
             const relations = [];
             if (features) {
@@ -792,9 +791,14 @@ proto.stop = function() {
     this.commit(true).then(() => {
       const toolboxes = this.getToolBoxes();
       const promises = toolboxes.map((toolbox) => {
-        toolbox.stop();
+        return toolbox.stop();
       });
-      Promise.all(promises).then(()=> {
+      Promise.all(promises).then((...toolboxIds)=> {
+        toolboxIds = toolboxIds[0];
+        for (let i = toolboxIds.length; i--;) {
+          const id = toolboxIds[i];
+          this.stopSessionChildren(id);
+        }
         resolve()
       }).catch((err) => {
         reject(err)
@@ -840,13 +844,12 @@ proto.getRelationsInEditing = async function({relations, feature}={}) {
 
 // qui devo verificare sia l condizione del padre che del figlio
 proto.stopSessionChildren = function(layerId) {
+  this._featureRelationsLoaded[layerId] = {};
   // caso padre verifico se i figli sono in editing o meno
-  let relationLayerChildren = this.getLayerById(layerId).getChildren();
-  let toolbox;
+  const relationLayerChildren = this.getLayerById(layerId).getChildren();
   relationLayerChildren.forEach((id) => {
-    toolbox = this.getToolBoxById(id);
-    if (toolbox && !toolbox.inEditing())
-      this._sessions[id].stop();
+    const session = this._sessions[id];
+    session.isStarted() && session.stop();
   });
 };
 
@@ -888,28 +891,24 @@ proto.getLayersDependencyFeatures = function(layerId) {
   const relationChildLayers = this.getLayerById(layerId).getChildren() || [];
   for (let i = relationChildLayers.length; i--; ) {
     const relationLayerId = relationChildLayers[i];
-    const options = this.createEditingDataOptions(this.getLayerById(relationLayerId).getType());
     let session = this._sessions[relationLayerId];
-    //verifico che ci sia la sessione
-    if (session) {
-      if (!session.isStarted()) {
-        session.start(options)
-      } else {
-        session.getFeatures(options)
-      }
-    } else {
+    if (!session) {
       try {
-        const layer = this._layersstore.getLayerById(relationLayerId);
+        const layer = this._editableLayers[relationLayerId];
         const editor = layer.getEditor();
         session = new Session({
           editor,
           id: relationLayerId,
         });
+        session.register();
         const source = session.getFeaturesStore();
-        source.setProvider(layer.getProvider('data'));
+        const cloneEditorLayer = layer.clone();
         this._editableLayers[relationLayerId].setSource(source);
+        editor.setLayer(cloneEditorLayer);
         this._sessions[relationLayerId] = session;
-      } catch(err) {}
+      } catch(err) {
+        console.log(err)
+      }
     }
   }
 };
@@ -917,8 +916,8 @@ proto.getLayersDependencyFeatures = function(layerId) {
 proto._applyChangesToNewRelationsAfterCommit = function(relationsResponse) {
   for (relationLayerId in relationsResponse) {
     const response = relationsResponse[relationLayerId];
-    const layer = this.getLayerById(relationLayerId);
-    const sessionFeaturesStore = this.getToolBoxById(relationLayerId).getSession().getFeaturesStore();
+    const layer = this._editableLayers[relationLayerId];
+    const sessionFeaturesStore = this._sessions[relationLayerId].getFeaturesStore();
     const featureStore = layer.getSource();
     const features = _.clone(sessionFeaturesStore.readFeatures());
     features.forEach((feature) => {
@@ -1217,6 +1216,11 @@ proto.commit = function(close=false) {
                   responses,
                   commitObject
                 });
+                if (!Array.isArray(args[0])) args = [args];
+                for (let i = args.length; i--;) {
+                  const relationsResponse = args[i][1].response.new_relations;
+                  relationsResponse && this._applyChangesToNewRelationsAfterCommit(relationsResponse);
+                }
                 resolve()
               }, (error) => {
                 console.log(error)

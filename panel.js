@@ -4,7 +4,6 @@ const t = g3wsdk.core.i18n.tPlugin;
 const EditingComponent = require('./vue/editing');
 
 function EditingPanelComponent(options={}) {
-  // editortoolsbars
   options.id = "editing-panel";
   options.title = t("editing.editing_data");
   options.name = "Gestione dati EDITING";

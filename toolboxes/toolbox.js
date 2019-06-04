@@ -291,7 +291,8 @@ proto.stop = function() {
             tool.getOperator().off('change-help-message');
           });
           this.emit(EventName);
-          resolve(true)
+          // return id of toolbox stopped
+          resolve(this.getId())
         })
         .fail((err) => {
           // mostro un errore a video o tramite un messaggio nel pannello
