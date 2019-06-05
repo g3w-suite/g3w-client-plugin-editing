@@ -136,6 +136,7 @@ let relationsTable;
   mounted() {
     this.$nextTick(() => {
       $('.g3w-icon[data-toggle="dropdown"]').tooltip();
+      $('[data-toggle="tooltip"]').tooltip();
     })
   },
   destroyed: function() {
