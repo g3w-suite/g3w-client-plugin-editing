@@ -2,7 +2,7 @@ export default {
   it: {
     search: "Cerca",
     editing_data: "Editing Dati",
-    editing_attributes: "Editita attributi",
+    editing_attributes: "Edita attributi",
     relations: "Relazioni",
     edit_relation: "Edita relazione",
     back_to_relations: "Ritorna alle Relazioni",

@@ -207,6 +207,7 @@ proto.start = function() {
               });
             })
             .fail((error) => {
+              GUI.notify.error(error.message);
               EditingService.runEventHandler({
                 type: 'error-editing',
                 id,
