@@ -764,14 +764,7 @@ proto.afterEditingStart = function({layer}= {}) {
 
 // vado a recuperare il toolbox a seconda del suo id
 proto.getToolBoxById = function(toolboxId) {
-  let toolBox = null;
-  this._toolboxes.forEach((toolbox) => {
-    if (toolbox.getId() === toolboxId) {
-      toolBox = toolbox;
-      return false;
-    }
-  });
-  return toolBox;
+  return this._toolboxes.find(toolbox => toolbox.getId() === toolboxId);
 };
 
 proto.getToolBoxes = function() {
@@ -799,6 +792,7 @@ proto.stop = function() {
           const id = toolboxIds[i];
           this.stopSessionChildren(id);
         }
+        console.log(this._toolboxes)
         resolve()
       }).catch((err) => {
         reject(err)
