@@ -27,6 +27,10 @@ proto.run = function(inputs, context) {};
 
 proto.stop = function() {};
 
+proto.getStateOfModel = function() {
+  return this.getEditingService().getStateOfModel();
+};
+
 proto.setEnableEditing = function(bool) {
   const editingService = this.getEditingService();
   editingService.setEnabledEditing(bool);

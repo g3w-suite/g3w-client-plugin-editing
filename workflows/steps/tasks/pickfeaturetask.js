@@ -1,7 +1,7 @@
-var inherit = g3wsdk.core.utils.inherit;
-var base =  g3wsdk.core.utils.base;
-var PickFeatureInteraction = g3wsdk.ol.interactions.PickFeatureInteraction;
-var EditingTask = require('./editingtask');
+const inherit = g3wsdk.core.utils.inherit;
+const base =  g3wsdk.core.utils.base;
+const PickFeatureInteraction = g3wsdk.ol.interactions.PickFeatureInteraction;
+const EditingTask = require('./editingtask');
 
 function PickFeatureTask(options={}) {
   this._one = options.one || false; // if one feature or not

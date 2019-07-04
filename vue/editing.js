@@ -12,8 +12,7 @@ const vueComponentOptions = {
   template: EditingTemplate,
   data() {
     return {
-      height: 0,
-      undoRedo: this.$options.service.getUndoRedo()
+      height: 0
     }
   },
   components: {
@@ -122,6 +121,9 @@ const vueComponentOptions = {
     allowediting() {
       this.$options.service.removeAllGeometryTools();
       return this.state.editing.enabled;
+    },
+    undoRedo() {
+      return this.$options.service.getUndoRedo()
     },
     message: function() {
       const message = "";

@@ -98,11 +98,15 @@ function EditingService() {
     };
     this._branchLayerId = this.progeoApi.getBranchLayerId();
       // sono i layer originali caricati dal progetto e messi nel catalogo
+    // const layers = this._getEditableLayersFromCatalog().filter((layer) => {
+    //   return ['timesources1562063034903','sources1562063034903', 'branches1562063034903'].indexOf(layer.getId()) !== -1;
+    // });
     const layers = this._getEditableLayersFromCatalog();
     const editingLayersLenght  = layers.length;
     let layersNotReady = editingLayersLenght;
     //ciclo su ogni layers editiabile
     for (let i = 0; i < editingLayersLenght; i++) {
+
       const layer = layers[i];
       const layerId = layer.getId();
       if (layerId === this._branchLayerId)
@@ -148,7 +152,6 @@ function EditingService() {
     this._layersstore.addLayers(this.getLayers());
     // vado a creare i toolboxes
     this._buildToolBoxes();
-    //this.registerOrphanNodes();
     this.emit('ready');
   }
 }
@@ -197,6 +200,10 @@ proto.subscribe = function({event, layerId}={}) {
 };
 
 // END API
+
+proto.getStateOfModel = function() {
+  return this.progeoApi.getProjectState().state;
+};
 
 proto.isBranchLayer = function(layerId) {
   return layerId === this._branchLayerId;
@@ -270,9 +277,8 @@ proto.redo = function(session) {
 
 // redo delle relazioni
 proto.undoRedoRelations = function({relationsItems, action} = {}) {
-  Object.entries(relationsItems).forEach(([toolboxId, items]) => {
-    const toolbox = this.getToolBoxById(toolboxId);
-    const session = toolbox.getSession();
+  Object.entries(relationsItems).forEach(([id, items]) => {
+    const session = this._sessions[id];
     session[action](items);
   })
 };
@@ -303,9 +309,8 @@ proto.undoRelations = function(undoItems) {
 
 // undo delle relazioni
 proto.rollbackRelations = function(rollbackItems) {
-  Object.entries(rollbackItems).forEach(([toolboxId, items]) => {
-    const toolbox = this.getToolBoxById(toolboxId);
-    const session = toolbox.getSession();
+  Object.entries(rollbackItems).forEach(([id, items]) => {
+    const session = this._sessions[id];
     session.rollback(items);
   })
 };
@@ -553,7 +558,7 @@ proto._attachLayerWidgetsEvent = function(layer) {
   const fields = layer.getEditingFields();
   for (let i=0; i < fields.length; i++) {
     const field = fields[i];
-    if(field.type !== 'child' && field.input.type === 'select_autocomplete') {
+    if (field.type !== 'child' && field.input && field.input.type === 'select_autocomplete') {
       const options = field.input.options;
       const {key, values, value, usecompleter, layer_id, loading} = options;
       if (!usecompleter) {
@@ -787,12 +792,7 @@ proto.stop = function() {
         return toolbox.stop();
       });
       Promise.all(promises).then((...toolboxIds)=> {
-        toolboxIds = toolboxIds[0];
-        for (let i = toolboxIds.length; i--;) {
-          const id = toolboxIds[i];
-          this.stopSessionChildren(id);
-        }
-        console.log(this._toolboxes)
+        this.stopSessionChildren();
         resolve()
       }).catch((err) => {
         reject(err)
@@ -837,14 +837,18 @@ proto.getRelationsInEditing = async function({relations, feature}={}) {
 };
 
 // qui devo verificare sia l condizione del padre che del figlio
-proto.stopSessionChildren = function(layerId) {
-  this._featureRelationsLoaded[layerId] = {};
-  // caso padre verifico se i figli sono in editing o meno
-  const relationLayerChildren = this.getLayerById(layerId).getChildren();
-  relationLayerChildren.forEach((id) => {
-    const session = this._sessions[id];
-    session.isStarted() && session.stop();
-  });
+proto.stopSessionChildren = function() {
+  this.getToolBoxes().forEach((toolbox) => {
+    const layerId = toolbox.getId();
+    this._featureRelationsLoaded[layerId] = {};
+    // caso padre verifico se i figli sono in editing o meno
+    const relationLayerChildren = this.getLayerById(layerId).getChildren();
+    relationLayerChildren.forEach((id) => {
+      const session = this._sessions[id];
+      session.isStarted() && session.stop();
+    });
+  })
+
 };
 
 proto.fatherInEditing = function(layerId) {
@@ -869,7 +873,7 @@ proto.createEditingDataOptions = function(layerType) {
     type: layerType
   };
   // verifico se layer vettoriale
-  if(layerType === Layer.LayerTypes.VECTOR) {
+  if (layerType === Layer.LayerTypes.VECTOR) {
     // aggiungo il filto bbox
     let bbox = this._mapService.getMapBBOX();
     options.filter = {
@@ -880,7 +884,7 @@ proto.createEditingDataOptions = function(layerType) {
   return options
 };
 
-// fa lo start di tutte le dipendenze del layer legato alla toolbox che si è avviato
+//start di tutte le dipendenze del layer legato alla toolbox che si è avviato
 proto.getLayersDependencyFeatures = function(layerId) {
   const relationChildLayers = this.getLayerById(layerId).getChildren() || [];
   for (let i = relationChildLayers.length; i--; ) {
@@ -893,12 +897,9 @@ proto.getLayersDependencyFeatures = function(layerId) {
         session = new Session({
           editor,
           id: relationLayerId,
+          add: false,
+          featuresstore: layer.getSource()
         });
-        session.register();
-        const source = session.getFeaturesStore();
-        const cloneEditorLayer = layer.clone();
-        this._editableLayers[relationLayerId].setSource(source);
-        editor.setLayer(cloneEditorLayer);
         this._sessions[relationLayerId] = session;
       } catch(err) {
         console.log(err)

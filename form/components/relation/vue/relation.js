@@ -72,6 +72,7 @@ let relationsTable;
       if (value && typeof  value === 'object' && value.constructor === Object) {
         value = value.value;
       }
+      value = value && value.toString().indexOf('_new_') !== -1 ? '' : value;
       this.value = value;
       return value;
     },

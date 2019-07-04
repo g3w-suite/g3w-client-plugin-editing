@@ -124,7 +124,7 @@ proto.startTool = function(relationtool, index) {
     const toolPromise = (this._layerType === 'vector') && this.startVectorTool(relationtool, index) ||
       (this._layerType === 'table') && this.startTableTool(relationtool, index);
     toolPromise.then(() => {
-      this.emitEventToParentWorkFlow();
+      //this.emitEventToParentWorkFlow();
       resolve();
     }).fail((err) => {
       reject(err)
@@ -135,13 +135,17 @@ proto.startTool = function(relationtool, index) {
 proto.startTableTool = function(relationtool, index) {
   const d = $.Deferred();
   const relation = this.relations[index]; // oggetto relazione
+  const otherfeatures =  this.relations.filter((relation, _index) => {
+    return _index !== index
+  });
   const featurestore = this.getEditingService().getSession({
     layerId: this._layerId
   }).getFeaturesStore();
   const relationfeature = featurestore.getFeatureById(relation.id); // relation feature
   GUI.setModal(false);
   const options = this._createWorkflowOptions({
-    features: [relationfeature]
+    features: [relationfeature],
+    otherfeatures
   });
   let workflow;
   // delete feature
@@ -226,7 +230,7 @@ proto.startVectorTool = function(relationtool, index) {
         const fields = this._getRelationFieldsValue(relationfeature);
         fields.forEach((_field) => {
           relation.fields.forEach((field) => {
-            if (field.name == _field.name)
+            if (field.name === _field.name)
               field.value = _field.value;
           })
         });
@@ -332,7 +336,9 @@ proto.addRelation = function() {
   GUI.setModal(false);
   const workflow = this._getAddFeatureWorkflow();
   const percContent = this._bindEscKeyUp(workflow);
-  const options = this._createWorkflowOptions();
+  const options = this._createWorkflowOptions({
+    otherfeatures: this.relations
+  });
   const session = options.context.session;
   workflow.start(options)
     .then((outputs) => {
@@ -344,7 +350,7 @@ proto.addRelation = function() {
       //vado a aggiungere una nuova relazione
       const newRelation = this._createRelationObj(newFeature);
       this.relations.push(newRelation);
-      this.emitEventToParentWorkFlow()
+      //this.emitEventToParentWorkFlow()
     })
     .fail((err) => {
       session.rollback();
@@ -384,7 +390,7 @@ proto.linkRelation = function() {
         relation.set(this.relation.childField, this._currentFeatureFatherFieldValue);
         this.getCurrentWorkflowData().session.pushUpdate(this._layerId , relation, originalRelation);
         this.relations.push(this._createRelationObj(relation));
-        this.emitEventToParentWorkFlow();
+        //this.emitEventToParentWorkFlow();
       } else {
         GUI.notify.warning(t("editing.relation_already_added"));
       }
@@ -441,7 +447,8 @@ proto._createWorkflowOptions = function(options={}) {
       layer: this.getLayer(),
       excludeFields: [this.relation.childField],
       childField: this.relation.childField,
-      fatherValue: this._currentFeatureFatherFieldValue
+      fatherValue: this._currentFeatureFatherFieldValue,
+      otherfeatures: options.otherfeatures || []
     },
     inputs: {
       features: options.features || [],

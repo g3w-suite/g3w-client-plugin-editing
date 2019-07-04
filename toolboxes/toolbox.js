@@ -10,8 +10,7 @@ const validationLine = require('../utils/utils').validation.line;
 
 function ToolBox(options={}) {
   base(this);
-  // editor del Layer che permette di interagire con il layer
-  // save, etc ...
+  // editor del Layer che permette di interagire con il layer etc..
   this._editor = options.editor;
   // l'editing layer originale che contiene tutte le informazioni anche le relazioni
   this._layer = this._editor.getLayer();
@@ -195,7 +194,6 @@ proto.addDependency = function(dependency) {
 proto._setEditingLayerSource = function() {
   // vado a prendere il featurestore della sessione appartenete al toolbox
   const featuresstore = this._session.getFeaturesStore();
-  // questo ritorna come promessa l'array di features del featuresstore
   // vado  a settare il source del layer
   const source = this._layerType === Layer.LayerTypes.VECTOR ? new ol.source.Vector({features: featuresstore.getFeaturesCollection()}) :featuresstore;
   //setto come source del layer l'array / collection feature del features sotre della sessione

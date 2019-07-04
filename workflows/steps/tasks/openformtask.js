@@ -6,6 +6,8 @@ const EditingFormComponent = require('../../../form/editingform');
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 const EditingTask = require('./editingtask');
 import EditPipes from '../../../vue/components/editing/pipes.vue'
+const MAST_NOT_EDITABLE_FIELDS = ['name', 'label'];
+
 
 function OpenFormTask(options={}) {
   this._formIdPrefix = 'form_';
@@ -59,6 +61,7 @@ proto._getUniqueFieldsType = function(fields) {
 };
 
 proto._getForm = function(inputs, context) {
+  const isMastState = this.getStateOfModel() === 'mast';
   const excludeFields = context.excludeFields;
   this._isContentChild = WorkflowsStack.getLength() > 1;
   this._session = context.session;
@@ -73,6 +76,22 @@ proto._getForm = function(inputs, context) {
   this._fields = this._originalLayer.getFieldsWithValues(this._feature, {
     exclude: excludeFields
   });
+  if (this._isContentChild) {
+    this._fields.forEach((field) => {
+      if (field.validate.exclude_values) {
+        field.validate.exclude_values.splice();
+        field.validate.exclude_values = context.otherfeatures.map((feature) => {
+          return feature.fields.find(_field => _field.name === field.name).value.toString()
+        });
+      }
+    })
+  }
+  if (isMastState)
+    this._fields.forEach((field) => {
+      if (MAST_NOT_EDITABLE_FIELDS.indexOf(field.name) !== -1) {
+        field.editable = false;
+      }
+    });
   this._editorFormStructure = this._originalLayer.hasFormStructure() ? this._originalLayer.getEditorFormStructure() : null ;
   const uniqueFields = this._getUniqueFieldsType(this._fields);
   if (!_.isEmpty(uniqueFields))
