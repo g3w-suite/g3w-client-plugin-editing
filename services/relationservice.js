@@ -12,6 +12,7 @@ const RELATIONTOOLS = {
 
 // servizio che in base alle relazioni (configurazione)
 const RelationService = function(options = {}) {
+  this._id = options.id;
   this.relation = options.relation;
   this.relations = options.relations;
   this._isExternalFieldRequired = false;
@@ -155,6 +156,20 @@ proto.startTableTool = function(relationtool, index) {
         this.getCurrentWorkflowData().session.pushDelete(this._layerId, relationfeature);
         this.relations.splice(index, 1);
         featurestore.removeFeature(relationfeature);
+        this.emitEventToParentWorkFlow({
+          type: 'component-validation',
+          options: {
+            id: this._id,
+            valid: this.relations.length > 0
+          }
+        });
+        this.emitEventToParentWorkFlow({
+          type: 'validate-relation',
+          options: {
+            id: this._id,
+            valid: this.relations.length > 0
+          }
+        });
         d.resolve(result);
       } else {
         d.reject(result);
@@ -328,7 +343,7 @@ proto._createRelationObj = function(relation) {
   }
 };
 
-proto.emitEventToParentWorkFlow = function(type='set-main-component', options={}) {
+proto.emitEventToParentWorkFlow = function({type='set-main-component', options={}}) {
   this._parentWorkFlow.getContextService().getEventBus().$emit(type, options)
 };
 
@@ -350,7 +365,20 @@ proto.addRelation = function() {
       //vado a aggiungere una nuova relazione
       const newRelation = this._createRelationObj(newFeature);
       this.relations.push(newRelation);
-      //this.emitEventToParentWorkFlow()
+      this.emitEventToParentWorkFlow({
+        type: 'component-validation',
+        options: {
+          id: this._id,
+          valid: this.relations.length > 0
+        }
+      });
+      this.emitEventToParentWorkFlow({
+        type: 'validate-relation',
+        options: {
+          id: this._id,
+          valid: this.relations.length > 0
+        }
+      })
     })
     .fail((err) => {
       session.rollback();

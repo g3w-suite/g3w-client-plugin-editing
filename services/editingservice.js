@@ -1,5 +1,6 @@
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
+const resolve = g3wsdk.core.utils.resolve;
 const {Filter, Expression} = g3wsdk.core.layer.filter;
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 const PluginService = g3wsdk.core.plugin.PluginService;
@@ -33,7 +34,8 @@ function EditingService() {
     history: [],
     undoRedo: {
       canUndo: false,
-      canRedo: false
+      canRedo: false,
+      canCommit: false
     }
   };
   this._editableLayers = {
@@ -214,8 +216,11 @@ proto.getUndoRedo = function() {
 };
 
 proto.setUndoRedo = function() {
-  this._allHistory.undoRedo.canUndo = this._allHistory.currentIndex > 0;
+  const canUndo = this._allHistory.currentIndex > 0;
+  this._allHistory.undoRedo.canUndo = this._allHistory.undoRedo.canCommit = canUndo;
   this._allHistory.undoRedo.canRedo = this._allHistory.currentIndex < this._allHistory.history.length;
+  if (this._allHistory.currentIndex === 2)
+    this._allHistory.undoRedo.canCommit = this._allHistory.history[this._allHistory.currentIndex -1].session._history.canCommit();
   this.checkOrphanNodes();
 };
 
@@ -343,7 +348,6 @@ proto.getChartComponent = function(options={}) {
   return this.progeoApi.getChartComponent(options);
 };
 
-
 // method to get and syle orphans nodes
 proto.setOrphanNodes = function({layerId , nodes}) {
   this._orphanNodes[layerId] = nodes;
@@ -406,7 +410,7 @@ proto.setLayersColor = function() {
     "#431F34"
   ];
   for (const layer of this.getLayers()) {
-    const color = !layer.getColor() && LAYERS_COLOR.splice(0,1).pop();
+    const color = layer.getColor() || LAYERS_COLOR.splice(0,1).pop();
     layer.setColor(color);
   }
 };
@@ -445,7 +449,7 @@ proto.getEditingLayer = function(layerId) {
   return this.getToolBoxById(layerId) && toolbox.getEditingLayer() || this._editableLayers[layerId];
 };
 
-proto.setLineStyle = function({color, editingLayer}) {
+proto.setLineStyle = function({color, width, editingLayer}) {
   const styleFnc = function (feature, resolution) {
     const geometry = feature.getGeometry();
     const styles = [
@@ -453,7 +457,7 @@ proto.setLineStyle = function({color, editingLayer}) {
       new ol.style.Style({
         stroke: new ol.style.Stroke({
           color,
-          width: 3
+          width: width || 3
         })
       })
     ];
@@ -470,7 +474,7 @@ proto.setLineStyle = function({color, editingLayer}) {
       lineStr2.rotate(rotation, center);
       const stroke = new ol.style.Stroke({
         color,
-        width: 5
+        width: width ? width +2 : 5
       });
 
       styles.push(new ol.style.Style({
@@ -494,6 +498,7 @@ proto._buildToolBoxes = function() {
     // la toolboxes costruirà il toolboxex adatto per quel layer
     // assegnadogli le icone dei bottonii etc ..
     const {layer, dependency, icon} = layerswithdependency[i];
+    const { width } = layer.getEditingStyle();
     const toolbox = ToolBoxesFactory.build({
       layer,
       dependency,
@@ -504,7 +509,8 @@ proto._buildToolBoxes = function() {
           offset: [-4, 4],
         }),
         stroke: new ol.style.Stroke({
-          color: layer.getColor()
+          color: layer.getColor(),
+          width
         })
       }): null
     });
@@ -514,6 +520,7 @@ proto._buildToolBoxes = function() {
     if (layer.getGeometryType() === 'Line') {
       this.setLineStyle({
         color: layer.getColor(),
+        width,
         editingLayer: toolbox.getEditingLayer()
       })
     }
@@ -711,36 +718,45 @@ proto.getRelationsByFeature = async function(relation, feature) {
     this._featureRelationsLoaded[layerFatherId][relationLayerId] = Array.isArray(this._featureRelationsLoaded[layerFatherId][relationLayerId]) ? this._featureRelationsLoaded[layerFatherId][relationLayerId] : [];
     try {
       return await new Promise((resolve, reject) => {
-        const filter = {};
-        filter[relationChildField] = featureValue;
-        const requestOptions = {
-          editing: true,
-          type: 'table',
-          filter
-        };
-        const sessionPromise = session.isStarted() ? session.getFeatures(requestOptions): session.start(requestOptions);
-        sessionPromise.then((promise) => {
-          promise.then((features) => {
-            const relations = [];
-            if (features) {
-              for (let i = 0; i < features.length; i++) {
-                const feature = features[i];
-                const id = feature.get('id');
-                feature.setId(id);
-                const relation = new Feature({
-                  feature
-                });
-                relations.push(relation);
+        if (!session.isStarted()) {
+          const filter = {};
+          filter[relationChildField] = featureValue;
+          const requestOptions = {
+            editing: true,
+            type: 'table',
+            filter
+          };
+          session.start(requestOptions).then((promise) => {
+            promise.then((features) => {
+              const relations = [];
+              if (features) {
+                for (let i = 0; i < features.length; i++) {
+                  const feature = features[i];
+                  const id = feature.get('id');
+                  feature.setId(id);
+                  const relation = new Feature({
+                    feature
+                  });
+                  relations.push(relation);
+                }
               }
-            }
-            this._featureRelationsLoaded[layerFatherId][relationLayerId].push(featureValue);
-            resolve(relations);
+              this._featureRelationsLoaded[layerFatherId][relationLayerId].push(featureValue);
+              resolve(relations.filter(((feature) => {
+                return feature.get(relationChildField) === featureValue;
+              })));
+            }).fail((err) => {
+              reject(err);
+            })
           }).fail((err) => {
             reject(err);
           })
-        }).fail((err) => {
-          reject(err);
-        })
+        } else {
+          const features = this.getLayerById(relationLayerId).readFeatures().filter((feature) => {
+            return feature.get(relationChildField) === featureValue;
+          });
+          resolve(features)
+        }
+
       });
     } catch (err) {
       return [];
@@ -908,14 +924,23 @@ proto.getLayersDependencyFeatures = function(layerId) {
   }
 };
 
-proto._applyChangesToNewRelationsAfterCommit = function(relationsResponse) {
+proto._applyChangesToNewRelationsAfterCommit = function(fatherResponse=[], relationsResponse) {
   for (relationLayerId in relationsResponse) {
     const response = relationsResponse[relationLayerId];
     const layer = this._editableLayers[relationLayerId];
     const sessionFeaturesStore = this._sessions[relationLayerId].getFeaturesStore();
     const featureStore = layer.getSource();
-    const features = _.clone(sessionFeaturesStore.readFeatures());
+    const features = sessionFeaturesStore.readFeatures();
+    const isfatherNew = fatherResponse;
     features.forEach((feature) => {
+      if (isfatherNew) {
+        Object.entries(feature.getProperties()).forEach(([field, value]) => {
+          const featureNew = fatherResponse.find((newItem) => {
+            return value === newItem.clientid;
+          });
+          featureNew && feature.set(field, featureNew.id);
+        })
+      }
       feature.clearState();
     });
     featureStore.setFeatures(features);
@@ -1119,6 +1144,7 @@ proto._changeBranchIdFromNodesOfNewBranches = function({commitItems, nodeLayerId
   }
 };
 
+
 proto._handleCommitsResponse = function({responses, commitObject}) {
   const deleteOrphanNodes = this._isThereOrphanNodes();
   const doWithResponse = {
@@ -1136,7 +1162,7 @@ proto._handleCommitsResponse = function({responses, commitObject}) {
         nodeLayerIds: response.nodeLayerIds,
         response: response.response
       });
-    if (response.result) {
+      if (response.result) {
       doWithResponse.message.successful+=1;
     } else {
       doWithResponse.message.fail.push(response.errors);
@@ -1213,8 +1239,11 @@ proto.commit = function(close=false) {
                 });
                 if (!Array.isArray(args[0])) args = [args];
                 for (let i = args.length; i--;) {
+                  const fatherResponse = args[i][1].response.new;
                   const relationsResponse = args[i][1].response.new_relations;
-                  relationsResponse && this._applyChangesToNewRelationsAfterCommit(relationsResponse);
+                  if (relationsResponse) {
+                    this._applyChangesToNewRelationsAfterCommit(fatherResponse, relationsResponse);
+                  }
                 }
                 resolve()
               }, (error) => {

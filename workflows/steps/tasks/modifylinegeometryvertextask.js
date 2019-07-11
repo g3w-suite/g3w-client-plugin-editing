@@ -112,6 +112,8 @@ proto.run = function(inputs, context) {
     this._clearMeasureTooltip();
     for (let i = 0; i < featuresLength; i++) {
       const feature =  modifiedBranchFeatures[i];
+      feature.set('pipes', undefined);
+      // set undefined to recall pispe from server
       const newFeature = feature.clone();
       this.setBranchProfileData({
         feature: newFeature,

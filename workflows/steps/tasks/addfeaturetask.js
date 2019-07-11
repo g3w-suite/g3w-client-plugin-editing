@@ -75,7 +75,7 @@ proto.run = function(inputs, context) {
       };
       const fields = originalLayer.getFields();
       const attributes = fields.filter((field) => {
-        return field.editable && field.name != originalLayer.getPk() ;
+        return field.editable && field.name !== originalLayer.getPk() ;
       });
       this._condition = AddFeatureTask.CONDITIONS[geometryType](options);
       // creo una source temporanea
@@ -153,8 +153,11 @@ proto.run = function(inputs, context) {
               })
             });
           else {
-            const {originalFeature, newFeature, updateFeature} = this._splitSnapFeature();
-            session.pushUpdate(layerId, updateFeature.clone(), originalFeature);
+            const {originalFeature, newFeature, snapFeature} = this._splitSnapFeature();
+            this._setSplittedBrachProfiles({
+              features: [newFeature, snapFeature]
+            });
+            session.pushUpdate(layerId, snapFeature, originalFeature);
             session.pushAdd(layerId, newFeature);
             source.addFeature(newFeature);
           }
@@ -166,21 +169,35 @@ proto.run = function(inputs, context) {
   return d.promise();
 };
 
+proto._setSplittedBrachProfiles = function({features}) {
+  features.forEach((feature) => {
+    feature.set('pipes', undefined);
+    this.setBranchProfileData({
+      feature
+    });
+  })
+};
+
 proto._splitSnapFeature = function() {
-  const updateFeature = this._optionscondition.snapFeatures.filter(snapFeature => {
+  // ricavo la feature su cui è snappata la nuova feature inserita
+  const snapFeature = this._optionscondition.snapFeatures.filter(snapFeature => {
     return snapFeature;
   })[0];
-  const originalCoordinates = updateFeature.getGeometry().getCoordinates();
-  const coordinate = this._optionscondition.edgeCoordinate;
-  const originalFeature = updateFeature.clone();
-  const newFeature = updateFeature.clone();
+  // prendo le coordinate originali
+  const originalCoordinates = snapFeature.getGeometry().getCoordinates();
+  // prendo le coordinate del punto di snap
+  const snapCoordinate = this._optionscondition.edgeCoordinate;
+  // vado a clonare la feature originale
+  const originalFeature = snapFeature.clone();
+  // vado a clonare la feature orinale per la creazione della nuona feature
+  const newFeature = snapFeature.clone();
   newFeature.setTemporaryId();
-  newFeature.getGeometry().setCoordinates([coordinate, originalCoordinates[1]]);
-  updateFeature.getGeometry().setCoordinates([originalCoordinates[0], coordinate]);
+  newFeature.getGeometry().setCoordinates([snapCoordinate, originalCoordinates[1]]);
+  snapFeature.getGeometry().setCoordinates([originalCoordinates[0], snapCoordinate]);
   return {
     originalFeature,
     newFeature,
-    updateFeature
+    snapFeature
   }
 };
 

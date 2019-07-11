@@ -44,6 +44,7 @@ const EdtingFormService = function() {
     const relationComponents = [];
     for (let i = 0; i < relations.length; i++) {
       const relation = relations[i];
+      const id = `${t("editing.edit_relation")} ${relation.relation.name}`;
       const relationComponent = Vue.extend({
         mixins: [RelationComponent],
         name: relation.relation.name,
@@ -53,6 +54,7 @@ const EdtingFormService = function() {
           }
         },
         data: function() {
+          this.id = id;
           return {
             relation: relation.relation,
             relations: relation.relations,
@@ -62,8 +64,9 @@ const EdtingFormService = function() {
         }
       });
       relationComponents.push({
-        id: `${t("editing.edit_relation")} ${relation.relation.name}`,
-        component: relationComponent
+        id,
+        component: relationComponent,
+        valid: relation.relations.length > 0
       })
     }
     return relationComponents;

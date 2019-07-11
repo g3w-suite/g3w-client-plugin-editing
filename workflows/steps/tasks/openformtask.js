@@ -5,7 +5,7 @@ const GUI = g3wsdk.gui.GUI;
 const EditingFormComponent = require('../../../form/editingform');
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 const EditingTask = require('./editingtask');
-import EditPipes from '../../../vue/components/editing/pipes.vue'
+const pipesComponentFactory = require('../../../vue/components/editing/pipesComponentfactory');
 const MAST_NOT_EDITABLE_FIELDS = ['name', 'label'];
 
 
@@ -13,6 +13,7 @@ function OpenFormTask(options={}) {
   this._formIdPrefix = 'form_';
   this._isContentChild = false;
   this.editattribute = options.editattribute;
+  this._reactiveField;
   this._feature;
   this._layerId;
   this._originalLayer;
@@ -73,9 +74,11 @@ proto._getForm = function(inputs, context) {
   // vado a prendere l'ultima feature
   this._feature = inputs.features[inputs.features.length - 1];
   this._originalFeature = this._feature.clone();
+
   this._fields = this._originalLayer.getFieldsWithValues(this._feature, {
     exclude: excludeFields
   });
+
   if (this._isContentChild) {
     this._fields.forEach((field) => {
       if (field.validate.exclude_values) {
@@ -99,14 +102,17 @@ proto._getForm = function(inputs, context) {
   return GUI.showContentFactory('form');
 };
 
-proto._cancelFnc = function(promise) {
+proto._cancelFnc = function(promise, chartData) {
   return function() {
+    if (this.isBranchLayer(this._layerId)) {
+      this._feature.set('pipes', chartData.originalpipes);
+    }
     GUI.setModal(false);
     promise.reject();
   }
 };
 
-proto._saveFnc = function(promise, context, inputs) {
+proto._saveFnc = function(promise, context, inputs, chartData) {
   return function(fields) {
     const layerId = this._originalLayer.getId();
     this._originalLayer.setFieldsWithValues(this._feature, fields);
@@ -120,64 +126,20 @@ proto._saveFnc = function(promise, context, inputs) {
     }
     const newFeature = this._feature.clone();
     if (this.isBranchLayer(layerId)) {
-      newFeature.set("pipes", this._chart.pipes.data);
+      if (!this._feature.get('pipes'))
+        this._feature.set("pipes", chartData.pipes.data);
+      newFeature.set("pipes", chartData.pipes.data);
     }
 
     if (this._isContentChild)
       //is a relation so i i have to put relation feature
       inputs.relationFeature = {
         newFeature: this._feature,
-        originalFeature: this._feature
+        originalFeature: this._originalFeature
       };
     this._session.pushUpdate(layerId, newFeature, this._originalFeature);
     GUI.setModal(false);
     promise.resolve(inputs);
-  }
-};
-
-proto._setChartComponent = function() {
-  let default_value_changed = false;
-  const self = this;
-  this._chart = {
-    data: null,
-    pipes: {
-      section: undefined,
-      data: [],
-      originalvalues: []
-    }
-  };
-
-  //Hook
-
-  EditPipes.created = function() {
-    this.pipes = self._chart.pipes;
-  };
-
-  EditPipes.activated = function() {
-   if (default_value_changed) {
-     for (let i = this.pipes.data.length; i--;) {
-       this.pipes.data[i][4] = this.pipes.pipe_section;
-     }
-     this.$forceUpdate()
-   }
-   default_value_changed = false;
-  };
-  //
-
-  this._chart.pipes.pipe_section = this._feature.get('pipe_section_default');
-  for (let i=0, len = this._fields.length; i< len; i++) {
-    if (this._fields[i].name === "pipe_section_default") {
-      this._fields[i] = new Proxy(this._fields[i], {
-        set: (target, property, value) => {
-          value = value ? +value: value;
-          target[property] = value ;
-          this._chart.pipes.pipe_section = value;
-          default_value_changed = true;
-          return true;
-        }
-      });
-      break;
-    }
   }
 };
 
@@ -186,8 +148,41 @@ proto.startForm = function(options = {}) {
   const formComponent = options.formComponent || EditingFormComponent;
   const Form = this._getForm(inputs, context);
   const isBranchLayer = this.isBranchLayer(this._layerId);
-  isBranchLayer &&  this._setChartComponent();
-  const formService = Form({
+  if (isBranchLayer)
+    for (let i=0, len = this._fields.length; i< len; i++) {
+      if (this._fields[i].name === "pipe_section_default") {
+        this._fields[i] = new Proxy(this._fields[i], {
+          set: (target, property, value) => {
+            value = value ? +value: value;
+            target[property] = value ;
+            for (let i = chartData.pipes.data.length; i--;) {
+              chartData.pipes.data[i][4] = value;
+            }
+            return true;
+          }
+        });
+        break;
+      }
+    }
+  const chartData = {
+    originalpipes: [],
+    pipes: {
+      data: [],
+      originalvalues: [],
+    }
+  };
+  const footer = {
+    message: !isBranchLayer && this._originalLayer.getRelations() ?
+      `${t('editing.form.relations.required')}  ${this._originalLayer.getRelations().getArray().map( (relation) => {
+        const names = relation.getName().toUpperCase().split(' ');
+        return names.length < 1 ? names[1] : names[0];
+      }).join(', ')}` : null,
+    style: {
+      color: '#ff4b00',
+      fontWeight: 'bold'
+    }
+  };
+  const formService = this.formService = Form({
     formComponent,
     title: `${t("editing.editing_attributes")} ${this._layerName}`,
     name: `${t("editing.editing_attributes")} ${this._layerName}`,
@@ -206,42 +201,87 @@ proto.startForm = function(options = {}) {
     perc: this._editorFormStructure ? 100 : null,
     push: this._isContentChild, // indica se posso aggiungere form
     showgoback: !this._isContentChild, // se è figlo evito di visualizzare il go back
+    footer,
     buttons:[{
       title: t("editing.form.buttons.save"),
       type: "save",
       class: "btn-success",
-      cbk: this._saveFnc(promise, context, inputs).bind(this)
+      cbk: this._saveFnc(promise, context, inputs, chartData).bind(this)
     }, {
       title: t("editing.form.buttons.cancel"),
       type: "cancel",
       class: "btn-primary",
-      cbk: this._cancelFnc(promise).bind(this)
+      cbk: this._cancelFnc(promise, chartData).bind(this)
     }]
   });
-
   if (isBranchLayer) {
+    const EditPipesComponent = pipesComponentFactory(chartData.pipes);
     formService.setLoading(true);
+
     this.getChartComponent({
       feature: this._feature,
       editing: {
         mode: true,
-        components: [EditPipes]
+        components: [EditPipesComponent]
       },
     }).then(({id, component, error, data}) => {
       if (!error) {
-        this._chart.pipes.data = this._originalFeature.isNew()? data : this._feature.get('pipes');
-        this._chart.pipes.originalvalues = data.map((_data) => _data[2]);
+         data.forEach((pipe) => {
+           chartData.pipes.data.push(pipe);
+           chartData.originalpipes.push([...pipe]);
+           chartData.pipes.originalvalues.push(pipe[2]);
+        });
+        this._originalFeature.set('pipes', chartData.originalpipes);
+
         formService.addComponent({
           id: id,
           component,
           icon: GUI.getFontClass('chart')
         });
+
+
       }
     }).catch((err)=>{
       console.log(err)
     })
       .finally(() => {
       formService.setLoading(false);
+    })
+  }
+  // custom for valvues
+  const relations = this._originalLayer.getRelations() ? this._originalLayer.getRelations().getArray(): [];
+  if (relations.length === 2) {
+    const id = `${t("editing.edit_relation")} ${relations[0].getName()}`;
+    const cdField = this._fields.find(field => field.name === 'cd');
+    const startingFooterMessage = footer.message;
+    const cdValidMessage = `${t('editing.form.relations.required')} ${relations[1].getName().toUpperCase()}`;
+    this._reactiveField = new Vue({
+      functional: true,
+      created() {
+        let isValid = false;
+        const EventBus = formService.getEventBus();
+        EventBus.$on('add-component-validate',({id:relationId, valid}) => {
+          if (id === relationId) {
+            isValid = valid;
+            EventBus.$off('add-component-validate');
+          }
+        });
+        EventBus.$on('validate-relation',({id:relationId, valid}) => {
+          if (id === relationId) {
+            isValid = valid;
+          }
+        });
+        this.$watch(() => cdField.value, (value) => {
+
+          footer.message = !!value ? cdValidMessage : startingFooterMessage;
+          EventBus.$emit('disable-component', {index: 1, disabled: !!value});
+          EventBus.$emit('component-validation',
+            {
+              id,
+              valid: !!value || isValid
+            });
+        })
+      }
     })
   }
   WorkflowsStack.getCurrent().setContextService(formService);
@@ -266,8 +306,11 @@ proto._generateFormId = function(layerName) {
 
 // metodo eseguito alla disattivazione del tool
 proto.stop = function() {
-  this.setEnableEditing(true);
-  this._chart = null;
+  this.setEnableEditing(!this._isContentChild);
+  this._reactiveField && this._reactiveField.$destroy();
+  this._reactiveField = null;
   this._isContentChild ? GUI.popContent() : GUI.closeForm();
+  this.formService && this.formService.getEventBus().$off('validate-relation');
+  this.formService = null;
 };
 

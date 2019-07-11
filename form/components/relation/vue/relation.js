@@ -2,7 +2,6 @@ const t = g3wsdk.core.i18n.tPlugin;
 const RelationService = require('../../../../services/relationservice');
 const MediaMixin = g3wsdk.gui.vue.Mixins.mediaMixin;
 const maxSubsetLength = 5;
-let relationsTable;
 
  RelationComponent = Vue.extend({
   mixins: [MediaMixin],
@@ -63,7 +62,7 @@ let relationsTable;
       this.showallfieldsindex = this.showallfieldsindex == index ? null : index;
     },
     showAllFieds: function(index) {
-      return this.showallfieldsindex == index;
+      return this.showallfieldsindex === index;
     },
     getRelationTools: function() {
       return this._service.getRelationTools();
@@ -81,11 +80,11 @@ let relationsTable;
     },
     _setDataTableSearch() {
       $('#filterRelation').on('keyup', function() {
-        relationsTable.search($(this).val()).draw() ;
+        this._relationDataTable.search($(this).val()).draw() ;
       });
     },
     _createDataTable() {
-      relationsTable = $('.g3wform-relation-table').DataTable({
+      this._relationDataTable = $(this.$el).find('.g3wform-relation-table').DataTable({
         "scrollX": true,
         "order": [ 0, 'asc' ],
         "destroy": true,
@@ -98,37 +97,33 @@ let relationsTable;
   },
   computed: {
     relationsLength: function() {
+      if (!this.relations.length) {
+        this._relationDataTable && this._relationDataTable.destroy();
+        this._relationDataTable = null;
+      } else {
+        !this._relationDataTable && this.$nextTick(() => {
+          this._createDataTable();
+        })
+      }
       return this.relations.length;
     },
     fieldrequired: function() {
       return this._service.isRequired();
     },
     enableAddLinkButtons: function() {
-      return !this.relations.length || (this.relations.length && this.relation.type != 'ONE');
+      return !this.relations.length || (this.relations.length && this.relation.type !== 'ONE');
     }
   },
   created() {
+    this._relationDataTable = null;
     //vado a settare il servizio
     this._service = new RelationService({
+      id: this.id,
       relation: this.relation,
       relations: this.relations
     });
     this._service.showRelationStyle();
     this.formeventbus.$on('changeinput', this.updateExternalKeyValueRelations);
-  },
-  activated() {
-    if (!relationsTable && this.relationsLength) {
-      this.$nextTick(() => {
-        this._createDataTable();
-      })
-    }
-  },
-  deactivated() {
-    if (relationsTable) {
-      relationsTable = relationsTable.destroy();
-      relationsTable = null;
-      $('#filterRelation').off();
-    }
   },
   mounted() {
     this.$nextTick(() => {
@@ -136,7 +131,12 @@ let relationsTable;
       $('[data-toggle="tooltip"]').tooltip();
     })
   },
-  destroyed: function() {
+  beforeDestroy: function() {
+    if (this._relationDataTable) {
+      this._relationDataTable = this._relationDataTable.destroy();
+      this._relationDataTable = null;
+      $('#filterRelation').off();
+    }
     this._service.hideRelationStyle();
   }
  });

@@ -17,8 +17,8 @@
     </div>
   </div>
   <div class="box-body" style="padding:0;">
-    <template v-if="relationsLength">
-      <table class="table g3wform-relation-table table-striped" style="width:100%">
+    <template>
+      <table v-if="relationsLength" class="table g3wform-relation-table table-striped" style="width:100%">
         <thead>
           <tr>
             <th v-for="attribute in relationAttributesSubset(relations[0])">

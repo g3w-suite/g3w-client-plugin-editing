@@ -80,6 +80,7 @@ export default {
     },
     form: {
       relations: {
+        required: "** E' necessario aggiundere almeno un ",
         tooltips: {
           add_relation: "Aggiungi una nuova riga",
           link_relation: "Associa una relazione esistente a questa feature",
@@ -177,6 +178,7 @@ export default {
     },
     form: {
       relations: {
+        required: "** Must add at least an  ",
         tooltips: {
           add_relation: "Add new row",
           link_relation: "Join a relation to this feature",

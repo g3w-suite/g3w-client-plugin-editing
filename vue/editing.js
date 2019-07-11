@@ -12,7 +12,8 @@ const vueComponentOptions = {
   template: EditingTemplate,
   data() {
     return {
-      height: 0
+      height: 0,
+      undoRedo: this.$options.service.getUndoRedo()
     }
   },
   components: {
@@ -32,9 +33,12 @@ const vueComponentOptions = {
       this.$options.service.redoHistory();
     },
     commit: function() {
-      this.$options.service.commit().then(()=> {
-        this.$options.service.clearHistory();
-      });
+      this.$options.service.commit()
+        .then(()=> {
+          this.$options.service.clearHistory();
+        }).catch((err) => {
+          console.log(err)
+      })
     },
     saveAll: function() {},
     startToolBox: function(toolBoxes) {
@@ -122,15 +126,12 @@ const vueComponentOptions = {
       this.$options.service.removeAllGeometryTools();
       return this.state.editing.enabled;
     },
-    undoRedo() {
-      return this.$options.service.getUndoRedo()
-    },
     message: function() {
       const message = "";
       return message;
     },
     canCommit: function() {
-      return this.canUndo;
+      return this.undoRedo.canCommit;
     },
     canUndo: function() {
       return this.allowediting && this.undoRedo.canUndo;
