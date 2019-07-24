@@ -14,7 +14,7 @@
         </th>
       </tr>
       </thead>
-      <tbody class="editing_pipes" :style="{height: height + 'px'}" style=" overflow-y: auto; display:block;width: 100%;">
+      <tbody class="editing_pipes" :style="{maxHeight: height + 'px'}" style=" overflow-y: auto; display:block;width: 100%;">
       <tr v-for="(item, index) in data" style="border-bottom: 1px solid #eeeeee; padding-bottom: 3px; display:flex; justify-content: space-between; align-items: center">
         <td style="padding: 5px;">
           <input type="checkbox" @keydown.13.stop="()=>{}" :id="`id_pipe_${item.index}`" class="magic-checkbox checkbox_pipe" @change="selectUnselectItem($event, index)" :index="index">

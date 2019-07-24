@@ -67,10 +67,11 @@ proto.isBranchLayer = function(layerId) {
   return this.getEditingService().isBranchLayer(layerId);
 };
 
-proto.getChartComponent = function({feature, editing}={}) {
+proto.getChartComponent = function({feature, editing, step}={}) {
   return this.getEditingService().getChartComponent({
     feature,
-    editing
+    editing,
+    step
   })
 };
 
@@ -310,16 +311,25 @@ proto.updateFeatureBranchId = function({feature, branchIds}) {
   })
 };
 
-proto.setBranchProfileData = function({feature}) {
-  this.getEditingService().getProfileData({feature}).then((response) => {
-    if (response.result) {
-      const profile = JSON.parse(response.profile);
-      for (let i = profile.length; i--; ) {
-        profile[i][4] = feature.get('pipe_section_default');
-      }
-      feature.set('pipes', profile);
-    }
-  });
+proto.setBranchProfileData = function({feature, step}) {
+  return new Promise((resolve, reject) => {
+    this.getEditingService().getProfileData({feature, step})
+      .then((response) => {
+        if (response.result) {
+          const profile = JSON.parse(response.profile);
+          for (let i = profile.length; i--; ) {
+            profile[i][4] = feature.get('pipe_section_default');
+          }
+          feature.set('pipes', profile);
+          resolve(profile);
+        } else
+          reject();
+      })
+      .catch((err) =>{
+        reject(err);
+      })
+  })
+
 };
 
 proto.runNodeMethods = function({type, layerId, feature}) {

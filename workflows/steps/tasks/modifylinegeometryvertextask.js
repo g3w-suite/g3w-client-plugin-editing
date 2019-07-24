@@ -75,7 +75,7 @@ proto.run = function(inputs, context) {
         const snapBranchLenth = snapFeatures.length;
         self._registerPointerMoveEvent({
           feature,
-          snapFeatures: snapBranchLenth > 1 ? []: [snapFeatures[0].feature]
+          snapFeatures: snapBranchLenth > 1 || snapBranchLenth === 0 ? []: [snapFeatures[0].feature]
         });
 
       }
@@ -114,62 +114,62 @@ proto.run = function(inputs, context) {
       const feature =  modifiedBranchFeatures[i];
       feature.set('pipes', undefined);
       // set undefined to recall pispe from server
-      const newFeature = feature.clone();
+      const newFeature = feature;
       this.setBranchProfileData({
         feature: newFeature,
         update:true
-      });
-      const originalFeature = originalBranchFeatures[i];
-      session.pushUpdate(layerId, newFeature, originalFeature);
-      inputs.features.push(newFeature);
-    }
-    let newDependencyFeatures = [];
-    if (dependencyFeatures) {
-      for (let i = 0; i < dependencyFeatures.length; i++) {
-        const {layerId, feature:dependencyFeature} = dependencyFeatures[i];
-        const newFeature = dependencyFeature.clone();
-        const newDependecyFeature = {
-          layerId,
-          feature: newFeature
-        };
-        newDependencyFeatures.push(newDependecyFeature);
-        session.pushUpdate(layerId, newFeature, dependencyOriginalFeatures[i]);
-      }
-    }
-    // considero sostamento solo se tra due branch
-    if (featuresLength ===  2) {
-      this.runBranchMethods({
-        action:'update_geometry',
-        feature: newDependencyFeatures,
-        session
-      }, {
-        snapFeatures: modifiedBranchFeatures
-      })
-    } else if (featuresLength === 1) {
-      const snapFeatures = self.getSnapBrachFeatures({
-        feature: modifiedBranchFeatures[0]
-      });
-
-      if (snapFeatures.length === 1) {
-        const lossfeature = this.getLosseByCoordinatesBeforeRunBranchMethods({
-          coordinates: snapFeatures[0].coordinates,
-          action: 'update_geometry'
-        });
-        if (lossfeature) {
+      }).then(() => {
+        const originalFeature = originalBranchFeatures[i];
+        session.pushUpdate(layerId, newFeature, originalFeature);
+        inputs.features.push(newFeature);
+        let newDependencyFeatures = [];
+        if (dependencyFeatures) {
+          for (let i = 0; i < dependencyFeatures.length; i++) {
+            const {layerId, feature:dependencyFeature} = dependencyFeatures[i];
+            const newFeature = dependencyFeature.clone();
+            const newDependecyFeature = {
+              layerId,
+              feature: newFeature
+            };
+            newDependencyFeatures.push(newDependecyFeature);
+            session.pushUpdate(layerId, newFeature, dependencyOriginalFeatures[i]);
+          }
+        }
+        // considero sostamento solo se tra due branch
+        if (featuresLength ===  2) {
           this.runBranchMethods({
             action:'update_geometry',
-            feature: [lossfeature],
+            feature: newDependencyFeatures,
             session
           }, {
-            snapFeatures: [modifiedBranchFeatures[0], snapFeatures[0].feature]
+            snapFeatures: modifiedBranchFeatures
           })
+        } else if (featuresLength === 1) {
+          const snapFeatures = self.getSnapBrachFeatures({
+            feature: modifiedBranchFeatures[0]
+          });
+
+          if (snapFeatures.length === 1) {
+            const lossfeature = this.getLosseByCoordinatesBeforeRunBranchMethods({
+              coordinates: snapFeatures[0].coordinates,
+              action: 'update_geometry'
+            });
+            if (lossfeature) {
+              this.runBranchMethods({
+                action:'update_geometry',
+                feature: [lossfeature],
+                session
+              }, {
+                snapFeatures: [modifiedBranchFeatures[0], snapFeatures[0].feature]
+              })
+            }
+          }
         }
-      }
+        ol.Observable.unByKey(startKey);
+        d.resolve(inputs);
+      })
     }
-    ol.Observable.unByKey(startKey);
-    // remove event listeners added by
-    this.checkOrphanNodes();
-    d.resolve(inputs);
+
   });
   return d.promise();
 };

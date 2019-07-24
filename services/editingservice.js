@@ -215,19 +215,23 @@ proto.getUndoRedo = function() {
   return this._allHistory.undoRedo;
 };
 
-proto.setUndoRedo = function() {
+proto.setUndoRedo = function({checkorphan = true}={}) {
   const canUndo = this._allHistory.currentIndex > 0;
   this._allHistory.undoRedo.canUndo = this._allHistory.undoRedo.canCommit = canUndo;
   this._allHistory.undoRedo.canRedo = this._allHistory.currentIndex < this._allHistory.history.length;
   if (this._allHistory.currentIndex === 2)
     this._allHistory.undoRedo.canCommit = this._allHistory.history[this._allHistory.currentIndex -1].session._history.canCommit();
-  this.checkOrphanNodes();
+  checkorphan && setTimeout(()=> {
+    this.checkOrphanNodes();
+  },0);
 };
 
 proto.clearHistory = function() {
   this._allHistory.history = [];
   this._allHistory.currentIndex = 0;
-  this.setUndoRedo();
+  this.setUndoRedo({
+    checkorphan: false
+  });
 };
 
 proto.addChangeToHistory = function(session) {
@@ -1020,46 +1024,47 @@ proto._createCommitMessage = function(sessions) {
 // metyhod to get
 proto.checkOrphanNodes = function() {
   const map = this._mapService.getMap();
-  map.once('postrender', () => {
-    const branchLayer = this.getToolBoxById(this._branchLayerId).getEditingLayer();
-    this._nodelayerIds.forEach((layerId) => {
-      const toolbox = this.getToolBoxById(layerId);
-      const layernode = toolbox.getEditingLayer();
-      const nodes = layernode.getSource().getFeatures();
-      const nodeStyle = layernode.getStyle();
-      layernode.getSource().forEachFeature((node) =>{
-        node.setStyle(nodeStyle)
-      });
-      this._orphanNodes[layerId] = [];
-      nodes.forEach((node) => {
-        const coordinate = node.getGeometry().getCoordinates();
+  const mapExtent = map.getView().calculateExtent(map.getSize());
+  const branchLayer = this.getToolBoxById(this._branchLayerId).getEditingLayer();
+  this._nodelayerIds.forEach((layerId) => {
+    const toolbox = this.getToolBoxById(layerId);
+    const layernode = toolbox.getEditingLayer();
+    const nodes = layernode.getSource().getFeatures();
+    const nodeStyle = layernode.getStyle();
+    layernode.getSource().forEachFeature((node) =>{
+      node.setStyle(nodeStyle)
+    });
+    this._orphanNodes[layerId] = [];
+    nodes.forEach((node) => {
+      const coordinate = node.getGeometry().getCoordinates();
+      if (ol.extent.containsCoordinate(mapExtent, coordinate)) {
         const pixel = map.getPixelFromCoordinate(coordinate);
         map.getFeaturesAtPixel(pixel,  {
           layerFilter: (layer) => {
             return layer === branchLayer
           }
         }) ?  null : this._orphanNodes[layerId].push(node);
-      });
-      this._orphanNodes[layerId].forEach((node) => {
-        const styles = [
-          layernode.getStyle(),
-          new ol.style.Style({
-            image: new ol.style.Circle({
-              radius: 15,
-              stroke: new ol.style.Stroke({
-                color: [255, 0, 0], width: 5
-              })
+      }
+    });
+    this._orphanNodes[layerId].forEach((node) => {
+      const styles = [
+        layernode.getStyle(),
+        new ol.style.Style({
+          image: new ol.style.Circle({
+            radius: 15,
+            stroke: new ol.style.Stroke({
+              color: [255, 0, 0], width: 5
             })
           })
-        ];
-        node.setStyle(styles)
-      })
+        })
+      ];
+      node.setStyle(styles)
     })
-  });
+  })
 };
 
-proto.getProfileData = function({feature}) {
-  return this.progeoApi.getProfileData({feature});
+proto.getProfileData = function({feature, step}) {
+  return this.progeoApi.getProfileData({feature, step});
 };
 
 proto._preCommit = function() {

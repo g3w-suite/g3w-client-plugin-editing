@@ -1,4 +1,5 @@
 const inherit = g3wsdk.core.utils.inherit;
+const debounce = g3wsdk.core.utils.debounce;
 const base =  g3wsdk.core.utils.base;
 const t = g3wsdk.core.i18n.tPlugin;
 const GUI = g3wsdk.gui.GUI;
@@ -74,7 +75,6 @@ proto._getForm = function(inputs, context) {
   // vado a prendere l'ultima feature
   this._feature = inputs.features[inputs.features.length - 1];
   this._originalFeature = this._feature.clone();
-
   this._fields = this._originalLayer.getFieldsWithValues(this._feature, {
     exclude: excludeFields
   });
@@ -143,27 +143,56 @@ proto._saveFnc = function(promise, context, inputs, chartData) {
   }
 };
 
+proto._createChartComponent = function({formService, chartData, step, replace=false, pipe_section_default}) {
+  const EditPipesComponent = pipesComponentFactory(chartData.pipes);
+  replace &&  this._feature.set('pipes', undefined);
+  formService.setLoading(true);
+  this.getChartComponent({
+    feature: this._feature,
+    step,
+    editing: {
+      mode: true,
+      components: [EditPipesComponent]
+    },
+  }).then(({id, component, error, data}) => {
+    if (!error) {
+      data.forEach((pipe) => {
+        chartData.pipes.data.push(pipe);
+        chartData.originalpipes.push([...pipe]);
+        chartData.pipes.originalvalues.push(pipe[2]);
+      });
+      if (!replace) {
+        this._originalFeature.set('pipes', chartData.originalpipes);
+        formService.addComponent({
+          id: id,
+          component,
+          icon: GUI.getFontClass('chart')
+        });
+      } else {
+        for (let i = chartData.pipes.data.length; i--;) {
+          chartData.pipes.data[i][4] = pipe_section_default;
+        }
+        formService.replaceComponent({
+          index: 1,
+          component: component,
+        });
+      }
+    }
+
+  }).catch((err)=>{
+    console.log(err)
+  })
+    .finally(() => {
+      formService.setLoading(false);
+    })
+};
+
 proto.startForm = function(options = {}) {
+  let isCreatedForm = false;
   const {inputs, context, promise } = options;
   const formComponent = options.formComponent || EditingFormComponent;
   const Form = this._getForm(inputs, context);
   const isBranchLayer = this.isBranchLayer(this._layerId);
-  if (isBranchLayer)
-    for (let i=0, len = this._fields.length; i< len; i++) {
-      if (this._fields[i].name === "pipe_section_default") {
-        this._fields[i] = new Proxy(this._fields[i], {
-          set: (target, property, value) => {
-            value = value ? +value: value;
-            target[property] = value ;
-            for (let i = chartData.pipes.data.length; i--;) {
-              chartData.pipes.data[i][4] = value;
-            }
-            return true;
-          }
-        });
-        break;
-      }
-    }
   const chartData = {
     originalpipes: [],
     pipes: {
@@ -171,6 +200,49 @@ proto.startForm = function(options = {}) {
       originalvalues: [],
     }
   };
+
+  if (isBranchLayer) {
+    let pipe_section_default = null;
+    for (let i=0, len = this._fields.length; i< len; i++) {
+      if (this._fields[i].name === "pipe_section_default") {
+        this._fields[i] = new Proxy(this._fields[i], {
+          set: (target, property, value) => {
+            value = value ? +value: value;
+            pipe_section_default = value;
+            target[property] = value;
+            for (let i = chartData.pipes.data.length; i--;) {
+              chartData.pipes.data[i][4] = value;
+            }
+            return true;
+          }
+        });
+      }
+      if (this._fields[i].name === "profile_step_default") {
+        const debounceCreateChartComponent = debounce(this._createChartComponent.bind(this));
+        this._fields[i] = new Proxy(this._fields[i], {
+          set: (target, property, value) => {
+            target[property] = value;
+            if (isCreatedForm && value !== null) {
+              chartData.originalpipes = [];
+              chartData.pipes =  {
+                data: [],
+                originalvalues: [],
+              };
+              debounceCreateChartComponent({
+                chartData,
+                formService,
+                step: value ? + value: null,
+                replace: true,
+                pipe_section_default
+              })
+            }
+            return true;
+          }
+        });
+      }
+    }
+  }
+
   const footer = {
     message: !isBranchLayer && this._originalLayer.getRelations() ?
       `${t('editing.form.relations.required')}  ${this._originalLayer.getRelations().getArray().map( (relation) => {
@@ -215,38 +287,11 @@ proto.startForm = function(options = {}) {
     }]
   });
   if (isBranchLayer) {
-    const EditPipesComponent = pipesComponentFactory(chartData.pipes);
-    formService.setLoading(true);
-
-    this.getChartComponent({
-      feature: this._feature,
-      editing: {
-        mode: true,
-        components: [EditPipesComponent]
-      },
-    }).then(({id, component, error, data}) => {
-      if (!error) {
-         data.forEach((pipe) => {
-           chartData.pipes.data.push(pipe);
-           chartData.originalpipes.push([...pipe]);
-           chartData.pipes.originalvalues.push(pipe[2]);
-        });
-        this._originalFeature.set('pipes', chartData.originalpipes);
-
-        formService.addComponent({
-          id: id,
-          component,
-          icon: GUI.getFontClass('chart')
-        });
-
-
-      }
-    }).catch((err)=>{
-      console.log(err)
-    })
-      .finally(() => {
-      formService.setLoading(false);
-    })
+    this._createChartComponent({
+      formService,
+      chartData
+    });
+    isCreatedForm = true;
   }
   // custom for valvues
   const relations = this._originalLayer.getRelations() ? this._originalLayer.getRelations().getArray(): [];

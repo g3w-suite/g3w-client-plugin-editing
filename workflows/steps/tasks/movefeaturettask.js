@@ -66,7 +66,7 @@ proto.run = function(inputs, context) {
         feature: newFeature,
         branch_id: dependencyFeature.getId()
       });
-      
+
       session.pushUpdate(layerId, newFeature, originalFeature);
       inputs.features.push(newFeature);
       feature.setStyle(originalStyle);
