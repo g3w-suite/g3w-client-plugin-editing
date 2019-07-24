@@ -114,9 +114,12 @@ proto._saveFnc = function(promise, context, inputs) {
 proto.startForm = function(options = {}) {
   const inputs = options.inputs;
   const context = options.context;
+  const session = context.session;
   const promise = options.promise;
   const formComponent = options.formComponent || EditingFormComponent;
   const Form = this._getForm(inputs, context);
+  const layerId = this._originalLayer.getId();
+  const isnew = this._originalFeature.isNew();
   const formService = Form({
     formComponent,
     title: t("editing.editing_attributes") + " " + this._layerName,
@@ -125,7 +128,7 @@ proto.startForm = function(options = {}) {
     dataid: this._layerName,
     layer: this._originalLayer,
     pk: this._pk,
-    isnew: this._originalFeature.isNew(),
+    isnew,
     fields: this._fields,
     context_inputs:  {
       context,
@@ -148,6 +151,14 @@ proto.startForm = function(options = {}) {
       cbk: _.bind(this._cancelFnc(promise),this)
     }]
   });
+  this.emitEvent('openform',
+    {
+      layerId,
+      isnew,
+      session,
+      feature: this._originalFeature,
+      formService
+    });
   WorkflowsStack.getCurrent().setContextService(formService);
 };
 

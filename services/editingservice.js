@@ -47,7 +47,7 @@ function EditingService() {
   //plugin components
   this._formComponents = {};
   // oggetto che server per ascoltare editing da parte di plugin
-  this._subscribes = {};
+  this._subscribers = {};
   // prendo tutti i layers del progetto corrente che si trovano
   // all'interno dei Layerstore del catalog registry con caratteristica editabili.
   // Mi verranno estratti tutti i layer editabili anche quelli presenti nell'albero del catalogo
@@ -149,17 +149,17 @@ proto.getFeature = function({layerId} = {}) {
   return tool.getFeature();
 };
 
-proto.subscribe = function({event, layerId}={}) {
-  let observable;
-  switch (event) {
-    case 'editing':
-      observable = this.getToolBoxById(layerId);
-      break;
-  }
-  return observable;
+proto.subscribe = function(event, fnc) {
+  if (!this._subscribers[event])
+    this._subscribers[event] = [];
+  this._subscribers[event].push(fnc);
 };
 
 // END API
+
+proto.fireEvent = function(event, options={}) {
+  this._subscribers[event] && this._subscribers[event].forEach(fnc => fnc(options))
+};
 
 proto.activeQueryInfo = function() {
   this._mapService.activeMapControl('query');
@@ -487,7 +487,7 @@ proto.afterEditingStart = function({layer}= {}) {
 proto.getToolBoxById = function(toolboxId) {
   let toolBox = null;
   this._toolboxes.forEach((toolbox) => {
-    if (toolbox.getId() == toolboxId) {
+    if (toolbox.getId() === toolboxId) {
       toolBox = toolbox;
       return false;
     }

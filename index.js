@@ -32,7 +32,7 @@ const _Plugin = function() {
       this.setHookLoading({
         loading: true
       });
-      this.service.on('ready', () => {
+      this.service.once('ready', () => {
         //plugin registry
         if (this.registerPlugin(this.config.gid)) {
           if (!GUI.ready) {

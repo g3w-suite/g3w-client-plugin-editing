@@ -14,11 +14,8 @@ const API = function({service} = {}) {
     return service.getFeature(options)
   };
 
-  this.subscribe = function({event, layerId }) {
-    return service.subscribe({
-      event,
-      layerId
-    })
+  this.subscribe = function(event, fnc) {
+    return service.subscribe(event, fnc);
   }
 };
 
