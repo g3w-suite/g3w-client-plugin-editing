@@ -36,7 +36,7 @@ const _Plugin = function() {
         //plugin registry
         if (this.registerPlugin(this.config.gid)) {
           if (!GUI.ready) {
-            GUI.on('ready',_.bind(this.setupGui, this));
+            GUI.on('ready', this.setupGui.bind(this));
           } else {
             this.setupGui();
           }
