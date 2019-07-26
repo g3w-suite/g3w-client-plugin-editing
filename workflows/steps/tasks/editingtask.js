@@ -24,7 +24,7 @@ proto.getEditingService = function() {
   return this._editingServive;
 };
 
-proto.emitEvent = function(event, options={}) {
+proto.fireEvent = function(event, options={}) {
   this.getEditingService().fireEvent(event, options);
 };
 proto.run = function(inputs, context) {};

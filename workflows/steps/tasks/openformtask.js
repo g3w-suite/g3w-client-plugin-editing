@@ -80,6 +80,7 @@ proto._getForm = function(inputs, context) {
 proto._cancelFnc = function(promise) {
   return function() {
     GUI.setModal(false);
+    this.fireEvent('closeform', {});
     promise.reject();
   }
 };
@@ -107,6 +108,7 @@ proto._saveFnc = function(promise, context, inputs) {
         originalFeature: this._originalFeature
       };
     GUI.setModal(false);
+    this.fireEvent('saveform', {});
     promise.resolve(inputs);
   }
 };
@@ -151,10 +153,9 @@ proto.startForm = function(options = {}) {
       cbk: _.bind(this._cancelFnc(promise),this)
     }]
   });
-  this.emitEvent('openform',
+  this.fireEvent('openform',
     {
       layerId,
-      isnew,
       session,
       feature: this._originalFeature,
       formService

@@ -12,6 +12,7 @@ const serverErrorParser= g3wsdk.core.errors.parsers.Server;
 const ToolBoxesFactory = require('../toolboxes/toolboxesfactory');
 const t = g3wsdk.core.i18n.tPlugin;
 const CommitFeaturesWorkflow = require('../workflows/commitfeaturesworkflow');
+const getScaleFromResolution = g3wsdk.ol.utils.getScaleFromResolution;
 import API from '../api'
 
 function EditingService() {
@@ -29,6 +30,7 @@ function EditingService() {
   };
   // state of editing
   this.state = {
+    canEdit: true,
     toolboxes: [], // contiene tutti gli stati delle toolbox in editing
     toolboxselected: null, // tiene riferimento alla toolbox selezionata
     toolboxidactivetool: null,
@@ -40,7 +42,7 @@ function EditingService() {
   // disable active tool on wehena a control is activated
   this._mapService.on('mapcontrol:active', (interaction) => {
     let toolboxselected = this.state.toolboxselected;
-    if ( toolboxselected && toolboxselected.getActiveTool()) {
+    if (toolboxselected && toolboxselected.getActiveTool()) {
       toolboxselected.getActiveTool().stop();
     }
   });
@@ -53,6 +55,9 @@ function EditingService() {
   // Mi verranno estratti tutti i layer editabili anche quelli presenti nell'albero del catalogo
   // come per esempio il caso di layers relazionati
   this.init = function(config) {// layersStore del plugin editing che conterrà tutti i layer di editing
+    // FAKE SCALE
+    //config.scale = 10000;
+    /// END FAKE
     this._layersstore = new LayersStore({
       id: 'editing',
       queryable: false // lo setto a false così che quando faccio la query (controllo) non prendo anche questi
@@ -156,6 +161,23 @@ proto.subscribe = function(event, fnc) {
 };
 
 // END API
+
+proto.canEdit = function() {
+  if (this.config.scale) {
+    const message = `${t('editing.messages.constraints.enable_editing')}${this.config.scale}`.toUpperCase();
+    this.state.canEdit = getScaleFromResolution(this._mapService.getMap().getView().getResolution()) <= this.config.scale;
+    GUI.setModal(!this.state.canEdit, message);
+    const fnc = (event) => {
+      this.state.canEdit = getScaleFromResolution(event.target.getResolution()) <= this.config.scale;
+      GUI.setModal(!this.state.canEdit, message);
+    };
+    this._mapService.getMap().getView().on('change:resolution', fnc);
+    this.disableCanEditEvent = () => {
+      GUI.setModal(false);
+      this._mapService.getMap().getView().un('change:resolution', fnc);
+    }
+  }
+};
 
 proto.fireEvent = function(event, options={}) {
   this._subscribers[event] && this._subscribers[event].forEach(fnc => fnc(options))
@@ -509,6 +531,7 @@ proto._cancelOrSave = function(){
 
 proto.stop = function() {
   return new Promise((resolve, reject) => {
+    this.disableCanEditEvent && this.disableCanEditEvent();
     let commitpromises = [];
     // vado a chiamare lo stop di ogni toolbox
     this._toolboxes.forEach((toolbox) => {

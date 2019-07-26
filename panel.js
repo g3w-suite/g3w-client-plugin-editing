@@ -1,7 +1,7 @@
-var base = g3wsdk.core.utils.base;
-var inherit = g3wsdk.core.utils.inherit;
-var t = g3wsdk.core.i18n.tPlugin;
-var EditingComponent = require('./vue/editing');
+const base = g3wsdk.core.utils.base;
+const inherit = g3wsdk.core.utils.inherit;
+const t = g3wsdk.core.i18n.tPlugin;
+const EditingComponent = require('./vue/editing');
 
 function EditingPanelComponent(options={}) {
   // editortoolsbars

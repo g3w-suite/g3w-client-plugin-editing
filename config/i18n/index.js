@@ -39,6 +39,9 @@ export default {
       saved: "I dati sono stati salvati correttamente",
       loading_data: "Caricamento dati",
       saving: "Salvataggio dati in corso. Attendere ...",
+      constraints: {
+        enable_editing: "Aumentare il livello di zoom per abilitare l'editing \nScala di attivazione 1:"
+      },
       commit: {
         header: "La lista sotto riporta tutte le modifiche che verranno salvate.",
         header_add: "<b>Aggiunte</b> riporta il numero delle features aggiunte",
@@ -119,6 +122,9 @@ export default {
       saved: "Data saved successfully",
       loading_data: "Loading data",
       saving: "Saving data. Please wait ...",
+      constraints: {
+        enable_editing: "Please Zoom In to enable zoom editing tools \nActivation scale at 1:"
+      },
       pdf: "Document preview not available. Please click here ",
       commit: {
         header: "The following list show all changes to commit.",

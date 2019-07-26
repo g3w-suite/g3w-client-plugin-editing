@@ -3,7 +3,7 @@ const ToolsOfToolComponent = require('./toolsoftool');
 
 const ToolboxComponent = Vue.extend({
   template: require('./toolbox.html'),
-  props: ['state', 'resourcesurl'],
+  props: ['state', 'resourcesurl', 'canEdit'],
   data: function() {
     return {
       active: false

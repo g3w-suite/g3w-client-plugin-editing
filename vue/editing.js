@@ -131,6 +131,7 @@ const vueComponentOptions = {
   created() {
     GUI.on('opencontent', this._enableEditingButtons);
     GUI.on('closeform', this._enableEditingButtons);
+    this.$options.service.canEdit();
   },
   mounted() {
     this.$nextTick(() => {})
@@ -188,7 +189,6 @@ function PanelComponent(options) {
       });
     return d.promise();
   };
-
 }
 
 inherit(PanelComponent, Component);

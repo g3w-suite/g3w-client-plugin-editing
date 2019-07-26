@@ -1,5 +1,5 @@
 <div class="toolbox">
-  <div :class="{'disableddiv' : !isLayerReady }" :id="'id_toolbox_'+ state.id">
+  <div :class="{'disableddiv' : !isLayerReady || !canEdit }" :id="'id_toolbox_'+ state.id">
     <div @click="select" class="panel panel-primary" :class="{ 'toolboxselected': state.selected }">
       <div v-show="!isLayerReady" class="bar-loader"></div>
       <div class="panel-heading container" style="width:100%;" :style="{ background: state.color}" >
