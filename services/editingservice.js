@@ -55,9 +55,8 @@ function EditingService() {
   // Mi verranno estratti tutti i layer editabili anche quelli presenti nell'albero del catalogo
   // come per esempio il caso di layers relazionati
   this.init = function(config) {// layersStore del plugin editing che conterrà tutti i layer di editing
-    // FAKE SCALE
-    //config.scale = 10000;
-    /// END FAKE
+    // check constraints editing /scale, geometry, bbox etc ..
+    config.constraints = config.constraints || {};
     this._layersstore = new LayersStore({
       id: 'editing',
       queryable: false // lo setto a false così che quando faccio la query (controllo) non prendo anche questi
@@ -162,13 +161,22 @@ proto.subscribe = function(event, fnc) {
 
 // END API
 
+proto.getEditingConstraints = function() {
+  return this.config.constraints;
+};
+
+proto.getEditingConstraint = function(type) {
+  return this.getEditingConstraints()[type];
+};
+
 proto.canEdit = function() {
-  if (this.config.scale) {
-    const message = `${t('editing.messages.constraints.enable_editing')}${this.config.scale}`.toUpperCase();
-    this.state.canEdit = getScaleFromResolution(this._mapService.getMap().getView().getResolution()) <= this.config.scale;
+  if (this.config.constraints.scale) {
+    const scale = this.config.constraints.scale;
+    const message = `${t('editing.messages.constraints.enable_editing')}${scale}`.toUpperCase();
+    this.state.canEdit = getScaleFromResolution(this._mapService.getMap().getView().getResolution()) <= scale;
     GUI.setModal(!this.state.canEdit, message);
     const fnc = (event) => {
-      this.state.canEdit = getScaleFromResolution(event.target.getResolution()) <= this.config.scale;
+      this.state.canEdit = getScaleFromResolution(event.target.getResolution()) <= scale;
       GUI.setModal(!this.state.canEdit, message);
     };
     this._mapService.getMap().getView().on('change:resolution', fnc);
