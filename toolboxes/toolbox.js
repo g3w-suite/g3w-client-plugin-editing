@@ -2,13 +2,16 @@ const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
 const G3WObject = g3wsdk.core.G3WObject;
 const GUI = g3wsdk.gui.GUI;
+const t = g3wsdk.core.i18n.tPlugin;
 const Layer = g3wsdk.core.layer.Layer;
 const Session = g3wsdk.core.editing.Session;
+const getScaleFromResolution = g3wsdk.ol.utils.getScaleFromResolution;
 const OlFeaturesStore = g3wsdk.core.layer.features.OlFeaturesStore;
 const FeaturesStore = g3wsdk.core.layer.features.FeaturesStore;
 
 function ToolBox(options={}) {
   base(this);
+  this._constraints = options.constraints || {};
   // editor del Layer che permette di interagire con il layer
   // save, etc ...
   this._editor = options.editor;
@@ -33,7 +36,7 @@ function ToolBox(options={}) {
   this._session = new Session({
     id: options.id, // contiene l'id del layer
     editor: this._editor,
-    featuresstore: this._layerType == Layer.LayerTypes.VECTOR ? new OlFeaturesStore(): new FeaturesStore()
+    featuresstore: this._layerType === Layer.LayerTypes.VECTOR ? new OlFeaturesStore(): new FeaturesStore()
   });
   // opzione per recuperare le feature
   this._getFeaturesOption = {};
@@ -63,7 +66,8 @@ function ToolBox(options={}) {
       on: false,
       dependencies: [], // array di id dei toolbox dipendenti, utili per accendere spendere editing e chiedere il commit
       relations: [],
-      father: false
+      father: false,
+      canEdit: true
     },
     layerstate: this._layer.state
   };
@@ -109,6 +113,10 @@ function ToolBox(options={}) {
 inherit(ToolBox, G3WObject);
 
 const proto = ToolBox.prototype;
+
+proto.getState = function() {
+  return this.state;
+};
 
 proto.getLayer = function() {
   return this._layer;
@@ -242,6 +250,7 @@ proto.stop = function() {
   const EventName  = 'stop-editing';
   // le sessioni dipendenti per poter eseguier l'editing
   const d = $.Deferred();
+  this.disableCanEditEvent && this.disableCanEditEvent();
   if (this._session && this._session.isStarted()) {
     //vado a verificare se  c'è un padre in editing
     const EditingService = require('../services/editingservice');
@@ -266,7 +275,9 @@ proto.stop = function() {
         .fail((err) => {
           // mostro un errore a video o tramite un messaggio nel pannello
           d.reject(err)
-        });
+        }).always(()=> {
+          this.setSelected(false);
+        })
     } else {
       // spengo il tool attivo
       this.stopActiveTool();
@@ -276,8 +287,10 @@ proto.stop = function() {
       this.clearToolboxMessages();
       this._unregisterGetFeaturesEvent();
       EditingService.stopSessionChildren(this.state.id);
+      this.setSelected(false);
     }
   } else {
+    this.setSelected(false);
     d.resolve(true)
   }
   return d.promise();
@@ -308,7 +321,7 @@ proto._registerGetFeaturesEvent = function(options) {
     case Layer.LayerTypes.VECTOR:
       const fnc = _.bind(function(options) {
         // get current map extent bbox
-        const canEdit = EditingService.state.canEdit;
+        const canEdit = this.state.editing.canEdit;
         this._editingLayer.setVisible(canEdit);
         if (canEdit) {
           const bbox = this._mapService.getMapBBOX();
@@ -345,6 +358,41 @@ proto._setToolsEnabled = function(bool) {
     if (!bool)
       tool.setActive(bool);
   })
+};
+
+proto.getEditingConstraints = function() {
+  return this._constraints;
+};
+
+proto.getEditingConstraint = function(type) {
+  return this.getEditingConstraints()[type];
+};
+
+proto.canEdit = function() {
+  return this.state.editing.canEdit;
+};
+
+proto._canEdit = function() {
+  if (this._constraints.scale) {
+    const scale = this._constraints.scale;
+    const message = `${t('editing.messages.constraints.enable_editing')}${scale}`.toUpperCase();
+    this.state.editing.canEdit = getScaleFromResolution(this._mapService.getMap().getView().getResolution()) <= scale;
+    GUI.setModal(!this.state.editing.canEdit, message);
+    const fnc = (event) => {
+      this.state.editing.canEdit = getScaleFromResolution(event.target.getResolution()) <= scale;
+      GUI.setModal(!this.state.editing.canEdit, message);
+    };
+    this._mapService.getMap().getView().on('change:resolution', fnc);
+    this.disableCanEditEvent = () => {
+      GUI.setModal(false);
+      this._mapService.getMap().getView().un('change:resolution', fnc);
+    }
+  }
+};
+
+proto._disableCanEdit = function() {
+  this.state.editing.canEdit = true;
+  this.disableCanEditEvent && this.disableCanEditEvent()
 };
 
 proto.setMessage = function(message) {
@@ -417,6 +465,7 @@ proto.isSelected = function() {
 
 proto.setSelected = function(bool) {
   this.state.selected = _.isBoolean(bool) ? bool : false;
+  this.state.selected ? this._canEdit() : this._disableCanEdit();
 };
 
 proto.getTools = function() {

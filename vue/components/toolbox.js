@@ -3,7 +3,7 @@ const ToolsOfToolComponent = require('./toolsoftool');
 
 const ToolboxComponent = Vue.extend({
   template: require('./toolbox.html'),
-  props: ['state', 'resourcesurl', 'canEdit'],
+  props: ['state', 'resourcesurl'],
   data: function() {
     return {
       active: false
@@ -22,6 +22,7 @@ const ToolboxComponent = Vue.extend({
       }
     },
     toggleEditing() {
+      this.select();
       //se il toolbox non è ancora abilitato non faccio niente
       if (!this.state.layerstate.editing.ready || this.state.loading)
         return;
@@ -38,6 +39,9 @@ const ToolboxComponent = Vue.extend({
     }
   },
   computed: {
+    canEdit() {
+      return this.state.editing.canEdit;
+    },
     father: function() {
       return this.state.editing.father && !!this.state.editing.dependencies.length;
     },
@@ -50,6 +54,11 @@ const ToolboxComponent = Vue.extend({
     isLayerReady() {
       return this.state.layerstate.editing.ready;
     }
+  },
+  created() {
+    this.$emit('canEdit', {
+      id: this.state.id
+    })
   }
 });
 

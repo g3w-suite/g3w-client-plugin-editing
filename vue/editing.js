@@ -36,7 +36,7 @@ const vueComponentOptions = {
     saveAll: function() {},
     startToolBox: function(toolboxId) {
       const toolbox = this._getToolBoxById(toolboxId);
-      toolbox.start();
+      toolbox.canEdit() && toolbox.start();
     },
     stopToolBox: function(toolboxId) {
       const toolbox = this._getToolBoxById(toolboxId);
@@ -80,12 +80,8 @@ const vueComponentOptions = {
       const service = this.$options.service;
       const toolbox = this._getToolBoxById(toolboxId);
       const toolboxes = service.getToolBoxes();
-      _.forEach(toolboxes, function(toolbox) {
-        if (toolbox.isSelected()) {
-          toolbox.setSelected(false);
-          return false;
-        }
-      });
+      const toolboxSelected = toolboxes.find((toolbox) => toolbox.isSelected());
+      toolboxSelected && toolboxSelected.setSelected(false);
       toolbox.setSelected(true);
       this.state.toolboxselected = toolbox;
       if (toolbox.getDependencies().length) {
@@ -131,7 +127,6 @@ const vueComponentOptions = {
   created() {
     GUI.on('opencontent', this._enableEditingButtons);
     GUI.on('closeform', this._enableEditingButtons);
-    this.$options.service.canEdit();
   },
   mounted() {
     this.$nextTick(() => {})

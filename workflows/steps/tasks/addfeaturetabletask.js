@@ -23,8 +23,9 @@ proto.run = function(inputs, context) {
   const feature = originalLayer.createNewFeature();
   originalLayer.isPkEditable() ?  feature.setNew() : feature.setTemporaryId();
   editingLayer.getSource().addFeature(feature);
+  const newFeature = session.pushAdd(layerId, feature);
+  inputs.newFeature = newFeature;
   inputs.features.push(feature);
-  session.pushAdd(layerId, feature);
   d.resolve(inputs, context);
   return d.promise();
 };

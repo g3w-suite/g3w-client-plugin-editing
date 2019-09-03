@@ -123,7 +123,7 @@ export default {
       loading_data: "Loading data",
       saving: "Saving data. Please wait ...",
       constraints: {
-        enable_editing: "Please Zoom In to enable zoom editing tools \nActivation scale at 1:"
+        enable_editing: "Please Zoom In to enable editing tools \nActivation scale at 1:"
       },
       pdf: "Document preview not available. Please click here ",
       commit: {

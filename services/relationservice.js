@@ -144,7 +144,7 @@ proto.startTableTool = function(relationtool, index) {
   });
   let workflow;
   // delete feature
-  if (relationtool.state.id == 'deletefeature') {
+  if (relationtool.state.id === 'deletefeature') {
     GUI.dialog.confirm(t("editing.messages.delete_feature"), (result) => {
       if (result) {
         this.getCurrentWorkflowData().session.pushDelete(this._layerId, relationfeature);
@@ -157,7 +157,7 @@ proto.startTableTool = function(relationtool, index) {
 
     });
   }
-  if (relationtool.state.id == 'editattributes') {
+  if (relationtool.state.id === 'editattributes') {
     const EditTableFeatureWorkflow = require('../workflows/edittablefeatureworkflow');
     workflow = new EditTableFeatureWorkflow();
     const percContent = this._bindEscKeyUp(workflow,  function() {});
@@ -166,7 +166,7 @@ proto.startTableTool = function(relationtool, index) {
         const fields = this._getRelationFieldsValue(relationfeature);
         fields.forEach((_field) => {
           relation.fields.forEach((field) => {
-            if (field.name == _field.name)
+            if (field.name === _field.name)
               field.value = _field.value;
           })
         });
@@ -215,18 +215,18 @@ proto.startVectorTool = function(relationtool, index) {
   const start =(workflow instanceof workflows.DeleteFeatureWorkflow || workflow instanceof workflows.EditFeatureAttributesWorkflow ) && workflow.startFromLastStep(options)
     || workflow.start(options);
   start.then((outputs) => {
-      if (relationtool.getId() == 'deletefeature') {
+      if (relationtool.getId() === 'deletefeature') {
         // vado a cambiarli lo style
         relationfeature.setStyle(this._originalLayerStyle);
         this.getEditingLayer().getSource().removeFeature(relationfeature);
         this.getCurrentWorkflowData().session.pushDelete(this._layerId, relationfeature);
         this.relations.splice(index, 1)
       }
-      if (relationtool.getId() == 'editattributes') {
+      if (relationtool.getId() === 'editattributes') {
         const fields = this._getRelationFieldsValue(relationfeature);
         fields.forEach((_field) => {
           relation.fields.forEach((field) => {
-            if (field.name == _field.name)
+            if (field.name === _field.name)
               field.value = _field.value;
           })
         });

@@ -12,13 +12,14 @@ const serverErrorParser= g3wsdk.core.errors.parsers.Server;
 const ToolBoxesFactory = require('../toolboxes/toolboxesfactory');
 const t = g3wsdk.core.i18n.tPlugin;
 const CommitFeaturesWorkflow = require('../workflows/commitfeaturesworkflow');
-const getScaleFromResolution = g3wsdk.ol.utils.getScaleFromResolution;
 import API from '../api'
 
 function EditingService() {
   base(this);
   // contains alla sessions
   this._sessions = {};
+  // constraints
+  this.constraints = {};
   // events
   this._events = {
     layer: {
@@ -30,7 +31,6 @@ function EditingService() {
   };
   // state of editing
   this.state = {
-    canEdit: true,
     toolboxes: [], // contiene tutti gli stati delle toolbox in editing
     toolboxselected: null, // tiene riferimento alla toolbox selezionata
     toolboxidactivetool: null,
@@ -56,7 +56,6 @@ function EditingService() {
   // come per esempio il caso di layers relazionati
   this.init = function(config) {// layersStore del plugin editing che conterrà tutti i layer di editing
     // check constraints editing /scale, geometry, bbox etc ..
-    config.constraints = config.constraints || {};
     this._layersstore = new LayersStore({
       id: 'editing',
       queryable: false // lo setto a false così che quando faccio la query (controllo) non prendo anche questi
@@ -83,6 +82,7 @@ function EditingService() {
       // vado a chiamare la funzione che mi permette di
       // estrarre la versione editabile del layer di partenza (es. da imagelayer a vector layer, table layer/tablelayer etc..)
       const editableLayer = layer.getLayerForEditing();
+      //this.constraints[layerId] = {scale: 10000};//editableLayer.getEditingConstrains();
       if (editableLayer.isReady()) {
         editingLayersLenght-=1;
       }
@@ -160,32 +160,6 @@ proto.subscribe = function(event, fnc) {
 };
 
 // END API
-
-proto.getEditingConstraints = function() {
-  return this.config.constraints;
-};
-
-proto.getEditingConstraint = function(type) {
-  return this.getEditingConstraints()[type];
-};
-
-proto.canEdit = function() {
-  if (this.config.constraints.scale) {
-    const scale = this.config.constraints.scale;
-    const message = `${t('editing.messages.constraints.enable_editing')}${scale}`.toUpperCase();
-    this.state.canEdit = getScaleFromResolution(this._mapService.getMap().getView().getResolution()) <= scale;
-    GUI.setModal(!this.state.canEdit, message);
-    const fnc = (event) => {
-      this.state.canEdit = getScaleFromResolution(event.target.getResolution()) <= scale;
-      GUI.setModal(!this.state.canEdit, message);
-    };
-    this._mapService.getMap().getView().on('change:resolution', fnc);
-    this.disableCanEditEvent = () => {
-      GUI.setModal(false);
-      this._mapService.getMap().getView().un('change:resolution', fnc);
-    }
-  }
-};
 
 proto.fireEvent = function(event, options={}) {
   this._subscribers[event] && this._subscribers[event].forEach(fnc => fnc(options))
@@ -539,7 +513,6 @@ proto._cancelOrSave = function(){
 
 proto.stop = function() {
   return new Promise((resolve, reject) => {
-    this.disableCanEditEvent && this.disableCanEditEvent();
     let commitpromises = [];
     // vado a chiamare lo stop di ogni toolbox
     this._toolboxes.forEach((toolbox) => {
@@ -773,7 +746,7 @@ proto._createCommitMessage = function(commitItems) {
 };
 
 proto.commit = function(toolbox, close=false) {
-  let d = $.Deferred();
+  const d = $.Deferred();
   toolbox = toolbox || this.state.toolboxselected;
   let session = toolbox.getSession();
   let layer = toolbox.getLayer();

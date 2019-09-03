@@ -11,6 +11,7 @@ function EditorToolBoxesFactory() {
   // il layer è il layer di editing originale da cui tutte le feature
   // verranno chiamate tramite il featuresstore provider
   this.build = function(layer) {
+    const constraints = layer.getEditingConstrains();
     // estraggo il layer dell'editor
     const editor = layer.getEditor();
     // estraggo il tipo di layer
@@ -52,7 +53,8 @@ function EditorToolBoxesFactory() {
       editor: editor,
       layer: editingLayer,
       tools: tools,
-      title: "Edit " + layer.getName()
+      title: "Edit " + layer.getName(),
+      constraints
     })
   };
 }

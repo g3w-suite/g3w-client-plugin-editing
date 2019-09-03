@@ -52,7 +52,7 @@ proto.run = function(inputs, context) {
       // specificando il layer sul quale le feature aggiunte devono essere messe
       const source = editingLayer.getSource();
       const attributes = _.filter(originalLayer.getFields(), function(field) {
-        return field.editable && field.name != originalLayer.getPk() ;
+        return field.editable && field.name !== originalLayer.getPk() ;
       });
       // creo una source temporanea
       const temporarySource = new ol.source.Vector();
@@ -89,7 +89,8 @@ proto.run = function(inputs, context) {
         //source.readFeatures().push(feature);
         // devo creare un clone per evitare che quando eventualmente sposto la feature appena aggiunta
         // questa non sovrascriva le feature nuova originale del primo update
-        session.pushAdd(layerId, feature);
+        const newFeature = session.pushAdd(layerId, feature);
+        inputs.newFeature = newFeature;
         inputs.features.push(feature);
         d.resolve(inputs);
       });

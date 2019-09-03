@@ -93,20 +93,22 @@ proto._saveFnc = function(promise, context, inputs) {
     if (this._feature.isNew()) {
      if (this._originalLayer.isPkEditable()) {
        fields.forEach((field) => {
-         if(field.name === this._feature.getPk())
+         if(field.name === this._feature.getPk()) {
            this._feature.set(this._feature.getPk(), field.value);
+           // check if inputs has a newFeature value (case only if added for firts time (add feature task))
+           inputs.newFeature &&  inputs.newFeature.setId(this._feature.getId());
+         }
        });
      }
     }
     const newFeature = this._feature.clone();
-    if (session.getId() === layerId)
-      session.pushUpdate(layerId, newFeature, this._originalFeature);
-    else
-      //is a relation so i i have to put relation feature
+    if (this._isContentChild)
+    //is a relation so i i have to put relation feature
       inputs.relationFeature = {
         newFeature,
         originalFeature: this._originalFeature
       };
+    session.pushUpdate(layerId, newFeature, this._originalFeature);
     GUI.setModal(false);
     this.fireEvent('saveform', {});
     promise.resolve(inputs);
