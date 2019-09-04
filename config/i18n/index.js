@@ -17,8 +17,8 @@ export default {
       update_vertex: "Aggiorna vertici feature",
       update_feature: "Modifica feature",
       switch_feature: "Cambia direzione",
-      copy_paste_network: 'Copia e incolla network'
-
+      copy_paste_network: 'Copia e incolla network',
+      split_branch: "Splitta il Branch"
     },
     graph: {
       title: 'Profilo Altimetrico',
@@ -42,7 +42,8 @@ export default {
         switch_direction: "Clicca sul branch per invertire la direzione",
         insert_attributes_feature: "Inserisci gli attributi della feature",
         select_elements: "Seleziona gli elementi della rete che vuoi copiare",
-        select_vertex_to_paste: "Seleziona il vertice su cui copiare la selezione"
+        select_vertex_to_paste: "Seleziona il vertice su cui copiare la selezione",
+        split_branch: "Clicca sul punto su cui vuoi splittare il branch"
       }
     },
     messages: {
@@ -113,7 +114,8 @@ export default {
       update_vertex: "Update feature vertex",
       update_feature: "Update feature",
       switch_feature: "Switch direction",
-      copy_paste_network: 'Copy and paste network'
+      copy_paste_network: 'Copy and paste network',
+      split_branch: "Split Branch"
 
     },
     graph: {
@@ -139,7 +141,8 @@ export default {
         switch_direction: "Click on branch to invert direction",
         insert_attributes_feature: "Insert attributes of the feature",
         select_elements: "Select elements of network to copy",
-        select_vertex_to_paste: "Select vertex where paste the selection network"
+        select_vertex_to_paste: "Select vertex where paste the selection network",
+        split_branch: "Click to branch to split"
       }
     },
     messages: {

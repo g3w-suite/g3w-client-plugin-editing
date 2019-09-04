@@ -329,7 +329,6 @@ proto.setBranchProfileData = function({feature, step}) {
         reject(err);
       })
   })
-
 };
 
 proto.runNodeMethods = function({type, layerId, feature}) {

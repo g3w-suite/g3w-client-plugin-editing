@@ -5,6 +5,7 @@ const Tool = require('./tool');
 const AddFeatureWorkflow = require('../workflows/addfeatureworkflow');
 const ModifyGeometryVertexWorkflow = require('../workflows/modifygeometryvertexworkflow');
 const ModifyLineGeometryVertexWorkflow = require('../workflows/modifylinegeometryvertexworkflow');
+const SplitBranchWorkfow =  require('../workflows/splitbranchworkflow');
 const MoveFeatureWorkflow = require('../workflows/movefeatureworkflow');
 const DeleteFeatureWorkflow = require('../workflows/deletefeatureworkflow');
 const EditFeatureAttributesWorkflow = require('../workflows/editfeatureattributesworkflow');
@@ -95,6 +96,14 @@ function EditorToolsFactory() {
                 layer,
                 dependency,
                 op: ModifyLineGeometryVertexWorkflow
+              }),
+              new Tool({
+                id: 'splitbranch',
+                name: t("editing.tools.split_branch"),
+                icon: "splitBranch.png",
+                layer,
+                dependency,
+                op: SplitBranchWorkfow
               }),
               new Tool({
                 id: 'deletefeature',

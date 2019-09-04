@@ -64,7 +64,7 @@ function EditingService() {
   //mapservice
   this._mapService = GUI.getComponent('map').getService();
   // disable active tool on wehena a control is activated
-  this._mapService.on('mapcontrol:active', (interaction) => {
+  this._mapService.on('mapcontrol:active', () => {
     let toolboxselected = this.state.toolboxselected;
     if (toolboxselected && toolboxselected.getActiveTool()) {
       toolboxselected.getActiveTool().stop();
@@ -91,7 +91,6 @@ function EditingService() {
     // setto la configurazione del plugin
     this.config = config;
     // oggetto contenente tutti i layers in editing
-
     // restto
     this.state.toolboxes = [];
     const _dependencies = {
@@ -104,11 +103,12 @@ function EditingService() {
     //   return ['timesources1562063034903','sources1562063034903', 'branches1562063034903'].indexOf(layer.getId()) !== -1;
     // });
     const layers = this._getEditableLayersFromCatalog();
+    const branchLayer = layers.pop();
+    layers.unshift(branchLayer);
     const editingLayersLenght  = layers.length;
     let layersNotReady = editingLayersLenght;
     //ciclo su ogni layers editiabile
     for (let i = 0; i < editingLayersLenght; i++) {
-
       const layer = layers[i];
       const layerId = layer.getId();
       if (layerId === this._branchLayerId)
@@ -151,7 +151,8 @@ function EditingService() {
     // set toolbox colors
     this.setLayersColor();
     // after sadd layers to layerstore
-    this._layersstore.addLayers(this.getLayers());
+    const layers = this.getLayers();
+    this._layersstore.addLayers(layers);
     // vado a creare i toolboxes
     this._buildToolBoxes();
     this.emit('ready');
@@ -223,7 +224,7 @@ proto.setUndoRedo = function({checkorphan = true}={}) {
     this._allHistory.undoRedo.canCommit = this._allHistory.history[this._allHistory.currentIndex -1].session._history.canCommit();
   checkorphan && setTimeout(()=> {
     this.checkOrphanNodes();
-  },0);
+  }, 0);
 };
 
 proto.clearHistory = function() {
@@ -304,7 +305,6 @@ proto.undo = function(session) {
       resolve();
     });
   });
-
 };
 
 // udo delle relazioni
@@ -521,6 +521,7 @@ proto._buildToolBoxes = function() {
     dependency.forEach((_dependency) => dependencyToolboxSession[_dependency.getId()] = toolbox.getSession());
     // vado ad aggiungere la toolbox
     this.addToolBox(toolbox);
+    ///
     if (layer.getGeometryType() === 'Line') {
       this.setLineStyle({
         color: layer.getColor(),
@@ -529,7 +530,6 @@ proto._buildToolBoxes = function() {
       })
     }
   }
-
   for (const toolBoxId in dependencyToolboxSession) {
     this._setDependencyToolboxSession({
       toolBoxId,
