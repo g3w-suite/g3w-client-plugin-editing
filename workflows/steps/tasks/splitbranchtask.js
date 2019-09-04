@@ -24,32 +24,35 @@ proto.run = function(inputs, context) {
   this._interaction = new PickFeatureInteraction({
     layers: [editingLayer]
   });
-  this._interaction.on('picked', (evt)=> {
-    const originalFeature = evt.feature;
-    const coordinates = originalFeature.getGeometry().getClosestPoint(evt.coordinate);
-    const splittedFeature = originalFeature.clone();
-    const newFeature = originalFeature.clone();
+  this._interaction.on('picked', (evt) => {
+    const feature = evt.feature;
+    const originalFeature = feature.clone();
+    const newFeature = feature.clone();
     newFeature.setTemporaryId();
-    const originalCoordinates = originalFeature.getGeometry().getCoordinates();
+    const originalCoordinates = feature.getGeometry().getCoordinates();
+    const coordinates = feature.getGeometry().getClosestPoint(evt.coordinate);
     newFeature.getGeometry().setCoordinates([coordinates, originalCoordinates[1]]);
-    splittedFeature.getGeometry().setCoordinates([originalCoordinates[0], coordinates]);
-    [newFeature, splittedFeature].forEach((feature) => {
-      feature.set('pipes', undefined);
-      this.setBranchProfileData({
+    feature.getGeometry().setCoordinates([originalCoordinates[0], coordinates]);
+    const promisesProfiles = [newFeature, feature].map((feature) => {
+      return this.setBranchProfileData({
         feature
       });
     });
-    session.pushUpdate(layerId, splittedFeature, originalFeature);
-    session.pushAdd(layerId, newFeature);
-    source.addFeature(newFeature);
-    this.runBranchMethods({
-      action: 'add',
-      session,
-      feature: newFeature,
-    }, {
-      snapFeatures:[splittedFeature]
-    });
-    d.resolve(inputs)
+    Promise.all(promisesProfiles).then(()=> {
+      session.pushUpdate(layerId, feature, originalFeature);
+      session.pushAdd(layerId, newFeature);
+      source.addFeature(newFeature);
+      this.runBranchMethods({
+        action: 'add',
+        session,
+        feature: newFeature,
+      }, {
+        snapFeatures:[feature]
+      });
+      d.resolve(inputs)
+    }).catch((err)=>{
+      d.reject(err)
+    })
   });
   this.addInteraction(this._interaction);
   return d.promise();
