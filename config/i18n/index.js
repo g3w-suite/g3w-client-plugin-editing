@@ -94,7 +94,6 @@ export default {
         cancel: "Cancella"
       }
     }
-
   },
   en: {
     search: "Search",
@@ -116,16 +115,14 @@ export default {
       switch_feature: "Switch direction",
       copy_paste_network: 'Copy and paste network',
       split_branch: "Split Branch"
-
     },
     graph: {
-      title: 'Altimetry',
+      title: 'Profile and Properties',
       labels: {
         x: 'Distance (m)',
         y:'Height (m)'
       }
     },
-
     steps: {
       help: {
         new: "Create new feature",
@@ -193,6 +190,6 @@ export default {
         save: "Save",
         cancel: "Cancel"
       }
-    },
+    }
   }
 }

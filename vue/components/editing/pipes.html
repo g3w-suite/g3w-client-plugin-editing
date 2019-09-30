@@ -20,9 +20,13 @@
           <input type="checkbox" @keydown.13.stop="()=>{}" :id="`id_pipe_${item.index}`" class="magic-checkbox checkbox_pipe" @change="selectUnselectItem($event, index)" :index="index">
           <label :for="`id_pipe_${index}`" style="padding: 5px"></label>
         </td>
-        <td align="right" style="padding: 5px;">
-          sezione: <input class="pipe_section" @keydown.13.stop="()=>{}" type="number" style="width: 80px; padding: 5px; font-weight: bold"  v-model.number="pipes.data[index][4]" :disabled="pipes.data[index][4] === undefined || selectitems.indexOf(item) === -1 ">
-          altezza: <input class="pipe_height" @keydown.13.stop="()=>{}" type="number" @change="changeItem(item)" style="width: 100px; padding: 5px; font-weight: bold"  v-model.number="item.value" :disabled="selectitems.indexOf(item) === -1">
+        <td align="right" style="padding: 5px; display: flex;  flex-wrap: wrap; justify-content: flex-end">
+          <div>
+            diametro: <input class="pipe_section" @keydown.13.stop="()=>{}" type="number" style="width: 80px; padding: 5px; font-weight: bold; margin-right: 5px"  v-model.number="pipes.data[index][4]" :disabled="pipes.data[index][4] === undefined || selectitems.indexOf(item) === -1 ">
+          </div>
+          <div>
+            altezza: <input class="pipe_height" @keydown.13.stop="()=>{}" type="number" @change="changeItem(item)" style="width: 100px; padding: 5px; font-weight: bold"  v-model.number="item.value" :disabled="selectitems.indexOf(item) === -1">
+          </div>
         </td>
       </tr>
       </tbody>

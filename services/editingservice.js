@@ -204,6 +204,14 @@ proto.subscribe = function({event, layerId}={}) {
 
 // END API
 
+proto.showUserMessage = function({message, type}){
+  GUI.showUserMessage({message, type})
+};
+
+proto.closeUserMessage = function(){
+  GUI.closeUserMessage()
+};
+
 proto.getStateOfModel = function() {
   return this.progeoApi.getProjectState().state;
 };
