@@ -56,7 +56,6 @@ proto._generateFormId = function(layerName) {
   return this._formIdPrefix + layerName;
 };
 
-
 // metodo eseguito alla disattivazione del tool
 proto.stop = function() {
   //console.log('stop open table task ...');

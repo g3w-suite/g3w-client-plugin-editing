@@ -6,11 +6,11 @@ const TableService = function(options = {}) {
   this._promise = options.promise;
   this._context = options.context;
   this._inputs = options.inputs;
-  this._headers = options.headers;
   this._fatherValue = options.fatherValue;
   this._foreignKey = options.foreignKey;
   this._workflow = null;
   this.state = {
+    headers: options.headers || [],
     features: [],
     isrelation: options.isrelation || false, //
     title: options.title || 'Link relation'
@@ -18,9 +18,15 @@ const TableService = function(options = {}) {
   this.init = function() {
     //filter the original feature based on if is a relation
     this._features = !this.state.isrelation ? this._features : this._features.filter((feature) => {
-      return feature.get(this._foreignKey) != this._fatherValue
+      return feature.get(this._foreignKey) !== this._fatherValue
     });
     // set values
+    if (this._features.length) {
+      const properties = Object.keys(this._features[0].getProperties());
+      this.state.headers = this.state.headers.filter((header) => {
+        return properties.indexOf(header.name) !== -1;
+      })
+    }
     this._features.forEach((feature) => {
       const properties = feature.getProperties();
       this.state.features.push(properties);
@@ -34,8 +40,8 @@ const proto = TableService.prototype;
 
 proto.isMediaField = function(name) {
   let isMedia = false;
-  for (let i=0; i < this._headers.length; i++) {
-    const header = this._headers[i];
+  for (let i=0; i < this.state.headers.length; i++) {
+    const header = this.state.headers[i];
     if (header.name === name && header.input.type === 'media' ) {
       isMedia = true;
       break;
@@ -96,8 +102,7 @@ proto.linkFeature = function(index) {
 
 proto._setLayout = function() {
   const editing_table_content_height = $('#editing_table').height();
-  let height_70 = (editing_table_content_height * 70) / 100;
-  return height_70
+  return  (editing_table_content_height * 70) / 100;
 };
 
 
