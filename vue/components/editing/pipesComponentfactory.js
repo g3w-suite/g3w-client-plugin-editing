@@ -113,4 +113,4 @@ module.exports = function createPipesComponent(pipes) {
       this.timeout = null;
     }
   }
-}
+};

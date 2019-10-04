@@ -9,6 +9,13 @@ const EditingTask = require('./editingtask');
 const pipesComponentFactory = require('../../../vue/components/editing/pipesComponentfactory');
 const MAST_NOT_EDITABLE_FIELDS = ['name', 'label'];
 
+const PIPESFIELDNAMEINDEX = {
+  pipe_diameter_default: 4,
+  pipe_inlet_diameter_default: 5,
+  pipe_equivalent_diameter_default: 6,
+  pipe_mesh_param_default: 7,
+  pipe_roughness_default: 8
+};
 
 function OpenFormTask(options={}) {
   this._formIdPrefix = 'form_';
@@ -143,7 +150,7 @@ proto._saveFnc = function(promise, context, inputs, chartData) {
   }
 };
 
-proto._createChartComponent = function({formService, chartData, step, replace=false, pipe_section_default}) {
+proto._createChartComponent = function({formService, chartData, step, replace=false, default_fields_value={}} = {}) {
   const EditPipesComponent = pipesComponentFactory(chartData.pipes);
   replace &&  this._feature.set('pipes', undefined);
   formService.setLoading(true);
@@ -170,21 +177,20 @@ proto._createChartComponent = function({formService, chartData, step, replace=fa
         });
       } else {
         for (let i = chartData.pipes.data.length; i--;) {
-          chartData.pipes.data[i][4] = pipe_section_default;
+          Object.keys(PIPESFIELDNAMEINDEX).forEach((fieldName) => {
+            chartData.pipes.data[i][PIPESFIELDNAMEINDEX[fieldName]] = default_fields_value[fieldName];
+          })
         }
         formService.replaceComponent({
           index: 1,
-          component: component,
-        });
+          component,
+        })
       }
-    }
-
-  }).catch((err)=>{
-    console.log(err)
-  })
-    .finally(() => {
       formService.setLoading(false);
-    })
+    }
+  }).catch((err)=>{
+    formService.setLoading(false);
+  })
 };
 
 proto.startForm = function(options = {}) {
@@ -193,56 +199,77 @@ proto.startForm = function(options = {}) {
   const formComponent = options.formComponent || EditingFormComponent;
   const Form = this._getForm(inputs, context);
   const isBranchLayer = this.isBranchLayer(this._layerId);
-  const chartData = {
-    originalpipes: [],
-    pipes: {
-      data: [],
-      originalvalues: [],
-    }
-  };
-
+  let chartData;
+  let pipesFields;
   if (isBranchLayer) {
-    let pipe_section_default = null;
-    for (let i=0, len = this._fields.length; i< len; i++) {
-      if (this._fields[i].name === "pipe_section_default") {
-        this._fields[i] = new Proxy(this._fields[i], {
-          set: (target, property, value) => {
-            value = value ? +value: value;
-            pipe_section_default = value;
-            target[property] = value;
-            for (let i = chartData.pipes.data.length; i--;) {
-              chartData.pipes.data[i][4] = value;
-            }
-            return true;
-          }
-        });
+    const default_fields_value = {};
+    Object.keys(PIPESFIELDNAMEINDEX).forEach((fieldName) => {
+      default_fields_value[fieldName] = this._feature.get(fieldName) || null;
+    });
+    pipesFields = this._fields.filter((field) => {
+      return PIPESFIELDNAMEINDEX[field.name] !== undefined;
+    }).map((field) => {
+      return {
+        label: field.label.replace('Pipe', '').replace('default', '').trim(),
+        index: PIPESFIELDNAMEINDEX[field.name]
       }
-      if (this._fields[i].name === "profile_step_default") {
-        const debounceCreateChartComponent = debounce(this._createChartComponent.bind(this));
-        this._fields[i] = new Proxy(this._fields[i], {
-          set: (target, property, value) => {
-            target[property] = value;
-            if (isCreatedForm && value !== null) {
-              chartData.originalpipes = [];
-              chartData.pipes =  {
-                data: [],
-                originalvalues: [],
-              };
-              debounceCreateChartComponent({
-                chartData,
-                formService,
-                step: value ? + value: null,
-                replace: true,
-                pipe_section_default
-              })
+    });
+    chartData = {
+      originalpipes: [],
+      pipes: {
+        fields: pipesFields,
+        data: [],
+        originalvalues: [],
+      }
+    };
+
+    for (let i=0, len = this._fields.length; i < len; i++) {
+      const fieldName = this._fields[i].name;
+      switch(fieldName) {
+        case "pipe_diameter_default":
+        case "pipe_inlet_diameter_default":
+        case "pipe_equivalent_diameter_default":
+        case "pipe_mesh_param_default":
+        case "pipe_roughness_default":
+          this._fields[i] = new Proxy(this._fields[i], {
+            set: (target, property, value) => {
+              value = value ? +value : value;
+              default_fields_value[fieldName] = value;
+              target[property] = value;
+              for (let i = chartData.pipes.data.length; i--;) {
+                chartData.pipes.data[i][PIPESFIELDNAMEINDEX[fieldName]] = value;
+              }
+              return true;
             }
-            return true;
-          }
-        });
+          });
+          break;
+        case "profile_step_default":
+          const debounceCreateChartComponent = debounce(this._createChartComponent.bind(this));
+          this._fields[i] = new Proxy(this._fields[i], {
+            set: (target, property, value) => {
+              if (isCreatedForm && value !== null && target[property] !== value) {
+                chartData.originalpipes = [];
+                chartData.pipes =  {
+                  fields: pipesFields,
+                  data: [],
+                  originalvalues: [],
+                };
+                debounceCreateChartComponent({
+                  chartData,
+                  formService,
+                  step: value ? + value: null,
+                  replace: true,
+                  default_fields_value
+                })
+              }
+              target[property] = value;
+              return true;
+            }
+          });
+          break;
       }
     }
   }
-
   const footer = {
     message: !isBranchLayer && this._originalLayer.getRelations() ?
       `${t('editing.form.relations.required')}  ${this._originalLayer.getRelations().getArray().map( (relation) => {

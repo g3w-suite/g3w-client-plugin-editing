@@ -12,13 +12,12 @@ const InternalComponent = Vue.extend({
   data: function() {
     this.dataTable = null;
     return {
-      headers: this.$options.headers,
       state: null
     }
   },
   methods: {
     showValue(key) {
-      return !!this.headers.find((header) => {
+      return !!this.state.headers.find((header) => {
         return header.name === key
       })
     },
@@ -35,7 +34,6 @@ const InternalComponent = Vue.extend({
       this.$options.service.cancel();
     },
     deleteFeature: function(index) {
-      console.log(index)
       this.$options.service.deleteFeature(index);
     },
     editFeature: function(index) {
@@ -55,7 +53,7 @@ const InternalComponent = Vue.extend({
     }
   },
   watch: {
-    'state.relations' : function() {
+    'state.relations'(){
       this.$nextTick(function() {
       });
     }
@@ -82,12 +80,20 @@ const InternalComponent = Vue.extend({
 
 const TableComponent = function(options={}) {
   base(this);
-  const service = options.service || new TableService(options);
-  const headers = options.headers || [];
+  const service = options.service || new TableService({
+    headers: options.headers,
+    features: options.features,
+    promise: options.promise,
+    context: options.context,
+    inputs: options.inputs,
+    isrelation: options.isrelation,
+    fatherValue: options.fatherValue,
+    foreignKey: options.foreignKey,
+    title: options.title
+  });
   this.setService(service);
   const internalComponent = new InternalComponent({
-    service,
-    headers
+    service
   });
   this.setInternalComponent(internalComponent);
   internalComponent.state = service.state;

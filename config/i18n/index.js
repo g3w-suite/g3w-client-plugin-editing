@@ -80,6 +80,10 @@ export default {
       }
     },
     form: {
+      pipes: {
+        diameter: "diametro",
+        height: "altezza"
+      },
       relations: {
         required: "** E' necessario aggiundere almeno un ",
         tooltips: {
@@ -177,6 +181,10 @@ export default {
       }
     },
     form: {
+      pipes: {
+        diameter: "diameter",
+        height: "height"
+      },
       relations: {
         required: "** Must add at least an  ",
         tooltips: {

@@ -117,6 +117,7 @@ proto.run = function(inputs, context) {
       const newFeature = feature;
       this.setBranchProfileData({
         feature: newFeature,
+        step: feature.get('profile_step_default'),
         update:true
       }).then(() => {
         const originalFeature = originalBranchFeatures[i];

@@ -69,7 +69,9 @@ const _Plugin = function() {
         text: t("editing.editing_data")
       },
       action: this.showEditingPanel
-    }, pluginGroupTool)
+    }, pluginGroupTool);
+
+    GUI.getComponent('tools').setOpen(true);
   };
 
   //method to show editing panel
