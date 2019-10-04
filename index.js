@@ -71,7 +71,7 @@ const _Plugin = function() {
       action: this.showEditingPanel
     }, pluginGroupTool);
 
-    GUI.getComponent('tools').setOpen(true);
+    GUI.getComponent('tools').openClose();
   };
 
   //method to show editing panel
