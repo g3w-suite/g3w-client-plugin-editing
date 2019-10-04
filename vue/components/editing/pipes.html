@@ -15,29 +15,30 @@
       </tr>
       </thead>
       <tbody class="editing_pipes" :style="{maxHeight: height + 'px'}" style=" overflow-y: auto; display:block;width: 100%;">
-      <tr v-for="(item, index) in data" style="border-bottom: 1px solid #eeeeee; padding-bottom: 3px; display:flex; justify-content: space-between;">
-        <td style="padding: 5px;">
+      <tr v-for="(item, index) in data" style="border-bottom: 1px solid #eeeeee; padding-bottom: 3px; display:flex; justify-content: space-between">
+        <td style="margin: 2px 10px 0 5px;">
           <input type="checkbox" @keydown.13.stop="()=>{}" :id="`id_pipe_${item.index}`" class="magic-checkbox checkbox_pipe" @change="selectUnselectItem($event, index)" :index="index">
           <label :for="`id_pipe_${index}`" style="padding: 5px"></label>
         </td>
-        <td align="right" style="display: flex; flex-wrap: wrap; justify-content: flex-end; margin-left: 15px;">
-          <div v-for="pipefield in pipes.fields" :key="pipefield.index" style="margin-top: 3px; width: 50%">
-            <label>{{ pipefield.label }}</label>
+        <td align="right" style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; ">
+          <div v-for="pipefield in pipes.fields" :key="pipefield.index"
+               style="display: flex; flex-direction: column; justify-content: flex-start; margin: 3px;max-width: 105px; ">
+            <label style="text-align: left; font-size: 0.8em;">{{ pipefield.label }}</label>
             <input
               class="pipe_section"
               @keydown.13.stop="()=>{}"
-              type="number" style="max-width: 100px; padding: 5px; font-weight: bold; margin-right: 5px"
+              type="number" style="width: 100%; padding: 5px; font-weight: bold; margin-right: 5px"
               v-model.number="pipes.data[index][pipefield.index]"
               :disabled="pipes.data[index][pipefield.index] === undefined || selectitems.indexOf(item) === -1 ">
           </div>
-          <div style="margin-top: 3px; width: 50%">
-            <label v-t-plugin="'editing.form.pipes.height'"></label>
+          <div style="display: flex; flex-direction: column; justify-content: flex-start; margin: 3px; max-width: 105px;">
+            <label  style="text-align: left; font-size: 0.8em;"v-t-plugin="'editing.form.pipes.height'"></label>
             <input
               class="pipe_height"
               @keydown.13.stop="()=>{}"
               type="number"
               @change="changeItem(item)"
-              style="max-width: 100px; padding: 5px; font-weight: bold;  margin-right: 5px"
+              style="width: 100%; padding: 5px; font-weight: bold;  margin-right: 5px"
               v-model.number="item.value"
               :disabled="selectitems.indexOf(item) === -1">
           </div>
