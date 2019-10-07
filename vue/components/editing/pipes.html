@@ -22,7 +22,7 @@
         </td>
         <td align="right" style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; ">
           <div v-for="pipefield in pipes.fields" :key="pipefield.index"
-               style="display: flex; flex-direction: column; justify-content: flex-start; margin: 3px;max-width: 105px; ">
+               style="display: flex; flex-direction: column; justify-content: flex-start; margin: 3px;max-width: 100px; ">
             <label style="text-align: left; font-size: 0.8em;">{{ pipefield.label }}</label>
             <input
               class="pipe_section"
@@ -31,7 +31,7 @@
               v-model.number="pipes.data[index][pipefield.index]"
               :disabled="pipes.data[index][pipefield.index] === undefined || selectitems.indexOf(item) === -1 ">
           </div>
-          <div style="display: flex; flex-direction: column; justify-content: flex-start; margin: 3px; max-width: 105px;">
+          <div style="display: flex; flex-direction: column; justify-content: flex-start; margin: 3px; max-width: 100px;">
             <label  style="text-align: left; font-size: 0.8em;"v-t-plugin="'editing.form.pipes.height'"></label>
             <input
               class="pipe_height"
