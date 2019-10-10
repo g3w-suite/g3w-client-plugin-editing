@@ -452,11 +452,8 @@ proto.checkOrphanNodes = function() {
   this.getEditingService().checkOrphanNodes();
 };
 
-proto.showUserMessage = function({message, type}) {
-  this.getEditingService().showUserMessage({
-    message,
-    type
-  })
+proto.showUserMessage = function(options={}) {
+  this.getEditingService().showUserMessage(options)
 };
 
 proto.closeUserMessage = function(){

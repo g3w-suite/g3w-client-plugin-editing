@@ -204,8 +204,8 @@ proto.subscribe = function({event, layerId}={}) {
 
 // END API
 
-proto.showUserMessage = function({message, type}){
-  GUI.showUserMessage({message, type})
+proto.showUserMessage = function(options={}){
+  GUI.showUserMessage(options)
 };
 
 proto.closeUserMessage = function(){

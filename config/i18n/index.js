@@ -55,6 +55,9 @@ export default {
       loading_data: "Caricamento dati",
       delete_branch: "Non è possibile cancellare branches intermedi. Cancellare prima i branches estremi",
       saving: "Salvataggio dati in corso. Attendere ...",
+      editing: {
+        no_branch: "E' necessario inserire prima un branch"
+      },
       commit: {
         header: "La lista sotto riporta tutte le modifiche che verranno salvate.",
         header_add: "<b>Aggiunte</b> riporta il numero delle features aggiunte",
@@ -156,6 +159,9 @@ export default {
       delete_branch: "Can't delete intermediate branches. Must delete external branches before it",
       saving: "Saving data. Please wait ...",
       pdf: "Document preview not available. Please click here ",
+      editing: {
+        no_branch: "You must add at leat one branch before insert other features"
+      },
       commit: {
         header: "The following list show all changes to commit.",
         header_add: "<b>Added</b> show the number of features added",

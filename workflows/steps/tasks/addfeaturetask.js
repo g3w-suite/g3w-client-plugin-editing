@@ -1,4 +1,5 @@
 const inherit = g3wsdk.core.utils.inherit;
+const tPlugin =  t = g3wsdk.core.i18n.tPlugin;
 const Layer = g3wsdk.core.layer.Layer;
 const Geometry = g3wsdk.core.geometry.Geometry;
 const base =  g3wsdk.core.utils.base;
@@ -35,12 +36,31 @@ proto.run = function(inputs, context) {
     editingLayer: è il layer, in questo caso ol.layer.Vector con cui gli strumenti interagiscono
    */
   const d = $.Deferred();
+  const self = this;
   const editingLayer = inputs.layer;
   //recupero la sessione dal context
   const session = context.session;
   const originalLayer = context.layer;
   const layerId = originalLayer.getId();
   const isBranchLayer = this.isBranchLayer(layerId);
+  if (!isBranchLayer && !this.getBranchLayerSource().getFeatures().length)
+    this.showUserMessage({
+      type: 'warning',
+      message: tPlugin('editing.messages.editing.no_branch'),
+      component: {
+        render(createElement) {
+          return createElement('button', {
+            style: {
+              alignSelf: 'flex-end',
+              marginBottom: '5px'
+            },
+            on: {
+              click(){ console.log(self)}
+            }
+          }, 'chiudi')
+        }
+      }
+    });
   // vado a rrecuperare la primary key del layer
   const pk = originalLayer.getPk();
   this._optionscondition = {
