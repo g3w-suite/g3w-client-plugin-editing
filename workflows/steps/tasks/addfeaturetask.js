@@ -46,20 +46,7 @@ proto.run = function(inputs, context) {
   if (!isBranchLayer && !this.getBranchLayerSource().getFeatures().length)
     this.showUserMessage({
       type: 'warning',
-      message: tPlugin('editing.messages.editing.no_branch'),
-      component: {
-        render(createElement) {
-          return createElement('button', {
-            style: {
-              alignSelf: 'flex-end',
-              marginBottom: '5px'
-            },
-            on: {
-              click(){ console.log(self)}
-            }
-          }, 'chiudi')
-        }
-      }
+      message: tPlugin('editing.messages.editing.no_branch')
     });
   // vado a rrecuperare la primary key del layer
   const pk = originalLayer.getPk();

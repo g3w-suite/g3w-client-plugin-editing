@@ -1,11 +1,61 @@
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
 const EditingTask = require('./editingtask');
+const GUI = g3wsdk.gui.GUI;
+const StepsEventBus = new Vue();
 
 function SelectElementsTask(options={}) {
   this._bboxSelection;
   this._drawInteraction;
   this._snapIteraction;
+  this._userMessageComponent = {
+    data() {
+      return {
+        steps: {
+          select: {
+            description: 'Select',
+            done: false
+          },
+          copy: {
+            description: 'Copy',
+            done: false
+          },
+          from: {
+            description: 'From',
+            done: false
+          },
+          to: {
+            description: 'To',
+            done: false
+          }
+        }
+      }
+    },
+    render(h) {
+      return h('ul', {
+        style: {
+          alignSelf: 'flex-start'
+        }
+      }, Object.values(this.steps).map((step)=>{
+        return h('li', {
+            style: {
+              fontWeight: step.done && 'bold'
+            }
+          },
+          [step.description, h('i',{
+            class: {
+              [GUI.getFontClass('check')]: step.done,
+              [GUI.getFontClass('uncheck')]: !step.done
+            }
+          })])
+      }))
+    },
+    created() {
+      StepsEventBus.$on('step-done', ({type})=>{
+        this.steps[type].done = true;
+      })
+    }
+  };
   base(this, options);
 }
 
@@ -14,6 +64,11 @@ inherit(SelectElementsTask, EditingTask);
 const proto = SelectElementsTask.prototype;
 
 proto.run = function(inputs, context) {
+  this.showUserMessage({
+    hooks: {
+      body: this._userMessageComponent
+    }
+  });
   const d = $.Deferred();
   const layersFeaturesSelected = {};
   const styles = {
@@ -40,7 +95,6 @@ proto.run = function(inputs, context) {
     source: new ol.source.Vector(),
     style: selectionStyleFnc
   });
-
 
   this._ctrlC = (evt) => {
     if ((evt.ctrlKey ||evt.metaKey) && evt.which === 67) {
@@ -78,7 +132,7 @@ proto.run = function(inputs, context) {
     condition: ol.events.condition.shiftKeyOnly
   });
   this.addInteraction(this._bboxSelection);
-  
+
   this._bboxSelection.on('boxend', () => {
     this._selectedFeaturesLayer.getSource().clear();
     const bboxExtent = this._bboxSelection.getGeometry().getExtent();
@@ -94,6 +148,9 @@ proto.run = function(inputs, context) {
         this._selectedFeaturesLayer.getSource().addFeature(feature);
       }
     }
+    StepsEventBus.$emit('step-done', {
+      type: 'select'
+    })
   });
   document.addEventListener('keydown', this._ctrlC);
   this.getMap().addLayer(this._selectedFeaturesLayer);
