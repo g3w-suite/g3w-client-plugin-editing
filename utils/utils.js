@@ -1,3 +1,4 @@
+const GUI = g3wsdk.gui.GUI;
 const utils = {
   validation: {
     line: {

@@ -3,11 +3,17 @@ const base =  g3wsdk.core.utils.base;
 const EditingTask = require('./editingtask');
 
 function MoveElementsTask(options={}){
-  base(this,options);
+  this._steps = {
+    to: {
+      description: 'Select vertex where paste the features selected',
+      done: false
+    }
+  };
+  base(this, options);
+  this.setUserMessageSteps(this._steps);
 }
 
 inherit(MoveElementsTask, EditingTask);
-
 
 const proto = MoveElementsTask.prototype;
 
@@ -76,6 +82,7 @@ proto.run = function(inputs) {
           session.pushAdd(layerId, feature);
         }
       }
+      this._steps.to.done = true;
       this.checkOrphanNodes();
       d.resolve()
     });

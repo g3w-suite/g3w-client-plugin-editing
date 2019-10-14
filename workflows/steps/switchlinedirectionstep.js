@@ -1,7 +1,6 @@
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
-const t = g3wsdk.core.i18n.tPlugin;
-const Step = g3wsdk.core.workflow.Step;
+const EditingStep = require('./editingstep');
 const SwitchLineDirectionTask = require('./tasks/switchlinedirectiontask');
 
 //creato uno step per permettere di fare il pickfeature
@@ -11,6 +10,6 @@ const PickFeatureStep = function(options={}) {
   base(this, options)
 };
 
-inherit(PickFeatureStep, Step);
+inherit(PickFeatureStep, EditingStep);
 
 module.exports = PickFeatureStep;

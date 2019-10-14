@@ -1,6 +1,6 @@
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
-const Step = g3wsdk.core.workflow.Step;
+const EditingStep = require('./editingstep');
 const t = g3wsdk.core.i18n.tPlugin;
 const OpenFormTask = require('./tasks/openformtask');
 
@@ -13,6 +13,6 @@ const OpenFormStep = function(options={}) {
   base(this, options)
 };
 
-inherit(OpenFormStep, Step);
+inherit(OpenFormStep, EditingStep);
 
 module.exports = OpenFormStep;

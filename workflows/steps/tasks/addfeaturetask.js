@@ -36,7 +36,6 @@ proto.run = function(inputs, context) {
     editingLayer: è il layer, in questo caso ol.layer.Vector con cui gli strumenti interagiscono
    */
   const d = $.Deferred();
-  const self = this;
   const editingLayer = inputs.layer;
   //recupero la sessione dal context
   const session = context.session;
@@ -220,6 +219,7 @@ proto.stop = function() {
   this.removeInteraction(this.drawInteraction);
   this.drawInteraction = null;
   document.removeEventListener('keydown', this._removeLastPoint);
+  this.closeUserMessage();
   return true;
 };
 

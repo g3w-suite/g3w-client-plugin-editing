@@ -4,7 +4,7 @@ const G3WObject = g3wsdk.core.G3WObject;
 
 // Calsse che rappresenta di fatto
 // il bottone all'interno dell'editor control per l'editing
-function Tool(options = {}) {
+function Tool(options={}) {
   base(this);
   this._session = options.session;
   this._editingService;

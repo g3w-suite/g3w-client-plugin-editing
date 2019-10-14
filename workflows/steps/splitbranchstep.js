@@ -1,7 +1,7 @@
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
 const t = g3wsdk.core.i18n.tPlugin;
-const Step = g3wsdk.core.workflow.Step;
+const EditingStep = require('./editingstep');
 const SplitBranchTask = require('./tasks/splitbranchtask');
 
 //creato uno step per permettere di fare il pickfeature
@@ -12,6 +12,6 @@ const SplitBranchStep = function(options={}) {
   base(this, options)
 };
 
-inherit(SplitBranchStep, Step);
+inherit(SplitBranchStep, EditingStep);
 
 module.exports = SplitBranchStep;

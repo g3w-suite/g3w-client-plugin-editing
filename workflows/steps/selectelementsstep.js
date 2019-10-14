@@ -5,11 +5,9 @@ const EditingStep = require('./editingstep');
 const SelectElementsTask = require('./tasks/selectelemetsstask');
 
 const SelectElementsStep = function(options={}, chain) {
-  const task = new SelectElementsTask(options);
-  options.task = task;
+  options.task = new SelectElementsTask(options);
   options.help = t("editing.steps.help.select_elements");
-  if (chain)
-    this.on('run', () => {
+  chain && this.on('run', () => {
       this.emit('next-step', t("editing.steps.help.select_elements"))
     });
   base(this, options)

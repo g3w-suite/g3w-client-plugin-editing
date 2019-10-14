@@ -2,7 +2,6 @@ const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
 const Workflow = g3wsdk.core.workflow.Workflow;
 
-
 function EditingWorkflow(options={}) {
   base(this, options);
   this._toolsoftool = [];

@@ -1,62 +1,27 @@
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
 const EditingTask = require('./editingtask');
-const GUI = g3wsdk.gui.GUI;
-const StepsEventBus = new Vue();
 
 function SelectElementsTask(options={}) {
   this._bboxSelection;
   this._drawInteraction;
   this._snapIteraction;
-  this._userMessageComponent = {
-    data() {
-      return {
-        steps: {
-          select: {
-            description: 'Select',
-            done: false
-          },
-          copy: {
-            description: 'Copy',
-            done: false
-          },
-          from: {
-            description: 'From',
-            done: false
-          },
-          to: {
-            description: 'To',
-            done: false
-          }
-        }
-      }
+  this._steps = {
+    select: {
+      description: 'Select features drwawind a Box pressing SHIFT Key',
+      done: false
     },
-    render(h) {
-      return h('ul', {
-        style: {
-          alignSelf: 'flex-start'
-        }
-      }, Object.values(this.steps).map((step)=>{
-        return h('li', {
-            style: {
-              fontWeight: step.done && 'bold'
-            }
-          },
-          [step.description, h('i',{
-            class: {
-              [GUI.getFontClass('check')]: step.done,
-              [GUI.getFontClass('uncheck')]: !step.done
-            }
-          })])
-      }))
+    copy: {
+      description: 'Copy features select with CTRL+C',
+      done: false
     },
-    created() {
-      StepsEventBus.$on('step-done', ({type})=>{
-        this.steps[type].done = true;
-      })
+    from: {
+      description: 'Select starting point of Selected features',
+      done: false
     }
   };
   base(this, options);
+  this.setUserMessageSteps(this._steps);
 }
 
 inherit(SelectElementsTask, EditingTask);
@@ -64,11 +29,7 @@ inherit(SelectElementsTask, EditingTask);
 const proto = SelectElementsTask.prototype;
 
 proto.run = function(inputs, context) {
-  this.showUserMessage({
-    hooks: {
-      body: this._userMessageComponent
-    }
-  });
+
   const d = $.Deferred();
   const layersFeaturesSelected = {};
   const styles = {
@@ -87,6 +48,7 @@ proto.run = function(inputs, context) {
       })
     })
   };
+
   const selectionStyleFnc = function(feature) {
     return styles[feature.getGeometry().getType()]
   };
@@ -98,6 +60,7 @@ proto.run = function(inputs, context) {
 
   this._ctrlC = (evt) => {
     if ((evt.ctrlKey ||evt.metaKey) && evt.which === 67) {
+      this._steps.copy.done = true;
       if (!this._selectedFeaturesLayer.getSource().getFeatures().length) return;
       this._bboxSelection.setActive(false);
       const branchLayerFeatures = layersFeaturesSelected[this.getBranchLayerId()];
@@ -122,6 +85,7 @@ proto.run = function(inputs, context) {
           layersFeaturesSelected,
           coordinates
         });
+        this.setUserMessageStepDone('from')
       });
       this.addInteraction(this._drawIteraction);
       this.addInteraction(this._snapIteraction);
@@ -148,9 +112,7 @@ proto.run = function(inputs, context) {
         this._selectedFeaturesLayer.getSource().addFeature(feature);
       }
     }
-    StepsEventBus.$emit('step-done', {
-      type: 'select'
-    })
+    this._steps.select.done = true
   });
   document.addEventListener('keydown', this._ctrlC);
   this.getMap().addLayer(this._selectedFeaturesLayer);
@@ -166,7 +128,7 @@ proto.stop = function() {
   this._bboxSelection = null;
   document.removeEventListener('keydown', this._ctrlC);
   this._ctrlC = null;
-    this.getMap().removeLayer(this._selectedFeaturesLayer);
+  this.getMap().removeLayer(this._selectedFeaturesLayer);
   this._selectedFeaturesLayer.getSource().clear();
   this._selectedFeaturesLayer = null;
   return true;
