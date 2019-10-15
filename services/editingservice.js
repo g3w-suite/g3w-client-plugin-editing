@@ -82,14 +82,15 @@ function EditingService() {
       // vado a chiamare la funzione che mi permette di
       // estrarre la versione editabile del layer di partenza (es. da imagelayer a vector layer, table layer/tablelayer etc..)
       const editableLayer = layer.getLayerForEditing();
-      //this.constraints[layerId] = {scale: 10000};//editableLayer.getEditingConstrains();
       if (editableLayer.isReady()) {
         editingLayersLenght-=1;
       }
       editableLayer.on('layer-config-ready', () => {
         editingLayersLenght-=1;
-        this._attachLayerWidgetsEvent(editableLayer);
         if (editingLayersLenght === 0) {
+          for (let layerId in this._editableLayers) {
+            this._attachLayerWidgetsEvent(this._editableLayers[layerId]);
+          }
           this._ready();
         }
       });
@@ -323,7 +324,11 @@ proto._attachLayerWidgetsEvent = function(layer) {
     const field = fields[i];
     if(field.input && field.input.type === 'select_autocomplete') {
       const options = field.input.options;
-      const {key, values, value, usecompleter, layer_id, loading} = options;
+      let {key, values, value, usecompleter, layer_id, loading} = options;
+      const relationLayer = this.getLayerById(layer_id);
+      const relationLayerPk = relationLayer && relationLayer.getPk();
+      const isKeyPk = relationLayerPk === key;
+      const idValuePk = relationLayerPk === value;
       if (!usecompleter) {
         this.addEvent({
           type: 'start-editing',
@@ -341,8 +346,8 @@ proto._attachLayerWidgetsEvent = function(layer) {
                   const features = response.features;
                   for (let i = 0; i < features.length; i++) {
                     values.push({
-                      key: features[i].properties[key],
-                      value: features[i].properties[value]
+                      key: isKeyPk ? features[i].id : features[i].properties[key],
+                      value: idValuePk? features[i].id : features[i].properties[value]
                     })
                   }
                   loading.state = 'ready';
