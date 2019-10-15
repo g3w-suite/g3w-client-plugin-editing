@@ -6,6 +6,7 @@ const Feature = g3wsdk.core.layer.features.Feature;
 
 function EditingTask(options = {}) {
   base(this, options);
+  this._steps = null;
   this._mapService = GUI.getComponent('map').getService();
   this._measureTooltipElement;
   this._poinOnMapMoveListener;
@@ -26,6 +27,11 @@ const proto = EditingTask.prototype;
 proto.run = function(inputs, context) {};
 
 proto.stop = function() {};
+
+proto.setSteps = function(steps={}){
+  this._steps = steps;
+  this.setUserMessageSteps(steps);
+};
 
 proto.getStateOfModel = function() {
   return this.getEditingService().getStateOfModel();

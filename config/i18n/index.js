@@ -46,6 +46,14 @@ export default {
         split_branch: "Clicca sul punto su cui vuoi splittare il branch"
       }
     },
+    workflow: {
+      steps: {
+        selectSHIFT: 'Seleziona le features tenedo premuto il tasto SHIFT',
+        copyCTRL: 'Copia le features selezionate con CTRL+C',
+        selectStartVertex: 'Seleziona il vertice di partenza delle feature selezionate',
+        selectVertexToPaste: 'Seleziona il vertice dove verranno incollate le features selezionate'
+      }
+    },
     messages: {
       orphan_nodes: "Trovati Nodi orfani. Se si decide di continuare verranno eliminati automaticamente",
       delete_feature: "Vuoi eliminare l'elemento selezionato?",
@@ -69,18 +77,16 @@ export default {
     },
     relation: {
       table: {
-        info: `
-                  <div>
-                    Questa è la lista delle relazioni orfane o associate ad altre geometrie.
-                    Clicca sulla singola relazione per associarla alla geometria in editing.
-                  </div>
-                  <div>
-                    <span style="font-weight: bold">
-                      ATTENZIONE
-                    </span>: nel caso in cui la relazione sia attualmente associata ad un'altra geometria, verrà dissociata da questa
-                  </div>
-                `
-      }
+        info: `<div>
+                Questa è la lista delle relazioni orfane o associate ad altre geometrie.
+                Clicca sulla singola relazione per associarla alla geometria in editing.
+               </div>
+               <div>
+                <span style="font-weight: bold">
+                  ATTENZIONE
+                </span>: nel caso in cui la relazione sia attualmente associata ad un'altra geometria, verrà dissociata da questa
+               </div> `
+        }
     },
     form: {
       pipes: {
@@ -147,6 +153,14 @@ export default {
         select_elements: "Select elements of network to copy",
         select_vertex_to_paste: "Select vertex where paste the selection network",
         split_branch: "Click to branch to split"
+      }
+    },
+    workflow: {
+      steps: {
+        selectSHIFT: 'Select features drawing a rectangle pressing SHIFT',
+        copyCTRL: 'Copy selected features using CTRL+C',
+        selectStartVertex: 'Select starting vertex of selected features',
+        selectVertexToPaste: 'Select vertex where paste the features selected'
       }
     },
     messages: {

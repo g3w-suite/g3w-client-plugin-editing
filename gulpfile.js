@@ -12,9 +12,10 @@ const watchify = require('watchify');
 const vueify = require('vueify');
 const stringify = require('stringify');
 const sourcemaps = require('gulp-sourcemaps');
+var production = false;
+var sourcemap = false;
 
 gulp.task('browserify', [], function() {
-  var production = false;
   var bundler = browserify('./index.js', {
     basedir: "./",
     paths: ["./"],
@@ -41,15 +42,21 @@ gulp.task('browserify', [], function() {
       })
       .pipe(source('build.js'))
       .pipe(buffer())
-      .pipe(gulpif(!production,sourcemaps.init({ loadMaps: true })))
-      .pipe(gulpif(production, uglify().on('error', gutil.log)))
-      .pipe(gulpif(!production,sourcemaps.write()))
+      .pipe(gulpif(sourcemap, sourcemaps.init()))
+      .pipe(gulpif(production, uglify({
+          compress: {
+            drop_console: true
+          }
+        }).on('error', gutil.log))
+      )
       .pipe(rename('plugin.js'))
-      .pipe(gulp.dest('./'));
+      .pipe(gulpif(sourcemap, sourcemaps.write('.')))
+      .pipe(gulp.dest('.'));
   };
 
   var rebundle;
-
+  const del = require('del');
+  del(['./plugin.js.map']);
   if (!production) {
     rebundle = function(){
       return bundle();
@@ -69,7 +76,14 @@ gulp.task('production', function(){
     production = true;
 });
 
+gulp.task('sourcemap', function(){
+  sourcemap = true;
+});
+
+
 gulp.task('watch',['browserify']);
+
+gulp.task('default-sourcemap',['production', 'sourcemap', 'browserify']);
 
 gulp.task('default',['production','browserify']);
 

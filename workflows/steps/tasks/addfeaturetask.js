@@ -45,6 +45,8 @@ proto.run = function(inputs, context) {
   if (!isBranchLayer && !this.getBranchLayerSource().getFeatures().length)
     this.showUserMessage({
       type: 'warning',
+      closable: false,
+      position: 'top-center',
       message: tPlugin('editing.messages.editing.no_branch')
     });
   // vado a rrecuperare la primary key del layer

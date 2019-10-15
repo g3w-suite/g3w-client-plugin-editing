@@ -6,22 +6,7 @@ function SelectElementsTask(options={}) {
   this._bboxSelection;
   this._drawInteraction;
   this._snapIteraction;
-  this._steps = {
-    select: {
-      description: 'Select features drwawind a Box pressing SHIFT Key',
-      done: false
-    },
-    copy: {
-      description: 'Copy features select with CTRL+C',
-      done: false
-    },
-    from: {
-      description: 'Select starting point of Selected features',
-      done: false
-    }
-  };
   base(this, options);
-  this.setUserMessageSteps(this._steps);
 }
 
 inherit(SelectElementsTask, EditingTask);
@@ -29,7 +14,6 @@ inherit(SelectElementsTask, EditingTask);
 const proto = SelectElementsTask.prototype;
 
 proto.run = function(inputs, context) {
-
   const d = $.Deferred();
   const layersFeaturesSelected = {};
   const styles = {
@@ -95,9 +79,11 @@ proto.run = function(inputs, context) {
   this._bboxSelection = new ol.interaction.DragBox({
     condition: ol.events.condition.shiftKeyOnly
   });
+
   this.addInteraction(this._bboxSelection);
 
   this._bboxSelection.on('boxend', () => {
+    let selectedFeatures = 0;
     this._selectedFeaturesLayer.getSource().clear();
     const bboxExtent = this._bboxSelection.getGeometry().getExtent();
     const toolboxes = this.getEditingService().getToolBoxes();
@@ -107,12 +93,16 @@ proto.run = function(inputs, context) {
       const layerSource = toolbox.getEditingLayer().getSource();
       let features = layerSource.getFeaturesInExtent(bboxExtent);
       layersFeaturesSelected[layerId] = features;
-      for( let i = features.length; i--; ){
+      for( let i = features.length; i--; ) {
         const feature = features[i].clone();
         this._selectedFeaturesLayer.getSource().addFeature(feature);
+        selectedFeatures+=1;
       }
     }
-    this._steps.select.done = true
+    if (selectedFeatures === 0)
+      d.reject();
+    else
+      this.setUserMessageStepDone('select');
   });
   document.addEventListener('keydown', this._ctrlC);
   this.getMap().addLayer(this._selectedFeaturesLayer);

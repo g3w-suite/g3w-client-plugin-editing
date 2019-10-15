@@ -3,14 +3,7 @@ const base =  g3wsdk.core.utils.base;
 const EditingTask = require('./editingtask');
 
 function MoveElementsTask(options={}){
-  this._steps = {
-    to: {
-      description: 'Select vertex where paste the features selected',
-      done: false
-    }
-  };
   base(this, options);
-  this.setUserMessageSteps(this._steps);
 }
 
 inherit(MoveElementsTask, EditingTask);
@@ -50,12 +43,9 @@ proto.run = function(inputs) {
       };
       const oldIdNewIdBranch = {};
       let LayerIds = Object.keys(layersFeaturesSelected);
-      // necessito di avere come primo id qeullo dei branches
-      if (LayerIds[0] !== branchLayerId) {
-        LayerIds = LayerIds.filter((id) => !id !== branchLayerId);
-        LayerIds.unshift(branchLayerId)
-      }
-      for (let i= 0, len=LayerIds.length; i < len; i++) {
+      LayerIds = LayerIds.filter((id) => id !== branchLayerId);
+      LayerIds.unshift(branchLayerId);
+      for (let i=0, len=LayerIds.length; i < len; i++) {
         const layerId = LayerIds[i];
         const source = this.getLayerSource(layerId);
         const features = layersFeaturesSelected[layerId];
