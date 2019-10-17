@@ -1183,10 +1183,17 @@ proto._handleCommitsResponse = function({responses, commitObject}) {
     doWithResponse.refreshMap = doWithResponse.refreshMap || response.result;
   }
   if (doWithResponse.message.successful === responses.length)
-    GUI.notify.success(t("editing.messages.saved"));
+    GUI.showUserMessage({
+      autoclose: true,
+      type: 'success',
+      message: t("editing.messages.saved")
+    });
   else {
     const message = doWithResponse.message.fail.join('\n\n');
-    GUI.notify.error(message);
+    GUI.showUserMessage({
+      type: 'alert',
+      message
+    });
   }
 
   if (doWithResponse.refreshMap)

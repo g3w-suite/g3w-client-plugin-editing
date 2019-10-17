@@ -187,9 +187,13 @@ proto._createChartComponent = function({formService, chartData, step, replace=fa
         })
       }
       formService.setLoading(false);
+    } else {
+      formService.setLoading(false);
+      this._errorWhenGetProfileData();
     }
   }).catch((err)=>{
-    formService.setLoading(false);
+    formService.setLoading(true);
+    this._errorWhenGetProfileData();
   })
 };
 
@@ -344,7 +348,6 @@ proto.startForm = function(options = {}) {
           }
         });
         this.$watch(() => cdField.value, (value) => {
-
           footer.message = !!value ? cdValidMessage : startingFooterMessage;
           EventBus.$emit('disable-component', {index: 1, disabled: !!value});
           EventBus.$emit('component-validation',

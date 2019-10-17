@@ -55,6 +55,7 @@ export default {
       }
     },
     messages: {
+      error_get_profile_data: "Si è verificato un errore durante il recupero dei dati dei profili",
       orphan_nodes: "Trovati Nodi orfani. Se si decide di continuare verranno eliminati automaticamente",
       delete_feature: "Vuoi eliminare l'elemento selezionato?",
       commit_feature: "Vuoi salvare definitivamente le modifiche",
@@ -164,6 +165,7 @@ export default {
       }
     },
     messages: {
+      error_get_profile_data: "An error occurred while retrieving the profile data",
       orphan_nodes: "Orphan nodes found. These nodes will be delete automatically",
       delete_feature: "Do you want delete selected feature ?",
       commit_feature: "Do you want to save the changes",
@@ -174,7 +176,7 @@ export default {
       saving: "Saving data. Please wait ...",
       pdf: "Document preview not available. Please click here ",
       editing: {
-        no_branch: "You must add at leat one branch before insert other features"
+        no_branch: "You must add at least one branch feature before insert other features"
       },
       commit: {
         header: "The following list show all changes to commit.",

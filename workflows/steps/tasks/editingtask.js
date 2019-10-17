@@ -33,6 +33,13 @@ proto.setSteps = function(steps={}){
   this.setUserMessageSteps(steps);
 };
 
+proto._errorWhenGetProfileData = function() {
+  GUI.showUserMessage({
+    type: 'alert',
+    message: t('editing.messages.error_get_profile_data')
+  });
+};
+
 proto.getStateOfModel = function() {
   return this.getEditingService().getStateOfModel();
 };

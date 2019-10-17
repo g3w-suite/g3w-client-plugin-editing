@@ -126,7 +126,10 @@ proto.run = function(inputs, context) {
         }
       }
       if (!canDeleteBranch)
-        GUI.notify.warning(t("editing.messages.delete_branch"),);
+        GUI.showUserMessage({
+          type: 'warning',
+          message: t("editing.messages.delete_branch")
+        });
       return canDeleteBranch && ol.events.condition.click;
     }: ol.events.condition.always,
     style() {

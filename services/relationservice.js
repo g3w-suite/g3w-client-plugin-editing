@@ -420,7 +420,10 @@ proto.linkRelation = function() {
         this.relations.push(this._createRelationObj(relation));
         //this.emitEventToParentWorkFlow();
       } else {
-        GUI.notify.warning(t("editing.relation_already_added"));
+        GUI.showUserMessage({
+          type: 'warning',
+          message:t("editing.relation_already_added")
+        })
       }
     })
     .fail((err) => {

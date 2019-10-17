@@ -46,7 +46,7 @@ proto.run = function(inputs, context) {
     this.showUserMessage({
       type: 'warning',
       closable: false,
-      position: 'top-center',
+      position: 'top',
       message: tPlugin('editing.messages.editing.no_branch')
     });
   // vado a rrecuperare la primary key del layer
@@ -222,6 +222,7 @@ proto.stop = function() {
   this.drawInteraction = null;
   document.removeEventListener('keydown', this._removeLastPoint);
   this.closeUserMessage();
+  this._measureTooltip && this._clearMeasureTooltip();
   return true;
 };
 
