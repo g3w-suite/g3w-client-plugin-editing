@@ -344,12 +344,12 @@ proto._attachLayerWidgetsEvent = function(layer) {
                 if (response && response.features) {
                   const relationLayerPk = response.pkField;
                   const isKeyPk = relationLayerPk === key;
-                  const idValuePk = relationLayerPk === value;
+                  const isValuePk = relationLayerPk === value;
                   const features = response.features;
                   for (let i = 0; i < features.length; i++) {
                     values.push({
                       key: isKeyPk ? features[i].id : features[i].properties[key],
-                      value: idValuePk? features[i].id : features[i].properties[value]
+                      value: isValuePk? features[i].id : features[i].properties[value]
                     })
                   }
                   loading.state = 'ready';
