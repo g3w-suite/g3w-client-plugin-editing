@@ -70,7 +70,10 @@ proto._getForm = function(inputs, context) {
   this._fields = this._originalLayer.getFieldsWithValues(this._feature, {
     exclude: excludeFields
   });
-  this._editorFormStructure = this._originalLayer.hasFormStructure() ? this._originalLayer.getEditorFormStructure() : null ;
+  if (this._originalLayer.hasFormStructure()) {
+    const editorFormStructure = this._originalLayer.getEditorFormStructure();
+    this._editorFormStructure = editorFormStructure.length ? editorFormStructure : null;
+  }
   const uniqueFields = this._getUniqueFieldsType(this._fields);
   if (!_.isEmpty(uniqueFields))
     this._getFieldUniqueValuesFromServer(this._originalLayer, uniqueFields);

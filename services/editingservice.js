@@ -82,10 +82,10 @@ function EditingService() {
       // vado a chiamare la funzione che mi permette di
       // estrarre la versione editabile del layer di partenza (es. da imagelayer a vector layer, table layer/tablelayer etc..)
       const editableLayer = layer.getLayerForEditing();
-      if (editableLayer.isReady()) {
-        editingLayersLenght-=1;
-      }
-      editableLayer.on('layer-config-ready', () => {
+      // vado ad aggiungere ai layer editabili
+      this._editableLayers[layerId] = editableLayer;
+      this._editableLayers[Symbol.for('layersarray')].push(editableLayer);
+      const handleReadyConfigurationLayer = () => {
         editingLayersLenght-=1;
         if (editingLayersLenght === 0) {
           for (let layerId in this._editableLayers) {
@@ -93,10 +93,13 @@ function EditingService() {
           }
           this._ready();
         }
-      });
-      // vado ad aggiungere ai layer editabili
-      this._editableLayers[layerId] = editableLayer;
-      this._editableLayers[Symbol.for('layersarray')].push(editableLayer);
+      };
+      if (editableLayer.isReady())
+        handleReadyConfigurationLayer();
+      else
+        editableLayer.once('layer-config-ready', () => {
+          handleReadyConfigurationLayer();
+        });
       // aggiungo all'array dei vectorlayers se per caso mi servisse
       this._sessions[layerId] = null;
     }
@@ -322,13 +325,9 @@ proto._attachLayerWidgetsEvent = function(layer) {
   const fields = layer.getEditingFields();
   for (let i=0; i < fields.length; i++) {
     const field = fields[i];
-    if(field.input && field.input.type === 'select_autocomplete') {
+    if (field.input && field.input.type === 'select_autocomplete') {
       const options = field.input.options;
       let {key, values, value, usecompleter, layer_id, loading} = options;
-      const relationLayer = this.getLayerById(layer_id);
-      const relationLayerPk = relationLayer && relationLayer.getPk();
-      const isKeyPk = relationLayerPk === key;
-      const idValuePk = relationLayerPk === value;
       if (!usecompleter) {
         this.addEvent({
           type: 'start-editing',
@@ -342,7 +341,10 @@ proto._attachLayerWidgetsEvent = function(layer) {
               relationLayer.getDataTable({
                 ordering: key
               }).then((response) => {
-                if(response && response.features) {
+                if (response && response.features) {
+                  const relationLayerPk = response.pkField;
+                  const isKeyPk = relationLayerPk === key;
+                  const idValuePk = relationLayerPk === value;
                   const features = response.features;
                   for (let i = 0; i < features.length; i++) {
                     values.push({
