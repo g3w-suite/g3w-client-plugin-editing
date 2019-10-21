@@ -44,8 +44,8 @@ proto.run = function(inputs, context) {
 
   this._ctrlC = (evt) => {
     if ((evt.ctrlKey ||evt.metaKey) && evt.which === 67) {
-      this._steps.copy.done = true;
       if (!this._selectedFeaturesLayer.getSource().getFeatures().length) return;
+      this.setUserMessageStepDone('copy');
       this._bboxSelection.setActive(false);
       const branchLayerFeatures = layersFeaturesSelected[this.getBranchLayerId()];
       this._snapIteraction = new ol.interaction.Snap({
@@ -101,10 +101,12 @@ proto.run = function(inputs, context) {
     }
     if (selectedFeatures === 0)
       d.reject();
-    else
+    else {
       this.setUserMessageStepDone('select');
+      document.addEventListener('keydown', this._ctrlC);
+    }
+
   });
-  document.addEventListener('keydown', this._ctrlC);
   this.getMap().addLayer(this._selectedFeaturesLayer);
   return d.promise();
 };

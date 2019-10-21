@@ -24,6 +24,14 @@ inherit(EditingTask, Task);
 
 const proto = EditingTask.prototype;
 
+proto.PIPESFIELDNAMEINDEX = {
+  pipe_diameter_default: 4,
+  pipe_inlet_diameter_default: 5,
+  pipe_equivalent_diameter_default: 6,
+  pipe_mesh_param_default: 7,
+  pipe_roughness_default: 8
+};
+
 proto.run = function(inputs, context) {};
 
 proto.stop = function() {};
@@ -331,7 +339,9 @@ proto.setBranchProfileData = function({feature, step}) {
         if (response.result) {
           const profile = JSON.parse(response.profile);
           for (let i = profile.length; i--; ) {
-            profile[i][4] = feature.get('pipe_section_default');
+            Object.keys(this.PIPESFIELDNAMEINDEX).forEach((key) =>{
+              profile[i][this.PIPESFIELDNAMEINDEX[key]] = feature.get(key);
+            })
           }
           feature.set('pipes', profile);
           resolve(profile);

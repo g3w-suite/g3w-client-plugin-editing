@@ -9,14 +9,6 @@ const EditingTask = require('./editingtask');
 const pipesComponentFactory = require('../../../vue/components/editing/pipesComponentfactory');
 const MAST_NOT_EDITABLE_FIELDS = ['name', 'label'];
 
-const PIPESFIELDNAMEINDEX = {
-  pipe_diameter_default: 4,
-  pipe_inlet_diameter_default: 5,
-  pipe_equivalent_diameter_default: 6,
-  pipe_mesh_param_default: 7,
-  pipe_roughness_default: 8
-};
-
 function OpenFormTask(options={}) {
   this._formIdPrefix = 'form_';
   this._isContentChild = false;
@@ -177,8 +169,8 @@ proto._createChartComponent = function({formService, chartData, step, replace=fa
         });
       } else {
         for (let i = chartData.pipes.data.length; i--;) {
-          Object.keys(PIPESFIELDNAMEINDEX).forEach((fieldName) => {
-            chartData.pipes.data[i][PIPESFIELDNAMEINDEX[fieldName]] = default_fields_value[fieldName];
+          Object.keys(this.PIPESFIELDNAMEINDEX).forEach((fieldName) => {
+            chartData.pipes.data[i][this.PIPESFIELDNAMEINDEX[fieldName]] = default_fields_value[fieldName];
           })
         }
         formService.replaceComponent({
@@ -207,15 +199,15 @@ proto.startForm = function(options = {}) {
   let pipesFields;
   if (isBranchLayer) {
     const default_fields_value = {};
-    Object.keys(PIPESFIELDNAMEINDEX).forEach((fieldName) => {
+    Object.keys(this.PIPESFIELDNAMEINDEX).forEach((fieldName) => {
       default_fields_value[fieldName] = this._feature.get(fieldName) || null;
     });
     pipesFields = this._fields.filter((field) => {
-      return PIPESFIELDNAMEINDEX[field.name] !== undefined;
+      return this.PIPESFIELDNAMEINDEX[field.name] !== undefined;
     }).map((field) => {
       return {
         label: field.label.replace('Pipe', '').replace('default', '').trim(),
-        index: PIPESFIELDNAMEINDEX[field.name]
+        index: this.PIPESFIELDNAMEINDEX[field.name]
       }
     });
     chartData = {
@@ -241,7 +233,7 @@ proto.startForm = function(options = {}) {
               default_fields_value[fieldName] = value;
               target[property] = value;
               for (let i = chartData.pipes.data.length; i--;) {
-                chartData.pipes.data[i][PIPESFIELDNAMEINDEX[fieldName]] = value;
+                chartData.pipes.data[i][this.PIPESFIELDNAMEINDEX[fieldName]] = value;
               }
               return true;
             }
