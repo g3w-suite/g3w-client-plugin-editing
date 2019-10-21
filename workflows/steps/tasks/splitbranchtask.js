@@ -35,7 +35,8 @@ proto.run = function(inputs, context) {
     feature.getGeometry().setCoordinates([originalCoordinates[0], coordinates]);
     const promisesProfiles = [newFeature, feature].map((feature) => {
       return this.setBranchProfileData({
-        feature
+        feature,
+        step: feature.get('profile_step_default')
       });
     });
     Promise.all(promisesProfiles).then(()=> {
