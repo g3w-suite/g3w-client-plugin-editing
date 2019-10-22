@@ -36,27 +36,27 @@ const _Plugin = function() {
           this.setHookLoading({
             loading: true
           });
+          this.service.on('ready', () => {
+            if (this.registerPlugin(this.config.gid)) {
+              if (!GUI.ready) {
+                GUI.on('ready', () => {
+                  this.setupGui()
+                });
+              } else {
+                this.setupGui();
+              }
+            }
+            this.setHookLoading({
+              loading: false
+            });
+            this.setReady(true);
+          });
           this.service.init(this.config);
         }
       })
       .catch((err)=> {
         console.log(err);
       });
-    this.service.on('ready', () => {
-      if (this.registerPlugin(this.config.gid)) {
-        if (!GUI.ready) {
-          GUI.on('ready', () => {
-            this.setupGui()
-          });
-        } else {
-          this.setupGui();
-        }
-      }
-      this.setHookLoading({
-        loading: false
-      });
-      this.setReady(true);
-    })
   };
   //setup plugin interface
   this.setupGui = function() {
