@@ -26,9 +26,6 @@ const _Plugin = function() {
     this.config = this.getConfig();
     // check if exist any layer to edit
     if (this.service.loadPlugin()) {
-      //inizialize service
-      this.service.init(this.config);
-      this.addToolGroup(pluginGroupTool);
       this.setHookLoading({
         loading: true
       });
@@ -42,12 +39,15 @@ const _Plugin = function() {
           }
         }
         this.setHookLoading({
-           loading: false
+          loading: false
         });
         const api = this.service.getApi();
         this.setApi(api);
         this.setReady(true);
-      })
+      });
+      //inizialize service
+      this.service.init(this.config);
+      this.addToolGroup(pluginGroupTool);
     }
   };
   //setup plugin interface
