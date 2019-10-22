@@ -325,7 +325,7 @@ proto._registerGetFeaturesEvent = function(options={}) {
   // le sessioni dipendenti per poter eseguier l'editing
   switch(this._layerType) {
     case Layer.LayerTypes.VECTOR:
-      const fnc = function(options) {
+      const fnc = () => {
         // get current map extent bbox
         const bbox = this._mapService.getMapBBOX();
         // get loadedExtent
@@ -334,7 +334,7 @@ proto._registerGetFeaturesEvent = function(options={}) {
         else this._getFeaturesEvent.options.extent = ol.extent.extend(this._getFeaturesEvent.options.extent, bbox);
         options.filter.bbox = bbox;
         this._session.getFeatures(options);
-      }.bind(this, options);
+      };
       this._getFeaturesEvent.event = 'moveend';
       this._getFeaturesEvent.fnc = fnc;
       this._mapService.getMap().on('moveend', fnc);
