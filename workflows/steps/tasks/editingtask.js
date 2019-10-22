@@ -123,6 +123,7 @@ proto.losseLayerSetDegree = function({ nodeOptions, branchOptions, options={}}) 
   } else if (branchOptions) {
     feature = branchOptions.feature;
     branchFeatures = branchOptions.snapFeatures;
+    branchOptions.update = branchOptions.update === undefined ?  true: branchOptions.update;
     session = branchOptions.session;
     if (feature.length === 1)
       feature = feature[0];
@@ -134,7 +135,7 @@ proto.losseLayerSetDegree = function({ nodeOptions, branchOptions, options={}}) 
     featureA,
     featureB
   });
-  if (branchOptions) {
+  if (branchOptions && branchOptions.update ) {
     const cloneFeature = feature.clone();
     cloneFeature.set(field, +degree);
     session.pushUpdate(branchOptions.layerId, cloneFeature, feature);

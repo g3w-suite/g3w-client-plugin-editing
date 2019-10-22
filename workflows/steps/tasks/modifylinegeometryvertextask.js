@@ -111,61 +111,63 @@ proto.run = function(inputs, context) {
     const featuresLength =  modifiedBranchFeatures.length;
     this._clearMeasureTooltip();
     for (let i = 0; i < featuresLength; i++) {
-      const feature =  modifiedBranchFeatures[i];
+      const feature = modifiedBranchFeatures[i];
       feature.set('pipes', undefined);
       // set undefined to recall pipes from server
       const newFeature = feature;
       const profile = await this.setBranchProfileData({
         feature: newFeature,
         step: feature.get('profile_step_default'),
-        update:true
+        update: true
       });
       const originalFeature = originalBranchFeatures[i];
       session.pushUpdate(layerId, newFeature, originalFeature);
       inputs.features.push(newFeature);
-      let newDependencyFeatures = [];
-      if (dependencyFeatures) {
-        for (let i = 0; i < dependencyFeatures.length; i++) {
-          const {layerId, feature:dependencyFeature} = dependencyFeatures[i];
-          const newFeature = dependencyFeature.clone();
-          const newDependecyFeature = {
-            layerId,
-            feature: newFeature
-          };
-          newDependencyFeatures.push(newDependecyFeature);
-          session.pushUpdate(layerId, newFeature, dependencyOriginalFeatures[i]);
-        }
+    }
+    let newDependencyFeatures = [];
+    if (dependencyFeatures) {
+      for (let i = 0; i < dependencyFeatures.length; i++) {
+        const {layerId, feature:dependencyFeature} = dependencyFeatures[i];
+        const newFeature = dependencyFeature.clone();
+        const newDependecyFeature = {
+          layerId,
+          feature: newFeature
+        };
+        newDependencyFeatures.push(newDependecyFeature);
+        session.pushUpdate(layerId, newFeature, dependencyOriginalFeatures[i]);
       }
-      // considero sostamento solo se tra due branch
-      if (featuresLength ===  2) {
-        this.runBranchMethods({
-          action:'update_geometry',
-          feature: newDependencyFeatures,
-          session
-        }, {
-          snapFeatures: modifiedBranchFeatures
-        })
-      } else if (featuresLength === 1) {
-        const snapFeatures = self.getSnapBrachFeatures({
-          feature: modifiedBranchFeatures[0]
+    }
+    // considero sostamento solo se tra due branch
+    if (featuresLength ===  2) {
+      this.runBranchMethods({
+        action:'update_geometry',
+        feature: newDependencyFeatures,
+        session
+      }, {
+        snapFeatures: modifiedBranchFeatures,
+        update: false
+      })
+    } else if (featuresLength === 1) {
+      const snapFeatures = self.getSnapBrachFeatures({
+        feature: modifiedBranchFeatures[0]
+      });
+      if (snapFeatures.length === 1) {
+        const lossfeature = this.getLosseByCoordinatesBeforeRunBranchMethods({
+          coordinates: snapFeatures[0].coordinates,
+          action: 'update_geometry'
         });
-        if (snapFeatures.length === 1) {
-          const lossfeature = this.getLosseByCoordinatesBeforeRunBranchMethods({
-            coordinates: snapFeatures[0].coordinates,
-            action: 'update_geometry'
-          });
-          if (lossfeature) {
-            this.runBranchMethods({
-              action:'update_geometry',
-              feature: [lossfeature],
-              session
-            }, {
-              snapFeatures: [modifiedBranchFeatures[0], snapFeatures[0].feature]
-            })
-          }
+        if (lossfeature) {
+          this.runBranchMethods({
+            action:'update_geometry',
+            feature: [lossfeature],
+            session
+          }, {
+            snapFeatures: [modifiedBranchFeatures[0], snapFeatures[0].feature]
+          })
         }
       }
     }
+
     ol.Observable.unByKey(startKey);
     d.resolve(inputs);
   });
