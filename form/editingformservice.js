@@ -31,16 +31,16 @@ const EdtingFormService = function(options={}) {
   this.buildRelationComponents = function() {
     const self = this;
     const relationComponents = [];
-    for (const relation of relations) {
+    relations.forEach((relation) => {
       const relationComponent = Vue.extend({
         mixins: [RelationComponent],
-        name: relation.relation.name,
+        name: `relation_${Date.now()}`,
         methods: {
-          getService: function() {
+          getService() {
             return self._relationsService;
           }
         },
-        data: function() {
+        data() {
           return {
             relation: relation.relation,
             relations: relation.relations,
@@ -53,7 +53,7 @@ const EdtingFormService = function(options={}) {
         id: `${t("editing.edit_relation")} ${relation.relation.name}`,
         component: relationComponent
       })
-    }
+    });
     return relationComponents;
   };
 };

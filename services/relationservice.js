@@ -45,13 +45,13 @@ const RelationService = function(options = {}) {
   } else {
     allrelationtools = this.getEditingService().getToolBoxById(this.relation.child).getTools();
     allrelationtools.forEach((tool) => {
-      if(_.concat(RELATIONTOOLS[relationLayerType], RELATIONTOOLS.default).indexOf(tool.getId()) != -1) {
+      if(_.concat(RELATIONTOOLS[relationLayerType], RELATIONTOOLS.default).indexOf(tool.getId()) !== -1) {
         this._relationTools.push(_.cloneDeep(tool));
       }
     });
   }
 
-  this._originalLayerStyle = this.getLayer().getType() == 'vector' ? this.getEditingLayer().getStyle() : null;
+  this._originalLayerStyle = this.getLayer().getType() === 'vector' ? this.getEditingLayer().getStyle() : null;
   // vado ad aggiungere i workflow per link relation che add new relation
   this._setAddLinkWorkflow();
 };
@@ -87,7 +87,7 @@ proto.getRelationTools = function() {
 proto._highlightRelationSelect = function(relation) {
   const geometryType = this.getLayer().getGeometryType();
   let style;
-  if (geometryType == 'LineString' || geometryType == 'MultiLineString') {
+  if (geometryType === 'LineString' || geometryType === 'MultiLineString') {
     style = new ol.style.Style({
       stroke: new ol.style.Stroke({
         color: 'rgb(255,255,0)',
@@ -95,7 +95,7 @@ proto._highlightRelationSelect = function(relation) {
       })
     });
   }
-  else if (geometryType == 'Point' || geometryType == 'MultiPoint') {
+  else if (geometryType === 'Point' || geometryType === 'MultiPoint') {
     style = new ol.style.Style({
       image: new ol.style.Circle({
         radius: 8,
@@ -104,7 +104,7 @@ proto._highlightRelationSelect = function(relation) {
         })
       })
     });
-  } else if (geometryType == 'MultiPolygon' || geometryType == 'Polygon') {
+  } else if (geometryType === 'MultiPolygon' || geometryType === 'Polygon') {
     style = new ol.style.Style({
       stroke: new ol.style.Stroke({
         color: 'rgb(255,255,0)',
