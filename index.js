@@ -56,8 +56,9 @@ const _Plugin = function() {
       return false;
     this.config.name = this.config.name ||  t("editing.editing_data");
     this.addTools({
-        action: this.showEditingPanel
-      }, pluginGroupTool)
+      action: this.showEditingPanel,
+      icon: 'pencil'
+    }, pluginGroupTool)
   };
 
   //method to show editing panel
