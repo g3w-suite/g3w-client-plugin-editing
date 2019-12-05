@@ -17,6 +17,7 @@ const _Plugin = function() {
 
   this.name = 'editing';
   this.init = function() {
+    //if (GUI.isMobile()) return;
     // add i18n of the plugin
     addI18nPlugin({
       name: this.name,

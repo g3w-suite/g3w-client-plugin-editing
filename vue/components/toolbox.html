@@ -12,8 +12,8 @@
         <div class="panel-title" :class="[father ? 'col-md-6' : 'col-md-8']">
           {{ state.title }}
         </div>
-        <div @click.stop="toggleEditing" class="editbtn pull-right" :class="{'enabled' : isLayerReady,  'g3w-icon-toggled' : state.editing.on}" >
-          <span style="font-size: 1.1em; padding: 5px;"  :class="g3wtemplate.font['pencil']"></span>
+        <div data-placement="left" data-toggle="tooltip" :title="edit_layer_tooltip" @click.stop="toggleEditing" class="editbtn skin-tooltip-left pull-right" :class="{'enabled' : isLayerReady,  'g3w-icon-toggled' : state.editing.on}" >
+          <span  style="font-size: 1.1em; padding: 5px;"  :class="g3wtemplate.font['pencil']"></span>
         </div>
       </div>
       <bar-loader :loading="state.loading"></bar-loader>

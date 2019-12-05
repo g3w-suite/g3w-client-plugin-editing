@@ -1,5 +1,6 @@
 const ToolComponent = require('./tool');
 const ToolsOfToolComponent = require('./toolsoftool');
+const t = g3wsdk.core.i18n.tPlugin;
 
 const ToolboxComponent = Vue.extend({
   template: require('./toolbox.html'),
@@ -56,8 +57,14 @@ const ToolboxComponent = Vue.extend({
     }
   },
   created() {
+    this.edit_layer_tooltip = t('editing.tooltip.edit_layer');
     this.$emit('canEdit', {
       id: this.state.id
+    })
+  },
+  mounted() {
+    this.$nextTick(()=>{
+      $('.editbtn[data-toggle="tooltip"]').tooltip();
     })
   }
 });

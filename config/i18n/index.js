@@ -10,6 +10,9 @@ export default {
     relation_data: "Dati relativi alla relazione",
     relation_already_added : "Relazione già presente",
     list_of_relations_feature: "Elenco Relazioni della feature ",
+    tooltip:{
+      edit_layer: "Modifica Layer"
+    },
     tools: {
       add_feature: "Aggiungi feature",
       delete_feature: "Elimina feature",
@@ -93,6 +96,9 @@ export default {
     relation_data: "Relation data",
     relation_already_added: "Relation already added",
     list_of_relations_feature: "List of relations feature ",
+    tooltip: {
+      edit_layer: "Edit Layer"
+    },
     tools: {
       add_feature: "Add feature",
       delete_feature: "Delete feature",
