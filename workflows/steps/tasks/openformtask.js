@@ -77,7 +77,6 @@ proto._getForm = function(inputs, context) {
   this._fields = this._originalLayer.getFieldsWithValues(this._feature, {
     exclude: excludeFields
   });
-
   if (this._isContentChild) {
     this._fields.forEach((field) => {
       if (field.validate.exclude_values) {
@@ -263,6 +262,34 @@ proto.startForm = function(options = {}) {
             }
           });
           break;
+        case "boundary_type":
+          const showBoundaryTypeRelatedFields = (value) => {
+            if (value === 'air' || value === 'water') {
+              this._fields.forEach(field => {
+                if (['boundary_depth', 'boundary_soil_type', 'boundary_soil_temp'].indexOf(field.name) !== -1) {
+                  field.editable = false;
+                  field.value = null;
+                } else if (['boundary_velocity', 'boundary_temp'].indexOf(field.name) !== -1)
+                  field.editable = true;
+              })
+            } else {
+              this._fields.forEach(field => {
+                if (['boundary_velocity', 'boundary_temp'].indexOf(field.name) !== -1) {
+                  field.editable = false;
+                  field.value = null;
+                } else if (['boundary_depth', 'boundary_soil_type', 'boundary_soil_temp'].indexOf(field.name) !== -1) {
+                  field.editable = true;
+                }
+              })
+            }
+          };
+          this._fields[i] = new Proxy(this._fields[i], {
+            set: (target, property, value) => {
+              value && showBoundaryTypeRelatedFields(value);
+              return true;
+            }
+          });
+          break
       }
     }
   }
