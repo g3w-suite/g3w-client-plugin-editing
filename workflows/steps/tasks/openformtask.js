@@ -285,11 +285,9 @@ proto.startForm = function(options = {}) {
           };
           this._fields[i] = new Proxy(this._fields[i], {
             set: (target, property, value) => {
-              if (property === 'value') {
-                value && enableDisableBoundaryTypeRelatedFields(value);
-                target[property] = value;
-                return !!value;
-              } else return true;
+              value && enableDisableBoundaryTypeRelatedFields(value);
+              target[property] = value;
+              return true;
             }
           });
           break;
