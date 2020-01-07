@@ -263,7 +263,7 @@ proto.startForm = function(options = {}) {
           });
           break;
         case "boundary_type":
-          const showBoundaryTypeRelatedFields = (value) => {
+          const enableDisableBoundaryTypeRelatedFields = (value) => {
             if (value === 'air' || value === 'water') {
               this._fields.forEach(field => {
                 if (['boundary_depth', 'boundary_soil_type', 'boundary_soil_temp'].indexOf(field.name) !== -1) {
@@ -285,11 +285,14 @@ proto.startForm = function(options = {}) {
           };
           this._fields[i] = new Proxy(this._fields[i], {
             set: (target, property, value) => {
-              value && showBoundaryTypeRelatedFields(value);
-              return true;
+              if (property === 'value') {
+                value && enableDisableBoundaryTypeRelatedFields(value);
+                target[property] = value;
+                return !!value;
+              } else return true;
             }
           });
-          break
+          break;
       }
     }
   }
