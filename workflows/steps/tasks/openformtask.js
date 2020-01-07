@@ -290,6 +290,8 @@ proto.startForm = function(options = {}) {
               return true;
             }
           });
+          const value = this._fields[i].value;
+          value && enableDisableBoundaryTypeRelatedFields(value);
           break;
       }
     }
