@@ -268,17 +268,26 @@ proto.startForm = function(options = {}) {
               this._fields.forEach(field => {
                 if (['boundary_depth', 'boundary_soil_type', 'boundary_soil_temp'].indexOf(field.name) !== -1) {
                   field.editable = false;
-                  field.value = null;
-                } else if (['boundary_velocity', 'boundary_temp'].indexOf(field.name) !== -1)
+                  field.validate.valid = true;
+                  field.validate.required = false;
+                  field.value = field.name !== 'boundary_soil_type' ? null : field.value;
+                } else if (['boundary_velocity', 'boundary_temp'].indexOf(field.name) !== -1){
                   field.editable = true;
+                  field.validate.required = true;
+                  field.validate.valid = false;
+                }
               })
             } else {
               this._fields.forEach(field => {
                 if (['boundary_velocity', 'boundary_temp'].indexOf(field.name) !== -1) {
                   field.editable = false;
+                  field.validate.valid = true;
+                  field.validate.required = false;
                   field.value = null;
                 } else if (['boundary_depth', 'boundary_soil_type', 'boundary_soil_temp'].indexOf(field.name) !== -1) {
                   field.editable = true;
+                  field.validate.required = true;
+                  field.validate.valid = !!field.value;
                 }
               })
             }
