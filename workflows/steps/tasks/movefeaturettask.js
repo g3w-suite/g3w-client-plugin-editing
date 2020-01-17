@@ -20,6 +20,7 @@ proto.run = function(inputs, context) {
   const editingLayer = inputs.layer;
   const originalLayer = context.layer;
   const layerId = originalLayer.getId();
+  const layerName = originalLayer.getName();
   const originalStyle = editingLayer.getStyle();
   let originalFeature = null;
   let feature;
@@ -51,22 +52,38 @@ proto.run = function(inputs, context) {
 
   this._modifyInteraction.on('modifyend', function(evt) {
     const pixel = evt.mapBrowserEvent.pixel;
-    const map = this.getMap();
+    const coordinate = evt.mapBrowserEvent.coordinate;
+    const map = evt.mapBrowserEvent.map;
+    const vertexIndex = {
+      Inlets: 0,
+      OutLets: 1
+    };
+    const layerFilter = (layer) => {
+      return !!self._dependency.find((dependency) => layer === dependency)
+    };
     const dependencyFeature = map.forEachFeatureAtPixel(pixel, (feature) => {
-      return feature;
-      }, {
-      layerFilter: (layer) => {
-        return !!self._dependency.find((dependency) => layer === dependency)
+      if (!feature)
+        return false;
+      if (layerName === 'Inlets' || layerName === 'OutLets') {
+        const index = vertexIndex[layerName];
+        const vertex = feature.getGeometry().getCoordinates()[index];
+        const canDraw = vertex[0] === coordinate[0] && vertex[1] === coordinate[1];
+        const features = this.getMap().getFeaturesAtPixel(pixel, {
+          layerFilter
+        });
+        return features.length === 1 && canDraw ? feature : null;
+      } else {
+        return feature;
       }
+    }, {
+      layerFilter
     });
     if (dependencyFeature) {
       const newFeature = feature.clone();
-
       self.setFeatureBranchId({
         feature: newFeature,
         branch_id: dependencyFeature.getId()
       });
-
       session.pushUpdate(layerId, newFeature, originalFeature);
       inputs.features.push(newFeature);
       feature.setStyle(originalStyle);

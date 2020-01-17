@@ -41,6 +41,7 @@ proto.run = function(inputs, context) {
   const session = context.session;
   const originalLayer = context.layer;
   const layerId = originalLayer.getId();
+  const layerName = originalLayer.getName();
   const isBranchLayer = this.isBranchLayer(layerId);
   if (!isBranchLayer && !this.getBranchLayerSource().getFeatures().length)
     this.showUserMessage({
@@ -55,9 +56,13 @@ proto.run = function(inputs, context) {
     vertex: 0,
     snapFeatures: [],
     start: false,
-    edge:false,
+    edge: false,
     edgeCoordinate:[]
   };
+  this._inletoutletoptionscondition = {
+    edge: false
+  };
+
   // qui vado a valutare il tipo di layer
   switch (originalLayer.getType()) {
     case Layer.LayerTypes.VECTOR:
@@ -75,6 +80,7 @@ proto.run = function(inputs, context) {
       const source = editingLayer.getSource();
       const dependencyFeatures = this.getDependencyFeatures(this._dependency);
       const options = {
+        layerName,
         source,
         canDraw: false,
         dependency: this._dependency,
@@ -280,12 +286,34 @@ AddFeatureTask.CONDITIONS = {
       }
     }
   },
-  'Point': function({ dependency, dependencyFeatures, source }) {
+  'Point': function({ layerName, dependency, dependencyFeatures, source }) {
+    const vertexIndex = {
+      Inlets: 0,
+      OutLets: 1
+    };
     return function({coordinate, pixel}) {
       return dependencyFeatures.length &&
         !!dependencyFeatures.find((feature) => {
-          return !!this.getMap().forEachFeatureAtPixel(pixel, function(_feature) {
-            return feature === _feature;
+          return !!this.getMap().forEachFeatureAtPixel(pixel, (_feature) => {
+            if (layerName === 'Inlets' || layerName === 'OutLets') {
+              const index = vertexIndex[layerName];
+              const vertex = _feature.getGeometry().getCoordinates()[index];
+              const canDraw = vertex[0] === coordinate[0] && vertex[1] === coordinate[1];
+              if (dependencyFeatures.length === 1)
+                return canDraw;
+              else {
+                const features = this.getMap().getFeaturesAtPixel(pixel, {
+                  layerFilter: function(layer) {
+                    return !!dependency.find((_dependency) => {
+                      return _dependency === layer
+                    })
+                  }
+                });
+                return features.length === 1 && canDraw;
+              }
+            } else {
+              return feature === _feature;
+            }
           }, {
             layerFilter: function(layer) {
               return !!dependency.find((_dependency) => {

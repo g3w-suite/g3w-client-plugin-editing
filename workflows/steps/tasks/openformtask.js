@@ -14,6 +14,7 @@ function OpenFormTask(options={}) {
   this._isContentChild = false;
   this.editattribute = options.editattribute;
   this._reactiveField;
+  this._controlledValuesReactiveFields;
   this._feature;
   this._layerId;
   this._originalLayer;
@@ -262,6 +263,14 @@ proto.startForm = function(options = {}) {
             }
           });
           break;
+        case "boundary_depth":
+        case "boundary_soil_type":
+        case "boundary_soil_temp":
+        case "boundary_velocity":
+        case "boundary_temp":
+          this._fields[i].validate.required = false;
+          this._fields[i].validate.valid = true;
+          break;
         case "boundary_type":
           const enableDisableBoundaryTypeRelatedFields = (value) => {
             if (value === 'air' || value === 'water') {
@@ -390,6 +399,29 @@ proto.startForm = function(options = {}) {
       }
     })
   }
+  if (this._layerName === 'ControlledValves') {
+    const relations = this._originalLayer.getRelations() ? this._originalLayer.getRelations().getArray(): [];
+    const id = `${t("editing.edit_relation")} ${relations[0].getName()}`;
+    const cdField = this._fields.find(field => field.name === 'cd');
+    const startingFooterMessage = footer.message;
+    const cdValidMessage = '';
+    this._controlledValuesReactiveFields = new Vue({
+      functional: true,
+      created() {
+        const EventBus = formService.getEventBus();
+        this.$watch(() => cdField.value, (value) => {
+          const valid = !!value;
+          footer.message =  valid ? cdValidMessage : startingFooterMessage;
+          EventBus.$emit('disable-component', {index: 1, disabled: !!value});
+          EventBus.$emit('component-validation',
+            {
+              id,
+              valid
+            });
+        })
+      }
+    })
+  }
   WorkflowsStack.getCurrent().setContextService(formService);
 };
 
@@ -415,6 +447,8 @@ proto.stop = function() {
   this.setEnableEditing(!this._isContentChild);
   this._reactiveField && this._reactiveField.$destroy();
   this._reactiveField = null;
+  this._controlledValuesReactiveFields && this._controlledValuesReactiveFields.$destroy();
+  this._controlledValuesReactiveFields = null;
   this._isContentChild ? GUI.popContent() : GUI.closeForm();
   this.formService && this.formService.getEventBus().$off('validate-relation');
   this.formService = null;
