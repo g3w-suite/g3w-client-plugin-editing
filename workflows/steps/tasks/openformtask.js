@@ -396,14 +396,13 @@ proto.startForm = function(options = {}) {
     const id = `${t("editing.edit_relation")} ${relations[0].getName()}`;
     const cdField = this._fields.find(field => field.name === 'cd');
     const startingFooterMessage = footer.message;
-    const cdValidMessage = '';
     this._controlledValuesReactiveFields = new Vue({
       functional: true,
       created() {
         const EventBus = formService.getEventBus();
         this.$watch(() => cdField.value, (value) => {
           const valid = !!value;
-          footer.message =  valid ? cdValidMessage : startingFooterMessage;
+          footer.message =  valid ? '' : startingFooterMessage;
           EventBus.$emit('disable-component', {index: 1, disabled: !!value});
           EventBus.$emit('component-validation',
             {
@@ -413,6 +412,32 @@ proto.startForm = function(options = {}) {
         })
       }
     })
+  } else if (this._layerName === 'Inlets') {
+    const relations = this._originalLayer.getRelations() ? this._originalLayer.getRelations().getArray(): [];
+    const id = `${t("editing.edit_relation")} ${relations[0].getName()}`;
+    const field = this._fields.find(field => field.name === 'type');
+    const EventBus = formService.getEventBus();
+    const changeTypeHandler = (value) => {
+      const valid =  value === 'close';
+      footer.message =  valid ? '' : startingFooterMessage;
+      EventBus.$emit('disable-component', {index: 1, disabled: valid});
+      EventBus.$emit('component-validation',
+        {
+          id,
+          valid
+        });
+    };
+    field.value && setTimeout(()=> {
+      changeTypeHandler(field.value);
+    },0);
+    const startingFooterMessage = footer.message;
+    this._controlledValuesReactiveFields = new Vue({
+      functional: true,
+      created() {
+        this.$watch(() => field.value, changeTypeHandler)
+      }
+    })
+
   }
   WorkflowsStack.getCurrent().setContextService(formService);
 };
