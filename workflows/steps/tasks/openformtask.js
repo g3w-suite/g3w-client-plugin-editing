@@ -427,9 +427,9 @@ proto.startForm = function(options = {}) {
           valid
         });
     };
-    field.value && setTimeout(()=> {
+    EventBus.$once('add-component-validate', () =>{
       changeTypeHandler(field.value);
-    },300);
+    });
     const startingFooterMessage = footer.message;
     this._controlledValuesReactiveFields = new Vue({
       functional: true,
