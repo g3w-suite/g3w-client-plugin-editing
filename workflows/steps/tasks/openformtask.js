@@ -429,7 +429,7 @@ proto.startForm = function(options = {}) {
     };
     field.value && setTimeout(()=> {
       changeTypeHandler(field.value);
-    },0);
+    },300);
     const startingFooterMessage = footer.message;
     this._controlledValuesReactiveFields = new Vue({
       functional: true,
