@@ -63,7 +63,7 @@ proto._getUniqueFieldsType = function(fields) {
 };
 
 proto._getForm = function(inputs, context) {
-  const isMastState = this.getStateOfModel() === 'mast';
+  const isMastState = false;//this.getStateOfModel() === 'mast';
   const excludeFields = context.excludeFields;
   this._isContentChild = WorkflowsStack.getLength() > 1;
   this._session = context.session;
@@ -262,14 +262,6 @@ proto.startForm = function(options = {}) {
               return true;
             }
           });
-          break;
-        case "boundary_depth":
-        case "boundary_soil_type":
-        case "boundary_soil_temp":
-        case "boundary_velocity":
-        case "boundary_temp":
-          this._fields[i].validate.required = false;
-          this._fields[i].validate.valid = true;
           break;
         case "boundary_type":
           const enableDisableBoundaryTypeRelatedFields = (value) => {
