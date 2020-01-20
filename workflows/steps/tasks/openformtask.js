@@ -305,6 +305,31 @@ proto.startForm = function(options = {}) {
           break;
       }
     }
+  } else {
+    for (let i=0, len = this._fields.length; i < len; i++) {
+      const fieldName = this._fields[i].name;
+      switch(fieldName) {
+        case "transformation":
+          const setPressionSourceRequiredorNot = (value) => {
+            const psource = this._fields.find(field => {
+              return field.name === 'psource';
+            });
+            psource.validate.required = (value !== 'ISOTHERMAL');
+            psource.editable = (value !== 'ISOTHERMAL');
+            psource.validate.valid = (value === 'ISOTHERMAL') || psource.value !== null;
+            psource.value = (value !== 'ISOTHERMAL') ? psource.value : null;
+          };
+          this._fields[i] = new Proxy(this._fields[i], {
+            set: (target, property, value) => {
+              value && setPressionSourceRequiredorNot(value);
+              target[property] = value;
+              return true;
+            }
+          });
+          this._fields[i].value && setPressionSourceRequiredorNot(this._fields[i].value);
+          break;
+      }
+    }
   }
   const footer = {
     message: !isBranchLayer && this._originalLayer.getRelations() ?
