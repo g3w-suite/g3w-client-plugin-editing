@@ -20,6 +20,25 @@ const vueComponentOptions = {
     'toolbox': ToolboxComponent //componente toolbox
   },
   transitions: {'addremovetransition': 'showhide'},
+  computed: {
+    allowediting() {
+      this.$options.service.removeAllGeometryTools();
+      return this.state.editing.enabled;
+    },
+    message: function() {
+      const message = "";
+      return message;
+    },
+    canCommit: function() {
+      return this.undoRedo.canCommit;
+    },
+    canUndo: function() {
+      return this.allowediting && this.undoRedo.canUndo;
+    },
+    canRedo: function() {
+      return this.allowediting && this.undoRedo.canRedo;
+    }
+  },
   methods: {
     startEditing() {
       const toolBoxes = this.$options.service.getToolBoxes();
@@ -116,30 +135,11 @@ const vueComponentOptions = {
       const service = this.$options.service;
       const toolbox = service.getToolBoxById(toolboxId);
       return toolbox;
-    }
+    },
   },
   created() {
      this.startEditing();
   },
-  computed: {
-    allowediting() {
-      this.$options.service.removeAllGeometryTools();
-      return this.state.editing.enabled;
-    },
-    message: function() {
-      const message = "";
-      return message;
-    },
-    canCommit: function() {
-      return this.undoRedo.canCommit;
-    },
-    canUndo: function() {
-      return this.allowediting && this.undoRedo.canUndo;
-    },
-    canRedo: function() {
-      return this.allowediting && this.undoRedo.canRedo;
-    }
-  }
 };
 
 function PanelComponent(options) {

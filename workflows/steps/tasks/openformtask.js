@@ -267,7 +267,7 @@ proto.startForm = function(options = {}) {
           const enableDisableBoundaryTypeRelatedFields = (value) => {
             if (value === 'air' || value === 'water') {
               this._fields.forEach(field => {
-                if (['boundary_depth', 'boundary_soil_type', 'boundary_soil_temp'].indexOf(field.name) !== -1) {
+                if (['boundary_depth', 'boundary_soil_type', 'boundary_soil_temp', 'heat_transfer_coeff'].indexOf(field.name) !== -1) {
                   field.editable = false;
                   field.validate.valid = true;
                   field.validate.required = false;
@@ -275,17 +275,30 @@ proto.startForm = function(options = {}) {
                 } else if (['boundary_velocity', 'boundary_temp'].indexOf(field.name) !== -1){
                   field.editable = true;
                   field.validate.required = true;
-                  field.validate.valid = false;
+                  field.validate.valid = !!field.value;
                 }
               })
-            } else {
+            } else if(value === 'soil') {
               this._fields.forEach(field => {
-                if (['boundary_velocity', 'boundary_temp'].indexOf(field.name) !== -1) {
+                if (['boundary_velocity', 'boundary_temp', 'heat_transfer_coeff'].indexOf(field.name) !== -1) {
                   field.editable = false;
                   field.validate.valid = true;
                   field.validate.required = false;
                   field.value = null;
                 } else if (['boundary_depth', 'boundary_soil_type', 'boundary_soil_temp'].indexOf(field.name) !== -1) {
+                  field.editable = true;
+                  field.validate.required = true;
+                  field.validate.valid = !!field.value;
+                }
+              })
+            } else if (value === 'fixed') {
+              this._fields.forEach(field => {
+                if(['boundary_depth', 'boundary_soil_type', 'boundary_soil_temp', 'boundary_velocity'].indexOf(field.name) !== -1) {
+                  field.editable = false;
+                  field.validate.valid = true;
+                  field.validate.required = false;
+                  field.value = field.name !== 'boundary_soil_type' ? null : field.value;
+                } else if(['boundary_temp', 'heat_transfer_coeff'].indexOf(field.name) !== -1) {
                   field.editable = true;
                   field.validate.required = true;
                   field.validate.valid = !!field.value;

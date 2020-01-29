@@ -1,7 +1,6 @@
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
 const resolve = g3wsdk.core.utils.resolve;
-const {Filter, Expression} = g3wsdk.core.layer.filter;
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 const PluginService = g3wsdk.core.plugin.PluginService;
 const CatalogLayersStoresRegistry = g3wsdk.core.catalog.CatalogLayersStoresRegistry;
