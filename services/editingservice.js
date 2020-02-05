@@ -20,6 +20,8 @@ function EditingService() {
   this._sessions = {};
   // constraints
   this.constraints = {};
+  this._vectorUrl;
+  this._projectType;
   // events
   this._events = {
     layer: {
@@ -56,6 +58,8 @@ function EditingService() {
   // come per esempio il caso di layers relazionati
   this.init = function(config) {// layersStore del plugin editing che conterrà tutti i layer di editing
     // check constraints editing /scale, geometry, bbox etc ..
+    this._vectorUrl = config.vectorurl;
+    this._projectType = config.project_type;
     this._layersstore = new LayersStore({
       id: 'editing',
       queryable: false // lo setto a false così che quando faccio la query (controllo) non prendo anche questi
@@ -81,7 +85,11 @@ function EditingService() {
       this._editableLayers[layerId] = {};
       // vado a chiamare la funzione che mi permette di
       // estrarre la versione editabile del layer di partenza (es. da imagelayer a vector layer, table layer/tablelayer etc..)
-      const editableLayer = layer.getLayerForEditing();
+      //this._vectorUrl && layer.setVectorUrl(this._vectorUrl);
+      const editableLayer = layer.getLayerForEditing({
+        vectorurl: this._vectorUrl,
+        project_type: this._projectType
+      });
       // vado ad aggiungere ai layer editabili
       this._editableLayers[layerId] = editableLayer;
       this._editableLayers[Symbol.for('layersarray')].push(editableLayer);

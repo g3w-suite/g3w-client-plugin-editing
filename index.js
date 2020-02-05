@@ -53,8 +53,7 @@ const _Plugin = function() {
   };
   //setup plugin interface
   this.setupGui = function() {
-    if (_.isBoolean(this.config.visible) && !this.config.visible)
-      return false;
+    if (this.config.visible === false) return false;
     this.config.name = this.config.name ||  t("editing.editing_data");
     this.addTools({
       action: this.showEditingPanel,
