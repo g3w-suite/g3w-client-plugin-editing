@@ -150,12 +150,12 @@ proto.startForm = function(options = {}) {
       title: t("editing.form.buttons.save"),
       type: "save",
       class: "btn-success",
-      cbk: _.bind(this._saveFnc(promise, context, inputs), this)
+      cbk: this._saveFnc(promise, context, inputs).bind(this)
     }, {
       title: t("editing.form.buttons.cancel"),
       type: "cancel",
       class: "btn-primary",
-      cbk: _.bind(this._cancelFnc(promise),this)
+      cbk: this._cancelFnc(promise).bind(this)
     }]
   });
   this.fireEvent('openform',
