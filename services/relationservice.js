@@ -198,20 +198,21 @@ proto.startVectorTool = function(relationtool, index) {
 
   GUI.setModal(false);
 
-  const workflow = Object.entries(workflows).find(([key, classworkflow]) => {
-    return relationtool.getOperator() instanceof classworkflow
-  });
-
   const options = this._createWorkflowOptions({
     features: [relationfeature]
   });
+
+  const ClassWorkflow = Object.values(workflows).find(classworkflow => {
+    return relationtool.getOperator() instanceof classworkflow
+  });
+
+  const workflow = new ClassWorkflow(options);
 
   this._highlightRelationSelect(relationfeature);
 
   const percContent = this._bindEscKeyUp(workflow,  function() {
     relation.setStyle(this._originalLayerStyle);
   });
-
   const start =(workflow instanceof workflows.DeleteFeatureWorkflow || workflow instanceof workflows.EditFeatureAttributesWorkflow ) && workflow.startFromLastStep(options)
     || workflow.start(options);
   start.then((outputs) => {
