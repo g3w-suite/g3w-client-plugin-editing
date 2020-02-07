@@ -169,14 +169,16 @@ proto.addDependency = function(dependency) {
 // funzione che permette di settare il featurestore del session in particolare
 // collezioni di features per quanto riguarda il vector layer e da vedere per il table layer (forse array) al table layer
 proto._setEditingLayerSource = function() {
-  // vado a prendere il featurestore della sessione appartenete al toolbox
-  const featuresstore = this._session.getFeaturesStore();
-  // questo ritorna come promessa l'array di features del featuresstore
-  // vado  a settare il source del layer
-  const source = this._layerType === Layer.LayerTypes.VECTOR ? new ol.source.Vector({features: featuresstore.getFeaturesCollection()}) :featuresstore;
-  //setto come source del layer l'array / collection feature del features sotre della sessione
-  // il layer deve implementare anche un setSource
-  this._editingLayer.setSource(source);
+  if (this._layerType === Layer.LayerTypes.VECTOR) {
+    // vado a prendere il featurestore della sessione appartenete al toolbox
+    const featuresstore = this._session.getFeaturesStore();
+    // questo ritorna come promessa l'array di features del featuresstore
+    // vado  a settare il source del layer
+    const source = this._layerType === Layer.LayerTypes.VECTOR ? new ol.source.Vector({features: featuresstore.getFeaturesCollection()}) :featuresstore;
+    //setto come source del layer l'array / collection feature del features sotre della sessione
+    // il layer deve implementare anche un setSource
+    this._editingLayer.setSource(source);
+  }
 };
 
 // funzione che fa in modo di attivare tutti i tasks associati
@@ -267,7 +269,7 @@ proto.stop = function() {
           // seci sono tool attivi vado a spengere
           this._setToolsEnabled(false);
           this.clearToolboxMessages();
-          this._layerType === Layer.LayerTypes.VECTOR && this._setEditingLayerSource();
+          this._setEditingLayerSource();
           this.setSelected(false);
           this.emit(EventName);
           d.resolve(true)
@@ -316,10 +318,9 @@ proto._unregisterGetFeaturesEvent = function() {
 // funzione che ha lo scopo di registrare gli eventi per catturare le feature
 proto._registerGetFeaturesEvent = function(options) {
   // le sessioni dipendenti per poter eseguier l'editing
-  const EditingService = require('../services/editingservice');
   switch(this._layerType) {
     case Layer.LayerTypes.VECTOR:
-      const fnc = _.bind(function(options) {
+      const fnc = (options) => {
         // get current map extent bbox
         const canEdit = this.state.editing.canEdit;
         this._editingLayer.setVisible(canEdit);
@@ -329,11 +330,7 @@ proto._registerGetFeaturesEvent = function(options) {
           if (this._getFeaturesEvent.options.extent && ol.extent.containsExtent(this._getFeaturesEvent.options.extent, bbox)) {
             return;
           }
-          if (!this._getFeaturesEvent.options.extent) {
-            this._getFeaturesEvent.options.extent = bbox;
-          } else {
-            this._getFeaturesEvent.options.extent = ol.extent.extend(this._getFeaturesEvent.options.extent, bbox);
-          }
+          this._getFeaturesEvent.options.extent = !this._getFeaturesEvent.options.extent ? bbox: ol.extent.extend(this._getFeaturesEvent.options.extent, bbox) ;
           options.filter.bbox = bbox;
           this.state.loading = true;
           this._session.getFeatures(options).then((promise)=> {
@@ -342,7 +339,7 @@ proto._registerGetFeaturesEvent = function(options) {
             });
           })
         }
-      }, this, options);
+      };
       this._getFeaturesEvent.event = 'moveend';
       this._getFeaturesEvent.fnc = fnc;
       this._mapService.getMap().on('moveend', fnc);

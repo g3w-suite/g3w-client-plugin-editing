@@ -602,8 +602,10 @@ proto.stopSessionChildren = function(layerId) {
   let toolbox;
   relationLayerChildren.forEach((id) => {
     toolbox = this.getToolBoxById(id);
-    if (toolbox && !toolbox.inEditing())
+    if (toolbox && !toolbox.inEditing()) {
       this._sessions[id].stop();
+      toolbox._setEditingLayerSource();
+    }
   });
 };
 
@@ -669,18 +671,17 @@ proto.getLayersDependencyFeatures = function(layerId) {
       toolbox.startLoading();
       //verifico che ci sia la sessione
       if (session) {
-        if (!session.isStarted()) {
+        if (!session.isStarted())
           session.start(options)
             .always(() => {
-              // setto la proprià a stop loading sempre
               toolbox.stopLoading();
-            })
-        } else {
+            });
+        else
           session.getFeatures(options)
             .always(() => {
               toolbox.stopLoading();
-            })
-        }
+            });
+
       } else {
         // altrimenti per quel layer la devo instanziare
         try {
