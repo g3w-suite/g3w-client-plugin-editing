@@ -316,11 +316,11 @@ proto._unregisterGetFeaturesEvent = function() {
 };
 
 // funzione che ha lo scopo di registrare gli eventi per catturare le feature
-proto._registerGetFeaturesEvent = function(options) {
+proto._registerGetFeaturesEvent = function(options={}) {
   // le sessioni dipendenti per poter eseguier l'editing
   switch(this._layerType) {
     case Layer.LayerTypes.VECTOR:
-      const fnc = (options) => {
+      const fnc = () => {
         // get current map extent bbox
         const canEdit = this.state.editing.canEdit;
         this._editingLayer.setVisible(canEdit);
