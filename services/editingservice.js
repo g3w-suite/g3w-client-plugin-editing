@@ -460,38 +460,30 @@ proto.getCurrentWorkflowData = function() {
 };
 
 proto.getRelationsAttributesByFeature = function(relation, feature) {
-  let relationsattributes = [];
-  let toolboxId = relation.getChild();
-  let layer = this.getToolBoxById(toolboxId).getLayer();
-  let relations = this.getRelationsByFeature(relation, feature, layer.getType());
-  let fields;
-  relations.forEach((relation) => {
-    fields = layer.getFieldsWithValues(relation, {
-      relation: true
-    });
-    relationsattributes.push({
-      fields: fields,
+  const toolboxId = relation.getChild();
+  const layer = this.getToolBoxById(toolboxId).getLayer();
+  const relations = this.getRelationsByFeature(relation, feature, layer.getType());
+  return relations.map((relation) => {
+    return {
+      fields: layer.getFieldsWithValues(relation, {
+        relation: true
+      }),
       id: relation.getId()
-    });
+    };
   });
-  return relationsattributes;
 };
 
 proto.getRelationsByFeature = function(relation, feature, layerType) {
-  let toolboxId = relation.getChild();
-  let relationChildField = relation.getChildField();
-  let relationFatherField= relation.getFatherField();
-  let featureValue = feature.isPk(relationFatherField) ? feature.getId() : feature.get(relationFatherField);
-  let toolbox = this.getToolBoxById(toolboxId);
-  let editingLayer = toolbox.getEditingLayer();
-  let features = layerType == 'vector' ? editingLayer.getSource().getFeatures() : editingLayer.getSource().readFeatures() ;
-  let relations = [];
-  features.forEach((feature) => {
-    if (feature.get(relationChildField) == featureValue) {
-      relations.push(feature);
-    }
+  const toolboxId = relation.getChild();
+  const relationChildField = relation.getChildField();
+  const relationFatherField = relation.getFatherField();
+  const featureValue = feature.isPk(relationFatherField) ? feature.getId() : feature.get(relationFatherField);
+  const toolbox = this.getToolBoxById(toolboxId);
+  const editingLayer = toolbox.getEditingLayer();
+  const features = layerType === 'vector' ? editingLayer.getSource().getFeatures() : editingLayer.getSource().readFeatures();
+  return features.filter(feature => {
+    return feature.get(relationChildField) == featureValue
   });
-  return relations;
 };
 
 proto.loadPlugin = function() {
@@ -576,7 +568,7 @@ proto.clearState = function() {
 };
 
 // funzione che filtra le relazioni in base a quelle presenti in editing
-proto.getRelationsInEditing = function(relations, feature, isNew) {
+proto.getRelationsInEditing = function(relations, feature) {
   let relationsinediting = [];
   let relationinediting;
   relations.forEach((relation) => {

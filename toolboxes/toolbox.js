@@ -36,7 +36,10 @@ function ToolBox(options={}) {
   this._session = new Session({
     id: options.id, // contiene l'id del layer
     editor: this._editor,
-    featuresstore: this._layerType === Layer.LayerTypes.VECTOR ? new OlFeaturesStore(): new FeaturesStore()
+    //in case of table or not ol layer i have to set provider to get data
+    featuresstore: this._layerType === Layer.LayerTypes.VECTOR ? new OlFeaturesStore(): new FeaturesStore({
+      provider: this._editingLayer.getProvider('data')
+    })
   });
   // opzione per recuperare le feature
   this._getFeaturesOption = {};
@@ -169,16 +172,14 @@ proto.addDependency = function(dependency) {
 // funzione che permette di settare il featurestore del session in particolare
 // collezioni di features per quanto riguarda il vector layer e da vedere per il table layer (forse array) al table layer
 proto._setEditingLayerSource = function() {
-  if (this._layerType === Layer.LayerTypes.VECTOR) {
-    // vado a prendere il featurestore della sessione appartenete al toolbox
-    const featuresstore = this._session.getFeaturesStore();
-    // questo ritorna come promessa l'array di features del featuresstore
-    // vado  a settare il source del layer
-    const source = this._layerType === Layer.LayerTypes.VECTOR ? new ol.source.Vector({features: featuresstore.getFeaturesCollection()}) :featuresstore;
-    //setto come source del layer l'array / collection feature del features sotre della sessione
-    // il layer deve implementare anche un setSource
-    this._editingLayer.setSource(source);
-  }
+  // vado a prendere il featurestore della sessione appartenete al toolbox
+  const featuresstore = this._session.getFeaturesStore();
+  // questo ritorna come promessa l'array di features del featuresstore
+  // vado  a settare il source del layer
+  const source = this._layerType === Layer.LayerTypes.VECTOR ? new ol.source.Vector({features: featuresstore.getFeaturesCollection()}) :featuresstore;
+  //setto come source del layer l'array / collection feature del features sotre della sessione
+  // il layer deve implementare anche un setSource
+  this._editingLayer.setSource(source);
 };
 
 // funzione che fa in modo di attivare tutti i tasks associati

@@ -19,7 +19,7 @@ const EdtingFormService = function(options={}) {
   if (formLayer.isFather()) {
     // recupero l'array delle relazioni
     relations = formLayer.getRelations().getArray();
-    // vado a filtrare le relazioni per quelle che son o effettivamente in editing
+    // vado a filtrare le relazioni per quelle che sono effettivamente in editing
     relations = EditingService.getRelationsInEditing(relations, formFeature, formFeature.isNew());
     // le relazioni in questione sono oggetti Realtion che contengono le informazioni nello stato delle composizione della relazione
   }

@@ -37,6 +37,7 @@ export default {
     },
     messages: {
       delete_feature: "Vuoi eliminare l'elemento selezionato?",
+      unlink_relation: "Vuoi staccare la relazione?",
       commit_feature: "Vuoi salvare definitivamente le modifiche",
       change_toolbox_relation: "Layer in relazione. Prima di passare ad altri editing è obbligatorio salvare le modifiche correnti.",
       saved: "I dati sono stati salvati correttamente",
@@ -123,6 +124,7 @@ export default {
     },
     messages: {
       delete_feature: "Do you want delete selected feature ?",
+      unlink_relation: "Do you want unlink relation?",
       commit_feature: "Do you want to save the changes",
       change_toolbox_relation: "Layer has relation/relations. Before switch editing you need to save changes done.",
       saved: "Data saved successfully",

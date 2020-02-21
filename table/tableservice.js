@@ -9,28 +9,24 @@ const TableService = function(options = {}) {
   this._fatherValue = options.fatherValue;
   this._foreignKey = options.foreignKey;
   this._workflow = null;
+  this._deleteFeaturesIndexes = [];
+  this._isrelation = options.isrelation || false;
   this.state = {
     headers: options.headers || [],
     features: [],
-    isrelation: options.isrelation || false, //
     title: options.title || 'Link relation'
   };
   this.init = function() {
     //filter the original feature based on if is a relation
-    this._features = !this.state.isrelation ? this._features : this._features.filter((feature) => {
-      return feature.get(this._foreignKey) !== this._fatherValue
-    });
+    this._features = !this._isrelation ? this._features : this._features.filter(feature =>
+      feature.get(this._foreignKey) !== this._fatherValue
+    );
     // set values
     if (this._features.length) {
       const properties = Object.keys(this._features[0].getProperties());
-      this.state.headers = this.state.headers.filter((header) => {
-        return properties.indexOf(header.name) !== -1;
-      })
+      this.state.headers = this.state.headers.filter(header => properties.indexOf(header.name) !== -1);
+      this.state.features = this._features.map(feature => feature.getProperties());
     }
-    this._features.forEach((feature) => {
-      const properties = feature.getProperties();
-      this.state.features.push(properties);
-    });
   };
 
   this.init();
@@ -64,9 +60,9 @@ proto.deleteFeature = function(index) {
       const feature = this._features[index];
       const session = this._context.session;
       const layerId = this._inputs.layer.getId();
+      this._inputs.layer.getSource().removeFeature(feature);
       session.pushDelete(layerId, feature);
       this.state.features.splice(index, 1);
-      this._features.splice(index, 1);
     }
   });
 };

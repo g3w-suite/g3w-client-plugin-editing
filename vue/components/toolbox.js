@@ -1,9 +1,10 @@
 const ToolComponent = require('./tool');
 const ToolsOfToolComponent = require('./toolsoftool');
 const t = g3wsdk.core.i18n.tPlugin;
+const compiledTemplate = Vue.compile(require('./toolbox.html'));
 
 const ToolboxComponent = Vue.extend({
-  template: require('./toolbox.html'),
+  ...compiledTemplate,
   props: ['state', 'resourcesurl'],
   data: function() {
     return {

@@ -22,9 +22,12 @@ const RelationService = function(options = {}) {
   this._add_link_workflow = null; // sono i workflow link e add che verranmno settati in base al tipo di layer
   this._isExternalFieldRequired = this._checkIfExternalFieldRequired();
   // prendo il valore del campo se esiste come proprietà altrimenti prendo il valore della chiave primaria
-  this._currentFeatureFatherFieldValue = this.relation.fatherField in this.getCurrentWorkflowData().feature.getProperties() ? this.getCurrentWorkflowData().feature.get(this.relation.fatherField) : this.getCurrentWorkflowData().feature.getId();
+  this._currentFeatureFatherFieldValue =
+    this.relation.fatherField in this.getCurrentWorkflowData().feature.getProperties() ?
+      this.getCurrentWorkflowData().feature.get(this.relation.fatherField) :
+      this.getCurrentWorkflowData().feature.getId();
   //get type of relation
-  const relationLayerType = this.getLayer().getType() == 'vector' ? this.getLayer().getGeometryType() : 'table';
+  const relationLayerType = this.getLayer().getType() === 'vector' ? this.getLayer().getGeometryType() : 'table';
   let allrelationtools;
   if (relationLayerType == 'table') {
     this._relationTools.push({
@@ -335,13 +338,29 @@ proto.addRelation = function() {
   const percContent = this._bindEscKeyUp(workflow);
   const options = this._createWorkflowOptions();
   const session = options.context.session;
+  const { parentFeature } = options;
   workflow.start(options)
     .then((outputs) => {
       // sono le features e il layer editato
       const {newFeature, originalFeature} = outputs.relationFeature;
+      const setFatherFieldValue = (value) =>{
+        newFeature.set(this.relation.childField, value);
+        this.getLayer().getSource().updateFeature(newFeature);
+        session.pushUpdate(this._layerId, newFeature, originalFeature);
+      };
+      setFatherFieldValue(this._currentFeatureFatherFieldValue);
       // vado a settare il valore della relazione che è legato al padre
-      newFeature.set(this.relation.childField, this._currentFeatureFatherFieldValue);
-      session.pushUpdate(this._layerId, newFeature, originalFeature);
+      const parentlayer = this._parentWorkFlow.getContext().layer;
+      if (parentFeature.isNew() && parentlayer.isPkEditable() && this.relation.fatherField === parentlayer.getPk()) {
+        const keyFatherFeatureChange = parentFeature.on('propertychange', evt => {
+          if (parentFeature.isNew()) {
+            if(evt.key === this.relation.fatherField) {
+              const value = evt.target.get(this.relation.fatherField);
+              setFatherFieldValue(value);
+            }
+          } else ol.Observable.unByKey(keyFatherFeatureChange);
+        })
+      }
       //vado a aggiungere una nuova relazione
       const newRelation = this._createRelationObj(newFeature);
       this.relations.push(newRelation);
@@ -373,22 +392,14 @@ proto.linkRelation = function() {
   workflow.start(options)
     .then((outputs) => {
       const relation = outputs.features[0];
-      let relationAlreadyLinked = false;
-      this.relations.forEach((rel) => {
-        if (rel.id == relation.getId()) {
-          relationAlreadyLinked = true;
-          return false;
-        }
-      });
+      const relationAlreadyLinked = this.relations.find(rel => rel.id === relation.getId());
       if (!relationAlreadyLinked) {
         const originalRelation = relation.clone();
         relation.set(this.relation.childField, this._currentFeatureFatherFieldValue);
         this.getCurrentWorkflowData().session.pushUpdate(this._layerId , relation, originalRelation);
         this.relations.push(this._createRelationObj(relation));
         this.emitEventToParentWorkFlow();
-      } else {
-        GUI.notify.warning(t("editing.relation_already_added"));
-      }
+      } else GUI.notify.warning(t("editing.relation_already_added"));
     })
     .fail((err) => {
       session.rollback();
@@ -417,12 +428,21 @@ proto._getRelationFeature = function(featureId) {
 };
 
 proto.unlinkRelation = function(index) {
-  let relation = this.relations[index];
-  relation = this.getEditingLayer().getSource().getFeatureById(relation.id);
-  const originalRelation = relation.clone();
-  relation.set(this.relation.childField, null);
-  this.getCurrentWorkflowData().session.pushUpdate(this._layerId, relation, originalRelation);
-  this.relations.splice(index, 1);
+  const d = $.Deferred();
+  GUI.dialog.confirm(t("editing.messages.unlink_relation"), (result) => {
+    if (result) {
+      const relation = this.relations[index];
+      const feature = this.getEditingLayer().getSource().getFeatureById(relation.id);
+      const originalRelation = feature.clone();
+      feature.set(this.relation.childField, null);
+      this.getCurrentWorkflowData().session.pushUpdate(this._layerId, feature, originalRelation);
+      this.relations.splice(index, 1);
+      d.resolve(result);
+    } else {
+      d.reject(result);
+    }
+  });
+  return d.promise();
 };
 
 proto.getCurrentWorkflow = function() {
@@ -437,11 +457,12 @@ proto.getCurrentWorkflowData = function() {
 // così da poter inserire le modifiche della relazione al current workflow
 proto._createWorkflowOptions = function(options={}) {
   const workflow_options = {
+    parentFeature: this.getCurrentWorkflowData().feature,
     context: {
       session: this.getCurrentWorkflowData().session,
       layer: this.getLayer(),
       excludeFields: [this.relation.childField],
-      fatherValue: this._currentFeatureFatherFieldValue
+      fatherValue: this._currentFeatureFatherFieldValue,
     },
     inputs: {
       features: options.features || [],

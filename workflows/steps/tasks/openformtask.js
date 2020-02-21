@@ -27,7 +27,6 @@ module.exports = OpenFormTask;
 
 const proto = OpenFormTask.prototype;
 
-
 proto._getFieldUniqueValuesFromServer = function(layer, uniqueFields) {
   const fieldsName = _.map(uniqueFields, (field) => {
     return field.name
@@ -64,7 +63,6 @@ proto._getForm = function(inputs, context) {
   this._editingLayer = inputs.layer;
   this._pk = this._originalLayer.getPk();
   this._layerName = this._originalLayer.getName();
-  // vado a prendere l'ultima feature
   this._feature = inputs.features[inputs.features.length - 1];
   this._originalFeature = this._feature.clone();
   this._fields = this._originalLayer.getFieldsWithValues(this._feature, {
@@ -75,16 +73,15 @@ proto._getForm = function(inputs, context) {
     this._editorFormStructure = editorFormStructure.length ? editorFormStructure : null;
   }
   const uniqueFields = this._getUniqueFieldsType(this._fields);
-  if (!_.isEmpty(uniqueFields))
-    this._getFieldUniqueValuesFromServer(this._originalLayer, uniqueFields);
+  !_.isEmpty(uniqueFields) && this._getFieldUniqueValuesFromServer(this._originalLayer, uniqueFields);
   return GUI.showContentFactory('form');
 };
 
-proto._cancelFnc = function(promise) {
+proto._cancelFnc = function(promise, inputs) {
   return function() {
     GUI.setModal(false);
     this.fireEvent('closeform', {});
-    promise.reject();
+    promise.reject(inputs);
   }
 };
 
@@ -96,7 +93,7 @@ proto._saveFnc = function(promise, context, inputs) {
     if (this._feature.isNew()) {
      if (this._originalLayer.isPkEditable()) {
        fields.forEach((field) => {
-         if(field.name === this._feature.getPk()) {
+         if (field.name === this._feature.getPk()) {
            this._feature.set(this._feature.getPk(), field.value);
            // check if inputs has a newFeature value (case only if added for firts time (add feature task))
            inputs.newFeature &&  inputs.newFeature.setId(this._feature.getId());
@@ -105,12 +102,12 @@ proto._saveFnc = function(promise, context, inputs) {
      }
     }
     const newFeature = this._feature.clone();
-    if (this._isContentChild)
-    //is a relation so i i have to put relation feature
+    if (this._isContentChild) {
       inputs.relationFeature = {
         newFeature,
         originalFeature: this._originalFeature
       };
+    }
     session.pushUpdate(layerId, newFeature, this._originalFeature);
     GUI.setModal(false);
     this.fireEvent('saveform', {});
@@ -119,18 +116,16 @@ proto._saveFnc = function(promise, context, inputs) {
 };
 
 proto.startForm = function(options = {}) {
-  const inputs = options.inputs;
-  const context = options.context;
-  const session = context.session;
-  const promise = options.promise;
+  const { inputs, context, promise } = options;
+  const { session } = context;
   const formComponent = options.formComponent || EditingFormComponent;
   const Form = this._getForm(inputs, context);
   const layerId = this._originalLayer.getId();
   const isnew = this._originalFeature.isNew();
   const formService = Form({
     formComponent,
-    title: t("editing.editing_attributes") + " " + this._layerName,
-    name: t("editing.editing_attributes") + " " + this._layerName,
+    title: `${t("editing.editing_attributes")} ${this._layerName}`,
+    name: `${t("editing.editing_attributes")} ${this._layerName}`,
     id: this._generateFormId(this._layerName),
     dataid: this._layerName,
     layer: this._originalLayer,
@@ -144,8 +139,8 @@ proto.startForm = function(options = {}) {
     formStructure: this._editorFormStructure,
     modal: true,
     perc: this._editorFormStructure ? 100 : null,
-    push: this._isContentChild, // indica se posso aggiungere form
-    showgoback: !this._isContentChild, // se è figlo evito di visualizzare il go back
+    push: this._isContentChild,
+    showgoback: !this._isContentChild,
     buttons:[{
       title: t("editing.form.buttons.save"),
       type: "save",
@@ -155,7 +150,7 @@ proto.startForm = function(options = {}) {
       title: t("editing.form.buttons.cancel"),
       type: "cancel",
       class: "btn-primary",
-      cbk: this._cancelFnc(promise).bind(this)
+      cbk: this._cancelFnc(promise, inputs).bind(this)
     }]
   });
   this.fireEvent('openform',
@@ -170,10 +165,11 @@ proto.startForm = function(options = {}) {
 
 // metodo eseguito all'avvio del tool
 proto.run = function(inputs, context) {
+
   const d = $.Deferred();
   this.startForm({
-    inputs: inputs,
-    context: context,
+    inputs,
+    context,
     promise: d
   });
   return d.promise();

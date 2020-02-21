@@ -5,20 +5,20 @@ const t = g3wsdk.core.i18n.tPlugin;
 const GUI = g3wsdk.gui.GUI;
 const Component = g3wsdk.gui.vue.Component;
 const EditingService = require('../services/editingservice');
-const EditingTemplate = require('./editing.html');
+const compiledTemplate = Vue.compile(require('./editing.html'));
 const ToolboxComponent = require('./components/toolbox');
 
 const vueComponentOptions = {
-  template: EditingTemplate,
+  ...compiledTemplate,
   data: null,
   components: {
-    'toolbox': ToolboxComponent //componente toolbox
+    'toolbox': ToolboxComponent
   },
   transitions: {'addremovetransition': 'showhide'},
   methods: {
     undo: function() {
       const session = this.state.toolboxselected.getSession();
-      const undoItems = session.undo(); // questi solo le feature (cambiamenti) che devo applicare al features stores dei singoli layers coinvolti
+      const undoItems = session.undo();
       this.$options.service.undoRelations(undoItems)
     },
     redo: function() {
@@ -59,13 +59,10 @@ const vueComponentOptions = {
       toolbox.setActiveTool(tool);
     },
     startActiveTool: function(toolId, toolboxId) {
-      // vado a verificare se l'id dell toolbox attivo è diverso o meno da quello premuto
       if (this.state.toolboxidactivetool && toolboxId != this.state.toolboxidactivetool) {
         this._checkDirtyToolBoxes(this.state.toolboxidactivetool)
           .then((toolbox) => {
-            // vado a stoppare l'eventuale tool attivo del precedente toolbox
-            if (toolbox)
-              toolbox.stopActiveTool();
+            if (toolbox) toolbox.stopActiveTool();
             this._setActiveToolOfToolbooxSelected(toolId, toolboxId);
           })
       } else {
@@ -95,7 +92,6 @@ const vueComponentOptions = {
     _checkDirtyToolBoxes: function(toolboxId) {
       return this.$options.service.commitDirtyToolBoxes(toolboxId);
     },
-    // funzione che mi va a aprendere dal service il toolbox in base al suo id
     _getToolBoxById: function(toolboxId) {
       const service = this.$options.service;
       const toolbox = service.getToolBoxById(toolboxId);
@@ -106,8 +102,6 @@ const vueComponentOptions = {
     }
   },
   computed: {
-    // messaggio generale dell'editing esempio comunicando che il layer
-    // che stiamo editindo è padre e quindi i figli sono disabilitati
     message: function() {
       const message = "";
       return message;
@@ -127,6 +121,7 @@ const vueComponentOptions = {
   created() {
     GUI.on('opencontent', this._enableEditingButtons);
     GUI.on('closeform', this._enableEditingButtons);
+    GUI.on('closecontent', this._enableEditingButtons);
   },
   mounted() {
     this.$nextTick(() => {})
@@ -134,28 +129,22 @@ const vueComponentOptions = {
   beforeDestroy() {
     GUI.off('opencontent', this._enableEditingButtons);
     GUI.off('closeform', this._enableEditingButtons);
+    GUI.off('closecontent', this._enableEditingButtons);
   }
 };
 
 function PanelComponent(options) {
-  // proprietà necessarie. In futuro le mettermo in una classe Panel
-  // da cui deriveranno tutti i pannelli che vogliono essere mostrati nella sidebar
   base(this, options);
-  // qui vado a tenere traccia delle due cose che mi permettono di customizzare
-  // vue component e service
   this.vueComponent = vueComponentOptions;
   this.name = options.name || 'Gestione dati';
   merge(this, options);
-  // resource urls
   this._resourcesUrl = options.resourcesUrl || GUI.getResourcesUrl();
   this._service = options.service || EditingService;
-  // setto il componente interno
   const InternalComponent = Vue.extend(this.vueComponent);
   this.internalComponent = new InternalComponent({
     service: this._service,
     data: () => {
       return {
-        //lo state è quello del servizio in quanto è lui che va a modificare operare sui dati
         state: this._service.state,
         resourcesurl: this._resourcesUrl,
         editingButtonsEnabled: true
@@ -163,17 +152,15 @@ function PanelComponent(options) {
     }
   });
 
-  // sovrascrivo richiamando il padre in append
   this.mount = function(parent) {
     return base(this, 'mount', parent, true)
   };
 
   this.unmount = function() {
     const d = $.Deferred();
-    //vado a fare lo stop del servizio che fa un po di pulizia
     this._service.stop()
       .then(() => {
-        //vado a riscrivere la proprietà
+
         this.unmount = function() {
           base(this, 'unmount')
             .then(() => {

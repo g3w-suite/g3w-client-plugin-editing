@@ -3,9 +3,10 @@ const base =  g3wsdk.core.utils.base;
 const Component = g3wsdk.gui.vue.Component;
 const Media_Field = g3wsdk.gui.vue.Fields.media_field;
 const TableService = require('../tableservice');
+const compiledTemplate = Vue.compile(require('./table.html'));
 
 const InternalComponent = Vue.extend({
-  template: require('./table.html'),
+  ...compiledTemplate,
   components: {
     'g3w-media': Media_Field
   },
@@ -81,15 +82,7 @@ const InternalComponent = Vue.extend({
 const TableComponent = function(options={}) {
   base(this);
   const service = options.service || new TableService({
-    headers: options.headers,
-    features: options.features,
-    promise: options.promise,
-    context: options.context,
-    inputs: options.inputs,
-    isrelation: options.isrelation,
-    fatherValue: options.fatherValue,
-    foreignKey: options.foreignKey,
-    title: options.title
+   ...options
   });
   this.setService(service);
   const internalComponent = new InternalComponent({

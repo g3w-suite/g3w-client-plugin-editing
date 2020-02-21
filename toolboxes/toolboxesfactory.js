@@ -36,7 +36,7 @@ function EditorToolBoxesFactory() {
       // caso layer tabellare da mettere in piedi
       case Layer.LayerTypes.TABLE:
         // vado a clonar il layer per utilizzarlo nei vari task
-        editingLayer = _.cloneDeep(layer);
+        editingLayer = layer;
         tools = EditToolsFactory.build({
           layer: editingLayer,
           type: layerType

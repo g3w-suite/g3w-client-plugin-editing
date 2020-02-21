@@ -142,14 +142,9 @@ proto.run = function(inputs, context) {
         }
       }
     });
-    // vado a cancellare dalla source la feature selezionata
     editingLayer.getSource().removeFeature(feature);
     self._selectInteraction.getFeatures().remove(feature);
-    // dico di cancellarla (la feature non viene cancellatata ma aggiornato il suo stato
     session.pushDelete(layerId, feature);
-    //dovrei aggiungere qui qualcosa per salvare temporaneamente quesa modifica sulla sessione al fine di
-    // portare tutte le modifiche quando viene fatto il save della sessione
-    // ritorno come outpu l'input layer che sarà modificato
     d.resolve(inputs);
   });
   return d.promise();

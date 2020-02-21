@@ -3,11 +3,12 @@ const RelationService = require('../../../../services/relationservice');
 const MediaMixin = g3wsdk.gui.vue.Mixins.mediaMixin;
 const maxSubsetLength = 5;
 let relationsTable;
+const compiledTemplate = Vue.compile( require('./relation.html'));
 
- RelationComponent = Vue.extend({
+const RelationComponent = Vue.extend({
   mixins: [MediaMixin],
   name: 'g3w-relation',
-  template: require('./relation.html'),
+  ...compiledTemplate,
   data: function() {
     return {
       showallfieldsindex: null,
@@ -92,6 +93,7 @@ let relationsTable;
         "scrollX": true,
         "order": [ 0, 'asc' ],
         "destroy": true,
+        "pageLength": 10,
         columnDefs: [
           { orderable: false, targets: [-1, -2, -3] }]
       });
