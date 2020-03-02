@@ -1,6 +1,6 @@
-var inherit = g3wsdk.core.utils.inherit;
-var base =  g3wsdk.core.utils.base;
-var EditingTask = require('./editingtask');
+const inherit = g3wsdk.core.utils.inherit;
+const base =  g3wsdk.core.utils.base;
+const EditingTask = require('./editingtask');
 
 function AddFeatureTableTask(options) {
   options = options || {};
@@ -9,24 +9,25 @@ function AddFeatureTableTask(options) {
 
 inherit(AddFeatureTableTask, EditingTask);
 
-var proto = AddFeatureTableTask.prototype;
+const proto = AddFeatureTableTask.prototype;
 
-// metodo eseguito all'avvio del tool
 proto.run = function(inputs, context) {
-  var d = $.Deferred();
-  var originalLayer = context.layer;
-  var layerId = originalLayer.getId();
-  // l'etiing layer in realtà è la session per i layer tabellari
-  var editingLayer = inputs.layer;
-  var session = context.session;
-  // nella creazione della nuova feature utilizzo l'editing layer originale (TableLayer)
-  var feature = originalLayer.createNewFeature();
-  session.pushAdd(layerId, feature);
+  const d = $.Deferred();
+  const session = context.session;
+  const originalLayer = context.layer;
+  const layerId = originalLayer.getId();
+  const editingLayer = inputs.layer;
+  const feature = originalLayer.createNewFeature();
+  originalLayer.isPkEditable() ?  feature.setNew() : feature.setTemporaryId();
   editingLayer.getSource().addFeature(feature);
+  const newFeature = session.pushAdd(layerId, feature);
+  inputs.newFeature = newFeature;
   inputs.features.push(feature);
-  d.resolve(inputs);
+  d.resolve(inputs, context);
   return d.promise();
 };
+
+proto.stop = function() {};
 
 
 module.exports = AddFeatureTableTask;

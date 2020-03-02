@@ -1,10 +1,9 @@
-var inherit = g3wsdk.core.utils.inherit;
-var base =  g3wsdk.core.utils.base;
-var geom = g3wsdk.core.geometry.geom;
-var PickFeatureInteraction = g3wsdk.ol3.interactions.PickFeatureInteraction;
-var PickCoordinatesInteraction = g3wsdk.ol3.interactions.PickCoordsInteraction;
-
-var EditingTask = require('./editingtask');
+const inherit = g3wsdk.core.utils.inherit;
+const base =  g3wsdk.core.utils.base;
+const geom = g3wsdk.core.geometry.geom;
+const PickFeatureInteraction = g3wsdk.ol.interactions.PickFeatureInteraction;
+const PickCoordinatesInteraction = g3wsdk.ol.interactions.PickCoordsInteraction;
+const EditingTask = require('./editingtask');
 
 function CutLineTask(editor){
   this.setters = {
@@ -12,7 +11,7 @@ function CutLineTask(editor){
   };
 
   base(this,options);
-  
+
   //this.steps = new EditingTool.Steps(CutLineTool.steps);
   this._origFeature = null;
   this._origGeometry = null;
@@ -102,20 +101,20 @@ proto.run = function() {
           if (slicedLines){
             var prevLineFeature = slicedLines[0];
             var nextLineFeature = slicedLines[1];
-            
+
             var newId = self.editor.generateId();
             prevLineFeature.setId(newId+'_1');
             nextLineFeature.setId(newId+'_2');
-            
+
             // prendo le proprietà della feature originale (esclusa la geometria)
             var origProperties = feature.getProperties();
             delete origProperties[feature.getGeometryName()];
-            
+
             self._showSelection(prevLineFeature.getGeometry(),300);
             setTimeout(function(){
               self._showSelection(nextLineFeature.getGeometry(),300);
             }, 300);
-            
+
             // nel caso di modifica su taglio
             if (self._modType == 'MODONCUT') {
               // seleziono la porzione da mantenere/modificare
@@ -162,7 +161,7 @@ proto.run = function() {
               self._newFeatures.push(prevLineFeature);
               self._newFeatures.push(nextLineFeature);
               self.editingLayer.getSource().addFeatures([featureToAdd,prevLineFeature]);
-              
+
               var data = {
                 added: [prevLineFeature,nextLineFeature],
                 removed: feature
@@ -265,18 +264,18 @@ proto._selectLineToKeep = function(prevLineFeature,nextLineFeature){
   var layer = this._lineToKeepOverlay;
   layer.getSource().addFeatures([prevLineFeature,nextLineFeature]);
   layer.setMap(this.editor.getMapService().viewer.map);
-  
+
   var selectLineInteraction = new PickFeatureInteraction({
     layers: [this._lineToKeepOverlay]
   });
   this.addInteraction(selectLineInteraction);
-  
+
   selectLineInteraction.on('picked',function(e){
     layer.setMap(null);
     self.removeInteraction(this);
     d.resolve(e.feature);
   });
-  
+
   return d.promise();
 };
 
@@ -303,7 +302,7 @@ proto._cut = function(geometry,cutCoordinate){
     }
     index += 1;
   });
-  
+
   var coordinates = geometry.getCoordinates();
   // prendo la prima porzione di coordinate
   var prevCoords = coordinates.slice(0,closestIndex+1);
@@ -313,17 +312,17 @@ proto._cut = function(geometry,cutCoordinate){
   var nextCoords = coordinates.slice(closestIndex);
   // aggiungo la coordinata di taglio alla seconda porzione
   nextCoords.splice(0,1,cutCoordinate);
-  
+
   if (prevCoords.length < 2 || nextCoords.length < 2){
     return false;
   }
-  
+
   // creo le geometrie
   var prevLine = new ol.geom.LineString();
   prevLine.setCoordinates(prevCoords);
   var nextLine = new ol.geom.LineString();
   nextLine.setCoordinates(nextCoords);
-  
+
   // creo le nuove feature
   var prevLineFeat = new ol.Feature({
     geometry: prevLine
@@ -331,7 +330,7 @@ proto._cut = function(geometry,cutCoordinate){
   var nextLineFeat = new ol.Feature({
     geometry: nextLine
   });
-  
+
   return [prevLineFeat,nextLineFeat];
 };
 

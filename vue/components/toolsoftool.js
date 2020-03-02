@@ -1,7 +1,7 @@
 const Tools = require('./toolsoftool/tools');
-
-var ToolsOfToolComponent = Vue.extend({
-  template: require('./toolsoftool.html'),
+const compiledTemplate = Vue.compile(require('./toolsoftool.html'));
+const ToolsOfToolComponent = Vue.extend({
+  ...compiledTemplate,
   props: ['tools'],
   components: {
     snap: Tools.snap

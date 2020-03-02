@@ -1,12 +1,13 @@
-var inherit = g3wsdk.core.utils.inherit;
-var base =  g3wsdk.core.utils.base;
-var EditingStep = require('./editingstep');
-var DeleteFeatureTask = require('./tasks/deletefeaturetask');
+const inherit = g3wsdk.core.utils.inherit;
+const base =  g3wsdk.core.utils.base;
+const t = g3wsdk.core.i18n.tPlugin;
+const EditingStep = require('./editingstep');
+const DeleteFeatureTask = require('./tasks/deletefeaturetask');
 
-var DeleteFeatureStep = function(options) {
+const DeleteFeatureStep = function(options) {
   options = options || {};
   options.task = new DeleteFeatureTask();
-  options.help = "editing.steps.help.double_click_delete";
+  options.help = t("editing.steps.help.double_click_delete");
   base(this, options)
 };
 

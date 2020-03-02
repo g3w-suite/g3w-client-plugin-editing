@@ -1,5 +1,6 @@
-var ToolComponent = Vue.extend({
-  template: require('./tool.html'),
+const compiledTemplate = Vue.compile(require('./tool.html'));
+const ToolComponent = Vue.extend({
+  ...compiledTemplate,
   props: ['state' ,'resourcesurl'],
   data: function() {
     return {}
@@ -7,11 +8,8 @@ var ToolComponent = Vue.extend({
   methods: {
     toggletool: function() {
       // se non è attivo lo attivo emettendo il segnale
-      if (!this.state.active) {
-        this.$emit('setactivetool', this.state.id);
-      } else {
-        this.$emit('stopactivetool');
-      }
+      if (!this.state.active) this.$emit('setactivetool', this.state.id);
+      else this.$emit('stopactivetool');
     }
   }
 });

@@ -1,6 +1,6 @@
 const Layer = g3wsdk.core.layer.Layer;
 const Geometry = g3wsdk.core.geometry.Geometry;
-const t = g3wsdk.core.i18n.t;
+const t = g3wsdk.core.i18n.tPlugin;
 const Tool = require('./tool');
 const AddFeatureWorkflow = require('../workflows/addfeatureworkflow');
 const ModifyGeometryVertexWorkflow = require('../workflows/modifygeometryvertexworkflow');
@@ -102,21 +102,21 @@ function EditorToolsFactory() {
               new Tool({
                 id: 'addfeature',
                 name: t("editing.tools.add_feature"),
-                icon: "AddPolygon.png",
+                icon: "addPolygon.png",
                 layer: layer,
                 op: AddFeatureWorkflow
               }),
               new Tool({
                 id: 'movefeature',
                 name: t("editing.tools.move_feature"),
-                icon: "MovePolygon.png",
+                icon: "movePolygon.png",
                 layer: layer,
                 op: MoveFeatureWorkflow
               }),
               new Tool({
                 id: 'movevertex',
                 name: t("editing.tools.update_vertex"),
-                icon: "MovePolygonVertex.png",
+                icon: "movePolygonVertex.png",
                 layer: layer,
                 op: ModifyGeometryVertexWorkflow
               }),

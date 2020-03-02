@@ -1,18 +1,16 @@
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
-const PickFeatureInteraction = g3wsdk.ol3.interactions.PickFeatureInteraction;
+const PickFeatureInteraction = g3wsdk.ol.interactions.PickFeatureInteraction;
 
 const EditingTask = require('./editingtask');
 
-function ModifyFeatureTask(options){
-  options = options || {};
+function ModifyFeatureTask(options={}){
   this.editor = editor;
   this.drawInteraction = null;
   this._deleteCondition = options.deleteCondition || undefined;
   this._snap = options.snap || null;
   this._snapInteraction = null;
-
-  base(this,editor);
+  base(this, editor);
 }
 
 inherit(ModifyFeatureTask, EditingTask);

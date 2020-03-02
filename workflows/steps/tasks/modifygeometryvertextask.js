@@ -50,7 +50,7 @@ proto.run = function(inputs, context) {
     })
   ];
   feature.setStyle(style);
-  var features = new ol.Collection(inputs.features);
+  const features = new ol.Collection(inputs.features);
   this._modifyInteraction = new ol.interaction.Modify({
     features: features,
     deleteCondition: this._deleteCondition

@@ -1,21 +1,29 @@
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
 const Component = g3wsdk.gui.vue.Component;
+const Media_Field = g3wsdk.gui.vue.Fields.media_field;
 const TableService = require('../tableservice');
+const compiledTemplate = Vue.compile(require('./table.html'));
 
 const InternalComponent = Vue.extend({
-  template: require('./table.html'),
+  ...compiledTemplate,
+  components: {
+    'g3w-media': Media_Field
+  },
   data: function() {
+    this.dataTable = null;
     return {
-      headers: this.$options.headers,
       state: null
     }
   },
   methods: {
     showValue(key) {
-      return !!this.headers.find((header) => {
-        return header.name == key
+      return !!this.state.headers.find((header) => {
+        return header.name === key
       })
+    },
+    isMediaField(name) {
+      return this.$options.service.isMediaField(name)
     },
     stop: function() {
       this.$options.service.cancel();
@@ -46,16 +54,15 @@ const InternalComponent = Vue.extend({
     }
   },
   watch: {
-    'state.relations' : function() {
+    'state.relations'(){
       this.$nextTick(function() {
-        $(".nano").nanoScroller();
       });
     }
   },
   mounted: function() {
     this.$nextTick(() => {
       const maxHeightTable = this._setLayout();
-      $('#editing_table table').DataTable({
+      this.dataTable = $('#editing_table table').DataTable({
         "pageLength": 10,
         "scrollX": true,
         "scrollY": maxHeightTable + 'px',
@@ -66,29 +73,20 @@ const InternalComponent = Vue.extend({
         ]
       });
     });
+  },
+  beforeDestroy() {
+    this.dataTable.destroy();
   }
 });
 
-const TableComponent = function(options) {
+const TableComponent = function(options={}) {
   base(this);
-  options = options || {};
   const service = options.service || new TableService({
-    headers: options.headers,
-    features: options.features,
-    promise: options.promise,
-    context: options.context,
-    inputs: options.inputs,
-    isrelation: options.isrelation,
-    fatherValue: options.fatherValue,
-    foreignKey: options.foreignKey,
-    title: options.title
+   ...options
   });
-  const headers = options.headers || [];
-  // istanzio il componente interno
   this.setService(service);
   const internalComponent = new InternalComponent({
-    service: service,
-    headers: headers
+    service
   });
   this.setInternalComponent(internalComponent);
   internalComponent.state = service.state;

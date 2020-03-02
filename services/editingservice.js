@@ -10,13 +10,27 @@ const Layer = g3wsdk.core.layer.Layer;
 const GUI = g3wsdk.gui.GUI;
 const serverErrorParser= g3wsdk.core.errors.parsers.Server;
 const ToolBoxesFactory = require('../toolboxes/toolboxesfactory');
-const t = g3wsdk.core.i18n.t;
+const t = g3wsdk.core.i18n.tPlugin;
 const CommitFeaturesWorkflow = require('../workflows/commitfeaturesworkflow');
+import API from '../api'
 
 function EditingService() {
   base(this);
   // contains alla sessions
   this._sessions = {};
+  // constraints
+  this.constraints = {};
+  this._vectorUrl;
+  this._projectType;
+  // events
+  this._events = {
+    layer: {
+      start_editing: {
+        before: {},
+        after: {}
+      }
+    }
+  };
   // state of editing
   this.state = {
     toolboxes: [], // contiene tutti gli stati delle toolbox in editing
@@ -30,15 +44,22 @@ function EditingService() {
   // disable active tool on wehena a control is activated
   this._mapService.on('mapcontrol:active', (interaction) => {
     let toolboxselected = this.state.toolboxselected;
-    if ( toolboxselected && toolboxselected.getActiveTool()) {
+    if (toolboxselected && toolboxselected.getActiveTool()) {
       toolboxselected.getActiveTool().stop();
     }
   });
+  //plugin components
+  this._formComponents = {};
+  // oggetto che server per ascoltare editing da parte di plugin
+  this._subscribers = {};
   // prendo tutti i layers del progetto corrente che si trovano
   // all'interno dei Layerstore del catalog registry con caratteristica editabili.
   // Mi verranno estratti tutti i layer editabili anche quelli presenti nell'albero del catalogo
   // come per esempio il caso di layers relazionati
   this.init = function(config) {// layersStore del plugin editing che conterrà tutti i layer di editing
+    // check constraints editing /scale, geometry, bbox etc ..
+    this._vectorUrl = config.vectorurl;
+    this._projectType = config.project_type;
     this._layersstore = new LayersStore({
       id: 'editing',
       queryable: false // lo setto a false così che quando faccio la query (controllo) non prendo anche questi
@@ -48,44 +69,113 @@ function EditingService() {
     // setto la configurazione del plugin
     this.config = config;
     // oggetto contenente tutti i layers in editing
-    this._editableLayers = {};
+    this._editableLayers = {
+      [Symbol.for('layersarray')]: []
+    };
     // contiene tutti i toolbox
     this._toolboxes = [];
     // restto
     this.state.toolboxes = [];
-    let editableLayer;
-    let layerId;
     // sono i layer originali caricati dal progetto e messi nel catalogo
     let layers = this._getEditableLayersFromCatalog();
+    let editingLayersLenght = layers.length;
     //ciclo su ogni layers editiabile
     for (const layer of layers) {
-      layerId = layer.getId();
+      const layerId = layer.getId();
+      this._editableLayers[layerId] = {};
       // vado a chiamare la funzione che mi permette di
       // estrarre la versione editabile del layer di partenza (es. da imagelayer a vector layer, table layer/tablelayer etc..)
-      editableLayer = layer.getLayerForEditing();
-      // se di tipo table assesgno sempre un solo colore
-      //color = layer.getType() == Layer.LayerTypes.TABLE ? "#cc3300" : COLORS.splice(0,1).pop();
-      // setto il colore che mi servrà per colorarare si il vettoriale che il toolbox
-      //editableLayer.setColor(color);
+      //this._vectorUrl && layer.setVectorUrl(this._vectorUrl);
+      const editableLayer = layer.getLayerForEditing({
+        vectorurl: this._vectorUrl,
+        project_type: this._projectType
+      });
       // vado ad aggiungere ai layer editabili
       this._editableLayers[layerId] = editableLayer;
+      this._editableLayers[Symbol.for('layersarray')].push(editableLayer);
+      const handleReadyConfigurationLayer = () => {
+        editingLayersLenght-=1;
+        if (editingLayersLenght === 0) {
+          for (let layerId in this._editableLayers) {
+            this._attachLayerWidgetsEvent(this._editableLayers[layerId]);
+          }
+          this._ready();
+        }
+      };
+      if (editableLayer.isReady())
+        handleReadyConfigurationLayer();
+      else
+        editableLayer.once('layer-config-ready', () => {
+          handleReadyConfigurationLayer();
+        });
       // aggiungo all'array dei vectorlayers se per caso mi servisse
       this._sessions[layerId] = null;
     }
+  };
+  this._ready = function() {
     // set toolbox colors
     this.setLayersColor();
     // after sadd layers to layerstore
-    this._layersstore.addLayers(Object.values(this._editableLayers));
+    this._layersstore.addLayers(this.getLayers());
     // vado a creare i toolboxes
     this._buildToolBoxes();
     // create a dependencies tree
     this._createToolBoxDependencies();
+    //setApi
+    this.setApi({
+      api: new API({
+        service:this
+      })
+    });
+    this.emit('ready');
   }
 }
 
 inherit(EditingService, PluginService);
 
 let proto = EditingService.prototype;
+
+//api methods
+
+proto.getFormComponentsById = function(layerId) {
+  return this._formComponents[layerId] || [];
+};
+
+proto.getFormComponents = function() {
+  return this._formComponents;
+};
+
+proto.addFormComponents = function({layerId, components= []} = {}) {
+  if (!this._formComponents[layerId])
+    this._formComponents[layerId] = [];
+  for (let i=0; i < components.length; i++) {
+    const component = components[i];
+    this._formComponents[layerId].push(component)
+  }
+};
+
+proto.getSession = function({layerId} = {}) {
+  const toolbox = this.getToolBoxById(layerId);
+  return toolbox.getSession();
+};
+
+proto.getFeature = function({layerId} = {}) {
+  const toolbox = this.getToolBoxById(layerId);
+  const tool = toolbox.getActiveTool();
+  return tool.getFeature();
+};
+
+proto.subscribe = function(event, fnc) {
+  if (!this._subscribers[event])
+    this._subscribers[event] = [];
+  this._subscribers[event].push(fnc);
+};
+
+// END API
+
+proto.fireEvent = function(event, options={}) {
+  this._subscribers[event] && this._subscribers[event].forEach(fnc => fnc(options))
+};
 
 proto.activeQueryInfo = function() {
   this._mapService.activeMapControl('query');
@@ -94,79 +184,90 @@ proto.activeQueryInfo = function() {
 proto.setLayersColor = function() {
 
   const RELATIONS_COLOR = [
-    ["#656F94",
-      "#485584",
-      "#303E73",
+    [
+      "#0C1B53",
+      "#740313",
+      "#1B6803",
+      "#7A5603",
+
+    ],
+    [
       "#1B2B63",
-      "#0C1B53"],
-
-    ["#CF858F",
-      "#B95A67",
-      "#A23645",
       "#8B1929",
-      "#740313"],
-
-    ["#86B976",
-      "#64A450",
-      "#479030",
       "#2F7C16",
-      "#1B6803"],
-
-    ["#DAC28C",
-      "#C2A45E",
-      "#AA8739",
       "#926E1A",
-      "#7A5603"]
+    ],
+    [
+      "#303E73",
+      "#A23645",
+      "#479030",
+      "#AA8739"
+    ],
+    [
+      "#485584",
+      "#B95A67",
+      "#64A450",
+      "#C2A45E",
+    ],
+    [
+      "#656F94",
+      "#CF858F",
+      "#86B976",
+      "#DAC28C"
+    ]
   ];
 
   const LAYERS_COLOR = [
-    "#AFEE30",
-    "#96C735",
-    "#7B9F35",
-    "#5F772F",
+
     "#414F25",
-
-    "#4138B2",
-    "#3E3794",
-    "#373276",
-    "#2E2B59",
     "#22203B",
-
-    "#FFD033",
-    "#D5B139",
-    "#AA9039",
-    "#7F6E33",
     "#544A27",
+    "#431F34",
 
-    "#CD2986",
-    "#AB2E74",
-    "#882D61",
+    "#5F772F",
+    "#2E2B59",
+    "#7F6E33",
     "#66294B",
-    "#431F34"
+
+    "#7B9F35",
+    "#373276",
+    "#882D61",
+    "#AA9039",
+
+    "#96C735",
+    "#3E3794",
+    "#D5B139",
+    "#AB2E74",
+
+    "#AFEE30",
+    "#4138B2",
+    "#FFD033",
+    "#CD2986",
   ];
   let color;
   let childrenLayers;
-  Object.entries(this._editableLayers).forEach(([layerId, layer]) => {
+  for (const layer of this.getLayers()) {
     // verifico se è un layer è padre e se ha figli in editing
     childrenLayers = this._layerChildrenRelationInEditing(layer);
     if (layer.isFather() && childrenLayers.length) {
       color = RELATIONS_COLOR.splice(0,1).pop().reverse();
       !layer.getColor() ? layer.setColor(color.splice(0,1).pop()): null;
       childrenLayers.forEach((layerId) => {
-        !this._editableLayers[layerId].getColor() ? this._editableLayers[layerId].setColor(color.splice(0,1).pop()): null;
+        const layer = this.getLayerById(layerId);
+        !layer.getColor() ? layer.setColor(color.splice(0,1).pop()): null;
       });
     }
-  });
-  Object.entries(this._editableLayers).forEach(([layerId, layer]) => {
-    !this._editableLayers[layerId].getColor() ? layer.setColor(LAYERS_COLOR.splice(0,1).pop()): null;
-  })
+  }
+  for (const layer of this.getLayers()) {
+    !layer.getColor() ? layer.setColor(LAYERS_COLOR.splice(0,1).pop()): null;
+  }
 };
 
 proto._layerChildrenRelationInEditing = function(layer) {
   let relations = layer.getChildren();
   let childrenrealtioninediting = [];
   relations.forEach((relation) => {
-    if (this._editableLayers[relation])
+    if (this.getLayerById(relation))
       childrenrealtioninediting.push(relation);
   });
   return childrenrealtioninediting;
@@ -174,33 +275,27 @@ proto._layerChildrenRelationInEditing = function(layer) {
 
 // udo delle relazioni
 proto.undoRelations = function(undoItems) {
-  let session;
-  let toolbox;
   Object.entries(undoItems).forEach(([toolboxId, items]) => {
-    toolbox = this.getToolBoxById(toolboxId);
-    session = toolbox.getSession();
+    const toolbox = this.getToolBoxById(toolboxId);
+    const session = toolbox.getSession();
     session.undo(items);
   })
 };
 
 // undo delle relazioni
 proto.rollbackRelations = function(rollbackItems) {
-  let session;
-  let toolbox;
   Object.entries(rollbackItems).forEach(([toolboxId, items]) => {
-    toolbox = this.getToolBoxById(toolboxId);
-    session = toolbox.getSession();
+    const toolbox = this.getToolBoxById(toolboxId);
+    const session = toolbox.getSession();
     session.rollback(items);
   })
 };
 
 // redo delle relazioni
 proto.redoRelations = function(redoItems) {
-  let session;
-  let toolbox;
   Object.entries(redoItems).forEach(([toolboxId, items]) => {
-    toolbox = this.getToolBoxById(toolboxId);
-    session = toolbox.getSession();
+    const toolbox = this.getToolBoxById(toolboxId);
+    const session = toolbox.getSession();
     session.redo(items);
   })
 };
@@ -213,14 +308,13 @@ proto.getEditingLayer = function(id) {
 };
 
 proto._buildToolBoxes = function() {
-  let toolbox;
-  _.forEach(this._editableLayers, (layer) => {
+  for (const layer of this.getLayers()) {
     // la toolboxes costruirà il toolboxex adatto per quel layer
     // assegnadogli le icone dei bottonii etc ..
-    toolbox = ToolBoxesFactory.build(layer);
+    const toolbox = ToolBoxesFactory.build(layer);
     // vado ad aggiungere la toolbox
     this.addToolBox(toolbox);
-  })
+  }
 };
 
 //funzione che server per aggiungere un editor
@@ -231,29 +325,90 @@ proto.addToolBox = function(toolbox) {
   this.state.toolboxes.push(toolbox.state);
 };
 
+proto.addEvent = function({type, id, fnc}) {
+  if (!this._events[type])
+    this._events[type] = {};
+  if (!this._events[type][id])
+    this._events[type][id] = [];
+  this._events[type][id].push(fnc);
+};
+
+proto.runEventHandler = function({type, id} = {}) {
+  this._events[type] && this._events[type][id] && this._events[type][id].forEach((fnc) => {
+    fnc();
+  });
+};
+
+proto._attachLayerWidgetsEvent = function(layer) {
+  const fields = layer.getEditingFields();
+  for (let i=0; i < fields.length; i++) {
+    const field = fields[i];
+    if (field.input && field.input.type === 'select_autocomplete') {
+      const options = field.input.options;
+      let {key, values, value, usecompleter, layer_id, loading} = options;
+      if (!usecompleter) {
+        this.addEvent({
+          type: 'start-editing',
+          id: layer.getId(),
+          fnc() {
+            // remove all values
+            loading.state = 'loading';
+            values.splice(0);
+            const relationLayer = CatalogLayersStoresRegistry.getLayerById(layer_id);
+            if (relationLayer) {
+              relationLayer.getDataTable({
+                ordering: key
+              }).then((response) => {
+                if (response && response.features) {
+                  const relationLayerPk = response.pkField;
+                  const isKeyPk = relationLayerPk === key;
+                  const isValuePk = relationLayerPk === value;
+                  const features = response.features;
+                  for (let i = 0; i < features.length; i++) {
+                    values.push({
+                      key: isKeyPk ? features[i].id : features[i].properties[key],
+                      value: isValuePk? features[i].id : features[i].properties[value]
+                    })
+                  }
+                  loading.state = 'ready';
+                }
+              }).fail((error) => {
+                loading.state = 'error'
+              });
+            } else {
+              loading.state = 'error'
+            }
+          }
+        })
+      }
+    }
+  }
+};
+
 // funzione che crea le dipendenze
 proto._createToolBoxDependencies = function() {
-  let layer;
   this._toolboxes.forEach((toolbox) => {
-    layer = toolbox.getLayer();
+    const layer = toolbox.getLayer();
     toolbox.setFather(layer.isFather());
     toolbox.state.editing.dependencies = this._getToolBoxEditingDependencies(layer);
     if (layer.isFather() && toolbox.hasDependencies() ) {
-      _.forEach(layer.getRelations().getRelations(), (relation) => {
+      const layerRelations = layer.getRelations().getRelations();
+      for (const relationName in layerRelations) {
+        const relation = layerRelations[relationName];
         toolbox.addRelation(relation);
-      })
+      }
     }
   })
 };
 
 proto.isFieldRequired = function(layerId, fieldName) {
-  return this._editableLayers[layerId].isFieldRequired(fieldName);
+  return this.getLayerById(layerId).isFieldRequired(fieldName);
 };
 
 proto._getToolBoxEditingDependencies = function(layer) {
   let relationLayers = _.merge(layer.getChildren(), layer.getFathers());
   let toolboxesIds = relationLayers.filter((layerName) => {
-    return !!this._editableLayers[layerName]
+    return !!this.getLayerById(layerName);
   });
   return toolboxesIds;
 };
@@ -284,8 +439,17 @@ proto._getEditableLayersFromCatalog = function() {
   return layers;
 };
 
-proto.getCurrentWorflow = function() {
-  let currentWorkFlow = WorkflowsStack.getLast();
+
+proto.getLayers = function() {
+  return this._editableLayers[Symbol.for('layersarray')];
+};
+
+proto.getCurrentWorkflow = function() {
+  return WorkflowsStack.getCurrent();
+};
+
+proto.getCurrentWorkflowData = function() {
+  const currentWorkFlow = WorkflowsStack.getCurrent();
   return {
     session: currentWorkFlow.getSession(),
     inputs: currentWorkFlow.getInputs(),
@@ -296,45 +460,34 @@ proto.getCurrentWorflow = function() {
 };
 
 proto.getRelationsAttributesByFeature = function(relation, feature) {
-  let relationsattributes = [];
-  let toolboxId = relation.getChild();
-  let layer = this.getToolBoxById(toolboxId).getLayer();
-  let relations = this.getRelationsByFeature(relation, feature, layer.getType());
-  let fields;
-  relations.forEach((relation) => {
-    fields = layer.getFieldsWithValues(relation);
-    relationsattributes.push({
-      fields: fields,
+  const toolboxId = relation.getChild();
+  const layer = this.getToolBoxById(toolboxId).getLayer();
+  const relations = this.getRelationsByFeature(relation, feature, layer.getType());
+  return relations.map((relation) => {
+    return {
+      fields: layer.getFieldsWithValues(relation, {
+        relation: true
+      }),
       id: relation.getId()
-    });
+    };
   });
-  return relationsattributes;
 };
 
 proto.getRelationsByFeature = function(relation, feature, layerType) {
-  let toolboxId = relation.getChild();
-  let relationChildField = relation.getChildField();
-  let relationFatherField= relation.getFatherField();
-  let featureValue = feature.isPk(relationFatherField) ? feature.getId() : feature.get(relationFatherField);
-  let toolbox = this.getToolBoxById(toolboxId);
-  let editingLayer = toolbox.getEditingLayer();
-  let features = layerType == 'vector' ? editingLayer.getSource().getFeatures() : editingLayer.getSource().readFeatures() ;
-  let relations = [];
-  features.forEach((feature) => {
-    if (feature.get(relationChildField) == featureValue) {
-      relations.push(feature);
-    }
+  const toolboxId = relation.getChild();
+  const relationChildField = relation.getChildField();
+  const relationFatherField = relation.getFatherField();
+  const featureValue = feature.isPk(relationFatherField) ? feature.getId() : feature.get(relationFatherField);
+  const toolbox = this.getToolBoxById(toolboxId);
+  const editingLayer = toolbox.getEditingLayer();
+  const features = layerType === 'vector' ? editingLayer.getSource().getFeatures() : editingLayer.getSource().readFeatures();
+  return features.filter(feature => {
+    return feature.get(relationChildField) == featureValue
   });
-  return relations;
 };
 
 proto.loadPlugin = function() {
   return this._load = !!this._getEditableLayersFromCatalog().length; // mi dice se ci sono layer in editing e quindi da caricare il plugin
-};
-
-// ritorna i layer editabili presenti nel layerstore dell'editing
-proto.getLayers = function() {
-  return this._editableLayers;
 };
 
 // funzione che restituisce l'editing layer estratto dal layer del catalogo
@@ -343,11 +496,19 @@ proto.getLayerById = function(layerId) {
   return this._editableLayers[layerId];
 };
 
+proto.beforeEditingStart = function({layer} = {}) {
+  this._checkLayerWidgets(layer);
+};
+
+proto.afterEditingStart = function({layer}= {}) {
+  //TODO
+};
+
 // vado a recuperare il toolbox a seconda del suo id
 proto.getToolBoxById = function(toolboxId) {
   let toolBox = null;
   this._toolboxes.forEach((toolbox) => {
-    if (toolbox.getId() == toolboxId) {
+    if (toolbox.getId() === toolboxId) {
       toolBox = toolbox;
       return false;
     }
@@ -375,21 +536,21 @@ proto.stop = function() {
       // vado a verificare se c'è una sessione sporca e quindi
       // chiedere se salvare
       if (toolbox.getSession().getHistory().state.commit) {
-        // ask to commit before exit, sdet true to close
+        // ask to commit before exit
         commitpromises.push(this.commit(toolbox, true));
       }
     });
     // prima di stoppare tutto e chidere panello
     $.when.apply(this, commitpromises)
       .always(() => {
-        this._mapService.refreshMap();
         this._toolboxes.forEach((toolbox) => {
-          // vado a stoppare tutti le toolbox
+          // stop toolbox
           toolbox.stop();
-          // vado a deselzionare eventuali toolbox
-          toolbox.setSelected(false);
         });
         this.clearState();
+        this.activeQueryInfo();
+        // serve per poter aggiornare ae applicare le modifice ai layer wms
+        this._mapService.refreshMap();
         resolve();
     });
   });
@@ -407,11 +568,11 @@ proto.clearState = function() {
 };
 
 // funzione che filtra le relazioni in base a quelle presenti in editing
-proto.getRelationsInEditing = function(relations, feature, isNew) {
+proto.getRelationsInEditing = function(relations, feature) {
   let relationsinediting = [];
   let relationinediting;
   relations.forEach((relation) => {
-    if (this._editableLayers[relation.getChild()]) {
+    if (this.getLayerById(relation.getChild())) {
       // aggiungo lo state della relazione
       relationinediting = {
         relation:relation.getState(),
@@ -429,12 +590,14 @@ proto.getRelationsInEditing = function(relations, feature, isNew) {
 // qui devo verificare sia l condizione del padre che del figlio
 proto.stopSessionChildren = function(layerId) {
   // caso padre verifico se i figli sono in editing o meno
-  let relationLayerChildren = this._editableLayers[layerId].getChildren();
+  let relationLayerChildren = this.getLayerById(layerId).getChildren();
   let toolbox;
   relationLayerChildren.forEach((id) => {
     toolbox = this.getToolBoxById(id);
-    if (toolbox && !toolbox.inEditing())
+    if (toolbox && !toolbox.inEditing()) {
       this._sessions[id].stop();
+      toolbox._setEditingLayerSource();
+    }
   });
 };
 
@@ -442,7 +605,7 @@ proto.fatherInEditing = function(layerId) {
   let inEditing = false;
   let toolbox;
   // caso padre verifico se ci sono padri in editing o meno
-  let relationLayerFathers = this._editableLayers[layerId].getFathers();
+  let relationLayerFathers = this.getLayerById(layerId).getFathers();
   relationLayerFathers.forEach((id) => {
     toolbox = this.getToolBoxById(id);
     if (toolbox && toolbox.inEditing()) {
@@ -477,9 +640,9 @@ proto.getLayersDependencyFeatures = function(layerId) {
   /*
    IMPORTANTE: PER EVITARE PROBLEMI È IMPORTANTE CHE I LAYER DIPENDENTI SIANO A SUA VOLTA EDITABILI
    */
-  let children = this._editableLayers[layerId].getChildren();
+  let children = this.getLayerById(layerId).getChildren();
   let relationChildLayers = children.filter((id) => {
-    return !!this._editableLayers[id];
+    return !!this.getLayerById(id);
   });
   // se ci sono layer figli dipendenti
   if (!_.isNil(relationChildLayers) && relationChildLayers.length) {
@@ -493,25 +656,24 @@ proto.getLayersDependencyFeatures = function(layerId) {
     let options;
     // cliclo sulle dipendenze create
     relationChildLayers.forEach((id) => {
-      options = this.createEditingDataOptions(this._editableLayers[id].getType());
+      options = this.createEditingDataOptions(this.getLayerById(id).getType());
       session = this._sessions[id];
       toolbox = this.getToolBoxById(id);
       //setto la proprietà a loading
       toolbox.startLoading();
       //verifico che ci sia la sessione
       if (session) {
-        if (!session.isStarted()) {
+        if (!session.isStarted())
           session.start(options)
             .always(() => {
-              // setto la proprià a stop loading sempre
               toolbox.stopLoading();
-            })
-        } else {
+            });
+        else
           session.getFeatures(options)
             .always(() => {
               toolbox.stopLoading();
-            })
-        }
+            });
+
       } else {
         // altrimenti per quel layer la devo instanziare
         try {
@@ -574,12 +736,15 @@ proto.commitDirtyToolBoxes = function(toolboxId) {
 proto._createCommitMessage = function(commitItems) {
   function create_changes_list_dom_element(add, update, del) {
     const changeIds = {};
-    changeIds[`${t('editing.messages.commit.add')}`] = _.map(add, 'id').join(',');
-    changeIds[`${t('editing.messages.commit.update')}`] = _.map(update, 'id').join(',');
-    changeIds[`${t('editing.messages.commit.delete')}`] = del.join(',');
-    let dom = "<ul style='border-bottom-color: #f4f4f4;'>";
+    changeIds[`${t('editing.messages.commit.add')}`] = add.length;
+    changeIds[`${t('editing.messages.commit.update')}`] = `[${update.map((item)=> item.id).join(',')}]`;
+    changeIds[`${t('editing.messages.commit.delete')}`] = `[${del.join(',')}]`;
+    let dom = `<h4>${t('editing.messages.commit.header')}</h4>`;
+    dom+=`<h5>${t('editing.messages.commit.header_add')}</h5>`;
+    dom+=`<h5>${t('editing.messages.commit.header_update_delete')}</h5>`;
+    dom+= "<ul style='border-bottom-color: #f4f4f4;'>";
     Object.entries(changeIds).forEach(([action, ids]) => {
-      dom += "<li>" + action + ": [" + ids + "]</li>";
+      dom += `<li>${action} : ${ids} </li>`;
     });
     dom += "</ul>";
     return dom;
@@ -589,7 +754,7 @@ proto._createCommitMessage = function(commitItems) {
   message += create_changes_list_dom_element(commitItems.add, commitItems.update, commitItems.delete);
   if (!_.isEmpty(commitItems.relations)) {
     message += "<div style='height:1px; background:#f4f4f4;border-bottom:1px solid #f4f4f4;'></div>";
-    message += "<div style='margin-left: 40%'><h4>Relazioni</h4></div>";
+    message += "<div style='margin-left: 40%'><h4>"+ t('editing.relations') +"</h4></div>";
     Object.entries(commitItems.relations).forEach(([ relationName, commits]) => {
       message +=  "<div><span style='font-weight: bold'>" + relationName + "</span></div>";
       message += create_changes_list_dom_element(commits.add, commits.update, commits.delete);
@@ -599,7 +764,7 @@ proto._createCommitMessage = function(commitItems) {
 };
 
 proto.commit = function(toolbox, close=false) {
-  let d = $.Deferred();
+  const d = $.Deferred();
   toolbox = toolbox || this.state.toolboxselected;
   let session = toolbox.getSession();
   let layer = toolbox.getLayer();
@@ -618,7 +783,6 @@ proto.commit = function(toolbox, close=false) {
         message: `<h4 class="text-center"><i style="margin-right: 5px;" class=${GUI.getFontClass('spinner')}></i>${t('editing.messages.saving')}</h4>`,
         closeButton: false
       });
-
       // funzione che serve a fare il commit della sessione legata al tool
       // qui probabilmente a seconda del layer se ha dipendenze faccio ogni sessione
       // produrrà i suoi dati post serializzati che poi saranno uniti per un unico commit
@@ -658,6 +822,8 @@ proto.commit = function(toolbox, close=false) {
     });
   return d.promise();
 };
+
+EditingService.EDITING_FIELDS_TYPE = ['unique'];
 
 
 module.exports = new EditingService;

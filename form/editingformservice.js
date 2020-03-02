@@ -1,5 +1,5 @@
 const GUI = g3wsdk.gui.GUI;
-const t = g3wsdk.core.i18n.t;
+const t = g3wsdk.core.i18n.tPlugin;
 const RelationComponent = require('./components/relation/vue/relation');
 const EdtingFormService = function(options={}) {
   const EditingService = require('../services/editingservice');
@@ -19,7 +19,7 @@ const EdtingFormService = function(options={}) {
   if (formLayer.isFather()) {
     // recupero l'array delle relazioni
     relations = formLayer.getRelations().getArray();
-    // vado a filtrare le relazioni per quelle che son o effettivamente in editing
+    // vado a filtrare le relazioni per quelle che sono effettivamente in editing
     relations = EditingService.getRelationsInEditing(relations, formFeature, formFeature.isNew());
     // le relazioni in questione sono oggetti Realtion che contengono le informazioni nello stato delle composizione della relazione
   }
@@ -31,16 +31,16 @@ const EdtingFormService = function(options={}) {
   this.buildRelationComponents = function() {
     const self = this;
     const relationComponents = [];
-    for (const relation of relations) {
+    relations.forEach((relation) => {
       const relationComponent = Vue.extend({
         mixins: [RelationComponent],
-        name: relation.relation.name,
+        name: `relation_${Date.now()}`,
         methods: {
-          getService: function() {
+          getService() {
             return self._relationsService;
           }
         },
-        data: function() {
+        data() {
           return {
             relation: relation.relation,
             relations: relation.relations,
@@ -53,7 +53,7 @@ const EdtingFormService = function(options={}) {
         id: `${t("editing.edit_relation")} ${relation.relation.name}`,
         component: relationComponent
       })
-    }
+    });
     return relationComponents;
   };
 };

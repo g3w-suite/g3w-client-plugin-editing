@@ -2,43 +2,63 @@ const inherit = g3wsdk.core.utils.inherit;
 const base = g3wsdk.core.utils.base;
 const Plugin = g3wsdk.core.plugin.Plugin;
 const GUI = g3wsdk.gui.GUI;
-const i18nService = g3wsdk.core.i18n;
+const t = g3wsdk.core.i18n.tPlugin;
 const Service = require('./services/editingservice');
 const EditingPanel = require('./panel');
+import pluginConfig from './config';
+const addI18nPlugin = g3wsdk.core.i18n.addI18nPlugin;
 
 const _Plugin = function() {
   base(this);
+  const pluginGroupTool = {
+    position: 0,
+    title: 'EDITING'
+  };
+
   this.name = 'editing';
   this.init = function() {
+    //if (GUI.isMobile()) return;
+    // add i18n of the plugin
+    addI18nPlugin({
+      name: this.name,
+      config: pluginConfig.i18n
+    });
     this.setService(Service);
     this.config = this.getConfig();
     // check if exist any layer to edit
     if (this.service.loadPlugin()) {
-      //inizialize service
-     this.service.init(this.config);
-      //plugin registry
-      if (this.registerPlugin(this.config.gid)) {
-        if (!GUI.ready) {
-          GUI.on('ready',_.bind(this.setupGui, this));
-        } else {
-          this.setupGui();
+      this.setHookLoading({
+        loading: true
+      });
+      this.service.once('ready', () => {
+        //plugin registry
+        if (this.registerPlugin(this.config.gid)) {
+          if (!GUI.ready) {
+            GUI.on('ready', this.setupGui.bind(this));
+          } else {
+            this.setupGui();
+          }
         }
-      }
+        this.setHookLoading({
+          loading: false
+        });
+        const api = this.service.getApi();
+        this.setApi(api);
+        this.setReady(true);
+      });
+      //inizialize service
+      this.service.init(this.config);
+      this.addToolGroup(pluginGroupTool);
     }
   };
   //setup plugin interface
   this.setupGui = function() {
-    if (_.isBoolean(this.config.visible) && !this.config.visible)
-      return false;
-    let self = this;
-    let toolsComponent = GUI.getComponent('tools');
-    let toolsService = toolsComponent.getService();
-    toolsService.addTools(0, 'EDITING', [
-      {
-        name: i18nService.t("editing_data"),
-        action: _.bind(self.showEditingPanel, this)
-      }
-    ])
+    if (this.config.visible === false) return false;
+    this.config.name = this.config.name ||  t("editing.editing_data");
+    this.addTools({
+      action: this.showEditingPanel,
+      icon: 'pencil'
+    }, pluginGroupTool)
   };
 
   //method to show editing panel
@@ -52,6 +72,7 @@ const _Plugin = function() {
   };
 
   this.unload = function() {
+    this.removeTools();
     this.service.clear()
   }
 };

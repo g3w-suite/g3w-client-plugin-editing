@@ -2,13 +2,16 @@ const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
 const G3WObject = g3wsdk.core.G3WObject;
 const GUI = g3wsdk.gui.GUI;
+const t = g3wsdk.core.i18n.tPlugin;
 const Layer = g3wsdk.core.layer.Layer;
 const Session = g3wsdk.core.editing.Session;
+const getScaleFromResolution = g3wsdk.ol.utils.getScaleFromResolution;
 const OlFeaturesStore = g3wsdk.core.layer.features.OlFeaturesStore;
 const FeaturesStore = g3wsdk.core.layer.features.FeaturesStore;
 
 function ToolBox(options={}) {
   base(this);
+  this._constraints = options.constraints || {};
   // editor del Layer che permette di interagire con il layer
   // save, etc ...
   this._editor = options.editor;
@@ -33,7 +36,10 @@ function ToolBox(options={}) {
   this._session = new Session({
     id: options.id, // contiene l'id del layer
     editor: this._editor,
-    featuresstore: this._layerType == Layer.LayerTypes.VECTOR ? new OlFeaturesStore(): new FeaturesStore()
+    //in case of table or not ol layer i have to set provider to get data
+    featuresstore: this._layerType === Layer.LayerTypes.VECTOR ? new OlFeaturesStore(): new FeaturesStore({
+      provider: this._editingLayer.getProvider('data')
+    })
   });
   // opzione per recuperare le feature
   this._getFeaturesOption = {};
@@ -63,7 +69,8 @@ function ToolBox(options={}) {
       on: false,
       dependencies: [], // array di id dei toolbox dipendenti, utili per accendere spendere editing e chiedere il commit
       relations: [],
-      father: false
+      father: false,
+      canEdit: true
     },
     layerstate: this._layer.state
   };
@@ -109,6 +116,10 @@ function ToolBox(options={}) {
 inherit(ToolBox, G3WObject);
 
 const proto = ToolBox.prototype;
+
+proto.getState = function() {
+  return this.state;
+};
 
 proto.getLayer = function() {
   return this._layer;
@@ -161,16 +172,11 @@ proto.addDependency = function(dependency) {
 // funzione che permette di settare il featurestore del session in particolare
 // collezioni di features per quanto riguarda il vector layer e da vedere per il table layer (forse array) al table layer
 proto._setEditingLayerSource = function() {
-  // vado a prendere
+  // vado a prendere il featurestore della sessione appartenete al toolbox
   const featuresstore = this._session.getFeaturesStore();
-  let source;
   // questo ritorna come promessa l'array di features del featuresstore
   // vado  a settare il source del layer
-  if (this._layerType == Layer.LayerTypes.VECTOR) {
-    source = new ol.source.Vector({features: featuresstore.getFeaturesCollection() });
-  } else {
-    source  = featuresstore;
-  }
+  const source = this._layerType === Layer.LayerTypes.VECTOR ? new ol.source.Vector({features: featuresstore.getFeaturesCollection()}) :featuresstore;
   //setto come source del layer l'array / collection feature del features sotre della sessione
   // il layer deve implementare anche un setSource
   this._editingLayer.setSource(source);
@@ -182,7 +188,9 @@ proto._setEditingLayerSource = function() {
 // inoltre farà uno start e stop dell'editor
 proto.start = function() {
   const EditingService = require('../services/editingservice');
+  const EventName = 'start-editing';
   const d = $.Deferred();
+  const id = this.getId();
   // vado a recuperare l'oggetto opzioni data per poter richiedere le feature al provider
   this._getFeaturesOption = EditingService.createEditingDataOptions(this._layerType);
   // se non è stata avviata da altri allora faccio avvio sessione
@@ -192,14 +200,32 @@ proto.start = function() {
       this.state.loading = true;
       this._session.start(this._getFeaturesOption)
         .then((promise) => {
+          this.emit(EventName);
+          EditingService.runEventHandler({
+            type: EventName,
+            id
+          });
           promise
             .then((features) => {
               this.state.loading = false;
               this.setEditing(true);
+              EditingService.runEventHandler({
+                type: 'get-features-editing',
+                id,
+                options: {
+                  features
+                }
+              });
             })
-            .fail((err) => {
+            .fail((error) => {
+              GUI.notify.error(error.message);
+              EditingService.runEventHandler({
+                type: 'error-editing',
+                id,
+                error
+              });
               this.stop();
-              d.reject(err);
+              d.reject(error);
             })
         })
     } else {
@@ -224,8 +250,10 @@ proto.getFeaturesOption = function() {
 
 // funzione che disabiliterà
 proto.stop = function() {
+  const EventName  = 'stop-editing';
   // le sessioni dipendenti per poter eseguier l'editing
   const d = $.Deferred();
+  this.disableCanEditEvent && this.disableCanEditEvent();
   if (this._session && this._session.isStarted()) {
     //vado a verificare se  c'è un padre in editing
     const EditingService = require('../services/editingservice');
@@ -242,12 +270,17 @@ proto.stop = function() {
           // seci sono tool attivi vado a spengere
           this._setToolsEnabled(false);
           this.clearToolboxMessages();
+          this._setEditingLayerSource();
+          this.setSelected(false);
+          this.emit(EventName);
           d.resolve(true)
         })
         .fail((err) => {
           // mostro un errore a video o tramite un messaggio nel pannello
           d.reject(err)
-        });
+        }).always(()=> {
+          this.setSelected(false);
+        })
     } else {
       // spengo il tool attivo
       this.stopActiveTool();
@@ -257,8 +290,10 @@ proto.stop = function() {
       this.clearToolboxMessages();
       this._unregisterGetFeaturesEvent();
       EditingService.stopSessionChildren(this.state.id);
+      this.setSelected(false);
     }
   } else {
+    this.setSelected(false);
     d.resolve(true)
   }
   return d.promise();
@@ -282,25 +317,30 @@ proto._unregisterGetFeaturesEvent = function() {
 };
 
 // funzione che ha lo scopo di registrare gli eventi per catturare le feature
-proto._registerGetFeaturesEvent = function(options) {
+proto._registerGetFeaturesEvent = function(options={}) {
   // le sessioni dipendenti per poter eseguier l'editing
   switch(this._layerType) {
     case Layer.LayerTypes.VECTOR:
-      const fnc = _.bind(function(options) {
+      const fnc = () => {
         // get current map extent bbox
-        const bbox = this._mapService.getMapBBOX();
-        // get loadedExtent
-        if (this._getFeaturesEvent.options.extent && ol.extent.containsExtent(this._getFeaturesEvent.options.extent, bbox)) {
-          return;
+        const canEdit = this.state.editing.canEdit;
+        this._editingLayer.setVisible(canEdit);
+        if (canEdit) {
+          const bbox = this._mapService.getMapBBOX();
+          // get loadedExtent
+          if (this._getFeaturesEvent.options.extent && ol.extent.containsExtent(this._getFeaturesEvent.options.extent, bbox)) {
+            return;
+          }
+          this._getFeaturesEvent.options.extent = !this._getFeaturesEvent.options.extent ? bbox: ol.extent.extend(this._getFeaturesEvent.options.extent, bbox) ;
+          options.filter.bbox = bbox;
+          this.state.loading = true;
+          this._session.getFeatures(options).then((promise)=> {
+            promise.then(() => {
+              this.state.loading = false;
+            });
+          })
         }
-        if (!this._getFeaturesEvent.options.extent) {
-          this._getFeaturesEvent.options.extent = bbox;
-        } else {
-          this._getFeaturesEvent.options.extent = ol.extent.extend(this._getFeaturesEvent.options.extent, bbox);
-        }
-        options.filter.bbox = bbox;
-        this._session.getFeatures(options);
-      }, this, options);
+      };
       this._getFeaturesEvent.event = 'moveend';
       this._getFeaturesEvent.fnc = fnc;
       this._mapService.getMap().on('moveend', fnc);
@@ -316,6 +356,41 @@ proto._setToolsEnabled = function(bool) {
     if (!bool)
       tool.setActive(bool);
   })
+};
+
+proto.getEditingConstraints = function() {
+  return this._constraints;
+};
+
+proto.getEditingConstraint = function(type) {
+  return this.getEditingConstraints()[type];
+};
+
+proto.canEdit = function() {
+  return this.state.editing.canEdit;
+};
+
+proto._canEdit = function() {
+  if (this._constraints.scale) {
+    const scale = this._constraints.scale;
+    const message = `${t('editing.messages.constraints.enable_editing')}${scale}`.toUpperCase();
+    this.state.editing.canEdit = getScaleFromResolution(this._mapService.getMap().getView().getResolution()) <= scale;
+    GUI.setModal(!this.state.editing.canEdit, message);
+    const fnc = (event) => {
+      this.state.editing.canEdit = getScaleFromResolution(event.target.getResolution()) <= scale;
+      GUI.setModal(!this.state.editing.canEdit, message);
+    };
+    this._mapService.getMap().getView().on('change:resolution', fnc);
+    this.disableCanEditEvent = () => {
+      GUI.setModal(false);
+      this._mapService.getMap().getView().un('change:resolution', fnc);
+    }
+  }
+};
+
+proto._disableCanEdit = function() {
+  this.state.editing.canEdit = true;
+  this.disableCanEditEvent && this.disableCanEditEvent()
 };
 
 proto.setMessage = function(message) {
@@ -388,6 +463,7 @@ proto.isSelected = function() {
 
 proto.setSelected = function(bool) {
   this.state.selected = _.isBoolean(bool) ? bool : false;
+  this.state.selected ? this._canEdit() : this._disableCanEdit();
 };
 
 proto.getTools = function() {

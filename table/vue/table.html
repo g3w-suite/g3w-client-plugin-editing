@@ -4,20 +4,23 @@
       <button :class="g3wtemplate.font['close']" class="pull-right close-panel-button"></button>
     </div>
     <h3 class="editing_table_title">{{ state.title }}</h3>
-    <div class="editing_table_relation_messagge"  v-if="state.isrelation" v-t="'editing.relation.table.info'">
+    <div class="editing_table_relation_messagge"  v-if="state.isrelation" v-t-plugin="'editing.relation.table.info'">
     </div>
   </div>
   <table class="display" style="width:100%">
         <thead>
           <tr>
-            <th v-for="header in headers">{{ header.label }}</th>
+            <th v-for="header in state.headers">{{ header.label }}</th>
             <th v-show="!state.isrelation"></th>
             <th v-show="!state.isrelation"></th>
           </tr>
         </thead>
         <tbody>
           <tr @click="state.isrelation ? linkFeature(index) : null" v-for="(feature, index) in state.features" :key="index">
-            <td v-if ="showValue(key)" v-for="(value, key) in feature"> {{ getValue(value) }}</td>
+            <td v-if ="showValue(key)" v-for="(value, key) in feature">
+              <g3w-media v-if=" getValue(value) && isMediaField(key)" :state="value"></g3w-media>
+              <p v-else>{{ getValue(value) }}</p>
+            </td>
             <td v-show="!state.isrelation">
               <i :class="g3wtemplate.font['trash-o']" class="g3w-icon" style="color:red;" aria-hidden="true" @click="deleteFeature(index)"></i>
             </td>
@@ -27,10 +30,8 @@
           </tr>
         </tbody>
       </table>
-  <div id="buttons" v-show="!state.isrelation" style="display:flex; justify-content: center;">
-    <div>
-      <button v-t="'save'" class="btn btn-success" style="margin-right: 10px" @click="save"></button>
-      <button v-t="'cancel'" class="btn btn-primary" @click="cancel"></button>
-    </div>
+  <div id="buttons" v-show="!state.isrelation" style="position: absolute; bottom: 10px; width: 100%; display:flex; justify-content: center;">
+      <button v-t-plugin="'editing.form.buttons.save'" class="btn btn-success" style="margin-right: 10px" @click="save"></button>
+      <button v-t-plugin="'editing.form.buttons.cancel'" class="btn btn-primary" @click="cancel"></button>
   </div>
 </div>

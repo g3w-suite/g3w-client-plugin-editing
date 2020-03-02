@@ -4,9 +4,9 @@ const G3WObject = g3wsdk.core.G3WObject;
 
 // Calsse che rappresenta di fatto
 // il bottone all'interno dell'editor control per l'editing
-function Tool(options) {
+function Tool(options = {}) {
   base(this);
-  options = options || {};
+  this._options = null;
   this._session = options.session;
   // prendo il layer
   this._layer = options.layer;
@@ -31,6 +31,10 @@ inherit(Tool, G3WObject);
 
 const proto = Tool.prototype;
 
+proto.getFeature = function() {
+  return this._options.inputs.features[0];
+};
+
 // funzione che al click del bottone lancio
 proto.start = function() {
   const options = {};
@@ -45,6 +49,8 @@ proto.start = function() {
     session: this._session,
     layer: this._session.getEditor().getLayer()
   };
+
+  this._options = options;
   // funzione che mi permette di far ripartire
   // l'operatore/workflow quando è arrivato alla fine
   const startOp = (options) => {
@@ -63,7 +69,7 @@ proto.start = function() {
         this._session.save()
           .then(() => {});
       })
-      .fail(() =>  {
+      .fail((error) =>  {
         // in caso di mancato successo faccio il rollback
         // della sessione da vedere se li
         const EditingService = require('../services/editingservice');
@@ -91,6 +97,9 @@ proto.start = function() {
 
 //fa lo stop del tool
 proto.stop = function() {
+  this.emit('stop', {
+    session: this._session
+  });
   const d = $.Deferred();
   //console.log('Stopping Tool ... ');
   if (this._op) {
@@ -102,6 +111,7 @@ proto.stop = function() {
         this._session.rollback();
       })
       .always(() => {
+        this._options = null;
         this.state.active = false;
         this.emit('stop');
         d.resolve();

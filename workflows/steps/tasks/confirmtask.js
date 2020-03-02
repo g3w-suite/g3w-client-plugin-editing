@@ -1,6 +1,7 @@
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
 const GUI = g3wsdk.gui.GUI;
+const tPlugin = g3wsdk.core.i18n.tPlugin;
 const t = g3wsdk.core.i18n.t;
 const EditingTask = require('./editingtask');
 
@@ -9,10 +10,10 @@ let Dialogs = {
   delete: {
     fnc: function(inputs) {
       let d = $.Deferred();
-      GUI.dialog.confirm(t("editing.messages.delete_feature"), function(result) {
-        if (result)
+      GUI.dialog.confirm(tPlugin("editing.messages.delete_feature"), function(result) {
+        if (result) {
           d.resolve(inputs);
-        else
+        } else
           d.reject(inputs);
       });
       return d.promise();
@@ -50,7 +51,7 @@ let Dialogs = {
       // NOW I HAVE TO IMPLEMENT WHAT HAPPEND ID NO ACTION HAPPEND
       const dialog = GUI.dialog.dialog({
         message: inputs.message,
-        title: t("editing.messages.commit_feature") + " " +inputs.layer.getName() + "?",
+        title: tPlugin("editing.messages.commit_feature") + " " +inputs.layer.getName() + "?",
         buttons: buttons
       });
       return d.promise()
@@ -70,7 +71,7 @@ let proto = ConfirmTask.prototype;
 
 // metodo eseguito all'avvio del tool
 proto.run = function(inputs, context) {
-  console.log('Confirm Feature Task run ....');
+  //console.log('Confirm Feature Task run ....');
   return this._dialog.fnc(inputs);
 };
 

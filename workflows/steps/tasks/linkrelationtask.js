@@ -2,7 +2,7 @@ const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
 const EditingTask = require('./editingtask');
 const GUI = g3wsdk.gui.GUI;
-const PickFeatureInteraction = g3wsdk.ol3.interactions.PickFeatureInteraction;
+const PickFeatureInteraction = g3wsdk.ol.interactions.PickFeatureInteraction;
 
 
 // classe  per l'aggiungere una relazione

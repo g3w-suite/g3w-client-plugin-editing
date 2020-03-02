@@ -1,13 +1,14 @@
 const ToolComponent = require('./tool');
 const ToolsOfToolComponent = require('./toolsoftool');
+const t = g3wsdk.core.i18n.tPlugin;
+const compiledTemplate = Vue.compile(require('./toolbox.html'));
 
 const ToolboxComponent = Vue.extend({
-  template: require('./toolbox.html'),
+  ...compiledTemplate,
   props: ['state', 'resourcesurl'],
   data: function() {
     return {
-      active: false,
-      showtoolsoftool: true
+      active: false
     }
   },
   components: {
@@ -23,8 +24,9 @@ const ToolboxComponent = Vue.extend({
       }
     },
     toggleEditing() {
+      this.select();
       //se il toolbox non è ancora abilitato non faccio niente
-      if (!this.state.layerstate.editing.ready)
+      if (!this.state.layerstate.editing.ready || this.state.loading)
         return;
       this.state.editing.on ? this.$emit('stoptoolbox', this.state.id): this.$emit('starttoolbox', this.state.id);
     },
@@ -39,6 +41,9 @@ const ToolboxComponent = Vue.extend({
     }
   },
   computed: {
+    canEdit() {
+      return this.state.editing.canEdit;
+    },
     father: function() {
       return this.state.editing.father && !!this.state.editing.dependencies.length;
     },
@@ -51,6 +56,17 @@ const ToolboxComponent = Vue.extend({
     isLayerReady() {
       return this.state.layerstate.editing.ready;
     }
+  },
+  created() {
+    this.edit_layer_tooltip = t('editing.tooltip.edit_layer');
+    this.$emit('canEdit', {
+      id: this.state.id
+    })
+  },
+  mounted() {
+    this.$nextTick(()=>{
+      $('.editbtn[data-toggle="tooltip"]').tooltip();
+    })
   }
 });
 

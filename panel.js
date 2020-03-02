@@ -1,13 +1,12 @@
-var base = g3wsdk.core.utils.base;
-var inherit = g3wsdk.core.utils.inherit;
-var i18nService = g3wsdk.core.i18n;
-var EditingComponent = require('./vue/editing');
+const base = g3wsdk.core.utils.base;
+const inherit = g3wsdk.core.utils.inherit;
+const t = g3wsdk.core.i18n.tPlugin;
+const EditingComponent = require('./vue/editing');
 
-function EditingPanelComponent(options) {
-  options = options || {};
+function EditingPanelComponent(options={}) {
   // editortoolsbars
   options.id = "editing-panel";
-  options.title = i18nService.t("editing_data");
+  options.title = t("editing.editing_data");
   options.name = "Gestione dati EDITING";
   options.toolboxes = options.toolboxes || null;
   base(this, options)

@@ -1,6 +1,7 @@
 const RelationComponent = require('../../relation/vue/relation');
+const compiledTemplate = Vue.compile(require('./relations.html'));
 const RelationsComponent = {
-  template: require('./relations.html'),
+  ...compiledTemplate,
   components: {
     'relation': RelationComponent
   },

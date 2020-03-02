@@ -1,6 +1,6 @@
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
-const DeleteInteraction = g3wsdk.ol3.interactions.DeleteFeatureInteraction;
+const DeleteInteraction = g3wsdk.ol.interactions.DeleteFeatureInteraction;
 const EditingTask = require('./editingtask');
 
 function DeleteFeatureTask(options) {
@@ -14,7 +14,7 @@ inherit(DeleteFeatureTask, EditingTask);
 
 const proto = DeleteFeatureTask.prototype;
 
-/* BRUTTISSIMO! Tocca ridefinire tutte le parti internet di OL3 non esposte dalle API */
+/* BRUTTISSIMO! */
 
 ol.geom.GeometryType = {
   POINT: 'Point',
@@ -95,7 +95,7 @@ styles[ol.geom.GeometryType.GEOMETRY_COLLECTION] = _.concat(styles[ol.geom.Geome
 // run del tool di delete feature
 // che ritorna una promessa
 proto.run = function(inputs, context) {
-  console.log('Delete task run.......');
+  //console.log('Delete task run.......');
   var self = this;
   var d = $.Deferred();
   var editingLayer = inputs.layer;
@@ -142,21 +142,16 @@ proto.run = function(inputs, context) {
         }
       }
     });
-    // vado a cancellare dalla source la feature selezionata
     editingLayer.getSource().removeFeature(feature);
     self._selectInteraction.getFeatures().remove(feature);
-    // dico di cancellarla (la feature non viene cancellatata ma aggiornato il suo stato
     session.pushDelete(layerId, feature);
-    //dovrei aggiungere qui qualcosa per salvare temporaneamente quesa modifica sulla sessione al fine di
-    // portare tutte le modifiche quando viene fatto il save della sessione
-    // ritorno come outpu l'input layer che sarà modificato
     d.resolve(inputs);
   });
   return d.promise();
 };
 
 proto.stop = function() {
-  console.log('Stop delete task ....');
+  //console.log('Stop delete task ....');
   return new Promise((resolve, reject) => {
     this._selectInteraction.getFeatures().clear();
     this.removeInteraction(this._selectInteraction);

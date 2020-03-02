@@ -1,5 +1,5 @@
 <div class="toolbox">
-  <div :class="{'disableddiv' : !isLayerReady }" :id="'id_toolbox_'+ state.id">
+  <div :class="{'disableddiv' : !isLayerReady || !canEdit }" :id="'id_toolbox_'+ state.id">
     <div @click="select" class="panel panel-primary" :class="{ 'toolboxselected': state.selected }">
       <div v-show="!isLayerReady" class="bar-loader"></div>
       <div class="panel-heading container" style="width:100%;" :style="{ background: state.color}" >
@@ -12,18 +12,19 @@
         <div class="panel-title" :class="[father ? 'col-md-6' : 'col-md-8']">
           {{ state.title }}
         </div>
-        <div @click="toggleEditing" class="editbtn pull-right" :class="{'enabled' : isLayerReady,  'g3w-icon-toggled' : state.editing.on}" >
-          <span style="font-size: 1.1em; padding: 5px;"  :class="g3wtemplate.font['pencil']"></span>
+        <div data-placement="left" data-toggle="tooltip" :title="edit_layer_tooltip" @click.stop="toggleEditing" class="editbtn skin-tooltip-left pull-right" :class="{'enabled' : isLayerReady,  'g3w-icon-toggled' : state.editing.on}" >
+          <span  style="font-size: 1.1em; padding: 5px;"  :class="g3wtemplate.font['pencil']"></span>
         </div>
       </div>
+      <bar-loader :loading="state.loading"></bar-loader>
       <div class="panel-body">
-        <div style="display: flex; justify-content: flex-start">
+        <div style="display: flex; flex-wrap: wrap;">
           <tool
             :state="toolstate"
             :resourcesurl="resourcesurl"
             @stopactivetool="stopActiveTool"
             @setactivetool="setActiveTool"
-            v-for="toolstate in state.tools">
+            v-for="toolstate in state.tools" :key="toolstate.id">
           </tool>
         </div>
         <div class="message" style="margin-top: 5px;" :id="'id_toolbox_messages_'+ state.id">
@@ -32,9 +33,6 @@
             <toolsoftool v-if="showtoolsoftool" :tools="state.toolsoftool"></toolsoftool>
           </transition>
           <div class="toolbox_help_message" v-html="toolhelpmessage"></div>
-          <div v-t="'editing.messages.loading_data'" v-show="state.loading">
-            <img style="padding-left: 3px;" :src="resourcesurl + '/images/loader.svg'">
-          </div>
         </div>
       </div>
     </div>
