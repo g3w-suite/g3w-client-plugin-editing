@@ -356,14 +356,15 @@ proto._attachLayerWidgetsEvent = function(layer) {
             loading.state = 'loading';
             values.splice(0);
             const relationLayer = CatalogLayersStoresRegistry.getLayerById(layer_id);
+            const isVector = relationLayer.getType() === Layer.LayerTypes.VECTOR;
             if (relationLayer) {
               relationLayer.getDataTable({
                 ordering: key
               }).then((response) => {
                 if (response && response.features) {
                   const relationLayerPk = response.pkField;
-                  const isKeyPk = relationLayerPk === key;
-                  const isValuePk = relationLayerPk === value;
+                  const isKeyPk = isVector && relationLayerPk === key;
+                  const isValuePk = isVector && relationLayerPk === value;
                   const features = response.features;
                   for (let i = 0; i < features.length; i++) {
                     values.push({
@@ -371,7 +372,6 @@ proto._attachLayerWidgetsEvent = function(layer) {
                       value: isValuePk? features[i].id : features[i].properties[value]
                     })
                   }
-                  console.log(values)
                   loading.state = 'ready';
                 }
               }).fail((error) => {
@@ -668,7 +668,6 @@ proto.getLayersDependencyFeatures = function(layerId, opts={}) {
      * */
     //cerco prima tra i toolbox se presente
     let session;
-    // cliclo sulle dipendenze create
     relationChildLayers.forEach((id) => {
       const promise = new Promise((resolve) => {
         const type = this.getLayerById(id).getType();
@@ -676,9 +675,7 @@ proto.getLayersDependencyFeatures = function(layerId, opts={}) {
         const options = this.createEditingDataOptions(type, opts);
         session = this._sessions[id];
         const toolbox = this.getToolBoxById(id);
-        //setto la proprietà a loading
         toolbox.startLoading();
-        //verifico che ci sia la sessione
         if (session) {
           if (!session.isStarted())
             session.start(options)
@@ -689,14 +686,15 @@ proto.getLayersDependencyFeatures = function(layerId, opts={}) {
                 })
               });
           else
-            session.getFeatures(options)
-              .always(() => {
-                promise.always(()=>{
-                  toolbox.stopLoading();
-                  resolve(id);
+            if (type === Layer.LayerTypes.VECTOR)
+              session.getFeatures(options)
+                .always(() => {
+                  promise.always(()=>{
+                    toolbox.stopLoading();
+                    resolve(id);
+                  });
                 });
-
-              });
+            else resolve(id);
         } else {
           // altrimenti per quel layer la devo instanziare
           try {
