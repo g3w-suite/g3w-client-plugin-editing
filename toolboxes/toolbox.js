@@ -92,9 +92,9 @@ function ToolBox(options={}) {
 
   this._session.onafter('start', (options) => {
     this._getFeaturesOption = options;
-    const EditingService = require('../services/editingservice');
+    //const EditingService = require('../services/editingservice');
     // passo id del toolbox e le opzioni per far partire la sessione
-    EditingService.getLayersDependencyFeatures(this.state.id);// dove le opzioni possono essere il filtro;
+    //EditingService.getLayersDependencyFeatures(this.state.id);// dove le opzioni possono essere il filtro;
     // vado a registrare l'evento getFeature
     this._registerGetFeaturesEvent(this._getFeaturesOption);
   });
