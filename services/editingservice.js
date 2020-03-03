@@ -355,14 +355,15 @@ proto._attachLayerWidgetsEvent = function(layer) {
             loading.state = 'loading';
             values.splice(0);
             const relationLayer = CatalogLayersStoresRegistry.getLayerById(layer_id);
+            const isVector = relationLayer.getType() === Layer.LayerTypes.VECTOR;
             if (relationLayer) {
               relationLayer.getDataTable({
                 ordering: key
               }).then((response) => {
                 if (response && response.features) {
                   const relationLayerPk = response.pkField;
-                  const isKeyPk = relationLayerPk === key;
-                  const isValuePk = relationLayerPk === value;
+                  const isKeyPk = isVector && relationLayerPk === key;
+                  const isValuePk = isVector && relationLayerPk === value;
                   const features = response.features;
                   for (let i = 0; i < features.length; i++) {
                     values.push({
@@ -623,7 +624,7 @@ proto.createEditingDataOptions = function(layerType) {
     type: layerType
   };
   // verifico se layer vettoriale
-  if(layerType == Layer.LayerTypes.VECTOR) {
+  if(layerType === Layer.LayerTypes.VECTOR) {
     // aggiungo il filto bbox
     let bbox = this._mapService.getMapBBOX();
     options.filter = {
