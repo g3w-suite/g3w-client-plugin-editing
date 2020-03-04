@@ -346,7 +346,6 @@ proto._attachLayerWidgetsEvent = function(layer) {
     if (field.input && field.input.type === 'select_autocomplete') {
       const options = field.input.options;
       let {key, values, value, usecompleter, layer_id, loading} = options;
-      console.log(options)
       if (!usecompleter) {
         this.addEvent({
           type: 'start-editing',
@@ -647,6 +646,21 @@ proto.createEditingDataOptions = function(type, options={}) {
   }
 };
 
+proto.getLayersDependencyFeaturesFromSource = function({layerId, relation, feature}={}){
+  return new Promise((resolve, reject) => {
+    const layer = this.getLayerById(layerId);
+    const features = layer.getSource().readFeatures();
+    const fatherPk = feature.getPk();
+    const fatherField = relation.getFatherField();
+    const featureFatherValue =  fatherPk === fatherField ? feature.getId() : feature.get(fatherField);
+    const childField = relation.getChildField();
+    const find = features.find(featureSource => {
+      return featureSource.get(childField) === featureFatherValue;
+    });
+    resolve(find);
+  })
+};
+
 // fa lo start di tutte le dipendenze del layer legato alla toolbox che si è avviato
 proto.getLayersDependencyFeatures = function(layerId, opts={}) {
   const promises = [];
@@ -671,7 +685,8 @@ proto.getLayersDependencyFeatures = function(layerId, opts={}) {
     relationChildLayers.forEach((id) => {
       const promise = new Promise((resolve) => {
         const type = this.getLayerById(id).getType();
-        opts.relation = relations.find(relation => relation.getChild() === id);
+        const relation = relations.find(relation => relation.getChild() === id);
+        opts.relation = relation;
         const options = this.createEditingDataOptions(type, opts);
         session = this._sessions[id];
         const toolbox = this.getToolBoxById(id);
@@ -694,7 +709,25 @@ proto.getLayersDependencyFeatures = function(layerId, opts={}) {
                     resolve(id);
                   });
                 });
-            else resolve(id);
+            else if (type === Layer.LayerTypes.TABLE) {
+              const getLoadedFeaturesPromise = this.getLayersDependencyFeaturesFromSource({
+                layerId: id,
+                relation,
+                feature: opts.feature
+              });
+              getLoadedFeaturesPromise.then(find =>{
+                if (find) {
+                  resolve(id);
+                  toolbox.stopLoading();
+                } else session.getFeatures(options)
+                  .always((promise) => {
+                    promise.always(()=>{
+                      toolbox.stopLoading();
+                      resolve(id);
+                    });
+                  });
+              })
+            }
         } else {
           // altrimenti per quel layer la devo instanziare
           try {
