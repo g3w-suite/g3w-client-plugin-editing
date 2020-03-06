@@ -168,13 +168,20 @@ proto.getFeature = function({layerId} = {}) {
 proto.subscribe = function(event, fnc) {
   if (!this._subscribers[event])
     this._subscribers[event] = [];
-  this._subscribers[event].push(fnc);
+  return this._subscribers[event].push(fnc);
+};
+
+proto.unsubscribe = function(event, fnc) {
+  this._subscribers[event] = this._subscribers[event].filter(cb => cb !==fnc);
 };
 
 // END API
 
 proto.fireEvent = function(event, options={}) {
-  this._subscribers[event] && this._subscribers[event].forEach(fnc => fnc(options))
+  return new Promise((resolve) => {
+    this._subscribers[event] && this._subscribers[event].forEach(fnc => fnc(options));
+    resolve();
+  });
 };
 
 proto.activeQueryInfo = function() {
@@ -346,6 +353,7 @@ proto._attachLayerWidgetsEvent = function(layer) {
     if (field.input && field.input.type === 'select_autocomplete') {
       const options = field.input.options;
       let {key, values, value, usecompleter, layer_id, loading} = options;
+      const self = this;
       if (!usecompleter) {
         this.addEvent({
           type: 'start-editing',
@@ -365,6 +373,10 @@ proto._attachLayerWidgetsEvent = function(layer) {
                   const isKeyPk = isVector && relationLayerPk === key;
                   const isValuePk = isVector && relationLayerPk === value;
                   const features = response.features;
+                  self.fireEvent('autocomplete', {
+                    field,
+                    features
+                  });
                   for (let i = 0; i < features.length; i++) {
                     values.push({
                       key: isKeyPk ? features[i].id : features[i].properties[key],

@@ -108,13 +108,14 @@ proto._saveFnc = function(promise, context, inputs) {
         originalFeature: this._originalFeature
       };
     }
-    session.pushUpdate(layerId, newFeature, this._originalFeature);
-    GUI.setModal(false);
     this.fireEvent('saveform', {
       newFeature,
       originalFeature: this._originalFeature
-    });
-    promise.resolve(inputs);
+    }).then(()=> {
+      session.pushUpdate(layerId, newFeature, this._originalFeature);
+      GUI.setModal(false);
+      promise.resolve(inputs);
+    })
   }
 };
 

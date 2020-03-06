@@ -16,6 +16,10 @@ const API = function({service} = {}) {
 
   this.subscribe = function(event, fnc) {
     return service.subscribe(event, fnc);
+  };
+
+  this.unsubscribe = function(event, fnc) {
+    return service.unsubscribe(event, fnc);
   }
 };
 
