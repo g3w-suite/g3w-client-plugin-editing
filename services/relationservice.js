@@ -377,11 +377,23 @@ proto.addRelation = function() {
     });
 };
 
-// funzione che screa lo stile delle relazioni diepndenti riconoscibili con il colore del padre
-proto._getRelationAsFatherStyleColor = function() {
-  const fatherLayerStyle = this.getEditingService().getEditingLayer(this.relation.father).getStyle();
-  const fatherLayerStyleColor = fatherLayerStyle.getFill() ? fatherLayerStyle.getFill() : fatherLayerStyle.getStroke();
-  return fatherLayerStyleColor.getColor();
+// funzione che screa lo stile delle relazioni dipendenti riconoscibili con il colore del padre
+proto._getRelationAsFatherStyleColor = function(type) {
+  const fatherLayer = this.getEditingService().getEditingLayer(this.relation.father);
+  const fatherLayerStyle = fatherLayer.getStyle();
+  let fatherLayerStyleColor;
+  switch (type) {
+    case 'Point':
+      fatherLayerStyleColor = fatherLayerStyle.getImage() && fatherLayerStyle.getImage().getFill();
+      break;
+    case 'Line':
+      fatherLayerStyleColor = fatherLayerStyle.getStroke() || fatherLayerStyle.getFill();
+      break;
+    case 'Polygon':
+      fatherLayerStyleColor = fatherLayerStyle.getFill() || fatherLayerStyle.getStroke();
+      break;
+  }
+  return fatherLayerStyleColor && fatherLayerStyleColor.getColor() || '#000000';
 };
 
 proto.linkRelation = function() {
@@ -489,7 +501,7 @@ proto.showRelationStyle = function() {
           }),
           stroke: new ol.style.Stroke({
             width: 5,
-            color:  this._getRelationAsFatherStyleColor()
+            color:  this._getRelationAsFatherStyleColor('Point')
           })
         })
       });
@@ -501,14 +513,14 @@ proto.showRelationStyle = function() {
         }),
         stroke: new ol.style.Stroke({
           width: 5,
-          color: this._getRelationAsFatherStyleColor()
+          color: this._getRelationAsFatherStyleColor('Line')
         })
       });
       break;
     case 'Polygon' || 'MultiPolygon':
       style =  new ol.style.Style({
         stroke: new ol.style.Stroke({
-          color:  this._getRelationAsFatherStyleColor(),
+          color:  this._getRelationAsFatherStyleColor('Polygon'),
           width: 5
         }),
         fill: new ol.style.Fill({
