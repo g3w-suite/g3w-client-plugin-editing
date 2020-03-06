@@ -11,6 +11,7 @@ const FeaturesStore = g3wsdk.core.layer.features.FeaturesStore;
 
 function ToolBox(options={}) {
   base(this);
+  this._start = false;
   this._constraints = options.constraints || {};
   // editor del Layer che permette di interagire con il layer
   // save, etc ...
@@ -92,10 +93,6 @@ function ToolBox(options={}) {
 
   this._session.onafter('start', (options) => {
     this._getFeaturesOption = options;
-    //const EditingService = require('../services/editingservice');
-    // passo id del toolbox e le opzioni per far partire la sessione
-    //EditingService.getLayersDependencyFeatures(this.state.id);// dove le opzioni possono essere il filtro;
-    // vado a registrare l'evento getFeature
     this._registerGetFeaturesEvent(this._getFeaturesOption);
   });
 
@@ -194,41 +191,48 @@ proto.start = function() {
   // vado a recuperare l'oggetto opzioni data per poter richiedere le feature al provider
   this._getFeaturesOption = EditingService.createEditingDataOptions(this._layerType);
   // se non è stata avviata da altri allora faccio avvio sessione
+  const handlerAfterSessionGetFeatures = (promise) => {
+    this.emit(EventName);
+    EditingService.runEventHandler({
+      type: EventName,
+      id
+    });
+    promise
+      .then((features) => {
+        this.state.loading = false;
+        this.setEditing(true);
+        EditingService.runEventHandler({
+          type: 'get-features-editing',
+          id,
+          options: {
+            features
+          }
+        });
+      })
+      .fail((error) => {
+        GUI.notify.error(error.message);
+        EditingService.runEventHandler({
+          type: 'error-editing',
+          id,
+          error
+        });
+        this.stop();
+        d.reject(error);
+      })
+  };
   if (this._session) {
     if (!this._session.isStarted()) {
+      this._start = true;
       // setto il loding dei dati a true
       this.state.loading = true;
       this._session.start(this._getFeaturesOption)
-        .then((promise) => {
-          this.emit(EventName);
-          EditingService.runEventHandler({
-            type: EventName,
-            id
-          });
-          promise
-            .then((features) => {
-              this.state.loading = false;
-              this.setEditing(true);
-              EditingService.runEventHandler({
-                type: 'get-features-editing',
-                id,
-                options: {
-                  features
-                }
-              });
-            })
-            .fail((error) => {
-              GUI.notify.error(error.message);
-              EditingService.runEventHandler({
-                type: 'error-editing',
-                id,
-                error
-              });
-              this.stop();
-              d.reject(error);
-            })
-        })
+        .then(handlerAfterSessionGetFeatures)
     } else {
+      if (!this._start) {
+        this._session.getFeatures(this._getFeaturesOption)
+          .then(handlerAfterSessionGetFeatures);
+        this._start = true;
+      }
       this.setEditing(true);
     }
   }
@@ -261,6 +265,7 @@ proto.stop = function() {
     if (!is_there_a_father_in_editing) {
       this._session.stop()
         .then(() => {
+          this._start = false;
           this.state.editing.on = false;
           this.state.enabled = false;
           this.state.loading = false;
