@@ -715,7 +715,7 @@ proto.getLayersDependencyFeatures = function(layerId, opts={}) {
           else
             if (type === Layer.LayerTypes.VECTOR)
               session.getFeatures(options)
-                .always(() => {
+                .always((promise) => {
                   promise.always(()=>{
                     toolbox.stopLoading();
                     resolve(id);
