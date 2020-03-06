@@ -132,6 +132,7 @@ proto.run = function(inputs, context) {
     relationsInEditing.forEach((relation) => {
       let updateRelation = true;
       let relationService = new RelationService({
+        layerId, 
         relation: relation.relation,
         relations: relation.relations
       });

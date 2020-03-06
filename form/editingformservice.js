@@ -26,7 +26,7 @@ const EdtingFormService = function(options={}) {
       relations,
       feature: formFeature,
       isNew: formFeature.isNew()
-    }, );
+    });
     // le relazioni in questione sono oggetti Realtion che contengono le informazioni nello stato delle composizione della relazione
   }
   this.hasRelations = function() {
@@ -48,6 +48,7 @@ const EdtingFormService = function(options={}) {
         },
         data() {
           return {
+            layerId,
             relation: relation.relation,
             relations: relation.relations,
             resourcesurl: GUI.getResourcesUrl(),
