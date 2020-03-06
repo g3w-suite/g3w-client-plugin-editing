@@ -681,14 +681,12 @@ proto.createEditingDataOptions = function(type, options={}) {
       layerId,
       relation
     });
-    console.log(pk, relation, fatherField, childField)
 
     filter = {
       field: {
         [childField]: pk === fatherField ? feature.getId() : feature.get(fatherField)
       }
     }
-    console.log(filter)
   }
   return {
     editing: true,
@@ -706,9 +704,9 @@ proto.getLayersDependencyFeaturesFromSource = function({layerId, relation, featu
       layerId,
       relation
     });
-    const featureFatherValue = fatherPk === fatherField ? feature.getId() : feature.get(fatherField);
+    const featureFatherValue = fatherPk === childField ? feature.getId() : feature.get(childField);
     const find = features.find(featureSource => {
-      return featureSource.get(childField) === featureFatherValue;
+      return featureSource.get(fatherField) === featureFatherValue;
     });
     resolve(find);
   })
