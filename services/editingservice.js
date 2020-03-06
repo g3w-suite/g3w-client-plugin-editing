@@ -178,7 +178,10 @@ proto.unsubscribe = function(event, fnc) {
 // END API
 
 proto.fireEvent = function(event, options={}) {
-  this._subscribers[event] && this._subscribers[event].forEach(fnc => fnc(options))
+  return new Promise((resolve) => {
+    this._subscribers[event] && this._subscribers[event].forEach(fnc => fnc(options));
+    resolve();
+  });
 };
 
 proto.activeQueryInfo = function() {
