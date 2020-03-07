@@ -125,20 +125,25 @@ proto.run = function(inputs, context) {
     const relationsInEditing = EditingService.getRelationsInEditing({
       layerId,
       relations,
-      feature, 
+      feature,
       isNew:feature.isNew()
     });
     inputs.features = [feature];
     relationsInEditing.forEach((relation) => {
       let updateRelation = true;
       let relationService = new RelationService({
-        layerId, 
+        layerId,
         relation: relation.relation,
         relations: relation.relations
       });
-      const relationLayer = EditingService.getLayerById(relation.relation.child);
+      const relationId = relation.relation.child !== layerId ? relation.relation.child : relation.relation.father; 
+      const relationLayer = EditingService.getLayerById(relationId);
+      const {ownField} = EditingService._getRelationFieldsFromRelation({
+        layerId: relationId,
+        relation: relation.relation
+      });
       relationLayer.getEditingFields().forEach((field) => {
-        if (field.name === relation.relation.childField && field.validate.required)
+        if (field.name === ownField && field.validate.required)
           updateRelation = false;
       });
       if (updateRelation) {
