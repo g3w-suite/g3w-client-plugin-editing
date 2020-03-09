@@ -12,10 +12,11 @@ const RELATIONTOOLS = {
 
 // servizio che in base alle relazioni (configurazione)
 const RelationService = function(layerId, options = {}) {
+  this._mainLayerId = layerId;
   this.relation = options.relation;
   this.relations = options.relations;
   this._isExternalFieldRequired = false;
-  this._layerId = this.relation.child === layerId ? this.relation.father : this.relation.child;
+  this._layerId = this.relation.child === this._mainLayerId ? this.relation.father : this.relation.child;
   const {relationField} = this.getEditingService()._getRelationFieldsFromRelation({
     layerId: this._layerId,
     relation: this.relation
@@ -140,9 +141,9 @@ proto.startTool = function(relationtool, index) {
 
 proto.startTableTool = function(relationtool, index) {
   const d = $.Deferred();
-  const relation = this.relations[index]; 
+  const relation = this.relations[index];
   const featurestore = this.getEditingService().getToolBoxById(this._layerId).getSession().getFeaturesStore();
-  const relationfeature = featurestore.getFeatureById(relation.id); 
+  const relationfeature = featurestore.getFeatureById(relation.id);
   GUI.setModal(false);
   const options = this._createWorkflowOptions({
     features: [relationfeature]
@@ -191,8 +192,8 @@ proto.startTableTool = function(relationtool, index) {
 
 proto.startVectorTool = function(relationtool, index) {
   const d = $.Deferred();
-  const relation = this.relations[index]; 
-  const relationfeature = this._getRelationFeature(relation.id); 
+  const relation = this.relations[index];
+  const relationfeature = this._getRelationFeature(relation.id);
   const workflows = {
     ModifyGeometryVertexWorkflow: require('../workflows/modifygeometryvertexworkflow'),
     MoveFeatureWorkflow : require('../workflows/movefeatureworkflow'),
@@ -381,7 +382,7 @@ proto.addRelation = function() {
 
 // funzione che screa lo stile delle relazioni dipendenti riconoscibili con il colore del padre
 proto._getRelationAsFatherStyleColor = function(type) {
-  const fatherLayer = this.getEditingService().getEditingLayer(this._featureLayerId);
+  const fatherLayer = this.getEditingService().getEditingLayer(this._mainLayerId);
   const fatherLayerStyle = fatherLayer.getStyle();
   let fatherLayerStyleColor;
   switch (type) {
