@@ -7,7 +7,6 @@ const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 
 function OpenTableTask(options={}) {
   this._formIdPrefix = 'form_';
-  this._isContentChild = false;
   base(this, options);
 }
 
@@ -50,7 +49,6 @@ proto._generateFormId = function(layerName) {
 
 proto.stop = function() {
   this._isContentChild ? GUI.popContent() : GUI.closeForm();
-  return true;
 };
 
 module.exports = OpenTableTask;

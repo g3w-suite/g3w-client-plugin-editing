@@ -11,14 +11,13 @@ const RELATIONTOOLS = {
 };
 
 // servizio che in base alle relazioni (configurazione)
-const RelationService = function(options = {}) {
-  this._featureLayerId = options.layerId;
+const RelationService = function(layerId, options = {}) {
   this.relation = options.relation;
   this.relations = options.relations;
   this._isExternalFieldRequired = false;
-  this._layerId = this.relation.child === this._featureLayerId ? this.relation.father : this.relation.child;
+  this._layerId = this.relation.child === layerId ? this.relation.father : this.relation.child;
   const {relationField} = this.getEditingService()._getRelationFieldsFromRelation({
-    layerId: this._featureLayerId,
+    layerId: this._layerId,
     relation: this.relation
   });
   this._layerType = this.getLayer().getType();
@@ -126,7 +125,6 @@ proto._highlightRelationSelect = function(relation) {
   relation.setStyle(style);
 };
 
-// funzione che lachia la funzione in base al tipo di layer
 proto.startTool = function(relationtool, index) {
   return new Promise((resolve, reject) => {
     const toolPromise = (this._layerType === 'vector') && this.startVectorTool(relationtool, index) ||
@@ -138,19 +136,17 @@ proto.startTool = function(relationtool, index) {
       reject(err)
     })
   })
-
 };
 
 proto.startTableTool = function(relationtool, index) {
   const d = $.Deferred();
-  const relation = this.relations[index]; // oggetto relazione
+  const relation = this.relations[index]; 
   const featurestore = this.getEditingService().getToolBoxById(this._layerId).getSession().getFeaturesStore();
-  const relationfeature = featurestore.getFeatureById(relation.id); // relation feature
+  const relationfeature = featurestore.getFeatureById(relation.id); 
   GUI.setModal(false);
   const options = this._createWorkflowOptions({
     features: [relationfeature]
   });
-  let workflow;
   // delete feature
   if (relationtool.state.id === 'deletefeature') {
     GUI.dialog.confirm(t("editing.messages.delete_feature"), (result) => {
@@ -167,7 +163,7 @@ proto.startTableTool = function(relationtool, index) {
   }
   if (relationtool.state.id === 'editattributes') {
     const EditTableFeatureWorkflow = require('../workflows/edittablefeatureworkflow');
-    workflow = new EditTableFeatureWorkflow();
+    const workflow = new EditTableFeatureWorkflow();
     const percContent = this._bindEscKeyUp(workflow,  function() {});
     workflow.start(options)
       .then((output) => {
@@ -195,8 +191,8 @@ proto.startTableTool = function(relationtool, index) {
 
 proto.startVectorTool = function(relationtool, index) {
   const d = $.Deferred();
-  const relation = this.relations[index]; // oggetto relazione
-  const relationfeature = this._getRelationFeature(relation.id); // relation feature
+  const relation = this.relations[index]; 
+  const relationfeature = this._getRelationFeature(relation.id); 
   const workflows = {
     ModifyGeometryVertexWorkflow: require('../workflows/modifygeometryvertexworkflow'),
     MoveFeatureWorkflow : require('../workflows/movefeatureworkflow'),
@@ -225,7 +221,6 @@ proto.startVectorTool = function(relationtool, index) {
     || workflow.start(options);
   start.then((outputs) => {
       if (relationtool.getId() === 'deletefeature') {
-        // vado a cambiarli lo style
         relationfeature.setStyle(this._originalLayerStyle);
         this.getEditingLayer().getSource().removeFeature(relationfeature);
         this.getCurrentWorkflowData().session.pushDelete(this._layerId, relationfeature);
@@ -246,7 +241,6 @@ proto.startVectorTool = function(relationtool, index) {
       d.reject(err)
     })
     .always(() => {
-      // vado a mettere lo style della relazione
       this.showRelationStyle();
       workflow.stop();
       GUI.hideContent(false, percContent);
@@ -256,12 +250,10 @@ proto.startVectorTool = function(relationtool, index) {
   return d.promise()
 };
 
-// ritorna il layer editable estartto dal layer del catalogo
 proto.getLayer = function() {
   return this.getEditingService().getLayerById(this._layerId);
 };
 
-// ritorna il layer che è effettivamente in editing utilizzato dai task
 proto.getEditingLayer = function() {
   return this.getEditingService().getEditingLayer(this._layerId);
 };
@@ -274,7 +266,7 @@ proto.getEditingService = function() {
 proto.updateExternalKeyValueRelations = function(input) {
   const session = this.getEditingService().getToolBoxById(this._layerId).getSession();
   const {ownField, relationField} = this.getEditingService()._getRelationFieldsFromRelation({
-    layerId: this._featureLayerId,
+    layerId: this._layerId,
     relation: this.relation
   });
   if (input.name === relationField) {
@@ -287,7 +279,6 @@ proto.updateExternalKeyValueRelations = function(input) {
         }
       });
       relation = this._getRelationFeature(relation.id);
-      // vado a setare il valore della relazione e aggiornare la sessione
       const originalRelation = relation.clone();
       relation.set(ownField, input.value);
       if (!relation.isNew()) {
@@ -297,7 +288,6 @@ proto.updateExternalKeyValueRelations = function(input) {
   }
 };
 
-// funzione che gestisce l'evento keyup esc
 proto._escKeyUpHandler = function(evt) {
   if (evt.keyCode === 27) {
     evt.data.workflow.stop();
@@ -347,7 +337,7 @@ proto.addRelation = function() {
   const options = this._createWorkflowOptions();
   const session = options.context.session;
   const {ownField, relationField} = this.getEditingService()._getRelationFieldsFromRelation({
-    layerId: this._featureLayerId,
+    layerId: this._layerId,
     relation: this.relation
   });
   const { parentFeature } = options;
@@ -414,7 +404,7 @@ proto.linkRelation = function() {
   const options = this._createWorkflowOptions();
   const session = options.context.session;
   const {ownField} = this.getEditingService()._getRelationFieldsFromRelation({
-    layerId: this._featureLayerId,
+    layerId: this._layerId,
     relation: this.relation
   });
   workflow.start(options)
@@ -441,7 +431,7 @@ proto.linkRelation = function() {
 
 proto._checkIfExternalFieldRequired = function() {
   const {ownField} = this.getEditingService()._getRelationFieldsFromRelation({
-    layerId: this._featureLayerId,
+    layerId: this._layerId,
     relation: this.relation
   });
   return this.getEditingService().isFieldRequired(this._layerId, ownField);
@@ -459,7 +449,7 @@ proto._getRelationFeature = function(featureId) {
 proto.unlinkRelation = function(index) {
   const d = $.Deferred();
   const {ownField} = this.getEditingService()._getRelationFieldsFromRelation({
-    layerId: this._featureLayerId,
+    layerId: this._layerId,
     relation: this.relation
   });
   GUI.dialog.confirm(t("editing.messages.unlink_relation"), (result) => {
@@ -490,7 +480,7 @@ proto.getCurrentWorkflowData = function() {
 // così da poter inserire le modifiche della relazione al current workflow
 proto._createWorkflowOptions = function(options={}) {
   const {ownField} = this.getEditingService()._getRelationFieldsFromRelation({
-    layerId: this._featureLayerId,
+    layerId: this._layerId,
     relation: this.relation
   });
   const workflow_options = {

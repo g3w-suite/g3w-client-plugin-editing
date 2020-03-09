@@ -52,7 +52,7 @@ let Dialogs = {
       const dialog = GUI.dialog.dialog({
         message: inputs.message,
         title: tPlugin("editing.messages.commit_feature") + " " +inputs.layer.getName() + "?",
-        buttons: buttons
+        buttons
       });
       return d.promise()
     }

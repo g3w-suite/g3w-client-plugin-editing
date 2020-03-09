@@ -419,11 +419,10 @@ proto.isFieldRequired = function(layerId, fieldName) {
 };
 
 proto._getToolBoxEditingDependencies = function(layer) {
-  let relationLayers = _.merge(layer.getChildren(), layer.getFathers());
-  let toolboxesIds = relationLayers.filter((layerName) => {
+  let relationLayers = [...layer.getChildren(), ...layer.getFathers()];
+  return relationLayers.filter((layerName) => {
     return !!this.getLayerById(layerName);
   });
-  return toolboxesIds;
 };
 
 // verifico se le sue diendenza sono legate a layer effettivamente in editing o no
@@ -687,8 +686,7 @@ proto.createEditingDataOptions = function(type, options={}) {
 
 proto._getFeaturesByLayerId = function(layerId) {
   const layerType = this.getLayerById(layerId).getType();
-  const toolbox = this.getToolBoxById(layerId);
-  const editingLayer = toolbox.getEditingLayer();
+  const editingLayer = this.getEditingLayer(layerId);
   return layerType === Layer.LayerTypes.VECTOR ? editingLayer.getSource().getFeatures() : editingLayer.getSource().readFeatures();
 };
 
@@ -717,7 +715,7 @@ proto.getLayersDependencyFeatures = function(layerId, opts={}) {
    IMPORTANTE: PER EVITARE PROBLEMI È IMPORTANTE CHE I LAYER DIPENDENTI SIANO A SUA VOLTA EDITABILI
    */
   const layer = this.getLayerById(layerId);
-  const relations = layer.getRelations() ? this._filterRelationsInEditing({
+  const relations = layer.getChildren().length && layer.getRelations() ? this._filterRelationsInEditing({
     relations: layer.getRelations().getArray(),
     layerId
   }) : [];
@@ -726,15 +724,16 @@ proto.getLayersDependencyFeatures = function(layerId, opts={}) {
     * se la sessione è attiva altrimenti viene attivata
     * */
   //cerco prima tra i toolbox se presente
-  let session;
+
   relations.forEach((relation) => {
+
     const id = relation.getFather() === layerId ? relation.getChild(): relation.getFather();
     const promise = new Promise((resolve) => {
       const type = this.getLayerById(id).getType();
       opts.relation = relation;
       opts.layerId = id;
       const options = this.createEditingDataOptions(type, opts);
-      session = this._sessions[id];
+      const session = this._sessions[id];
       const toolbox = this.getToolBoxById(id);
       toolbox.startLoading();
       if (session) {
@@ -769,7 +768,7 @@ proto.getLayersDependencyFeatures = function(layerId, opts={}) {
         try {
           const layer = this._layersstore.getLayerById(id);
           const editor = layer.getEditor();
-          session = new Session({
+          const session = new Session({
             editor
           });
           this._sessions[id] = session;
@@ -808,17 +807,17 @@ proto._applyChangesToNewRelationsAfterCommit = function(relationsResponse) {
   }
 };
 
-proto.commitDirtyToolBoxes = function(toolboxId) {
-  return new Promise((resolve, reject) => {
-    let toolbox = this.getToolBoxById(toolboxId);
+proto.commitDirtyToolBoxes = function(layerId) {
+  return new Promise(resolve => {
+    const toolbox = this.getToolBoxById(layerId);
+    const children = this.getLayerById(layerId).getChildren();
     if (toolbox.isDirty() && toolbox.hasDependencies()) {
       this.commit(toolbox)
         .fail(() => {
           toolbox.revert()
             .then(() => {
-              // se ha dipendenze vado a fare il revert delle modifiche fatte
-              toolbox.getDependencies().forEach((toolboxId) => {
-                this.getToolBoxById(toolboxId).revert();
+              toolbox.getDependencies().forEach((layerId) => {
+                children.indexOf(layerId) !== -1 && this.getToolBoxById(layerId).revert();
               })
             })
         })
@@ -839,11 +838,11 @@ proto._createCommitMessage = function(commitItems) {
     let dom = `<h4>${t('editing.messages.commit.header')}</h4>`;
     dom+=`<h5>${t('editing.messages.commit.header_add')}</h5>`;
     dom+=`<h5>${t('editing.messages.commit.header_update_delete')}</h5>`;
-    dom+= "<ul style='border-bottom-color: #f4f4f4;'>";
+    dom+= `<ul style='border-bottom-color: #f4f4f4;'>`;
     Object.entries(changeIds).forEach(([action, ids]) => {
       dom += `<li>${action} : ${ids} </li>`;
     });
-    dom += "</ul>";
+    dom += `</ul>`;
     return dom;
   }
 

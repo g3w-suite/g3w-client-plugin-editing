@@ -114,8 +114,7 @@ const RelationComponent = Vue.extend({
   },
   created() {
     //vado a settare il servizio
-    this._service = new RelationService({
-      layerId: this.layerId,
+    this._service = new RelationService(this.layerId, {
       relation: this.relation,
       relations: this.relations
     });

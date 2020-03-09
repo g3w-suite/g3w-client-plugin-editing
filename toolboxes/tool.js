@@ -75,13 +75,11 @@ proto.start = function() {
   }
 };
 
-proto.stop = function() {
+proto.stop = function(force=false) {
   const d = $.Deferred();
   if (this._op) {
-    this._op.stop()
-      .then(() => {
-
-      })
+    this._op.stop(force)
+      .then(() => {})
       .fail((err) => {
         this._session.rollback();
       })
