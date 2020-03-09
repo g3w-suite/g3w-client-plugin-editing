@@ -247,7 +247,6 @@ proto.stopLoading = function() {
   this.state.loading = false;
 };
 
-
 proto.getFeaturesOption = function() {
   return this._getFeaturesOption;
 };

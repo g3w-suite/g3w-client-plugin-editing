@@ -437,9 +437,7 @@ proto.handleToolboxDependencies = function(toolbox) {
   let dependecyToolBox;
   if (toolbox.isFather())
   // verifico se le feature delle dipendenze sono state caricate
-    this.getLayersDependencyFeatures({
-      layerId: toolbox.getId()
-    });
+    this.getLayersDependencyFeatures(toolbox.getId());
   toolbox.getDependencies().forEach((toolboxId) => {
     dependecyToolBox = this.getToolBoxById(toolboxId);
     // disabilito visivamente l'editing
@@ -712,13 +710,12 @@ proto.getLayersDependencyFeaturesFromSource = function({layerId, relation, featu
 };
 
 // fa lo start di tutte le dipendenze del layer legato alla toolbox che si è avviato
-proto.getLayersDependencyFeatures = function(opts={}) {
+proto.getLayersDependencyFeatures = function(layerId, opts={}) {
   const promises = [];
   // vado a recuperare le relazioni (figli al momento) di quel paricolare layer
   /*
    IMPORTANTE: PER EVITARE PROBLEMI È IMPORTANTE CHE I LAYER DIPENDENTI SIANO A SUA VOLTA EDITABILI
    */
-  const {layerId} = opts;
   const layer = this.getLayerById(layerId);
   const relations = layer.getRelations() ? this._filterRelationsInEditing({
     relations: layer.getRelations().getArray(),

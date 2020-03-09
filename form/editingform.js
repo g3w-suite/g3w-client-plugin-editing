@@ -13,8 +13,7 @@ function EditingFormComponent(options={}) {
   if (relationsOptions) {
     const feature = relationsOptions.inputs.features[relationsOptions.inputs.features.length-1];
     GUI.setLoadingContent(true);
-    EditingService.getLayersDependencyFeatures({
-      layerId,
+    EditingService.getLayersDependencyFeatures(layerId, {
       feature
     }).then(()=> {
       relationsOptions.formEventBus = this.getService().getEventBus();

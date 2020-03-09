@@ -1,6 +1,5 @@
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
-const t = g3wsdk.core.i18n.tPlugin;
 const GUI = g3wsdk.gui.GUI;
 const TableComponent = require('../../../table/vue/table');
 const EditingTask = require('./editingtask');
@@ -21,11 +20,10 @@ proto.run = function(inputs, context) {
   const originalLayer = context.layer;
   const layerName = originalLayer.getName();
   const headers = originalLayer.getEditingFields();
-  this._isContentChild = !!(WorkflowsStack.getLength() > 1);
+  this._isContentChild = WorkflowsStack.getLength() > 1;
   const foreignKey = this._isContentChild ? context.excludeFields[0] :  null;
   const editingLayer = inputs.layer;
   const features = editingLayer.getSource().readFeatures();
-  const action = this._isContentChild ? t('editing.relation.table.link.title') : t('editing.relation.table.edit.title') ;
   const content = new TableComponent({
     title: `${layerName}`,
     features,
