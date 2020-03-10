@@ -15,6 +15,7 @@ const RelationService = function(layerId, options = {}) {
   this._mainLayerId = layerId;
   this.relation = options.relation;
   this.relations = options.relations;
+  this._editingService;
   this._isExternalFieldRequired = false;
   this._layerId = this.relation.child === this._mainLayerId ? this.relation.father : this.relation.child;
   const {relationField} = this.getEditingService()._getRelationFieldsFromRelation({
@@ -260,8 +261,8 @@ proto.getEditingLayer = function() {
 };
 
 proto.getEditingService = function() {
-  const EditingService = require('./editingservice');
-  return EditingService;
+  this._editingService = this._editingService || require('./editingservice');
+  return this._editingService;
 };
 
 proto.updateExternalKeyValueRelations = function(input) {
@@ -314,10 +315,9 @@ proto._bindEscKeyUp = function(workflow, callback) {
 
 proto._getRelationFieldsValue = function(relation) {
   const layer = this.getLayer();
-  const fields = layer.getFieldsWithValues(relation, {
+  return layer.getFieldsWithValues(relation, {
     relation: true
   });
-  return fields;
 };
 
 proto._createRelationObj = function(relation) {
