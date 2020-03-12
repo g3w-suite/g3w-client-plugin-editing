@@ -1,3 +1,4 @@
+import API from '../api'
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
@@ -12,7 +13,7 @@ const serverErrorParser= g3wsdk.core.errors.parsers.Server;
 const ToolBoxesFactory = require('../toolboxes/toolboxesfactory');
 const t = g3wsdk.core.i18n.tPlugin;
 const CommitFeaturesWorkflow = require('../workflows/commitfeaturesworkflow');
-import API from '../api'
+const ApplicationService = g3wsdk.core.ApplicationService;
 
 function EditingService() {
   base(this);
@@ -22,6 +23,8 @@ function EditingService() {
   this.constraints = {};
   this._vectorUrl;
   this._projectType;
+  // contain array of object setter(as key), key to unby (as value)
+  this._unByKeys = [];
   // events
   this._events = {
     layer: {
@@ -37,7 +40,8 @@ function EditingService() {
     toolboxselected: null, // tiene riferimento alla toolbox selezionata
     toolboxidactivetool: null,
     message: null, // messaggio genarle del pannello di editing
-    relations: [] // relazioni
+    relations: [], // relazioni
+    online: ApplicationService.isOnline()
   };
   //mapservice
   this._mapService = GUI.getComponent('map').getService();
@@ -127,13 +131,15 @@ function EditingService() {
         service:this
       })
     });
+    //register online offline event
+    this.registerOnLineOffLineEvent();
     this.emit('ready');
   }
 }
 
 inherit(EditingService, PluginService);
 
-let proto = EditingService.prototype;
+const proto = EditingService.prototype;
 
 //api methods
 
@@ -176,6 +182,43 @@ proto.unsubscribe = function(event, fnc) {
 };
 
 // END API
+
+proto.registerOnLineOffLineEvent = function() {
+  const offlineKey =  ApplicationService.onbefore('offline', ()=>{
+    this.state.online = false;
+    GUI.showUserMessage({
+      type: 'warning',
+      message: t('editing.messages.offline'),
+    })
+  });
+
+  this._unByKeys.push({
+    owner : ApplicationService,
+    setter: 'offline',
+    key: offlineKey
+  });
+
+  const onlineKey = ApplicationService.onbefore('online', () =>{
+    this.state.online = true;
+    GUI.showUserMessage({
+      type: 'info',
+      message: t('editing.messages.online')
+    })
+  });
+
+  this._unByKeys.push({
+    owner : ApplicationService,
+    setter: 'online',
+    key: onlineKey
+  });
+};
+
+proto.unregisterSettersEvents = function() {
+  this._unByKeys.forEach(registered => {
+    const {owner, setter, key} = registered;
+    owner.un(setter, key);
+  })
+};
 
 proto.fireEvent = function(event, options={}) {
   return new Promise((resolve) => {
@@ -879,35 +922,34 @@ proto.commit = function(toolbox, close=false) {
         message: `<h4 class="text-center"><i style="margin-right: 5px;" class=${GUI.getFontClass('spinner')}></i>${t('editing.messages.saving')}</h4>`,
         closeButton: false
       });
-      // funzione che serve a fare il commit della sessione legata al tool
-      // qui probabilmente a seconda del layer se ha dipendenze faccio ogni sessione
-      // produrrà i suoi dati post serializzati che poi saranno uniti per un unico commit
-      session.commit()
-        .then( (commitItems, response) => {
-          if (response.result) {
-            let relationsResponse = response.response.new_relations;
-            if (relationsResponse) {
-              this._applyChangesToNewRelationsAfterCommit(relationsResponse);
+      session.commit({offline: !this.state.online})
+        .then((commitItems, response) => {
+          if (this.status.online) {
+            if (response.result) {
+              let relationsResponse = response.response.new_relations;
+              if (relationsResponse) {
+                this._applyChangesToNewRelationsAfterCommit(relationsResponse);
+              }
+              GUI.notify.success(t("editing.messages.saved"));
+              if (layerType === 'vector')
+                this._mapService.refreshMap({force: true});
+            } else {
+              const message = response.errors;
+              GUI.notify.error(message);
             }
-            GUI.notify.success(t("editing.messages.saved"));
-            if (layerType === 'vector')
-              this._mapService.refreshMap({force: true});
-          } else {
-            const message = response.errors;
-            GUI.notify.error(message);
           }
           workflow.stop();
           d.resolve(toolbox);
         })
         .fail( (error) => {
-          let parser = new serverErrorParser({
-            error: error
-          });
-          let message = parser.parse();
-          GUI.notify.error(message);
-          workflow.stop();
-          d.resolve(toolbox);
-        })
+            let parser = new serverErrorParser({
+              error: error
+            });
+            let message = parser.parse();
+            GUI.notify.error(message);
+            workflow.stop();
+            d.resolve(toolbox);
+          })
         .always(() => {
           dialog.modal('hide');
         })
