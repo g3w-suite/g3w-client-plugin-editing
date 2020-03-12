@@ -96,18 +96,18 @@ styles[ol.geom.GeometryType.GEOMETRY_COLLECTION] = _.concat(styles[ol.geom.Geome
 // che ritorna una promessa
 proto.run = function(inputs, context) {
   //console.log('Delete task run.......');
-  var self = this;
-  var d = $.Deferred();
-  var editingLayer = inputs.layer;
-  var originaLayer = context.layer;
-  var layerId = originaLayer.getId();
+  const self = this;
+  const d = $.Deferred();
+  const editingLayer = inputs.layer;
+  const originaLayer = context.layer;
+  const layerId = originaLayer.getId();
   //recupero la sessione dal context
   var session = context.session;
   this._selectInteraction = new ol.interaction.Select({
     layers: [editingLayer],
     condition: ol.events.condition.click,
     style: function(feature) {
-      var style = styles[feature.getGeometry().getType()];
+      const style = styles[feature.getGeometry().getType()];
       return style;
     }
   });
@@ -122,17 +122,28 @@ proto.run = function(inputs, context) {
     const EditingService = require('../../../services/editingservice');
     const RelationService = require('../../../services/relationservice');
     const relations = originaLayer.getRelations()? originaLayer.getRelations().getArray() : [];
-    const relationsInEditing = EditingService.getRelationsInEditing(relations, feature, feature.isNew());
+    const relationsInEditing = EditingService.getRelationsInEditing({
+      layerId,
+      relations,
+      feature,
+      isNew:feature.isNew()
+    });
     inputs.features = [feature];
     relationsInEditing.forEach((relation) => {
       let updateRelation = true;
       let relationService = new RelationService({
+        layerId,
         relation: relation.relation,
         relations: relation.relations
       });
-      const relationLayer = EditingService.getLayerById(relation.relation.child);
+      const relationId = relation.relation.child !== layerId ? relation.relation.child : relation.relation.father; 
+      const relationLayer = EditingService.getLayerById(relationId);
+      const {ownField} = EditingService._getRelationFieldsFromRelation({
+        layerId: relationId,
+        relation: relation.relation
+      });
       relationLayer.getEditingFields().forEach((field) => {
-        if (field.name === relation.relation.childField && field.validate.required)
+        if (field.name === ownField && field.validate.required)
           updateRelation = false;
       });
       if (updateRelation) {

@@ -13,7 +13,7 @@ const InternalComponent = Vue.extend({
   data: function() {
     this.dataTable = null;
     return {
-      state: null
+      state: null,
     }
   },
   methods: {
@@ -92,6 +92,7 @@ const TableComponent = function(options={}) {
   internalComponent.state = service.state;
 
   this.unmount = function() {
+    service.cancel();
     return base(this, 'unmount');
   };
 

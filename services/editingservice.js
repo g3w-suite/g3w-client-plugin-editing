@@ -332,7 +332,7 @@ proto.addToolBox = function(toolbox) {
   this.state.toolboxes.push(toolbox.state);
 };
 
-proto.addEvent = function({type, id, fnc}) {
+proto.addEvent = function({type, id, fnc}={}) {
   if (!this._events[type])
     this._events[type] = {};
   if (!this._events[type][id])
@@ -419,11 +419,10 @@ proto.isFieldRequired = function(layerId, fieldName) {
 };
 
 proto._getToolBoxEditingDependencies = function(layer) {
-  let relationLayers = _.merge(layer.getChildren(), layer.getFathers());
-  let toolboxesIds = relationLayers.filter((layerName) => {
+  let relationLayers = [...layer.getChildren(), ...layer.getFathers()];
+  return relationLayers.filter((layerName) => {
     return !!this.getLayerById(layerName);
   });
-  return toolboxesIds;
 };
 
 // verifico se le sue diendenza sono legate a layer effettivamente in editing o no
@@ -472,10 +471,9 @@ proto.getCurrentWorkflowData = function() {
   };
 };
 
-proto.getRelationsAttributesByFeature = function(relation, feature) {
-  const toolboxId = relation.getChild();
-  const layer = this.getToolBoxById(toolboxId).getLayer();
-  const relations = this.getRelationsByFeature(relation, feature, layer.getType());
+proto.getRelationsAttributesByFeature = function({layerId, relation, feature}={}) {
+  const layer = this.getToolBoxById(layerId).getLayer();
+  const relations = this.getRelationsByFeature({layerId, relation, feature});
   return relations.map((relation) => {
     return {
       fields: layer.getFieldsWithValues(relation, {
@@ -486,16 +484,20 @@ proto.getRelationsAttributesByFeature = function(relation, feature) {
   });
 };
 
-proto.getRelationsByFeature = function(relation, feature, layerType) {
-  const toolboxId = relation.getChild();
-  const relationChildField = relation.getChildField();
-  const relationFatherField = relation.getFatherField();
-  const featureValue = feature.isPk(relationFatherField) ? feature.getId() : feature.get(relationFatherField);
-  const toolbox = this.getToolBoxById(toolboxId);
-  const editingLayer = toolbox.getEditingLayer();
-  const features = layerType === 'vector' ? editingLayer.getSource().getFeatures() : editingLayer.getSource().readFeatures();
+proto._getRelationLayerId = function({layerId, relation}={}){
+  return relation.getChild() === layerId ? relation.getFather() : relation.getChild();
+};
+
+proto.getRelationsByFeature = function({layerId, relation, feature, layerType}={}) {
+  const {ownField, relationField} = this._getRelationFieldsFromRelation({
+    layerId,
+    relation
+  });
+  const featureValue = feature.isPk(relationField) ? feature.getId() : feature.get(relationField);
+  const features = this._getFeaturesByLayerId(layerId);
   return features.filter(feature => {
-    return feature.get(relationChildField) == featureValue
+    const pk = feature.getPk();
+    return (pk === ownField) ? feature.getId() === featureValue : feature.get(ownField) === featureValue;
   });
 };
 
@@ -580,16 +582,28 @@ proto.clearState = function() {
   this.state.message =  null; // messaggio genarle del pannello di editing
 };
 
+proto._filterRelationsInEditing = function({layerId, relations=[]}) {
+  return relations.filter(relation => {
+    const isChild = relation.getChild() !== layerId;
+    return this.getLayerById(isChild ? relation.getChild() : relation.getFather() )
+  })
+};
+
 // funzione che filtra le relazioni in base a quelle presenti in editing
-proto.getRelationsInEditing = function(relations, feature) {
+proto.getRelationsInEditing = function({layerId, relations, feature, isNew}={}) {
   let relationsinediting = [];
   let relationinediting;
   relations.forEach((relation) => {
-    if (this.getLayerById(relation.getChild())) {
+    const relationLayerId = this._getRelationLayerId({layerId, relation});
+    if (this.getLayerById(relationLayerId)) {
       // aggiungo lo state della relazione
       relationinediting = {
-        relation:relation.getState(),
-        relations: this.getRelationsAttributesByFeature(relation, feature) // le relazioni esistenti
+        relation: relation.getState(),
+        relations: this.getRelationsAttributesByFeature({
+          layerId: relationLayerId,
+          relation,
+          feature
+        })
       };
       relationinediting.validate = {
         valid:true
@@ -629,81 +643,150 @@ proto.fatherInEditing = function(layerId) {
   return inEditing;
 };
 
+proto._getRelationFieldsFromRelation = function({layerId, relation} = {}) {
+  const childId = relation.getChild ? relation.getChild() : relation.child;
+  const isChild = childId !== layerId;
+  const _fatherField = relation.getFatherField ? relation.getFatherField() : relation.fatherField;
+  const _childField = relation.getChildField ? relation.getChildField() : relation.childField;
+  const ownField = isChild ? _fatherField : _childField;
+  const relationField = isChild ? _childField : _fatherField;
+  return {
+    ownField,
+    relationField
+  }
+};
+
 // prendo come opzione il tipo di layer
-proto.createEditingDataOptions = function(layerType) {
-  let options = {
-    editing: true,
-    type: layerType
-  };
-  // verifico se layer vettoriale
-  if(layerType === Layer.LayerTypes.VECTOR) {
-    // aggiungo il filto bbox
-    let bbox = this._mapService.getMapBBOX();
-    options.filter = {
-      bbox: bbox
+proto.createEditingDataOptions = function(type, options={}) {
+  const {feature, relation, layerId} = options;
+  let filter;
+  if (!relation && type === Layer.LayerTypes.VECTOR)
+    filter = {
+      bbox: this._mapService.getMapBBOX()
+    };
+  else if (feature) {
+    const pk = feature.getPk();
+    const {ownField, relationField} = this._getRelationFieldsFromRelation({
+      layerId,
+      relation
+    });
+
+    filter = {
+      field: {
+        [ownField]: pk === relationField ? feature.getId() : feature.get(relationField)
+      }
     }
   }
-  // ritorno opzione
-  return options
+  return {
+    editing: true,
+    type,
+    filter
+  }
+};
+
+proto._getFeaturesByLayerId = function(layerId) {
+  const layerType = this.getLayerById(layerId).getType();
+  const editingLayer = this.getEditingLayer(layerId);
+  return layerType === Layer.LayerTypes.VECTOR ? editingLayer.getSource().getFeatures() : editingLayer.getSource().readFeatures();
+};
+
+proto.getLayersDependencyFeaturesFromSource = function({layerId, relation, feature}={}){
+  return new Promise((resolve) => {
+    const features = this._getFeaturesByLayerId(layerId);
+    const fatherPk = feature.getPk();
+    const {ownField, relationField} = this._getRelationFieldsFromRelation({
+      layerId,
+      relation
+    });
+    const featureValue = fatherPk === relationField ? feature.getId() : feature.get(relationField);
+    const featureSourcePk = features.length && features[0].getPk();
+    const find = features.find(featureSource => {
+      return featureSourcePk === ownField ? featureSource.getId() === featureValue : featureSource.get(ownField) === featureValue;
+    });
+    resolve(find);
+  })
 };
 
 // fa lo start di tutte le dipendenze del layer legato alla toolbox che si è avviato
-proto.getLayersDependencyFeatures = function(layerId) {
+proto.getLayersDependencyFeatures = function(layerId, opts={}) {
+  const promises = [];
   // vado a recuperare le relazioni (figli al momento) di quel paricolare layer
   /*
    IMPORTANTE: PER EVITARE PROBLEMI È IMPORTANTE CHE I LAYER DIPENDENTI SIANO A SUA VOLTA EDITABILI
    */
-  let children = this.getLayerById(layerId).getChildren();
-  let relationChildLayers = children.filter((id) => {
-    return !!this.getLayerById(id);
-  });
-  // se ci sono layer figli dipendenti
-  if (!_.isNil(relationChildLayers) && relationChildLayers.length) {
-    /*
-     * qui andrò a verificare se stata istanziata la sessione altrimenti vienne creata
-     * se la sessione è attiva altrimenti viene attivata
-     * */
-    //cerco prima tra i toolbox se presente
-    let session;
-    let toolbox;
-    let options;
-    // cliclo sulle dipendenze create
-    relationChildLayers.forEach((id) => {
-      options = this.createEditingDataOptions(this.getLayerById(id).getType());
-      session = this._sessions[id];
-      toolbox = this.getToolBoxById(id);
-      //setto la proprietà a loading
+  const layer = this.getLayerById(layerId);
+  const relations = layer.getChildren().length && layer.getRelations() ? this._filterRelationsInEditing({
+    relations: layer.getRelations().getArray(),
+    layerId
+  }) : [];
+  /*
+    * qui andrò a verificare se stata istanziata la sessione altrimenti vienne creata
+    * se la sessione è attiva altrimenti viene attivata
+    * */
+  //cerco prima tra i toolbox se presente
+
+  relations.forEach((relation) => {
+
+    const id = relation.getFather() === layerId ? relation.getChild(): relation.getFather();
+    const promise = new Promise((resolve) => {
+      const type = this.getLayerById(id).getType();
+      opts.relation = relation;
+      opts.layerId = id;
+      const options = this.createEditingDataOptions(type, opts);
+      const session = this._sessions[id];
+      const toolbox = this.getToolBoxById(id);
       toolbox.startLoading();
-      //verifico che ci sia la sessione
       if (session) {
         if (!session.isStarted())
           session.start(options)
-            .always(() => {
-              toolbox.stopLoading();
+            .always((promise) => {
+              promise.always(()=>{
+                toolbox.stopLoading();
+                resolve(id);
+              })
             });
-        else
-          session.getFeatures(options)
-            .always(() => {
+        else {
+          this.getLayersDependencyFeaturesFromSource({
+            layerId: id,
+            relation,
+            feature: opts.feature
+          }).then(find =>{
+            if (find) {
+              resolve(id);
               toolbox.stopLoading();
-            });
-
+            } else session.getFeatures(options)
+              .always((promise) => {
+                promise.always(()=>{
+                  toolbox.stopLoading();
+                  resolve(id);
+                });
+              });
+          })
+        }
       } else {
         // altrimenti per quel layer la devo instanziare
         try {
-          let layer = this._layersstore.getLayerById(id);
-          let editor = layer.getEditor();
-          session = new Session({
-            editor: editor
+          const layer = this._layersstore.getLayerById(id);
+          const editor = layer.getEditor();
+          const session = new Session({
+            editor
           });
           this._sessions[id] = session;
-          session.start();
+          session.start()
+            .always((promise)=>{
+              promise.always(()=>{
+                resolve(id)
+              });
+            })
         }
         catch(err) {
           console.log(err);
         }
       }
-    })
-  }
+    });
+    promises.push(promise);
+  });
+  return Promise.all(promises);
 };
 
 proto._applyChangesToNewRelationsAfterCommit = function(relationsResponse) {
@@ -724,17 +807,17 @@ proto._applyChangesToNewRelationsAfterCommit = function(relationsResponse) {
   }
 };
 
-proto.commitDirtyToolBoxes = function(toolboxId) {
-  return new Promise((resolve, reject) => {
-    let toolbox = this.getToolBoxById(toolboxId);
+proto.commitDirtyToolBoxes = function(layerId) {
+  return new Promise(resolve => {
+    const toolbox = this.getToolBoxById(layerId);
+    const children = this.getLayerById(layerId).getChildren();
     if (toolbox.isDirty() && toolbox.hasDependencies()) {
       this.commit(toolbox)
         .fail(() => {
           toolbox.revert()
             .then(() => {
-              // se ha dipendenze vado a fare il revert delle modifiche fatte
-              toolbox.getDependencies().forEach((toolboxId) => {
-                this.getToolBoxById(toolboxId).revert();
+              toolbox.getDependencies().forEach((layerId) => {
+                children.indexOf(layerId) !== -1 && this.getToolBoxById(layerId).revert();
               })
             })
         })
@@ -755,11 +838,11 @@ proto._createCommitMessage = function(commitItems) {
     let dom = `<h4>${t('editing.messages.commit.header')}</h4>`;
     dom+=`<h5>${t('editing.messages.commit.header_add')}</h5>`;
     dom+=`<h5>${t('editing.messages.commit.header_update_delete')}</h5>`;
-    dom+= "<ul style='border-bottom-color: #f4f4f4;'>";
+    dom+= `<ul style='border-bottom-color: #f4f4f4;'>`;
     Object.entries(changeIds).forEach(([action, ids]) => {
       dom += `<li>${action} : ${ids} </li>`;
     });
-    dom += "</ul>";
+    dom += `</ul>`;
     return dom;
   }
 

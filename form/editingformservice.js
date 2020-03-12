@@ -15,12 +15,18 @@ const EdtingFormService = function(options={}) {
   // sono le relazioni effettive presenti
   let relations = [];
   const formLayer = this._context.layer;
+  const layerId = formLayer.getId();
   const formFeature = this._inputs.features[this._inputs.features.length - 1];
   if (formLayer.isFather()) {
     // recupero l'array delle relazioni
     relations = formLayer.getRelations().getArray();
     // vado a filtrare le relazioni per quelle che sono effettivamente in editing
-    relations = EditingService.getRelationsInEditing(relations, formFeature, formFeature.isNew());
+    relations = EditingService.getRelationsInEditing({
+      layerId,
+      relations,
+      feature: formFeature,
+      isNew: formFeature.isNew()
+    });
     // le relazioni in questione sono oggetti Realtion che contengono le informazioni nello stato delle composizione della relazione
   }
   this.hasRelations = function() {
@@ -42,6 +48,7 @@ const EdtingFormService = function(options={}) {
         },
         data() {
           return {
+            layerId,
             relation: relation.relation,
             relations: relation.relations,
             resourcesurl: GUI.getResourcesUrl(),

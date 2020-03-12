@@ -109,12 +109,12 @@ const RelationComponent = Vue.extend({
       return this._service.isRequired();
     },
     enableAddLinkButtons: function() {
-      return !this.relations.length || (this.relations.length && this.relation.type != 'ONE');
+      return !this.relations.length || (this.relations.length && this.relation.type !== 'ONE');
     }
   },
   created() {
     //vado a settare il servizio
-    this._service = new RelationService({
+    this._service = new RelationService(this.layerId, {
       relation: this.relation,
       relations: this.relations
     });

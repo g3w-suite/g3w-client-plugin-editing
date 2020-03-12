@@ -5,12 +5,14 @@ const GUI = g3wsdk.gui.GUI;
 const t = g3wsdk.core.i18n.tPlugin;
 const Layer = g3wsdk.core.layer.Layer;
 const Session = g3wsdk.core.editing.Session;
+const { debounce } = g3wsdk.core.utils;
 const getScaleFromResolution = g3wsdk.ol.utils.getScaleFromResolution;
 const OlFeaturesStore = g3wsdk.core.layer.features.OlFeaturesStore;
 const FeaturesStore = g3wsdk.core.layer.features.FeaturesStore;
 
 function ToolBox(options={}) {
   base(this);
+  this._start = false;
   this._constraints = options.constraints || {};
   // editor del Layer che permette di interagire con il layer
   // save, etc ...
@@ -92,10 +94,12 @@ function ToolBox(options={}) {
 
   this._session.onafter('start', (options) => {
     this._getFeaturesOption = options;
-    const EditingService = require('../services/editingservice');
-    // passo id del toolbox e le opzioni per far partire la sessione
-    EditingService.getLayersDependencyFeatures(this.state.id);// dove le opzioni possono essere il filtro;
-    // vado a registrare l'evento getFeature
+    if (options.type === Layer.LayerTypes.VECTOR && GUI.getContentLength())
+      GUI.once('closecontent', ()=> {
+        setTimeout(()=> {
+          this._mapService.getMap().dispatchEvent(this._getFeaturesEvent.event)
+        })
+      });
     this._registerGetFeaturesEvent(this._getFeaturesOption);
   });
 
@@ -192,43 +196,51 @@ proto.start = function() {
   const d = $.Deferred();
   const id = this.getId();
   // vado a recuperare l'oggetto opzioni data per poter richiedere le feature al provider
+  if (this._layerType)
   this._getFeaturesOption = EditingService.createEditingDataOptions(this._layerType);
   // se non è stata avviata da altri allora faccio avvio sessione
+  const handlerAfterSessionGetFeatures = (promise) => {
+    this.emit(EventName);
+    EditingService.runEventHandler({
+      type: EventName,
+      id
+    });
+    promise
+      .then((features) => {
+        this.state.loading = false;
+        this.setEditing(true);
+        EditingService.runEventHandler({
+          type: 'get-features-editing',
+          id,
+          options: {
+            features
+          }
+        });
+      })
+      .fail((error) => {
+        GUI.notify.error(error.message);
+        EditingService.runEventHandler({
+          type: 'error-editing',
+          id,
+          error
+        });
+        this.stop();
+        d.reject(error);
+      })
+  };
   if (this._session) {
     if (!this._session.isStarted()) {
+      this._start = true;
       // setto il loding dei dati a true
       this.state.loading = true;
       this._session.start(this._getFeaturesOption)
-        .then((promise) => {
-          this.emit(EventName);
-          EditingService.runEventHandler({
-            type: EventName,
-            id
-          });
-          promise
-            .then((features) => {
-              this.state.loading = false;
-              this.setEditing(true);
-              EditingService.runEventHandler({
-                type: 'get-features-editing',
-                id,
-                options: {
-                  features
-                }
-              });
-            })
-            .fail((error) => {
-              GUI.notify.error(error.message);
-              EditingService.runEventHandler({
-                type: 'error-editing',
-                id,
-                error
-              });
-              this.stop();
-              d.reject(error);
-            })
-        })
+        .then(handlerAfterSessionGetFeatures)
     } else {
+      if (!this._start) {
+        this._session.getFeatures(this._getFeaturesOption)
+          .then(handlerAfterSessionGetFeatures);
+        this._start = true;
+      }
       this.setEditing(true);
     }
   }
@@ -242,7 +254,6 @@ proto.startLoading = function() {
 proto.stopLoading = function() {
   this.state.loading = false;
 };
-
 
 proto.getFeaturesOption = function() {
   return this._getFeaturesOption;
@@ -261,6 +272,7 @@ proto.stop = function() {
     if (!is_there_a_father_in_editing) {
       this._session.stop()
         .then(() => {
+          this._start = false;
           this.state.editing.on = false;
           this.state.enabled = false;
           this.state.loading = false;
@@ -316,21 +328,15 @@ proto._unregisterGetFeaturesEvent = function() {
   }
 };
 
-// funzione che ha lo scopo di registrare gli eventi per catturare le feature
 proto._registerGetFeaturesEvent = function(options={}) {
-  // le sessioni dipendenti per poter eseguier l'editing
   switch(this._layerType) {
     case Layer.LayerTypes.VECTOR:
       const fnc = () => {
-        // get current map extent bbox
         const canEdit = this.state.editing.canEdit;
         this._editingLayer.setVisible(canEdit);
-        if (canEdit) {
+        if (canEdit && GUI.getContentLength() === 0) {
           const bbox = this._mapService.getMapBBOX();
-          // get loadedExtent
-          if (this._getFeaturesEvent.options.extent && ol.extent.containsExtent(this._getFeaturesEvent.options.extent, bbox)) {
-            return;
-          }
+          if (this._getFeaturesEvent.options.extent && ol.extent.containsExtent(this._getFeaturesEvent.options.extent, bbox)) return;
           this._getFeaturesEvent.options.extent = !this._getFeaturesEvent.options.extent ? bbox: ol.extent.extend(this._getFeaturesEvent.options.extent, bbox) ;
           options.filter.bbox = bbox;
           this.state.loading = true;
@@ -342,8 +348,9 @@ proto._registerGetFeaturesEvent = function(options={}) {
         }
       };
       this._getFeaturesEvent.event = 'moveend';
-      this._getFeaturesEvent.fnc = fnc;
-      this._mapService.getMap().on('moveend', fnc);
+      this._getFeaturesEvent.options.extent = options.filter.bbox;
+      this._getFeaturesEvent.fnc = debounce(fnc, 300);
+      this._mapService.getMap().on('moveend', this._getFeaturesEvent.fnc);
       break;
     default:
       return;
@@ -540,9 +547,9 @@ proto.restartActiveTool = function() {
 proto.stopActiveTool = function(tool) {
   const d = $.Deferred();
   const activeTool = this.getActiveTool();
-  if (activeTool && activeTool != tool) {
+  if (activeTool && activeTool !== tool) {
     activeTool.removeAllListeners();
-    activeTool.stop()
+    activeTool.stop(true)
       .then(() => {
         this.clearToolsOfTool();
         this.clearToolMessage();

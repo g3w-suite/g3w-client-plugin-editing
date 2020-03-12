@@ -16,6 +16,7 @@ const TableService = function(options = {}) {
     features: [],
     title: options.title || 'Link relation'
   };
+
   this.init = function() {
     //filter the original feature based on if is a relation
     this._features = !this._isrelation ? this._features : this._features.filter(feature =>
