@@ -28,10 +28,9 @@ const vueComponentOptions = {
     },
     commit: function(toolboxId) {
       const toolbox = this.$options.service.getToolBoxById(toolboxId);
-      this.$options.service.commit(toolbox)
-        .always((toolbox) => {
-          //toolbox.restartActiveTool()
-        })
+      this.$options.service.commit({
+        toolbox
+      })
     },
     saveAll: function() {},
     startToolBox: function(toolboxId) {
@@ -124,12 +123,15 @@ const vueComponentOptions = {
     GUI.on('closecontent', this._enableEditingButtons);
   },
   mounted() {
-    this.$nextTick(() => {})
+    this.$nextTick(() => {
+      this.$options.service.registerOnLineOffLineEvent();
+    })
   },
   beforeDestroy() {
     GUI.off('opencontent', this._enableEditingButtons);
     GUI.off('closeform', this._enableEditingButtons);
     GUI.off('closecontent', this._enableEditingButtons);
+    this.$options.service.unregisterOnLineOffLineEvent();
   }
 };
 

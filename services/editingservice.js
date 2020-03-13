@@ -14,6 +14,11 @@ const ToolBoxesFactory = require('../toolboxes/toolboxesfactory');
 const t = g3wsdk.core.i18n.tPlugin;
 const CommitFeaturesWorkflow = require('../workflows/commitfeaturesworkflow');
 const ApplicationService = g3wsdk.core.ApplicationService;
+const OFFLINE_ITEMS = {
+  //CONFIG: 'EDITING_CONFIG',
+  //FEATURES: 'EDITING_FEATURES',
+  CHANGES: 'EDITING_CHANGES'
+};
 
 function EditingService() {
   base(this);
@@ -131,8 +136,7 @@ function EditingService() {
         service:this
       })
     });
-    //register online offline event
-    this.registerOnLineOffLineEvent();
+    this._initOffLineItems();
     this.emit('ready');
   }
 }
@@ -183,13 +187,111 @@ proto.unsubscribe = function(event, fnc) {
 
 // END API
 
+proto._initOffLineItems = function() {
+  for (const id in OFFLINE_ITEMS) {
+    !this.getOfflineItem(OFFLINE_ITEMS[id]) && ApplicationService.setOfflineItem(OFFLINE_ITEMS[id]);
+  }
+};
+
+proto._handleOfflineChangesBeforeSave = function(data) {
+  const changes = ApplicationService.getOfflineItem(OFFLINE_ITEMS.CHANGES);
+  const applyChanges = ({layerId, current, previous})=> {
+    current[layerId].add = [...previous[layerId].add, ...current[layerId].add];
+    current[layerId].delete = [...previous[layerId].delete, ...current[layerId].delete];
+    previous[layerId].update.forEach(updateItem => {
+      const id = updateItem.id;
+      const find = current[layerId].update.find(updateItem => updateItem.id === id);
+      !find && current[layerId].update.unshift(updateItem);
+    })
+  };
+  for (const layerId in changes) {
+    // check if previous changes are made in the same layer or in relationlayer of current
+    const current = data[layerId]  ? data :
+      data[Object.keys(data)[0]].relations[layerId] ? data[Object.keys(data)[0]].relations : null;
+    if (current)
+      applyChanges({
+        layerId,
+        current,
+        previous: changes
+      });
+    else {
+      // check if in the last changes
+      const currentLayerId = Object.keys(data)[0];
+      const relationsIds = Object.keys(changes[layerId].relations);
+      if (relationsIds.length) {
+        if (relationsIds.indexOf(currentLayerId) !== -1) {
+          applyChanges({
+            layerId: currentLayerId,
+            current: data,
+            previous: changes[layerId].relations
+          });
+          changes[layerId].relations[currentLayerId] = data[currentLayerId];
+          data = changes;
+        }
+      } else data[layerId] = changes[layerId];
+    }
+  }
+  return data;
+};
+
+proto.saveOfflineItem = function({id, data}={}) {
+  if (id === OFFLINE_ITEMS.CHANGES)
+    data = this._handleOfflineChangesBeforeSave(data);
+  return ApplicationService.setOfflineItem(id, data);
+};
+
+proto.setOfflineItem = function(id, data){
+  ApplicationService.setOfflineItem(id, data);
+};
+
+proto.getOfflineItem = function(id){
+  return ApplicationService.getOfflineItem(id);
+};
+
+proto.checkOfflineChangesBeforeLoadData = function() {
+  const changes = ApplicationService.getOfflineItem(OFFLINE_ITEMS.CHANGES);
+  if (changes) {
+    const promises = [];
+    for (const layerId in changes) {
+      const toolbox = this.getToolBoxById(layerId);
+      const commitItems = changes[layerId];
+      promises.push(this.commit({
+        toolbox,
+        commitItems
+      }))
+    }
+    $.when.apply(this, promises).then(() =>{
+      this.setOfflineItem(OFFLINE_ITEMS.CHANGES);
+    })
+  }
+};
+
 proto.registerOnLineOffLineEvent = function() {
-  const offlineKey =  ApplicationService.onbefore('offline', ()=>{
+  this.state.online = ApplicationService.isOnline();
+  if (this.state.online) {
+    this.checkOfflineChangesBeforeLoadData()
+  } else {
+    GUI.showUserMessage({
+      type: 'warning',
+      message: t('editing.messages.offline'),
+    });
+  }
+
+  const offlineKey =  ApplicationService.onafter('offline', ()=>{
     this.state.online = false;
     GUI.showUserMessage({
       type: 'warning',
       message: t('editing.messages.offline'),
     })
+  });
+
+  const onlineKey = ApplicationService.onafter('online', () =>{
+    this.state.online = true;
+    GUI.showUserMessage({
+      type: 'info',
+      message: t('editing.messages.online')
+    });
+    this.checkOfflineChangesBeforeLoadData();
   });
 
   this._unByKeys.push({
@@ -198,22 +300,19 @@ proto.registerOnLineOffLineEvent = function() {
     key: offlineKey
   });
 
-  const onlineKey = ApplicationService.onbefore('online', () =>{
-    this.state.online = true;
-    GUI.showUserMessage({
-      type: 'info',
-      message: t('editing.messages.online')
-    })
-  });
-
   this._unByKeys.push({
     owner : ApplicationService,
     setter: 'online',
     key: onlineKey
   });
+
 };
 
-proto.unregisterSettersEvents = function() {
+proto.unregisterOnLineOffLineEvent = function() {
+  this.unregisterSettersEvents(['online', 'offline'])
+};
+
+proto.unregisterSettersEvents = function(setters=[]) {
   this._unByKeys.forEach(registered => {
     const {owner, setter, key} = registered;
     owner.un(setter, key);
@@ -589,16 +688,15 @@ proto._cancelOrSave = function(){
 proto.stop = function() {
   return new Promise((resolve, reject) => {
     let commitpromises = [];
-    // vado a chiamare lo stop di ogni toolbox
     this._toolboxes.forEach((toolbox) => {
-      // vado a verificare se c'è una sessione sporca e quindi
-      // chiedere se salvare
       if (toolbox.getSession().getHistory().state.commit) {
         // ask to commit before exit
-        commitpromises.push(this.commit(toolbox, true));
+        commitpromises.push(this.commit({
+          toolbox,
+          close: true
+        }));
       }
     });
-    // prima di stoppare tutto e chidere panello
     $.when.apply(this, commitpromises)
       .always(() => {
         this._toolboxes.forEach((toolbox) => {
@@ -607,7 +705,6 @@ proto.stop = function() {
         });
         this.clearState();
         this.activeQueryInfo();
-        // serve per poter aggiornare ae applicare le modifice ai layer wms
         this._mapService.refreshMap();
         resolve();
     });
@@ -769,7 +866,6 @@ proto.getLayersDependencyFeatures = function(layerId, opts={}) {
   //cerco prima tra i toolbox se presente
 
   relations.forEach((relation) => {
-
     const id = relation.getFather() === layerId ? relation.getChild(): relation.getFather();
     const promise = new Promise((resolve) => {
       const type = this.getLayerById(id).getType();
@@ -855,8 +951,9 @@ proto.commitDirtyToolBoxes = function(layerId) {
     const toolbox = this.getToolBoxById(layerId);
     const children = this.getLayerById(layerId).getChildren();
     if (toolbox.isDirty() && toolbox.hasDependencies()) {
-      this.commit(toolbox)
-        .fail(() => {
+      this.commit({
+        toolbox
+      }).fail(() => {
           toolbox.revert()
             .then(() => {
               toolbox.getDependencies().forEach((layerId) => {
@@ -902,19 +999,21 @@ proto._createCommitMessage = function(commitItems) {
   return message;
 };
 
-proto.commit = function(toolbox, close=false) {
+proto.commit = function({toolbox, commitItems, close=false}={}) {
   const d = $.Deferred();
   toolbox = toolbox || this.state.toolboxselected;
   let session = toolbox.getSession();
   let layer = toolbox.getLayer();
   const layerType = layer.getType();
-  let workflow = new CommitFeaturesWorkflow({
+  const items = commitItems;
+  commitItems = commitItems || session.getCommitItems();
+  const workflow = new CommitFeaturesWorkflow({
     type:  'commit'
   });
   workflow.start({
     inputs: {
       layer: layer,
-      message: this._createCommitMessage(session.getCommitItems()),
+      message: this._createCommitMessage(commitItems),
       close: close
     }})
     .then(() => {
@@ -922,9 +1021,9 @@ proto.commit = function(toolbox, close=false) {
         message: `<h4 class="text-center"><i style="margin-right: 5px;" class=${GUI.getFontClass('spinner')}></i>${t('editing.messages.saving')}</h4>`,
         closeButton: false
       });
-      session.commit({offline: !this.state.online})
+      session.commit({offline: !this.state.online, items})
         .then((commitItems, response) => {
-          if (this.status.online) {
+          if (this.state.online) {
             if (response.result) {
               let relationsResponse = response.response.new_relations;
               if (relationsResponse) {
@@ -937,6 +1036,17 @@ proto.commit = function(toolbox, close=false) {
               const message = response.errors;
               GUI.notify.error(message);
             }
+          } else {
+            this.saveOfflineItem({
+              data: {
+                [session.getId()]: commitItems
+              },
+              id: OFFLINE_ITEMS.CHANGES
+            }).then(() =>{
+              GUI.notify.success(t("editing.messages.saved"));
+            }).catch((error)=>{
+              GUI.notify.error(error);
+            })
           }
           workflow.stop();
           d.resolve(toolbox);
