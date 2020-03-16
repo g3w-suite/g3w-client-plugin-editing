@@ -102,7 +102,7 @@ proto.run = function(inputs, context) {
   const originaLayer = context.layer;
   const layerId = originaLayer.getId();
   //recupero la sessione dal context
-  var session = context.session;
+  const session = context.session;
   this._selectInteraction = new ol.interaction.Select({
     layers: [editingLayer],
     condition: ol.events.condition.click,
@@ -121,7 +121,7 @@ proto.run = function(inputs, context) {
     const feature = e.features.getArray()[0];
     const EditingService = require('../../../services/editingservice');
     const RelationService = require('../../../services/relationservice');
-    const relations = originaLayer.getRelations()? originaLayer.getRelations().getArray() : [];
+    const relations = originaLayer.getRelations() ? originaLayer.getRelations().getArray() : [];
     const relationsInEditing = EditingService.getRelationsInEditing({
       layerId,
       relations,
@@ -129,18 +129,18 @@ proto.run = function(inputs, context) {
       isNew:feature.isNew()
     });
     inputs.features = [feature];
-    relationsInEditing.forEach((relation) => {
+    relationsInEditing.forEach((relationInEditing) => {
+      const {relation, relations} = relationInEditing;
       let updateRelation = true;
-      let relationService = new RelationService({
-        layerId,
-        relation: relation.relation,
-        relations: relation.relations
+      const relationService = new RelationService(layerId, {
+        relation,
+        relations
       });
-      const relationId = relation.relation.child !== layerId ? relation.relation.child : relation.relation.father; 
+      const relationId = relation.child !== layerId ? relation.child : relation.father;
       const relationLayer = EditingService.getLayerById(relationId);
       const {ownField} = EditingService._getRelationFieldsFromRelation({
         layerId: relationId,
-        relation: relation.relation
+        relation
       });
       relationLayer.getEditingFields().forEach((field) => {
         if (field.name === ownField && field.validate.required)

@@ -731,13 +731,12 @@ proto._filterRelationsInEditing = function({layerId, relations=[]}) {
 
 // funzione che filtra le relazioni in base a quelle presenti in editing
 proto.getRelationsInEditing = function({layerId, relations, feature, isNew}={}) {
-  let relationsinediting = [];
-  let relationinediting;
+  const relationsinediting = [];
   relations.forEach((relation) => {
     const relationLayerId = this._getRelationLayerId({layerId, relation});
     if (this.getLayerById(relationLayerId)) {
       // aggiungo lo state della relazione
-      relationinediting = {
+      const relationinediting = {
         relation: relation.getState(),
         relations: this.getRelationsAttributesByFeature({
           layerId: relationLayerId,
