@@ -14,6 +14,7 @@ const ToolBoxesFactory = require('../toolboxes/toolboxesfactory');
 const t = g3wsdk.core.i18n.tPlugin;
 const CommitFeaturesWorkflow = require('../workflows/commitfeaturesworkflow');
 const ApplicationService = g3wsdk.core.ApplicationService;
+const ApplicationState = g3wsdk.core.ApplicationState;
 const OFFLINE_ITEMS = {
   CHANGES: 'EDITING_CHANGES'
 };
@@ -39,14 +40,12 @@ function EditingService() {
   };
   // state of editing
   this.state = {
-    toolboxes: [], 
-    toolboxselected: null, 
+    toolboxes: [],
+    toolboxselected: null,
     toolboxidactivetool: null,
-    message: null, 
+    message: null,
     relations: [],
   };
-  //get state of application
-  this.appState = ApplicationService.getState();
   //mapservice
   this._mapService = GUI.getComponent('map').getService();
   // disable active tool on wehena a control is activated
@@ -147,7 +146,7 @@ const proto = EditingService.prototype;
 //api methods
 
 proto.getAppState = function(){
-  return this.appState;
+  return ApplicationState;
 };
 
 proto.getFormComponentsById = function(layerId) {
@@ -279,7 +278,7 @@ proto.checkOfflineChangesBeforeLoadData = function({modal=true}={}) {
 
 proto.registerOnLineOffLineEvent = function() {
   this.state.online = ApplicationService.isOnline();
-  if (this.appState.online) this.checkOfflineChangesBeforeLoadData();
+  if (ApplicationState.online) this.checkOfflineChangesBeforeLoadData();
 
   const offlineKey =  ApplicationService.onafter('offline', ()=>{});
 

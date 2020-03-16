@@ -4,6 +4,7 @@ const merge =  g3wsdk.core.utils.merge;
 const t = g3wsdk.core.i18n.tPlugin;
 const GUI = g3wsdk.gui.GUI;
 const Component = g3wsdk.gui.vue.Component;
+const ApplicationState = g3wsdk.core.ApplicationState;
 const EditingService = require('../services/editingservice');
 const compiledTemplate = Vue.compile(require('./editing.html'));
 const ToolboxComponent = require('./components/toolbox');
@@ -118,7 +119,7 @@ const vueComponentOptions = {
     }
   },
   created() {
-    this.appState = this.$options.service.getAppState();
+    this.appState = ApplicationState;
     GUI.on('opencontent', this._enableEditingButtons);
     GUI.on('closeform', this._enableEditingButtons);
     GUI.on('closecontent', this._enableEditingButtons);
