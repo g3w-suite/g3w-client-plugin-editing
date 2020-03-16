@@ -41,7 +41,8 @@ function ToolBox(options={}) {
     //in case of table or not ol layer i have to set provider to get data
     featuresstore: this._layerType === Layer.LayerTypes.VECTOR ? new OlFeaturesStore(): new FeaturesStore({
       provider: this._editingLayer.getProvider('data')
-    })
+    }),
+    add: this._layerType !== Layer.LayerTypes.TABLE // in case of table adding is not necessary
   });
   // opzione per recuperare le feature
   this._getFeaturesOption = {};
@@ -113,7 +114,6 @@ function ToolBox(options={}) {
       extent: null
     }
   };
-  // vado a settare il source all'editing layer
   this._setEditingLayerSource();
 }
 
@@ -173,23 +173,15 @@ proto.addDependency = function(dependency) {
   this.state.editing.dependencies.push(dependency);
 };
 
-// funzione che permette di settare il featurestore del session in particolare
-// collezioni di features per quanto riguarda il vector layer e da vedere per il table layer (forse array) al table layer
 proto._setEditingLayerSource = function() {
-  // vado a prendere il featurestore della sessione appartenete al toolbox
   const featuresstore = this._session.getFeaturesStore();
-  // questo ritorna come promessa l'array di features del featuresstore
-  // vado  a settare il source del layer
-  const source = this._layerType === Layer.LayerTypes.VECTOR ? new ol.source.Vector({features: featuresstore.getFeaturesCollection()}) :featuresstore;
-  //setto come source del layer l'array / collection feature del features sotre della sessione
-  // il layer deve implementare anche un setSource
+  const source = (this._layerType === Layer.LayerTypes.VECTOR) ?
+    new ol.source.Vector({features: featuresstore.getFeaturesCollection()}) :
+    featuresstore;
   this._editingLayer.setSource(source);
 };
 
-// funzione che fa in modo di attivare tutti i tasks associati
-// al controllo. Questo verrà eventualmente chiamato o dalla pennina di start editing
-// o quando schiacchio il bottone generale Avvia editing
-// inoltre farà uno start e stop dell'editor
+
 proto.start = function() {
   const EditingService = require('../services/editingservice');
   const EventName = 'start-editing';
@@ -198,7 +190,6 @@ proto.start = function() {
   // vado a recuperare l'oggetto opzioni data per poter richiedere le feature al provider
   if (this._layerType)
   this._getFeaturesOption = EditingService.createEditingDataOptions(this._layerType);
-  // se non è stata avviata da altri allora faccio avvio sessione
   const handlerAfterSessionGetFeatures = (promise) => {
     this.emit(EventName);
     EditingService.runEventHandler({
@@ -231,7 +222,6 @@ proto.start = function() {
   if (this._session) {
     if (!this._session.isStarted()) {
       this._start = true;
-      // setto il loding dei dati a true
       this.state.loading = true;
       this._session.start(this._getFeaturesOption)
         .then(handlerAfterSessionGetFeatures)
