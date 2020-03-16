@@ -250,7 +250,7 @@ proto.getOfflineItem = function(id){
   return ApplicationService.getOfflineItem(id);
 };
 
-proto.checkOfflineChangesBeforeLoadData = function({modal=true}={}) {
+proto.checkOfflineChanges = function({modal=true}={}) {
   return new Promise((resolve, reject) => {
     const changes = ApplicationService.getOfflineItem(OFFLINE_ITEMS.CHANGES);
     if (changes) {
@@ -277,13 +277,12 @@ proto.checkOfflineChangesBeforeLoadData = function({modal=true}={}) {
 };
 
 proto.registerOnLineOffLineEvent = function() {
-  this.state.online = ApplicationService.isOnline();
-  if (ApplicationState.online) this.checkOfflineChangesBeforeLoadData();
+  if (ApplicationState.online) this.checkOfflineChanges();
 
   const offlineKey =  ApplicationService.onafter('offline', ()=>{});
 
   const onlineKey = ApplicationService.onafter('online', () =>{
-    this.checkOfflineChangesBeforeLoadData({
+    this.checkOfflineChanges({
       modal:false
     }).then(()=>{
     }).catch((error)=>{
@@ -1038,15 +1037,16 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
     close
   }) : Promise.resolve();
   promise.then((dialog)=> {
-    session.commit({offline: !this.state.online, items})
+    const offline = !ApplicationState.online;
+    session.commit({offline, items})
       .then((commitItems, response) => {
-        if (this.state.online) {
+        if (ApplicationState.online) {
           if (response.result) {
             let relationsResponse = response.response.new_relations;
             if (relationsResponse) {
               this._applyChangesToNewRelationsAfterCommit(relationsResponse);
             }
-            GUI.notify.success(t("editing.messages.saved"));
+            dialog && GUI.notify.success(t("editing.messages.saved"));
             if (layerType === 'vector')
               this._mapService.refreshMap({force: true});
           } else {
