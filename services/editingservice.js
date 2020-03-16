@@ -15,8 +15,6 @@ const t = g3wsdk.core.i18n.tPlugin;
 const CommitFeaturesWorkflow = require('../workflows/commitfeaturesworkflow');
 const ApplicationService = g3wsdk.core.ApplicationService;
 const OFFLINE_ITEMS = {
-  //CONFIG: 'EDITING_CONFIG',
-  //FEATURES: 'EDITING_FEATURES',
   CHANGES: 'EDITING_CHANGES'
 };
 
@@ -41,13 +39,14 @@ function EditingService() {
   };
   // state of editing
   this.state = {
-    toolboxes: [], // contiene tutti gli stati delle toolbox in editing
-    toolboxselected: null, // tiene riferimento alla toolbox selezionata
+    toolboxes: [], 
+    toolboxselected: null, 
     toolboxidactivetool: null,
-    message: null, // messaggio genarle del pannello di editing
-    relations: [], // relazioni
-    online: ApplicationService.isOnline()
+    message: null, 
+    relations: [],
   };
+  //get state of application
+  this.appState = ApplicationService.getState();
   //mapservice
   this._mapService = GUI.getComponent('map').getService();
   // disable active tool on wehena a control is activated
@@ -146,6 +145,10 @@ inherit(EditingService, PluginService);
 const proto = EditingService.prototype;
 
 //api methods
+
+proto.getAppState = function(){
+  return this.appState;
+};
 
 proto.getFormComponentsById = function(layerId) {
   return this._formComponents[layerId] || [];
@@ -248,50 +251,45 @@ proto.getOfflineItem = function(id){
   return ApplicationService.getOfflineItem(id);
 };
 
-proto.checkOfflineChangesBeforeLoadData = function() {
-  const changes = ApplicationService.getOfflineItem(OFFLINE_ITEMS.CHANGES);
-  if (changes) {
-    const promises = [];
-    for (const layerId in changes) {
-      const toolbox = this.getToolBoxById(layerId);
-      const commitItems = changes[layerId];
-      promises.push(this.commit({
-        toolbox,
-        commitItems
-      }))
+proto.checkOfflineChangesBeforeLoadData = function({modal=true}={}) {
+  return new Promise((resolve, reject) => {
+    const changes = ApplicationService.getOfflineItem(OFFLINE_ITEMS.CHANGES);
+    if (changes) {
+      const promises = [];
+      for (const layerId in changes) {
+        const toolbox = this.getToolBoxById(layerId);
+        const commitItems = changes[layerId];
+        promises.push(this.commit({
+          toolbox,
+          commitItems,
+          modal
+        }))
+      }
+      $.when.apply(this, promises)
+        .then(() =>{
+          this.setOfflineItem(OFFLINE_ITEMS.CHANGES);
+          resolve()
+        })
+        .fail((error)=>{
+          reject(error);
+        })
     }
-    $.when.apply(this, promises).then(() =>{
-      this.setOfflineItem(OFFLINE_ITEMS.CHANGES);
-    })
-  }
+  })
 };
 
 proto.registerOnLineOffLineEvent = function() {
   this.state.online = ApplicationService.isOnline();
-  if (this.state.online) {
-    this.checkOfflineChangesBeforeLoadData()
-  } else {
-    GUI.showUserMessage({
-      type: 'warning',
-      message: t('editing.messages.offline'),
-    });
-  }
+  if (this.appState.online) this.checkOfflineChangesBeforeLoadData();
 
-  const offlineKey =  ApplicationService.onafter('offline', ()=>{
-    this.state.online = false;
-    GUI.showUserMessage({
-      type: 'warning',
-      message: t('editing.messages.offline'),
-    })
-  });
+  const offlineKey =  ApplicationService.onafter('offline', ()=>{});
 
   const onlineKey = ApplicationService.onafter('online', () =>{
-    this.state.online = true;
-    GUI.showUserMessage({
-      type: 'info',
-      message: t('editing.messages.online')
-    });
-    this.checkOfflineChangesBeforeLoadData();
+    this.checkOfflineChangesBeforeLoadData({
+      modal:false
+    }).then(()=>{
+    }).catch((error)=>{
+      GUI.notify.error(error);
+    })
   });
 
   this._unByKeys.push({
@@ -998,7 +996,36 @@ proto._createCommitMessage = function(commitItems) {
   return message;
 };
 
-proto.commit = function({toolbox, commitItems, close=false}={}) {
+proto.showCommitModalWindow = function({layer, commitItems, close}) {
+  return new Promise((resolve, reject) =>{
+    const workflow = new CommitFeaturesWorkflow({
+      type: 'commit'
+    });
+    workflow.start({
+      inputs: {
+        layer,
+        message: this._createCommitMessage(commitItems),
+        close
+      }
+    })
+      .then(() => {
+        const dialog = GUI.dialog.dialog({
+          message: `<h4 class="text-center"><i style="margin-right: 5px;" class=${GUI.getFontClass('spinner')}></i>${t('editing.messages.saving')}</h4>`,
+          closeButton: false
+        });
+        resolve(dialog);
+      })
+      .fail((error)=>{
+        reject(error)
+      })
+      .always(()=>{
+        workflow.stop();
+      })
+  })
+
+};
+
+proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
   const d = $.Deferred();
   toolbox = toolbox || this.state.toolboxselected;
   let session = toolbox.getSession();
@@ -1006,65 +1033,54 @@ proto.commit = function({toolbox, commitItems, close=false}={}) {
   const layerType = layer.getType();
   const items = commitItems;
   commitItems = commitItems || session.getCommitItems();
-  const workflow = new CommitFeaturesWorkflow({
-    type:  'commit'
-  });
-  workflow.start({
-    inputs: {
-      layer: layer,
-      message: this._createCommitMessage(commitItems),
-      close: close
-    }})
-    .then(() => {
-      const dialog = GUI.dialog.dialog({
-        message: `<h4 class="text-center"><i style="margin-right: 5px;" class=${GUI.getFontClass('spinner')}></i>${t('editing.messages.saving')}</h4>`,
-        closeButton: false
-      });
-      session.commit({offline: !this.state.online, items})
-        .then((commitItems, response) => {
-          if (this.state.online) {
-            if (response.result) {
-              let relationsResponse = response.response.new_relations;
-              if (relationsResponse) {
-                this._applyChangesToNewRelationsAfterCommit(relationsResponse);
-              }
-              GUI.notify.success(t("editing.messages.saved"));
-              if (layerType === 'vector')
-                this._mapService.refreshMap({force: true});
-            } else {
-              const message = response.errors;
-              GUI.notify.error(message);
+  const promise = modal ?  this.showCommitModalWindow({
+    layer,
+    commitItems,
+    close
+  }) : Promise.resolve();
+  promise.then((dialog)=> {
+    session.commit({offline: !this.state.online, items})
+      .then((commitItems, response) => {
+        if (this.state.online) {
+          if (response.result) {
+            let relationsResponse = response.response.new_relations;
+            if (relationsResponse) {
+              this._applyChangesToNewRelationsAfterCommit(relationsResponse);
             }
+            GUI.notify.success(t("editing.messages.saved"));
+            if (layerType === 'vector')
+              this._mapService.refreshMap({force: true});
           } else {
-            this.saveOfflineItem({
-              data: {
-                [session.getId()]: commitItems
-              },
-              id: OFFLINE_ITEMS.CHANGES
-            }).then(() =>{
-              GUI.notify.success(t("editing.messages.saved"));
-            }).catch((error)=>{
-              GUI.notify.error(error);
-            })
-          }
-          workflow.stop();
-          d.resolve(toolbox);
-        })
-        .fail( (error) => {
-            let parser = new serverErrorParser({
-              error: error
-            });
-            let message = parser.parse();
+            const message = response.errors;
             GUI.notify.error(message);
-            workflow.stop();
-            d.resolve(toolbox);
+          }
+        } else {
+          this.saveOfflineItem({
+            data: {
+              [session.getId()]: commitItems
+            },
+            id: OFFLINE_ITEMS.CHANGES
+          }).then(() =>{
+            GUI.notify.success(t("editing.messages.saved"));
+          }).catch((error)=>{
+            GUI.notify.error(error);
           })
-        .always(() => {
-          dialog.modal('hide');
-        })
+        }
+        d.resolve(toolbox);
+      })
+      .fail( (error) => {
+        let parser = new serverErrorParser({
+          error: error
+        });
+        let message = parser.parse();
+        GUI.notify.error(message);
+        d.resolve(toolbox);
+      })
+      .always(() => {
+        dialog && dialog.modal('hide');
+      })
     })
-    .fail(() => {
-      workflow.stop();
+    .catch(() => {
       d.reject(toolbox);
     });
   return d.promise();

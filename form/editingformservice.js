@@ -27,7 +27,6 @@ const EdtingFormService = function(options={}) {
       feature: formFeature,
       isNew: formFeature.isNew()
     });
-    console.log(relations)
     // le relazioni in questione sono oggetti Realtion che contengono le informazioni nello stato delle composizione della relazione
   }
   this.hasRelations = function() {

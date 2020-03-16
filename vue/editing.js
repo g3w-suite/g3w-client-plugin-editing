@@ -118,6 +118,7 @@ const vueComponentOptions = {
     }
   },
   created() {
+    this.appState = this.$options.service.getAppState();
     GUI.on('opencontent', this._enableEditingButtons);
     GUI.on('closeform', this._enableEditingButtons);
     GUI.on('closecontent', this._enableEditingButtons);
@@ -162,7 +163,6 @@ function PanelComponent(options) {
     const d = $.Deferred();
     this._service.stop()
       .then(() => {
-
         this.unmount = function() {
           base(this, 'unmount')
             .then(() => {

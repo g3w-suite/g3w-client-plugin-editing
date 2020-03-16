@@ -12,7 +12,6 @@ const RELATIONTOOLS = {
 
 // servizio che in base alle relazioni (configurazione)
 const RelationService = function(layerId, options = {}) {
-  console.log(layerId, options)
   this._mainLayerId = layerId;
   this.relation = options.relation;
   this.relations = options.relations;

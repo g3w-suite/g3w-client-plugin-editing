@@ -37,7 +37,7 @@ export default {
     },
     messages: {
       online: "Ora sei di nuovo ONLINE. Puoi slavare le modifiche in modo permanente",
-      offline: "Attenzione!! Sei OFFLINE. Tutte le modifiche saranno salvate temporaneamente in locale",
+      offline: "Sei OFFLINE. Tutte le modifiche saranno salvate temporaneamente in locale",
       delete_feature: "Vuoi eliminare l'elemento selezionato?",
       unlink_relation: "Vuoi staccare la relazione?",
       commit_feature: "Vuoi salvare definitivamente le modifiche",
@@ -126,7 +126,7 @@ export default {
     },
     messages: {
       online: "Back ONLINE. Now you can save your changes on database",
-      offline: "Warning!! You are OFFLINE. All changes are saved locally",
+      offline: "You are OFFLINE. All changes are saved locally",
       delete_feature: "Do you want delete selected feature ?",
       unlink_relation: "Do you want unlink relation?",
       commit_feature: "Do you want to save the changes",
