@@ -444,7 +444,7 @@ proto.isRequired = function() {
 
 proto._getRelationFeature = function(featureId) {
   const editingLayer = this.getEditingLayer();
-  return editingLayer.getSource().getFeatureById(featureId);
+  return editingLayer.getEditingSource().getFeatureById(featureId);
 };
 
 proto.unlinkRelation = function(index) {
@@ -563,9 +563,7 @@ proto.relationFields = function(relation) {
   const attributes = [];
   const originalRelation = this._getRelationFeature(relation.id);
   relation.fields.forEach((field) => {
-    let value = field.value;
-    if (field.name === originalRelation.getPk() && originalRelation.isNew() && !field.editable)
-      value = null;
+    const value = (field.name === originalRelation.getPk() && originalRelation.isNew() && !field.editable) ? null : field.value;
     attributes.push({label: field.label, value: value})
   });
   return attributes

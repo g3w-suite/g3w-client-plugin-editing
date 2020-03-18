@@ -793,7 +793,7 @@ proto.createEditingDataOptions = function(type, options={}) {
 
 proto._getFeaturesByLayerId = function(layerId) {
   const editingLayer = this.getEditingLayer(layerId);
-  return editingLayer.getSource().readFeatures();
+  return editingLayer.readEditingFeatures();
 };
 
 proto.getLayersDependencyFeaturesFromSource = function({layerId, relation, feature}={}){

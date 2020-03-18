@@ -22,7 +22,7 @@ proto.run = function(inputs, context) {
   this._isContentChild = WorkflowsStack.getLength() > 1;
   const foreignKey = this._isContentChild ? context.excludeFields[0] :  null;
   const editingLayer = inputs.layer;
-  const features = editingLayer.getSource().readFeatures();
+  const features = editingLayer.getEditor().getSource().readFeatures();
   const content = new TableComponent({
     title: `${layerName}`,
     features,
