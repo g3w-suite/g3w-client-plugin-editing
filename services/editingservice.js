@@ -730,9 +730,9 @@ proto.getRelationsInEditing = function({layerId, relations, feature, isNew}={}) 
 proto.stopSessionChildren = function(layerId) {
   const relationLayerChildren = this.getLayerById(layerId).getChildren();
   relationLayerChildren.forEach((id) => {
-    const session = this._sessions[id];
-    session && session.isStarted() && session.stop();
-  });
+    const toolbox = this.getToolBoxById(id);
+    (toolbox && !toolbox.inEditing()) && this._sessions[id].stop();
+  })
 };
 
 proto.fatherInEditing = function(layerId) {
