@@ -1,7 +1,7 @@
-var inherit = g3wsdk.core.utils.inherit;
-var base =  g3wsdk.core.utils.base;
+const inherit = g3wsdk.core.utils.inherit;
+const base =  g3wsdk.core.utils.base;
 
-var EditingTask = require('./editingtask');
+const EditingTask = require('./editingtask');
 
 function ModifyGeometryVertexTask(options={}){
   this.drawInteraction = null;
@@ -16,19 +16,19 @@ function ModifyGeometryVertexTask(options={}){
 inherit(ModifyGeometryVertexTask, EditingTask);
 
 
-var proto = ModifyGeometryVertexTask.prototype;
+const proto = ModifyGeometryVertexTask.prototype;
 
 proto.run = function(inputs, context) {
-  var d = $.Deferred();
-  var editingLayer = inputs.layer;
-  var session = context.session;
-  var originalLayer = context.layer;
-  var layerId = originalLayer.getId();
-  var originalFeature,
+  const d = $.Deferred();
+  const editingLayer = inputs.layer;
+  const session = context.session;
+  const originalLayer = context.layer;
+  const layerId = originalLayer.getId();
+  let originalFeature,
     newFeature;
-  var feature = this._feature = inputs.features[0];
+  const feature = this._feature = inputs.features[0];
   this._originalStyle = editingLayer.getStyle();
-  var style = [
+  const style = [
     new ol.style.Style({
       stroke : new ol.style.Stroke({
         color : "grey",
@@ -43,8 +43,7 @@ proto.run = function(inputs, context) {
         })
       }),
       geometry: function(feature) {
-        // return the coordinates of the first ring of the polygon
-        var coordinates = feature.getGeometry().getCoordinates()[0];
+        const coordinates = feature.getGeometry().getCoordinates()[0];
         return new ol.geom.MultiPoint(coordinates);
       }
     })
@@ -64,23 +63,14 @@ proto.run = function(inputs, context) {
   });
 
   this._modifyInteraction.on('modifyend',function(e){
-    var feature = e.features.getArray()[0];
-    if (feature.getGeometry().getExtent() != originalFeature.getGeometry().getExtent()) {
+    const feature = e.features.getArray()[0];
+    if (feature.getGeometry().getExtent() !== originalFeature.getGeometry().getExtent()) {
       newFeature = feature.clone();
       session.pushUpdate(layerId, newFeature, originalFeature);
-      //self._selectInteraction.getFeatures().clear();
       inputs.features.push(newFeature);
-      // ritorno come outpu l'input layer che sarà modificato
       d.resolve(inputs);
     }
   });
-
-  /*if (this._snap) {
-    this._snapInteraction = new ol.interaction.Snap({
-      source: editingLayer.getSource()
-    });
-    this.addInteraction(this._snapInteraction);
-  }*/
 
   return d.promise();
 };
@@ -110,7 +100,7 @@ proto.removePoint = function(coordinate){
 };
 
 proto._isNew = function(feature){
-  return (!_.isNil(this.editingLayer.getSource().getFeatureById(feature.getId())));
+  return (!_.isNil(this.editingLayer.getEditingSource().getFeatureById(feature.getId())));
 };
 
 module.exports = ModifyGeometryVertexTask;

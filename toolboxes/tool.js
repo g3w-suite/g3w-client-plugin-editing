@@ -28,6 +28,7 @@ proto.getFeature = function() {
 };
 
 proto.start = function() {
+
   const options = {
     inputs : {
       layer: this._layer,

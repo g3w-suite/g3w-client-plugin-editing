@@ -4,8 +4,7 @@ var EditingWorkflow = require('./editingworkflow');
 var AddFeatureStep = require('./steps/addfeaturestep');
 var OpenFormStep = require('./steps/openformstep');
 
-function AddFeatureWorflow(options) {
-  options = options || {};
+function AddFeatureWorflow(options={}) {
   const addfeaturestep = new AddFeatureStep(options);
   const openformstep = new OpenFormStep(options);
   let snapTool;

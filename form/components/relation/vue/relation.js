@@ -31,11 +31,9 @@ const RelationComponent = Vue.extend({
     },
     startTool: function(relationtool, index) {
       this._service.startTool(relationtool, index)
-        .then(() => {
-
-        })
+        .then(() => {})
         .catch((error) => {
-
+          console.log(error)
         })
     },
     linkRelation: function() {

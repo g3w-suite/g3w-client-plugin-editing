@@ -24,7 +24,7 @@ proto.run = function(inputs, context) {
   //var style = this.editor._editingVectorStyle ? this.editor._editingVectorStyle.edit : null;
   // vado a settare i layers su cui faccio l'interacion agisce
   const editingLayer = inputs.layer;
-  if (layerType == 'vector') {
+  if (layerType === 'vector') {
     this.pickFeatureInteraction = new PickFeatureInteraction({
       layers: [editingLayer]
     });

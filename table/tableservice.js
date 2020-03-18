@@ -61,7 +61,8 @@ proto.deleteFeature = function(index) {
       const feature = this._features[index];
       const session = this._context.session;
       const layerId = this._inputs.layer.getId();
-      this._inputs.layer.getSource().removeFeature(feature);
+      const editor = this._inputs.layer.getEditor();
+      editor.getSource().removeFeature(feature);
       session.pushDelete(layerId, feature);
       this.state.features.splice(index, 1);
     }

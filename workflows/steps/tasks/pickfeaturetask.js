@@ -16,11 +16,9 @@ var proto = PickFeatureTask.prototype;
 
 // metodo eseguito all'avvio del tool
 proto.run = function(inputs, context) {
-  //console.log('Pick Feature Task run ....');
   const d = $.Deferred();
-  //var style = this.editor._editingVectorStyle ? this.editor._editingVectorStyle.edit : null;
-  // vado a settare i layers su cui faccio l'interacion agisce
-  const layers = [inputs.layer];
+  const editingLayer = inputs.layer;
+  const layers = [editingLayer];
   const features = inputs.features.length ? inputs.features : null;
   this.pickFeatureInteraction = new PickFeatureInteraction({
     layers,

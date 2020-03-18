@@ -10,15 +10,12 @@ const EditFeatureAttributesWorkflow = require('../workflows/editfeatureattribute
 const EditTableFeaturesWorkflow = require('../workflows/edittableworkflow');
 const AddTableFeatureWorflow = require('../workflows/addtablefeatureworkflow');
 
-// classe costruttrice di Tools
 function EditorToolsFactory() {
   // create a single tool
-  this.buildTool = function(options) {
+  this.buildTool = function(options={}) {
     //TODO
   };
-  // e dei tasks associati
-  this.build = function(options) {
-    options = options || {};
+  this.build = function(options={}) {
     const type = options.type || Layer.LayerTypes.VECTOR;
     const layer = options.layer;
     let tools;
@@ -138,7 +135,6 @@ function EditorToolsFactory() {
             break;
         }
         break;
-      // caso layer tabellare da mettere in piedi
       case Layer.LayerTypes.TABLE:
         tools = [
           new Tool({

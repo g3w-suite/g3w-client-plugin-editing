@@ -57,47 +57,30 @@ function EditingService() {
   });
   //plugin components
   this._formComponents = {};
-  // oggetto che server per ascoltare editing da parte di plugin
   this._subscribers = {};
-  // prendo tutti i layers del progetto corrente che si trovano
-  // all'interno dei Layerstore del catalog registry con caratteristica editabili.
-  // Mi verranno estratti tutti i layer editabili anche quelli presenti nell'albero del catalogo
-  // come per esempio il caso di layers relazionati
-  this.init = function(config) {// layersStore del plugin editing che conterrà tutti i layer di editing
-    // check constraints editing /scale, geometry, bbox etc ..
+  this.init = function(config) {
     this._vectorUrl = config.vectorurl;
     this._projectType = config.project_type;
     this._layersstore = new LayersStore({
       id: 'editing',
-      queryable: false // lo setto a false così che quando faccio la query (controllo) non prendo anche questi
+      queryable: false
     });
-    //add edting layer store to mapstoreregistry
     MapLayersStoreRegistry.addLayersStore(this._layersstore);
-    // setto la configurazione del plugin
     this.config = config;
-    // oggetto contenente tutti i layers in editing
     this._editableLayers = {
       [Symbol.for('layersarray')]: []
     };
-    // contiene tutti i toolbox
     this._toolboxes = [];
-    // restto
     this.state.toolboxes = [];
-    // sono i layer originali caricati dal progetto e messi nel catalogo
     let layers = this._getEditableLayersFromCatalog();
     let editingLayersLenght = layers.length;
-    //ciclo su ogni layers editiabile
     for (const layer of layers) {
       const layerId = layer.getId();
       this._editableLayers[layerId] = {};
-      // vado a chiamare la funzione che mi permette di
-      // estrarre la versione editabile del layer di partenza (es. da imagelayer a vector layer, table layer/tablelayer etc..)
-      //this._vectorUrl && layer.setVectorUrl(this._vectorUrl);
       const editableLayer = layer.getLayerForEditing({
         vectorurl: this._vectorUrl,
         project_type: this._projectType
       });
-      // vado ad aggiungere ai layer editabili
       this._editableLayers[layerId] = editableLayer;
       this._editableLayers[Symbol.for('layersarray')].push(editableLayer);
       const handleReadyConfigurationLayer = () => {
@@ -115,18 +98,13 @@ function EditingService() {
         editableLayer.once('layer-config-ready', () => {
           handleReadyConfigurationLayer();
         });
-      // aggiungo all'array dei vectorlayers se per caso mi servisse
       this._sessions[layerId] = null;
     }
   };
   this._ready = function() {
-    // set toolbox colors
     this.setLayersColor();
-    // after sadd layers to layerstore
     this._layersstore.addLayers(this.getLayers());
-    // vado a creare i toolboxes
     this._buildToolBoxes();
-    // create a dependencies tree
     this._createToolBoxDependencies();
     //setApi
     this.setApi({
@@ -749,17 +727,11 @@ proto.getRelationsInEditing = function({layerId, relations, feature, isNew}={}) 
   return relationsinediting;
 };
 
-// qui devo verificare sia l condizione del padre che del figlio
 proto.stopSessionChildren = function(layerId) {
-  // caso padre verifico se i figli sono in editing o meno
-  let relationLayerChildren = this.getLayerById(layerId).getChildren();
-  let toolbox;
+  const relationLayerChildren = this.getLayerById(layerId).getChildren();
   relationLayerChildren.forEach((id) => {
-    toolbox = this.getToolBoxById(id);
-    if (toolbox && !toolbox.inEditing()) {
-      this._sessions[id].stop();
-      toolbox._setEditingLayerSource();
-    }
+    const session = this._sessions[id];
+    session && session.isStarted() && session.stop();
   });
 };
 
@@ -820,9 +792,8 @@ proto.createEditingDataOptions = function(type, options={}) {
 };
 
 proto._getFeaturesByLayerId = function(layerId) {
-  const layerType = this.getLayerById(layerId).getType();
   const editingLayer = this.getEditingLayer(layerId);
-  return layerType === Layer.LayerTypes.VECTOR ? editingLayer.getSource().getFeatures() : editingLayer.getSource().readFeatures();
+  return editingLayer.getSource().readFeatures();
 };
 
 proto.getLayersDependencyFeaturesFromSource = function({layerId, relation, feature}={}){
@@ -923,21 +894,16 @@ proto.getLayersDependencyFeatures = function(layerId, opts={}) {
   return Promise.all(promises);
 };
 
+
+
 proto._applyChangesToNewRelationsAfterCommit = function(relationsResponse) {
-  for (relationLayerId in relationsResponse) {
+  for (const relationLayerId in relationsResponse) {
     const response = relationsResponse[relationLayerId];
-    const layer = this.getLayerById(relationLayerId);
-    const sessionFeaturesStore = this.getToolBoxById(relationLayerId).getSession().getFeaturesStore();
-    const featureStore = layer.getSource();
-    const features = _.clone(sessionFeaturesStore.readFeatures());
-    features.forEach((feature) => {
-      feature.clearState();
-    });
-    featureStore.setFeatures(features);
-    layer.applyCommitResponse({
+    const editor = this.getToolBoxById(relationLayerId).getEditor();
+    editor.applyCommitResponse({
       response,
       result: true
-    });
+    })
   }
 };
 

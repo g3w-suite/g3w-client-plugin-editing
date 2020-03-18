@@ -143,7 +143,7 @@ proto.startTool = function(relationtool, index) {
 proto.startTableTool = function(relationtool, index) {
   const d = $.Deferred();
   const relation = this.relations[index];
-  const featurestore = this.getEditingService().getToolBoxById(this._layerId).getSession().getFeaturesStore();
+  const featurestore = this.getEditingService().getToolBoxById(this._layerId).getEditor().getSource();
   const relationfeature = featurestore.getFeatureById(relation.id);
   GUI.setModal(false);
   const options = this._createWorkflowOptions({
@@ -477,8 +477,6 @@ proto.getCurrentWorkflowData = function() {
   return this.getEditingService().getCurrentWorkflowData();
 };
 
-// mi server per avere un riferimento al worflow attuale
-// così da poter inserire le modifiche della relazione al current workflow
 proto._createWorkflowOptions = function(options={}) {
   const {ownField} = this.getEditingService()._getRelationFieldsFromRelation({
     layerId: this._layerId,

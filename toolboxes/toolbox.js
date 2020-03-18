@@ -7,53 +7,32 @@ const Layer = g3wsdk.core.layer.Layer;
 const Session = g3wsdk.core.editing.Session;
 const { debounce } = g3wsdk.core.utils;
 const getScaleFromResolution = g3wsdk.ol.utils.getScaleFromResolution;
-const OlFeaturesStore = g3wsdk.core.layer.features.OlFeaturesStore;
-const FeaturesStore = g3wsdk.core.layer.features.FeaturesStore;
 
 function ToolBox(options={}) {
   base(this);
   this._start = false;
   this._constraints = options.constraints || {};
-  // editor del Layer che permette di interagire con il layer
-  // save, etc ...
   this._editor = options.editor;
-  // l'editing layer originale che contiene tutte le informazioni anche le relazioni
   this._layer = this._editor.getLayer();
-  //layer ol della mappa
   this._editingLayer = options.layer;
-  // recupero il tipo di toolbox
   this._layerType = options.type || 'vector';
   this._loadedExtent = null;
   this._tools = options.tools;
-  // optioni per il recupero delle feature
   this._getFeaturesOption = {};
-  // popolo gl'array degli state del tools appartenenti al toobox
   const toolsstate = [];
   this._tools.forEach((tool) => {
     toolsstate.push(tool.getState())
   });
-  //sessione che permette di gestire tutti i movimenti da parte
-  // dei tools del toolbox durante l'editing del layer
-  //creo la sessione passandogli l'editor
+
   this._session = new Session({
-    id: options.id, // contiene l'id del layer
-    editor: this._editor,
-    //in case of table or not ol layer i have to set provider to get data
-    featuresstore: this._layerType === Layer.LayerTypes.VECTOR ? new OlFeaturesStore(): new FeaturesStore({
-      provider: this._editingLayer.getProvider('data')
-    }),
-    add: this._layerType !== Layer.LayerTypes.TABLE // in case of table adding is not necessary
+    id: options.id,
+    editor: this._editor
   });
-  // opzione per recuperare le feature
   this._getFeaturesOption = {};
-  // stato della history
   const historystate = this._session.getHistory().state;
   const sessionstate = this._session.state;
-  // stato del toolbox;
   this.state = {
     id: options.id,
-    // colore del layer (darà il colore alla maschera) e quindi
-    // delle feature visualizzate sulla mappa
     color: options.color || 'blue',
     title: options.title || "Edit Layer",
     loading: false,
@@ -62,34 +41,29 @@ function ToolBox(options={}) {
     toolmessages: {
       help: null
     },
-    toolsoftool: [], // tools to show when a task request this
+    toolsoftool: [],
     tools: toolsstate,
-    selected: false, //proprieà che mi server per switchare tra un toolbox e un altro
-    activetool: null, // tiene conto del tool attivo corrente
+    selected: false,
+    activetool: null,
     editing: {
-      session: sessionstate, // STATE DELLA SESSIONE
-      history: historystate,// assegno lo state della history
+      session: sessionstate,
+      history: historystate,
       on: false,
-      dependencies: [], // array di id dei toolbox dipendenti, utili per accendere spendere editing e chiedere il commit
+      dependencies: [],
       relations: [],
       father: false,
       canEdit: true
     },
     layerstate: this._layer.state
   };
-  //vado a settare la sessione ad ogni tool di quel toolbox
-  // e lo stesso toolbox
+
   this._tools.forEach((tool) => {
     tool.setSession(this._session);
   });
 
-  // in ascolto dell'onafter start della sessione così se avviata
-  // vado ad associare le features del suo featuresstore al ol.layer.Vector
   this._session.onafter('stop', () => {
     const EditingService = require('../services/editingservice');
-    //vado a fermare la sessione dei figli
     EditingService.stopSessionChildren(this.state.id);
-    // vado a unregistrare gli eventi
     this._unregisterGetFeaturesEvent();
   });
 
@@ -104,9 +78,7 @@ function ToolBox(options={}) {
     this._registerGetFeaturesEvent(this._getFeaturesOption);
   });
 
-  // mapservice mi servirà per fare richieste al server sulle features (bbox) quando agisco sull mappa
   this._mapService = GUI.getComponent('map').getService();
-  //eventi per catturare le feature
   this._getFeaturesEvent = {
     event: null,
     fnc: null,
@@ -114,7 +86,6 @@ function ToolBox(options={}) {
       extent: null
     }
   };
-  this._setEditingLayerSource();
 }
 
 inherit(ToolBox, G3WObject);
@@ -172,15 +143,6 @@ proto.addDependencies = function(dependencies) {
 proto.addDependency = function(dependency) {
   this.state.editing.dependencies.push(dependency);
 };
-
-proto._setEditingLayerSource = function() {
-  const featuresstore = this._session.getFeaturesStore();
-  const source = (this._layerType === Layer.LayerTypes.VECTOR) ?
-    new ol.source.Vector({features: featuresstore.getFeaturesCollection()}) :
-    featuresstore;
-  this._editingLayer.setSource(source);
-};
-
 
 proto.start = function() {
   const EditingService = require('../services/editingservice');
@@ -249,44 +211,36 @@ proto.getFeaturesOption = function() {
   return this._getFeaturesOption;
 };
 
-// funzione che disabiliterà
 proto.stop = function() {
   const EventName  = 'stop-editing';
-  // le sessioni dipendenti per poter eseguier l'editing
   const d = $.Deferred();
   this.disableCanEditEvent && this.disableCanEditEvent();
   if (this._session && this._session.isStarted()) {
-    //vado a verificare se  c'è un padre in editing
     const EditingService = require('../services/editingservice');
     const is_there_a_father_in_editing = EditingService.fatherInEditing(this.state.id);
     if (!is_there_a_father_in_editing) {
       this._session.stop()
-        .then(() => {
-          this._start = false;
-          this.state.editing.on = false;
-          this.state.enabled = false;
-          this.state.loading = false;
-          this._getFeaturesOption = {};
-          // spengo il tool attivo
-          this.stopActiveTool();
-          // seci sono tool attivi vado a spengere
-          this._setToolsEnabled(false);
-          this.clearToolboxMessages();
-          this._setEditingLayerSource();
-          this.setSelected(false);
-          this.emit(EventName);
-          d.resolve(true)
-        })
-        .fail((err) => {
-          // mostro un errore a video o tramite un messaggio nel pannello
-          d.reject(err)
-        }).always(()=> {
-          this.setSelected(false);
+        .then((promise) => {
+          promise.then(()=>{
+            this._start = false;
+            this.state.editing.on = false;
+            this.state.enabled = false;
+            this.state.loading = false;
+            this._getFeaturesOption = {};
+            this.stopActiveTool();
+            this._setToolsEnabled(false);
+            this.clearToolboxMessages();
+            this.setSelected(false);
+            this.emit(EventName);
+            d.resolve(true)
+          }).fail((err) => {
+            d.reject(err)
+          }).always(()=> {
+            this.setSelected(false);
+          })
         })
     } else {
-      // spengo il tool attivo
       this.stopActiveTool();
-      // seci sono tool attivi vado a spengere
       this.state.editing.on = false;
       this._setToolsEnabled(false);
       this.clearToolboxMessages();
@@ -301,12 +255,10 @@ proto.stop = function() {
   return d.promise();
 };
 
-//funzione salvataggio modifiche
 proto.save = function () {
   this._session.commit();
 };
 
-// unregistra eventi che sono legati al getFeatures
 proto._unregisterGetFeaturesEvent = function() {
   switch(this._layerType) {
     case 'vector':
@@ -468,14 +420,7 @@ proto.getTools = function() {
 };
 
 proto.getToolById = function(toolId) {
-  let Tool = null;
-  this._tools.forEach((tool) => {
-    if (toolId == tool.getId()) {
-      Tool = tool;
-      return false
-    }
-  });
-  return Tool;
+  return this._tools.find((tool) => toolId === tool.getId());
 };
 
 proto.enableTools = function(bool) {
