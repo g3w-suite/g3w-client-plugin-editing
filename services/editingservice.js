@@ -173,15 +173,21 @@ proto._handleOfflineChangesBeforeSave = function(data) {
     current[layerId].add = [...previous[layerId].add, ...current[layerId].add];
     current[layerId].delete = [...previous[layerId].delete, ...current[layerId].delete];
     previous[layerId].update.forEach(updateItem => {
-      const id = updateItem.id;
+      const {id} = updateItem;
       const find = current[layerId].update.find(updateItem => updateItem.id === id);
       !find && current[layerId].update.unshift(updateItem);
+    });
+    previous[layerId].lockids.forEach(lockidItem => {
+      const {featureid} = lockidItem;
+      const find = current[layerId].lockids.find(lockidItem => lockidItem.featureid === featureid);
+      !find && current[layerId].update.unshift(lockidItem);
     })
   };
   for (const layerId in changes) {
     // check if previous changes are made in the same layer or in relationlayer of current
-    const current = data[layerId]  ? data :
-      data[Object.keys(data)[0]].relations[layerId] ? data[Object.keys(data)[0]].relations : null;
+    const current = data[layerId] ? data :
+      data[Object.keys(data)[0]].relations[layerId] ?
+        data[Object.keys(data)[0]].relations : null;
     if (current)
       applyChanges({
         layerId,

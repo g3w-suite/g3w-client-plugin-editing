@@ -30,29 +30,28 @@ function EditorToolsFactory() {
                 id: 'addfeature',
                 name: t("editing.tools.add_feature"),
                 icon: "addPoint.png",
-                layer: layer,
+                layer,
                 op: AddFeatureWorkflow
               }),
               new Tool({
                 id: 'movefeature',
                 name: t("editing.tools.move_feature"),
                 icon: "movePoint.png",
-                layer: layer,
-                type: type,
+                layer,
                 op: MoveFeatureWorkflow
               }),
               new Tool({
                 id: 'deletefeature',
                 name: t("editing.tools.delete_feature"),
                 icon: "deletePoint.png",
-                layer: layer,
+                layer,
                 op: DeleteFeatureWorkflow
               }),
               new Tool({
                 id: 'editattributes',
                 name: t("editing.tools.update_feature"),
                 icon: "editAttributes.png",
-                layer: layer,
+                layer,
                 op: EditFeatureAttributesWorkflow
               })
             ];
@@ -66,22 +65,21 @@ function EditorToolsFactory() {
                 id: 'addfeature',
                 name: t("editing.tools.add_feature"),
                 icon: "addLine.png",
-                layer: layer,
-                type: type,
+                layer,
                 op: AddFeatureWorkflow
               }),
               new Tool({
                 id: 'movevertex',
                 name: t("editing.tools.update_vertex"),
                 icon: "moveVertex.png",
-                layer: layer,
+                layer,
                 op: ModifyGeometryVertexWorkflow
               }),
               new Tool({
                 id: 'deletefeature',
                 name: t("editing.tools.delete_feature"),
                 icon: "deleteLine.png",
-                layer: layer,
+                layer,
                 op: DeleteFeatureWorkflow
               }),
               new Tool({
@@ -100,35 +98,35 @@ function EditorToolsFactory() {
                 id: 'addfeature',
                 name: t("editing.tools.add_feature"),
                 icon: "addPolygon.png",
-                layer: layer,
+                layer,
                 op: AddFeatureWorkflow
               }),
               new Tool({
                 id: 'movefeature',
                 name: t("editing.tools.move_feature"),
                 icon: "movePolygon.png",
-                layer: layer,
+                layer,
                 op: MoveFeatureWorkflow
               }),
               new Tool({
                 id: 'movevertex',
                 name: t("editing.tools.update_vertex"),
                 icon: "movePolygonVertex.png",
-                layer: layer,
+                layer,
                 op: ModifyGeometryVertexWorkflow
               }),
               new Tool({
                 id: 'deletefeature',
                 name: t("editing.tools.delete_feature"),
                 icon: "deletePolygon.png",
-                layer: layer,
+                layer,
                 op: DeleteFeatureWorkflow
               }),
               new Tool({
                 id: 'editattributes',
                 name: t("editing.tools.update_feature"),
                 icon: "editAttributes.png",
-                layer: layer,
+                layer,
                 op: EditFeatureAttributesWorkflow
               })
             ];
@@ -141,14 +139,14 @@ function EditorToolsFactory() {
             id: 'addfeature',
             name: t("editing.tools.add_feature"),
             icon: "addTableRow.png",
-            layer: layer,
+            layer,
             op: AddTableFeatureWorflow
           }),
           new Tool({
             id: 'edittable',
             name: t("editing.tools.update_feature"),
             icon: "editAttributes.png",
-            layer: layer,
+            layer,
             op: EditTableFeaturesWorkflow
           })
         ];
