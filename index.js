@@ -1,3 +1,4 @@
+import pluginConfig from './config';
 const inherit = g3wsdk.core.utils.inherit;
 const base = g3wsdk.core.utils.base;
 const Plugin = g3wsdk.core.plugin.Plugin;
@@ -5,7 +6,6 @@ const GUI = g3wsdk.gui.GUI;
 const t = g3wsdk.core.i18n.tPlugin;
 const Service = require('./services/editingservice');
 const EditingPanel = require('./panel');
-import pluginConfig from './config';
 const addI18nPlugin = g3wsdk.core.i18n.addI18nPlugin;
 
 const _Plugin = function() {

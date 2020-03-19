@@ -36,7 +36,7 @@ proto.run = function(inputs, context) {
         geometryType = 'MultiLineString';
       else
         geometryType = originalLayer.getEditingGeometryType();
-      const source = editingLayer.getSource();
+      const source = editingLayer.getEditingSource();
       const attributes = originalLayer.getEditingFields();
       const temporarySource = new ol.source.Vector();
       this.drawInteraction = new ol.interaction.Draw({

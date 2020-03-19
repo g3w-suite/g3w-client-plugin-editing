@@ -65,7 +65,6 @@ function EditingService() {
       id: 'editing',
       queryable: false
     });
-    MapLayersStoreRegistry.addLayersStore(this._layersstore);
     this.config = config;
     this._editableLayers = {
       [Symbol.for('layersarray')]: []
@@ -73,48 +72,43 @@ function EditingService() {
     this._toolboxes = [];
     this.state.toolboxes = [];
     let layers = this._getEditableLayersFromCatalog();
-    let editingLayersLenght = layers.length;
-    for (const layer of layers) {
+    const editingLayerPromises = [];
+    layers.forEach( layer => {
       const layerId = layer.getId();
       this._editableLayers[layerId] = {};
-      const editableLayer = layer.getLayerForEditing({
+      const promise = layer.getLayerForEditing({
         vectorurl: this._vectorUrl,
         project_type: this._projectType
       });
-      this._editableLayers[layerId] = editableLayer;
-      this._editableLayers[Symbol.for('layersarray')].push(editableLayer);
-      const handleReadyConfigurationLayer = () => {
-        editingLayersLenght-=1;
-        if (editingLayersLenght === 0) {
-          for (let layerId in this._editableLayers) {
-            this._attachLayerWidgetsEvent(this._editableLayers[layerId]);
-          }
-          this._ready();
-        }
-      };
-      if (editableLayer.isReady())
-        handleReadyConfigurationLayer();
-      else
-        editableLayer.once('layer-config-ready', () => {
-          handleReadyConfigurationLayer();
-        });
-      this._sessions[layerId] = null;
-    }
-  };
-  this._ready = function() {
-    this.setLayersColor();
-    this._layersstore.addLayers(this.getLayers());
-    this._buildToolBoxes();
-    this._createToolBoxDependencies();
-    //setApi
-    this.setApi({
-      api: new API({
-        service:this
-      })
+      editingLayerPromises.push(promise)
     });
-    this._initOffLineItems();
-    this.emit('ready');
-  }
+    Promise.all(editingLayerPromises).then(editableLayers => {
+      editableLayers.forEach((editableLayer) =>{
+        const layerId = editableLayer.getId();
+        this._editableLayers[layerId] = editableLayer;
+        this._editableLayers[Symbol.for('layersarray')].push(editableLayer);
+        this._attachLayerWidgetsEvent(editableLayer);
+        this._sessions[layerId] = null;
+      });
+      if (this._mapService.ready) {
+        MapLayersStoreRegistry.addLayersStore(this._layersstore);
+      } else this._mapService.once('ready', () =>{
+        MapLayersStoreRegistry.addLayersStore(this._layersstore);
+      });
+      this.setLayersColor();
+      this._layersstore.addLayers(this.getLayers());
+      this._buildToolBoxes();
+      this._createToolBoxDependencies();
+      //setApi
+      this.setApi({
+        api: new API({
+          service:this
+        })
+      });
+      this._initOffLineItems();
+      this.emit('ready');
+    });
+  };
 }
 
 inherit(EditingService, PluginService);
@@ -244,11 +238,13 @@ proto.checkOfflineChanges = function({modal=true}={}) {
       }
       $.when.apply(this, promises)
         .then(() =>{
-          this.setOfflineItem(OFFLINE_ITEMS.CHANGES);
           resolve()
         })
         .fail((error)=>{
           reject(error);
+        })
+        .always(()=>{
+          this.setOfflineItem(OFFLINE_ITEMS.CHANGES);
         })
     }
   })
@@ -256,9 +252,7 @@ proto.checkOfflineChanges = function({modal=true}={}) {
 
 proto.registerOnLineOffLineEvent = function() {
   if (ApplicationState.online) this.checkOfflineChanges();
-
   const offlineKey =  ApplicationService.onafter('offline', ()=>{});
-
   const onlineKey = ApplicationService.onafter('online', () =>{
     this.checkOfflineChanges({
       modal:false
@@ -613,7 +607,7 @@ proto.getRelationsByFeature = function({layerId, relation, feature, layerType}={
   const features = this._getFeaturesByLayerId(layerId);
   return features.filter(feature => {
     const pk = feature.getPk();
-    return (pk === ownField) ? feature.getId() === featureValue : feature.get(ownField) === featureValue;
+    return (pk === ownField) ? feature.getId() == featureValue : feature.get(ownField) == featureValue;
   });
 };
 
@@ -704,12 +698,11 @@ proto._filterRelationsInEditing = function({layerId, relations=[]}) {
 };
 
 // funzione che filtra le relazioni in base a quelle presenti in editing
-proto.getRelationsInEditing = function({layerId, relations, feature, isNew}={}) {
+proto.getRelationsInEditing = function({layerId, relations, feature}={}) {
   const relationsinediting = [];
   relations.forEach((relation) => {
     const relationLayerId = this._getRelationLayerId({layerId, relation});
     if (this.getLayerById(relationLayerId)) {
-      // aggiungo lo state della relazione
       const relationinediting = {
         relation: relation.getState(),
         relations: this.getRelationsAttributesByFeature({
@@ -748,6 +741,12 @@ proto.fatherInEditing = function(layerId) {
     }
   });
   return inEditing;
+};
+
+proto.getRelationFromLayerId = function({layerId, relation}={}){
+  const childId = relation.getChild ? relation.getChild() : relation.child;
+  const fatherId = relation.getFather ? relation.getFather() : relation.father;
+  return layerId === childId && fatherId || childId;
 };
 
 proto._getRelationFieldsFromRelation = function({layerId, relation} = {}) {
@@ -799,47 +798,43 @@ proto._getFeaturesByLayerId = function(layerId) {
 proto.getLayersDependencyFeaturesFromSource = function({layerId, relation, feature}={}){
   return new Promise((resolve) => {
     const features = this._getFeaturesByLayerId(layerId);
-    const fatherPk = feature.getPk();
-    const {ownField, relationField} = this._getRelationFieldsFromRelation({
-      layerId,
-      relation
-    });
-    const featureValue = fatherPk === relationField ? feature.getId() : feature.get(relationField);
-    const featureSourcePk = features.length && features[0].getPk();
-    const find = features.find(featureSource => {
-      return featureSourcePk === ownField ? featureSource.getId() === featureValue : featureSource.get(ownField) === featureValue;
-    });
-    resolve(find);
+    if (features.length) {
+      const featurePk = feature.getPk();
+      const relationFeaturePk = features[0].getPk();
+      const {ownField, relationField} = this._getRelationFieldsFromRelation({
+        layerId,
+        relation
+      });
+      const featureValue = featurePk === relationField ? feature.getId() : feature.get(relationField);
+      const find = features.find(featureSource => {
+        return relationFeaturePk == ownField ?
+          featureSource.getId() == featureValue :
+          featureSource.get(ownField) == featureValue;
+      });
+      resolve(find);
+    } else resolve(false)
   })
 };
 
-// fa lo start di tutte le dipendenze del layer legato alla toolbox che si è avviato
 proto.getLayersDependencyFeatures = function(layerId, opts={}) {
   const promises = [];
-  // vado a recuperare le relazioni (figli al momento) di quel paricolare layer
-  /*
-   IMPORTANTE: PER EVITARE PROBLEMI È IMPORTANTE CHE I LAYER DIPENDENTI SIANO A SUA VOLTA EDITABILI
-   */
   const layer = this.getLayerById(layerId);
   const relations = layer.getChildren().length && layer.getRelations() ? this._filterRelationsInEditing({
     relations: layer.getRelations().getArray(),
     layerId
   }) : [];
-  /*
-    * qui andrò a verificare se stata istanziata la sessione altrimenti vienne creata
-    * se la sessione è attiva altrimenti viene attivata
-    * */
-  //cerco prima tra i toolbox se presente
-
-  relations.forEach((relation) => {
-    const id = relation.getFather() === layerId ? relation.getChild(): relation.getFather();
+  relations.forEach(relation => {
+    const relationId = this.getRelationFromLayerId({
+      layerId,
+      relation
+    });
     const promise = new Promise((resolve) => {
-      const type = this.getLayerById(id).getType();
+      const type = this.getLayerById(relationId).getType();
       opts.relation = relation;
-      opts.layerId = id;
+      opts.layerId = relationId;
       const options = this.createEditingDataOptions(type, opts);
-      const session = this._sessions[id];
-      const toolbox = this.getToolBoxById(id);
+      const session = this._sessions[relationId];
+      const toolbox = this.getToolBoxById(relationId);
       toolbox.startLoading();
       if (session) {
         if (!session.isStarted())
@@ -847,40 +842,39 @@ proto.getLayersDependencyFeatures = function(layerId, opts={}) {
             .always((promise) => {
               promise.always(()=>{
                 toolbox.stopLoading();
-                resolve(id);
+                resolve(relationId);
               })
             });
         else {
           this.getLayersDependencyFeaturesFromSource({
-            layerId: id,
+            layerId: relationId,
             relation,
             feature: opts.feature
-          }).then(find =>{
+          }).then(find => {
             if (find) {
-              resolve(id);
               toolbox.stopLoading();
+              resolve(relationId);
             } else session.getFeatures(options)
               .always((promise) => {
                 promise.always(()=>{
                   toolbox.stopLoading();
-                  resolve(id);
+                  resolve(relationId);
                 });
               });
           })
         }
       } else {
-        // altrimenti per quel layer la devo instanziare
         try {
-          const layer = this._layersstore.getLayerById(id);
+          const layer = this._layersstore.getLayerById(relationId);
           const editor = layer.getEditor();
           const session = new Session({
             editor
           });
-          this._sessions[id] = session;
+          this._sessions[relationId] = session;
           session.start()
             .always((promise)=>{
               promise.always(()=>{
-                resolve(id)
+                resolve(relationId)
               });
             })
         }
@@ -893,8 +887,6 @@ proto.getLayersDependencyFeatures = function(layerId, opts={}) {
   });
   return Promise.all(promises);
 };
-
-
 
 proto._applyChangesToNewRelationsAfterCommit = function(relationsResponse) {
   for (const relationLayerId in relationsResponse) {
@@ -1018,6 +1010,7 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
           } else {
             const message = response.errors;
             GUI.notify.error(message);
+            d.reject();
           }
         } else {
           this.saveOfflineItem({
@@ -1029,6 +1022,7 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
             GUI.notify.success(t("editing.messages.saved"));
           }).catch((error)=>{
             GUI.notify.error(error);
+            d.reject();
           })
         }
         d.resolve(toolbox);
@@ -1039,7 +1033,7 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
         });
         let message = parser.parse();
         GUI.notify.error(message);
-        d.resolve(toolbox);
+        d.reject(toolbox);
       })
       .always(() => {
         dialog && dialog.modal('hide');

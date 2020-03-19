@@ -36,7 +36,7 @@ const vueComponentOptions = {
     saveAll: function() {},
     startToolBox: function(toolboxId) {
       const toolbox = this._getToolBoxById(toolboxId);
-      toolbox.canEdit() && toolbox.start();
+      ApplicationState.online && toolbox.canEdit() && toolbox.start();
     },
     stopToolBox: function(toolboxId) {
       const toolbox = this._getToolBoxById(toolboxId);
@@ -120,13 +120,20 @@ const vueComponentOptions = {
   },
   created() {
     this.appState = ApplicationState;
+    this.$options.service.registerOnLineOffLineEvent();
     GUI.on('opencontent', this._enableEditingButtons);
     GUI.on('closeform', this._enableEditingButtons);
     GUI.on('closecontent', this._enableEditingButtons);
   },
   mounted() {
     this.$nextTick(() => {
-      this.$options.service.registerOnLineOffLineEvent();
+      const ApplicationService = g3wsdk.core.ApplicationService;
+      setTimeout(()=>{
+        //ApplicationService.offline()
+      }, 2000);
+      // setTimeout(()=>{
+      //   ApplicationService.online()
+      // }, 15000);
     })
   },
   beforeDestroy() {

@@ -1,3 +1,4 @@
+const ApplicationState = g3wsdk.core.ApplicationState;
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
 const G3WObject = g3wsdk.core.G3WObject;
@@ -63,7 +64,7 @@ function ToolBox(options={}) {
 
   this._session.onafter('stop', () => {
     const EditingService = require('../services/editingservice');
-    EditingService.stopSessionChildren(this.state.id);
+    ApplicationState.online && EditingService.stopSessionChildren(this.state.id);
     this._unregisterGetFeaturesEvent();
   });
 
@@ -212,13 +213,13 @@ proto.getFeaturesOption = function() {
 };
 
 proto.stop = function() {
+  const EditingService = require('../services/editingservice');
   const EventName  = 'stop-editing';
   const d = $.Deferred();
   this.disableCanEditEvent && this.disableCanEditEvent();
   if (this._session && this._session.isStarted()) {
-    const EditingService = require('../services/editingservice');
     const is_there_a_father_in_editing = EditingService.fatherInEditing(this.state.id);
-    if (!is_there_a_father_in_editing) {
+    if (ApplicationState.online && !is_there_a_father_in_editing) {
       this._session.stop()
         .then((promise) => {
           promise.then(()=>{
@@ -245,7 +246,6 @@ proto.stop = function() {
       this._setToolsEnabled(false);
       this.clearToolboxMessages();
       this._unregisterGetFeaturesEvent();
-      EditingService.stopSessionChildren(this.state.id);
       this.setSelected(false);
     }
   } else {
@@ -276,7 +276,8 @@ proto._registerGetFeaturesEvent = function(options={}) {
       const fnc = () => {
         const canEdit = this.state.editing.canEdit;
         this._editingLayer.setVisible(canEdit);
-        if (canEdit && GUI.getContentLength() === 0) {
+        //added ApplicationState.online
+        if (ApplicationState.online && canEdit && GUI.getContentLength() === 0) {
           const bbox = this._mapService.getMapBBOX();
           if (this._getFeaturesEvent.options.extent && ol.extent.containsExtent(this._getFeaturesEvent.options.extent, bbox)) return;
           this._getFeaturesEvent.options.extent = !this._getFeaturesEvent.options.extent ? bbox: ol.extent.extend(this._getFeaturesEvent.options.extent, bbox) ;

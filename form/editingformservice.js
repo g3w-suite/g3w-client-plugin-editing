@@ -16,7 +16,7 @@ const EdtingFormService = function(options={}) {
   let relations = [];
   const formLayer = this._context.layer;
   const layerId = formLayer.getId();
-  const formFeature = this._inputs.features[this._inputs.features.length - 1];
+  const feature = this._inputs.features[this._inputs.features.length - 1];
   if (formLayer.isFather()) {
     // recupero l'array delle relazioni
     relations = formLayer.getRelations().getArray();
@@ -24,10 +24,9 @@ const EdtingFormService = function(options={}) {
     relations = EditingService.getRelationsInEditing({
       layerId,
       relations,
-      feature: formFeature,
-      isNew: formFeature.isNew()
+      feature,
+      isNew: feature.isNew()
     });
-    // le relazioni in questione sono oggetti Realtion che contengono le informazioni nello stato delle composizione della relazione
   }
   this.hasRelations = function() {
     return !!relations.length;
