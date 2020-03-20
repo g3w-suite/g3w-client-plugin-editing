@@ -10,11 +10,12 @@ const TableService = function(options = {}) {
   this._foreignKey = options.foreignKey;
   this._workflow = null;
   this._deleteFeaturesIndexes = [];
-  this._isrelation = options.isrelation || false;
+  this._isrelation = options.isrelation  || false;
   this.state = {
     headers: options.headers || [],
     features: [],
-    title: options.title || 'Link relation'
+    title: options.title || 'Link relation',
+    isrelation: this._isrelation
   };
 
   this.init = function() {
