@@ -10,11 +10,12 @@ const TableService = function(options = {}) {
   this._foreignKey = options.foreignKey;
   this._workflow = null;
   this._deleteFeaturesIndexes = [];
-  this._isrelation = options.isrelation || false;
+  this._isrelation = options.isrelation  || false;
   this.state = {
     headers: options.headers || [],
     features: [],
-    title: options.title || 'Link relation'
+    title: options.title || 'Link relation',
+    isrelation: this._isrelation
   };
 
   this.init = function() {
@@ -61,8 +62,7 @@ proto.deleteFeature = function(index) {
       const feature = this._features[index];
       const session = this._context.session;
       const layerId = this._inputs.layer.getId();
-      const editor = this._inputs.layer.getEditor();
-      editor.getSource().removeFeature(feature);
+      this._inputs.layer.getEditingSource().removeFeature(feature);
       session.pushDelete(layerId, feature);
       this.state.features.splice(index, 1);
     }
