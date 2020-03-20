@@ -181,7 +181,6 @@ proto._setEditingLayerSource = function() {
   this._editingLayer.setSource(source);
 };
 
-
 proto.start = function() {
   const EditingService = require('../services/editingservice');
   const EventName = 'start-editing';

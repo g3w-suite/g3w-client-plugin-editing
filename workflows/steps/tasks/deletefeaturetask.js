@@ -14,7 +14,6 @@ inherit(DeleteFeatureTask, EditingTask);
 
 const proto = DeleteFeatureTask.prototype;
 
-/* BRUTTISSIMO! */
 
 ol.geom.GeometryType = {
   POINT: 'Point',
@@ -33,7 +32,6 @@ const white = [255, 255, 255, 1];
 const red = [255, 0, 0, 1];
 const width = 3;
 
-//vado a definre lo stile della feature selezionata per essere cancellata
 const styles = {};
 styles[ol.geom.GeometryType.POLYGON] = [
   new ol.style.Style({
@@ -90,18 +88,12 @@ styles[ol.geom.GeometryType.POLYGON] = _.concat(styles[ol.geom.GeometryType.POLY
 
 styles[ol.geom.GeometryType.GEOMETRY_COLLECTION] = _.concat(styles[ol.geom.GeometryType.GEOMETRY_COLLECTION],styles[ol.geom.GeometryType.LINE_STRING]);
 
-/* FINE BRUTTISSIMO! */
-
-// run del tool di delete feature
-// che ritorna una promessa
 proto.run = function(inputs, context) {
-  //console.log('Delete task run.......');
   const self = this;
   const d = $.Deferred();
   const editingLayer = inputs.layer;
   const originaLayer = context.layer;
   const layerId = originaLayer.getId();
-  //recupero la sessione dal context
   const session = context.session;
   this._selectInteraction = new ol.interaction.Select({
     layers: [editingLayer],
@@ -113,8 +105,8 @@ proto.run = function(inputs, context) {
   });
   this.addInteraction(this._selectInteraction);
   this._deleteInteraction = new DeleteInteraction({
-    features: this._selectInteraction.getFeatures(), // passo le features selezionate
-    layer: editingLayer // il layer appartenente
+    features: this._selectInteraction.getFeatures(),
+    layer: editingLayer
   });
   this.addInteraction(this._deleteInteraction);
   this._deleteInteraction.on('deleteend', function(e) {
@@ -147,9 +139,9 @@ proto.run = function(inputs, context) {
           updateRelation = false;
       });
       if (updateRelation) {
-        const relationsLength = relation.relations.length;
+        const relationsLength = relations.length;
         for (let index = 0; index < relationsLength ; index++) {
-          relationService.unlinkRelation(0)
+          relationService.unlinkRelation(0, false)
         }
       }
     });

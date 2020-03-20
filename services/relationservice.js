@@ -444,28 +444,31 @@ proto.isRequired = function() {
 
 proto._getRelationFeature = function(featureId) {
   const editingLayer = this.getEditingLayer();
-  return editingLayer.getSource().getFeatureById(featureId);
+  return editingLayer.getEditingSource().getFeatureById(featureId);
 };
 
-proto.unlinkRelation = function(index) {
+proto.unlinkRelation = function(index, dialog=true) {
   const d = $.Deferred();
   const {ownField} = this.getEditingService()._getRelationFieldsFromRelation({
     layerId: this._layerId,
     relation: this.relation
   });
-  GUI.dialog.confirm(t("editing.messages.unlink_relation"), (result) => {
-    if (result) {
-      const relation = this.relations[index];
-      const feature = this.getEditingLayer().getSource().getFeatureById(relation.id);
-      const originalRelation = feature.clone();
-      feature.set(ownField, null);
-      this.getCurrentWorkflowData().session.pushUpdate(this._layerId, feature, originalRelation);
-      this.relations.splice(index, 1);
-      d.resolve(result);
-    } else {
-      d.reject(result);
-    }
-  });
+  const unlink = ()=>{
+    const relation = this.relations[index];
+    const feature = this.getEditingLayer().getSource().getFeatureById(relation.id);
+    const originalRelation = feature.clone();
+    feature.set(ownField, null);
+    this.getCurrentWorkflowData().session.pushUpdate(this._layerId, feature, originalRelation);
+    this.relations.splice(index, 1);
+    d.resolve(true);
+  };
+  if (dialog) {
+    GUI.dialog.confirm(t("editing.messages.unlink_relation"), (result) => {
+      if (result) unlink() ;
+      else d.reject(false);
+    })
+  } else unlink();
+
   return d.promise();
 };
 
@@ -477,8 +480,6 @@ proto.getCurrentWorkflowData = function() {
   return this.getEditingService().getCurrentWorkflowData();
 };
 
-// mi server per avere un riferimento al worflow attuale
-// così da poter inserire le modifiche della relazione al current workflow
 proto._createWorkflowOptions = function(options={}) {
   const {ownField} = this.getEditingService()._getRelationFieldsFromRelation({
     layerId: this._layerId,
@@ -565,9 +566,7 @@ proto.relationFields = function(relation) {
   const attributes = [];
   const originalRelation = this._getRelationFeature(relation.id);
   relation.fields.forEach((field) => {
-    let value = field.value;
-    if (field.name === originalRelation.getPk() && originalRelation.isNew() && !field.editable)
-      value = null;
+    const value = (field.name === originalRelation.getPk() && originalRelation.isNew() && !field.editable) ? null : field.value;
     attributes.push({label: field.label, value: value})
   });
   return attributes

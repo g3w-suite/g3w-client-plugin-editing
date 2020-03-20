@@ -30,9 +30,9 @@ proto.run = function(inputs, context) {
   switch (originalLayer.getType()) {
     case Layer.LayerTypes.VECTOR:
       let geometryType;
-      if (originalLayer.getEditingGeometryType() == Geometry.GeometryTypes.LINE)
+      if (originalLayer.getEditingGeometryType() === Geometry.GeometryTypes.LINE)
         geometryType = 'LineString';
-      else if (originalLayer.getEditingGeometryType() == Geometry.GeometryTypes.MULTILINE)
+      else if (originalLayer.getEditingGeometryType() === Geometry.GeometryTypes.MULTILINE)
         geometryType = 'MultiLineString';
       else
         geometryType = originalLayer.getEditingGeometryType();
