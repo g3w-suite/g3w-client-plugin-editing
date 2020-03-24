@@ -735,7 +735,9 @@ proto.getRelationsByFeature = async function(relation, feature) {
           const requestOptions = {
             editing: true,
             type: 'table',
-            filter
+            filter:{
+              field: filter
+            }
           };
           session.start(requestOptions).then((promise) => {
             promise.then((features) => {
