@@ -48,6 +48,7 @@ proto._generateFormId = function(layerName) {
 };
 
 proto.stop = function() {
+  console.log(this._isContentChild, 'table')
   this._isContentChild ? GUI.popContent() : GUI.closeForm();
 };
 

@@ -331,6 +331,25 @@ proto.emitEventToParentWorkFlow = function(type='set-main-component', options={}
   this._parentWorkFlow.getContextService().getEventBus().$emit(type, options)
 };
 
+// funzione che screa lo stile delle relazioni dipendenti riconoscibili con il colore del padre
+proto._getRelationAsFatherStyleColor = function(type) {
+  const fatherLayer = this.getEditingService().getEditingLayer(this._mainLayerId);
+  const fatherLayerStyle = fatherLayer.getStyle();
+  let fatherLayerStyleColor;
+  switch (type) {
+    case 'Point':
+      fatherLayerStyleColor = fatherLayerStyle.getImage() && fatherLayerStyle.getImage().getFill();
+      break;
+    case 'Line':
+      fatherLayerStyleColor = fatherLayerStyle.getStroke() || fatherLayerStyle.getFill();
+      break;
+    case 'Polygon':
+      fatherLayerStyleColor = fatherLayerStyle.getFill() || fatherLayerStyle.getStroke();
+      break;
+  }
+  return fatherLayerStyleColor && fatherLayerStyleColor.getColor() || '#000000';
+};
+
 proto.addRelation = function() {
   GUI.setModal(false);
   const workflow = this._getAddFeatureWorkflow();
@@ -380,24 +399,6 @@ proto.addRelation = function() {
     });
 };
 
-// funzione che screa lo stile delle relazioni dipendenti riconoscibili con il colore del padre
-proto._getRelationAsFatherStyleColor = function(type) {
-  const fatherLayer = this.getEditingService().getEditingLayer(this._mainLayerId);
-  const fatherLayerStyle = fatherLayer.getStyle();
-  let fatherLayerStyleColor;
-  switch (type) {
-    case 'Point':
-      fatherLayerStyleColor = fatherLayerStyle.getImage() && fatherLayerStyle.getImage().getFill();
-      break;
-    case 'Line':
-      fatherLayerStyleColor = fatherLayerStyle.getStroke() || fatherLayerStyle.getFill();
-      break;
-    case 'Polygon':
-      fatherLayerStyleColor = fatherLayerStyle.getFill() || fatherLayerStyle.getStroke();
-      break;
-  }
-  return fatherLayerStyleColor && fatherLayerStyleColor.getColor() || '#000000';
-};
 
 proto.linkRelation = function() {
   const workflow = this._getLinkFeatureWorkflow();
@@ -408,26 +409,33 @@ proto.linkRelation = function() {
     layerId: this._layerId,
     relation: this.relation
   });
-  workflow.start(options)
-    .then((outputs) => {
-      const relation = outputs.features[0];
-      const relationAlreadyLinked = this.relations.find(rel => rel.id === relation.getId());
-      if (!relationAlreadyLinked) {
-        const originalRelation = relation.clone();
-        relation.set(ownField, this._currentFeatureRelationFieldValue);
-        this.getCurrentWorkflowData().session.pushUpdate(this._layerId , relation, originalRelation);
-        this.relations.push(this._createRelationObj(relation));
-        this.emitEventToParentWorkFlow();
-      } else GUI.notify.warning(t("editing.relation_already_added"));
-    })
-    .fail((err) => {
-      session.rollback();
-    })
-    .always(() =>{
-      workflow.stop();
-      GUI.hideContent(false, percContent);
-      this._unbindEscKeyUp()
-    });
+  this.getEditingService().getLayersDependencyFeatures(this._mainLayerId, {
+    relations: [this.relation],
+    feature: this.getCurrentWorkflowData().feature,
+    operator: 'not'
+  }).then(()=>{
+    workflow.start(options)
+      .then((outputs) => {
+        const relation = outputs.features[0];
+        const relationAlreadyLinked = this.relations.find(rel => rel.id === relation.getId());
+        if (!relationAlreadyLinked) {
+          const originalRelation = relation.clone();
+          relation.set(ownField, this._currentFeatureRelationFieldValue);
+          this.getCurrentWorkflowData().session.pushUpdate(this._layerId , relation, originalRelation);
+          this.relations.push(this._createRelationObj(relation));
+          this.emitEventToParentWorkFlow();
+        } else GUI.notify.warning(t("editing.relation_already_added"));
+      })
+      .fail((err) => {
+        session.rollback();
+      })
+      .always(() =>{
+        GUI.hideContent(false, percContent);
+        this._unbindEscKeyUp();
+        workflow.stop();
+      });
+  })
+
 };
 
 proto._checkIfExternalFieldRequired = function() {

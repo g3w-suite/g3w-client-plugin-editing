@@ -160,7 +160,6 @@ function PanelComponent(options) {
     const d = $.Deferred();
     this._service.stop()
       .then(() => {
-
         this.unmount = function() {
           base(this, 'unmount')
             .then(() => {

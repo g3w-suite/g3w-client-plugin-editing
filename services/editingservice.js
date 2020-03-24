@@ -559,6 +559,7 @@ proto.stop = function() {
     $.when.apply(this, commitpromises)
       .always(() => {
         this._toolboxes.forEach((toolbox) => {
+          console.log(stop)
           // stop toolbox
           toolbox.stop();
         });
@@ -670,12 +671,12 @@ proto.createEditingDataOptions = function(type, options={}) {
       layerId,
       relation
     });
-
-    filter = {
-      field: {
-        [ownField]: pk === relationField ? feature.getId() : feature.get(relationField)
+    if (options.operator !== 'not')
+      filter = {
+        field: {
+          [ownField]: pk === relationField ? feature.getId() : feature.get(relationField)
+        }
       }
-    }
   }
   return {
     editing: true,
@@ -710,23 +711,13 @@ proto.getLayersDependencyFeaturesFromSource = function({layerId, relation, featu
 // fa lo start di tutte le dipendenze del layer legato alla toolbox che si è avviato
 proto.getLayersDependencyFeatures = function(layerId, opts={}) {
   const promises = [];
-  // vado a recuperare le relazioni (figli al momento) di quel paricolare layer
-  /*
-   IMPORTANTE: PER EVITARE PROBLEMI È IMPORTANTE CHE I LAYER DIPENDENTI SIANO A SUA VOLTA EDITABILI
-   */
   const layer = this.getLayerById(layerId);
-  const relations = layer.getChildren().length && layer.getRelations() ? this._filterRelationsInEditing({
+  const relations = opts.relations || layer.getChildren().length && layer.getRelations() ? this._filterRelationsInEditing({
     relations: layer.getRelations().getArray(),
     layerId
   }) : [];
-  /*
-    * qui andrò a verificare se stata istanziata la sessione altrimenti vienne creata
-    * se la sessione è attiva altrimenti viene attivata
-    * */
-  //cerco prima tra i toolbox se presente
 
   relations.forEach((relation) => {
-
     const id = relation.getFather() === layerId ? relation.getChild(): relation.getFather();
     const promise = new Promise((resolve) => {
       const type = this.getLayerById(id).getType();
