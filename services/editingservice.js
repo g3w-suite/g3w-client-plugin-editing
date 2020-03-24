@@ -12,6 +12,7 @@ const Layer = g3wsdk.core.layer.Layer;
 const GUI = g3wsdk.gui.GUI;
 const ToolBoxesFactory = require('../toolboxes/toolboxesfactory');
 const t = g3wsdk.core.i18n.tPlugin;
+const tMain = g3wsdk.core.i18n.t;
 const CommitFeaturesWorkflow = require('../workflows/commitfeaturesworkflow');
 
 function EditingService() {
@@ -1268,7 +1269,9 @@ proto.commit = function(close=false) {
                 }
                 resolve()
               }, (error) => {
-                console.log(error)
+                if (error && error.status && error.status == '400')
+                  GUI.notify.error(error.responseText);
+                else GUI.notify.error(tMain('info.server_error'))
               })
               .always(() => {
                 workflow.stop();
