@@ -86,8 +86,7 @@ function EditingService() {
       id: 'editing',
       queryable: false // lo setto a false così che quando faccio la query (controllo) non prendo anche questi
     });
-    //add edting layer store to mapstoreregistry
-    MapLayersStoreRegistry.addLayersStore(this._layersstore);
+
     // setto la configurazione del plugin
     this.config = config;
     // oggetto contenente tutti i layers in editing
@@ -148,7 +147,7 @@ function EditingService() {
   };
 
   this._ready = function() {
-    // set toolbox colors
+    MapLayersStoreRegistry.addLayersStore(this._layersstore);
     this.setLayersColor();
     // after sadd layers to layerstore
     const layers = this.getLayers();
