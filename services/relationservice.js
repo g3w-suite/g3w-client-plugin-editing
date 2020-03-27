@@ -399,7 +399,6 @@ proto.addRelation = function() {
     });
 };
 
-
 proto.linkRelation = function() {
   const workflow = this._getLinkFeatureWorkflow();
   const percContent = this._bindEscKeyUp(workflow);
