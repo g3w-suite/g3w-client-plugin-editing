@@ -5,9 +5,7 @@ const GUI = g3wsdk.gui.GUI;
 const PickFeatureInteraction = g3wsdk.ol.interactions.PickFeatureInteraction;
 
 
-// classe  per l'aggiungere una relazione
-function LinkRelationTask(options) {
-  options = options || {};
+function LinkRelationTask(options={}) {
   base(this, options);
 }
 
@@ -15,30 +13,37 @@ inherit(LinkRelationTask, EditingTask);
 
 const proto = LinkRelationTask.prototype;
 
-// metodo eseguito all'avvio del tool
 proto.run = function(inputs, context) {
   const d = $.Deferred();
   GUI.setModal(false);
-  const originalLayer = context.layer;
-  const layerType = originalLayer.getType();
-  //var style = this.editor._editingVectorStyle ? this.editor._editingVectorStyle.edit : null;
-  // vado a settare i layers su cui faccio l'interacion agisce
   const editingLayer = inputs.layer;
-  if (layerType === 'vector') {
+  this._originalLayerStyle = editingLayer.getStyle();
+  const beforeRun = context.beforeRun;
+  const promise = beforeRun && typeof beforeRun === 'function' ? beforeRun() : Promise.resolve();
+  const {field, value, pk} = context.exclude;
+  const style = context.style;
+  this._features = editingLayer.getSource().getFeatures();
+  this._features = field ? this._features.filter(feature => {
+    return  pk ? feature.getId() != value : feature.get(field) != value;
+  }) : this._features;
+  style && this._features.forEach(feature =>{
+    feature.setStyle(style)
+  });
+  promise.then(()=> {
     this.pickFeatureInteraction = new PickFeatureInteraction({
-      layers: [editingLayer]
+      layers: [editingLayer],
+      features: this._features
     });
-    // aggiungo
     this.addInteraction(this.pickFeatureInteraction);
-    // gestisco l'evento
-    this.pickFeatureInteraction.on('picked', function(e) {
+    this.pickFeatureInteraction.on('picked', (e) => {
       const relation = e.feature;
       inputs.features.push(relation);
       GUI.setModal(true);
       d.resolve(inputs);
     });
-  }
-
+  }).catch(()=>{
+    d.reject();
+  });
   return d.promise()
 };
 
@@ -46,7 +51,12 @@ proto.run = function(inputs, context) {
 proto.stop = function() {
   GUI.setModal(true);
   this.removeInteraction(this.pickFeatureInteraction);
+  this._features.forEach(feature => {
+    feature.setStyle(this._originalLayerStyle);
+  });
   this.pickFeatureInteraction = null;
+  this._features = null;
+  this._originalLayerStyle = null;
   return true;
 };
 

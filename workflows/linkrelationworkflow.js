@@ -1,10 +1,9 @@
-var inherit = g3wsdk.core.utils.inherit;
-var base =  g3wsdk.core.utils.base;
-var EditingWorkflow = require('./editingworkflow');
-var LinkRelationStep = require('./steps/linkrelationstep');
+const inherit = g3wsdk.core.utils.inherit;
+const base =  g3wsdk.core.utils.base;
+const EditingWorkflow = require('./editingworkflow');
+const LinkRelationStep = require('./steps/linkrelationstep');
 
-function LinkRelationWorflow(options) {
-  options = options || {};
+function LinkRelationWorflow(options={}) {
   options.steps = [new LinkRelationStep()];
   base(this, options);
 }

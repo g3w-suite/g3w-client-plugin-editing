@@ -89,7 +89,6 @@ styles[ol.geom.GeometryType.POLYGON] = _.concat(styles[ol.geom.GeometryType.POLY
 styles[ol.geom.GeometryType.GEOMETRY_COLLECTION] = _.concat(styles[ol.geom.GeometryType.GEOMETRY_COLLECTION],styles[ol.geom.GeometryType.LINE_STRING]);
 
 proto.run = function(inputs, context) {
-  const self = this;
   const d = $.Deferred();
   const editingLayer = inputs.layer;
   const originaLayer = context.layer;
@@ -109,46 +108,56 @@ proto.run = function(inputs, context) {
     layer: editingLayer
   });
   this.addInteraction(this._deleteInteraction);
-  this._deleteInteraction.on('deleteend', function(e) {
+  this._deleteInteraction.on('deleteend', (e) => {
     const feature = e.features.getArray()[0];
     const EditingService = require('../../../services/editingservice');
     const RelationService = require('../../../services/relationservice');
-    const relations = originaLayer.getRelations() ? originaLayer.getRelations().getArray() : [];
-    const relationsInEditing = EditingService.getRelationsInEditing({
+    const relations = EditingService._filterRelationsInEditing({
       layerId,
-      relations,
-      feature,
-      isNew:feature.isNew()
-    });
-    inputs.features = [feature];
-    relationsInEditing.forEach((relationInEditing) => {
-      const {relation, relations} = relationInEditing;
-      let updateRelation = true;
-      const relationService = new RelationService(layerId, {
-        relation,
-        relations
+      relations: originaLayer.getRelations() ? originaLayer.getRelations().getArray() : []
+    }).filter(relation => {
+      const relationId = EditingService._getRelationId({
+        layerId,
+        relation
       });
-      const relationId = relation.child !== layerId ? relation.child : relation.father;
       const relationLayer = EditingService.getLayerById(relationId);
       const {ownField} = EditingService._getRelationFieldsFromRelation({
         layerId: relationId,
         relation
       });
-      relationLayer.getEditingFields().forEach((field) => {
-        if (field.name === ownField && field.validate.required)
-          updateRelation = false;
+      const field = relationLayer.getEditingFields().find((field) => {
+        return field.name === ownField;
       });
-      if (updateRelation) {
+      return !field.validate.required;
+    });
+    const promise = relations.length ? EditingService.getLayersDependencyFeatures(layerId, {
+      feature,
+      relations
+    }) : Promise.resolve();
+    promise.then(() => {
+      const relationsInEditing = EditingService.getRelationsInEditing({
+        layerId,
+        relations,
+        feature,
+      });
+      inputs.features = [feature];
+      relationsInEditing.forEach((relationInEditing) => {
+        const {relation, relations} = relationInEditing;
+        const relationService = new RelationService(layerId, {
+          relation,
+          relations
+        });
         const relationsLength = relations.length;
         for (let index = 0; index < relationsLength ; index++) {
           relationService.unlinkRelation(0, false)
         }
-      }
-    });
-    editingLayer.getSource().removeFeature(feature);
-    self._selectInteraction.getFeatures().remove(feature);
-    session.pushDelete(layerId, feature);
-    d.resolve(inputs);
+      });
+      editingLayer.getSource().removeFeature(feature);
+      this._selectInteraction.getFeatures().remove(feature);
+      session.pushDelete(layerId, feature);
+      d.resolve(inputs);
+    })
+
   });
   return d.promise();
 };

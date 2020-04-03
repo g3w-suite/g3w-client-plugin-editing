@@ -50,23 +50,18 @@ proto.start = function() {
       this.emit('deactive', index)
     });
     this._op.start(options)
-      .then((outputs) => {
+      .then(() => {
         this._session.save()
           .then(() => {});
       })
-      .fail((error) =>  {
-        const EditingService = require('../services/editingservice');
+      .fail(() =>  {
         this._session.rollback()
-          .then((relationsChanges) => {
-            EditingService.rollbackRelations(relationsChanges);
-          })
+          .then(() => {})
       })
       .always(() => {
         options.inputs.features = [];
-        if (this._session.getEditor().getLayer().getType() != 'table')
-          startOp(options);
-        else
-          this.stop();
+        if (this._session.getEditor().getLayer().getType() !== 'table') startOp(options);
+        else this.stop();
       })
   };
   if (this._op) {
@@ -80,7 +75,7 @@ proto.stop = function(force=false) {
   if (this._op) {
     this._op.stop(force)
       .then(() => {})
-      .fail((err) => {
+      .fail(() => {
         this._session.rollback();
       })
       .always(() => {

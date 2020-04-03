@@ -174,6 +174,7 @@ proto.run = function(inputs, context) {
     context,
     promise: d
   });
+  this.disableSidebar(true);
   return d.promise();
 };
 
@@ -182,7 +183,7 @@ proto._generateFormId = function(layerName) {
 };
 
 proto.stop = function() {
-  console.log(this._isContentChild)
+  this.disableSidebar(false);
   this._isContentChild ? GUI.popContent() : GUI.closeForm();
 };
 

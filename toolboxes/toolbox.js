@@ -32,11 +32,9 @@ function ToolBox(options={}) {
   this._tools.forEach((tool) => {
     toolsstate.push(tool.getState())
   });
-  //sessione che permette di gestire tutti i movimenti da parte
-  // dei tools del toolbox durante l'editing del layer
-  //creo la sessione passandogli l'editor
+
   this._session = new Session({
-    id: options.id, // contiene l'id del layer
+    id: options.id,
     editor: this._editor,
     //in case of table or not ol layer i have to set provider to get data
     featuresstore: this._layerType === Layer.LayerTypes.VECTOR ? new OlFeaturesStore(): new FeaturesStore({
@@ -44,16 +42,11 @@ function ToolBox(options={}) {
     }),
     add: this._layerType !== Layer.LayerTypes.TABLE // in case of table adding is not necessary
   });
-  // opzione per recuperare le feature
   this._getFeaturesOption = {};
-  // stato della history
   const historystate = this._session.getHistory().state;
   const sessionstate = this._session.state;
-  // stato del toolbox;
   this.state = {
     id: options.id,
-    // colore del layer (darà il colore alla maschera) e quindi
-    // delle feature visualizzate sulla mappa
     color: options.color || 'blue',
     title: options.title || "Edit Layer",
     loading: false,
@@ -64,32 +57,28 @@ function ToolBox(options={}) {
     },
     toolsoftool: [], // tools to show when a task request this
     tools: toolsstate,
-    selected: false, //proprieà che mi server per switchare tra un toolbox e un altro
-    activetool: null, // tiene conto del tool attivo corrente
+    selected: false,
+    activetool: null,
     editing: {
-      session: sessionstate, // STATE DELLA SESSIONE
-      history: historystate,// assegno lo state della history
+      session: sessionstate,
+      history: historystate,
       on: false,
-      dependencies: [], // array di id dei toolbox dipendenti, utili per accendere spendere editing e chiedere il commit
+      dependencies: [],
       relations: [],
       father: false,
       canEdit: true
     },
     layerstate: this._layer.state
   };
-  //vado a settare la sessione ad ogni tool di quel toolbox
-  // e lo stesso toolbox
+
   this._tools.forEach((tool) => {
     tool.setSession(this._session);
   });
 
-  // in ascolto dell'onafter start della sessione così se avviata
-  // vado ad associare le features del suo featuresstore al ol.layer.Vector
+
   this._session.onafter('stop', () => {
     const EditingService = require('../services/editingservice');
-    //vado a fermare la sessione dei figli
     EditingService.stopSessionChildren(this.state.id);
-    // vado a unregistrare gli eventi
     this._unregisterGetFeaturesEvent();
   });
 
@@ -104,9 +93,7 @@ function ToolBox(options={}) {
     this._registerGetFeaturesEvent(this._getFeaturesOption);
   });
 
-  // mapservice mi servirà per fare richieste al server sulle features (bbox) quando agisco sull mappa
   this._mapService = GUI.getComponent('map').getService();
-  //eventi per catturare le feature
   this._getFeaturesEvent = {
     event: null,
     fnc: null,
@@ -175,10 +162,10 @@ proto.addDependency = function(dependency) {
 
 proto._setEditingLayerSource = function() {
   const featuresstore = this._session.getFeaturesStore();
-  const source = (this._layerType === Layer.LayerTypes.VECTOR) ?
-    new ol.source.Vector({features: featuresstore.getFeaturesCollection()}) :
-    featuresstore;
-  this._editingLayer.setSource(source);
+ if (this._layerType === Layer.LayerTypes.VECTOR)  {
+   const source =  new ol.source.Vector({features: featuresstore.getFeaturesCollection()});
+   this._editingLayer.setSource(source);
+ }
 };
 
 proto.start = function() {
@@ -186,9 +173,10 @@ proto.start = function() {
   const EventName = 'start-editing';
   const d = $.Deferred();
   const id = this.getId();
-  // vado a recuperare l'oggetto opzioni data per poter richiedere le feature al provider
   if (this._layerType)
-  this._getFeaturesOption = EditingService.createEditingDataOptions(this._layerType);
+  this._getFeaturesOption = EditingService.createEditingDataOptions(this._layerType, {
+    layerId: this.getId()
+  });
   const handlerAfterSessionGetFeatures = (promise) => {
     this.emit(EventName);
     EditingService.runEventHandler({
@@ -248,14 +236,11 @@ proto.getFeaturesOption = function() {
   return this._getFeaturesOption;
 };
 
-// funzione che disabiliterà
 proto.stop = function() {
   const EventName  = 'stop-editing';
-  // le sessioni dipendenti per poter eseguier l'editing
   const d = $.Deferred();
   this.disableCanEditEvent && this.disableCanEditEvent();
   if (this._session && this._session.isStarted()) {
-    //vado a verificare se  c'è un padre in editing
     const EditingService = require('../services/editingservice');
     const is_there_a_father_in_editing = EditingService.fatherInEditing(this.state.id);
     if (!is_there_a_father_in_editing) {
@@ -266,9 +251,7 @@ proto.stop = function() {
           this.state.enabled = false;
           this.state.loading = false;
           this._getFeaturesOption = {};
-          // spengo il tool attivo
           this.stopActiveTool();
-          // seci sono tool attivi vado a spengere
           this._setToolsEnabled(false);
           this.clearToolboxMessages();
           this._setEditingLayerSource();
@@ -277,15 +260,12 @@ proto.stop = function() {
           d.resolve(true)
         })
         .fail((err) => {
-          // mostro un errore a video o tramite un messaggio nel pannello
           d.reject(err)
         }).always(()=> {
           this.setSelected(false);
         })
     } else {
-      // spengo il tool attivo
       this.stopActiveTool();
-      // seci sono tool attivi vado a spengere
       this.state.editing.on = false;
       this._setToolsEnabled(false);
       this.clearToolboxMessages();
@@ -300,12 +280,10 @@ proto.stop = function() {
   return d.promise();
 };
 
-//funzione salvataggio modifiche
 proto.save = function () {
   this._session.commit();
 };
 
-// unregistra eventi che sono legati al getFeatures
 proto._unregisterGetFeaturesEvent = function() {
   switch(this._layerType) {
     case 'vector':
@@ -483,15 +461,11 @@ proto.enableTools = function(bool) {
   })
 };
 
-// funzione che attiva il tool
 proto.setActiveTool = function(tool) {
-  // prima stoppo l'eventuale active tool
   this.stopActiveTool(tool)
     .then(() => {
       this.clearToolsOfTool();
-      // faccio partire lo start del tool
       this.state.activetool = tool;
-      // registro l'evento sul workflow
       tool.once('settoolsoftool', (tools) => {
         tools.forEach((tool) => {
           this.state.toolsoftool.push(tool);
@@ -578,8 +552,6 @@ proto.getEditor = function() {
 proto.setEditor = function(editor) {
   this._editor = editor;
 };
-
-//PARTE DEDICATA ALLE RELAZIONI
 
 proto.hasChildren = function() {
   return this._layer.hasChildren();

@@ -12,6 +12,7 @@ const serverErrorParser= g3wsdk.core.errors.parsers.Server;
 const ToolBoxesFactory = require('../toolboxes/toolboxesfactory');
 const t = g3wsdk.core.i18n.tPlugin;
 const CommitFeaturesWorkflow = require('../workflows/commitfeaturesworkflow');
+const RelationService = require('./relationservice');
 import API from '../api'
 
 function EditingService() {
@@ -62,35 +63,25 @@ function EditingService() {
     this._projectType = config.project_type;
     this._layersstore = new LayersStore({
       id: 'editing',
-      queryable: false // lo setto a false così che quando faccio la query (controllo) non prendo anche questi
+      queryable: false
     });
     //add edting layer store to mapstoreregistry
     MapLayersStoreRegistry.addLayersStore(this._layersstore);
-    // setto la configurazione del plugin
     this.config = config;
-    // oggetto contenente tutti i layers in editing
     this._editableLayers = {
       [Symbol.for('layersarray')]: []
     };
-    // contiene tutti i toolbox
     this._toolboxes = [];
-    // restto
     this.state.toolboxes = [];
-    // sono i layer originali caricati dal progetto e messi nel catalogo
     let layers = this._getEditableLayersFromCatalog();
     let editingLayersLenght = layers.length;
-    //ciclo su ogni layers editiabile
     for (const layer of layers) {
       const layerId = layer.getId();
       this._editableLayers[layerId] = {};
-      // vado a chiamare la funzione che mi permette di
-      // estrarre la versione editabile del layer di partenza (es. da imagelayer a vector layer, table layer/tablelayer etc..)
-      //this._vectorUrl && layer.setVectorUrl(this._vectorUrl);
       const editableLayer = layer.getLayerForEditing({
         vectorurl: this._vectorUrl,
         project_type: this._projectType
       });
-      // vado ad aggiungere ai layer editabili
       this._editableLayers[layerId] = editableLayer;
       this._editableLayers[Symbol.for('layersarray')].push(editableLayer);
       const handleReadyConfigurationLayer = () => {
@@ -176,6 +167,10 @@ proto.unsubscribe = function(event, fnc) {
 };
 
 // END API
+
+proto.getMapService = function() {
+  return this._mapService;
+};
 
 proto.fireEvent = function(event, options={}) {
   return new Promise((resolve) => {
@@ -497,7 +492,7 @@ proto.getRelationsByFeature = function({layerId, relation, feature, layerType}={
   const features = this._getFeaturesByLayerId(layerId);
   return features.filter(feature => {
     const pk = feature.getPk();
-    return (pk === ownField) ? feature.getId() === featureValue : feature.get(ownField) === featureValue;
+    return (pk === ownField) ? feature.getId() == featureValue : feature.get(ownField) == featureValue;
   });
 };
 
@@ -545,7 +540,7 @@ proto._cancelOrSave = function(){
 
 proto.stop = function() {
   return new Promise((resolve, reject) => {
-    let commitpromises = [];
+    const commitpromises = [];
     // vado a chiamare lo stop di ogni toolbox
     this._toolboxes.forEach((toolbox) => {
       // vado a verificare se c'è una sessione sporca e quindi
@@ -555,18 +550,16 @@ proto.stop = function() {
         commitpromises.push(this.commit(toolbox, true));
       }
     });
-    // prima di stoppare tutto e chidere panello
     $.when.apply(this, commitpromises)
       .always(() => {
         this._toolboxes.forEach((toolbox) => {
-          console.log(stop)
           // stop toolbox
           toolbox.stop();
         });
         this.clearState();
         this.activeQueryInfo();
-        // serve per poter aggiornare ae applicare le modifice ai layer wms
         this._mapService.refreshMap();
+        RelationService.clear();
         resolve();
     });
   });
@@ -585,19 +578,21 @@ proto.clearState = function() {
 
 proto._filterRelationsInEditing = function({layerId, relations=[]}) {
   return relations.filter(relation => {
-    const isChild = relation.getChild() !== layerId;
-    return this.getLayerById(isChild ? relation.getChild() : relation.getFather() )
+    const relationId = this._getRelationId({
+      layerId,
+      relation
+    });
+    return this.getLayerById(relationId)
   })
 };
 
 // funzione che filtra le relazioni in base a quelle presenti in editing
-proto.getRelationsInEditing = function({layerId, relations, feature, isNew}={}) {
+proto.getRelationsInEditing = function({layerId, relations, feature}={}) {
   let relationsinediting = [];
   let relationinediting;
   relations.forEach((relation) => {
     const relationLayerId = this._getRelationLayerId({layerId, relation});
     if (this.getLayerById(relationLayerId)) {
-      // aggiungo lo state della relazione
       relationinediting = {
         relation: relation.getState(),
         relations: this.getRelationsAttributesByFeature({
@@ -661,11 +656,11 @@ proto._getRelationFieldsFromRelation = function({layerId, relation} = {}) {
 proto.createEditingDataOptions = function(type, options={}) {
   const {feature, relation, layerId} = options;
   let filter;
-  if (!relation && type === Layer.LayerTypes.VECTOR)
+  if (type === Layer.LayerTypes.VECTOR) {
     filter = {
       bbox: this._mapService.getMapBBOX()
     };
-  else if (feature) {
+  } else if (feature) {
     const pk = feature.getPk();
     const {ownField, relationField} = this._getRelationFieldsFromRelation({
       layerId,
@@ -688,10 +683,10 @@ proto.createEditingDataOptions = function(type, options={}) {
 proto._getFeaturesByLayerId = function(layerId) {
   const layerType = this.getLayerById(layerId).getType();
   const editingLayer = this.getEditingLayer(layerId);
-  return layerType === Layer.LayerTypes.VECTOR ? editingLayer.getSource().getFeatures() : editingLayer.getSource().readFeatures();
+  return layerType === Layer.LayerTypes.VECTOR ? editingLayer.getSource().getFeatures() : editingLayer.readEditingFeatures();
 };
 
-proto.getLayersDependencyFeaturesFromSource = function({layerId, relation, feature}={}){
+proto.getLayersDependencyFeaturesFromSource = function({layerId, relation, feature, operator='eq'}={}){
   return new Promise((resolve) => {
     const features = this._getFeaturesByLayerId(layerId);
     const fatherPk = feature.getPk();
@@ -701,24 +696,32 @@ proto.getLayersDependencyFeaturesFromSource = function({layerId, relation, featu
     });
     const featureValue = fatherPk === relationField ? feature.getId() : feature.get(relationField);
     const featureSourcePk = features.length && features[0].getPk();
-    const find = features.find(featureSource => {
-      return featureSourcePk === ownField ? featureSource.getId() === featureValue : featureSource.get(ownField) === featureValue;
-    });
+    const find = operator === 'eq' ? features.find(featureSource => {
+      const featureSourceValue = featureSourcePk === ownField ? featureSource.getId()  : featureSource.get(ownField) ;
+      return featureSourceValue == featureValue;
+    }): false;
     resolve(find);
   })
 };
 
-// fa lo start di tutte le dipendenze del layer legato alla toolbox che si è avviato
+proto._getRelationId = function({layerId, relation}={}) {
+  const fatherId = relation.getFather ? relation.getFather() : relation.father;
+  const childId = relation.getChild ? relation.getChild() : relation.child;
+  return fatherId === layerId ? childId: fatherId;
+};
+
 proto.getLayersDependencyFeatures = function(layerId, opts={}) {
   const promises = [];
   const layer = this.getLayerById(layerId);
-  const relations = opts.relations || layer.getChildren().length && layer.getRelations() ? this._filterRelationsInEditing({
+  const relations = opts.relations ? opts.relations : layer.getChildren().length && layer.getRelations() ? this._filterRelationsInEditing({
     relations: layer.getRelations().getArray(),
     layerId
   }) : [];
-
   relations.forEach((relation) => {
-    const id = relation.getFather() === layerId ? relation.getChild(): relation.getFather();
+    const id = this._getRelationId({
+      layerId,
+      relation
+    });
     const promise = new Promise((resolve) => {
       const type = this.getLayerById(id).getType();
       opts.relation = relation;
@@ -740,22 +743,23 @@ proto.getLayersDependencyFeatures = function(layerId, opts={}) {
           this.getLayersDependencyFeaturesFromSource({
             layerId: id,
             relation,
-            feature: opts.feature
+            feature: opts.feature,
+            operator: opts.operator
           }).then(find =>{
             if (find) {
               resolve(id);
               toolbox.stopLoading();
-            } else session.getFeatures(options)
-              .always((promise) => {
+            } else {
+              session.getFeatures(options).always((promise) => {
                 promise.always(()=>{
                   toolbox.stopLoading();
                   resolve(id);
                 });
               });
+            }
           })
         }
       } else {
-        // altrimenti per quel layer la devo instanziare
         try {
           const layer = this._layersstore.getLayerById(id);
           const editor = layer.getEditor();
@@ -781,20 +785,20 @@ proto.getLayersDependencyFeatures = function(layerId, opts={}) {
 };
 
 proto._applyChangesToNewRelationsAfterCommit = function(relationsResponse) {
-  for (relationLayerId in relationsResponse) {
+  for (const relationLayerId in relationsResponse) {
     const response = relationsResponse[relationLayerId];
     const layer = this.getLayerById(relationLayerId);
-    const sessionFeaturesStore = this.getToolBoxById(relationLayerId).getSession().getFeaturesStore();
-    const featureStore = layer.getSource();
-    const features = _.clone(sessionFeaturesStore.readFeatures());
+    const editingLayerSource = this.getEditingLayer(relationLayerId).getEditingSource();
+    const features = editingLayerSource.readFeatures();
     features.forEach((feature) => {
       feature.clearState();
     });
-    featureStore.setFeatures(features);
+    layer.getSource().setFeatures(features);
     layer.applyCommitResponse({
       response,
       result: true
     });
+    editingLayerSource.setFeatures(layer.getSource().readFeatures());
   }
 };
 

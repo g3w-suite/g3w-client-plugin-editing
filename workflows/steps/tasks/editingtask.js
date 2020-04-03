@@ -19,6 +19,10 @@ inherit(EditingTask, Task);
 
 const proto = EditingTask.prototype;
 
+proto.disableSidebar = function(bool=true) {
+  !this._isContentChild && GUI.disableSideBar(bool);
+};
+
 proto.getEditingService = function() {
   this._editingServive = this._editingServive || require('../../../services/editingservice');
   return this._editingServive;
