@@ -10,12 +10,12 @@ const TableService = function(options = {}) {
   this._foreignKey = options.foreignKey;
   this._workflow = null;
   this._deleteFeaturesIndexes = [];
-  this._isrelation = options.isrelation  || false;
+  this._isrelation = options.isrelation || false;
   this.state = {
     headers: options.headers || [],
     features: [],
     title: options.title || 'Link relation',
-    isrelation: this._isrelation
+    isrelation: options.push
   };
 
   this.init = function() {
@@ -25,7 +25,8 @@ const TableService = function(options = {}) {
     );
     // set values
     if (this._features.length) {
-      const properties = Object.keys(this._features[0].getProperties());
+      const baseFeature = this._features[0];
+      const properties = Object.keys(baseFeature.getProperties());
       this.state.headers = this.state.headers.filter(header => properties.indexOf(header.name) !== -1);
       this.state.features = this._features.map(feature => feature.getProperties());
     }
@@ -57,16 +58,29 @@ proto.cancel = function() {
 };
 
 proto.deleteFeature = function(index) {
-  GUI.dialog.confirm(t('editing.messages.delete_feature'), (result) => {
-    if (result) {
-      const feature = this._features[index];
-      const session = this._context.session;
-      const layerId = this._inputs.layer.getId();
-      this._inputs.layer.getEditingSource().removeFeature(feature);
-      session.pushDelete(layerId, feature);
-      this.state.features.splice(index, 1);
-    }
-  });
+  const EditingService = require('../services/editingservice');
+  const layer = this._inputs.layer;
+  const layerId = layer.getId();
+  const childRelations = layer.getChildren();
+  const relationinediting = childRelations.length &&  EditingService._filterRelationsInEditing({
+    layerId,
+    relations: layer.getRelations().getArray()
+  }).length > 0;
+  return new Promise((resolve, reject) =>{
+    GUI.dialog.confirm(`<h4>${t('editing.messages.delete_feature')}</h4>
+                        <div style="font-size:1.2em;">${ relationinediting ?t('editing.messages.delete_feature_relations') : ''}</div>`, (result) => {
+      if (result) {
+        const feature = this._features[index];
+        const session = this._context.session;
+        const layerId = this._inputs.layer.getId();
+        this._inputs.layer.getEditingSource().removeFeature(feature);
+        session.pushDelete(layerId, feature);
+        this.state.features.splice(index, 1);
+        resolve()
+      } else reject()
+    });
+  })
+
 };
 
 proto.editFeature = function(index) {
@@ -91,6 +105,13 @@ proto.editFeature = function(index) {
     .fail((err) => {})
 };
 
+proto.linkFeatures = function(featuresIndex=[]){
+  const features = featuresIndex.map(index => this._features[index]);
+  this._promise.resolve({
+    features
+  })
+};
+
 proto.linkFeature = function(index) {
   const feature = this._features[index];
   this._promise.resolve({
@@ -100,7 +121,7 @@ proto.linkFeature = function(index) {
 
 proto._setLayout = function() {
   const editing_table_content_height = $('#editing_table').height();
-  return  (editing_table_content_height * 70) / 100;
+  return  (editing_table_content_height * 65) / 100;
 };
 
 

@@ -8,6 +8,8 @@ const Layer = g3wsdk.core.layer.Layer;
 const Session = g3wsdk.core.editing.Session;
 const { debounce } = g3wsdk.core.utils;
 const getScaleFromResolution = g3wsdk.ol.utils.getScaleFromResolution;
+const OlFeaturesStore = g3wsdk.core.layer.features.OlFeaturesStore;
+const FeaturesStore = g3wsdk.core.layer.features.FeaturesStore;
 
 function ToolBox(options={}) {
   base(this);
@@ -27,7 +29,12 @@ function ToolBox(options={}) {
 
   this._session = new Session({
     id: options.id,
-    editor: this._editor
+    editor: this._editor,
+    //in case of table or not ol layer i have to set provider to get data
+    featuresstore: this._layerType === Layer.LayerTypes.VECTOR ? new OlFeaturesStore(): new FeaturesStore({
+      provider: this._editingLayer.getProvider('data')
+    }),
+    add: this._layerType !== Layer.LayerTypes.TABLE // in case of table adding is not necessary
   });
   this._getFeaturesOption = {};
   const historystate = this._session.getHistory().state;
@@ -62,6 +69,7 @@ function ToolBox(options={}) {
     tool.setSession(this._session);
   });
 
+
   this._session.onafter('stop', () => {
     const EditingService = require('../services/editingservice');
     ApplicationState.online && EditingService.stopSessionChildren(this.state.id);
@@ -87,6 +95,7 @@ function ToolBox(options={}) {
       extent: null
     }
   };
+  this._setEditingLayerSource();
 }
 
 inherit(ToolBox, G3WObject);
@@ -145,14 +154,23 @@ proto.addDependency = function(dependency) {
   this.state.editing.dependencies.push(dependency);
 };
 
+proto._setEditingLayerSource = function() {
+  const featuresstore = this._session.getFeaturesStore();
+ if (this._layerType === Layer.LayerTypes.VECTOR)  {
+   const source =  new ol.source.Vector({features: featuresstore.getFeaturesCollection()});
+   this._editingLayer.setSource(source);
+ }
+};
+
 proto.start = function() {
   const EditingService = require('../services/editingservice');
   const EventName = 'start-editing';
   const d = $.Deferred();
   const id = this.getId();
-  // vado a recuperare l'oggetto opzioni data per poter richiedere le feature al provider
   if (this._layerType)
-  this._getFeaturesOption = EditingService.createEditingDataOptions(this._layerType);
+  this._getFeaturesOption = EditingService.createEditingDataOptions(this._layerType, {
+    layerId: this.getId()
+  });
   const handlerAfterSessionGetFeatures = (promise) => {
     this.emit(EventName);
     EditingService.runEventHandler({
@@ -213,32 +231,32 @@ proto.getFeaturesOption = function() {
 };
 
 proto.stop = function() {
-  const EditingService = require('../services/editingservice');
   const EventName  = 'stop-editing';
   const d = $.Deferred();
   this.disableCanEditEvent && this.disableCanEditEvent();
   if (this._session && this._session.isStarted()) {
+    const EditingService = require('../services/editingservice');
     const is_there_a_father_in_editing = EditingService.fatherInEditing(this.state.id);
     if (ApplicationState.online && !is_there_a_father_in_editing) {
       this._session.stop()
-        .then((promise) => {
-          promise.then(()=>{
-            this._start = false;
-            this.state.editing.on = false;
-            this.state.enabled = false;
-            this.state.loading = false;
-            this._getFeaturesOption = {};
-            this.stopActiveTool();
-            this._setToolsEnabled(false);
-            this.clearToolboxMessages();
-            this.setSelected(false);
-            this.emit(EventName);
-            d.resolve(true)
-          }).fail((err) => {
-            d.reject(err)
-          }).always(()=> {
-            this.setSelected(false);
-          })
+        .then(() => {
+          this._start = false;
+          this.state.editing.on = false;
+          this.state.enabled = false;
+          this.state.loading = false;
+          this._getFeaturesOption = {};
+          this.stopActiveTool();
+          this._setToolsEnabled(false);
+          this.clearToolboxMessages();
+          this._setEditingLayerSource();
+          this.setSelected(false);
+          this.emit(EventName);
+          d.resolve(true)
+        })
+        .fail((err) => {
+          d.reject(err)
+        }).always(()=> {
+          this.setSelected(false);
         })
     } else {
       this.stopActiveTool();
@@ -246,6 +264,7 @@ proto.stop = function() {
       this._setToolsEnabled(false);
       this.clearToolboxMessages();
       this._unregisterGetFeaturesEvent();
+      EditingService.stopSessionChildren(this.state.id);
       this.setSelected(false);
     }
   } else {
@@ -430,15 +449,11 @@ proto.enableTools = function(bool) {
   })
 };
 
-// funzione che attiva il tool
 proto.setActiveTool = function(tool) {
-  // prima stoppo l'eventuale active tool
   this.stopActiveTool(tool)
     .then(() => {
       this.clearToolsOfTool();
-      // faccio partire lo start del tool
       this.state.activetool = tool;
-      // registro l'evento sul workflow
       tool.once('settoolsoftool', (tools) => {
         tools.forEach((tool) => {
           this.state.toolsoftool.push(tool);
@@ -525,8 +540,6 @@ proto.getEditor = function() {
 proto.setEditor = function(editor) {
   this._editor = editor;
 };
-
-//PARTE DEDICATA ALLE RELAZIONI
 
 proto.hasChildren = function() {
   return this._layer.hasChildren();

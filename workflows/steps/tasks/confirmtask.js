@@ -7,9 +7,19 @@ const EditingTask = require('./editingtask');
 
 const Dialogs = {
   delete: {
-    fnc: function(inputs) {
+    fnc: function(inputs, context) {
       let d = $.Deferred();
-      GUI.dialog.confirm(tPlugin("editing.messages.delete_feature"), function(result) {
+      const EditingService = require('../../../services/editingservice');
+      const layer = context.layer;
+      const layerId = layer.getId();
+      const childRelations = layer.getChildren();
+      const relationinediting = childRelations.length &&  EditingService._filterRelationsInEditing({
+        layerId,
+        relations: layer.getRelations().getArray()
+      }).length > 0;
+
+      GUI.dialog.confirm(`<h4>${tPlugin('editing.messages.delete_feature')}</h4>
+                        <div style="font-size:1.2em;">${ relationinediting ?tPlugin('editing.messages.delete_feature_relations') : ''}</div>`, (result) => {
         if (result) {
           d.resolve(inputs);
         } else
@@ -69,7 +79,7 @@ inherit(ConfirmTask, EditingTask);
 const proto = ConfirmTask.prototype;
 
 proto.run = function(inputs, context) {
-  return this._dialog.fnc(inputs);
+  return this._dialog.fnc(inputs, context);
 };
 
 proto.stop = function() {

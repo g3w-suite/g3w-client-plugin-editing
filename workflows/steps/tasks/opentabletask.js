@@ -21,13 +21,22 @@ proto.run = function(inputs, context) {
   const headers = originalLayer.getEditingFields();
   this._isContentChild = WorkflowsStack.getLength() > 1;
   const foreignKey = this._isContentChild ? context.excludeFields[0] :  null;
+  const exclude = this._isContentChild && context.exclude;
   const editingLayer = inputs.layer;
-  const features = editingLayer.readEditingFeatures();
+  let features = editingLayer.readEditingFeatures();
+  if (exclude && features.length) {
+    const pk = features[0].getPk();
+    const {value} = exclude;
+    features = features.filter(feature => {
+      const featureValue = foreignKey === pk ? feature.getId() : feature.get(foreignKey);
+      return featureValue != value;
+    })
+  }
   const content = new TableComponent({
     title: `${layerName}`,
     features,
     promise: d,
-    isrelation: this._isContentChild,
+    push: this._isContentChild,
     headers,
     context,
     inputs,
@@ -37,18 +46,20 @@ proto.run = function(inputs, context) {
   GUI.showContent({
     content,
     push: this._isContentChild,
-    showgoback: !features.length, // if no features show back button
+    showgoback: false,
     closable: false
   });
+  this.disableSidebar(true);
   return d.promise();
 };
 
 proto._generateFormId = function(layerName) {
-  return this._formIdPrefix + layerName;
+  return `${this._formIdPrefix}${layerName}`;
 };
 
 proto.stop = function() {
-  this._isContentChild ? GUI.popContent() : GUI.closeForm();
+  this.disableSidebar(false);
+  this._isContentChild ? GUI.popContent() : GUI.closeContent();
 };
 
 module.exports = OpenTableTask;

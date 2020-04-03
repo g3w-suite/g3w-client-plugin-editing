@@ -38,7 +38,9 @@ export default {
     messages: {
       online: "Ora sei di nuovo ONLINE. Puoi slavare le modifiche in modo permanente",
       offline: "Sei OFFLINE. Tutte le modifiche saranno salvate temporaneamente in locale",
+      press_esc: "Premi ESC per tornare indietro",
       delete_feature: "Vuoi eliminare l'elemento selezionato?",
+      delete_feature_relations: "Cancellando una feature con relazioni associate, tale relazioni rimarranno orfane. Si consiglia di gestire tali relazioni prima di cancellare la feature",
       unlink_relation: "Vuoi staccare la relazione?",
       commit_feature: "Vuoi salvare definitivamente le modifiche",
       change_toolbox_relation: "Layer in relazione. Prima di passare ad altri editing è obbligatorio salvare le modifiche correnti.",
@@ -61,13 +63,7 @@ export default {
       table: {
         info: `
                   <div>
-                    Questa è la lista delle relazioni orfane o associate ad altre geometrie.
-                    Clicca sulla singola relazione per associarla alla geometria in editing.
-                  </div>
-                  <div>
-                    <span style="font-weight: bold">
-                      ATTENZIONE
-                    </span>: nel caso in cui la relazione sia attualmente associata ad un'altra geometria, verrà dissociata da questa
+                    Seleziona le relaioni per associarle alla feature in editing.
                   </div>
                 `
       }
@@ -125,9 +121,11 @@ export default {
       }
     },
     messages: {
+      press_esc: "Press ESC to back",
       online: "Back ONLINE. Now you can save your changes on database",
       offline: "You are OFFLINE. All changes are saved locally",
       delete_feature: "Do you want delete selected feature ?",
+      delete_feature_relations: "If feature has bindings relations, these relations become orphans. We suggest to handle these relations before detele this feature",
       unlink_relation: "Do you want unlink relation?",
       commit_feature: "Do you want to save the changes",
       change_toolbox_relation: "Layer has relation/relations. Before switch editing you need to save changes done.",
@@ -151,14 +149,10 @@ export default {
       table: {
         info: `
                   <div>
-                    This is a list of orphan or binded relations to other features.
-                    Click on single relation to link it to current editing feature.
+                    Select relations to link it to current editing feature.
                   </div>
                   <div>
-                    <span style="font-weight: bold">
-                      ATTENTION
-                    </span>: in case of this relation is already bind to another, the previous link is lost
-                  </div>
+               
                 `
       }
     },

@@ -4,8 +4,7 @@ const t = g3wsdk.core.i18n.tPlugin;
 const EditingStep = require('./editingstep');
 const LinkRelationTask = require('./tasks/linkrelationtask');
 
-const LinkRelationStep = function(options) {
-  options = options || {};
+const LinkRelationStep = function(options={}) {
   options.task = new LinkRelationTask();
   options.help = t("editing.steps.help.select_feature_to_relation");
   base(this, options)

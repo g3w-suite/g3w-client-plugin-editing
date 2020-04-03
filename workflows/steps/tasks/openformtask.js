@@ -167,25 +167,23 @@ proto.startForm = function(options = {}) {
   WorkflowsStack.getCurrent().setContextService(formService);
 };
 
-// metodo eseguito all'avvio del tool
 proto.run = function(inputs, context) {
-
   const d = $.Deferred();
   this.startForm({
     inputs,
     context,
     promise: d
   });
+  this.disableSidebar(true);
   return d.promise();
 };
 
-// genera il from id
 proto._generateFormId = function(layerName) {
   return this._formIdPrefix + layerName;
 };
 
-// metodo eseguito alla disattivazione del tool
 proto.stop = function() {
+  this.disableSidebar(false);
   this._isContentChild ? GUI.popContent() : GUI.closeForm();
 };
 

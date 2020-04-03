@@ -74,7 +74,8 @@ const RelationComponent = Vue.extend({
     getValue(value) {
       if (value && typeof  value === 'object' && value.constructor === Object) {
         value = value.value;
-      }
+      } else if (typeof value == 'string' && value.indexOf('_new_') === 0)
+        value = null;
       this.value = value;
       return value;
     },
@@ -116,7 +117,6 @@ const RelationComponent = Vue.extend({
       relation: this.relation,
       relations: this.relations
     });
-    this._service.showRelationStyle();
     this.formeventbus.$on('changeinput', this.updateExternalKeyValueRelations);
   },
   activated() {
@@ -139,9 +139,7 @@ const RelationComponent = Vue.extend({
       $('[data-toggle="tooltip"]').tooltip();
     })
   },
-  destroyed: function() {
-    this._service.hideRelationStyle();
-  }
+  destroyed: function() {}
  });
 
 
