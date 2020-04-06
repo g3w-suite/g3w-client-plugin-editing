@@ -143,7 +143,7 @@ proto.startTool = function(relationtool, index) {
 proto.startTableTool = function(relationtool, index) {
   const d = $.Deferred();
   const relation = this.relations[index];
-  const featurestore = this.getEditingService().getToolBoxById(this._layerId).getSession().getFeaturesStore();
+  const featurestore = this.getLayer().getEditingSource();
   const relationfeature = featurestore.getFeatureById(relation.id);
   const options = this._createWorkflowOptions({
     features: [relationfeature]
