@@ -784,14 +784,15 @@ proto._getRelationFieldsFromRelation = function({layerId, relation} = {}) {
 };
 
 // prendo come opzione il tipo di layer
-proto.createEditingDataOptions = function(filterType='field', options={}) {
-  const {feature, relation, layerId} = options;
+proto.createEditingDataOptions = function(filterType='all', options={}) {
   let filter;
+  if (filterType === 'all') return {editing: true};
+  const {feature, relation, layerId} = options;
   if (filterType === 'bbox') {
     filter = {
       bbox: this._mapService.getMapBBOX()
     };
-  } else if (feature) {
+  } else if (filterType === 'field' && feature) {
     const pk = feature.getPk();
     const {ownField, relationField} = this._getRelationFieldsFromRelation({
       layerId,

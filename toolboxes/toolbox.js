@@ -143,8 +143,8 @@ proto.start = function() {
   const EventName = 'start-editing';
   const d = $.Deferred();
   const id = this.getId();
-  if (this._layerType)
-  this._getFeaturesOption = EditingService.createEditingDataOptions('bbox', {
+  const filterType = this._layerType === Layer.LayerTypes.TABLE ? 'all': 'bbox';
+  this._getFeaturesOption = EditingService.createEditingDataOptions(filterType, {
     layerId: this.getId()
   });
   const handlerAfterSessionGetFeatures = (promise) => {
