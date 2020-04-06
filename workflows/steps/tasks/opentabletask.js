@@ -16,13 +16,13 @@ const proto = OpenTableTask.prototype;
 
 proto.run = function(inputs, context) {
   const d = $.Deferred();
-  const originalLayer = context.layer;
+  const originalLayer = inputs.layer;
   const layerName = originalLayer.getName();
   const headers = originalLayer.getEditingFields();
   this._isContentChild = WorkflowsStack.getLength() > 1;
   const foreignKey = this._isContentChild ? context.excludeFields[0] :  null;
   const exclude = this._isContentChild && context.exclude;
-  const editingLayer = inputs.layer;
+  const editingLayer = originalLayer.getEditingLayer();
   let features = editingLayer.readEditingFeatures();
   if (exclude && features.length) {
     const pk = features[0].getPk();

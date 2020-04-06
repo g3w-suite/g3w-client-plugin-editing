@@ -90,8 +90,8 @@ styles[ol.geom.GeometryType.GEOMETRY_COLLECTION] = _.concat(styles[ol.geom.Geome
 
 proto.run = function(inputs, context) {
   const d = $.Deferred();
-  const editingLayer = inputs.layer;
-  const originaLayer = context.layer;
+  const originaLayer = inputs.layer;
+  const editingLayer = originaLayer.getEditingLayer();
   const layerId = originaLayer.getId();
   const session = context.session;
   this._selectInteraction = new ol.interaction.Select({

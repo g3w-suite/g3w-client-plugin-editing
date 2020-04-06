@@ -445,8 +445,7 @@ proto.redoRelations = function(redoItems) {
 // restituisce il layer che viene utilizzato dai task per fare le modifiche
 // ol.vector nel cso dei vettoriali, tableLayer nel caso delle tabelle
 proto.getEditingLayer = function(id) {
-  let toolbox = this.getToolBoxById(id);
-  return toolbox.getEditingLayer();
+  return this._editableLayers[id].getEditingLayer();
 };
 
 proto._buildToolBoxes = function() {
@@ -640,8 +639,7 @@ proto.loadPlugin = function() {
   return this._load = !!this._getEditableLayersFromCatalog().length; // mi dice se ci sono layer in editing e quindi da caricare il plugin
 };
 
-// funzione che restituisce l'editing layer estratto dal layer del catalogo
-// vectorLayer lel caso di un imageLayere e tablelayer  nel cso di un table lauer
+
 proto.getLayerById = function(layerId) {
   return this._editableLayers[layerId];
 };
@@ -699,7 +697,6 @@ proto.stop = function() {
         this.clearState();
         this.activeQueryInfo();
         this._mapService.refreshMap();
-        RelationService.clear();
         resolve();
     });
   });
@@ -787,10 +784,10 @@ proto._getRelationFieldsFromRelation = function({layerId, relation} = {}) {
 };
 
 // prendo come opzione il tipo di layer
-proto.createEditingDataOptions = function(type, options={}) {
+proto.createEditingDataOptions = function(filterType='field', options={}) {
   const {feature, relation, layerId} = options;
   let filter;
-  if (type === Layer.LayerTypes.VECTOR) {
+  if (filterType === 'bbox') {
     filter = {
       bbox: this._mapService.getMapBBOX()
     };
@@ -809,15 +806,12 @@ proto.createEditingDataOptions = function(type, options={}) {
   }
   return {
     editing: true,
-    type,
     filter
   }
 };
 
 proto._getFeaturesByLayerId = function(layerId) {
-  const layerType = this.getLayerById(layerId).getType();
-  const editingLayer = this.getEditingLayer(layerId);
-  return layerType === Layer.LayerTypes.VECTOR ? editingLayer.getSource().getFeatures() : editingLayer.readEditingFeatures();
+  return this.getLayerById(layerId).readEditingFeatures()
 };
 
 proto.getLayersDependencyFeaturesFromSource = function({layerId, relation, feature, operator='eq'}={}){
@@ -851,20 +845,21 @@ proto.getLayersDependencyFeatures = function(layerId, opts={}) {
     relations: layer.getRelations().getArray(),
     layerId
   }) : [];
+  const online = ApplicationState.online;
   relations.forEach((relation) => {
     const id = this._getRelationId({
       layerId,
       relation
     });
     const promise = new Promise((resolve) => {
-      const type = this.getLayerById(id).getType();
+      const filterType = opts.filterType || 'field';
       opts.relation = relation;
       opts.layerId = id;
-      const options = this.createEditingDataOptions(type, opts);
+      const options = this.createEditingDataOptions(filterType, opts);
       const session = this._sessions[id];
       const toolbox = this.getToolBoxById(id);
       toolbox.startLoading();
-      if (session) {
+      if (online && session) {
         if (!session.isStarted())
           session.start(options)
             .always((promise) => {
@@ -894,46 +889,19 @@ proto.getLayersDependencyFeatures = function(layerId, opts={}) {
           })
         }
       } else {
-        try {
-          const layer = this._layersstore.getLayerById(id);
-          const editor = layer.getEditor();
-          const session = new Session({
-            editor
-          });
-          this._sessions[id] = session;
-          session.start()
-            .always((promise)=>{
-              promise.always(()=>{
-                resolve(id)
-              });
-            })
-        }
-        catch(err) {
-          console.log(err);
-        }
+        this.getLayersDependencyFeaturesFromSource({
+          layerId: id,
+          relation,
+          feature: opts.feature,
+          operator: opts.operator
+        }).then(()=>{
+          resolve(id);
+        })
       }
     });
     promises.push(promise);
   });
   return Promise.all(promises);
-};
-
-proto._applyChangesToNewRelationsAfterCommit = function(relationsResponse) {
-  for (const relationLayerId in relationsResponse) {
-    const response = relationsResponse[relationLayerId];
-    const layer = this.getLayerById(relationLayerId);
-    const editingLayerSource = this.getEditingLayer(relationLayerId).getEditingSource();
-    const features = editingLayerSource.readFeatures();
-    features.forEach((feature) => {
-      feature.clearState();
-    });
-    layer.getSource().setFeatures(features);
-    layer.applyCommitResponse({
-      response,
-      result: true
-    });
-    editingLayerSource.setFeatures(layer.getSource().readFeatures());
-  }
 };
 
 proto.commitDirtyToolBoxes = function(layerId) {
@@ -1036,10 +1004,6 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
       .then((commitItems, response) => {
         if (ApplicationState.online) {
           if (response.result) {
-            let relationsResponse = response.response.new_relations;
-            if (relationsResponse) {
-              this._applyChangesToNewRelationsAfterCommit(relationsResponse);
-            }
             dialog && GUI.notify.success(t("editing.messages.saved"));
             if (layerType === 'vector')
               this._mapService.refreshMap({force: true});

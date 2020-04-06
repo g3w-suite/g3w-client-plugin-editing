@@ -11,7 +11,6 @@ const RELATIONTOOLS = {
   'Polygon': ['movefeature', 'movevertex']
 };
 
-let RELATIONSREQUESTFILTER = {};
 
 // servizio che in base alle relazioni (configurazione)
 const RelationService = function(layerId, options = {}) {
@@ -408,7 +407,8 @@ proto.linkRelation = function() {
   const dependencyOptions = {
     relations: [this.relation],
     feature: this.getCurrentWorkflowData().feature,
-    operator: 'not'
+    operator: 'not',
+    filterType: isVector ? 'bbox' : 'field'
   };
 
   const getRelationFeatures = () => this.getEditingService().getLayersDependencyFeatures(this._mainLayerId, dependencyOptions);
@@ -422,17 +422,7 @@ proto.linkRelation = function() {
           resolve();
         })
       });
-      let doRequest = true;
-      if (!RELATIONSREQUESTFILTER[this._layerId]) {
-        RELATIONSREQUESTFILTER[this._layerId] = mapService.getMapBBOX();
-      } else {
-        const bbox = mapService.getMapBBOX();
-        const contain = ol.extent.containsExtent(RELATIONSREQUESTFILTER[this._layerId], bbox);
-        if (!contain) {
-          RELATIONSREQUESTFILTER[this._layerId] =  ol.extent.extend(RELATIONSREQUESTFILTER[this._layerId], bbox) ;
-        } else doRequest = false;
-      }
-      doRequest && await getRelationFeatures();
+      await getRelationFeatures();
       mapService.hideMapSpinner();
       GUI.showUserMessage({
         type: 'info',
@@ -546,13 +536,12 @@ proto._createWorkflowOptions = function(options={}) {
     parentFeature: this.getCurrentWorkflowData().feature,
     context: {
       session: this.getCurrentWorkflowData().session,
-      layer: this.getLayer(),
       excludeFields: [ownField],
       fatherValue: this._currentFeatureRelationFieldValue,
     },
     inputs: {
       features: options.features || [],
-      layer: this.getEditingLayer()
+      layer: this.getLayer()
     }
   };
   return workflow_options;
@@ -613,10 +602,6 @@ proto.relationFields = function(relation) {
   return attributes
 };
 
-
-RelationService.clear = function() {
-  RELATIONSREQUESTFILTER = {};
-};
 
 
 module.exports = RelationService;

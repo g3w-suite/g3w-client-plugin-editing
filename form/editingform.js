@@ -14,7 +14,8 @@ function EditingFormComponent(options={}) {
     const feature = relationsOptions.inputs.features[relationsOptions.inputs.features.length-1];
     GUI.setLoadingContent(true);
     EditingService.getLayersDependencyFeatures(layerId, {
-      feature
+      feature,
+      filterType: 'field'
     }).then(()=> {
       relationsOptions.formEventBus = this.getService().getEventBus();
       const service = new EditingFormService(relationsOptions);

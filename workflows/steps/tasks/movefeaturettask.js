@@ -13,10 +13,10 @@ const proto = MoveFeatureTask.prototype;
 
 proto.run = function(inputs, context) {
   const d = $.Deferred();
+  const originalLayer = inputs.layer;
   const session = context.session;
-  const editingLayer = inputs.layer;
+  const editingLayer = originalLayer.geteditingLayer();
   const feature = inputs.features[0];
-  const originalLayer = context.layer;
   const layerId = originalLayer.getId();
   const originalStyle = editingLayer.getStyle();
   const style = new ol.style.Style({

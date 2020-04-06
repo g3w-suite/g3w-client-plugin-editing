@@ -5,12 +5,11 @@ const PickFeatureInteraction = g3wsdk.ol.interactions.PickFeatureInteraction;
 const EditingTask = require('./editingtask');
 
 function ModifyFeatureTask(options={}){
-  this.editor = editor;
   this.drawInteraction = null;
   this._deleteCondition = options.deleteCondition || undefined;
   this._snap = options.snap || null;
   this._snapInteraction = null;
-  base(this, editor);
+  base(this);
 }
 
 inherit(ModifyFeatureTask, EditingTask);

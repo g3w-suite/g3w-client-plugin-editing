@@ -14,9 +14,9 @@ const proto = AddFeatureTableTask.prototype;
 proto.run = function(inputs, context) {
   const d = $.Deferred();
   const session = context.session;
-  const originalLayer = context.layer;
+  const originalLayer = inputs.layer;
   const layerId = originalLayer.getId();
-  const editingLayer = inputs.layer;
+  const editingLayer = originalLayer.getEditingLayer();
   const feature = originalLayer.createNewFeature();
   originalLayer.isPkEditable() ?  feature.setNew() : feature.setTemporaryId();
   editingLayer.getEditingSource().addFeature(feature);

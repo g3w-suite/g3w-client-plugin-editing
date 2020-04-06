@@ -10,7 +10,7 @@ const Dialogs = {
     fnc: function(inputs, context) {
       let d = $.Deferred();
       const EditingService = require('../../../services/editingservice');
-      const layer = context.layer;
+      const layer = inputs.layer;
       const layerId = layer.getId();
       const childRelations = layer.getChildren();
       const relationinediting = childRelations.length &&  EditingService._filterRelationsInEditing({

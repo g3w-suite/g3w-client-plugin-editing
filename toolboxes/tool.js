@@ -35,8 +35,7 @@ proto.start = function() {
       features: []
     },
     context : {
-      session: this._session,
-      layer: this._session.getEditor().getLayer()
+      session: this._session
     }
   };
   this._options = options;
@@ -61,7 +60,7 @@ proto.start = function() {
       })
       .always(() => {
         options.inputs.features = [];
-        if (this._session.getEditor().getLayer().getType() !== 'table') startOp(options);
+        if (this._layer.getType() !== 'table') startOp(options);
         else this.stop();
       })
   };

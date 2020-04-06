@@ -8,16 +8,12 @@ const Layer = g3wsdk.core.layer.Layer;
 const Session = g3wsdk.core.editing.Session;
 const { debounce } = g3wsdk.core.utils;
 const getScaleFromResolution = g3wsdk.ol.utils.getScaleFromResolution;
-const OlFeaturesStore = g3wsdk.core.layer.features.OlFeaturesStore;
-const FeaturesStore = g3wsdk.core.layer.features.FeaturesStore;
 
 function ToolBox(options={}) {
   base(this);
   this._start = false;
   this._constraints = options.constraints || {};
-  this._editor = options.editor;
-  this._layer = this._editor.getLayer();
-  this._editingLayer = options.layer;
+  this._layer = options.layer;
   this._layerType = options.type || 'vector';
   this._loadedExtent = null;
   this._tools = options.tools;
@@ -29,12 +25,7 @@ function ToolBox(options={}) {
 
   this._session = new Session({
     id: options.id,
-    editor: this._editor,
-    //in case of table or not ol layer i have to set provider to get data
-    featuresstore: this._layerType === Layer.LayerTypes.VECTOR ? new OlFeaturesStore(): new FeaturesStore({
-      provider: this._editingLayer.getProvider('data')
-    }),
-    add: this._layerType !== Layer.LayerTypes.TABLE // in case of table adding is not necessary
+    editor: this._layer.getEditor()
   });
   this._getFeaturesOption = {};
   const historystate = this._session.getHistory().state;
@@ -90,12 +81,8 @@ function ToolBox(options={}) {
   this._mapService = GUI.getComponent('map').getService();
   this._getFeaturesEvent = {
     event: null,
-    fnc: null,
-    options: {
-      extent: null
-    }
+    fnc: null
   };
-  this._setEditingLayerSource();
 }
 
 inherit(ToolBox, G3WObject);
@@ -108,10 +95,6 @@ proto.getState = function() {
 
 proto.getLayer = function() {
   return this._layer;
-};
-
-proto.getEditingLayer = function() {
-  return this._editingLayer;
 };
 
 proto.setFather = function(bool) {
@@ -154,13 +137,6 @@ proto.addDependency = function(dependency) {
   this.state.editing.dependencies.push(dependency);
 };
 
-proto._setEditingLayerSource = function() {
-  const featuresstore = this._session.getFeaturesStore();
- if (this._layerType === Layer.LayerTypes.VECTOR)  {
-   const source =  new ol.source.Vector({features: featuresstore.getFeaturesCollection()});
-   this._editingLayer.setSource(source);
- }
-};
 
 proto.start = function() {
   const EditingService = require('../services/editingservice');
@@ -168,7 +144,7 @@ proto.start = function() {
   const d = $.Deferred();
   const id = this.getId();
   if (this._layerType)
-  this._getFeaturesOption = EditingService.createEditingDataOptions(this._layerType, {
+  this._getFeaturesOption = EditingService.createEditingDataOptions('bbox', {
     layerId: this.getId()
   });
   const handlerAfterSessionGetFeatures = (promise) => {
@@ -248,7 +224,6 @@ proto.stop = function() {
           this.stopActiveTool();
           this._setToolsEnabled(false);
           this.clearToolboxMessages();
-          this._setEditingLayerSource();
           this.setSelected(false);
           this.emit(EventName);
           d.resolve(true)
@@ -282,7 +257,6 @@ proto._unregisterGetFeaturesEvent = function() {
   switch(this._layerType) {
     case 'vector':
       this._mapService.getMap().un(this._getFeaturesEvent.event, this._getFeaturesEvent.fnc);
-      this._getFeaturesEvent.options.extent = null;
       break;
     default:
       return;
@@ -294,12 +268,10 @@ proto._registerGetFeaturesEvent = function(options={}) {
     case Layer.LayerTypes.VECTOR:
       const fnc = () => {
         const canEdit = this.state.editing.canEdit;
-        this._editingLayer.setVisible(canEdit);
+        this._layer.getEditingLayer().setVisible(canEdit);
         //added ApplicationState.online
         if (ApplicationState.online && canEdit && GUI.getContentLength() === 0) {
           const bbox = this._mapService.getMapBBOX();
-          if (this._getFeaturesEvent.options.extent && ol.extent.containsExtent(this._getFeaturesEvent.options.extent, bbox)) return;
-          this._getFeaturesEvent.options.extent = !this._getFeaturesEvent.options.extent ? bbox: ol.extent.extend(this._getFeaturesEvent.options.extent, bbox) ;
           options.filter.bbox = bbox;
           this.state.loading = true;
           this._session.getFeatures(options).then((promise)=> {
@@ -310,7 +282,6 @@ proto._registerGetFeaturesEvent = function(options={}) {
         }
       };
       this._getFeaturesEvent.event = 'moveend';
-      this._getFeaturesEvent.options.extent = options.filter.bbox;
       this._getFeaturesEvent.fnc = debounce(fnc, 300);
       this._mapService.getMap().on('moveend', this._getFeaturesEvent.fnc);
       break;

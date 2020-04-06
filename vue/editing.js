@@ -126,17 +126,6 @@ const vueComponentOptions = {
     GUI.on('closeform', this._enableEditingButtons);
     GUI.on('closecontent', this._enableEditingButtons);
   },
-  mounted() {
-    this.$nextTick(() => {
-      const ApplicationService = g3wsdk.core.ApplicationService;
-      setTimeout(()=>{
-        //ApplicationService.offline()
-      }, 2000);
-      // setTimeout(()=>{
-      //   ApplicationService.online()
-      // }, 15000);
-    })
-  },
   beforeDestroy() {
     GUI.off('opencontent', this._enableEditingButtons);
     GUI.off('closeform', this._enableEditingButtons);

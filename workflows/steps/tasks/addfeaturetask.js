@@ -21,10 +21,10 @@ inherit(AddFeatureTask, EditingTask);
 const proto = AddFeatureTask.prototype;
 
 proto.run = function(inputs, context) {
-  const d = $.Deferred();
-  const editingLayer = inputs.layer;
+  const d = $.Deferred(); 
+  const originalLayer = inputs.layer;
+  const editingLayer = originalLayer.getEditingLayer();
   const session = context.session;
-  const originalLayer = context.layer;
   const layerId = originalLayer.getId();
   const pk = originalLayer.getPk();
   switch (originalLayer.getType()) {
@@ -71,12 +71,10 @@ proto.run = function(inputs, context) {
 };
 
 proto.stop = function() {
-
   if (this._snapInteraction) {
      this.removeInteraction(this._snapInteraction);
      this._snapInteraction = null;
   }
-
   this.removeInteraction(this.drawInteraction);
   this.drawInteraction = null;
   return true;

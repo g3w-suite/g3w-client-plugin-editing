@@ -6,20 +6,17 @@ const EdtingFormService = function(options={}) {
   this.state = {
     relations: []
   };
-  // riceve il context del form principale
-  this._context = options.context || {};
   // riceve gli inpust del form principale
-  this._inputs = options.inputs || {};
+  const {layer, features} = options.inputs || {};
   // riceve l'event bus del form pricipale
   this._formEventBus = options.formEventBus || null;
   // sono le relazioni effettive presenti
   let relations = [];
-  const formLayer = this._context.layer;
-  const layerId = formLayer.getId();
-  const feature = this._inputs.features[this._inputs.features.length - 1];
-  if (formLayer.isFather()) {
+  const layerId = layer.getId();
+  const feature = features[features.length - 1];
+  if (layer.isFather()) {
     // recupero l'array delle relazioni
-    relations = formLayer.getRelations().getArray();
+    relations = layer.getRelations().getArray();
     // vado a filtrare le relazioni per quelle che sono effettivamente in editing
     relations = EditingService.getRelationsInEditing({
       layerId,

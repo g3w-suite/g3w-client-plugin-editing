@@ -20,9 +20,9 @@ const proto = ModifyGeometryVertexTask.prototype;
 
 proto.run = function(inputs, context) {
   const d = $.Deferred();
-  const editingLayer = inputs.layer;
+  const originalLayer = inputs.layer;
+  const editingLayer = originalLayer.getEditingLayer() ;
   const session = context.session;
-  const originalLayer = context.layer;
   const layerId = originalLayer.getId();
   let originalFeature,
     newFeature;

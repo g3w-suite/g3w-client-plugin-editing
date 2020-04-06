@@ -12,9 +12,7 @@ const AddTableFeatureWorflow = require('../workflows/addtablefeatureworkflow');
 
 function EditorToolsFactory() {
   // create a single tool
-  this.buildTool = function(options={}) {
-    //TODO
-  };
+  this.buildTool = function(options={}) {};
   this.build = function(options={}) {
     const type = options.type || Layer.LayerTypes.VECTOR;
     const layer = options.layer;

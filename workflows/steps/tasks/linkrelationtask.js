@@ -16,7 +16,7 @@ const proto = LinkRelationTask.prototype;
 proto.run = function(inputs, context) {
   const d = $.Deferred();
   GUI.setModal(false);
-  const editingLayer = inputs.layer;
+  const editingLayer = inputs.layer.getEditingLayer();
   this._originalLayerStyle = editingLayer.getStyle();
   const beforeRun = context.beforeRun;
   const promise = beforeRun && typeof beforeRun === 'function' ? beforeRun() : Promise.resolve();

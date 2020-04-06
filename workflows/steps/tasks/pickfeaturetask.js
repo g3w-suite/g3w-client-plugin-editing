@@ -17,7 +17,7 @@ var proto = PickFeatureTask.prototype;
 // metodo eseguito all'avvio del tool
 proto.run = function(inputs, context) {
   const d = $.Deferred();
-  const editingLayer = inputs.layer;
+  const editingLayer = inputs.layer.getEditingLayer();
   const layers = [editingLayer];
   const features = inputs.features.length ? inputs.features : null;
   this.pickFeatureInteraction = new PickFeatureInteraction({
