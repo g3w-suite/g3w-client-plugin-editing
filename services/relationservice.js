@@ -513,7 +513,7 @@ proto.unlinkRelation = function(index, dialog=true) {
   });
   const unlink = ()=>{
     const relation = this.relations[index];
-    const feature = this.getEditingLayer().getSource().getFeatureById(relation.id);
+    const feature = this.getLayer().getEditingSource().getFeatureById(relation.id);
     const originalRelation = feature.clone();
     feature.set(ownField, null);
     this.getCurrentWorkflowData().session.pushUpdate(this._layerId, feature, originalRelation);
