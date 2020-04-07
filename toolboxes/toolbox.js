@@ -62,9 +62,11 @@ function ToolBox(options={}) {
 
 
   this._session.onafter('stop', () => {
-    const EditingService = require('../services/editingservice');
-    ApplicationState.online && EditingService.stopSessionChildren(this.state.id);
-    this._unregisterGetFeaturesEvent();
+    if (this.inEditing()) {
+      const EditingService = require('../services/editingservice');
+      ApplicationState.online && EditingService.stopSessionChildren(this.state.id);
+      this._unregisterGetFeaturesEvent();
+    }
   });
 
   this._session.onafter('start', (options) => {

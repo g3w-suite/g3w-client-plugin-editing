@@ -711,15 +711,6 @@ proto.clearState = function() {
   this.state.message =  null; // messaggio genarle del pannello di editing
 };
 
-proto._filterRelationsInEditing = function({layerId, relations=[]}) {
-  return relations.filter(relation => {
-    const relationId = this._getRelationId({
-      layerId,
-      relation
-    });
-    return this.getLayerById(relationId)
-  })
-};
 
 // funzione che filtra le relazioni in base a quelle presenti in editing
 proto.getRelationsInEditing = function({layerId, relations, feature}={}) {
@@ -745,11 +736,28 @@ proto.getRelationsInEditing = function({layerId, relations, feature}={}) {
   return relationsinediting;
 };
 
+proto._filterRelationsInEditing = function({layerId, relations=[]}) {
+  return relations.filter(relation => {
+    const relationId = this._getRelationId({
+      layerId,
+      relation
+    });
+    return this.getLayerById(relationId)
+  })
+};
+
 proto.stopSessionChildren = function(layerId) {
-  const relationLayerChildren = this.getLayerById(layerId).getChildren();
-  relationLayerChildren.forEach((id) => {
-    const toolbox = this.getToolBoxById(id);
-    (toolbox && !toolbox.inEditing()) && this._sessions[id].stop();
+  const layer = this.getLayerById(layerId);
+  const relations = this._filterRelationsInEditing({
+    relations: layer.getRelations().getArray(),
+    layerId
+  });
+  relations.forEach((relation) => {
+    const relationId = this._getRelationId({
+      layerId,
+      relation
+    });
+    !this.getToolBoxById(relationId).inEditing() && this._sessions[relationId].stop();
   })
 };
 
