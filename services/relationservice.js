@@ -231,7 +231,6 @@ proto.startVectorTool = function(relationtool, index) {
       d.reject(err)
     })
     .always(() => {
-      this.showRelationStyle();
       workflow.stop();
       GUI.hideContent(false, percContent);
       this._unbindEscKeyUp();

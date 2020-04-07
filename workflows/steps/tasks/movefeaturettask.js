@@ -15,7 +15,7 @@ proto.run = function(inputs, context) {
   const d = $.Deferred();
   const originalLayer = inputs.layer;
   const session = context.session;
-  const editingLayer = originalLayer.geteditingLayer();
+  const editingLayer = originalLayer.getEditingLayer();
   const feature = inputs.features[0];
   const layerId = originalLayer.getId();
   const originalStyle = editingLayer.getStyle();
@@ -48,7 +48,7 @@ proto.run = function(inputs, context) {
     // repndo la feature di partenza
     originalFeature = feature.clone();
   });
-  
+
   this._translateInteraction.on('translateend',function(e) {
     const feature = e.features.getArray()[0];
     const newFeature = feature.clone();
