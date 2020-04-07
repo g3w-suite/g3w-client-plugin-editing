@@ -6,7 +6,6 @@ const PluginService = g3wsdk.core.plugin.PluginService;
 const CatalogLayersStoresRegistry = g3wsdk.core.catalog.CatalogLayersStoresRegistry;
 const MapLayersStoreRegistry = g3wsdk.core.map.MapLayersStoreRegistry;
 const LayersStore = g3wsdk.core.layer.LayersStore;
-const Session = g3wsdk.core.editing.Session;
 const Layer = g3wsdk.core.layer.Layer;
 const GUI = g3wsdk.gui.GUI;
 const serverErrorParser= g3wsdk.core.errors.parsers.Server;
@@ -15,7 +14,6 @@ const t = g3wsdk.core.i18n.tPlugin;
 const CommitFeaturesWorkflow = require('../workflows/commitfeaturesworkflow');
 const ApplicationService = g3wsdk.core.ApplicationService;
 const ApplicationState = g3wsdk.core.ApplicationState;
-const RelationService = require('./relationservice');
 const OFFLINE_ITEMS = {
   CHANGES: 'EDITING_CHANGES'
 };
@@ -859,8 +857,8 @@ proto.getLayersDependencyFeatures = function(layerId, opts={}) {
       const options = this.createEditingDataOptions(filterType, opts);
       const session = this._sessions[id];
       const toolbox = this.getToolBoxById(id);
-      toolbox.startLoading();
       if (online && session) {
+        toolbox.startLoading();
         if (!session.isStarted())
           session.start(options)
             .always((promise) => {
@@ -983,7 +981,6 @@ proto.showCommitModalWindow = function({layer, commitItems, close}) {
         workflow.stop();
       })
   })
-
 };
 
 proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
@@ -1000,47 +997,48 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
     close
   }) : Promise.resolve();
   promise.then((dialog)=> {
-    const offline = !ApplicationState.online;
-    session.commit({offline, items})
-      .then((commitItems, response) => {
-        if (ApplicationState.online) {
-          if (response.result) {
-            dialog && GUI.notify.success(t("editing.messages.saved"));
-            if (layerType === 'vector')
-              this._mapService.refreshMap({force: true});
-          } else {
-            const message = response.errors;
-            GUI.notify.error(message);
-            d.reject();
+    if (ApplicationState.online)
+      session.commit(items)
+        .then((commitItems, response) => {
+          if (ApplicationState.online) {
+            if (response.result) {
+              dialog && GUI.notify.success(t("editing.messages.saved"));
+              if (layerType === 'vector')
+                this._mapService.refreshMap({force: true});
+            } else {
+              const message = response.errors;
+              GUI.notify.error(message);
+              d.reject();
+            }
           }
-        } else {
-          this.saveOfflineItem({
+          d.resolve(toolbox);
+        })
+        .fail( (error) => {
+          let parser = new serverErrorParser({
+            error: error
+          });
+         let message = parser.parse();
+         GUI.notify.error(message);
+          d.reject(toolbox);
+        })
+        .always(() => {
+          dialog && dialog.modal('hide');
+        });
+    //case offline
+    else this.saveOfflineItem({
             data: {
               [session.getId()]: commitItems
             },
             id: OFFLINE_ITEMS.CHANGES
           }).then(() =>{
-            GUI.notify.success(t("editing.messages.saved"));
+            GUI.notify.success(t("editing.messages.saved_local"));
           }).catch((error)=>{
             GUI.notify.error(error);
             d.reject();
+          }). finally(()=>{
+            dialog && dialog.modal('hide');
           })
-        }
-        d.resolve(toolbox);
-      })
-      .fail( (error) => {
-        let parser = new serverErrorParser({
-          error: error
-        });
-        let message = parser.parse();
-        GUI.notify.error(message);
-        d.reject(toolbox);
-      })
-      .always(() => {
-        dialog && dialog.modal('hide');
-      })
-    })
-    .catch(() => {
+    }).catch(() => {
       d.reject(toolbox);
     });
   return d.promise();

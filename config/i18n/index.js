@@ -45,6 +45,7 @@ export default {
       commit_feature: "Vuoi salvare definitivamente le modifiche",
       change_toolbox_relation: "Layer in relazione. Prima di passare ad altri editing è obbligatorio salvare le modifiche correnti.",
       saved: "I dati sono stati salvati correttamente",
+      saved_local: "I dati sono stati salvati correttamente in locale",
       loading_data: "Caricamento dati",
       saving: "Salvataggio dati in corso. Attendere ...",
       constraints: {
@@ -130,6 +131,7 @@ export default {
       commit_feature: "Do you want to save the changes",
       change_toolbox_relation: "Layer has relation/relations. Before switch editing you need to save changes done.",
       saved: "Data saved successfully",
+      saved_local:"Data saved locally successfully",
       loading_data: "Loading data",
       saving: "Saving data. Please wait ...",
       constraints: {
