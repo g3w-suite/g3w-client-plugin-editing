@@ -24,7 +24,7 @@ function SelectcAndMoveElementsWorflow(options={}) {
   const moveelementssteps = new MoveElementsStep(options, true);
   moveelementssteps.getTask().setSteps({
     to: {
-      description: tPlugin('editing.workflow.steps.selectVertexToPaste'),
+      description: tPlugin('editing.workflow.steps.selectToPaste'),
       done: false
     }
   });

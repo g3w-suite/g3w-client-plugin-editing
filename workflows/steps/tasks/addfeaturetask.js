@@ -21,7 +21,7 @@ inherit(AddFeatureTask, EditingTask);
 const proto = AddFeatureTask.prototype;
 
 proto.run = function(inputs, context) {
-  const d = $.Deferred(); 
+  const d = $.Deferred();
   const originalLayer = inputs.layer;
   const editingLayer = originalLayer.getEditingLayer();
   const session = context.session;

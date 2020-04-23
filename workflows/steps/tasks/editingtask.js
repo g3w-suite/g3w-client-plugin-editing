@@ -19,6 +19,15 @@ inherit(EditingTask, Task);
 
 const proto = EditingTask.prototype;
 
+proto.setSteps = function(steps={}){
+  this._steps = steps;
+  this.setUserMessageSteps(steps);
+};
+
+proto.getMap = function() {
+  return this._mapService.getMap();
+};
+
 proto.disableSidebar = function(bool=true) {
   !this._isContentChild && GUI.disableSideBar(bool);
 };

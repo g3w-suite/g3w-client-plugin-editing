@@ -14,21 +14,21 @@ inherit(SelectElementsTask, EditingTask);
 const proto = SelectElementsTask.prototype;
 
 proto.run = function(inputs, context) {
+  this._layer = inputs.layer;
+  this._layerId = this._layer.getId();
   const d = $.Deferred();
-  const layersFeaturesSelected = {};
+  let featuresSelected = [];
   const styles = {
-    'LineString': new ol.style.Style({
+    'Polygon': new ol.style.Style({
       stroke: new ol.style.Stroke({
         color: [255, 255, 0, 1],
         width: 3
       })
     }),
-    'Point': new ol.style.Style({
-      image: new ol.style.Circle({
-        radius: 5,
-        fill: new ol.style.Fill({
-          color: [255, 255, 0, 1]
-        })
+    'MultiPolygon': new ol.style.Style({
+      stroke: new ol.style.Stroke({
+        color: [255, 255, 0, 1],
+        width: 3
       })
     })
   };
@@ -45,28 +45,23 @@ proto.run = function(inputs, context) {
   this._ctrlC = (evt) => {
     if ((evt.ctrlKey ||evt.metaKey) && evt.which === 67) {
       if (!this._selectedFeaturesLayer.getSource().getFeatures().length) return;
+      inputs.features = this._selectedFeaturesLayer.getSource().getFeatures();
       this.setUserMessageStepDone('copy');
       this._bboxSelection.setActive(false);
-      const branchLayerFeatures = layersFeaturesSelected[this.getBranchLayerId()];
+
       this._snapIteraction = new ol.interaction.Snap({
-        features: new ol.Collection(branchLayerFeatures),
+        features: new ol.Collection(inputs.features),
         edge: false
       });
       this._drawIteraction = new ol.interaction.Draw({
         type: 'Point',
         features: new ol.Collection(),
-        condition: function(evt) {
-          const coordinates = evt.coordinate;
-          return !!branchLayerFeatures.find((feature) => {
-            const featureCoordinates = feature.getGeometry().getCoordinates();
-            return (featureCoordinates[0].toString() === coordinates.toString() || featureCoordinates[1].toString() === coordinates.toString())
-          })
-        }
       });
       this._drawIteraction.on('drawend', (evt)=> {
         const coordinates = evt.feature.getGeometry().getCoordinates();
         d.resolve({
-          layersFeaturesSelected,
+          inputs,
+          context,
           coordinates
         });
         this.setUserMessageStepDone('from')
@@ -83,25 +78,14 @@ proto.run = function(inputs, context) {
   this.addInteraction(this._bboxSelection);
 
   this._bboxSelection.on('boxend', () => {
-    let selectedFeatures = 0;
     this._selectedFeaturesLayer.getSource().clear();
     const bboxExtent = this._bboxSelection.getGeometry().getExtent();
-    const toolboxes = this.getEditingService().getToolBoxes();
-    for (let i  = toolboxes.length; i--;) {
-      const toolbox = toolboxes[i];
-      const layerId = toolbox.getId();
-      const layerSource = toolbox.getEditingLayer().getSource();
-      let features = layerSource.getFeaturesInExtent(bboxExtent);
-      layersFeaturesSelected[layerId] = features;
-      for( let i = features.length; i--; ) {
-        const feature = features[i].clone();
-        this._selectedFeaturesLayer.getSource().addFeature(feature);
-        selectedFeatures+=1;
-      }
-    }
-    if (selectedFeatures === 0)
+    const layerSource = this._layer.getEditingLayer().getSource();
+    const features = layerSource.getFeaturesInExtent(bboxExtent);
+    if (!features.length)
       d.reject();
     else {
+      this._selectedFeaturesLayer.getSource().addFeatures(features);
       this.setUserMessageStepDone('select');
       document.addEventListener('keydown', this._ctrlC);
     }
