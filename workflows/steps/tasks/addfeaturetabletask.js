@@ -2,8 +2,7 @@ const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
 const EditingTask = require('./editingtask');
 
-function AddFeatureTableTask(options) {
-  options = options || {};
+function AddFeatureTableTask(options={}) {
   base(this, options);
 }
 
@@ -17,7 +16,7 @@ proto.run = function(inputs, context) {
   const originalLayer = inputs.layer;
   const layerId = originalLayer.getId();
   const editingLayer = originalLayer.getEditingLayer();
-  const feature = originalLayer.createNewFeature();
+  const feature = inputs.features.length ? inputs.features[inputs.features.length -1] : originalLayer.createNewFeature();
   originalLayer.isPkEditable() ?  feature.setNew() : feature.setTemporaryId();
   editingLayer.getEditingSource().addFeature(feature);
   const newFeature = session.pushAdd(layerId, feature);

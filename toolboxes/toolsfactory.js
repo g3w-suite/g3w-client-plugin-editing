@@ -9,6 +9,7 @@ const DeleteFeatureWorkflow = require('../workflows/deletefeatureworkflow');
 const EditFeatureAttributesWorkflow = require('../workflows/editfeatureattributesworkflow');
 const EditTableFeaturesWorkflow = require('../workflows/edittableworkflow');
 const AddTableFeatureWorflow = require('../workflows/addtablefeatureworkflow');
+const CopyFeaturesWorflow = require('../workflows/copyfeaturesworkflow');
 
 function EditorToolsFactory() {
   // create a single tool
@@ -110,6 +111,27 @@ function EditorToolsFactory() {
                 id: 'movevertex',
                 name: t("editing.tools.update_vertex"),
                 icon: "movePolygonVertex.png",
+                layer,
+                op: ModifyGeometryVertexWorkflow
+              }),
+              new Tool({
+                id: 'copyfeatures',
+                name: t("editing.tools.copy"),
+                icon: "copyPolygon.png",
+                layer,
+                op: CopyFeaturesWorflow
+              }),
+              new Tool({
+                id: 'mergefeatures',
+                name: t("editing.tools.merge"),
+                icon: "mergePolygon.png",
+                layer,
+                op: ModifyGeometryVertexWorkflow
+              }),
+              new Tool({
+                id: 'splitfeaturet',
+                name: t("editing.tools.split"),
+                icon: "splitPolygon.png",
                 layer,
                 op: ModifyGeometryVertexWorkflow
               }),

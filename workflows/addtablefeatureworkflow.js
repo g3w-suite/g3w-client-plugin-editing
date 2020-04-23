@@ -4,8 +4,7 @@ var EditingWorkflow = require('./editingworkflow');
 var AddTableFeatureStep = require('./steps/addtablefeaturestep');
 var OpenFormStep = require('./steps/openformstep');
 
-function AddTableFeatureWorflow(options) {
-  options = options || {};
+function AddTableFeatureWorflow(options={}) {
   options.steps = [new AddTableFeatureStep(), new OpenFormStep()];
   base(this, options);
 }

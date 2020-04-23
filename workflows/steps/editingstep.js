@@ -1,9 +1,9 @@
-var inherit = g3wsdk.core.utils.inherit;
-var base =  g3wsdk.core.utils.base;
-var Step = g3wsdk.core.workflow.Step;
+const inherit = g3wsdk.core.utils.inherit;
+const base =  g3wsdk.core.utils.base;
+const  Step = g3wsdk.core.workflow.Step;
 
-var EditingStep = function(options) {
-  base(this, options)
+const EditingStep = function(options={}) {
+  base(this, options);
 };
 
 inherit(EditingStep, Step);

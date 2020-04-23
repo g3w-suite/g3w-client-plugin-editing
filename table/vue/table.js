@@ -41,6 +41,9 @@ const InternalComponent = Vue.extend({
         this.dataTable.row(element).remove().draw()
       }).catch(()=>{})
     },
+    copyFeature(index){
+      this.$options.service.copyFeature(index);
+    },
     editFeature: function(index) {
       this.$options.service.editFeature(index);
     },

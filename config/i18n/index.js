@@ -14,6 +14,9 @@ export default {
       edit_layer: "Modifica Layer"
     },
     tools: {
+      copy: "Crea una copia delle feature selezionate",
+      merge: "Dissolvi features",
+      split: "Taglia Feature",
       add_feature: "Aggiungi feature",
       delete_feature: "Elimina feature",
       move_feature: "Muovi feature",
@@ -22,6 +25,9 @@ export default {
     },
     steps: {
       help: {
+        copy: "Crea una copia delle feature selezionate",
+        merge: "Dissolvi features",
+        split: "Taglia Feature",
         new: "Creo una nuova feature",
         edit_table: "Edita le features della tabella",
         draw_new_feature: "Disegna sulla mappa la feature",
@@ -33,6 +39,14 @@ export default {
         show_edit_feature_form:  "Mostra il form della feature per poter editare gli attributi",
         pick_feature: "Clicca su una feature per poterla modificare",
         insert_attributes_feature: "Inserisci gli attributi della feature"
+      }
+    },
+    workflow: {
+      steps: {
+        selectSHIFT: 'Seleziona le features tenedo premuto il tasto SHIFT',
+        copyCTRL: 'Copia le features selezionate con CTRL+C',
+        selectStartVertex: 'Seleziona il vertice di partenza delle feature selezionate',
+        selectVertexToPaste: 'Seleziona il vertice dove verranno incollate le features selezionate'
       }
     },
     messages: {
@@ -100,6 +114,9 @@ export default {
       edit_layer: "Edit Layer"
     },
     tools: {
+      copy: "Create new copy of selected features",
+      merge: "Dissolve features",
+      split: "Split Feature",
       add_feature: "Add feature",
       delete_feature: "Delete feature",
       move_feature: "Move feature",
@@ -108,6 +125,9 @@ export default {
     },
     steps: {
       help: {
+        copy: "Create new copy of selected features",
+        merge: "Dissolve features",
+        split: "Split Feature",
         new: "Create new feature",
         edit_table: "Edit table features",
         draw_new_feature: "Draw feature on map",
@@ -119,6 +139,14 @@ export default {
         show_edit_feature_form:  "Show feature form to edit attributes",
         pick_feature: "Click on feature to modify",
         insert_attributes_feature: "Insert attributes of the feature"
+      }
+    },
+    workflow: {
+      steps: {
+        selectSHIFT: 'Select features drawing a rectangle pressing SHIFT',
+        copyCTRL: 'Copy selected features using CTRL+C',
+        selectStartVertex: 'Select starting vertex of selected features',
+        selectVertexToPaste: 'Select vertex where paste the features selected'
       }
     },
     messages: {

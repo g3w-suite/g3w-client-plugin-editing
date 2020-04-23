@@ -80,7 +80,28 @@ proto.deleteFeature = function(index) {
       } else reject()
     });
   })
+};
 
+proto.copyFeature = function(index){
+  const feature = this._features[index];
+  const addTableFeatureWorflow = require('../workflows/addtablefeatureworkflow');
+  this._workflow = new addTableFeatureWorflow();
+  const inputs = this._inputs;
+  inputs.features.push(feature);
+  const options = {
+    context: this._context,
+    inputs
+  };
+  this._workflow.start(options)
+    .then((outputs) => {
+      const feature = outputs.features[0];
+      Object.entries(this.state.features[index]).forEach(([key, value]) => {
+        this.state.features[index][key] = feature.get(key);
+      });
+      const pk = feature.getPk();
+      this.state.features[index][pk] = feature.getId();
+    })
+    .fail((err) => {})
 };
 
 proto.editFeature = function(index) {
@@ -91,7 +112,7 @@ proto.editFeature = function(index) {
   inputs.features.push(feature);
   const options = {
     context: this._context,
-    inputs: inputs
+    inputs
   };
   this._workflow.start(options)
     .then((outputs) => {

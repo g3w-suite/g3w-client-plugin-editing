@@ -4,8 +4,7 @@ const t = g3wsdk.core.i18n.tPlugin;
 const EditingStep = require('./editingstep');
 const EditFeatureTask = require('./tasks/editattributestask');
 
-const EditFeatureStep = function(options) {
-  options = options || {};
+const EditFeatureStep = function(options={}) {
   options.task = new EditFeatureTask();
   options.help = t("editing.steps.help.show_edit_feature_form");
   base(this, options)
