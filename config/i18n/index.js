@@ -43,10 +43,12 @@ export default {
     },
     workflow: {
       steps: {
+        select: 'Clicca sulla feature da selezionare',
         selectSHIFT: 'Seleziona le features tenedo premuto il tasto SHIFT',
         copyCTRL: 'Copia le features selezionate con CTRL+C',
         selectStartVertex: 'Seleziona il vertice di partenza delle feature selezionate',
-        selectToPaste: 'Seleziona il dove verranno incollate le features selezionate'
+        selectToPaste: 'Seleziona il dove verranno incollate le features selezionate',
+        draw_split_line: "Disegna una linea per tagliare la feature selezionata"
       }
     },
     messages: {
@@ -143,10 +145,12 @@ export default {
     },
     workflow: {
       steps: {
+        select: 'Click on feature to select',
         selectSHIFT: 'Select features drawing a rectangle pressing SHIFT',
         copyCTRL: 'Copy selected features using CTRL+C',
         selectStartVertex: 'Select starting vertex of selected features',
-        selectToPaste: 'Select where paste the features selected'
+        selectToPaste: 'Select where paste the features selected',
+        draw_split_line: "Draw a line to split selected feature"
       }
     },
     messages: {
