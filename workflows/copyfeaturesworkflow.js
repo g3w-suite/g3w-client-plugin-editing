@@ -14,10 +14,6 @@ function SelectcAndMoveElementsWorflow(options={}) {
       description: layer && layer.isPkEditable() ? tPlugin('editing.workflow.steps.select') : tPlugin('editing.workflow.steps.selectSHIFT'),
       done: false
     },
-    copy: {
-      description: tPlugin('editing.workflow.steps.copyCTRL'),
-      done: false
-    },
     from: {
       description: tPlugin('editing.workflow.steps.selectStartVertex'),
       done: false

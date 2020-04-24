@@ -29,11 +29,17 @@ proto.run = function(inputs, context) {
     features
   });
   this.addInteraction(this.pickFeatureInteraction);
-  this.pickFeatureInteraction.on('picked', function(e) {
+  this.pickFeatureInteraction.on('picked', (e) => {
     const feature = e.feature;
-    if (!features)
-      inputs.features.push(feature);
-    d.resolve(inputs);
+    if (!features) inputs.features.push(feature);
+    if (this._steps) {
+      this.setUserMessageStepDone('select')
+      d.resolve({
+        inputs,
+        context
+      })
+    } else d.resolve(inputs);
+
   });
   return d.promise()
 };

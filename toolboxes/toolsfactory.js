@@ -10,6 +10,7 @@ const EditFeatureAttributesWorkflow = require('../workflows/editfeatureattribute
 const EditTableFeaturesWorkflow = require('../workflows/edittableworkflow');
 const AddTableFeatureWorflow = require('../workflows/addtablefeatureworkflow');
 const CopyFeaturesWorflow = require('../workflows/copyfeaturesworkflow');
+const SplitFeatureWorkflow = require('../workflows/splitfeatureworkflow');
 
 function EditorToolsFactory() {
   // create a single tool
@@ -134,7 +135,8 @@ function EditorToolsFactory() {
                 name: t("editing.tools.split"),
                 icon: "splitPolygon.png",
                 layer,
-                op: ModifyGeometryVertexWorkflow
+                once: true,
+                op: SplitFeatureWorkflow
               }),
               new Tool({
                 id: 'deletefeature',

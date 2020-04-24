@@ -3,7 +3,6 @@ const base =  g3wsdk.core.utils.base;
 const tPlugin = g3wsdk.core.i18n.tPlugin;
 const EditingWorkflow = require('./editingworkflow');
 const PickFeatureStep = require('./steps/pickfeaturestep');
-const DrawLineStep = require('./steps/drawlinestep');
 const SplitFeatureStep = require('./steps/splitfeaturestep');
 
 function SplitFeaturesWorflow(options={}) {
@@ -14,16 +13,14 @@ function SplitFeaturesWorflow(options={}) {
       done: false
     },
   });
-  const drawlinestep = new DrawLineStep(options, true);
-  drawlinestep.getTask().setSteps({
+  const splitfeaturestep = new SplitFeatureStep(options, true);
+  splitfeaturestep.getTask().setSteps({
     draw_line: {
       description: tPlugin('editing.workflow.steps.draw_split_line'),
       done: false
     }
   });
-  const splitfeaturestep = new SplitFeatureStep(options, true);
-
-  options.steps = [pickfeaturestep, drawlinestep, splitfeaturestep];
+  options.steps = [pickfeaturestep, splitfeaturestep];
   base(this, options);
 }
 
