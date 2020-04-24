@@ -4,6 +4,10 @@ const PickFeatureInteraction = g3wsdk.ol.interactions.PickFeatureInteraction;
 const EditingTask = require('./editingtask');
 
 function PickFeatureTask(options={}) {
+  this._options = {
+    highlight: options.highlight || false,
+    multi: options.multi || false
+  }
   this.pickFeatureInteraction = null;
   this._busy = false;
   this._tools = options.tools || [];
@@ -12,7 +16,7 @@ function PickFeatureTask(options={}) {
 
 inherit(PickFeatureTask, EditingTask);
 
-var proto = PickFeatureTask.prototype;
+const proto = PickFeatureTask.prototype;
 
 // metodo eseguito all'avvio del tool
 proto.run = function(inputs, context) {
@@ -24,9 +28,7 @@ proto.run = function(inputs, context) {
     layers,
     features
   });
-  // aggiungo
   this.addInteraction(this.pickFeatureInteraction);
-  // gestisco l'evento
   this.pickFeatureInteraction.on('picked', function(e) {
     const feature = e.feature;
     if (!features)

@@ -119,6 +119,7 @@ function EditorToolsFactory() {
                 name: t("editing.tools.copy"),
                 icon: "copyPolygon.png",
                 layer,
+                once: true,
                 op: CopyFeaturesWorflow
               }),
               new Tool({

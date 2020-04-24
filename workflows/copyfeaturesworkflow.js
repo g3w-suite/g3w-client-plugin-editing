@@ -4,12 +4,14 @@ const tPlugin = g3wsdk.core.i18n.tPlugin;
 const EditingWorkflow = require('./editingworkflow');
 const SelectElementsStep = require('./steps/selectelementsstep');
 const MoveElementsStep = require('./steps/movelementsstep');
+const OpenFormStep = require('./steps/openformstep');
 
 function SelectcAndMoveElementsWorflow(options={}) {
+  const {layer} = options;
   const selectelementssteps = new SelectElementsStep(options, true);
   selectelementssteps.getTask().setSteps({
     select: {
-      description: tPlugin('editing.workflow.steps.selectSHIFT'),
+      description: layer && layer.isPkEditable() ? tPlugin('editing.workflow.steps.select') : tPlugin('editing.workflow.steps.selectSHIFT'),
       done: false
     },
     copy: {
@@ -29,6 +31,10 @@ function SelectcAndMoveElementsWorflow(options={}) {
     }
   });
   options.steps = [selectelementssteps, moveelementssteps];
+  if (layer && layer.isPkEditable()) {
+    const openformstep = new OpenFormStep(options);
+    options.steps.push(openformstep);
+  }
   base(this, options);
 }
 

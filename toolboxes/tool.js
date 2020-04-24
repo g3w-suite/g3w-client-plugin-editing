@@ -7,7 +7,10 @@ function Tool(options = {}) {
   this._options = null;
   this._session = options.session;
   this._layer = options.layer;
-  this._op = new options.op();
+  this._op = new options.op({
+    layer: options.layer
+  });
+  this._once = options.once || false;
   this.state = {
     id: options.id,
     name: options.name,
@@ -60,7 +63,7 @@ proto.start = function() {
       })
       .always(() => {
         options.inputs.features = [];
-        if (this._layer.getType() !== 'table') startOp(options);
+        if (!this._once && this._layer.getType() !== 'table') startOp(options);
         else this.stop();
       })
   };

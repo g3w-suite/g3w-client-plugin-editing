@@ -1,9 +1,10 @@
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
 const EditingTask = require('./editingtask');
+const PickFeatureInteraction = g3wsdk.ol.interactions.PickFeatureInteraction;
 
 function SelectElementsTask(options={}) {
-  this._bboxSelection;
+  this._selectInteraction;
   this._drawInteraction;
   this._snapIteraction;
   base(this, options);
@@ -14,32 +15,14 @@ inherit(SelectElementsTask, EditingTask);
 const proto = SelectElementsTask.prototype;
 
 proto.run = function(inputs, context) {
-  this._layer = inputs.layer;
-  this._layerId = this._layer.getId();
+  const layer = inputs.layer;
+  const isPkEditable = layer.isPkEditable();
   const d = $.Deferred();
-  let featuresSelected = [];
-  const styles = {
-    'Polygon': new ol.style.Style({
-      stroke: new ol.style.Stroke({
-        color: [255, 255, 0, 1],
-        width: 3
-      })
-    }),
-    'MultiPolygon': new ol.style.Style({
-      stroke: new ol.style.Stroke({
-        color: [255, 255, 0, 1],
-        width: 3
-      })
-    })
-  };
-
-  const selectionStyleFnc = function(feature) {
-    return styles[feature.getGeometry().getType()]
-  };
-
   this._selectedFeaturesLayer = new ol.layer.Vector({
     source: new ol.source.Vector(),
-    style: selectionStyleFnc
+    style: (feature) => {
+      return this.getSelectedStyle(feature).selectedStyle
+    }
   });
 
   this._ctrlC = (evt) => {
@@ -47,16 +30,18 @@ proto.run = function(inputs, context) {
       if (!this._selectedFeaturesLayer.getSource().getFeatures().length) return;
       inputs.features = this._selectedFeaturesLayer.getSource().getFeatures();
       this.setUserMessageStepDone('copy');
-      this._bboxSelection.setActive(false);
+      this._selectInteraction.setActive(false);
 
       this._snapIteraction = new ol.interaction.Snap({
         features: new ol.Collection(inputs.features),
         edge: false
       });
+
       this._drawIteraction = new ol.interaction.Draw({
         type: 'Point',
         features: new ol.Collection(),
       });
+
       this._drawIteraction.on('drawend', (evt)=> {
         const coordinates = evt.feature.getGeometry().getCoordinates();
         d.resolve({
@@ -66,42 +51,55 @@ proto.run = function(inputs, context) {
         });
         this.setUserMessageStepDone('from')
       });
+
       this.addInteraction(this._drawIteraction);
       this.addInteraction(this._snapIteraction);
     }
   };
-
-  this._bboxSelection = new ol.interaction.DragBox({
-    condition: ol.events.condition.shiftKeyOnly
-  });
-
-  this.addInteraction(this._bboxSelection);
-
-  this._bboxSelection.on('boxend', () => {
-    this._selectedFeaturesLayer.getSource().clear();
-    const bboxExtent = this._bboxSelection.getGeometry().getExtent();
-    const layerSource = this._layer.getEditingLayer().getSource();
-    const features = layerSource.getFeaturesInExtent(bboxExtent);
-    if (!features.length)
-      d.reject();
-    else {
-      this._selectedFeaturesLayer.getSource().addFeatures(features);
-      this.setUserMessageStepDone('select');
-      document.addEventListener('keydown', this._ctrlC);
-    }
-
-  });
+  if (isPkEditable) {
+    this._selectInteraction = new PickFeatureInteraction({
+      layers: [layer.getEditingLayer()]
+    });
+    this._selectInteraction.on('picked', (e) => {
+      const feature = e.feature;
+      if (feature) {
+        this._selectedFeaturesLayer.getSource().addFeature(feature);
+        this.setUserMessageStepDone('select');
+        document.addEventListener('keydown', this._ctrlC);
+      }
+    });
+  } else {
+    this._selectInteraction = new ol.interaction.DragBox({
+      condition: ol.events.condition.shiftKeyOnly
+    });
+    this._selectInteraction.on('boxend', () => {
+      this._selectedFeaturesLayer.getSource().clear();
+      const bboxExtent = this._selectInteraction.getGeometry().getExtent();
+      const layerSource = layer.getEditingLayer().getSource();
+      const features = layerSource.getFeaturesInExtent(bboxExtent);
+      if (!features.length)
+        d.reject();
+      else {
+        this._selectedFeaturesLayer.getSource().addFeatures(features);
+        this.setUserMessageStepDone('select');
+        document.addEventListener('keydown', this._ctrlC);
+      }
+    });
+  }
   this.getMap().addLayer(this._selectedFeaturesLayer);
+  this.addInteraction(this._selectInteraction);
+
+
   return d.promise();
 };
 
 proto.stop = function() {
-  this.removeInteraction(this._bboxSelection);
+  this.removeInteraction(this._selectInteraction);
   this.removeInteraction(this._drawIteraction);
   this.removeInteraction(this._snapIteraction);
   this._drawInteraction = null;
   this._snapIteraction = null;
-  this._bboxSelection = null;
+  this._selectInteraction = null;
   document.removeEventListener('keydown', this._ctrlC);
   this._ctrlC = null;
   this.getMap().removeLayer(this._selectedFeaturesLayer);

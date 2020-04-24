@@ -33,22 +33,27 @@ proto.run = function({inputs, context, coordinates}={}) {
       y: y - coordinates[1]
     };
 
-    for (let i =0; i < features.length; i++) {
-      const feature = features[i].clone();
-      feature.setNew();
-      if (layer.isPkEditable()) {
-        const idFake = Math.floor(Math.random() * (1000000 - 100000)) + 100000;
-        feature.setId(idFake)
-      }
-      const geometry = feature.getGeometry().clone();
-      feature.setGeometry(geometry);
-      geometry.translate(deltaXY.x, deltaXY.y);
+    if (layer.isPkEditable()) {
+      const feature = features[0].clone({
+        setNew: true
+      });
+      feature.getGeometry().translate(deltaXY.x, deltaXY.y);
       source.addFeature(feature);
-      session.pushAdd(layerId, feature);
+      const newFeature = session.pushAdd(layerId, feature);
+      inputs.newFeature = newFeature;
+      inputs.features = [feature];
+    } else {
+      for (let i =0; i < features.length; i++) {
+        const feature = features[i].clone({
+          setNew: true
+        });
+        feature.getGeometry().translate(deltaXY.x, deltaXY.y);
+        source.addFeature(feature);
+        session.pushAdd(layerId, feature);
+      }
     }
-
     this._steps.to.done = true;
-    d.resolve()
+    d.resolve(inputs)
   });
   this.addInteraction(this._drawInteraction);
   this.addInteraction(this._snapIteraction);

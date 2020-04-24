@@ -1,5 +1,6 @@
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
+const createSelectedStyle = g3wsdk.core.geoutils.createSelectedStyle;
 const GUI = g3wsdk.gui.GUI;
 const Task = g3wsdk.core.workflow.Task;
 
@@ -24,8 +25,24 @@ proto.setSteps = function(steps={}){
   this.setUserMessageSteps(steps);
 };
 
+proto.getSteps = function(){
+  return this._steps;
+};
+
 proto.getMap = function() {
   return this._mapService.getMap();
+};
+
+proto.getSelectedStyle = function(feature){
+  const geometryType = feature.getGeometry().getType();
+  const originalStyle = feature.getStyle();
+  const selectedStyle = createSelectedStyle({
+    geometryType
+  })
+  return {
+    originalStyle,
+    selectedStyle
+  }
 };
 
 proto.disableSidebar = function(bool=true) {

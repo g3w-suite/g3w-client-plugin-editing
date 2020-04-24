@@ -3,24 +3,27 @@ const base =  g3wsdk.core.utils.base;
 const tPlugin = g3wsdk.core.i18n.tPlugin;
 const EditingWorkflow = require('./editingworkflow');
 const PickFeatureStep = require('./steps/pickfeaturestep');
-const MoveElementsStep = require('./steps/movelementsstep');
+const DrawLineStep = require('./steps/drawlinestep');
+const SplitFeatureStep = require('./steps/splitfeaturestep');
 
 function SplitFeaturesWorflow(options={}) {
-  const selectelementssteps = new PickFeatureStep(options, true);
-  selectelementssteps.getTask().setSteps({
+  const pickfeaturestep = new PickFeatureStep(options, true);
+  pickfeaturestep.getTask().setSteps({
     select: {
       description: tPlugin('editing.workflow.steps.select'),
       done: false
     },
   });
-  const moveelementssteps = new MoveElementsStep(options, true);
-  moveelementssteps.getTask().setSteps({
-    to: {
-      description: tPlugin('editing.workflow.steps.selectToPaste'),
+  const drawlinestep = new DrawLineStep(options, true);
+  drawlinestep.getTask().setSteps({
+    draw_line: {
+      description: tPlugin('editing.workflow.steps.draw_split_line'),
       done: false
     }
   });
-  options.steps = [selectelementssteps, moveelementssteps];
+  const splitfeaturestep = new SplitFeatureStep(options, true);
+
+  options.steps = [pickfeaturestep, drawlinestep, splitfeaturestep];
   base(this, options);
 }
 
