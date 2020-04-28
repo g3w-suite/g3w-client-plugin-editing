@@ -33,20 +33,6 @@ proto.run = function(inputs, context) {
       features,
       events: {
         click:(index) => {
-          const feature = features[index];
-          const originalFeature = feature.clone();
-          const newFeature = dissolve({
-            features,
-            index,
-          });
-          session.pushUpdate(layerId, newFeature, originalFeature);
-          features.splice(index, 1);
-          features.forEach(deleteFeature => {
-            session.pushDelete(layerId, deleteFeature);
-            source.removeFeature(deleteFeature);
-          })
-          inputs.features = [feature];
-          d.resolve(inputs);
         },
         mouseover:(index)=>{
           const feature = features[index];
@@ -56,7 +42,6 @@ proto.run = function(inputs, context) {
         }
       }
     });
-    console.log(message)
     GUI.showModalDialog({
       title: 'seleziona la feature',
       message,
@@ -65,14 +50,27 @@ proto.run = function(inputs, context) {
           label: 'Cancel',
           className: 'btn-default',
           callback: function(){
-
+            d.reject();
           }
         },
         ok: {
           label: 'Ok',
           className: 'btn-primary',
           callback: function(){
-
+            const feature = features[index];
+            const originalFeature = feature.clone();
+            const newFeature = dissolve({
+              features,
+              index,
+            });
+            session.pushUpdate(layerId, newFeature, originalFeature);
+            features.splice(index, 1);
+            features.forEach(deleteFeature => {
+              session.pushDelete(layerId, deleteFeature);
+              source.removeFeature(deleteFeature);
+            })
+            inputs.features = [feature];
+            d.resolve(inputs);
           }
         }
       }
