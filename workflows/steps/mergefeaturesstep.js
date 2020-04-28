@@ -4,8 +4,7 @@ const t = g3wsdk.core.i18n.tPlugin;
 const EditingStep = require('./editingstep');
 const MergeFeaturesTask = require('./tasks/mergefeaturestask');
 
-const MergeFeatureStep = function(options) {
-  options = options || {};
+const MergeFeatureStep = function(options={}) {
   options.task = new MergeFeaturesTask();
   options.help = t("editing.steps.help.merge");
   base(this, options)

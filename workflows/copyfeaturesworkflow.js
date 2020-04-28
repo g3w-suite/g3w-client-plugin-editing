@@ -3,17 +3,23 @@ const base =  g3wsdk.core.utils.base;
 const tPlugin = g3wsdk.core.i18n.tPlugin;
 const EditingWorkflow = require('./editingworkflow');
 const SelectElementsStep = require('./steps/selectelementsstep');
+const GetVertexStep = require('./steps/getvertexstep');
 const MoveElementsStep = require('./steps/movelementsstep');
 const OpenFormStep = require('./steps/openformstep');
 
 function SelectcAndMoveElementsWorflow(options={}) {
   const {layer} = options;
+  const isPkEditable = layer.isPkEditable()
+  options.type = isPkEditable ? 'single' : 'bbox';
   const selectelementssteps = new SelectElementsStep(options, true);
   selectelementssteps.getTask().setSteps({
     select: {
-      description: layer && layer.isPkEditable() ? tPlugin('editing.workflow.steps.select') : tPlugin('editing.workflow.steps.selectSHIFT'),
+      description: isPkEditable ? tPlugin('editing.workflow.steps.select') : tPlugin('editing.workflow.steps.selectSHIFT'),
       done: false
-    },
+    }
+  });
+  const getvertexstep = new GetVertexStep(options, true);
+  getvertexstep.getTask().setSteps({
     from: {
       description: tPlugin('editing.workflow.steps.selectStartVertex'),
       done: false
@@ -26,7 +32,7 @@ function SelectcAndMoveElementsWorflow(options={}) {
       done: false
     }
   });
-  options.steps = [selectelementssteps, moveelementssteps];
+  options.steps = [selectelementssteps, getvertexstep, moveelementssteps];
   if (layer && layer.isPkEditable()) {
     const openformstep = new OpenFormStep(options);
     options.steps.push(openformstep);

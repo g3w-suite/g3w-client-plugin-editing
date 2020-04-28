@@ -4,8 +4,10 @@ const tPlugin = g3wsdk.core.i18n.tPlugin;
 const EditingWorkflow = require('./editingworkflow');
 const PickFeatureStep = require('./steps/pickfeaturestep');
 const SplitFeatureStep = require('./steps/splitfeaturestep');
+const OpenFormStep = require('./steps/openformstep');
 
 function SplitFeaturesWorflow(options={}) {
+  const {layer} = options;
   const pickfeaturestep = new PickFeatureStep(options, true);
   pickfeaturestep.getTask().setSteps({
     select: {
@@ -21,6 +23,10 @@ function SplitFeaturesWorflow(options={}) {
     }
   });
   options.steps = [pickfeaturestep, splitfeaturestep];
+  if (layer && layer.isPkEditable()) {
+    const openformstep = new OpenFormStep(options);
+    options.steps.push(openformstep);
+  }
   base(this, options);
 }
 

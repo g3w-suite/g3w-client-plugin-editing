@@ -11,6 +11,7 @@ const EditTableFeaturesWorkflow = require('../workflows/edittableworkflow');
 const AddTableFeatureWorflow = require('../workflows/addtablefeatureworkflow');
 const CopyFeaturesWorflow = require('../workflows/copyfeaturesworkflow');
 const SplitFeatureWorkflow = require('../workflows/splitfeatureworkflow');
+const MergeFeaturesWorkflow = require('../workflows/mergefeaturesworkflow');
 
 function EditorToolsFactory() {
   // create a single tool
@@ -128,7 +129,8 @@ function EditorToolsFactory() {
                 name: t("editing.tools.merge"),
                 icon: "mergePolygon.png",
                 layer,
-                op: ModifyGeometryVertexWorkflow
+                once: true,
+                op: MergeFeaturesWorkflow
               }),
               new Tool({
                 id: 'splitfeaturet',

@@ -25,6 +25,7 @@ export default {
     },
     steps: {
       help: {
+        select_elements: "Selezionale le features",
         copy: "Crea una copia delle feature selezionate",
         merge: "Dissolvi features",
         split: "Taglia Feature",
@@ -127,6 +128,7 @@ export default {
     },
     steps: {
       help: {
+        select_elements: "Select features",
         copy: "Create new copy of selected features",
         merge: "Dissolve features",
         split: "Split Feature",

@@ -18,8 +18,7 @@ inherit(PickFeatureTask, EditingTask);
 
 const proto = PickFeatureTask.prototype;
 
-// metodo eseguito all'avvio del tool
-proto.run = function(inputs, context) {
+proto.run = function(inputs, context, queques) {
   const d = $.Deferred();
   const editingLayer = inputs.layer.getEditingLayer();
   const layers = [editingLayer];
@@ -33,13 +32,13 @@ proto.run = function(inputs, context) {
     const feature = e.feature;
     if (!features) inputs.features.push(feature);
     if (this._steps) {
-      this.setUserMessageStepDone('select')
-      d.resolve({
-        inputs,
-        context
+      const originalStyle = this.setFeaturesSelectedStyle([feature]);
+      this.setUserMessageStepDone('select');
+      queques.micro.addTask(() => {
+        feature.setStyle(originalStyle);
       })
+      d.resolve(inputs)
     } else d.resolve(inputs);
-
   });
   return d.promise()
 };

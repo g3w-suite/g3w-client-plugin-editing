@@ -29,8 +29,20 @@ proto.getSteps = function(){
   return this._steps;
 };
 
+proto.getMapService = function(){
+  return this._mapService;
+};
+
 proto.getMap = function() {
   return this._mapService.getMap();
+};
+
+proto.setFeaturesSelectedStyle = function(features=[]) {
+  if (features.length) {
+    const {originalStyle, selectedStyle} = this.getSelectedStyle(features[0]);
+    features.forEach(feature => feature.setStyle(selectedStyle));
+    return originalStyle;
+  }
 };
 
 proto.getSelectedStyle = function(feature){

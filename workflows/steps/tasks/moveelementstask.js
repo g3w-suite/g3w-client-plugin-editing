@@ -10,9 +10,9 @@ inherit(MoveElementsTask, EditingTask);
 
 const proto = MoveElementsTask.prototype;
 
-proto.run = function({inputs, context, coordinates}={}) {
+proto.run = function(inputs, context) {
   const d = $.Deferred();
-  const { layer, features } = inputs;
+  const { layer, features, coordinates } = inputs;
   const source = layer.getEditingLayer().getSource();
   const layerId = layer.getId();
   const session = context.session;
@@ -34,9 +34,7 @@ proto.run = function({inputs, context, coordinates}={}) {
     };
 
     for (let i =0; i < features.length; i++) {
-      const feature = features[i].clone({
-        setNew: true
-      });
+      const feature = features[i].cloneNew();
       feature.getGeometry().translate(deltaXY.x, deltaXY.y);
       source.addFeature(feature);
       layer.isPkEditable()
@@ -49,11 +47,12 @@ proto.run = function({inputs, context, coordinates}={}) {
     this._steps.to.done = true;
     d.resolve(inputs)
   });
+
   this.addInteraction(this._drawInteraction);
   this.addInteraction(this._snapIteraction);
   return d.promise();
 };
-proto.stop = function(){
+proto.stop = function() {
   this.removeInteraction(this._drawInteraction);
   this.removeInteraction(this._snapIteraction);
   this._drawInteraction = null;

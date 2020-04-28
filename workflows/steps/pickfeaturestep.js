@@ -4,7 +4,6 @@ const t = g3wsdk.core.i18n.tPlugin;
 const Step = g3wsdk.core.workflow.Step;
 const PickFeatureTask = require('./tasks/pickfeaturetask');
 
-//creato uno step per permettere di fare il pickfeature
 const PickFeatureStep = function(options={}) {
   const task = new PickFeatureTask(options);
   options.task = task ;
