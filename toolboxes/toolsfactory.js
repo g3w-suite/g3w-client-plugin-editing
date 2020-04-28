@@ -77,6 +77,30 @@ function EditorToolsFactory() {
                 op: ModifyGeometryVertexWorkflow
               }),
               new Tool({
+                id: 'copyfeaturespoly',
+                name: t("editing.tools.copy"),
+                icon: "copyPolygon.png",
+                layer,
+                once: true,
+                op: CopyFeaturesWorflow
+              }),
+              new Tool({
+                id: 'mergefeaturespoly',
+                name: t("editing.tools.merge"),
+                icon: "mergeFeatures.png",
+                layer,
+                once: true,
+                op: MergeFeaturesWorkflow
+              }),
+              new Tool({
+                id: 'splitfeatureline',
+                name: t("editing.tools.split"),
+                icon: "splitFeatures.png",
+                layer,
+                once: true,
+                op: SplitFeatureWorkflow
+              }),
+              new Tool({
                 id: 'deletefeature',
                 name: t("editing.tools.delete_feature"),
                 icon: "deleteLine.png",
@@ -117,7 +141,7 @@ function EditorToolsFactory() {
                 op: ModifyGeometryVertexWorkflow
               }),
               new Tool({
-                id: 'copyfeatures',
+                id: 'copyfeaturespoly',
                 name: t("editing.tools.copy"),
                 icon: "copyPolygon.png",
                 layer,
@@ -125,17 +149,17 @@ function EditorToolsFactory() {
                 op: CopyFeaturesWorflow
               }),
               new Tool({
-                id: 'mergefeatures',
+                id: 'mergefeaturespoly',
                 name: t("editing.tools.merge"),
-                icon: "mergePolygon.png",
+                icon: "mergeFeatures.png",
                 layer,
                 once: true,
                 op: MergeFeaturesWorkflow
               }),
               new Tool({
-                id: 'splitfeaturet',
+                id: 'splitfeaturepoly',
                 name: t("editing.tools.split"),
-                icon: "splitPolygon.png",
+                icon: "splitFeatures.png",
                 layer,
                 once: true,
                 op: SplitFeatureWorkflow

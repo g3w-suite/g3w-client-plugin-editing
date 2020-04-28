@@ -27,23 +27,28 @@ proto.run = function(inputs, context) {
       message: 'Seleziona come minimo due features',
       autoclose: true
     })
+    d.reject();
   } else {
     const mapService = this.getMapService();
+    let index;
     const message = SelectFeaturesDom({
       features,
       events: {
-        click:(index) => {
-        },
-        mouseover:(index)=>{
+        click:(idx) => {
+          console.log(index)
+          index = idx;
           const feature = features[index];
           mapService.highlightGeometry(feature.getGeometry(), {
-            zoom: false
+            zoom: false,
+            color: 'red'
           })
-        }
+        },
       }
     });
     GUI.showModalDialog({
       title: 'seleziona la feature',
+      className: 'modal-left',
+      closeButton: false,
       message,
       buttons: {
         cancel: {
@@ -56,21 +61,30 @@ proto.run = function(inputs, context) {
         ok: {
           label: 'Ok',
           className: 'btn-primary',
-          callback: function(){
-            const feature = features[index];
-            const originalFeature = feature.clone();
-            const newFeature = dissolve({
-              features,
-              index,
-            });
-            session.pushUpdate(layerId, newFeature, originalFeature);
-            features.splice(index, 1);
-            features.forEach(deleteFeature => {
-              session.pushDelete(layerId, deleteFeature);
-              source.removeFeature(deleteFeature);
-            })
-            inputs.features = [feature];
-            d.resolve(inputs);
+          callback() {
+            if (index !== undefined) {
+              const feature = features[index];
+              const originalFeature = feature.clone();
+              const newFeature = dissolve({
+                features,
+                index,
+              });
+              session.pushUpdate(layerId, newFeature, originalFeature);
+              features.splice(index, 1);
+              features.forEach(deleteFeature => {
+                session.pushDelete(layerId, deleteFeature);
+                source.removeFeature(deleteFeature);
+              })
+              inputs.features = [feature];
+              d.resolve(inputs);
+            } else {
+              GUI.showUserMessage({
+                type: 'warning',
+                message: 'No feature selected',
+                autoclose: true
+              })
+              d.reject();
+            }
           }
         }
       }

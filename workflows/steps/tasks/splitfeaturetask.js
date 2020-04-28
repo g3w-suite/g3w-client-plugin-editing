@@ -59,7 +59,7 @@ proto.run = function(inputs, context) {
     } else {
       const splittedGeometries = splitFeatures({
         splitfeature,
-        feature: features
+        features
       })
       splittedGeometries.forEach(({uid, geometries}) => {
         if (geometries.length > 1) {

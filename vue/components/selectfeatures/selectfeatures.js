@@ -1,37 +1,43 @@
 function SelectFeaturesDom({features, events}={}){
-
   const Component = Vue.extend({
-    functional: true,
+    data(){
+      return {
+        selected: null
+      }
+    },
     render(h) {
       const columns = Object.keys(features[0].getAlphanumericProperties());
       const header = columns.map(property => h('th', property))
-      const thead = h('thead', [h('tr', header)])
+      const thead = h('thead', [h('tr', header)]);
       const rows = features.map((feature, index) => {
-        let selected;
         const values = columns.map( column => h('td', feature.get(column)))
         return h('tr', {
           on: {
             click: () => {
-              selected = index;
-              //events.click(index);
-            },
-            mouseover: events.mouseover.bind(null, index)
+              this.selected = index;
+              events.click(index);
+            }
           },
           style: {
             cursor: 'pointer',
           },
           class: {
-            'skin-backgrond-color': selected === index
+            'skin-background-color lighten': this.selected === index
           }
         }, values);
       })
       const tbody = h('tbody', rows);
-      return h('table', {
+      const table = h('table', {
         class: {
-          table: true,
-          'table-striped': true
+          'table table-responsive table-striped': true
         }
-      }, [thead, tbody])
+      }, [thead, tbody]);
+      return h('div', {
+        style: {
+          width: '100%',
+          'overflow': 'auto'
+        },
+      }, [table])
     }
   })
   return new Component().$mount().$el;
