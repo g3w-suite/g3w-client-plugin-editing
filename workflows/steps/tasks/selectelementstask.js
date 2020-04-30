@@ -54,8 +54,8 @@ proto.run = function(inputs, context, queques) {
       });
       break;
   }
-  queques.end.addTask(()=>{
-    inputs.features.forEach((feature => feature.setStyle(originalStyle)));
+  queques.micro.addTask(()=>{
+   inputs.features.forEach((feature => feature.setStyle(originalStyle)));
   })
   this.addInteraction(this._selectInteraction);
   return d.promise();
@@ -64,7 +64,6 @@ proto.run = function(inputs, context, queques) {
 proto.stop = function(inputs, context) {
   this.removeInteraction(this._selectInteraction);
   this._drawInteraction = null;
-  return true;
 };
 
 module.exports = SelectElementsTask;

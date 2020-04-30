@@ -31,7 +31,6 @@ proto.getFeature = function() {
 };
 
 proto.start = function() {
-
   const options = {
     inputs : {
       layer: this._layer,
@@ -52,6 +51,8 @@ proto.start = function() {
     this._op.once('deactive', (index) => {
       this.emit('deactive', index)
     });
+    //reset features
+    options.inputs.features = [];
     this._op.start(options)
       .then(() => {
         this._session.save()
@@ -62,7 +63,6 @@ proto.start = function() {
           .then(() => {})
       })
       .always(() => {
-        options.inputs.features = [];
         if (!this._once && this._layer.getType() !== 'table') startOp(options);
         else this.stop();
       })

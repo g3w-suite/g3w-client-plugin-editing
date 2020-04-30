@@ -22,30 +22,27 @@ proto.run = function(inputs, context, queques) {
   const d = $.Deferred();
   const editingLayer = inputs.layer.getEditingLayer();
   const layers = [editingLayer];
-  const features = inputs.features.length ? inputs.features : null;
+  let originalStyle;
   this.pickFeatureInteraction = new PickFeatureInteraction({
     layers,
-    features
+    features: inputs.features
   });
   this.addInteraction(this.pickFeatureInteraction);
   this.pickFeatureInteraction.on('picked', (e) => {
     const feature = e.feature;
-    if (!features) inputs.features.push(feature);
-    if (this._steps) {
-      const originalStyle = this.setFeaturesSelectedStyle([feature]);
-      this.setUserMessageStepDone('select');
-      queques.micro.addTask(() => {
-        feature.setStyle(originalStyle);
-      })
-      d.resolve(inputs)
-    } else d.resolve(inputs);
+    originalStyle = this.setFeaturesSelectedStyle([feature]);
+    inputs.features.length === 0 && inputs.features.push(feature);
+    queques.micro.addTask(()=>{
+      inputs.features.forEach((feature => feature.setStyle(originalStyle)));
+    })
+    this._steps && this.setUserMessageStepDone('select');
+    d.resolve(inputs);
   });
+
   return d.promise()
 };
 
-// metodo eseguito alla disattivazione del tool
 proto.stop = function() {
-  //console.log('Stop pick feature');
   this.removeInteraction(this.pickFeatureInteraction);
   this.pickFeatureInteraction = null;
   return true;

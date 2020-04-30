@@ -15,6 +15,7 @@ proto.run = function(inputs, context) {
   const { layer, features, coordinates } = inputs;
   const source = layer.getEditingLayer().getSource();
   const layerId = layer.getId();
+  const isPkEditable = layer.isPkEditable;
   const session = context.session;
   this._snapIteraction = new ol.interaction.Snap({
     source,
@@ -32,17 +33,14 @@ proto.run = function(inputs, context) {
       x: x - coordinates[0],
       y: y - coordinates[1]
     };
-
-    for (let i =0; i < features.length; i++) {
+    const featuresLength = features.length;
+    for (let i =0; i < featuresLength; i++) {
       const feature = features[i].cloneNew();
       feature.getGeometry().translate(deltaXY.x, deltaXY.y);
       source.addFeature(feature);
-      layer.isPkEditable()
       const newFeature = session.pushAdd(layerId, feature);
-      if (layer.isPkEditable) {
-        inputs.newFeature = newFeature;
-        inputs.features = [feature];
-      }
+      if (isPkEditable) inputs.newFeature = newFeature;
+      inputs.features.push(feature);
     }
     this._steps.to.done = true;
     d.resolve(inputs)
