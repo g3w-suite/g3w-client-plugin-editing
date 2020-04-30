@@ -13,7 +13,7 @@ function AddFeatureWorflow(options={}) {
     snapTool = {
       type: 'snap',
       options: {
-        source: layer.getSource(),
+        source: layer.getEditingLayer().getSource(),
         active: true
       }
     };

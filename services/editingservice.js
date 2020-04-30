@@ -749,7 +749,7 @@ proto._filterRelationsInEditing = function({layerId, relations=[]}) {
 proto.stopSessionChildren = function(layerId) {
   const layer = this.getLayerById(layerId);
   const relations = this._filterRelationsInEditing({
-    relations: layer.getRelations().getArray(),
+    relations: layer.getRelations() ? layer.getRelations().getArray() : [],
     layerId
   });
   relations.forEach((relation) => {

@@ -2,18 +2,20 @@ const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
 const tPlugin = g3wsdk.core.i18n.tPlugin;
 const EditingWorkflow = require('./editingworkflow');
-const PickFeatureStep = require('./steps/pickfeaturestep');
+const SelectElementsStep = require('./steps/selectelementsstep');
 const SplitFeatureStep = require('./steps/splitfeaturestep');
 const OpenFormStep = require('./steps/openformstep');
 
 function SplitFeaturesWorflow(options={}) {
   const {layer} = options;
-  const pickfeaturestep = new PickFeatureStep(options, true);
-  pickfeaturestep.getTask().setSteps({
+  const isPkEditable = layer.isPkEditable()
+  options.type = isPkEditable ? 'single' : 'bbox';
+  const selectelementssteps = new SelectElementsStep(options, true);
+  selectelementssteps.getTask().setSteps({
     select: {
-      description: tPlugin('editing.workflow.steps.select'),
+      description: isPkEditable ? tPlugin('editing.workflow.steps.select') : tPlugin('editing.workflow.steps.selectSHIFT'),
       done: false
-    },
+    }
   });
   const splitfeaturestep = new SplitFeatureStep(options, true);
   splitfeaturestep.getTask().setSteps({
@@ -22,8 +24,8 @@ function SplitFeaturesWorflow(options={}) {
       done: false
     }
   });
-  options.steps = [pickfeaturestep, splitfeaturestep];
-  if (layer && layer.isPkEditable()) {
+  options.steps = [selectelementssteps, splitfeaturestep];
+  if (isPkEditable) {
     const openformstep = new OpenFormStep(options);
     options.steps.push(openformstep);
   }

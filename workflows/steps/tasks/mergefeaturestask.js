@@ -35,7 +35,6 @@ proto.run = function(inputs, context) {
       features,
       events: {
         click:(idx) => {
-          console.log(index)
           index = idx;
           const feature = features[index];
           mapService.highlightGeometry(feature.getGeometry(), {
@@ -69,14 +68,23 @@ proto.run = function(inputs, context) {
                 features,
                 index,
               });
-              session.pushUpdate(layerId, newFeature, originalFeature);
-              features.splice(index, 1);
-              features.forEach(deleteFeature => {
-                session.pushDelete(layerId, deleteFeature);
-                source.removeFeature(deleteFeature);
-              })
-              inputs.features = [feature];
-              d.resolve(inputs);
+              if (newFeature) {
+                session.pushUpdate(layerId, newFeature, originalFeature);
+                features.splice(index, 1);
+                features.forEach(deleteFeature => {
+                  session.pushDelete(layerId, deleteFeature);
+                  source.removeFeature(deleteFeature);
+                })
+                inputs.features = [feature];
+                d.resolve(inputs);
+              } else {
+                GUI.showUserMessage({
+                  type: 'warning',
+                  message: 'No feature disolved',
+                  autoclose: true
+                })
+                d.reject()
+              }
             } else {
               GUI.showUserMessage({
                 type: 'warning',

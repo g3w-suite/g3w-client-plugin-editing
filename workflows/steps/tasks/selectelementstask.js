@@ -44,8 +44,7 @@ proto.run = function(inputs, context, queques) {
         const bboxExtent = this._selectInteraction.getGeometry().getExtent();
         const layerSource = layer.getEditingLayer().getSource();
         features = layerSource.getFeaturesInExtent(bboxExtent);
-        if (!features.length)
-          d.reject();
+        if (!features.length) d.reject();
         else {
           inputs.features = features;
           originalStyle = this.setFeaturesSelectedStyle(features);
@@ -56,7 +55,7 @@ proto.run = function(inputs, context, queques) {
       break;
   }
   queques.end.addTask(()=>{
-    features.forEach((feature => feature.setStyle(originalStyle)));
+    inputs.features.forEach((feature => feature.setStyle(originalStyle)));
   })
   this.addInteraction(this._selectInteraction);
   return d.promise();

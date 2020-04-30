@@ -11,7 +11,7 @@ function ModifyGeometryVertexWorflow(options={}) {
     const snapTool = {
       type: 'snap',
       options: {
-        source: layer.getSource(),
+        source: layer.getEditingLayer().getSource(),
         active: false
       }
     };

@@ -53,7 +53,6 @@ proto.run = function(inputs, context) {
             inputs,
             session
           });
-          d.resolve(inputs);
         }
       }
     } else {
@@ -63,6 +62,7 @@ proto.run = function(inputs, context) {
       })
       splittedGeometries.forEach(({uid, geometries}) => {
         if (geometries.length > 1) {
+          isSplitted = true;
           const feature = features.find(feature => feature.getUid() === uid);
           this._handleSplitFeature({
             feature,
@@ -73,8 +73,8 @@ proto.run = function(inputs, context) {
         }
       })
     }
-
-    if (!isSplitted) {
+    if (isSplitted) d.resolve(inputs);
+    else {
       GUI.showUserMessage({
         type: 'warning',
         message: 'La feature non è stata splittata',
@@ -89,7 +89,7 @@ proto.run = function(inputs, context) {
   return d.promise();
 };
 
-proto._handleSplitFeature = function({feature, inputs, session, splittedGeometries}={}){
+proto._handleSplitFeature = function({feature, inputs, session, splittedGeometries=[]}={}){
   const newFeatures = [];
   const {layer} = inputs;
   const source = layer.getEditingLayer().getSource();
