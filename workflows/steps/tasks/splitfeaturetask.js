@@ -38,7 +38,6 @@ proto.run = function(inputs, context) {
         feature: features[0]
       })
       if (splittedGeometries.length && splittedGeometries.length > 1) {
-        isSplitted = true;
         if (splittedGeometries.length > 2) {
           GUI.showUserMessage({
             type: 'warning',
@@ -47,12 +46,15 @@ proto.run = function(inputs, context) {
           })
           d.reject();
         } else {
-          this._handleSplitFeature({
+          isSplitted = true;
+          const newFeatures = this._handleSplitFeature({
             feature: features[0],
             splittedGeometries,
             inputs,
             session
           });
+          inputs.newFeature = newFeatures[0];
+          d.resolve(inputs);
         }
       }
     } else {
@@ -82,7 +84,6 @@ proto.run = function(inputs, context) {
       })
       d.reject();
     }
-
   });
   this.addInteraction(this._drawInteraction);
   this.addInteraction(this._snapIteraction);
@@ -96,6 +97,7 @@ proto._handleSplitFeature = function({feature, inputs, session, splittedGeometri
   const pk = layer.getPk();
   const layerId = layer.getId();
   const oriFeature = feature.clone();
+  inputs.features = splittedGeometries.length ? [] : inputs.features;
   splittedGeometries.forEach((splittedGeometry, index) => {
     if (index === 0) {
       feature.setGeometry(splittedGeometry);
@@ -103,15 +105,15 @@ proto._handleSplitFeature = function({feature, inputs, session, splittedGeometri
     } else {
       const newFeature = oriFeature.cloneNew();
       newFeature.setGeometry(splittedGeometry);
-      const feature = new Feature({
+      feature = new Feature({
         feature: newFeature,
         pk
       });
       feature.setTemporaryId();
       source.addFeature(feature);
       newFeatures.push(session.pushAdd(layerId, feature));
-      inputs.features.push(feature)
     }
+    inputs.features.push(feature);
   })
   return newFeatures;
 }
@@ -121,7 +123,6 @@ proto.stop = function(){
   this.removeInteraction(this._snapIteraction);
   this._drawInteraction = null;
   this._snapIteraction = null;
-  return true;
 };
 
 

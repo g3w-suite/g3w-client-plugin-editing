@@ -27,9 +27,9 @@ proto.run = function(inputs, context, queques) {
         const feature = e.feature;
         features = [feature];
         if (feature) {
-          orginalStyle = this.setFeaturesSelectedStyle([feature]);
-          this.setUserMessageStepDone('select');
           inputs.features = features;
+          originalStyle = this.setFeaturesSelectedStyle(features);
+          this.setUserMessageStepDone('select');
           d.resolve(inputs);
         }
       });
