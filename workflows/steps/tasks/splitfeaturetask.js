@@ -27,6 +27,7 @@ proto.run = function(inputs, context) {
   this._drawInteraction = new ol.interaction.Draw({
     type: 'LineString',
     features: new ol.Collection(),
+    freehandCondition: ol.events.condition.never
   });
 
   this._drawInteraction.on('drawend', (evt) => {

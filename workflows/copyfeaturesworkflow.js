@@ -6,11 +6,12 @@ const SelectElementsStep = require('./steps/selectelementsstep');
 const GetVertexStep = require('./steps/getvertexstep');
 const MoveElementsStep = require('./steps/movelementsstep');
 const OpenFormStep = require('./steps/openformstep');
+const ApplicationState = g3wsdk.core.ApplicationState;
 
 function SelectcAndMoveElementsWorflow(options={}) {
   const {layer} = options;
   const isPkEditable = layer.isPkEditable()
-  options.type = isPkEditable ? 'single' : 'bbox';
+  options.type = ApplicationState.ismobile ? 'touch' : isPkEditable ? 'single' : 'bbox';
   const selectelementssteps = new SelectElementsStep(options, true);
   selectelementssteps.getTask().setSteps({
     select: {

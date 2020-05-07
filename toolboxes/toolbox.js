@@ -139,7 +139,6 @@ proto.addDependency = function(dependency) {
   this.state.editing.dependencies.push(dependency);
 };
 
-
 proto.start = function() {
   const EditingService = require('../services/editingservice');
   const EventName = 'start-editing';
