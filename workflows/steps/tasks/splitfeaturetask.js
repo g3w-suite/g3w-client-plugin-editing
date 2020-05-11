@@ -116,6 +116,11 @@ proto._handleSplitFeature = function({feature, inputs, session, splittedGeometri
     }
     inputs.features.push(feature);
   })
+  GUI.showUserMessage({
+    type: 'success',
+    message: newFeatures.length,
+    autoclose: false
+  });
   return newFeatures;
 }
 
