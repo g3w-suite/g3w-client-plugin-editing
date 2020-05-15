@@ -45,6 +45,7 @@ export default {
     workflow: {
       steps: {
         select: 'Clicca sulla feature da selezionare',
+        merge: 'Seleziona la feature su cui dissolvere',
         selectSHIFT: 'Seleziona le features tenedo premuto il tasto SHIFT',
         copyCTRL: 'Copia le features selezionate con CTRL+C',
         selectStartVertex: 'Seleziona il vertice di partenza delle feature selezionate',
@@ -148,6 +149,7 @@ export default {
     workflow: {
       steps: {
         select: 'Click on feature to select',
+        merge: 'Select featurewhere dissolve',
         selectSHIFT: 'Select features drawing a rectangle pressing SHIFT',
         copyCTRL: 'Copy selected features using CTRL+C',
         selectStartVertex: 'Select starting vertex of selected features',

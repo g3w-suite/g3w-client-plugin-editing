@@ -10,6 +10,7 @@ function SplitFeaturesWorflow(options={}) {
   const {layer} = options;
   const isPkEditable = layer.isPkEditable()
   options.type = isPkEditable ? 'single' : 'bbox';
+  options.help = 'editing.steps.help.split';
   const selectelementssteps = new SelectElementsStep(options, true);
   selectelementssteps.getTask().setSteps({
     select: {

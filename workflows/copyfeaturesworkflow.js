@@ -12,6 +12,7 @@ function SelectcAndMoveElementsWorflow(options={}) {
   const {layer} = options;
   const isPkEditable = layer.isPkEditable()
   options.type = ApplicationState.ismobile ? 'touch' : isPkEditable ? 'single' : 'bbox';
+  options.help = 'editing.steps.help.copy';
   const selectelementssteps = new SelectElementsStep(options, true);
   selectelementssteps.getTask().setSteps({
     select: {

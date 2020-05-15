@@ -7,6 +7,7 @@ const MergeFeaturesStep = require('./steps/mergefeaturesstep');
 
 function MergeFeaturesWorkflow(options={}) {
   options.type = 'bbox';
+  options.help = 'editing.steps.help.merge';
   const selectelementssteps = new SelectElementsStep(options, true);
   selectelementssteps.getTask().setSteps({
     select: {
@@ -17,7 +18,7 @@ function MergeFeaturesWorkflow(options={}) {
   const mergefeaturesstep = new MergeFeaturesStep(options, true);
   mergefeaturesstep.getTask().setSteps({
     choose: {
-      description: 'Seleziona la feature su cui dissolvere',
+      description: tPlugin('editing.workflow.steps.merge'),
       done: false
     }
   });

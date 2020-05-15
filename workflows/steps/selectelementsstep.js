@@ -6,7 +6,7 @@ const SelectElementsTask = require('./tasks/selectelementstask');
 
 const SelectElementsStep = function(options={}, chain) {
   options.task = new SelectElementsTask(options);
-  options.help = t("editing.steps.help.select_elements");
+  options.help = t(options.help || "editing.steps.help.select_elements");
   chain && this.on('run', () => {
       this.emit('next-step', t("editing.steps.help.select_elements"))
     });

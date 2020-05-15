@@ -28,7 +28,15 @@ const TableService = function(options = {}) {
       const baseFeature = this._features[0];
       const properties = Object.keys(baseFeature.getProperties());
       this.state.headers = this.state.headers.filter(header => properties.indexOf(header.name) !== -1);
-      this.state.features = this._features.map(feature => feature.getProperties());
+      const headers = this.state.headers.map(header => header.name);
+      this.state.features = this._features.map(feature => {
+        const properties = feature.getProperties();
+        const orderedProperties = {};
+        headers.forEach(header => {
+          orderedProperties[header] = properties[header]
+        });
+        return orderedProperties;
+      });
     }
   };
 
