@@ -14,14 +14,16 @@ function SplitFeaturesWorflow(options={}) {
   const selectelementssteps = new SelectElementsStep(options, true);
   selectelementssteps.getTask().setSteps({
     select: {
-      description: isPkEditable ? tPlugin('editing.workflow.steps.select') : tPlugin('editing.workflow.steps.selectSHIFT'),
+      description: isPkEditable ? 'editing.workflow.steps.select' : 'editing.workflow.steps.selectSHIFT',
+      directive: 't-plugin',
       done: false
     }
   });
   const splitfeaturestep = new SplitFeatureStep(options, true);
   splitfeaturestep.getTask().setSteps({
     draw_line: {
-      description: tPlugin('editing.workflow.steps.draw_split_line'),
+      description: 'editing.workflow.steps.draw_split_line',
+      directive: 't-plugin',
       done: false
     }
   });

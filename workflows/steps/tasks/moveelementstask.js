@@ -15,7 +15,7 @@ proto.run = function(inputs, context) {
   const { layer, features, coordinates } = inputs;
   const source = layer.getEditingLayer().getSource();
   const layerId = layer.getId();
-  const isPkEditable = layer.isPkEditable;
+  const isPkEditable = layer.isPkEditable();
   const session = context.session;
   this._snapIteraction = new ol.interaction.Snap({
     source,

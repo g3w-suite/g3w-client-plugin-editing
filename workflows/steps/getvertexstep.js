@@ -6,7 +6,7 @@ const GetVertexTask = require('./tasks/getvertextask');
 
 const GetVertexStep = function(options={}) {
   options.task = new GetVertexTask(options);
-  options.help = t("editing.steps.help.select");
+  options.help = "editing.steps.help.select";
   base(this, options)
 };
 

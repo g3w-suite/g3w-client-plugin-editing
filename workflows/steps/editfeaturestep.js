@@ -6,7 +6,7 @@ const EditFeatureTask = require('./tasks/editattributestask');
 
 const EditFeatureStep = function(options={}) {
   options.task = new EditFeatureTask();
-  options.help = t("editing.steps.help.show_edit_feature_form");
+  options.help = "editing.steps.help.show_edit_feature_form";
   base(this, options)
 };
 

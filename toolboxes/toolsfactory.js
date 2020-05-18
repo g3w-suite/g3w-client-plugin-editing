@@ -29,28 +29,28 @@ function EditorToolsFactory() {
             tools = [
               new Tool({
                 id: 'addfeature',
-                name: t("editing.tools.add_feature"),
+                name: "editing.tools.add_feature",
                 icon: "addPoint.png",
                 layer,
                 op: AddFeatureWorkflow
               }),
               new Tool({
                 id: 'movefeature',
-                name: t("editing.tools.move_feature"),
+                name: "editing.tools.move_feature",
                 icon: "movePoint.png",
                 layer,
                 op: MoveFeatureWorkflow
               }),
               new Tool({
                 id: 'deletefeature',
-                name: t("editing.tools.delete_feature"),
+                name: "editing.tools.delete_feature",
                 icon: "deletePoint.png",
                 layer,
                 op: DeleteFeatureWorkflow
               }),
               new Tool({
                 id: 'editattributes',
-                name: t("editing.tools.update_feature"),
+                name: "editing.tools.update_feature",
                 icon: "editAttributes.png",
                 layer,
                 op: EditFeatureAttributesWorkflow
@@ -64,21 +64,21 @@ function EditorToolsFactory() {
             tools = [
               new Tool({
                 id: 'addfeature',
-                name: t("editing.tools.add_feature"),
+                name: "editing.tools.add_feature",
                 icon: "addLine.png",
                 layer,
                 op: AddFeatureWorkflow
               }),
               new Tool({
                 id: 'movevertex',
-                name: t("editing.tools.update_vertex"),
+                name: "editing.tools.update_vertex",
                 icon: "moveVertex.png",
                 layer,
                 op: ModifyGeometryVertexWorkflow
               }),
               new Tool({
                 id: 'copyfeaturespoly',
-                name: t("editing.tools.copy"),
+                name: "editing.tools.copy",
                 icon: "copyPolygon.png",
                 layer,
                 once: true,
@@ -86,7 +86,7 @@ function EditorToolsFactory() {
               }),
               new Tool({
                 id: 'mergefeaturespoly',
-                name: t("editing.tools.merge"),
+                name: "editing.tools.merge",
                 icon: "mergeFeatures.png",
                 layer,
                 once: true,
@@ -94,7 +94,7 @@ function EditorToolsFactory() {
               }),
               new Tool({
                 id: 'splitfeatureline',
-                name: t("editing.tools.split"),
+                name: "editing.tools.split",
                 icon: "splitFeatures.png",
                 layer,
                 once: true,
@@ -102,14 +102,14 @@ function EditorToolsFactory() {
               }),
               new Tool({
                 id: 'deletefeature',
-                name: t("editing.tools.delete_feature"),
+                name: "editing.tools.delete_feature",
                 icon: "deleteLine.png",
                 layer,
                 op: DeleteFeatureWorkflow
               }),
               new Tool({
                 id: 'editattributes',
-                name: t("editing.tools.update_feature"),
+                name: "editing.tools.update_feature",
                 icon: "editAttributes.png",
                 layer: layer,
                 op: EditFeatureAttributesWorkflow
@@ -121,28 +121,28 @@ function EditorToolsFactory() {
             tools = [
               new Tool({
                 id: 'addfeature',
-                name: t("editing.tools.add_feature"),
+                name: "editing.tools.add_feature",
                 icon: "addPolygon.png",
                 layer,
                 op: AddFeatureWorkflow
               }),
               new Tool({
                 id: 'movefeature',
-                name: t("editing.tools.move_feature"),
+                name: "editing.tools.move_feature",
                 icon: "movePolygon.png",
                 layer,
                 op: MoveFeatureWorkflow
               }),
               new Tool({
                 id: 'movevertex',
-                name: t("editing.tools.update_vertex"),
+                name: "editing.tools.update_vertex",
                 icon: "movePolygonVertex.png",
                 layer,
                 op: ModifyGeometryVertexWorkflow
               }),
               new Tool({
                 id: 'copyfeaturespoly',
-                name: t("editing.tools.copy"),
+                name: "editing.tools.copy",
                 icon: "copyPolygon.png",
                 layer,
                 once: true,
@@ -150,7 +150,7 @@ function EditorToolsFactory() {
               }),
               new Tool({
                 id: 'mergefeaturespoly',
-                name: t("editing.tools.merge"),
+                name: "editing.tools.merge",
                 icon: "mergeFeatures.png",
                 layer,
                 once: true,
@@ -158,7 +158,7 @@ function EditorToolsFactory() {
               }),
               new Tool({
                 id: 'splitfeaturepoly',
-                name: t("editing.tools.split"),
+                name: "editing.tools.split",
                 icon: "splitFeatures.png",
                 layer,
                 once: true,
@@ -166,14 +166,14 @@ function EditorToolsFactory() {
               }),
               new Tool({
                 id: 'deletefeature',
-                name: t("editing.tools.delete_feature"),
+                name: "editing.tools.delete_feature",
                 icon: "deletePolygon.png",
                 layer,
                 op: DeleteFeatureWorkflow
               }),
               new Tool({
                 id: 'editattributes',
-                name: t("editing.tools.update_feature"),
+                name: "editing.tools.update_feature",
                 icon: "editAttributes.png",
                 layer,
                 op: EditFeatureAttributesWorkflow
@@ -186,14 +186,14 @@ function EditorToolsFactory() {
         tools = [
           new Tool({
             id: 'addfeature',
-            name: t("editing.tools.add_feature"),
+            name: "editing.tools.add_feature",
             icon: "addTableRow.png",
             layer,
             op: AddTableFeatureWorflow
           }),
           new Tool({
             id: 'edittable',
-            name: t("editing.tools.update_feature"),
+            name: "editing.tools.update_feature",
             icon: "editAttributes.png",
             layer,
             op: EditTableFeaturesWorkflow

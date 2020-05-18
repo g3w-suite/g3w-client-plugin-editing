@@ -3,7 +3,6 @@ const inherit = g3wsdk.core.utils.inherit;
 const base = g3wsdk.core.utils.base;
 const Plugin = g3wsdk.core.plugin.Plugin;
 const GUI = g3wsdk.gui.GUI;
-const t = g3wsdk.core.i18n.tPlugin;
 const Service = require('./services/editingservice');
 const EditingPanel = require('./panel');
 const addI18nPlugin = g3wsdk.core.i18n.addI18nPlugin;
@@ -54,7 +53,7 @@ const _Plugin = function() {
   //setup plugin interface
   this.setupGui = function() {
     if (this.config.visible === false) return false;
-    this.config.name = this.config.name ||  t("editing.editing_data");
+    this.config.name = this.config.name ||  "plugins.editing.editing_data";
     this.addTools({
       action: this.showEditingPanel,
       offline: false,

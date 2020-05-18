@@ -32,7 +32,8 @@ function EditorToolBoxesFactory() {
       type: layerType,
       layer,
       tools: tools,
-      title: `Edit ${layer.getName()}`,
+      lngTitle: 'editing.toolbox.title',
+      title: ` ${layer.getName()}`,
       constraints
     })
   };

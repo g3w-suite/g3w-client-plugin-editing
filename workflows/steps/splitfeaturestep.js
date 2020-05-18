@@ -7,7 +7,7 @@ const SplitFeatureTask = require('./tasks/splitfeaturetask');
 const MoveElementsStep = function(options={}) {
   const task = new SplitFeatureTask(options);
   options.task = task;
-  options.help = ''
+  options.help = '';
   base(this, options)
 };
 

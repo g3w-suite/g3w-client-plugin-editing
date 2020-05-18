@@ -146,12 +146,12 @@ proto.startForm = function(options = {}) {
     push: this._isContentChild,
     showgoback: !this._isContentChild,
     buttons:[{
-      title: t("editing.form.buttons.save"),
+      title: "plugins.editing.form.buttons.save",
       type: "save",
       class: "btn-success",
       cbk: this._saveFnc(promise, context, inputs).bind(this)
     }, {
-      title: t("editing.form.buttons.cancel"),
+      title: "plugins.editing.form.buttons.cancel",
       type: "cancel",
       class: "btn-primary",
       cbk: this._cancelFnc(promise, inputs).bind(this)

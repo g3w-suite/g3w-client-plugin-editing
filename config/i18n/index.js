@@ -1,7 +1,7 @@
 export default {
   it: {
     search: "Cerca",
-    editing_data: "Editing Dati",
+    editing_data: "Edita Dati",
     editing_attributes: "Edita attributi",
     relations: "Relazioni",
     edit_relation: "Edita relazione",
@@ -12,6 +12,9 @@ export default {
     list_of_relations_feature: "Elenco Relazioni della feature ",
     tooltip:{
       edit_layer: "Modifica Layer"
+    },
+    toolbox: {
+      title: 'Edita'
     },
     tools: {
       copy: "Crea una copia delle feature selezionate",
@@ -116,6 +119,9 @@ export default {
     list_of_relations_feature: "List of relations feature ",
     tooltip: {
       edit_layer: "Edit Layer"
+    },
+    toolbox: {
+      title: 'Edit'
     },
     tools: {
       copy: "Create new copy of selected features",

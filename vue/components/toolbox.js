@@ -1,3 +1,4 @@
+const ApplicationState = g3wsdk.core.ApplicationState;
 const ToolComponent = require('./tool');
 const ToolsOfToolComponent = require('./toolsoftool');
 const t = g3wsdk.core.i18n.tPlugin;
@@ -57,9 +58,15 @@ const ToolboxComponent = Vue.extend({
     }
   },
   created() {
-    this.edit_layer_tooltip = t('editing.tooltip.edit_layer');
+    this.edit_layer_tooltip = 'editing.tooltip.edit_layer';
     this.$emit('canEdit', {
       id: this.state.id
+    });
+    // to transalte help message
+    this.$watch(()=> ApplicationState.lng, ()=>{
+      const help = this.toolhelpmessage;
+      this.state.toolmessages.help = null;
+      this.state.toolmessages.help = help;
     })
   },
   mounted() {

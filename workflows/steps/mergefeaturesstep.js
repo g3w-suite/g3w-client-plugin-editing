@@ -6,7 +6,7 @@ const MergeFeaturesTask = require('./tasks/mergefeaturestask');
 
 const MergeFeatureStep = function(options={}) {
   options.task = new MergeFeaturesTask();
-  options.help = t("editing.steps.help.merge");
+  options.help = "editing.steps.help.merge";
   base(this, options)
 };
 

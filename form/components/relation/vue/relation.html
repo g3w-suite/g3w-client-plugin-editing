@@ -8,11 +8,11 @@
         <div class="col-sm-2 pull-right" style="padding:0">
           <span class="g3w-icon add-link pull-right" align="center"
                 data-toggle="tooltip" data-placement="bottom"
-                :title="tooltips.link_relation" @click="enableAddLinkButtons ? linkRelation() : null"
+                v-t-title:plugin="tooltips.link_relation" @click="enableAddLinkButtons ? linkRelation() : null"
                 :class="[{'disabled': !enableAddLinkButtons}, g3wtemplate.font['link']]">
           </span>
           <span data-toggle="tooltip" data-placement="bottom"
-                 :title="tooltips.add_relation"
+                 v-t-title:plugin="tooltips.add_relation"
                  @click="enableAddLinkButtons ? addRelationAndLink() : null"
                  class="g3w-icon add-link pull-right"
                  :class="[{'disabled' : !enableAddLinkButtons}, g3wtemplate.font['plus']]">
@@ -53,7 +53,7 @@
                   v-if="!fieldrequired"
                   class="g3w-mini-relation-icon skin-tooltip-left g3w-icon" :class="g3wtemplate.font['unlink']"
                   @click="unlinkRelation(index)"
-                  data-toggle="tooltip" data-placement="left" :title="tooltips.unlink_relation"
+                  data-toggle="tooltip" data-placement="left" v-t-title:plugintitle="tooltips.unlink_relation"
                   aria-hidden="true">
                 </div>
               </td>
@@ -62,7 +62,7 @@
                   <div class="skin-tooltip-left editbtn enabled" @click="startTool(relationtool, index)"
                        v-for="relationtool in getRelationTools()" :key="relationtool.state.name"
                        data-toggle="tooltip"
-                       data-placement="left" :title="relationtool.state.name">
+                       data-placement="left" v-t-tile:plugin="relationtool.state.name">
                     <img height="20px" width="20px" :src="resourcesurl + 'images/'+ relationtool.state.icon"/>
                   </div>
                 </div>

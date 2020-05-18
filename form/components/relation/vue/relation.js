@@ -13,10 +13,10 @@ const RelationComponent = Vue.extend({
     return {
       showallfieldsindex: null,
       tooltips: {
-        add_relation: t("editing.form.relations.tooltips.add_relation"),
-        link_relation: t("editing.form.relations.tooltips.link_relation"),
-        open_relation_tool: t("editing.form.relations.tooltips.open_relation_tools"),
-        unlink_relation: t("editing.form.relations.tooltips.unlink_relation")
+        add_relation: "editing.form.relations.tooltips.add_relation",
+        link_relation: "editing.form.relations.tooltips.link_relation",
+        open_relation_tool: "editing.form.relations.tooltips.open_relation_tools",
+        unlink_relation: "editing.form.relations.tooltips.unlink_relation"
       },
       value: null,
       placeholdersearch: `${t('editing.search')} ...`

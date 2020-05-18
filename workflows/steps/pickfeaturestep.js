@@ -7,7 +7,7 @@ const PickFeatureTask = require('./tasks/pickfeaturetask');
 const PickFeatureStep = function(options={}) {
   const task = new PickFeatureTask(options);
   options.task = task ;
-  options.help = t("editing.steps.help.pick_feature");
+  options.help = "editing.steps.help.pick_feature";
   base(this, options)
 };
 

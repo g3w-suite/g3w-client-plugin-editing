@@ -7,7 +7,7 @@ const AddFeatureTableTask = require('./tasks/addfeaturetabletask');
 //creato uno step per apriore il form
 var AddTableFeatureStep = function(options={}) {
   options.task = new AddFeatureTableTask();
-  options.help = t("editing.steps.help.new");
+  options.help = "editing.steps.help.new";
   base(this, options)
 };
 

@@ -6,7 +6,7 @@ const MoveFeatureTask = require('./tasks/movefeaturettask');
 
 const MoveFeatureStep = function(options={}) {
   options.task = new MoveFeatureTask(options);
-  options.help = t("editing.steps.help.move");
+  options.help = "editing.steps.help.move";
   base(this, options)
 };
 

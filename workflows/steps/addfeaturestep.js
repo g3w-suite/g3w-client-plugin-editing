@@ -6,7 +6,7 @@ const AddFeatureTask = require('./tasks/addfeaturetask');
 
 var AddFeatureStep = function(options={}) {
   options.task = new AddFeatureTask(options);
-  options.help = t("editing.steps.help.draw_new_feature");
+  options.help = "editing.steps.help.draw_new_feature";
   base(this, options)
 };
 

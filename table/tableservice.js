@@ -91,7 +91,7 @@ proto.deleteFeature = function(index) {
 };
 
 proto.copyFeature = function(index){
-  const feature = this._features[index];
+  const feature = this._features[index].cloneNew();
   const addTableFeatureWorflow = require('../workflows/addtablefeatureworkflow');
   this._workflow = new addTableFeatureWorflow();
   const inputs = this._inputs;

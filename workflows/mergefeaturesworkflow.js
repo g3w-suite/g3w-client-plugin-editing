@@ -11,14 +11,16 @@ function MergeFeaturesWorkflow(options={}) {
   const selectelementssteps = new SelectElementsStep(options, true);
   selectelementssteps.getTask().setSteps({
     select: {
-      description: tPlugin('editing.workflow.steps.selectSHIFT'),
+      description: 'editing.workflow.steps.selectSHIFT',
+      directive: 't-plugin',
       done: false
     }
   });
   const mergefeaturesstep = new MergeFeaturesStep(options, true);
   mergefeaturesstep.getTask().setSteps({
     choose: {
-      description: tPlugin('editing.workflow.steps.merge'),
+      description: 'editing.workflow.steps.merge',
+      directive: 't-plugin',
       done: false
     }
   });

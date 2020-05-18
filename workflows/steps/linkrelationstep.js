@@ -6,7 +6,7 @@ const LinkRelationTask = require('./tasks/linkrelationtask');
 
 const LinkRelationStep = function(options={}) {
   options.task = new LinkRelationTask();
-  options.help = t("editing.steps.help.select_feature_to_relation");
+  options.help = "editing.steps.help.select_feature_to_relation";
   base(this, options)
 };
 

@@ -16,21 +16,24 @@ function SelectcAndMoveElementsWorflow(options={}) {
   const selectelementssteps = new SelectElementsStep(options, true);
   selectelementssteps.getTask().setSteps({
     select: {
-      description: isPkEditable ? tPlugin('editing.workflow.steps.select') : tPlugin('editing.workflow.steps.selectSHIFT'),
+      description: isPkEditable ? 'editing.workflow.steps.select' : 'editing.workflow.steps.selectSHIFT',
+      directive: 't-plugin',
       done: false
     }
   });
   const getvertexstep = new GetVertexStep(options, true);
   getvertexstep.getTask().setSteps({
     from: {
-      description: tPlugin('editing.workflow.steps.selectStartVertex'),
+      description: 'editing.workflow.steps.selectStartVertex',
+      directive: 't-plugin',
       done: false
     }
   });
   const moveelementssteps = new MoveElementsStep(options, true);
   moveelementssteps.getTask().setSteps({
     to: {
-      description: tPlugin('editing.workflow.steps.selectToPaste'),
+      description: 'editing.workflow.steps.selectToPaste',
+      directive: 't-plugin',
       done: false
     }
   });

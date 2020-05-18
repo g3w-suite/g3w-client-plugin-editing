@@ -6,7 +6,7 @@ const DeleteFeatureTask = require('./tasks/deletefeaturetask');
 
 const DeleteFeatureStep = function(options={}) {
   options.task = new DeleteFeatureTask();
-  options.help = t("editing.steps.help.double_click_delete");
+  options.help = "editing.steps.help.double_click_delete";
   base(this, options)
 };
 
