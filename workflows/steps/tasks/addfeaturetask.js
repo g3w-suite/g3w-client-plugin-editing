@@ -26,7 +26,6 @@ proto.run = function(inputs, context) {
   const editingLayer = originalLayer.getEditingLayer();
   const session = context.session;
   const layerId = originalLayer.getId();
-  const pk = originalLayer.getPk();
   switch (originalLayer.getType()) {
     case Layer.LayerTypes.VECTOR:
       let geometryType;
@@ -56,9 +55,8 @@ proto.run = function(inputs, context) {
         });
         const feature = new Feature({
           feature: e.feature,
-          pk
         });
-        originalLayer.isPkEditable() ?  feature.setNew() : feature.setTemporaryId();
+        feature.setTemporaryId();
         source.addFeature(feature);
         const newFeature = session.pushAdd(layerId, feature);
         inputs.newFeature = newFeature;

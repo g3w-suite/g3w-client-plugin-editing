@@ -42,6 +42,14 @@ function EditorToolsFactory() {
                 op: MoveFeatureWorkflow
               }),
               new Tool({
+                id: 'copyfeaturespoint',
+                name: "editing.tools.copy",
+                icon: "copyPoint.png",
+                layer,
+                once: true,
+                op: CopyFeaturesWorflow
+              }),
+              new Tool({
                 id: 'deletefeature',
                 name: "editing.tools.delete_feature",
                 icon: "deletePoint.png",
@@ -79,7 +87,7 @@ function EditorToolsFactory() {
               new Tool({
                 id: 'copyfeaturespoly',
                 name: "editing.tools.copy",
-                icon: "copyPolygon.png",
+                icon: "copyLine.png",
                 layer,
                 once: true,
                 op: CopyFeaturesWorflow
@@ -136,7 +144,7 @@ function EditorToolsFactory() {
               new Tool({
                 id: 'movevertex',
                 name: "editing.tools.update_vertex",
-                icon: "movePolygonVertex.png",
+                icon: "moveVertex.png",
                 layer,
                 op: ModifyGeometryVertexWorkflow
               }),

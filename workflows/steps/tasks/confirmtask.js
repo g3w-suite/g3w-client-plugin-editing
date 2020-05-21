@@ -42,7 +42,7 @@ const Dialogs = {
         },
         CANCEL: {
           label: close ? t("exitnosave") : t("annul"),
-          className: close ? "btn-danger" : "btn-primary",
+          className: "btn-danger",
           callback: function () {
             d.reject();
           }

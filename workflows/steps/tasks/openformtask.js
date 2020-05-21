@@ -14,7 +14,6 @@ function OpenFormTask(options={}) {
   this._editingLayer;
   this._layerName;
   this._originalFeature;
-  this._pk;
   this._fields;
   this._session;
   this._editorFormStructure;
@@ -61,7 +60,6 @@ proto._getForm = function(inputs, context) {
   this._session = context.session;
   this._originalLayer = inputs.layer;
   this._editingLayer = this._originalLayer.getEditingLayer();
-  this._pk = this._originalLayer.getPk();
   this._layerName = this._originalLayer.getName();
   this._feature = inputs.features[inputs.features.length - 1];
   this._originalFeature = this._feature.clone();
@@ -90,17 +88,6 @@ proto._saveFnc = function(promise, context, inputs) {
     const session = context.session;
     const layerId = this._originalLayer.getId();
     this._originalLayer.setFieldsWithValues(this._feature, fields);
-    if (this._feature.isNew()) {
-     if (this._originalLayer.isPkEditable()) {
-       fields.forEach((field) => {
-         if (field.name === this._feature.getPk()) {
-           this._feature.set(this._feature.getPk(), field.value);
-           // check if inputs has a newFeature value (case only if added for firts time (add feature task))
-           inputs.newFeature &&  inputs.newFeature.setId(this._feature.getId());
-         }
-       });
-     }
-    }
     const newFeature = this._feature.clone();
     if (this._isContentChild) {
       inputs.relationFeature = {
@@ -128,12 +115,11 @@ proto.startForm = function(options = {}) {
   const isnew = this._originalFeature.isNew();
   const formService = Form({
     formComponent,
-    title: `${t("editing.editing_attributes")} ${this._layerName}`,
-    name: `${t("editing.editing_attributes")} ${this._layerName}`,
+    title: "plugins.editing.editing_attributes",
+    name: this._layerName,
     id: this._generateFormId(this._layerName),
     dataid: this._layerName,
     layer: this._originalLayer,
-    pk: this._pk,
     isnew,
     fields: this._fields,
     context_inputs:  {
@@ -146,14 +132,14 @@ proto.startForm = function(options = {}) {
     push: this._isContentChild,
     showgoback: !this._isContentChild,
     buttons:[{
-      title: "plugins.editing.form.buttons.save",
+      title: this._isContentChild ? "plugins.editing.form.buttons.save_and_back" : "plugins.editing.form.buttons.save",
       type: "save",
       class: "btn-success",
       cbk: this._saveFnc(promise, context, inputs).bind(this)
     }, {
       title: "plugins.editing.form.buttons.cancel",
       type: "cancel",
-      class: "btn-primary",
+      class: "btn-danger",
       cbk: this._cancelFnc(promise, inputs).bind(this)
     }]
   });

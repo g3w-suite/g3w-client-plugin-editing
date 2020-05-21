@@ -11,8 +11,6 @@ const RELATIONTOOLS = {
   'Polygon': ['movefeature', 'movevertex']
 };
 
-
-// servizio che in base alle relazioni (configurazione)
 const RelationService = function(layerId, options = {}) {
   this._mainLayerId = layerId;
   this.relation = options.relation;
@@ -27,9 +25,8 @@ const RelationService = function(layerId, options = {}) {
   this._layerType = this.getLayer().getType();
   this._relationTools = [];
   this._parentWorkFlow = this.getCurrentWorkflow();
-  this._add_link_workflow = null; // sono i workflow link e add che verranmno settati in base al tipo di layer
+  this._add_link_workflow = null; 
   this._isExternalFieldRequired = this._checkIfExternalFieldRequired();
-  // prendo il valore del campo se esiste come proprietà altrimenti prendo il valore della chiave primaria
   this._currentFeatureRelationFieldValue =
     relationField in this.getCurrentWorkflowData().feature.getProperties() ?
       this.getCurrentWorkflowData().feature.get(relationField) :
@@ -42,14 +39,14 @@ const RelationService = function(layerId, options = {}) {
       state: {
         icon: 'deleteTableRow.png',
         id: 'deletefeature',
-        name: t("editing.tools.delete_feature")
+        name: "editing.tools.delete_feature"
       }
     });
     this._relationTools.push({
       state: {
         icon: 'editAttributes.png',
         id: 'editattributes',
-        name: t("editing.tools.update_feature")
+        name: "editing.tools.update_feature"
 
       }
     })
@@ -359,7 +356,7 @@ proto.addRelation = function() {
     };
     setRelationFieldValue(this._currentFeatureRelationFieldValue);
     const parentlayer = this._parentWorkFlow.getContext().layer;
-    if (parentFeature.isNew() && parentlayer.isPkEditable() && relationField === parentlayer.getPk()) {
+    if (parentFeature.isNew()) {
       const keyRelationFeatureChange = parentFeature.on('propertychange', evt => {
         if (parentFeature.isNew()) {
           if(evt.key === relationField) {
@@ -394,22 +391,19 @@ proto.linkRelation = function() {
     layerId: this._layerId,
     relation: this.relation
   });
-  //add options texclude features
+  //add options to exclude features
   options.context.exclude = {
     value: this._currentFeatureRelationFieldValue,
-    field: ownField,
-    pk: this.getLayer().getPk() === ownField
+    field: ownField
   };
-
   if (isVector) options.context.style = this.getUnlinkedStyle();
-
+  const feature = this.getCurrentWorkflowData().feature;
   const dependencyOptions = {
     relations: [this.relation],
-    feature: this.getCurrentWorkflowData().feature,
+    feature,
     operator: 'not',
-    filterType: isVector ? 'bbox' : 'field'
+    filterType: isVector ? 'bbox' : 'fid'
   };
-
   const getRelationFeatures = () => this.getEditingService().getLayersDependencyFeatures(this._mainLayerId, dependencyOptions);
   let preWorkflowStart;
   if (isVector) {
@@ -590,13 +584,11 @@ proto.getUnlinkedStyle = function() {
   return style;
 };
 
-
 proto.relationFields = function(relation) {
   const attributes = [];
-  const originalRelation = this._getRelationFeature(relation.id);
   relation.fields.forEach((field) => {
-    const value = (originalRelation && field.name === originalRelation.getPk() && originalRelation.isNew() && !field.editable) ? null : field.value;
-    attributes.push({label: field.label, value: value})
+    const value = field.value;
+    attributes.push({label: field.label, value})
   });
   return attributes
 };

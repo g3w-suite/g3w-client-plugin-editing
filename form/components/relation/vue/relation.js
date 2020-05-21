@@ -90,11 +90,11 @@ const RelationComponent = Vue.extend({
     _createDataTable() {
       relationsTable = $('.g3wform-relation-table').DataTable({
         "scrollX": true,
-        "order": [ 0, 'asc' ],
+        "order": [ 2, 'asc' ],
         "destroy": true,
         "pageLength": 10,
         columnDefs: [
-          { orderable: false, targets: [-1, -2, -3] }]
+          { orderable: false, targets: [0, 1] }]
       });
       $(".dataTables_filter, .dataTables_length").hide();
       this._setDataTableSearch();

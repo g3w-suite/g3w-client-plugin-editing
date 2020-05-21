@@ -7,13 +7,20 @@
   <table class="display" style="width:100%">
         <thead>
           <tr>
+            <th v-if="!state.isrelation"></th>
             <th v-if="state.isrelation"></th>
             <th v-for="header in state.headers">{{ header.label }}</th>
-            <th v-if="!state.isrelation"></th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="(feature, index) in state.features" :key="feature.id" :id="feature.id">
+            <td v-if="!state.isrelation">
+              <div id="table-editing-tools" style="display:flex; justify-content: space-between;">
+                <i :class="g3wtemplate.font['pencil']" class="g3w-icon skin-tooltip-right"  data-placement="right"  style="color:#30cce7;" v-t-title:plugin="'editing.table.edit'" aria-hidden="true" @click="editFeature(index)"></i>
+                <i :class="g3wtemplate.font['copy-paste']" class="g3w-icon skin-tooltip-right"  data-placement="right"  style="color:#d98b14; padding: 5px 7px 5px 7px;" v-t-title:plugin="'editing.table.copy'" aria-hidden="true" @click="copyFeature(index)"></i>
+                <i :class="g3wtemplate.font['trash-o']" class="g3w-icon skin-tooltip-right"  data-placement="right"  style="color:red;" v-t-title:plugin="'editing.table.delete'" aria-hidden="true" @click="deleteFeature(index)"></i>
+              </div>
+            </td>
             <td v-if="state.isrelation" style="vertical-align: text-bottom;">
               <input :id="`relation__${index}`" @change="linkFeature(index, $event)" class="magic-checkbox" type="checkbox">
               <label :for="`relation__${index}`"></label>
@@ -22,16 +29,11 @@
               <g3w-media v-if=" getValue(value) && isMediaField(key)" :state="value"></g3w-media>
               <p v-else>{{ getValue(value) }}</p>
             </td>
-            <td v-if="!state.isrelation" style="display:flex; justify-content: space-between;">
-              <i :class="g3wtemplate.font['pencil']" class="g3w-icon" style="color:#30cce7;" aria-hidden="true" @click="editFeature(index)"></i>
-              <i :class="g3wtemplate.font['copy-paste']" class="g3w-icon" style="color:#d98b14; padding: 5px 7px 5px 7px;" aria-hidden="true" @click="copyFeature(index)"></i>
-              <i :class="g3wtemplate.font['trash-o']" class="g3w-icon" style="color:red;" aria-hidden="true" @click="deleteFeature(index)"></i>
-            </td>
           </tr>
         </tbody>
       </table>
   <div id="buttons"  style="position: absolute; bottom: 10px; width: 100%; display:flex; justify-content: center;">
-      <button v-t-plugin="'editing.form.buttons.save'" class="btn btn-success" style="margin-right: 10px" @click="save"></button>
-      <button v-t-plugin="'editing.form.buttons.cancel'" class="btn btn-primary" @click="cancel"></button>
+      <button v-t-plugin="state.isrelation ? 'editing.form.buttons.save_and_back' : 'editing.form.buttons.save'" class="btn btn-success" style="margin-right: 10px" @click="save"></button>
+      <button v-t-plugin="'editing.form.buttons.cancel'" class="btn btn-danger" @click="cancel"></button>
   </div>
 </div>

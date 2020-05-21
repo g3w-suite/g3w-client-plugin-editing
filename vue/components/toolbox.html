@@ -4,7 +4,7 @@
       <div v-show="!isLayerReady" class="bar-loader"></div>
       <div class="panel-heading container" style="width:100%;" :style="{ background: state.color}" >
         <div v-if="father" style="margin-right:5px;" class="pull-left enabled dropdown">
-          <span class="g3w-icon" :class="g3wtemplate.font['relation']"></span>
+          <span :class="g3wtemplate.font['relation']"></span>
           <div class="dropdown-content" style="padding: 5px;">
             <div v-for="dependency in state.editing.dependencies" style="color: black" >{{ dependency }}</div>
           </div>
@@ -20,7 +20,7 @@
       </div>
       <bar-loader :loading="state.loading"></bar-loader>
       <div class="panel-body">
-        <div style="display: flex; flex-wrap: wrap;">
+        <div class="tools-content" style="display: flex; flex-wrap: wrap;">
           <tool
             :state="toolstate"
             :resourcesurl="resourcesurl"

@@ -8,11 +8,11 @@
         <div class="col-sm-2 pull-right" style="padding:0">
           <span class="g3w-icon add-link pull-right" align="center"
                 data-toggle="tooltip" data-placement="bottom"
-                v-t-title:plugin="tooltips.link_relation" @click="enableAddLinkButtons ? linkRelation() : null"
+                v-t-tooltip:plugin="tooltips.link_relation" @click="enableAddLinkButtons ? linkRelation() : null"
                 :class="[{'disabled': !enableAddLinkButtons}, g3wtemplate.font['link']]">
           </span>
           <span data-toggle="tooltip" data-placement="bottom"
-                 v-t-title:plugin="tooltips.add_relation"
+                 v-t-tooltip:plugin="tooltips.add_relation"
                  @click="enableAddLinkButtons ? addRelationAndLink() : null"
                  class="g3w-icon add-link pull-right"
                  :class="[{'disabled' : !enableAddLinkButtons}, g3wtemplate.font['plus']]">
@@ -26,15 +26,32 @@
       <table class="table g3wform-relation-table table-striped" style="width:100%">
         <thead>
           <tr>
+            <th v-t="'tools'"></th>
+            <th></th>
             <th v-for="attribute in relationAttributesSubset(relations[0])">
               {{attribute.label}}
             </th>
-            <th></th>
-            <th v-t="'tools'"></th>
           </tr>
           </thead>
           <tbody>
             <tr v-for="(relation, index) in relations" class="featurebox-header">
+              <td>
+                <div style="display: flex">
+                  <div class="skin-tooltip-right editbtn enabled" @click="startTool(relationtool, index)"
+                       v-for="relationtool in getRelationTools()" :key="relationtool.state.name"
+                       data-toggle="tooltip"
+                       data-placement="right" v-t-tooltip:plugin="relationtool.state.name">
+                    <img height="20px" width="20px" :src="resourcesurl + 'images/'+ relationtool.state.icon"/>
+                  </div>
+                </div>
+              </td>
+              <td class="action-cell">
+                <div v-if="!fieldrequired" class="g3w-mini-relation-icon skin-tooltip-right g3w-icon" :class="g3wtemplate.font['unlink']"
+                     @click="unlinkRelation(index)"
+                     data-toggle="tooltip" data-placement="right" v-t-tooltip:plugin="tooltips.unlink_relation"
+                     aria-hidden="true">
+                </div>
+              </td>
               <td v-show="!showAllFieds(index)" v-for="attribute in relationAttributesSubset(relation)">
                 <template v-if="isMedia(attribute.value) && getValue(attribute.value)">
                   <div class="preview">
@@ -47,25 +64,6 @@
                   </div>
                 </template>
                 <span v-else>{{ getValue(attribute.value) }}</span>
-              </td>
-              <td class="action-cell">
-                <div
-                  v-if="!fieldrequired"
-                  class="g3w-mini-relation-icon skin-tooltip-left g3w-icon" :class="g3wtemplate.font['unlink']"
-                  @click="unlinkRelation(index)"
-                  data-toggle="tooltip" data-placement="left" v-t-title:plugintitle="tooltips.unlink_relation"
-                  aria-hidden="true">
-                </div>
-              </td>
-              <td>
-                <div style="display: flex">
-                  <div class="skin-tooltip-left editbtn enabled" @click="startTool(relationtool, index)"
-                       v-for="relationtool in getRelationTools()" :key="relationtool.state.name"
-                       data-toggle="tooltip"
-                       data-placement="left" v-t-tile:plugin="relationtool.state.name">
-                    <img height="20px" width="20px" :src="resourcesurl + 'images/'+ relationtool.state.icon"/>
-                  </div>
-                </div>
               </td>
             </tr>
           </tbody>

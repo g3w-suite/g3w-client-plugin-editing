@@ -20,11 +20,11 @@ proto.run = function(inputs, context) {
   this._originalLayerStyle = editingLayer.getStyle();
   const beforeRun = context.beforeRun;
   const promise = beforeRun && typeof beforeRun === 'function' ? beforeRun() : Promise.resolve();
-  const {field, value, pk} = context.exclude;
+  const {field, value} = context.exclude;
   const style = context.style;
   this._features = editingLayer.getSource().getFeatures();
   this._features = field ? this._features.filter(feature => {
-    return  pk ? feature.getId() != value : feature.get(field) != value;
+    return  feature.get(field) != value;
   }) : this._features;
   style && this._features.forEach(feature =>{
     feature.setStyle(style)

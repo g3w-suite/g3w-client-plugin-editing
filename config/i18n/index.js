@@ -17,7 +17,7 @@ export default {
       title: 'Edita'
     },
     tools: {
-      copy: "Crea una copia delle feature selezionate",
+      copy: "Copia features",
       merge: "Dissolvi features",
       split: "Taglia Feature",
       add_feature: "Aggiungi feature",
@@ -25,6 +25,11 @@ export default {
       move_feature: "Muovi feature",
       update_vertex: "Aggiorna vertici feature",
       update_feature: "Modifica feature"
+    },
+    table: {
+      edit: "Edita feature",
+      copy: "Crea una copia",
+      delete: "Cancella feature"
     },
     steps: {
       help: {
@@ -57,9 +62,11 @@ export default {
       }
     },
     messages: {
+      splitted: "Feature(s) splittata(e)",
+      nosplittedfeature: "La(e) feature(s) non è stata splittata",
+      press_esc: "Premi ESC per tornare indietro",
       online: "Ora sei di nuovo ONLINE. Puoi slavare le modifiche in modo permanente",
       offline: "Sei OFFLINE. Tutte le modifiche saranno salvate temporaneamente in locale",
-      press_esc: "Premi ESC per tornare indietro",
       delete_feature: "Vuoi eliminare l'elemento selezionato?",
       delete_feature_relations: "Cancellando una feature con relazioni associate, tale relazioni rimarranno orfane. Si consiglia di gestire tali relazioni prima di cancellare la feature",
       unlink_relation: "Vuoi staccare la relazione?",
@@ -83,11 +90,7 @@ export default {
     },
     relation: {
       table: {
-        info: `
-                  <div>
-                    Seleziona le relaioni per associarle alla feature in editing.
-                  </div>
-                `
+        info: `<div>Seleziona le relazioni per associarle alla feature in editing.</div>`
       }
     },
     form: {
@@ -101,6 +104,7 @@ export default {
       },
       buttons: {
         save: "Salva",
+        save_and_back: "Salva e torna al padre",
         cancel: "Cancella"
       }
     }
@@ -123,8 +127,13 @@ export default {
     toolbox: {
       title: 'Edit'
     },
+    table: {
+      edit: "Edit feature",
+      copy: "Create a copy",
+      delete: "Delete feature"
+    },
     tools: {
-      copy: "Create new copy of selected features",
+      copy: "Copy features",
       merge: "Dissolve features",
       split: "Split Feature",
       add_feature: "Add feature",
@@ -164,6 +173,8 @@ export default {
       }
     },
     messages: {
+      splitted: "Splitted",
+      nosplittedfeature: "Feature not spitted",
       press_esc: "Press ESC to back",
       online: "Back ONLINE. Now you can save your changes on database",
       offline: "You are OFFLINE. All changes are saved locally",
@@ -183,7 +194,7 @@ export default {
       commit: {
         header: "The following list show all changes to commit.",
         header_add: "<b>Added</b> show the number of features added",
-        header_update_delete: "<b>Modified</b> and <b>Deleted</b> show the list of feautes id",
+        header_update_delete: "<b>Modified</b> and <b>Deleted</b> show the list of features id",
         add: "Added(n. features)",
         delete: "Deleted(id)",
         update: "Modified(id)"
@@ -211,6 +222,7 @@ export default {
       },
       buttons: {
         save: "Save",
+        save_and_back: "Save and Back",
         cancel: "Cancel"
       }
     },

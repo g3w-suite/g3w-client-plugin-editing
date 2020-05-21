@@ -13,10 +13,11 @@ function EditingFormComponent(options={}) {
   if (relationsOptions) {
     const feature = relationsOptions.inputs.features[relationsOptions.inputs.features.length-1];
     GUI.setLoadingContent(true);
-    EditingService.getLayersDependencyFeatures(layerId, {
+    const promise =  feature.isNew() ? Promise.resolve() : EditingService.getLayersDependencyFeatures(layerId, {
       feature,
-      filterType: 'field'
-    }).then(()=> {
+      filterType: 'fid'
+    });
+    promise.then(()=> {
       relationsOptions.formEventBus = this.getService().getEventBus();
       const service = new EditingFormService(relationsOptions);
       const RelationComponents = service.buildRelationComponents();

@@ -25,10 +25,9 @@ proto.run = function(inputs, context) {
   const editingLayer = originalLayer.getEditingLayer();
   let features = editingLayer.readEditingFeatures();
   if (exclude && features.length) {
-    const pk = features[0].getPk();
     const {value} = exclude;
     features = features.filter(feature => {
-      const featureValue = foreignKey === pk ? feature.getId() : feature.get(foreignKey);
+      const featureValue = feature.get(foreignKey);
       return featureValue != value;
     })
   }

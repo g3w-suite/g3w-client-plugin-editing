@@ -106,8 +106,6 @@ proto.copyFeature = function(index){
       Object.entries(this.state.features[index]).forEach(([key, value]) => {
         this.state.features[index][key] = feature.get(key);
       });
-      const pk = feature.getPk();
-      this.state.features[index][pk] = feature.getId();
     })
     .fail((err) => {})
 };
@@ -128,8 +126,6 @@ proto.editFeature = function(index) {
       Object.entries(this.state.features[index]).forEach(([key, value]) => {
         this.state.features[index][key] = feature.get(key);
       });
-      const pk = feature.getPk();
-      this.state.features[index][pk] = feature.getId();
     })
     .fail((err) => {})
 };

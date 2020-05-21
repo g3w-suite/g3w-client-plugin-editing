@@ -3,6 +3,7 @@ const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 const PluginService = g3wsdk.core.plugin.PluginService;
+const RelationsService = g3wsdk.core.relations.RelationsService;
 const CatalogLayersStoresRegistry = g3wsdk.core.catalog.CatalogLayersStoresRegistry;
 const MapLayersStoreRegistry = g3wsdk.core.map.MapLayersStoreRegistry;
 const LayersStore = g3wsdk.core.layer.LayersStore;
@@ -501,9 +502,6 @@ proto._attachLayerWidgetsEvent = function(layer) {
                 ordering: key
               }).then((response) => {
                 if (response && response.features) {
-                  const relationLayerPk = response.pkField;
-                  const isKeyPk = isVector && relationLayerPk === key;
-                  const isValuePk = isVector && relationLayerPk === value;
                   const features = response.features;
                   self.fireEvent('autocomplete', {
                     field,
@@ -511,8 +509,8 @@ proto._attachLayerWidgetsEvent = function(layer) {
                   });
                   for (let i = 0; i < features.length; i++) {
                     values.push({
-                      key: isKeyPk ? features[i].id : features[i].properties[key],
-                      value: isValuePk? features[i].id : features[i].properties[value]
+                      key: features[i].properties[key],
+                      value: features[i].properties[value]
                     })
                   }
                   loading.state = 'ready';
@@ -625,11 +623,10 @@ proto.getRelationsByFeature = function({layerId, relation, feature, layerType}={
     layerId,
     relation
   });
-  const featureValue = feature.isPk(relationField) ? feature.getId() : feature.get(relationField);
+  const featureValue = feature.get(relationField);
   const features = this._getFeaturesByLayerId(layerId);
   return features.filter(feature => {
-    const pk = feature.getPk();
-    return (pk === ownField) ? feature.getId() == featureValue : feature.get(ownField) == featureValue;
+    return feature.get(ownField) == featureValue;
   });
 };
 
@@ -789,7 +786,6 @@ proto._getRelationFieldsFromRelation = function({layerId, relation} = {}) {
   }
 };
 
-// prendo come opzione il tipo di layer
 proto.createEditingDataOptions = function(filterType='all', options={}) {
   let filter;
   if (filterType === 'all') return {editing: true};
@@ -798,16 +794,16 @@ proto.createEditingDataOptions = function(filterType='all', options={}) {
     filter = {
       bbox: this._mapService.getMapBBOX()
     };
-  } else if (filterType === 'field' && feature) {
-    const pk = feature.getPk();
-    const {ownField, relationField} = this._getRelationFieldsFromRelation({
-      layerId,
-      relation
-    });
+  } else if (filterType === 'fid' && !feature.isNew()) {
     if (options.operator !== 'not')
       filter = {
-        field: {
-          [ownField]: pk === relationField ? feature.getId() : feature.get(relationField)
+        fid: {
+          fid: feature.getId(),
+          layer: {
+            id: layerId
+          },
+          type: 'editing',
+          relation: relation.state
         }
       }
   }
@@ -824,15 +820,13 @@ proto._getFeaturesByLayerId = function(layerId) {
 proto.getLayersDependencyFeaturesFromSource = function({layerId, relation, feature, operator='eq'}={}){
   return new Promise((resolve) => {
     const features = this._getFeaturesByLayerId(layerId);
-    const fatherPk = feature.getPk();
     const {ownField, relationField} = this._getRelationFieldsFromRelation({
       layerId,
       relation
     });
-    const featureValue = fatherPk === relationField ? feature.getId() : feature.get(relationField);
-    const featureSourcePk = features.length && features[0].getPk();
+    const featureValue = feature.get(relationField);
     const find = operator === 'eq' ? features.find(featureSource => {
-      const featureSourceValue = featureSourcePk === ownField ? featureSource.getId()  : featureSource.get(ownField) ;
+      const featureSourceValue = featureSource.get(ownField) ;
       return featureSourceValue == featureValue;
     }): false;
     resolve(find);
@@ -859,9 +853,9 @@ proto.getLayersDependencyFeatures = function(layerId, opts={}) {
       relation
     });
     const promise = new Promise((resolve) => {
-      const filterType = opts.filterType || 'field';
+      const filterType = opts.filterType || 'fid';
       opts.relation = relation;
-      opts.layerId = id;
+      opts.layerId = layerId;
       const options = this.createEditingDataOptions(filterType, opts);
       const session = this._sessions[id];
       const toolbox = this.getToolBoxById(id);
@@ -1021,12 +1015,15 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
           }
           d.resolve(toolbox);
         })
-        .fail( (error) => {
-          let parser = new serverErrorParser({
-            error: error
+        .fail((error) => {
+          const parser = new serverErrorParser({
+            error
           });
-         let message = parser.parse();
-         GUI.notify.error(message);
+          const message = parser.parse();
+          GUI.showUserMessage({
+            type: 'alert',
+            message
+           });
           d.reject(toolbox);
         })
         .always(() => {

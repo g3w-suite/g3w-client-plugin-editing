@@ -63,16 +63,16 @@ const InternalComponent = Vue.extend({
        return value;
     },
     setDataTable(){
-      const targets = this.state.isrelation ? [0, -1, -2]: [-1, -2];
+      //const targets = this.state.isrelation ? [0]: [0];
       const maxHeightTable = this._setLayout();
       this.dataTable = $('#editing_table table').DataTable({
         "pageLength": 10,
         "scrollX": true,
         "scrollY": maxHeightTable + 'px',
         "scrollCollapse": true,
-        "order": [ this.state.isrelation ? 1 : 0, 'asc' ],
+        "order": [ this.state.isrelation ? 2 : 1, 'asc' ],
         columnDefs: [
-          { orderable: false, targets }
+          { orderable: false, targets: 0 }
         ]
       });
     }
@@ -84,7 +84,8 @@ const InternalComponent = Vue.extend({
   mounted: function() {
     if (this.state.isrelation) this._linkFeatures = [];
     this.$nextTick(() => {
-      this.setDataTable()
+      this.setDataTable();
+      $('#table-editing-tools i').tooltip();
     });
   },
   beforeDestroy() {
