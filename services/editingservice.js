@@ -233,8 +233,7 @@ proto._handleOfflineChangesBeforeSave = function(data) {
 };
 
 proto.saveOfflineItem = function({id, data}={}) {
-  if (id === OFFLINE_ITEMS.CHANGES)
-    data = this._handleOfflineChangesBeforeSave(data);
+  if (id === OFFLINE_ITEMS.CHANGES) data = this._handleOfflineChangesBeforeSave(data);
   return ApplicationService.setOfflineItem(id, data);
 };
 
@@ -1000,7 +999,7 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
   }) : Promise.resolve();
   promise.then((dialog)=> {
     if (ApplicationState.online)
-      session.commit(items)
+      session.commit({items})
         .then((commitItems, response) => {
           if (ApplicationState.online) {
             if (response.result) {
@@ -1008,8 +1007,17 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
               if (layerType === 'vector')
                 this._mapService.refreshMap({force: true});
             } else {
-              const message = response.errors;
-              GUI.notify.error(message);
+              const parser = new serverErrorParser({
+                error: response.errors
+              });
+              const message = parser.parse({
+                type: 'String'
+              });
+              GUI.showUserMessage({
+                type: 'alert',
+                message,
+                textMessage: true
+              });
               d.reject();
             }
           }
@@ -1022,7 +1030,8 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
           const message = parser.parse();
           GUI.showUserMessage({
             type: 'alert',
-            message
+            message,
+            textMessage: true,
            });
           d.reject(toolbox);
         })
@@ -1037,6 +1046,7 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
             id: OFFLINE_ITEMS.CHANGES
           }).then(() =>{
             GUI.notify.success(t("editing.messages.saved_local"));
+            session.clearHistory();
           }).catch((error)=>{
             GUI.notify.error(error);
             d.reject();

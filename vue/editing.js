@@ -6,7 +6,6 @@ const GUI = g3wsdk.gui.GUI;
 const Component = g3wsdk.gui.vue.Component;
 const ApplicationState = g3wsdk.core.ApplicationState;
 const EditingService = require('../services/editingservice');
-const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 const compiledTemplate = Vue.compile(require('./editing.html'));
 const ToolboxComponent = require('./components/toolbox');
 
