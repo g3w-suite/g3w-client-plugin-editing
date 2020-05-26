@@ -98,6 +98,13 @@ const RelationComponent = Vue.extend({
       });
       $(".dataTables_filter, .dataTables_length").hide();
       this._setDataTableSearch();
+    },
+    destroyTable(){
+      if (relationsTable) {
+        relationsTable = relationsTable.destroy();
+        relationsTable = null;
+        $('#filterRelation').off();
+      }
     }
   },
   computed: {
@@ -111,8 +118,12 @@ const RelationComponent = Vue.extend({
       return !this.relations.length || (this.relations.length && this.relation.type !== 'ONE');
     }
   },
+  watch:{
+    relations(updatedrelations){
+      updatedrelations.length === 0 && this.destroyTable();
+    }
+  },
   created() {
-    //vado a settare il servizio
     this._service = new RelationService(this.layerId, {
       relation: this.relation,
       relations: this.relations
@@ -127,11 +138,7 @@ const RelationComponent = Vue.extend({
     }
   },
   deactivated() {
-    if (relationsTable) {
-      relationsTable = relationsTable.destroy();
-      relationsTable = null;
-      $('#filterRelation').off();
-    }
+    this.destroyTable();
   },
   mounted() {
     this.$nextTick(() => {

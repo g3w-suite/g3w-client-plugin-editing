@@ -3,7 +3,7 @@ const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 const PluginService = g3wsdk.core.plugin.PluginService;
-const RelationsService = g3wsdk.core.relations.RelationsService;
+const SessionsRegistry = g3wsdk.core.editing.SessionsRegistry;
 const CatalogLayersStoresRegistry = g3wsdk.core.catalog.CatalogLayersStoresRegistry;
 const MapLayersStoreRegistry = g3wsdk.core.map.MapLayersStoreRegistry;
 const LayersStore = g3wsdk.core.layer.LayersStore;
@@ -699,16 +699,16 @@ proto.stop = function() {
 // remove Editing LayersStore
 proto.clear = function() {
   MapLayersStoreRegistry.removeLayersStore(this._layersstore);
+  SessionsRegistry.clear();
 };
 
 proto.clearState = function() {
-  this.state.toolboxselected = null; // tiene riferimento alla toolbox selezionata
+  this.state.toolboxselected = null;
   this.state.toolboxidactivetool =  null;
-  this.state.message =  null; // messaggio genarle del pannello di editing
+  this.state.message =  null;
 };
 
 
-// funzione che filtra le relazioni in base a quelle presenti in editing
 proto.getRelationsInEditing = function({layerId, relations, feature}={}) {
   let relationsinediting = [];
   let relationinediting;
@@ -760,7 +760,6 @@ proto.stopSessionChildren = function(layerId) {
 proto.fatherInEditing = function(layerId) {
   let inEditing = false;
   let toolbox;
-  // caso padre verifico se ci sono padri in editing o meno
   let relationLayerFathers = this.getLayerById(layerId).getFathers();
   relationLayerFathers.forEach((id) => {
     toolbox = this.getToolBoxById(id);
@@ -999,7 +998,7 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
   }) : Promise.resolve();
   promise.then((dialog)=> {
     if (ApplicationState.online)
-      session.commit({items})
+      session.commit({items: items || commitItems})
         .then((commitItems, response) => {
           if (ApplicationState.online) {
             if (response.result) {

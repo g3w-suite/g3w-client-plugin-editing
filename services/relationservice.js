@@ -18,17 +18,17 @@ const RelationService = function(layerId, options = {}) {
   this._editingService;
   this._isExternalFieldRequired = false;
   this._layerId = this.relation.child === this._mainLayerId ? this.relation.father : this.relation.child;
-  const {relationField} = this.getEditingService()._getRelationFieldsFromRelation({
+  const { relationField} = this.getEditingService()._getRelationFieldsFromRelation({
     layerId: this._layerId,
     relation: this.relation
   });
+  this._isFatherFieldEditable = this.getLayer().isEditingFieldEditable(relationField);
   this._layerType = this.getLayer().getType();
   this._relationTools = [];
   this._parentWorkFlow = this.getCurrentWorkflow();
   this._add_link_workflow = null; 
   this._isExternalFieldRequired = this._checkIfExternalFieldRequired();
-  this._currentFeatureRelationFieldValue =
-    relationField in this.getCurrentWorkflowData().feature.getProperties() ?
+  this._currentFeatureRelationFieldValue = this._isFatherFieldEditable ?
       this.getCurrentWorkflowData().feature.get(relationField) :
       this.getCurrentWorkflowData().feature.getId();
   //get type of relation
@@ -349,14 +349,14 @@ proto.addRelation = function() {
   promise.then((outputs) => {
     const {newFeature, originalFeature} = outputs.relationFeature;
     const setRelationFieldValue = (value) =>{
+      console.log(value)
       newFeature.set(ownField, value);
       parentFeature.isNew() && originalFeature.set(ownField, value);
       this.getLayer().getEditingSource().updateFeature(newFeature);
       session.pushUpdate(this._layerId, newFeature, originalFeature);
     };
     setRelationFieldValue(this._currentFeatureRelationFieldValue);
-    const parentlayer = this._parentWorkFlow.getContext().layer;
-    if (parentFeature.isNew()) {
+    if (parentFeature.isNew() && this._isFatherFieldEditable) {
       const keyRelationFeatureChange = parentFeature.on('propertychange', evt => {
         if (parentFeature.isNew()) {
           if(evt.key === relationField) {
@@ -366,12 +366,11 @@ proto.addRelation = function() {
         } else ol.Observable.unByKey(keyRelationFeatureChange);
       })
     }
-    //vado a aggiungere una nuova relazione
     const newRelation = this._createRelationObj(newFeature);
     this.relations.push(newRelation);
     this.emitEventToParentWorkFlow()
   }).fail((err) => {
-    session.rollback();
+    session.rollbackDependecies([this._layerId]);
   }).always(() =>{
     if (isVector) {
       GUI.hideContent(false, percContent);
@@ -458,7 +457,7 @@ proto.linkRelation = function() {
         });
       }
     }).fail(() => {
-      session.rollback();
+      session.rollbackDependecies([this._layerId]);
     }).always(() =>{
       if (percContent) {
         GUI.closeUserMessage();

@@ -21,7 +21,7 @@
                 <i :class="g3wtemplate.font['trash-o']" class="g3w-icon skin-tooltip-right"  data-placement="right"  style="color:red;" v-t-title:plugin="'editing.table.delete'" aria-hidden="true" @click="deleteFeature(index)"></i>
               </div>
             </td>
-            <td v-if="state.isrelation" style="vertical-align: text-bottom;">
+            <td v-if="state.isrelation">
               <input :id="`relation__${index}`" @change="linkFeature(index, $event)" class="magic-checkbox" type="checkbox">
               <label :for="`relation__${index}`"></label>
             </td>

@@ -5,7 +5,6 @@ const RelationsComponent = {
   components: {
     'relation': RelationComponent
   },
-
 };
 
 module.exports = RelationsComponent;
