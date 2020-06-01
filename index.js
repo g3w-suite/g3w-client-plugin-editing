@@ -13,7 +13,9 @@ const _Plugin = function() {
     position: 0,
     title: 'EDITING'
   };
-
+  const show_errors = {
+    some_layers: false
+  };
   this.name = 'editing';
   this.init = function() {
     //if (GUI.isMobile()) return;
@@ -63,8 +65,23 @@ const _Plugin = function() {
 
   //method to show editing panel
   this.showEditingPanel = function() {
-    const panel = new EditingPanel();
-    GUI.showPanel(panel);
+    if (this.service.getLayers().length > 0) {
+      const panel = new EditingPanel();
+      GUI.showPanel(panel);
+      if (!show_errors.some_layers && this.service.getLayersInError()) {
+        GUI.showUserMessage({
+          type: 'warning',
+          message: 'plugins.editing.errors.some_layers',
+          closable: true
+        });
+        show_errors.some_layers = true;
+      }
+    } else {
+      GUI.showUserMessage({
+        type: 'alert',
+        message: 'plugins.editing.errors.no_layers'
+      })
+    }
   };
 
   this.load = function() {

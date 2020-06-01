@@ -203,7 +203,7 @@ proto.startVectorTool = function(relationtool, index) {
   this._highlightRelationSelect(relationfeature);
   const promise =(workflow instanceof workflows.DeleteFeatureWorkflow || workflow instanceof workflows.EditFeatureAttributesWorkflow ) && workflow.startFromLastStep(options)
     || workflow.start(options);
-  const percContent = this._bindEscKeyUp(workflow,  () => {
+  const percContent = workflow.bindEscKeyUp(() => {
     relationfeature.setStyle(this._originalLayerStyle);
   });
   promise.then((outputs) => {
@@ -230,7 +230,7 @@ proto.startVectorTool = function(relationtool, index) {
     .always(() => {
       workflow.stop();
       GUI.hideContent(false, percContent);
-      this._unbindEscKeyUp();
+      workflow.unbindEscKeyUp();
       GUI.setModal(true);
     });
   return d.promise()
@@ -272,27 +272,6 @@ proto.updateExternalKeyValueRelations = function(input) {
       }
     })
   }
-};
-
-proto._escKeyUpHandler = function(evt) {
-  if (evt.keyCode === 27) {
-    evt.data.workflow.reject();
-    evt.data.callback()
-  }
-};
-
-proto._unbindEscKeyUp = function() {
-  $(document).unbind('keyup', this._escKeyUpHandler);
-};
-
-proto._bindEscKeyUp = function(workflow, callback=()=>{}) {
-  const percContent = GUI.hideContent(true);
-  $(document).one('keyup', {
-    workflow,
-    percContent,
-    callback
-  }, this._escKeyUpHandler);
-  return percContent;
 };
 
 proto._getRelationFieldsValue = function(relation) {
@@ -345,7 +324,7 @@ proto.addRelation = function() {
 
   const { parentFeature } = options;
   const promise =   workflow.start(options);
-  const percContent = isVector &&  this._bindEscKeyUp(workflow);
+  const percContent = isVector && workflow.bindEscKeyUp();
   promise.then((outputs) => {
     const {newFeature, originalFeature} = outputs.relationFeature;
     const setRelationFieldValue = (value) =>{
@@ -374,7 +353,7 @@ proto.addRelation = function() {
   }).always(() =>{
     if (isVector) {
       GUI.hideContent(false, percContent);
-      this._unbindEscKeyUp();
+      workflow.unbindEscKeyUp();
       GUI.setModal(true);
     }
     workflow.stop();
@@ -424,7 +403,7 @@ proto.linkRelation = function() {
       })
     };
     preWorkflowStart = new Promise((resolve)=> {
-      const percContent = this._bindEscKeyUp(workflow);
+      const percContent = workflow.bindEscKeyUp();
       const promise = workflow.start(options);
       resolve({
         promise,
@@ -462,7 +441,7 @@ proto.linkRelation = function() {
       if (percContent) {
         GUI.closeUserMessage();
         GUI.hideContent(false, percContent);
-        this._unbindEscKeyUp();
+        workflow.unbindEscKeyUp();
       }
       workflow.stop();
     });

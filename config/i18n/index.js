@@ -1,5 +1,9 @@
 export default {
   it: {
+    errors: {
+      no_layers: "Si è verificato un errore nel caricamento dei layers in editing.",
+      some_layers: "Si è verificato un errore nel caricamento di alcuni layers in editing"
+    },
     search: "Cerca",
     editing_data: "Edita Dati",
     editing_attributes: "Edita attributi",
@@ -54,10 +58,12 @@ export default {
       steps: {
         select: 'Clicca sulla feature da selezionare',
         merge: 'Seleziona la feature su cui dissolvere',
+        selectPoint: "Clicca sulla feature per selezionarla",
         selectSHIFT: 'Seleziona le features tenedo premuto il tasto SHIFT',
+        selectPointSHIFT: 'Seleziona le features tenedo premuto il tasto SHIFT (multiselezione) oppure cliccando sulla singola feature',
         copyCTRL: 'Copia le features selezionate con CTRL+C',
         selectStartVertex: 'Seleziona il vertice di partenza delle feature selezionate',
-        selectToPaste: 'Seleziona il dove verranno incollate le features selezionate',
+        selectToPaste: 'Seleziona il punto dove verranno incollate le features selezionate',
         draw_split_line: "Disegna una linea per tagliare la feature selezionata"
       }
     },
@@ -111,6 +117,10 @@ export default {
 
   },
   en: {
+    errors: {
+      no_layers: "An error occurs. It's no possible to edit layers",
+      some_layers: "An error occurs: It's no possible to edit some layers"
+    },
     search: "Search",
     editing_data: "Editing Layers",
     editing_attributes: "Editing attributes",
@@ -166,9 +176,11 @@ export default {
         select: 'Click on feature to select',
         merge: 'Select featurewhere dissolve',
         selectSHIFT: 'Select features drawing a rectangle pressing SHIFT',
+        selectPoint: "Click on feature to select",
+        selectPointSHIFT: 'Select features drawing a rectangle pressing SHIFT (multifeatre) or click on one feature',
         copyCTRL: 'Copy selected features using CTRL+C',
         selectStartVertex: 'Select starting vertex of selected features',
-        selectToPaste: 'Select where paste the features selected',
+        selectToPaste: 'Select the point where paste the features selected',
         draw_split_line: "Draw a line to split selected feature"
       }
     },

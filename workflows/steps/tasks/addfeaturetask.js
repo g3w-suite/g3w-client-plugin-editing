@@ -42,6 +42,7 @@ proto.run = function(inputs, context) {
         type: geometryType,
         source: temporarySource,
         condition: this._condition,
+        freehandCondition: ol.events.condition.never,
         finishCondition: this._finishCondition
       });
 

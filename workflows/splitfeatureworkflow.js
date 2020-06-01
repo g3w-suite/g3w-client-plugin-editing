@@ -3,14 +3,15 @@ const base =  g3wsdk.core.utils.base;
 const EditingWorkflow = require('./editingworkflow');
 const SelectElementsStep = require('./steps/selectelementsstep');
 const SplitFeatureStep = require('./steps/splitfeaturestep');
+const ApplicationState = g3wsdk.core.ApplicationState;
 
 function SplitFeaturesWorflow(options={}) {
-  options.type = 'bbox';
+  options.type = ApplicationState.ismobile ? 'touch' :  'multiple';
   options.help = 'editing.steps.help.split';
   const selectelementssteps = new SelectElementsStep(options, true);
   selectelementssteps.getTask().setSteps({
     select: {
-      description: 'editing.workflow.steps.selectSHIFT',
+      description: options.type === 'multiple'  ? 'editing.workflow.steps.selectPointSHIFT' : 'editing.workflow.steps.selectPoint',
       directive: 't-plugin',
       done: false
     }
@@ -24,6 +25,7 @@ function SplitFeaturesWorflow(options={}) {
     }
   });
   options.steps = [selectelementssteps, splitfeaturestep];
+  this.registerEscKeyEvent();
   base(this, options);
 }
 

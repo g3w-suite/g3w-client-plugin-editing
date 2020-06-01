@@ -1,7 +1,7 @@
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
+const GUI = g3wsdk.gui.GUI;
 const Workflow = g3wsdk.core.workflow.Workflow;
-
 
 function EditingWorkflow(options={}) {
   base(this, options);
@@ -39,5 +39,37 @@ proto.getLayer = function() {
 proto.getSession = function() {
   return this.getContext().session;
 };
+
+//bind interrupt event
+proto.escKeyUpHandler = function(evt) {
+  if (evt.keyCode === 27) {
+    evt.data.workflow.reject();
+    evt.data.callback();
+  }
+};
+
+
+proto.unbindEscKeyUp = function() {
+  $(document).unbind('keyup', this.escKeyUpHandler);
+};
+
+proto.bindEscKeyUp = function(callback=()=>{}) {
+  const percContent = GUI.hideContent(true);
+  $(document).on('keyup', {
+    workflow: this,
+    callback
+  }, this.escKeyUpHandler);
+  return percContent;
+};
+
+proto.registerEscKeyEvent = function(callback){
+  this.on('start', ()=> {
+    this.bindEscKeyUp(callback);
+  });
+  this.on('stop', ()=>{
+    this.unbindEscKeyUp()
+  });
+};
+/////
 
 module.exports = EditingWorkflow;

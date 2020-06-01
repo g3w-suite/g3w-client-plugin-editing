@@ -10,6 +10,22 @@ inherit(MoveElementsTask, EditingTask);
 
 const proto = MoveElementsTask.prototype;
 
+proto.getDeltaXY = function({x, y, coordinates} = {}){
+  const getCoordinates = (coordinates)=> {
+    if (Array.isArray(coordinates[0])){
+      return getCoordinates(coordinates[0])
+    } else return {
+      x: coordinates[0],
+      y: coordinates[1]
+    };
+  };
+  const xy = getCoordinates(coordinates);
+  return {
+    x: x - xy.x,
+    y: y - xy.y
+  }
+};
+
 proto.run = function(inputs, context) {
   const d = $.Deferred();
   const { layer, features, coordinates } = inputs;
@@ -28,14 +44,24 @@ proto.run = function(inputs, context) {
 
   this._drawInteraction.on('drawend', (evt)=> {
     const [x, y] = evt.feature.getGeometry().getCoordinates();
-    const deltaXY = {
-      x: x - coordinates[0],
-      y: y - coordinates[1]
-    };
+    const deltaXY = coordinates ? this.getDeltaXY({
+      x, y, coordinates
+    }) : null;
     const featuresLength = features.length;
     for (let i =0; i < featuresLength; i++) {
       const feature = features[i].cloneNew();
-      feature.getGeometry().translate(deltaXY.x, deltaXY.y);
+      if (deltaXY) feature.getGeometry().translate(deltaXY.x, deltaXY.y);
+      else {
+        const coordinates = feature.getGeometry().getCoordinates();
+        const deltaXY = this.getDeltaXY({
+          x, y, coordinates
+        });
+        feature.getGeometry().translate(deltaXY.x, deltaXY.y)
+      }
+      this.setNullMediaFields({
+        feature,
+        layer
+      });
       source.addFeature(feature);
       session.pushAdd(layerId, feature);
       inputs.features.push(feature);

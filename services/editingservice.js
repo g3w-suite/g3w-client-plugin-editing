@@ -46,6 +46,7 @@ function EditingService() {
     message: null,
     relations: [],
   };
+  this._layers_in_error = false;
   //mapservice
   this._mapService = GUI.getComponent('map').getService();
   // disable active tool on wehena a control is activated
@@ -71,45 +72,36 @@ function EditingService() {
     this._editableLayers = {
       [Symbol.for('layersarray')]: []
     };
-    // contiene tutti i toolbox
     this._toolboxes = [];
-    // restto
     this.state.toolboxes = [];
-    // sono i layer originali caricati dal progetto e messi nel catalogo
     let layers = this._getEditableLayersFromCatalog();
-    let editingLayersLenght = layers.length;
+    const EditableLayersPromises = [];
     for (const layer of layers) {
-      const layerId = layer.getId();
-      this._editableLayers[layerId] = {};
-      const editableLayer = layer.getLayerForEditing({
+      // getLayerForEditing return a promise with layer usefult for editing
+      EditableLayersPromises.push(layer.getLayerForEditing({
         vectorurl: this._vectorUrl,
         project_type: this._projectType
-      });
-      this._editableLayers[layerId] = editableLayer;
-      this._editableLayers[Symbol.for('layersarray')].push(editableLayer);
-      const handleReadyConfigurationLayer = () => {
-        editingLayersLenght-=1;
-        if (editingLayersLenght === 0) {
-          for (let layerId in this._editableLayers) {
-            this._attachLayerWidgetsEvent(this._editableLayers[layerId]);
-          }
-          this._ready();
-        }
-      };
-      if (editableLayer.isReady())
-        handleReadyConfigurationLayer();
-      else
-        editableLayer.once('layer-config-ready', () => {
-          handleReadyConfigurationLayer();
-        });
-      // aggiungo all'array dei vectorlayers se per caso mi servisse
-      this._sessions[layerId] = null;
+      }))
     }
+    Promise.allSettled(EditableLayersPromises).then(editableLayers  => {
+      editableLayers.forEach(promise => {
+        const {status, value} = promise;
+        if (status === "fulfilled") {
+          const editableLayer = value;
+          const layerId = editableLayer.getId();
+          this._editableLayers[layerId] = editableLayer;
+          this._editableLayers[Symbol.for('layersarray')].push(editableLayer);
+          this._attachLayerWidgetsEvent(this._editableLayers[layerId]);
+          this._sessions[layerId] = null;
+        } else this._layers_in_error = true;
+      });
+      this._ready();
+    })
   };
   this._ready = function() {
     // set toolbox colors
     this.setLayersColor();
-    // after sadd layers to layerstore
+    // after add layers to layerstore
     this._layersstore.addLayers(this.getLayers());
     // vado a creare i toolboxes
     this._buildToolBoxes();
@@ -174,6 +166,10 @@ proto.unsubscribe = function(event, fnc) {
 };
 
 // END API
+
+proto.getLayersInError = function() {
+  return this._layers_in_error;
+};
 
 proto.getMapService = function() {
   return this._mapService;
@@ -495,30 +491,38 @@ proto._attachLayerWidgetsEvent = function(layer) {
             loading.state = 'loading';
             values.splice(0);
             const relationLayer = CatalogLayersStoresRegistry.getLayerById(layer_id);
-            const isVector = relationLayer.getType() === Layer.LayerTypes.VECTOR;
             if (relationLayer) {
-              relationLayer.getDataTable({
-                ordering: key
-              }).then((response) => {
-                if (response && response.features) {
-                  const features = response.features;
-                  self.fireEvent('autocomplete', {
-                    field,
-                    features
-                  });
-                  for (let i = 0; i < features.length; i++) {
-                    values.push({
-                      key: features[i].properties[key],
-                      value: features[i].properties[value]
-                    })
+              const isVector = relationLayer.getType() === Layer.LayerTypes.VECTOR;
+              if (relationLayer) {
+                relationLayer.getDataTable({
+                  ordering: key
+                }).then((response) => {
+                  if (response && response.features) {
+                    const features = response.features;
+                    self.fireEvent('autocomplete', {
+                      field,
+                      features
+                    });
+                    for (let i = 0; i < features.length; i++) {
+                      values.push({
+                        key: features[i].properties[key],
+                        value: features[i].properties[value]
+                      })
+                    }
+                    loading.state = 'ready';
                   }
-                  loading.state = 'ready';
-                }
-              }).fail((error) => {
+                }).fail((error) => {
+                  loading.state = 'error'
+                });
+              } else {
                 loading.state = 'error'
-              });
+              }
             } else {
-              loading.state = 'error'
+              self.fireEvent('autocomplete', {
+                field,
+                features:[]
+              });
+              loading.state = 'ready';
             }
           }
         })
@@ -527,7 +531,6 @@ proto._attachLayerWidgetsEvent = function(layer) {
   }
 };
 
-// funzione che crea le dipendenze
 proto._createToolBoxDependencies = function() {
   this._toolboxes.forEach((toolbox) => {
     const layer = toolbox.getLayer();
@@ -554,7 +557,6 @@ proto._getToolBoxEditingDependencies = function(layer) {
   });
 };
 
-// verifico se le sue diendenza sono legate a layer effettivamente in editing o no
 proto._hasEditingDependencies = function(layer) {
   let toolboxesIds = this._getToolBoxEditingDependencies(layer);
   return !!toolboxesIds.length;
@@ -579,7 +581,6 @@ proto._getEditableLayersFromCatalog = function() {
   });
   return layers;
 };
-
 
 proto.getLayers = function() {
   return this._editableLayers[Symbol.for('layersarray')];
@@ -632,7 +633,6 @@ proto.getRelationsByFeature = function({layerId, relation, feature, layerType}={
 proto.loadPlugin = function() {
   return this._load = !!this._getEditableLayersFromCatalog().length; // mi dice se ci sono layer in editing e quindi da caricare il plugin
 };
-
 
 proto.getLayerById = function(layerId) {
   return this._editableLayers[layerId];

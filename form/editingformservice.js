@@ -10,7 +10,8 @@ const EditingFormService = function(options={}) {
   this._formEventBus = options.formEventBus || null;
   const layerId = layer.getId();
   const feature = features[features.length - 1];
-  const relations = layer.isFather() ? EditingService.getRelationsInEditing({layerId, relations: layer.getRelations().getArray(), feature}) : [];
+  let relations = layer.getRelations().getArray().filter(relation => relation.getType() !== 'ONE');
+  relations = layer.isFather() ? EditingService.getRelationsInEditing({layerId, relations , feature}) : [];
   this.hasRelations = function() {
     return !!relations.length;
   };

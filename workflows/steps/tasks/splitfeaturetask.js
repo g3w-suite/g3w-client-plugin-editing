@@ -20,7 +20,7 @@ proto.run = function(inputs, context) {
   const session = context.session;
   this._snapIteraction = new ol.interaction.Snap({
     source,
-    edge: false
+    edge: true
   });
 
   this._drawInteraction = new ol.interaction.Draw({
@@ -76,7 +76,13 @@ proto._handleSplitFeature = function({feature, inputs, session, splittedGeometri
       session.pushUpdate(layerId, feature, oriFeature)
     } else {
       const newFeature = oriFeature.cloneNew();
+
       newFeature.setGeometry(splittedGeometry);
+      this.setNullMediaFields({
+        layer,
+        feature: newFeature
+      });
+
       feature = new Feature({
         feature: newFeature
       });

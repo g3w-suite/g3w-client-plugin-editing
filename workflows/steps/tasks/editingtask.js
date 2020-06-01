@@ -69,6 +69,15 @@ proto.getEditingService = function() {
 proto.fireEvent = function(event, options={}) {
   return this.getEditingService().fireEvent(event, options);
 };
+
+proto.setNullMediaFields = function({layer, feature}={}) {
+  const mediaFields = layer.getEditingMediaFields({});
+  mediaFields.forEach(field => {
+    feature.set(field, null);
+  })
+
+};
+
 proto.run = function(inputs, context) {};
 
 proto.stop = function() {};
