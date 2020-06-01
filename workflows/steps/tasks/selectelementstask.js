@@ -1,3 +1,4 @@
+const ApplicationState = g3wsdk.core.ApplicationState;
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
 const EditingTask = require('./editingtask');
@@ -33,21 +34,41 @@ proto.addSingleSelectInteraction = function({layer, inputs, promise}= {}){
 };
 
 proto.addMultipleSelectInteraction = function({layer, inputs, promise}={}){
-  const selectInteractionMultiple = new ol.interaction.DragBox({
-    condition: ol.events.condition.shiftKeyOnly
-  });
-  selectInteractionMultiple.on('boxend', () => {
-    const bboxExtent = selectInteractionMultiple.getGeometry().getExtent();
-    const layerSource = layer.getEditingLayer().getSource();
-    const features = layerSource.getFeaturesInExtent(bboxExtent);
-    if (!features.length) promise.reject();
-    else {
-      inputs.features = features;
-      this._originalStyle = this.setFeaturesSelectedStyle(features);
-      this.setUserMessageStepDone('select');
-      promise.resolve(inputs);
-    }
-  });
+  let selectInteractionMultiple;
+  if (ApplicationState.ismobile) {
+    selectInteractionMultiple = new ol.interaction.Draw({
+      type: 'Polygon'
+    });
+    selectInteractionMultiple.on('drawend', (evt) => {
+      const feature = evt.feature;
+      const bboxExtent = feature.getGeometry().getExtent();
+      const layerSource = layer.getEditingLayer().getSource();
+      const features = layerSource.getFeaturesInExtent(bboxExtent);
+      if (!features.length) promise.reject();
+      else {
+        inputs.features = features;
+        this._originalStyle = this.setFeaturesSelectedStyle(features);
+        this.setUserMessageStepDone('select');
+        promise.resolve(inputs);
+      }
+    });
+  }  else {
+    selectInteractionMultiple = new ol.interaction.DragBox({
+      condition: ol.events.condition.shiftKeyOnly
+    });
+    selectInteractionMultiple.on('boxend', () => {
+      const bboxExtent = selectInteractionMultiple.getGeometry().getExtent();
+      const layerSource = layer.getEditingLayer().getSource();
+      const features = layerSource.getFeaturesInExtent(bboxExtent);
+      if (!features.length) promise.reject();
+      else {
+        inputs.features = features;
+        this._originalStyle = this.setFeaturesSelectedStyle(features);
+        this.setUserMessageStepDone('select');
+        promise.resolve(inputs);
+      }
+    });
+  }
   this._selectInteractions.push(selectInteractionMultiple);
   this.addInteraction(selectInteractionMultiple);
 };

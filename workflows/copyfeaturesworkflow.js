@@ -8,7 +8,7 @@ const ApplicationState = g3wsdk.core.ApplicationState;
 
 function CopyFeaturesWorflow(options={}) {
   const isPointLayer = options.layer.getGeometryType().indexOf('Point') !== -1;
-  options.type = ApplicationState.ismobile ? 'touch' :  'multiple';
+  options.type = ApplicationState.ismobile ? 'single' :  'multiple';
   options.help = 'editing.steps.help.copy';
   options.steps = [];
   const selectelementssteps = new SelectElementsStep(options, true);

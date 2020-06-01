@@ -1,17 +1,16 @@
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
-const tPlugin = g3wsdk.core.i18n.tPlugin;
 const EditingWorkflow = require('./editingworkflow');
 const SelectElementsStep = require('./steps/selectelementsstep');
 const MergeFeaturesStep = require('./steps/mergefeaturesstep');
-
+const ApplicationState = g3wsdk.core.ApplicationState;
 function MergeFeaturesWorkflow(options={}) {
   options.type = 'bbox';
   options.help = 'editing.steps.help.merge';
   const selectelementssteps = new SelectElementsStep(options, true);
   selectelementssteps.getTask().setSteps({
     select: {
-      description: 'editing.workflow.steps.selectSHIFT',
+      description: ApplicationState.ismobile ? 'editing.workflow.steps.selectDrawBox' : 'editing.workflow.steps.selectSHIFT',
       directive: 't-plugin',
       done: false
     }
@@ -25,6 +24,7 @@ function MergeFeaturesWorkflow(options={}) {
     }
   });
   options.steps = [selectelementssteps, mergefeaturesstep];
+  this.registerEscKeyEvent();
   base(this, options);
 }
 

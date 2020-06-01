@@ -6,7 +6,7 @@ const SplitFeatureStep = require('./steps/splitfeaturestep');
 const ApplicationState = g3wsdk.core.ApplicationState;
 
 function SplitFeaturesWorflow(options={}) {
-  options.type = ApplicationState.ismobile ? 'touch' :  'multiple';
+  options.type = ApplicationState.ismobile ? 'single' :  'multiple';
   options.help = 'editing.steps.help.split';
   const selectelementssteps = new SelectElementsStep(options, true);
   selectelementssteps.getTask().setSteps({
