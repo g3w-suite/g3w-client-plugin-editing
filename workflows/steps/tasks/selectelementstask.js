@@ -8,6 +8,7 @@ function SelectElementsTask(options={}) {
   this._type = options.type || 'bbox'; // 'single' 'bbox' 'muliple'
   this._selectInteractions = [];
   this._originalStyle;
+  this._vectorLayer;
   base(this, options);
 }
 
@@ -36,8 +37,16 @@ proto.addSingleSelectInteraction = function({layer, inputs, promise}= {}){
 proto.addMultipleSelectInteraction = function({layer, inputs, promise}={}){
   let selectInteractionMultiple;
   if (ApplicationState.ismobile) {
+    const geometryFunction = ol.interaction.Draw.createBox();
+    const source = new ol.source.Vector({});
+    this._vectorLayer = new ol.layer.Vector({
+      source
+    });
+    this.getMap().addLayer(this._vectorLayer);
     selectInteractionMultiple = new ol.interaction.Draw({
-      type: 'Polygon'
+      type: 'Circle',
+      source,
+      geometryFunction
     });
     selectInteractionMultiple.on('drawend', (evt) => {
       const feature = evt.feature;
@@ -49,7 +58,9 @@ proto.addMultipleSelectInteraction = function({layer, inputs, promise}={}){
         inputs.features = features;
         this._originalStyle = this.setFeaturesSelectedStyle(features);
         this.setUserMessageStepDone('select');
-        promise.resolve(inputs);
+        setTimeout(()=>{
+          promise.resolve(inputs);
+        }, 500)
       }
     });
   }  else {
@@ -98,6 +109,8 @@ proto.stop = function(inputs, context) {
   this._selectInteractions.forEach(interaction => {
       this.removeInteraction(interaction);
   });
+  this._vectorLayer && this.getMap().removeLayer(this._vectorLayer);
+  this._vectorLayer = null;
   this._originalStyle = null;
   this._selectInteractions = [];
 };

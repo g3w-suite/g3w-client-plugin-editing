@@ -60,7 +60,7 @@ export default {
         merge: 'Seleziona la feature su cui dissolvere',
         selectPoint: "Clicca sulla feature per selezionarla",
         selectSHIFT: 'Seleziona le features tenedo premuto il tasto SHIFT',
-        selectDrawBox: "Seleziona le features disegnado un poligono",
+        selectDrawBox: "Seleziona le features disegnando un poligono",
         selectPointSHIFT: 'Seleziona le features tenedo premuto il tasto SHIFT (multiselezione) oppure cliccando sulla singola feature',
         copyCTRL: 'Copia le features selezionate con CTRL+C',
         selectStartVertex: 'Seleziona il vertice di partenza delle feature selezionate',

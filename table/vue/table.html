@@ -13,7 +13,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(feature, index) in state.features" :key="feature.id" :id="feature.id">
+          <tr v-for="(feature, index) in state.features" :key="feature.__gis3w_feature_uid" :id="feature.__gis3w_feature_uid">
             <td v-if="!state.isrelation">
               <div id="table-editing-tools" style="display:flex; justify-content: space-between;">
                 <i :class="g3wtemplate.font['pencil']" class="g3w-icon skin-tooltip-right"  data-placement="right"  style="color:#30cce7;" v-t-title:plugin="'editing.table.edit'" aria-hidden="true" @click="editFeature(index)"></i>
@@ -25,7 +25,7 @@
               <input :id="`relation__${index}`" @change="linkFeature(index, $event)" class="magic-checkbox" type="checkbox">
               <label :for="`relation__${index}`"></label>
             </td>
-            <td v-if ="showValue(key)" v-for="(value, key) in feature">
+            <td v-if ="showValue(key)" v-for="(value, key) in feature" :key="key">
               <g3w-media v-if=" getValue(value) && isMediaField(key)" :state="value"></g3w-media>
               <p v-else>{{ getValue(value) }}</p>
             </td>

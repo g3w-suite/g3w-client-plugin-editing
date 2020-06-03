@@ -35,7 +35,7 @@ const InternalComponent = Vue.extend({
       this.$options.service.cancel();
     },
     deleteFeature: function(index) {
-      const id = this.state.features[index].id;
+      const id = this.state.features[index].__gis3w_feature_uid;
       const element = $(`#editing_table table tr#${id}`);
       this.$options.service.deleteFeature(index).then(()=>{
         this.dataTable.row(element).remove().draw()

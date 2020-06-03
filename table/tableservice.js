@@ -35,6 +35,7 @@ const TableService = function(options = {}) {
         headers.forEach(header => {
           orderedProperties[header] = properties[header]
         });
+        orderedProperties.__gis3w_feature_uid = feature.getUid();
         return orderedProperties;
       });
     }
@@ -103,9 +104,11 @@ proto.copyFeature = function(index){
   this._workflow.start(options)
     .then((outputs) => {
       const feature = outputs.features[0];
-      Object.entries(this.state.features[index]).forEach(([key, value]) => {
-        this.state.features[index][key] = feature.get(key);
+      const newFeature = {};
+      Object.entries(this.state.features[0]).forEach(([key, value]) => {
+        newFeature[key] = feature.get(key);
       });
+      this.state.features.push(newFeature);
     })
     .fail((err) => {})
 };
