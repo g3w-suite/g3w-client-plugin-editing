@@ -7,10 +7,9 @@ const OpenFormStep = require('./steps/openformstep');
 function AddFeatureWorflow(options={}) {
   const addfeaturestep = new AddFeatureStep(options);
   const openformstep = new OpenFormStep(options);
-  let snapTool;
   addfeaturestep.on('run', ({inputs, context}) => {
     const layer = inputs.layer;
-    snapTool = {
+    const snapTool = {
       type: 'snap',
       options: {
         source: layer.getEditingLayer().getSource(),
@@ -25,7 +24,6 @@ function AddFeatureWorflow(options={}) {
   addfeaturestep.on('stop', () => {
     this.emit('deactive', ['snap']);
   });
-
   options.steps = [addfeaturestep, openformstep];
   base(this, options);
 }

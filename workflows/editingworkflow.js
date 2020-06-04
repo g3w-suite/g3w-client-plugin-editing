@@ -48,7 +48,6 @@ proto.escKeyUpHandler = function(evt) {
   }
 };
 
-
 proto.unbindEscKeyUp = function() {
   $(document).unbind('keyup', this.escKeyUpHandler);
 };

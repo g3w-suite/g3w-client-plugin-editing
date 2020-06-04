@@ -40,9 +40,7 @@
       }
     },
     destroyed() {
-      if (snapInteraction) {
-        mapService.removeInteraction(snapInteraction);
-      }
+      snapInteraction && mapService.removeInteraction(snapInteraction);
     }
   }
 </script>

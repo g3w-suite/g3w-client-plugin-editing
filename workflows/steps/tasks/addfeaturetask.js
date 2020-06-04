@@ -12,7 +12,6 @@ function AddFeatureTask(options={}) {
   this._snapInteraction = null;
   this._finishCondition = options.finishCondition || _.constant(true);
   this._condition = options.condition || _.constant(true);
-
   base(this, options);
 }
 
@@ -29,12 +28,9 @@ proto.run = function(inputs, context) {
   switch (originalLayer.getType()) {
     case Layer.LayerTypes.VECTOR:
       let geometryType;
-      if (originalLayer.getEditingGeometryType() === Geometry.GeometryTypes.LINE)
-        geometryType = 'LineString';
-      else if (originalLayer.getEditingGeometryType() === Geometry.GeometryTypes.MULTILINE)
-        geometryType = 'MultiLineString';
-      else
-        geometryType = originalLayer.getEditingGeometryType();
+      if (originalLayer.getEditingGeometryType() === Geometry.GeometryTypes.LINE) geometryType = 'LineString';
+      else if (originalLayer.getEditingGeometryType() === Geometry.GeometryTypes.MULTILINE) geometryType = 'MultiLineString';
+      else geometryType = originalLayer.getEditingGeometryType();
       const source = editingLayer.getSource();
       const attributes = originalLayer.getEditingFields();
       const temporarySource = new ol.source.Vector();
@@ -45,11 +41,8 @@ proto.run = function(inputs, context) {
         freehandCondition: ol.events.condition.never,
         finishCondition: this._finishCondition
       });
-
       this.addInteraction(this.drawInteraction);
       this.drawInteraction.setActive(true);
-      this.drawInteraction.on('drawstart',function(e) {
-      });
       this.drawInteraction.on('drawend', function(e) {
         attributes.forEach((attribute) => {
           e.feature.set(attribute.name, null);
