@@ -26,7 +26,7 @@ proto.run = function(inputs, context) {
       type: 'warning',
       message: 'Seleziona come minimo due features',
       autoclose: true
-    })
+    });
     d.reject();
   } else {
     const mapService = this.getMapService();
@@ -74,7 +74,7 @@ proto.run = function(inputs, context) {
                 features.forEach(deleteFeature => {
                   session.pushDelete(layerId, deleteFeature);
                   source.removeFeature(deleteFeature);
-                })
+                });
                 inputs.features = [feature];
                 d.resolve(inputs);
               } else {
@@ -82,7 +82,7 @@ proto.run = function(inputs, context) {
                   type: 'warning',
                   message: 'No feature disolved',
                   autoclose: true
-                })
+                });
                 d.reject()
               }
             } else {
@@ -90,7 +90,7 @@ proto.run = function(inputs, context) {
                 type: 'warning',
                 message: 'No feature selected',
                 autoclose: true
-              })
+              });
               d.reject();
             }
           }
@@ -98,8 +98,6 @@ proto.run = function(inputs, context) {
       }
     })
   }
-
-
   return d.promise();
 };
 proto.stop = function(){

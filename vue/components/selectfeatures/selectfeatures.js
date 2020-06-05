@@ -1,3 +1,4 @@
+const {toRawType} =  g3wsdk.core.utils;
 function SelectFeaturesDom({features, events}={}){
   const Component = Vue.extend({
     data(){
@@ -7,10 +8,14 @@ function SelectFeaturesDom({features, events}={}){
     },
     render(h) {
       const columns = Object.keys(features[0].getAlphanumericProperties());
-      const header = columns.map(property => h('th', property))
+      const header = columns.map(property => h('th', property));
       const thead = h('thead', [h('tr', header)]);
       const rows = features.map((feature, index) => {
-        const values = columns.map( column => h('td', feature.get(column)))
+        const values = columns.map(column => {
+          let value = feature.get(column);
+          value = toRawType(value) === 'Object' ? value.value : value;
+          return h('td', value)
+        });
         return h('tr', {
           on: {
             click: () => {
@@ -25,7 +30,7 @@ function SelectFeaturesDom({features, events}={}){
             'skin-background-color lighten': this.selected === index
           }
         }, values);
-      })
+      });
       const tbody = h('tbody', rows);
       const table = h('table', {
         class: {
@@ -39,8 +44,8 @@ function SelectFeaturesDom({features, events}={}){
         },
       }, [table])
     }
-  })
+  });
   return new Component().$mount().$el;
 }
 
-module.exports = SelectFeaturesDom
+module.exports = SelectFeaturesDom;
