@@ -319,81 +319,49 @@ proto.activeQueryInfo = function() {
 
 proto.setLayersColor = function() {
 
-  const RELATIONS_COLOR = [
-    [
-      "#0C1B53",
-      "#740313",
-      "#1B6803",
-      "#7A5603",
-
-    ],
-    [
-      "#1B2B63",
-      "#8B1929",
-      "#2F7C16",
-      "#926E1A",
-    ],
-    [
-      "#303E73",
-      "#A23645",
-      "#479030",
-      "#AA8739"
-    ],
-    [
-      "#485584",
-      "#B95A67",
-      "#64A450",
-      "#C2A45E",
-    ],
-    [
-      "#656F94",
-      "#CF858F",
-      "#86B976",
-      "#DAC28C"
-    ]
-  ];
-
   const LAYERS_COLOR = [
-
-    "#414F25",
-    "#22203B",
-    "#544A27",
-    "#431F34",
-
-    "#5F772F",
-    "#2E2B59",
-    "#7F6E33",
-    "#66294B",
-
+    "#C43C39",
+    '#d95f02',
+    "#91522D",
+    "#7F9801",
+    "#0B2637",
+    "#8D5A99",
+    "#85B66F",
+    "#8D2307",
+    "#2B83BA",
+    "#7D8B8F",
+    "#E8718D",
+    "#1E434C",
+    "#9B4F07",
+    '#1b9e77',
+    "#FF9E17",
+    '#7570b3',
+    "#204B24",
+    "#9795A3",
+    "#C94F44",
     "#7B9F35",
     "#373276",
     "#882D61",
     "#AA9039",
-
-    "#96C735",
-    "#3E3794",
-    "#D5B139",
-    "#AB2E74",
-
-    "#AFEE30",
-    "#4138B2",
-    "#FFD033",
-    "#CD2986",
+    "#F38F3A",
+    "#712333",
+    "#3B3A73",
+    "#9E5165",
+    "#A51E22",
+    "#261326",
+    "#e4572e",
+    "#29335c",
+    "#f3a712",
+    "#669bbc",
+    "#eb6841",
+    "#4f372d",
+    "#cc2a36",
+    "#00a0b0",
+    "#00b159",
+    "#f37735",
+    "#ffc425",
   ];
-  let color;
-  let childrenLayers;
-  for (const layer of this.getLayers()) {
-    // verifico se è un layer è padre e se ha figli in editing
-    childrenLayers = this._layerChildrenRelationInEditing(layer);
-    if (layer.isFather() && childrenLayers.length) {
-      color = RELATIONS_COLOR.splice(0,1).pop().reverse();
-      !layer.getColor() ? layer.setColor(color.splice(0,1).pop()): null;
-      childrenLayers.forEach((layerId) => {
-        const layer = this.getLayerById(layerId);
-        !layer.getColor() ? layer.setColor(color.splice(0,1).pop()): null;
-      });
-    }
-  }
+
   for (const layer of this.getLayers()) {
     !layer.getColor() ? layer.setColor(LAYERS_COLOR.splice(0,1).pop()): null;
   }

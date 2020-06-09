@@ -1,12 +1,12 @@
 <div class="toolbox">
   <div :class="{'disableddiv' : !isLayerReady || !canEdit }" :id="'id_toolbox_'+ state.id">
-    <div @click="select" class="panel panel-primary" :class="{ 'toolboxselected': state.selected }">
+    <div @click="select" class="panel" :class="{ 'toolboxselected': state.selected }">
       <div v-show="!isLayerReady" class="bar-loader"></div>
       <div class="panel-heading container" style="width:100%;" :style="{ background: state.color}" >
-        <div v-if="father" style="margin-right:5px;" class="pull-left enabled dropdown">
+        <div v-if="father" style="margin-right:5px; cursor:pointer;" class="pull-left enabled dropdown">
           <span :class="g3wtemplate.font['relation']"></span>
-          <div class="dropdown-content" style="padding: 5px;">
-            <div v-for="dependency in state.editing.dependencies" style="color: black" >{{ dependency }}</div>
+          <div class="dropdown-content skin-background-color" style="padding: 5px; border-radius: 3px;">
+            <div v-for="dependency in state.editing.dependencies" style="font-weight: bold" >{{ dependency }}</div>
           </div>
         </div>
         <div class="panel-title" :class="[father ? 'col-md-6' : 'col-md-8']" v-t-plugin:pre="'editing.toolbox.title'">{{ state.title }}
