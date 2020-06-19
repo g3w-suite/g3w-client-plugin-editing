@@ -34,6 +34,20 @@ function EditorToolsFactory() {
                 op: AddFeatureWorkflow
               }),
               new Tool({
+                id: 'editattributes',
+                name: "editing.tools.update_feature",
+                icon: "editAttributes.png",
+                layer,
+                op: EditFeatureAttributesWorkflow
+              }),
+              new Tool({
+                id: 'deletefeature',
+                name: "editing.tools.delete_feature",
+                icon: "deletePoint.png",
+                layer,
+                op: DeleteFeatureWorkflow
+              }),
+              new Tool({
                 id: 'movefeature',
                 name: "editing.tools.move_feature",
                 icon: "movePoint.png",
@@ -47,20 +61,6 @@ function EditorToolsFactory() {
                 layer,
                 once: true,
                 op: CopyFeaturesWorflow
-              }),
-              new Tool({
-                id: 'deletefeature',
-                name: "editing.tools.delete_feature",
-                icon: "deletePoint.png",
-                layer,
-                op: DeleteFeatureWorkflow
-              }),
-              new Tool({
-                id: 'editattributes',
-                name: "editing.tools.update_feature",
-                icon: "editAttributes.png",
-                layer,
-                op: EditFeatureAttributesWorkflow
               })
             ];
             break;
@@ -77,11 +77,25 @@ function EditorToolsFactory() {
                 op: AddFeatureWorkflow
               }),
               new Tool({
+                id: 'editattributes',
+                name: "editing.tools.update_feature",
+                icon: "editAttributes.png",
+                layer: layer,
+                op: EditFeatureAttributesWorkflow
+              }),
+              new Tool({
                 id: 'movevertex',
                 name: "editing.tools.update_vertex",
                 icon: "moveVertex.png",
                 layer,
                 op: ModifyGeometryVertexWorkflow
+              }),
+              new Tool({
+                id: 'deletefeature',
+                name: "editing.tools.delete_feature",
+                icon: "deleteLine.png",
+                layer,
+                op: DeleteFeatureWorkflow
               }),
               new Tool({
                 id: 'copyfeaturespoly',
@@ -106,20 +120,6 @@ function EditorToolsFactory() {
                 layer,
                 once: true,
                 op: SplitFeatureWorkflow
-              }),
-              new Tool({
-                id: 'deletefeature',
-                name: "editing.tools.delete_feature",
-                icon: "deleteLine.png",
-                layer,
-                op: DeleteFeatureWorkflow
-              }),
-              new Tool({
-                id: 'editattributes',
-                name: "editing.tools.update_feature",
-                icon: "editAttributes.png",
-                layer: layer,
-                op: EditFeatureAttributesWorkflow
               })
             ];
             break;
@@ -134,11 +134,11 @@ function EditorToolsFactory() {
                 op: AddFeatureWorkflow
               }),
               new Tool({
-                id: 'movefeature',
-                name: "editing.tools.move_feature",
-                icon: "movePolygon.png",
+                id: 'editattributes',
+                name: "editing.tools.update_feature",
+                icon: "editAttributes.png",
                 layer,
-                op: MoveFeatureWorkflow
+                op: EditFeatureAttributesWorkflow
               }),
               new Tool({
                 id: 'movevertex',
@@ -146,6 +146,20 @@ function EditorToolsFactory() {
                 icon: "moveVertex.png",
                 layer,
                 op: ModifyGeometryVertexWorkflow
+              }),
+              new Tool({
+                id: 'deletefeature',
+                name: "editing.tools.delete_feature",
+                icon: "deletePolygon.png",
+                layer,
+                op: DeleteFeatureWorkflow
+              }),
+              new Tool({
+                id: 'movefeature',
+                name: "editing.tools.move_feature",
+                icon: "movePolygon.png",
+                layer,
+                op: MoveFeatureWorkflow
               }),
               new Tool({
                 id: 'copyfeaturespoly',
@@ -170,20 +184,6 @@ function EditorToolsFactory() {
                 layer,
                 once: true,
                 op: SplitFeatureWorkflow
-              }),
-              new Tool({
-                id: 'deletefeature',
-                name: "editing.tools.delete_feature",
-                icon: "deletePolygon.png",
-                layer,
-                op: DeleteFeatureWorkflow
-              }),
-              new Tool({
-                id: 'editattributes',
-                name: "editing.tools.update_feature",
-                icon: "editAttributes.png",
-                layer,
-                op: EditFeatureAttributesWorkflow
               })
             ];
             break;

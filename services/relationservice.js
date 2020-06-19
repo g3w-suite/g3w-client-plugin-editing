@@ -328,7 +328,6 @@ proto.addRelation = function() {
   promise.then((outputs) => {
     const {newFeature, originalFeature} = outputs.relationFeature;
     const setRelationFieldValue = (value) =>{
-      console.log(value)
       newFeature.set(ownField, value);
       parentFeature.isNew() && originalFeature.set(ownField, value);
       this.getLayer().getEditingSource().updateFeature(newFeature);
