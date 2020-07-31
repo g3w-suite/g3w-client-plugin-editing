@@ -2,7 +2,6 @@ const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
 const { dissolve } = g3wsdk.core.geoutils;
 const EditingTask = require('./editingtask');
-const PickFeatureInteraction = g3wsdk.ol.interactions.PickFeatureInteraction;
 const GUI = g3wsdk.gui.GUI;
 const SelectFeaturesDom = require('../../../vue/components/selectfeatures/selectfeatures');
 

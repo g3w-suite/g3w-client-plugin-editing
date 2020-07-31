@@ -50,7 +50,7 @@ proto.getSelectedStyle = function(feature){
   const originalStyle = feature.getStyle();
   const selectedStyle = createSelectedStyle({
     geometryType
-  })
+  });
   return {
     originalStyle,
     selectedStyle

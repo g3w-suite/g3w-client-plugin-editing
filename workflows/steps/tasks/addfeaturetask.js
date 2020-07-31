@@ -6,6 +6,7 @@ const EditingTask = require('./editingtask');
 const Feature = g3wsdk.core.layer.features.Feature;
 
 function AddFeatureTask(options={}) {
+  this._add = options.add === undefined ? true : options.add;
   this._busy = false;
   this.drawInteraction = null;
   this._snap = options.snap===false ? false : true;
@@ -44,16 +45,19 @@ proto.run = function(inputs, context) {
       this.addInteraction(this.drawInteraction);
       this.drawInteraction.setActive(true);
       this.drawInteraction.on('drawend', function(e) {
-        attributes.forEach((attribute) => {
-          e.feature.set(attribute.name, null);
-        });
-        const feature = new Feature({
-          feature: e.feature,
-        });
-        feature.setTemporaryId();
-        source.addFeature(feature);
-        const newFeature = session.pushAdd(layerId, feature);
-        inputs.newFeature = newFeature;
+        let feature;
+        if (this._add) {
+          attributes.forEach((attribute) => {
+            e.feature.set(attribute.name, null);
+          });
+          const feature = new Feature({
+            feature: e.feature,
+          });
+          feature.setTemporaryId();
+          source.addFeature(feature);
+          const newFeature = session.pushAdd(layerId, feature);
+          inputs.newFeature = newFeature;
+        } else feature = e.feature;
         inputs.features.push(feature);
         d.resolve(inputs);
       });

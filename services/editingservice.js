@@ -95,7 +95,7 @@ function EditingService() {
           this._sessions[layerId] = null;
         } else this._layers_in_error = true;
       });
-      this._ready();
+      Promise.resolve().then(()=> this._ready());
     })
   };
   this._ready = function() {
@@ -363,7 +363,7 @@ proto.setLayersColor = function() {
   ];
 
   for (const layer of this.getLayers()) {
-    !layer.getColor() ? layer.setColor(LAYERS_COLOR.splice(0,1).pop()): null;
+    !layer.getColor() ? layer.setColor(LAYERS_COLOR.splice(0,1)[0]): null;
   }
 };
 
@@ -377,7 +377,7 @@ proto._layerChildrenRelationInEditing = function(layer) {
   return childrenrealtioninediting;
 };
 
-// udo delle relazioni
+// undo relations
 proto.undoRelations = function(undoItems) {
   Object.entries(undoItems).forEach(([toolboxId, items]) => {
     const toolbox = this.getToolBoxById(toolboxId);
@@ -386,7 +386,7 @@ proto.undoRelations = function(undoItems) {
   })
 };
 
-// undo delle relazioni
+// undo relations
 proto.rollbackRelations = function(rollbackItems) {
   Object.entries(rollbackItems).forEach(([toolboxId, items]) => {
     const toolbox = this.getToolBoxById(toolboxId);
@@ -395,7 +395,7 @@ proto.rollbackRelations = function(rollbackItems) {
   })
 };
 
-// redo delle relazioni
+// redo relations
 proto.redoRelations = function(redoItems) {
   Object.entries(redoItems).forEach(([toolboxId, items]) => {
     const toolbox = this.getToolBoxById(toolboxId);
@@ -404,29 +404,28 @@ proto.redoRelations = function(redoItems) {
   })
 };
 
-// restituisce il layer che viene utilizzato dai task per fare le modifiche
-// ol.vector nel cso dei vettoriali, tableLayer nel caso delle tabelle
 proto.getEditingLayer = function(id) {
   return this._editableLayers[id].getEditingLayer();
 };
 
 proto._buildToolBoxes = function() {
   for (const layer of this.getLayers()) {
-    // la toolboxes costruirà il toolboxex adatto per quel layer
-    // assegnadogli le icone dei bottonii etc ..
     const toolbox = ToolBoxesFactory.build(layer);
-    // vado ad aggiungere la toolbox
     this.addToolBox(toolbox);
   }
 };
 
-//funzione che server per aggiungere un editor
 proto.addToolBox = function(toolbox) {
   this._toolboxes.push(toolbox);
-  // vado ad aggiungere la sessione
+  // add session
   this._sessions[toolbox.getId()] = toolbox.getSession();
   this.state.toolboxes.push(toolbox.state);
 };
+/*
+* Add event
+* @param {String} type - Event Type
+* @param
+* */
 
 proto.addEvent = function({type, id, fnc}={}) {
   if (!this._events[type])
@@ -446,54 +445,56 @@ proto._attachLayerWidgetsEvent = function(layer) {
   const fields = layer.getEditingFields();
   for (let i=0; i < fields.length; i++) {
     const field = fields[i];
-    if (field.input && field.input.type === 'select_autocomplete') {
-      const options = field.input.options;
-      let {key, values, value, usecompleter, layer_id, loading} = options;
-      const self = this;
-      if (!usecompleter) {
-        this.addEvent({
-          type: 'start-editing',
-          id: layer.getId(),
-          fnc() {
-            // remove all values
-            loading.state = 'loading';
-            values.splice(0);
-            const relationLayer = CatalogLayersStoresRegistry.getLayerById(layer_id);
-            if (relationLayer) {
-              const isVector = relationLayer.getType() === Layer.LayerTypes.VECTOR;
+    if (field.input) {
+      if (field.input.type === 'select_autocomplete') {
+        const options = field.input.options;
+        let {key, values, value, usecompleter, layer_id, loading} = options;
+        const self = this;
+        if (!usecompleter) {
+          this.addEvent({
+            type: 'start-editing',
+            id: layer.getId(),
+            fnc() {
+              // remove all values
+              loading.state = 'loading';
+              values.splice(0);
+              const relationLayer = CatalogLayersStoresRegistry.getLayerById(layer_id);
               if (relationLayer) {
-                relationLayer.getDataTable({
-                  ordering: key
-                }).then((response) => {
-                  if (response && response.features) {
-                    const features = response.features;
-                    self.fireEvent('autocomplete', {
-                      field,
-                      features
-                    });
-                    for (let i = 0; i < features.length; i++) {
-                      values.push({
-                        key: features[i].properties[key],
-                        value: features[i].properties[value]
-                      })
+                const isVector = relationLayer.getType() === Layer.LayerTypes.VECTOR;
+                if (relationLayer) {
+                  relationLayer.getDataTable({
+                    ordering: key
+                  }).then((response) => {
+                    if (response && response.features) {
+                      const features = response.features;
+                      self.fireEvent('autocomplete', {
+                        field,
+                        features
+                      });
+                      for (let i = 0; i < features.length; i++) {
+                        values.push({
+                          key: features[i].properties[key],
+                          value: features[i].properties[value]
+                        })
+                      }
+                      loading.state = 'ready';
                     }
-                    loading.state = 'ready';
-                  }
-                }).fail((error) => {
+                  }).fail((error) => {
+                    loading.state = 'error'
+                  });
+                } else {
                   loading.state = 'error'
-                });
+                }
               } else {
-                loading.state = 'error'
+                self.fireEvent('autocomplete', {
+                  field,
+                  features: []
+                });
+                loading.state = 'ready';
               }
-            } else {
-              self.fireEvent('autocomplete', {
-                field,
-                features:[]
-              });
-              loading.state = 'ready';
             }
-          }
-        })
+          })
+        }
       }
     }
   }

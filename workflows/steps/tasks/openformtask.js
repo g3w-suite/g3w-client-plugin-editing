@@ -7,6 +7,7 @@ const EditingTask = require('./editingtask');
 const EditingFormComponent = require('../../../form/editingform');
 
 function OpenFormTask(options={}) {
+  this._edit_relations = options.edit_relations === undefined ? true : options._edit_relations;
   this._formIdPrefix = 'form_';
   this._isContentChild = false;
   this._feature;
@@ -122,7 +123,7 @@ proto.startForm = function(options = {}) {
     layer: this._originalLayer,
     isnew,
     fields: this._fields,
-    context_inputs:  {
+    context_inputs: this._edit_relations && {
       context,
       inputs
     },

@@ -7,7 +7,7 @@ function PickFeatureTask(options={}) {
   this._options = {
     highlight: options.highlight || false,
     multi: options.multi || false
-  }
+  };
   this.pickFeatureInteraction = null;
   this._busy = false;
   this._tools = options.tools || [];

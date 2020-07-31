@@ -22,6 +22,8 @@ export default {
     },
     tools: {
       copy: "Copia features",
+      addpart: "Aggiungi Parte",
+      deletepart: "Cancella Parte",
       merge: "Dissolvi features",
       split: "Taglia Feature",
       add_feature: "Aggiungi feature",
@@ -37,7 +39,8 @@ export default {
     },
     steps: {
       help: {
-        select_elements: "Selezionale le features",
+        select_elements: "Seleziona le features",
+        select_element: "Seleziona la feature",
         copy: "Crea una copia delle feature selezionate",
         merge: "Dissolvi features",
         split: "Taglia Feature",
@@ -45,7 +48,7 @@ export default {
         edit_table: "Edita le features della tabella",
         draw_new_feature: "Disegna sulla mappa la feature",
         action_confirm: "Conferma azione",
-        double_click_delete: "Doppio Click sulla feature che vuoi cancellare",
+        double_click_delete: "Doppio click sulla feature che vuoi cancellare",
         edit_feature_vertex: "Modifica o aggiungi un vertice alla feature selezionata",
         move: "Muovi la feature selezionata",
         select_feature_to_relation: "Seleziona la feature che vuoi mettere in relazione",
@@ -57,6 +60,7 @@ export default {
     workflow: {
       steps: {
         select: 'Clicca sulla feature da selezionare',
+        draw_part: "Disegna la nuova parte",
         merge: 'Seleziona la feature su cui dissolvere',
         selectPoint: "Clicca sulla feature per selezionarla",
         selectSHIFT: 'Seleziona le features tenedo premuto il tasto SHIFT',
@@ -145,6 +149,8 @@ export default {
     },
     tools: {
       copy: "Copy features",
+      addpart: "Add Part",
+      deletepart: "Delete Part",
       merge: "Dissolve features",
       split: "Split Feature",
       add_feature: "Add feature",
@@ -156,6 +162,7 @@ export default {
     steps: {
       help: {
         select_elements: "Select features",
+        select_element: "Select feature",
         copy: "Create new copy of selected features",
         merge: "Dissolve features",
         split: "Split Feature",
@@ -175,6 +182,7 @@ export default {
     workflow: {
       steps: {
         select: 'Click on feature to select',
+        draw_part: "Draw new part",
         merge: 'Select featurewhere dissolve',
         selectSHIFT: 'Select features drawing a rectangle pressing SHIFT',
         selectDrawBox: "Select features drawing a polygon",
