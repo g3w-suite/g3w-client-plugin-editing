@@ -36,16 +36,16 @@ function EditorToolsFactory() {
                 layer,
                 op: AddFeatureWorkflow
               }),
-              ...(isMultiGeometry ? [
-                new Tool({
-                  id: 'addPartToPoint',
-                  name: "editing.tools.addpart",
-                  icon: "addPart.png",
-                  layer,
-                  once: true,
-                  op: AddPartToMultigeometriesWorkflow
-                })
-              ] : []),
+              // ...(isMultiGeometry ? [
+              //   new Tool({
+              //     id: 'addPartToPoint',
+              //     name: "editing.tools.addpart",
+              //     icon: "addPart.png",
+              //     layer,
+              //     once: true,
+              //     op: AddPartToMultigeometriesWorkflow
+              //   })
+              // ] : []),
               new Tool({
                 id: 'editattributes',
                 name: "editing.tools.update_feature",
@@ -60,15 +60,15 @@ function EditorToolsFactory() {
                 layer,
                 op: DeleteFeatureWorkflow
               }),
-              ...(isMultiGeometry ? [
-                new Tool({
-                  id: 'deletePart',
-                  name: "editing.tools.deletepart",
-                  icon: "deletePart.png",
-                  layer,
-                  op: DeletePartFromMultigeometriesWorkflow
-                })
-              ] : []),
+              // ...(isMultiGeometry ? [
+              //   new Tool({
+              //     id: 'deletePart',
+              //     name: "editing.tools.deletepart",
+              //     icon: "deletePart.png",
+              //     layer,
+              //     op: DeletePartFromMultigeometriesWorkflow
+              //   })
+              // ] : []),
               new Tool({
                 id: 'movefeature',
                 name: "editing.tools.move_feature",
@@ -98,16 +98,16 @@ function EditorToolsFactory() {
                 layer,
                 op: AddFeatureWorkflow
               }),
-              ...(isMultiGeometry ? [
-                new Tool({
-                  id: 'addPartToPoint',
-                  name: "editing.tools.addpart",
-                  icon: "addPart.png",
-                  layer,
-                  once: true,
-                  op: AddPartToMultigeometriesWorkflow
-                })
-              ] : []),
+              // ...(isMultiGeometry ? [
+              //   new Tool({
+              //     id: 'addPartToPoint',
+              //     name: "editing.tools.addpart",
+              //     icon: "addPart.png",
+              //     layer,
+              //     once: true,
+              //     op: AddPartToMultigeometriesWorkflow
+              //   })
+              // ] : []),
               new Tool({
                 id: 'editattributes',
                 name: "editing.tools.update_feature",
@@ -129,15 +129,15 @@ function EditorToolsFactory() {
                 layer,
                 op: DeleteFeatureWorkflow
               }),
-              ...(isMultiGeometry ? [
-                new Tool({
-                  id: 'deletePart',
-                  name: "editing.tools.deletpart",
-                  icon: "deletePart.png",
-                  layer,
-                  op: DeletePartFromMultigeometriesWorkflow
-                })
-              ] : []),
+              // ...(isMultiGeometry ? [
+              //   new Tool({
+              //     id: 'deletePart',
+              //     name: "editing.tools.deletpart",
+              //     icon: "deletePart.png",
+              //     layer,
+              //     op: DeletePartFromMultigeometriesWorkflow
+              //   })
+              // ] : []),
               new Tool({
                 id: 'copyfeaturespoly',
                 name: "editing.tools.copy",
@@ -174,16 +174,16 @@ function EditorToolsFactory() {
                 layer,
                 op: AddFeatureWorkflow
               }),
-              ...(isMultiGeometry ? [
-                new Tool({
-                  id: 'addPartToPoint',
-                  name: "editing.tools.addpart",
-                  icon: "addPart.png",
-                  layer,
-                  once: true,
-                  op: AddPartToMultigeometriesWorkflow
-                })
-              ] : []),
+              // ...(isMultiGeometry ? [
+              //   new Tool({
+              //     id: 'addPartToPoint',
+              //     name: "editing.tools.addpart",
+              //     icon: "addPart.png",
+              //     layer,
+              //     once: true,
+              //     op: AddPartToMultigeometriesWorkflow
+              //   })
+              // ] : []),
               new Tool({
                 id: 'editattributes',
                 name: "editing.tools.update_feature",
@@ -205,15 +205,15 @@ function EditorToolsFactory() {
                 layer,
                 op: DeleteFeatureWorkflow
               }),
-              ...(isMultiGeometry ? [
-                new Tool({
-                  id: 'deletePart',
-                  name: "editing.tools.deletepart",
-                  icon: "deletePart.png",
-                  layer,
-                  op: DeletePartFromMultigeometriesWorkflow
-                })
-              ] : []),
+              // ...(isMultiGeometry ? [
+              //   new Tool({
+              //     id: 'deletePart',
+              //     name: "editing.tools.deletepart",
+              //     icon: "deletePart.png",
+              //     layer,
+              //     op: DeletePartFromMultigeometriesWorkflow
+              //   })
+              // ] : []),
               new Tool({
                 id: 'movefeature',
                 name: "editing.tools.move_feature",
