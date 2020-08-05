@@ -1,1 +1,0 @@
-// qui verranno messi le configurazioni comuni base del plugin

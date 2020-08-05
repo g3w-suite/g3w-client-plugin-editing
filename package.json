@@ -43,11 +43,6 @@
     "vinyl-buffer": "^1.0.1",
     "vinyl-source-stream": "^2.0.0",
     "vue-loader": "^14.2.1",
-    "watchify": "^3.11.0",
-    "webpack": "^4.1.1",
-    "webpack-cli": "^2.0.12",
-    "webpack-dev-server": "^3.1.1",
-    "webpack-hot-middleware": "^2.21.2",
-    "webpack-merge": "^4.1.2"
+    "watchify": "^3.11.0"
   }
 }

@@ -12,8 +12,8 @@ const watchify = require('watchify');
 const vueify = require('vueify');
 const stringify = require('stringify');
 const sourcemaps = require('gulp-sourcemaps');
-var production = false;
-var sourcemap = false;
+let production = false;
+let sourcemap = false;
 
 gulp.task('browserify', [], function() {
   var bundler = browserify('./index.js', {
