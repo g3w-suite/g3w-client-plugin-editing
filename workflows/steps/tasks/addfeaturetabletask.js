@@ -19,8 +19,7 @@ proto.run = function(inputs, context) {
   const feature = inputs.features.length ? inputs.features[inputs.features.length -1] : originalLayer.createNewFeature();
   feature.setTemporaryId();
   editingLayer.getEditingSource().addFeature(feature);
-  const newFeature = session.pushAdd(layerId, feature);
-  inputs.newFeature = newFeature;
+  session.pushAdd(layerId, feature);
   inputs.features.push(feature);
   d.resolve(inputs, context);
   return d.promise();

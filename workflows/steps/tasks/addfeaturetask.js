@@ -55,8 +55,7 @@ proto.run = function(inputs, context) {
           });
           feature.setTemporaryId();
           source.addFeature(feature);
-          const newFeature = session.pushAdd(layerId, feature);
-          inputs.newFeature = newFeature;
+          session.pushAdd(layerId, feature);
         } else feature = e.feature;
         inputs.features.push(feature);
         d.resolve(inputs);
