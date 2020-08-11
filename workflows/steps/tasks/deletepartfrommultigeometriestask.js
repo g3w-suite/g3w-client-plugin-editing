@@ -45,9 +45,14 @@ proto.run = function(inputs, context) {
         this.forEachFeatureAtPixel(pixel, (_feature)=>{
           if(!found) {
             source.removeFeature(_feature);
-            const newGeometry = singleGeometriesToMultiGeometry(source.getFeatures().map(feature => feature.getGeometry()));
-            feature.setGeometry(newGeometry);
-            session.pushUpdate(layerId, feature, originalFeature);
+            if (source.getFeatures().length) {
+              const newGeometry = singleGeometriesToMultiGeometry(source.getFeatures().map(feature => feature.getGeometry()));
+              feature.setGeometry(newGeometry);
+              session.pushUpdate(layerId, feature, originalFeature);
+            } else {
+              editingLayer.getSource().removeFeature(feature);
+              session.pushDelete(layerId, feature)
+            }
             d.resolve(inputs);
             found = true;
           }
