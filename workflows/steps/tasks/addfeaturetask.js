@@ -44,13 +44,13 @@ proto.run = function(inputs, context) {
       });
       this.addInteraction(this.drawInteraction);
       this.drawInteraction.setActive(true);
-      this.drawInteraction.on('drawend', function(e) {
+      this.drawInteraction.on('drawend', (e) => {
         let feature;
         if (this._add) {
           attributes.forEach((attribute) => {
             e.feature.set(attribute.name, null);
           });
-          const feature = new Feature({
+          feature = new Feature({
             feature: e.feature,
           });
           feature.setTemporaryId();

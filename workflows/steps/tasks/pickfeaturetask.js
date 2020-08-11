@@ -34,7 +34,7 @@ proto.run = function(inputs, context, queques) {
     inputs.features.length === 0 && inputs.features.push(feature);
     queques.micro.addTask(()=>{
       inputs.features.forEach((feature => feature.setStyle(originalStyle)));
-    })
+    });
     this._steps && this.setUserMessageStepDone('select');
     d.resolve(inputs);
   });
