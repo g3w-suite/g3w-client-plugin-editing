@@ -36,22 +36,19 @@ function EditorToolsFactory() {
                 layer,
                 op: AddFeatureWorkflow
               }),
-              ...(isMultiGeometry ? [
-                new Tool({
-                  id: 'addPartToPoint',
-                  name: "editing.tools.addpart",
-                  icon: "addPart.png",
-                  layer,
-                  once: true,
-                  op: AddPartToMultigeometriesWorkflow
-                })
-              ] : []),
               new Tool({
                 id: 'editattributes',
                 name: "editing.tools.update_feature",
                 icon: "editAttributes.png",
                 layer,
                 op: EditFeatureAttributesWorkflow
+              }),
+              new Tool({
+                id: 'movefeature',
+                name: "editing.tools.move_feature",
+                icon: "movePoint.png",
+                layer,
+                op: MoveFeatureWorkflow
               }),
               new Tool({
                 id: 'deletefeature',
@@ -62,6 +59,16 @@ function EditorToolsFactory() {
               }),
               ...(isMultiGeometry ? [
                 new Tool({
+                  id: 'addPartToPoint',
+                  name: "editing.tools.addpart",
+                  icon: "addPart.png",
+                  layer,
+                  once: true,
+                  op: AddPartToMultigeometriesWorkflow
+                })
+              ] : []),
+              ...(isMultiGeometry ? [
+                new Tool({
                   id: 'deletePart',
                   name: "editing.tools.deletepart",
                   icon: "deletePart.png",
@@ -69,13 +76,7 @@ function EditorToolsFactory() {
                   op: DeletePartFromMultigeometriesWorkflow
                 })
               ] : []),
-              new Tool({
-                id: 'movefeature',
-                name: "editing.tools.move_feature",
-                icon: "movePoint.png",
-                layer,
-                op: MoveFeatureWorkflow
-              }),
+
               new Tool({
                 id: 'copyfeaturespoint',
                 name: "editing.tools.copy",
@@ -98,16 +99,6 @@ function EditorToolsFactory() {
                 layer,
                 op: AddFeatureWorkflow
               }),
-              ...(isMultiGeometry ? [
-                new Tool({
-                  id: 'addPartToPoint',
-                  name: "editing.tools.addpart",
-                  icon: "addPart.png",
-                  layer,
-                  once: true,
-                  op: AddPartToMultigeometriesWorkflow
-                })
-              ] : []),
               new Tool({
                 id: 'editattributes',
                 name: "editing.tools.update_feature",
@@ -122,6 +113,16 @@ function EditorToolsFactory() {
                 layer,
                 op: ModifyGeometryVertexWorkflow
               }),
+              ...(isMultiGeometry ? [
+                new Tool({
+                  id: 'addPartToPoint',
+                  name: "editing.tools.addpart",
+                  icon: "addPart.png",
+                  layer,
+                  once: true,
+                  op: AddPartToMultigeometriesWorkflow
+                })
+              ] : []),
               new Tool({
                 id: 'deletefeature',
                 name: "editing.tools.delete_feature",
@@ -174,16 +175,6 @@ function EditorToolsFactory() {
                 layer,
                 op: AddFeatureWorkflow
               }),
-              ...(isMultiGeometry ? [
-                new Tool({
-                  id: 'addPartToPoint',
-                  name: "editing.tools.addpart",
-                  icon: "addPart.png",
-                  layer,
-                  once: true,
-                  op: AddPartToMultigeometriesWorkflow
-                })
-              ] : []),
               new Tool({
                 id: 'editattributes',
                 name: "editing.tools.update_feature",
@@ -199,12 +190,29 @@ function EditorToolsFactory() {
                 op: ModifyGeometryVertexWorkflow
               }),
               new Tool({
+                id: 'movefeature',
+                name: "editing.tools.move_feature",
+                icon: "movePolygon.png",
+                layer,
+                op: MoveFeatureWorkflow
+              }),
+              new Tool({
                 id: 'deletefeature',
                 name: "editing.tools.delete_feature",
                 icon: "deletePolygon.png",
                 layer,
                 op: DeleteFeatureWorkflow
               }),
+              ...(isMultiGeometry ? [
+                new Tool({
+                  id: 'addPartToPoint',
+                  name: "editing.tools.addpart",
+                  icon: "addPart.png",
+                  layer,
+                  once: true,
+                  op: AddPartToMultigeometriesWorkflow
+                })
+              ] : []),
               ...(isMultiGeometry ? [
                 new Tool({
                   id: 'deletePart',
@@ -214,13 +222,6 @@ function EditorToolsFactory() {
                   op: DeletePartFromMultigeometriesWorkflow
                 })
               ] : []),
-              new Tool({
-                id: 'movefeature',
-                name: "editing.tools.move_feature",
-                icon: "movePolygon.png",
-                layer,
-                op: MoveFeatureWorkflow
-              }),
               new Tool({
                 id: 'copyfeaturespoly',
                 name: "editing.tools.copy",
