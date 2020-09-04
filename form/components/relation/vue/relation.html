@@ -1,24 +1,20 @@
 <div style="margin-bottom: 5px;">
-  <div class="box-header with-border" style="margin-button:3px; background-color: #ffffff; ">
-    <div class="container" style="width:100%">
-      <div class="row">
-        <div class="col-sm-4" id="search-box" >
-          <input v-if="relationsLength" type="text" class="form-control" id="filterRelation" :placeholder="placeholdersearch">
-        </div>
-        <div class="col-sm-2 pull-right" style="padding:0">
-          <span class="g3w-icon add-link pull-right" align="center"
-                data-toggle="tooltip" data-placement="bottom"
-                v-t-tooltip:plugin="tooltips.link_relation" @click="enableAddLinkButtons ? linkRelation() : null"
-                :class="[{'disabled': !enableAddLinkButtons}, g3wtemplate.font['link']]">
+  <div class="box-header with-border" style="width:100%; display: flex; justify-content: flex-end; margin-button:3px; background-color: #ffffff; ">
+    <div id="search-box" style="margin-right: auto;">
+      <input v-if="relationsLength" type="text" class="form-control" id="filterRelation" :placeholder="placeholdersearch">
+    </div>
+    <div>
+      <span class="g3w-icon add-link" align="center"
+            data-toggle="tooltip" data-placement="bottom"
+            v-t-tooltip:plugin="tooltips.link_relation" @click="enableAddLinkButtons ? linkRelation() : null"
+            :class="[{'disabled': !enableAddLinkButtons}, g3wtemplate.font['link']]">
+      </span>
+      <span data-toggle="tooltip" data-placement="bottom"
+            v-t-tooltip:plugin="tooltips.add_relation"
+            @click="enableAddLinkButtons ? addRelationAndLink() : null"
+            class="g3w-icon add-link pull-right"
+            :class="[{'disabled' : !enableAddLinkButtons}, g3wtemplate.font['plus']]">
           </span>
-          <span data-toggle="tooltip" data-placement="bottom"
-                 v-t-tooltip:plugin="tooltips.add_relation"
-                 @click="enableAddLinkButtons ? addRelationAndLink() : null"
-                 class="g3w-icon add-link pull-right"
-                 :class="[{'disabled' : !enableAddLinkButtons}, g3wtemplate.font['plus']]">
-          </span>
-        </div>
-      </div>
     </div>
   </div>
   <div class="box-body" style="padding:0;">
