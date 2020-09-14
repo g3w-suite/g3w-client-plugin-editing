@@ -31,6 +31,7 @@ function AddPartToMultigeometriesWorflow(options={}) {
     const snapTool = {
       type: 'snap',
       options: {
+        layerId: layer.getId(),
         source: layer.getEditingLayer().getSource(),
         active: true
       }

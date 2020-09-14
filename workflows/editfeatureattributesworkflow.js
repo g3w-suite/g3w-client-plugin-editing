@@ -4,8 +4,7 @@ var EditingWorkflow = require('./editingworkflow');
 var PickFeatureStep = require('./steps/pickfeaturestep');
 var OpenFormStep = require('./steps/openformstep');
 
-function EditFeatureAttributesWorkflow(options) {
-  options = options || {};
+function EditFeatureAttributesWorkflow(options={}) {
   options.steps = [new PickFeatureStep(), new OpenFormStep()];
   base(this, options);
 }

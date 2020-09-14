@@ -4,8 +4,7 @@ var EditingWorkflow = require('./editingworkflow');
 var PickFeatureStep = require('./steps/pickfeaturestep');
 var MoveFeatureStep = require('./steps/movefeaturestep');
 
-function MoveFeatureWorflow(options) {
-  options = options || {};
+function MoveFeatureWorflow(options={}) {
   options.steps = [new PickFeatureStep(), new MoveFeatureStep()];
   base(this, options);
 }

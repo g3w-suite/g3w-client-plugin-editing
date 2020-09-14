@@ -1,8 +1,8 @@
-var inherit = g3wsdk.core.utils.inherit;
-var base =  g3wsdk.core.utils.base;
-var EditingWorkflow = require('./editingworkflow');
-var PickFeatureStep = require('./steps/pickfeaturestep');
-var ModifyGeometryVertexStep = require('./steps/modifygeometryvertexstep');
+const inherit = g3wsdk.core.utils.inherit;
+const base =  g3wsdk.core.utils.base;
+const EditingWorkflow = require('./editingworkflow');
+const PickFeatureStep = require('./steps/pickfeaturestep');
+const ModifyGeometryVertexStep = require('./steps/modifygeometryvertexstep');
 
 function ModifyGeometryVertexWorflow(options={}) {
   const pickstep = new PickFeatureStep(options);
@@ -11,6 +11,7 @@ function ModifyGeometryVertexWorflow(options={}) {
     const snapTool = {
       type: 'snap',
       options: {
+        layerId: layer.getId(),
         source: layer.getEditingLayer().getSource(),
         active: false
       }
