@@ -48,54 +48,46 @@
       setShowSnapAll(){
         this.showSnapAll = this.vectorToolboxesEditingState.find(editing => editing.on) && true || false;
         this.checkedAll = this.showSnapAll ? this.checkedAll : false;
+      },
+      activeSnapInteraction({source, features, snaptype}={}) {
+        snaptype === 'snapall' ? this.checked = false : this.checkedAll = false;
+        snapInteraction &&  mapService.removeInteraction(snapInteraction);
+        snapInteraction = null;
+        snapInteraction = new ol.interaction.Snap({
+          source,
+          features
+        });
+        mapService.addInteraction(snapInteraction);
       }
     },
     watch: {
       add(add) {
-        if (!add) {
-          mapService.removeInteraction(snapInteraction);
-        }
+        !add && mapService.removeInteraction(snapInteraction);
       },
-      checked(checked){
-        if (checked) {
-          this.checkedAll &&  mapService.removeInteraction(snapInteraction);
-          this.checkedAll = false;
-          snapInteraction =   new ol.interaction.Snap({
-            source: this.options.source
+      checked(bool) {
+        bool && this.activeSnapInteraction({
+            source: this.options.source,
+            type: 'snap'
           });
-          mapService.addInteraction(snapInteraction);
-        }
       },
-      checkedAll(checked){
-        if (checked) {
-          this.checked &&  mapService.removeInteraction(snapInteraction);
-          this.checked = false;
-          snapInteraction = new ol.interaction.Snap({
-            features: this.features
+      checkedAll(bool) {
+        bool && this.activeSnapInteraction({
+            features: this.features,
+            type: 'snapall'
           });
-          mapService.addInteraction(snapInteraction);
-        }
       }
     },
     created() {
-      // editing toolboexes dependencies
+      this.features = new ol.Collection();
+      this.sourcesAndEventsKeys = [];
+      // editing toolboxes dependencies
       this.vectorToolboxesEditingState = [];
       // unwatched function
       this.unwatches = [];
-      editingService.getLayers().filter(layer => {
+      editingService.getLayers().forEach(layer => {
         const layerId = layer.getId();
-        if (this.options.layerId !== layerId && layer.getType() === Layer.LayerTypes.VECTOR) {
-          const editing = editingService.getToolBoxById(layerId).getState().editing;
-          const unwatch = this.$watch(()=> editing.on, this.setShowSnapAll);
-          this.unwatches.push(unwatch);
-          this.vectorToolboxesEditingState.push(editing);
-        }
-      });
-      this.setShowSnapAll();
-      this.features = new ol.Collection();
-      this.sourcesAndEventsKeys = [];
-      editingService.getToolBoxes().filter(toolbox => {
-        if (toolbox.getLayer().type === 'vector') {
+        if (layer.getType() === Layer.LayerTypes.VECTOR) {
+          const toolbox = editingService.getToolBoxById(layerId);
           const source = toolbox.getLayer().getEditingSource();
           this.features.extend(source.readFeatures());
           const addFeaturesKey = source.onbefore('addFeatures', this.addFeatures);
@@ -104,9 +96,7 @@
             const features = source.readFeatures();
             this.removeFeatures(features);
           });
-          const olKey = source.getFeaturesCollection().on('add', (evt)=>{
-            this.addFeature(evt.element)
-          });
+          const olKey = source.getFeaturesCollection().on('add', evt => this.addFeature(evt.element));
           this.sourcesAndEventsKeys.push({
             source,
             settersAndKeys: {
@@ -115,9 +105,17 @@
               'clear': clearKey
             },
             olKey
-          })
+          });
+          // handle snap all
+          if (this.options.layerId !== layerId) {
+            const editing = toolbox.getState().editing;
+            const unwatch = this.$watch(()=> editing.on, this.setShowSnapAll);
+            this.unwatches.push(unwatch);
+            this.vectorToolboxesEditingState.push(editing);
+          }
         }
-      })
+      });
+      this.setShowSnapAll();
     },
     beforeDestroy() {
       snapInteraction && mapService.removeInteraction(snapInteraction);
@@ -130,6 +128,7 @@
         ol.Observable.unByKey(olKey)
       });
       this.unwatches.forEach(unwatch => unwatch());
+      snapInteraction = null;
       this.unwatches = null;
       this.vectorToolboxesEditingState = null;
     }
