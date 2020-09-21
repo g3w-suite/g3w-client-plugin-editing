@@ -600,7 +600,7 @@ proto.getRelationsByFeature = function({layerId, relation, feature, layerType}={
 };
 
 proto.loadPlugin = function() {
-  return this._load = !!this._getEditableLayersFromCatalog().length; // mi dice se ci sono layer in editing e quindi da caricare il plugin
+  return this._load = !!this._getEditableLayersFromCatalog().length;
 };
 
 proto.getLayerById = function(layerId) {
