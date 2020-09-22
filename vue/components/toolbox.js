@@ -18,11 +18,8 @@ const ToolboxComponent = Vue.extend({
   },
   methods: {
     select: function() {
-      if (!this.isLayerReady)
-        return;
-      if (!this.state.selected) {
-        this.$emit('setselectedtoolbox', this.state.id);
-      }
+      if (!this.isLayerReady) return;
+      if (!this.state.selected) this.$emit('setselectedtoolbox', this.state.id);
     },
     toggleEditing() {
       this.select();
