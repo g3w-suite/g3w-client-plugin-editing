@@ -599,6 +599,12 @@ proto.getRelationsByFeature = function({layerId, relation, feature, layerType}={
   });
 };
 
+proto.registerLeavePage = function(bool){
+  ApplicationService.registerLeavePage({
+    bool
+  });
+};
+
 proto.loadPlugin = function() {
   return this._load = !!this._getEditableLayersFromCatalog().length;
 };

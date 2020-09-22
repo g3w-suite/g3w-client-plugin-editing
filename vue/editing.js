@@ -118,6 +118,11 @@ const vueComponentOptions = {
       return toolbox && toolbox.state.editing.history.redo && this.editingButtonsEnabled;
     }
   },
+  watch:{
+    canCommit(bool) {
+      this.$options.service.registerLeavePage(bool);
+    }
+  },
   created() {
     this.appState = ApplicationState;
     this.$options.service.registerOnLineOffLineEvent();
