@@ -18,6 +18,7 @@ function OpenFormTask(options={}) {
   this._fields;
   this._session;
   this._editorFormStructure;
+  this._multi = options.multi || false; // set if can handle multi edit features
   base(this, options);
 }
 
@@ -34,9 +35,9 @@ proto._getFieldUniqueValuesFromServer = function(layer, uniqueFields) {
   layer.getWidgetData({
     type: 'unique',
     fields: fieldsName.join()
-  }).then(function(response) {
+  }).then( response => {
     const data = response.data;
-    _.forEach(data, function(values, fieldName) {
+    _.forEach(data, (values, fieldName) => {
       values.forEach((value) => {
         uniqueFields[fieldName].input.options.values.push(value);
       })
@@ -67,6 +68,13 @@ proto._getForm = function(inputs, context) {
   this._fields = this._originalLayer.getFieldsWithValues(this._feature, {
     exclude: excludeFields
   });
+  this._fields = this._multi ? this._fields.map(field => {
+    const _field = JSON.parse(JSON.stringify(field));
+    _field.value = null;
+    _field.validate.required = false;
+    console.log(_field)
+    return _field;
+  }).filter(field => !field.pk) : this._fields;
   if (this._originalLayer.hasFormStructure()) {
     const editorFormStructure = this._originalLayer.getEditorFormStructure();
     this._editorFormStructure = editorFormStructure.length ? editorFormStructure : null;
@@ -88,22 +96,28 @@ proto._saveFnc = function(promise, context, inputs) {
   return function(fields) {
     const session = context.session;
     const layerId = this._originalLayer.getId();
-    this._originalLayer.setFieldsWithValues(this._feature, fields);
-    const newFeature = this._feature.clone();
-    if (this._isContentChild) {
-      inputs.relationFeature = {
+    if (!this._multi) {
+      this._originalLayer.setFieldsWithValues(this._feature, fields);
+      const newFeature = this._feature.clone();
+      if (this._isContentChild) {
+        inputs.relationFeature = {
+          newFeature,
+          originalFeature: this._originalFeature
+        };
+      }
+      this.fireEvent('saveform', {
         newFeature,
         originalFeature: this._originalFeature
-      };
-    }
-    this.fireEvent('saveform', {
-      newFeature,
-      originalFeature: this._originalFeature
-    }).then(()=> {
-      session.pushUpdate(layerId, newFeature, this._originalFeature);
-      GUI.setModal(false);
+      }).then(()=> {
+        session.pushUpdate(layerId, newFeature, this._originalFeature);
+        GUI.setModal(false);
+        promise.resolve(inputs);
+      })
+    } else {
+      const fieldsNotNull = fields.filter(field => field.value !== null);
+      console.log(inputs.features);
       promise.resolve(inputs);
-    })
+    }
   }
 };
 
@@ -123,7 +137,7 @@ proto.startForm = function(options = {}) {
     layer: this._originalLayer,
     isnew,
     fields: this._fields,
-    context_inputs: this._edit_relations && {
+    context_inputs: !this._multi && this._edit_relations && {
       context,
       inputs
     },

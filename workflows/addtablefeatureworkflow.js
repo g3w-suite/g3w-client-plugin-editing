@@ -1,8 +1,8 @@
-var inherit = g3wsdk.core.utils.inherit;
-var base =  g3wsdk.core.utils.base;
-var EditingWorkflow = require('./editingworkflow');
-var AddTableFeatureStep = require('./steps/addtablefeaturestep');
-var OpenFormStep = require('./steps/openformstep');
+const inherit = g3wsdk.core.utils.inherit;
+const base =  g3wsdk.core.utils.base;
+const EditingWorkflow = require('./editingworkflow');
+const AddTableFeatureStep = require('./steps/addtablefeaturestep');
+const OpenFormStep = require('./steps/openformstep');
 
 function AddTableFeatureWorflow(options={}) {
   options.steps = [new AddTableFeatureStep(), new OpenFormStep()];

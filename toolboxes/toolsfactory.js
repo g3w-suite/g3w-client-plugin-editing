@@ -13,6 +13,8 @@ const SplitFeatureWorkflow = require('../workflows/splitfeatureworkflow');
 const MergeFeaturesWorkflow = require('../workflows/mergefeaturesworkflow');
 const AddPartToMultigeometriesWorkflow = require('../workflows/addparttomultigeometriesworkflow');
 const DeletePartFromMultigeometriesWorkflow = require('../workflows/deletepartfrommultigeometriesworkflow');
+const EditMultiFeatureAttributesWorkflow = require('../workflows/editmultifeatureattributesworkflow');
+
 
 function EditorToolsFactory() {
   // create a single tool
@@ -42,6 +44,13 @@ function EditorToolsFactory() {
                 icon: "editAttributes.png",
                 layer,
                 op: EditFeatureAttributesWorkflow
+              }),
+              new Tool({
+                id: 'editmultiattributes',
+                name: "editing.tools.update_multi_features",
+                icon: "editMultiAttributes.png",
+                layer,
+                op: EditMultiFeatureAttributesWorkflow
               }),
               new Tool({
                 id: 'movefeature',
@@ -105,6 +114,13 @@ function EditorToolsFactory() {
                 icon: "editAttributes.png",
                 layer: layer,
                 op: EditFeatureAttributesWorkflow
+              }),
+              new Tool({
+                id: 'editmultiattributes',
+                name: "editing.tools.update_multi_features",
+                icon: "editMultiAttributes.png",
+                layer,
+                op: EditMultiFeatureAttributesWorkflow
               }),
               new Tool({
                 id: 'movevertex',
@@ -181,6 +197,13 @@ function EditorToolsFactory() {
                 icon: "editAttributes.png",
                 layer,
                 op: EditFeatureAttributesWorkflow
+              }),
+              new Tool({
+                id: 'editmultiattributes',
+                name: "editing.tools.update_multi_features",
+                icon: "multiEditAttributes.png",
+                layer,
+                op: EditMultiFeatureAttributesWorkflow
               }),
               new Tool({
                 id: 'movevertex',

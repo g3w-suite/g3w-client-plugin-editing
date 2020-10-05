@@ -26,7 +26,7 @@ proto.addSingleSelectInteraction = function({layer, inputs, promise}= {}){
     if (feature) {
       inputs.features = features;
       this._originalStyle = this.setFeaturesSelectedStyle(features);
-      this.setUserMessageStepDone('select');
+      this._steps && this.setUserMessageStepDone('select');
       promise.resolve(inputs);
     }
   });
@@ -57,7 +57,7 @@ proto.addMultipleSelectInteraction = function({layer, inputs, promise}={}){
       else {
         inputs.features = features;
         this._originalStyle = this.setFeaturesSelectedStyle(features);
-        this.setUserMessageStepDone('select');
+        this._steps &&  this.setUserMessageStepDone('select');
         setTimeout(()=>{
           promise.resolve(inputs);
         }, 500)
@@ -75,7 +75,7 @@ proto.addMultipleSelectInteraction = function({layer, inputs, promise}={}){
       else {
         inputs.features = features;
         this._originalStyle = this.setFeaturesSelectedStyle(features);
-        this.setUserMessageStepDone('select');
+        this._steps && this.setUserMessageStepDone('select');
         promise.resolve(inputs);
       }
     });

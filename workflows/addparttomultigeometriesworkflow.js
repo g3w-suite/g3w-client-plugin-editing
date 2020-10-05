@@ -3,7 +3,6 @@ const base =  g3wsdk.core.utils.base;
 const EditingWorkflow = require('./editingworkflow');
 const SelectElementsStep = require('./steps/selectelementsstep');
 const AddFeatureStep = require('./steps/addfeaturestep');
-const OpenFormStep = require('./steps/openformstep');
 const AddPartToMultigeometriesStep = require('./steps/addparttomultigeometriesstep');
 
 function AddPartToMultigeometriesWorflow(options={}) {

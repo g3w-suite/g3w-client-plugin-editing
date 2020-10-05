@@ -1,7 +1,7 @@
-var inherit = g3wsdk.core.utils.inherit;
-var base =  g3wsdk.core.utils.base;
-var EditingWorkflow = require('./editingworkflow');
-var ConfirmStep = require('./steps/confirmstep');
+const inherit = g3wsdk.core.utils.inherit;
+const base =  g3wsdk.core.utils.base;
+const EditingWorkflow = require('./editingworkflow');
+const ConfirmStep = require('./steps/confirmstep');
 
 function CommitFeatureWorflow(options={}) {
   options.steps = [new ConfirmStep(options)];
@@ -9,7 +9,5 @@ function CommitFeatureWorflow(options={}) {
 }
 
 inherit(CommitFeatureWorflow, EditingWorkflow);
-
-var proto = CommitFeatureWorflow.prototype;
 
 module.exports = CommitFeatureWorflow;
