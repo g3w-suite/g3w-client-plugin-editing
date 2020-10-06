@@ -5,10 +5,10 @@ const SelectElementsStep = require('./steps/selectelementsstep');
 const OpenFormStep = require('./steps/openformstep');
 
 function EditMultiFeatureAttributesWorkflow(options={}) {
+  options.helpMessage = 'editing.tools.update_multi_features';
   options.steps = [new SelectElementsStep(), new OpenFormStep({
     multi: true
   })];
-  this.registerEscKeyEvent();
   base(this, options);
 }
 

@@ -7,6 +7,7 @@ const AddPartToMultigeometriesStep = require('./steps/addparttomultigeometriesst
 
 function AddPartToMultigeometriesWorflow(options={}) {
   options.type = 'single';
+  options.helpMessage = 'editing.tools.addpart';
   options.help = 'editing.steps.help.select_element';
   const selectelementssteps = new SelectElementsStep(options, true);
   selectelementssteps.getTask().setSteps({

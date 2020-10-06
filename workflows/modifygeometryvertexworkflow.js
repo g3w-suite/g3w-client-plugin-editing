@@ -5,6 +5,7 @@ const PickFeatureStep = require('./steps/pickfeaturestep');
 const ModifyGeometryVertexStep = require('./steps/modifygeometryvertexstep');
 
 function ModifyGeometryVertexWorflow(options={}) {
+  options.helpMessage = 'editing.tools.update_vertex';
   const pickstep = new PickFeatureStep(options);
   pickstep.on('run', ({inputs, context}) => {
     const layer = inputs.layer;

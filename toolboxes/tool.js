@@ -161,7 +161,7 @@ proto.clear = function() {
 
 proto.getMessage = function() {
   const operator = this.getOperator();
-  return operator.getRunningStep() ? this.state.messages : null;
+  return operator.getHelpMessage() || (operator.getRunningStep() ? this.state.messages : null);
 };
 
 proto.setMessage = function(message) {

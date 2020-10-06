@@ -10,11 +10,11 @@ function OpenFormTask(options={}) {
   this._edit_relations = options.edit_relations === undefined ? true : options._edit_relations;
   this._formIdPrefix = 'form_';
   this._isContentChild = false;
-  this._feature;
+  this._features;
   this._originalLayer;
   this._editingLayer;
   this._layerName;
-  this._originalFeature;
+  this._originalFeatures;
   this._fields;
   this._session;
   this._editorFormStructure;
@@ -37,7 +37,7 @@ proto._getFieldUniqueValuesFromServer = function(layer, uniqueFields) {
     fields: fieldsName.join()
   }).then( response => {
     const data = response.data;
-    _.forEach(data, (values, fieldName) => {
+    Object.entries(data).forEach(([fieldName, values]) => {
       values.forEach((value) => {
         uniqueFields[fieldName].input.options.values.push(value);
       })
@@ -63,16 +63,17 @@ proto._getForm = function(inputs, context) {
   this._originalLayer = inputs.layer;
   this._editingLayer = this._originalLayer.getEditingLayer();
   this._layerName = this._originalLayer.getName();
-  this._feature = inputs.features[inputs.features.length - 1];
-  this._originalFeature = this._feature.clone();
-  this._fields = this._originalLayer.getFieldsWithValues(this._feature, {
+  this._features = this._multi ? inputs.features : [inputs.features[inputs.features.length - 1]];
+  this._originalFeatures = this._features.map(feature => feature.clone());
+  this._fields = this._originalLayer.getFieldsWithValues(this._features[0], {
     exclude: excludeFields
   });
+  // in case of multi editit set all field to null //
   this._fields = this._multi ? this._fields.map(field => {
     const _field = JSON.parse(JSON.stringify(field));
     _field.value = null;
+    _field.forceNull = true;
     _field.validate.required = false;
-    console.log(_field)
     return _field;
   }).filter(field => !field.pk) : this._fields;
   if (this._originalLayer.hasFormStructure()) {
@@ -92,32 +93,46 @@ proto._cancelFnc = function(promise, inputs) {
   }
 };
 
+proto._saveFeatures = function({fields, promise, session, inputs}){
+  fields = this._multi ? fields.filter(field => field.value !== null) : fields;
+  if (fields.length) {
+    const layerId = this._originalLayer.getId();
+    const newFeatures = [];
+    this._features.forEach(feature =>{
+      this._originalLayer.setFieldsWithValues(feature, fields);
+      newFeatures.push(feature.clone());
+    });
+    if (this._isContentChild) {
+      inputs.relationFeatures = {
+        newFeatures,
+        originalFeatures: this._originalFeatures
+      };
+    }
+    this.fireEvent('saveform', {
+      newFeatures,
+      originalFeatures: this._originalFeatures
+    }).then(()=> {
+      newFeatures.forEach((newFeature, index)=>{
+        session.pushUpdate(layerId, newFeature, this._originalFeatures[index]);
+      });
+      GUI.setModal(false);
+      promise.resolve(inputs);
+    })
+  } else {
+    GUI.setModal(false);
+    promise.resolve(inputs);
+  }
+};
+
 proto._saveFnc = function(promise, context, inputs) {
   return function(fields) {
     const session = context.session;
-    const layerId = this._originalLayer.getId();
-    if (!this._multi) {
-      this._originalLayer.setFieldsWithValues(this._feature, fields);
-      const newFeature = this._feature.clone();
-      if (this._isContentChild) {
-        inputs.relationFeature = {
-          newFeature,
-          originalFeature: this._originalFeature
-        };
-      }
-      this.fireEvent('saveform', {
-        newFeature,
-        originalFeature: this._originalFeature
-      }).then(()=> {
-        session.pushUpdate(layerId, newFeature, this._originalFeature);
-        GUI.setModal(false);
-        promise.resolve(inputs);
-      })
-    } else {
-      const fieldsNotNull = fields.filter(field => field.value !== null);
-      console.log(inputs.features);
-      promise.resolve(inputs);
-    }
+    this._saveFeatures({
+      fields,
+      promise,
+      session,
+      inputs
+    });
   }
 };
 
@@ -127,7 +142,7 @@ proto.startForm = function(options = {}) {
   const formComponent = options.formComponent || EditingFormComponent;
   const Form = this._getForm(inputs, context);
   const layerId = this._originalLayer.getId();
-  const isnew = this._originalFeature.isNew();
+  const isnew = this._originalFeatures.length > 1 ? false : this._originalFeatures[0].isNew();
   const formService = Form({
     formComponent,
     title: "plugins.editing.editing_attributes",

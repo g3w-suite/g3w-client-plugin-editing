@@ -326,12 +326,15 @@ proto.addRelation = function() {
   const promise =   workflow.start(options);
   const percContent = isVector && workflow.bindEscKeyUp();
   promise.then((outputs) => {
-    const {newFeature, originalFeature} = outputs.relationFeature;
+    const {newFeatures, originalFeatures} = outputs.relationFeatures;
     const setRelationFieldValue = (value) =>{
-      newFeature.set(ownField, value);
-      parentFeature.isNew() && originalFeature.set(ownField, value);
-      this.getLayer().getEditingSource().updateFeature(newFeature);
-      session.pushUpdate(this._layerId, newFeature, originalFeature);
+      newFeatures.forEach((newFeature, index) =>{
+        const originalFeature = originalFeatures[index];
+        newFeature.set(ownField, value);
+        parentFeature.isNew() && originalFeature.set(ownField, value);
+        this.getLayer().getEditingSource().updateFeature(newFeature);
+        session.pushUpdate(this._layerId, newFeature, originalFeature);
+      })
     };
     setRelationFieldValue(this._currentFeatureRelationFieldValue);
     if (parentFeature.isNew() && this._isFatherFieldEditable) {
@@ -344,8 +347,10 @@ proto.addRelation = function() {
         } else ol.Observable.unByKey(keyRelationFeatureChange);
       })
     }
-    const newRelation = this._createRelationObj(newFeature);
-    this.relations.push(newRelation);
+    newFeatures.forEach(newFeature =>{
+      const newRelation = this._createRelationObj(newFeature);
+      this.relations.push(newRelation);
+    })
     this.emitEventToParentWorkFlow()
   }).fail((err) => {
     session.rollbackDependecies([this._layerId]);

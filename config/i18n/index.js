@@ -22,15 +22,16 @@ export default {
     },
     tools: {
       copy: "Copia features",
-      addpart: "Aggiungi Parte",
-      deletepart: "Cancella Parte",
+      addpart: "Aggiungi parte alla geometria",
+      deletepart: "Cancella parte dalla geometria",
       merge: "Dissolvi features",
       split: "Taglia Feature",
       add_feature: "Aggiungi feature",
       delete_feature: "Elimina feature",
       move_feature: "Muovi feature",
       update_vertex: "Aggiorna vertici feature",
-      update_feature: "Modifica feature"
+      update_feature: "Modifica attributi feature",
+      update_multi_features: "Modifica gli attributi delle features selezionate",
     },
     table: {
       edit: "Edita feature",
@@ -149,15 +150,16 @@ export default {
     },
     tools: {
       copy: "Copy features",
-      addpart: "Add Part",
-      deletepart: "Delete Part",
+      addpart: "Add part to multipart",
+      deletepart: "Delete part from multipart",
       merge: "Dissolve features",
       split: "Split Feature",
       add_feature: "Add feature",
       delete_feature: "Delete feature",
       move_feature: "Move feature",
       update_vertex: "Update feature vertex",
-      update_feature: "Update feature"
+      update_feature: "Update feature attribute",
+      update_multi_features: "Update attributes of selected features",
     },
     steps: {
       help: {

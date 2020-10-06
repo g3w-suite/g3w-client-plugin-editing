@@ -5,12 +5,23 @@ const Workflow = g3wsdk.core.workflow.Workflow;
 
 function EditingWorkflow(options={}) {
   base(this, options);
+  this.helpMessage = options.helpMessage ? {help:options.helpMessage} : null;
   this._toolsoftool = [];
 }
 
 inherit(EditingWorkflow, Workflow);
 
 const proto = EditingWorkflow.prototype;
+
+proto.setHelpMessage = function(message) {
+  this.helpMessage = {
+    help: message
+  };
+};
+
+proto.getHelpMessage = function(){
+  return this.helpMessage;
+};
 
 proto.getFeatures = function() {
   return this.getInputs().features;

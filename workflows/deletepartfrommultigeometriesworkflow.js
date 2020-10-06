@@ -4,6 +4,7 @@ const EditingWorkflow = require('./editingworkflow');
 const DeletePartFromMultigeometriesStep = require('./steps/deletepartfrommultigeometriesstep');
 
 function DeletePartToMultigeometriesWorflow(options={}) {
+  options.helpMessage = 'editing.tools.deletepart';
   const deletepartfrommultigeometriesstep = new DeletePartFromMultigeometriesStep(options);
   options.steps = [deletepartfrommultigeometriesstep];
   base(this, options);
