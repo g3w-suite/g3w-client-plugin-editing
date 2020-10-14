@@ -111,7 +111,6 @@ proto.copyFeature = function(index){
         });
         newFeature.__gis3w_feature_uid = feature.getUid();
         this.state.features.push(newFeature);
-        console.log(newFeature)
         resolve(newFeature)
       })
       .fail((err) => {
