@@ -92,25 +92,31 @@ proto.deleteFeature = function(index) {
 };
 
 proto.copyFeature = function(index){
-  const feature = this._features[index].cloneNew();
-  const addTableFeatureWorflow = require('../workflows/addtablefeatureworkflow');
-  this._workflow = new addTableFeatureWorflow();
-  const inputs = this._inputs;
-  inputs.features.push(feature);
-  const options = {
-    context: this._context,
-    inputs
-  };
-  this._workflow.start(options)
-    .then((outputs) => {
-      const feature = outputs.features[0];
-      const newFeature = {};
-      Object.entries(this.state.features[0]).forEach(([key, value]) => {
-        newFeature[key] = feature.get(key);
-      });
-      this.state.features.push(newFeature);
-    })
-    .fail((err) => {})
+  return new Promise((resolve, reject) =>{
+    const feature = this._features[index].cloneNew();
+    const addTableFeatureWorflow = require('../workflows/addtablefeatureworkflow');
+    this._workflow = new addTableFeatureWorflow();
+    const inputs = this._inputs;
+    inputs.features.push(feature);
+    const options = {
+      context: this._context,
+      inputs
+    };
+    this._workflow.start(options)
+      .then(outputs => {
+        const feature = outputs.features[outputs.features.length -1];
+        const newFeature = {};
+        Object.entries(this.state.features[0]).forEach(([key, value]) => {
+          newFeature[key] = feature.get(key);
+        });
+        newFeature.__gis3w_feature_uid = feature.getUid();
+        this.state.features.push(newFeature);
+        resolve(newFeature)
+      })
+      .fail((err) => {
+        reject();
+      })
+  })
 };
 
 proto.editFeature = function(index) {
@@ -124,8 +130,8 @@ proto.editFeature = function(index) {
     inputs
   };
   this._workflow.start(options)
-    .then((outputs) => {
-      const feature = outputs.features[0];
+    .then(outputs => {
+      const feature = outputs.features[outputs.features.length -1];
       Object.entries(this.state.features[index]).forEach(([key, value]) => {
         this.state.features[index][key] = feature.get(key);
       });
@@ -146,12 +152,5 @@ proto.linkFeature = function(index) {
       features: [feature]
     });
 };
-
-proto._setLayout = function() {
-  const editing_table_content_height = $('#editing_table').height();
-  return  (editing_table_content_height * 65) / 100;
-};
-
-
 
 module.exports = TableService;
