@@ -1,12 +1,14 @@
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
 const Component = g3wsdk.gui.vue.Component;
+const {resizeMixin} = g3wsdk.gui.vue.Mixins;
 const Media_Field = g3wsdk.gui.vue.Fields.media_field;
 const TableService = require('../tableservice');
 const compiledTemplate = Vue.compile(require('./table.html'));
 
 const InternalComponent = Vue.extend({
   ...compiledTemplate,
+  mixins: [resizeMixin],
   components: {
     'g3w-media': Media_Field
   },
@@ -14,9 +16,16 @@ const InternalComponent = Vue.extend({
     this.dataTable = null;
     return {
       state: null,
+      show: true
     }
   },
   methods: {
+    resize(){
+      const tableHeight = $(".content").height();
+      const tableHeaderHeight = $('#editing_table  div.dataTables_scrollHeadInner').height();
+      const OtherElementHeight = $('.navbar-header').height() + $('.editing_table_title').height() + $('.dataTables_length').height() +  $('.dataTables_filter').height() + $('.dataTables_scrollHeadInner').height() + $('.table_editing_footer_buttons').height();
+      $('#editing_table  div.dataTables_scrollBody').height(tableHeight - tableHeaderHeight - OtherElementHeight - 20);
+    },
     showValue(key) {
       return !!this.state.headers.find((header) => {
         return header.name === key
@@ -42,14 +51,20 @@ const InternalComponent = Vue.extend({
       }).catch(()=>{})
     },
     copyFeature(index){
-      this.$options.service.copyFeature(index);
+      this.$options.service.copyFeature(index).then(async feature =>{
+        this.show = false;
+        this.dataTable.destroy();
+        await this.$nextTick();
+        this.show = true;
+        await this.$nextTick();
+        this.setDataTable();
+      })
     },
     editFeature: function(index) {
       this.$options.service.editFeature(index);
     },
     linkFeature: function(index, evt) {
-     if (evt.target.checked)
-       this._linkFeatures.push(index);
+     if (evt.target.checked) this._linkFeatures.push(index);
       else this._linkFeatures = this._linkFeatures.filter(addindex => addindex !== index);
     },
     _setLayout: function() {
@@ -63,32 +78,33 @@ const InternalComponent = Vue.extend({
        return value;
     },
     setDataTable(){
-      const maxHeightTable = this._setLayout();
       this.dataTable = $('#editing_table table').DataTable({
         "pageLength": 10,
         "scrollX": true,
-        "scrollY": maxHeightTable + 'px',
         "scrollCollapse": true,
+        "scrollResize": true,
         "order": [1, 'asc' ],
         columnDefs: [
           { orderable: false, targets: 0 }
         ]
       });
+      this.resize();
     }
   },
   watch: {
     'state.features'(features){}
   },
-  mounted: function() {
+  beforeCreate() {
+    this.delayType = 'debounce';
+  },
+  async mounted() {
     if (this.state.isrelation) this._linkFeatures = [];
-    this.$nextTick(() => {
-      this.setDataTable();
-      $('#table-editing-tools i').tooltip();
-    });
+    await this.$nextTick();
+    this.setDataTable();
+    $('#table-editing-tools i').tooltip();
   },
   beforeDestroy() {
-    if(this._linkFeatures)
-      this._linkFeatures = null;
+    if (this._linkFeatures) this._linkFeatures = null;
     this.dataTable.destroy();
   }
 });
@@ -111,10 +127,6 @@ const TableComponent = function(options={}) {
     return base(this, 'unmount');
   };
 
-  this.layout = function() {
-    const maxHeightTable = this.getService()._setLayout();
-    $('#editing_table div.dataTables_scrollBody').height( maxHeightTable );
-  }
 };
 
 inherit(TableComponent, Component);
