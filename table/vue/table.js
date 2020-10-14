@@ -14,6 +14,7 @@ const InternalComponent = Vue.extend({
     this.dataTable = null;
     return {
       state: null,
+      show: true
     }
   },
   methods: {
@@ -42,14 +43,20 @@ const InternalComponent = Vue.extend({
       }).catch(()=>{})
     },
     copyFeature(index){
-      this.$options.service.copyFeature(index);
+      this.$options.service.copyFeature(index).then(async feature =>{
+        this.show = false;
+        this.dataTable.destroy();
+        await this.$nextTick();
+        this.show = true;
+        await this.$nextTick();
+        this.setDataTable();
+      })
     },
     editFeature: function(index) {
       this.$options.service.editFeature(index);
     },
     linkFeature: function(index, evt) {
-     if (evt.target.checked)
-       this._linkFeatures.push(index);
+     if (evt.target.checked) this._linkFeatures.push(index);
       else this._linkFeatures = this._linkFeatures.filter(addindex => addindex !== index);
     },
     _setLayout: function() {
@@ -79,16 +86,14 @@ const InternalComponent = Vue.extend({
   watch: {
     'state.features'(features){}
   },
-  mounted: function() {
+  async mounted() {
     if (this.state.isrelation) this._linkFeatures = [];
-    this.$nextTick(() => {
-      this.setDataTable();
-      $('#table-editing-tools i').tooltip();
-    });
+    await this.$nextTick();
+    this.setDataTable();
+    $('#table-editing-tools i').tooltip();
   },
   beforeDestroy() {
-    if(this._linkFeatures)
-      this._linkFeatures = null;
+    if (this._linkFeatures) this._linkFeatures = null;
     this.dataTable.destroy();
   }
 });
