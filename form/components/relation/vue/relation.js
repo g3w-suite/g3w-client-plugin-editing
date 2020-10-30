@@ -1,12 +1,13 @@
 const t = g3wsdk.core.i18n.tPlugin;
+const toRawType = g3wsdk.core.utils.toRawType;
 const RelationService = require('../../../../services/relationservice');
-const MediaMixin = g3wsdk.gui.vue.Mixins.mediaMixin;
+const {fieldsMixin, resizeMixin, mediaMixin} = g3wsdk.gui.vue.Mixins;
 const maxSubsetLength = 5;
 let relationsTable;
 const compiledTemplate = Vue.compile( require('./relation.html'));
 
 const RelationComponent = Vue.extend({
-  mixins: [MediaMixin],
+  mixins: [mediaMixin, fieldsMixin, resizeMixin],
   name: 'g3w-relation',
   ...compiledTemplate,
   data: function() {
@@ -23,6 +24,9 @@ const RelationComponent = Vue.extend({
     }
   },
   methods: {
+    resize(){
+      relationsTable.columns.adjust();
+    },
     unlinkRelation: function(index) {
       this._service.unlinkRelation(index)
     },
@@ -71,8 +75,12 @@ const RelationComponent = Vue.extend({
     getRelationTools: function() {
       return this._service.getRelationTools();
     },
+    isLink(value){
+      value = this.getValue(value);
+      return ['photo', 'link'].indexOf(this.getFieldType(value)) !== -1;
+    },
     getValue(value) {
-      if (value && typeof  value === 'object' && value.constructor === Object) {
+      if (value && toRawType(value) === 'Object') {
         value = value.value;
       } else if (typeof value == 'string' && value.indexOf('_new_') === 0)
         value = null;
@@ -92,6 +100,8 @@ const RelationComponent = Vue.extend({
         "scrollX": true,
         "order": [ 2, 'asc' ],
         "destroy": true,
+        "scrollResize": true,
+        "scrollCollapse": true,
         "pageLength": 10,
         columnDefs: [
           { orderable: false, targets: [0, 1] }]
@@ -122,6 +132,9 @@ const RelationComponent = Vue.extend({
     relations(updatedrelations){
       updatedrelations.length === 0 && this.destroyTable();
     }
+  },
+  beforeCreate(){
+    this.delayType = 'debounce'
   },
   created() {
     this._service = new RelationService(this.layerId, {
