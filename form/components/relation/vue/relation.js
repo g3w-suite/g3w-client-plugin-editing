@@ -52,12 +52,15 @@ const RelationComponent = Vue.extend({
     relationAttributesSubset: function(relation) {
       let attributes = [];
       const fields = this.relationsFields(relation);
-      fields.forEach((field) => {
-        if (_.isArray(field.value)) return;
-        attributes.push({label: field.label, value: field.value})
+      fields.forEach(field => {
+        if (Array.isArray(field.value)) return;
+        const {label, value} = field;
+        attributes.push({
+          label,
+          value
+        })
       });
-      const end = Math.min(maxSubsetLength, attributes.length);
-      return attributes.slice(0, end);
+      return attributes;
     },
     relationsAttributesSubsetLength: function(relation) {
       return this.relationAttributesSubset(relation).length;
