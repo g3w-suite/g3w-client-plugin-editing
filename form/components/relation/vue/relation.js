@@ -2,7 +2,6 @@ const t = g3wsdk.core.i18n.tPlugin;
 const toRawType = g3wsdk.core.utils.toRawType;
 const RelationService = require('../../../../services/relationservice');
 const {fieldsMixin, resizeMixin, mediaMixin} = g3wsdk.gui.vue.Mixins;
-const maxSubsetLength = 5;
 let relationsTable;
 const compiledTemplate = Vue.compile( require('./relation.html'));
 
