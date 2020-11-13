@@ -1,5 +1,6 @@
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
+const GUI = g3wsdk.gui.GUI;
 const G3WObject = g3wsdk.core.G3WObject;
 
 function Tool(options = {}) {
@@ -30,7 +31,7 @@ proto.getFeature = function() {
   return this._options.inputs.features[0];
 };
 
-proto.start = function() {
+proto.start = function(hideSidebar = false) {
   const options = {
     inputs : {
       layer: this._layer,
@@ -53,12 +54,14 @@ proto.start = function() {
     });
     //reset features
     options.inputs.features = [];
+    hideSidebar && GUI.hideSidebar();
     this._op.start(options)
       .then(() => {
         this._session.save()
           .then(() => {});
       })
       .fail(() =>  {
+        hideSidebar && GUI.showSidebar();
         this._session.rollback()
           .then(() => {})
       })

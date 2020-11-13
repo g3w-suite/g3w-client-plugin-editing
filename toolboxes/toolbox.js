@@ -11,6 +11,7 @@ const getScaleFromResolution = g3wsdk.ol.utils.getScaleFromResolution;
 
 function ToolBox(options={}) {
   base(this);
+  this._mapService = GUI.getComponent('map').getService();
   this._start = false;
   this._constraints = options.constraints || {};
   this._layer = options.layer;
@@ -69,7 +70,6 @@ function ToolBox(options={}) {
   });
 
   this._session.onafter('start', options => {
-    this._mapService = GUI.getComponent('map').getService();
     this._getFeaturesEvent = {
       event: null,
       fnc: null
@@ -174,14 +174,13 @@ proto.start = function() {
         });
         this.stop();
         this.state.loading = false;
-        this.setEditing(false);
         d.reject(error);
       })
   };
   if (this._session) {
     if (!this._session.isStarted()) {
       //added case of mobile
-      if (ApplicationState.ismobile && this._layerType === Layer.LayerTypes.VECTOR) {
+      if (ApplicationState.ismobile && this._mapService.isMapHidden() && this._layerType === Layer.LayerTypes.VECTOR) {
         this.setEditing(true);
         GUI.getComponent('map').getService().onceafter('setHidden', () =>{
           setTimeout(()=>{
@@ -191,7 +190,7 @@ proto.start = function() {
               layerId: this.getId()
             });
             this._session.start(this._getFeaturesOption)
-              .then(handlerAfterSessionGetFeatures)
+              .then(handlerAfterSessionGetFeatures).fail(()=>this.setEditing(false));
           }, 300);
         })
       } else {
@@ -464,8 +463,8 @@ proto.setActiveTool = function(tool) {
       tool.on('deactive', (activetools=[]) => {
         _activedeactivetooloftools(activetools, false);
       });
-
-      tool.start();
+      const hideSidebar = this._mapService.isMapHidden();
+      tool.start(hideSidebar);
       const message = this.getToolMessage();
       this.setToolMessage(message);
     });

@@ -48,7 +48,7 @@ proto.addMultipleSelectInteraction = function({layer, inputs, promise}={}){
       source,
       geometryFunction
     });
-    selectInteractionMultiple.on('drawend', (evt) => {
+    selectInteractionMultiple.on('drawend', evt => {
       const feature = evt.feature;
       const bboxExtent = feature.getGeometry().getExtent();
       const layerSource = layer.getEditingLayer().getSource();
@@ -82,6 +82,8 @@ proto.addMultipleSelectInteraction = function({layer, inputs, promise}={}){
   }
   this._selectInteractions.push(selectInteractionMultiple);
   this.addInteraction(selectInteractionMultiple);
+  PIPPO = this._selectInteractions;
+  MAP = this.getMapService().getMap()
 };
 
 proto.run = function(inputs, context, queques) {
@@ -107,7 +109,7 @@ proto.run = function(inputs, context, queques) {
 
 proto.stop = function(inputs, context) {
   this._selectInteractions.forEach(interaction => {
-      this.removeInteraction(interaction);
+    this.removeInteraction(interaction);
   });
   this._vectorLayer && this.getMap().removeLayer(this._vectorLayer);
   this._vectorLayer = null;

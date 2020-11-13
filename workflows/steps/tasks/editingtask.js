@@ -12,7 +12,10 @@ function EditingTask(options = {}) {
     this._mapService.addInteraction(interaction);
   };
   this.removeInteraction = function(interaction) {
-    this._mapService.removeInteraction(interaction);
+    //needed to avoid a issue on openlayer
+    setTimeout(()=>{
+      this._mapService.removeInteraction(interaction);
+    })
   };
 }
 
