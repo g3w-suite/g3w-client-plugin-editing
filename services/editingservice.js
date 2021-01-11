@@ -1035,5 +1035,4 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
 
 EditingService.EDITING_FIELDS_TYPE = ['unique'];
 
-
 module.exports = new EditingService;

@@ -1,8 +1,8 @@
 <div class="toolbox">
   <div :class="{'disableddiv' : !isLayerReady || !canEdit }" :id="'id_toolbox_'+ state.id">
-    <div @click="select" class="panel" :class="{ 'toolboxselected': state.selected }">
+    <div @click="select" class="panel" :class="{'mobile': isMobile(), 'toolboxselected': state.selected }">
       <div v-show="!isLayerReady" class="bar-loader"></div>
-      <div class="panel-heading container" style="width:100%;" :style="{ background: state.color}" >
+      <div class="panel-heading container" style="width:100%;" :style="{ background: state.color}">
         <div v-if="father" style="margin-right:5px; cursor:pointer;" class="pull-left enabled dropdown">
           <span :class="g3wtemplate.font['relation']"></span>
           <div class="dropdown-content skin-background-color" style="padding: 5px; border-radius: 3px;">
@@ -13,9 +13,9 @@
         </div>
         <div data-placement="left" data-toggle="tooltip"
              @click.stop="toggleEditing"
-             class="editbtn skin-tooltip-left pull-right"
-             :class="{'enabled' : isLayerReady,  'g3w-icon-toggled' : state.editing.on}" v-t-title:plugin="edit_layer_tooltip">
-          <span  style="font-size: 1.1em; padding: 5px;"  :class="g3wtemplate.font['pencil']"></span>
+             class="start-editing editbtn skin-tooltip-left"
+             :class="{'pull-right': !isMobile(), 'enabled' : isLayerReady,  'g3w-icon-toggled' : state.editing.on}" v-t-title:plugin="edit_layer_tooltip">
+          <span style="font-size: 1.1em; padding: 5px;"  :class="g3wtemplate.font['pencil']"></span>
         </div>
       </div>
       <bar-loader :loading="state.loading"></bar-loader>

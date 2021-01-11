@@ -18,14 +18,12 @@ let sourcemap = false;
 gulp.task('browserify', [], function() {
   var bundler = browserify('./index.js', {
     basedir: "./",
-    paths: ["./"],
+    paths: ["./", '../'],
     debug: !production,
     cache: {},
     packageCache: {}
   });
-  if (!production) {
-    bundler = watchify(bundler);
-  }
+  if (!production) bundler = watchify(bundler);
   bundler.transform(vueify)
   .transform(babelify, {
     babelrc: true

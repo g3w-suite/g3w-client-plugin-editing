@@ -2,7 +2,6 @@ const t = g3wsdk.core.i18n.tPlugin;
 const toRawType = g3wsdk.core.utils.toRawType;
 const RelationService = require('../../../../services/relationservice');
 const {fieldsMixin, resizeMixin, mediaMixin} = g3wsdk.gui.vue.Mixins;
-const maxSubsetLength = 5;
 let relationsTable;
 const compiledTemplate = Vue.compile( require('./relation.html'));
 
@@ -52,12 +51,15 @@ const RelationComponent = Vue.extend({
     relationAttributesSubset: function(relation) {
       let attributes = [];
       const fields = this.relationsFields(relation);
-      fields.forEach((field) => {
-        if (_.isArray(field.value)) return;
-        attributes.push({label: field.label, value: field.value})
+      fields.forEach(field => {
+        if (Array.isArray(field.value)) return;
+        const {label, value} = field;
+        attributes.push({
+          label,
+          value
+        })
       });
-      const end = Math.min(maxSubsetLength, attributes.length);
-      return attributes.slice(0, end);
+      return attributes;
     },
     relationsAttributesSubsetLength: function(relation) {
       return this.relationAttributesSubset(relation).length;

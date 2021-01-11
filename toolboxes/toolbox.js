@@ -11,6 +11,7 @@ const getScaleFromResolution = g3wsdk.ol.utils.getScaleFromResolution;
 
 function ToolBox(options={}) {
   base(this);
+  this._mapService = GUI.getComponent('map').getService();
   this._start = false;
   this._constraints = options.constraints || {};
   this._layer = options.layer;
@@ -60,7 +61,6 @@ function ToolBox(options={}) {
     tool.setSession(this._session);
   });
 
-
   this._session.onafter('stop', () => {
     if (this.inEditing()) {
       const EditingService = require('../services/editingservice');
@@ -69,22 +69,21 @@ function ToolBox(options={}) {
     }
   });
 
-  this._session.onafter('start', (options) => {
+  this._session.onafter('start', options => {
+    this._getFeaturesEvent = {
+      event: null,
+      fnc: null
+    };
     this._getFeaturesOption = options;
+    this._registerGetFeaturesEvent(this._getFeaturesOption);
     if (options.type === Layer.LayerTypes.VECTOR && GUI.getContentLength())
       GUI.once('closecontent', ()=> {
         setTimeout(()=> {
           this._mapService.getMap().dispatchEvent(this._getFeaturesEvent.event)
-        })
+        },)
       });
-    this._registerGetFeaturesEvent(this._getFeaturesOption);
-  });
+  })
 
-  this._mapService = GUI.getComponent('map').getService();
-  this._getFeaturesEvent = {
-    event: null,
-    fnc: null
-  };
 }
 
 inherit(ToolBox, G3WObject);
@@ -148,14 +147,14 @@ proto.start = function() {
   this._getFeaturesOption = EditingService.createEditingDataOptions(filterType, {
     layerId: this.getId()
   });
-  const handlerAfterSessionGetFeatures = (promise) => {
+  const handlerAfterSessionGetFeatures = promise => {
     this.emit(EventName);
     EditingService.runEventHandler({
       type: EventName,
       id
     });
     promise
-      .then((features) => {
+      .then(features => {
         this.state.loading = false;
         this.setEditing(true);
         EditingService.runEventHandler({
@@ -166,7 +165,7 @@ proto.start = function() {
           }
         });
       })
-      .fail((error) => {
+      .fail(error => {
         GUI.notify.error(error.message);
         EditingService.runEventHandler({
           type: 'error-editing',
@@ -174,17 +173,34 @@ proto.start = function() {
           error
         });
         this.stop();
+        this.state.loading = false;
         d.reject(error);
       })
   };
   if (this._session) {
     if (!this._session.isStarted()) {
-      this._start = true;
-      this.state.loading = true;
-      this._session.start(this._getFeaturesOption)
-        .then(handlerAfterSessionGetFeatures)
+      //added case of mobile
+      if (ApplicationState.ismobile && this._mapService.isMapHidden() && this._layerType === Layer.LayerTypes.VECTOR) {
+        this.setEditing(true);
+        GUI.getComponent('map').getService().onceafter('setHidden', () =>{
+          setTimeout(()=>{
+            this._start = true;
+            this.state.loading = true;
+            this._getFeaturesOption = EditingService.createEditingDataOptions(filterType, {
+              layerId: this.getId()
+            });
+            this._session.start(this._getFeaturesOption)
+              .then(handlerAfterSessionGetFeatures).fail(()=>this.setEditing(false));
+          }, 300);
+        })
+      } else {
+        this._start = true;
+        this._session.start(this._getFeaturesOption)
+          .then(handlerAfterSessionGetFeatures)
+      }
     } else {
       if (!this._start) {
+        this.state.loading = true;
         this._session.getFeatures(this._getFeaturesOption)
           .then(handlerAfterSessionGetFeatures);
         this._start = true;
@@ -256,7 +272,7 @@ proto.save = function () {
 
 proto._unregisterGetFeaturesEvent = function() {
   switch(this._layerType) {
-    case 'vector':
+    case Layer.LayerTypes.VECTOR:
       this._mapService.getMap().un(this._getFeaturesEvent.event, this._getFeaturesEvent.fnc);
       break;
     default:
@@ -275,7 +291,7 @@ proto._registerGetFeaturesEvent = function(options={}) {
           const bbox = this._mapService.getMapBBOX();
           options.filter.bbox = bbox;
           this.state.loading = true;
-          this._session.getFeatures(options).then((promise)=> {
+          this._session.getFeatures(options).then(promise=> {
             promise.then(() => {
               this.state.loading = false;
             });
@@ -284,7 +300,8 @@ proto._registerGetFeaturesEvent = function(options={}) {
       };
       this._getFeaturesEvent.event = 'moveend';
       this._getFeaturesEvent.fnc = debounce(fnc, 300);
-      this._mapService.getMap().on('moveend', this._getFeaturesEvent.fnc);
+      const map = this._mapService.getMap();
+      map.on('moveend', this._getFeaturesEvent.fnc);
       break;
     default:
       return;
@@ -446,8 +463,8 @@ proto.setActiveTool = function(tool) {
       tool.on('deactive', (activetools=[]) => {
         _activedeactivetooloftools(activetools, false);
       });
-
-      tool.start();
+      const hideSidebar = this._mapService.isMapHidden();
+      tool.start(hideSidebar);
       const message = this.getToolMessage();
       this.setToolMessage(message);
     });

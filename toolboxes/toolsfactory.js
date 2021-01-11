@@ -129,6 +129,20 @@ function EditorToolsFactory() {
                 layer,
                 op: ModifyGeometryVertexWorkflow
               }),
+              new Tool({
+                id: 'movefeature',
+                name: "editing.tools.move_feature",
+                icon: "moveLine.png",
+                layer,
+                op: MoveFeatureWorkflow
+              }),
+              new Tool({
+                id: 'deletefeature',
+                name: "editing.tools.delete_feature",
+                icon: "deleteLine.png",
+                layer,
+                op: DeleteFeatureWorkflow
+              }),
               ...(isMultiGeometry ? [
                 new Tool({
                   id: 'addPartToPoint',
@@ -139,13 +153,6 @@ function EditorToolsFactory() {
                   op: AddPartToMultigeometriesWorkflow
                 })
               ] : []),
-              new Tool({
-                id: 'deletefeature',
-                name: "editing.tools.delete_feature",
-                icon: "deleteLine.png",
-                layer,
-                op: DeleteFeatureWorkflow
-              }),
               ...(isMultiGeometry ? [
                 new Tool({
                   id: 'deletePart',
