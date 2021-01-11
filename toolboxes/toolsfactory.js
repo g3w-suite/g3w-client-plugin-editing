@@ -48,7 +48,7 @@ function EditorToolsFactory() {
               new Tool({
                 id: 'editmultiattributes',
                 name: "editing.tools.update_multi_features",
-                icon: "editMultiAttributes.png",
+                icon: "multiEditAttributes.png",
                 layer,
                 op: EditMultiFeatureAttributesWorkflow
               }),
@@ -118,7 +118,7 @@ function EditorToolsFactory() {
               new Tool({
                 id: 'editmultiattributes',
                 name: "editing.tools.update_multi_features",
-                icon: "editMultiAttributes.png",
+                icon: "multiEditAttributes.png",
                 layer,
                 op: EditMultiFeatureAttributesWorkflow
               }),
