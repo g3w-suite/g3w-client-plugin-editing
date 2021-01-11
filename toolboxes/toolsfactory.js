@@ -50,6 +50,7 @@ function EditorToolsFactory() {
                 name: "editing.tools.update_multi_features",
                 icon: "multiEditAttributes.png",
                 layer,
+                once: true,
                 op: EditMultiFeatureAttributesWorkflow
               }),
               new Tool({
@@ -120,6 +121,7 @@ function EditorToolsFactory() {
                 name: "editing.tools.update_multi_features",
                 icon: "multiEditAttributes.png",
                 layer,
+                once: true,
                 op: EditMultiFeatureAttributesWorkflow
               }),
               new Tool({
@@ -210,6 +212,7 @@ function EditorToolsFactory() {
                 name: "editing.tools.update_multi_features",
                 icon: "multiEditAttributes.png",
                 layer,
+                once: true,
                 op: EditMultiFeatureAttributesWorkflow
               }),
               new Tool({
