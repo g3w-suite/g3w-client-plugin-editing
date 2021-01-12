@@ -7,10 +7,16 @@ const OpenFormStep = require('./steps/openformstep');
 
 function EditMultiFeatureAttributesWorkflow(options={}) {
   options.helpMessage = 'editing.tools.update_multi_features';
-  const selectstep = new SelectElementsStep();
+  const selectstep = new SelectElementsStep({
+    type: 'multiple'
+  });
   selectstep.getTask().setSteps({
     select: {
-      description: ApplicationState.ismobile ? 'editing.workflow.steps.selectDrawBox' : 'editing.workflow.steps.selectSHIFT',
+      description: ApplicationState.ismobile ? 'editing.workflow.steps.selectDrawBox' : 'editing.workflow.steps.selectMultiPointSHIFT',
+      buttonnext: {
+        disabled: true,
+        done: ()=>{}
+      },
       directive: 't-plugin',
       done: false
     }

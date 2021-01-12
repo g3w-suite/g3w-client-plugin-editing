@@ -5,8 +5,9 @@ const EditingTask = require('./editingtask');
 const PickFeatureInteraction = g3wsdk.ol.interactions.PickFeatureInteraction;
 
 function SelectElementsTask(options={}) {
-  this._type = options.type || 'bbox'; // 'single' 'bbox' 'muliple'
+  this._type = options.type || 'bbox'; // 'single' 'bbox' 'multiple'
   this._selectInteractions = [];
+  this.multipleselectfeatures = [];
   this._originalStyle;
   this._vectorLayer;
   base(this, options);
@@ -16,25 +17,42 @@ inherit(SelectElementsTask, EditingTask);
 
 const proto = SelectElementsTask.prototype;
 
-proto.addSingleSelectInteraction = function({layer, inputs, promise}= {}){
+proto.addSingleSelectInteraction = function({layer, inputs, promise, buttonnext=false}= {}){
   const singleInteraction = new PickFeatureInteraction({
     layers: [layer.getEditingLayer()]
   });
   singleInteraction.on('picked', (e) => {
     const feature = e.feature;
-    const features = [feature];
     if (feature) {
+      const features = [feature];
       inputs.features = features;
-      this._originalStyle = this.setFeaturesSelectedStyle(features);
-      this._steps && this.setUserMessageStepDone('select');
-      promise.resolve(inputs);
+      if (!buttonnext) {
+        this._originalStyle = this.setFeaturesSelectedStyle(features);
+        this._steps && this.setUserMessageStepDone('select');
+        promise.resolve(inputs);
+      } else this.addRemoveToMultipleSelectFeatures([feature], inputs);
     }
   });
   this._selectInteractions.push(singleInteraction);
   this.addInteraction(singleInteraction);
 };
 
-proto.addMultipleSelectInteraction = function({layer, inputs, promise}={}){
+proto.addRemoveToMultipleSelectFeatures = function(features=[], inputs){
+  features.forEach(feature =>{
+    const selIndex = this.multipleselectfeatures.indexOf(feature);
+    if (selIndex < 0) {
+      this._originalStyle = this.setFeaturesSelectedStyle([feature]);
+      this.multipleselectfeatures.push(feature);
+    } else {
+      this.multipleselectfeatures.splice(selIndex, 1);
+      feature.setStyle(this._originalStyle);
+    }
+    inputs.features = this.multipleselectfeatures;
+    this._steps.select.buttonnext.disabled = this.multipleselectfeatures.length === 0;
+  });
+};
+
+proto.addMultipleSelectInteraction = function({layer, inputs, promise, buttonnext=false}={}){
   let selectInteractionMultiple;
   if (ApplicationState.ismobile) {
     const geometryFunction = ol.interaction.Draw.createBox();
@@ -53,15 +71,17 @@ proto.addMultipleSelectInteraction = function({layer, inputs, promise}={}){
       const bboxExtent = feature.getGeometry().getExtent();
       const layerSource = layer.getEditingLayer().getSource();
       const features = layerSource.getFeaturesInExtent(bboxExtent);
-      if (!features.length) promise.reject();
-      else {
-        inputs.features = features;
-        this._originalStyle = this.setFeaturesSelectedStyle(features);
-        this._steps &&  this.setUserMessageStepDone('select');
-        setTimeout(()=>{
-          promise.resolve(inputs);
-        }, 500)
-      }
+      if (!buttonnext){
+        if (!features.length) promise.reject();
+        else {
+          inputs.features = features;
+          this._originalStyle = this.setFeaturesSelectedStyle(features);
+          this._steps &&  this.setUserMessageStepDone('select');
+          setTimeout(()=>{
+            promise.resolve(inputs);
+          }, 500)
+        }
+      } else this.addRemoveToMultipleSelectFeatures(features, inputs);
     });
   }  else {
     selectInteractionMultiple = new ol.interaction.DragBox({
@@ -71,19 +91,20 @@ proto.addMultipleSelectInteraction = function({layer, inputs, promise}={}){
       const bboxExtent = selectInteractionMultiple.getGeometry().getExtent();
       const layerSource = layer.getEditingLayer().getSource();
       const features = layerSource.getFeaturesInExtent(bboxExtent);
-      if (!features.length) promise.reject();
-      else {
-        inputs.features = features;
-        this._originalStyle = this.setFeaturesSelectedStyle(features);
-        this._steps && this.setUserMessageStepDone('select');
-        promise.resolve(inputs);
-      }
+      if (!buttonnext){
+        if (!features.length) promise.reject();
+        else {
+          inputs.features = features;
+          this._originalStyle = this.setFeaturesSelectedStyle(features);
+          this._steps && this.setUserMessageStepDone('select');
+          promise.resolve(inputs);
+        }
+      } else this.addRemoveToMultipleSelectFeatures(features, inputs)
+
     });
   }
   this._selectInteractions.push(selectInteractionMultiple);
   this.addInteraction(selectInteractionMultiple);
-  PIPPO = this._selectInteractions;
-  MAP = this.getMapService().getMap()
 };
 
 proto.run = function(inputs, context, queques) {
@@ -94,8 +115,10 @@ proto.run = function(inputs, context, queques) {
       this.addSingleSelectInteraction({layer, inputs, promise});
       break;
     case 'multiple':
-      this.addSingleSelectInteraction({layer, inputs, promise});
-      this.addMultipleSelectInteraction({layer, inputs, promise});
+      const buttonnext = !!this._steps.select.buttonnext;
+      if (buttonnext) this._steps.select.buttonnext.done = () =>{promise.resolve(inputs)};
+      this.addSingleSelectInteraction({layer, inputs, promise, buttonnext});
+      this.addMultipleSelectInteraction({layer, inputs, promise, buttonnext});
       break;
     case 'bbox':
       this.addMultipleSelectInteraction({layer, inputs, promise});
@@ -115,6 +138,7 @@ proto.stop = function(inputs, context) {
   this._vectorLayer = null;
   this._originalStyle = null;
   this._selectInteractions = [];
+  this.multipleselectfeatures = [];
 };
 
 module.exports = SelectElementsTask;
