@@ -18,6 +18,7 @@ function EditMultiFeatureAttributesWorkflow(options={}) {
         done: ()=>{}
       },
       directive: 't-plugin',
+      dynamic: 0,
       done: false
     }
   });

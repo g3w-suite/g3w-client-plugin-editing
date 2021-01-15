@@ -48,8 +48,9 @@ proto.addRemoveToMultipleSelectFeatures = function(features=[], inputs){
       feature.setStyle(this._originalStyle);
     }
     inputs.features = this.multipleselectfeatures;
-    this._steps.select.buttonnext.disabled = this.multipleselectfeatures.length === 0;
   });
+  this._steps.select.buttonnext.disabled = this.multipleselectfeatures.length === 0;
+  if (this._steps.select.dynamic !== undefined) this._steps.select.dynamic = this.multipleselectfeatures.length;
 };
 
 proto.addMultipleSelectInteraction = function({layer, inputs, promise, buttonnext=false}={}){
