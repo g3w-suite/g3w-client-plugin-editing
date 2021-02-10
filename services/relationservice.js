@@ -288,8 +288,9 @@ proto._createRelationObj = function(relation) {
   }
 };
 
-proto.emitEventToParentWorkFlow = function(type='set-main-component', options={}) {
-  this._parentWorkFlow.getContextService().getEventBus().$emit(type, options)
+proto.emitEventToParentWorkFlow = function(type, options={}) {
+  //type=set-main-component event name to set table parent visible
+  type && this._parentWorkFlow.getContextService().getEventBus().$emit(type, options)
 };
 
 proto._getRelationAsFatherStyleColor = function(type) {
