@@ -1,6 +1,6 @@
+const ApplicationState = g3wsdk.core.ApplicationState;
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
-const t = g3wsdk.core.i18n.tPlugin;
 const GUI = g3wsdk.gui.GUI;
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 const EditingTask = require('./editingtask');
@@ -28,34 +28,6 @@ module.exports = OpenFormTask;
 
 const proto = OpenFormTask.prototype;
 
-proto._getFieldUniqueValuesFromServer = function(layer, uniqueFields) {
-  const fieldsName = _.map(uniqueFields, (field) => {
-    return field.name
-  });
-  layer.getWidgetData({
-    type: 'unique',
-    fields: fieldsName.join()
-  }).then( response => {
-    const data = response.data;
-    Object.entries(data).forEach(([fieldName, values]) => {
-      values.forEach((value) => {
-        uniqueFields[fieldName].input.options.values.push(value);
-      })
-    })
-  }).fail((err) => {
-    console.log(err)
-  })
-};
-
-proto._getUniqueFieldsType = function(fields) {
-  const uniqueFields = {};
-  fields.forEach((field) => {
-     if (field.input && field.input.type === 'unique')
-       uniqueFields[field.name] = field;
-  });
-  return uniqueFields;
-};
-
 proto._getForm = function(inputs, context) {
   const excludeFields = context.excludeFields;
   this._isContentChild = !!(WorkflowsStack.getLength() > 1);
@@ -68,7 +40,7 @@ proto._getForm = function(inputs, context) {
   this._fields = this._originalLayer.getFieldsWithValues(this._features[0], {
     exclude: excludeFields
   });
-  // in case of multi editit set all field to null //
+  // in case of multi editing set all field to null //
   this._fields = this._multi ? this._fields.map(field => {
     const _field = JSON.parse(JSON.stringify(field));
     _field.value = null;
@@ -80,8 +52,7 @@ proto._getForm = function(inputs, context) {
     const editorFormStructure = this._originalLayer.getEditorFormStructure();
     this._editorFormStructure = editorFormStructure.length ? editorFormStructure : null;
   }
-  const uniqueFields = this._getUniqueFieldsType(this._fields);
-  !_.isEmpty(uniqueFields) && this._getFieldUniqueValuesFromServer(this._originalLayer, uniqueFields);
+
   return GUI.showContentFactory('form');
 };
 

@@ -13,21 +13,26 @@ function ToolBox(options={}) {
   base(this);
   this._mapService = GUI.getComponent('map').getService();
   this._start = false;
+  this._initilized = false;
   this._constraints = options.constraints || {};
   this._layer = options.layer;
+  this.uniqueFields = this.getUniqueFieldsType(this._layer.getEditingFields());
   this._layerType = options.type || 'vector';
   this._loadedExtent = null;
   this._tools = options.tools;
   this._getFeaturesOption = {};
   const toolsstate = [];
-  this._tools.forEach((tool) => {
-    toolsstate.push(tool.getState())
-  });
-
+  this._tools.forEach(tool => toolsstate.push(tool.getState()));
   this._session = new Session({
     id: options.id,
     editor: this._layer.getEditor()
   });
+
+  // get informed when save on server
+  this.uniqueFields && this._session.onafter('saveChangesOnServer', ()=>{
+    this._resetUniqueValues();
+  });
+
   this._getFeaturesOption = {};
   const historystate = this._session.getHistory().state;
   const sessionstate = this._session.state;
@@ -138,7 +143,47 @@ proto.addDependency = function(dependency) {
   this.state.editing.dependencies.push(dependency);
 };
 
+proto.getFieldUniqueValuesFromServer = function({reset=false}={}) {
+  const fieldsName = Object.values(this.uniqueFields).map(field => field.name);
+  this._layer.getWidgetData({
+    type: 'unique',
+    fields: fieldsName.join()
+  }).then( response => {
+    const data = response.data;
+    Object.entries(data).forEach(([fieldName, values]) => {
+      reset && this.uniqueFields[fieldName].input.options.values.splice(0);
+      values.forEach((value) => {
+        this.uniqueFields[fieldName].input.options.values.push(value);
+      })
+    })
+  }).fail(err => {
+    console.log(err)
+  })
+};
+
+proto.getUniqueFieldsType = function(fields) {
+  const uniqueFields = {};
+  let find = false;
+  fields.forEach(field => {
+    if (field.input && field.input.type === 'unique') {
+      uniqueFields[field.name] = field;
+      find = true;
+    }
+  });
+  return find && uniqueFields || null;
+};
+
+proto._resetUniqueValues = function(){
+  this.getFieldUniqueValuesFromServer({
+    reset: true
+  })
+};
+
 proto.start = function() {
+  if (!this._initilized) {
+    this.uniqueFields && this.getFieldUniqueValuesFromServer();
+    this._initilized = true;
+  }
   const EditingService = require('../services/editingservice');
   const EventName = 'start-editing';
   const d = $.Deferred();
