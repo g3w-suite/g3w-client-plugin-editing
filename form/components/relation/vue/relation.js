@@ -120,13 +120,13 @@ const RelationComponent = Vue.extend({
     }
   },
   computed: {
-    relationsLength: function() {
+    relationsLength() {
       return this.relations.length;
     },
-    fieldrequired: function() {
+    fieldrequired() {
       return this._service.isRequired();
     },
-    enableAddLinkButtons: function() {
+    enableAddLinkButtons() {
       return !this.relations.length || (this.relations.length && this.relation.type !== 'ONE');
     }
   },
@@ -136,30 +136,27 @@ const RelationComponent = Vue.extend({
     }
   },
   beforeCreate(){
-    this.delayType = 'debounce'
+    this.delayType = 'debounce';
   },
   created() {
     this._service = new RelationService(this.layerId, {
-      relation: this.relation,
-      relations: this.relations
+      relation: this.relation, // main relation between layerId (current in editing)
+      relations: this.relations // relation related to current feature of current layer in editing
     });
     this.formeventbus.$on('changeinput', this.updateExternalKeyValueRelations);
   },
-  activated() {
+  async activated() {
     if (!relationsTable && this.relationsLength) {
-      this.$nextTick(() => {
-        this._createDataTable();
-      })
+      this._createDataTable();
     }
   },
   deactivated() {
     this.destroyTable();
   },
-  mounted() {
-    this.$nextTick(() => {
-      $('.g3w-icon[data-toggle="dropdown"]').tooltip();
-      $('[data-toggle="tooltip"]').tooltip();
-    })
+  async mounted() {
+    await this.$nextTick();
+    $('.g3w-icon[data-toggle="dropdown"]').tooltip();
+    $('[data-toggle="tooltip"]').tooltip();
   },
   destroyed: function() {}
  });

@@ -32,7 +32,7 @@ proto.run = function(inputs) {
         switch (geometryType){
           case 'MultiLineString':
             featureCoordinates = featureGeometry.getCoordinates();
-            return areCoordinatesEqual(coordinates, featureCoordinates)
+            return areCoordinatesEqual(coordinates, featureCoordinates);
             break;
           case 'LineString':
             return !!featureGeometry.getCoordinates().find(f_coordinates => {
@@ -40,7 +40,7 @@ proto.run = function(inputs) {
             })
             break;
           case 'Polygon':
-            return !!_.flatMap(polygon.getCoordinates()).find(f_coordinates => {
+            return !!_.flatMap(featureGeometry.getCoordinates()).find(f_coordinates => {
               return areCoordinatesEqual(coordinates, f_coordinates);
             })
             break;

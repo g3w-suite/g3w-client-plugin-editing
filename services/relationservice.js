@@ -17,22 +17,25 @@ const RelationService = function(layerId, options = {}) {
   this.relations = options.relations;
   this._editingService;
   this._isExternalFieldRequired = false;
+  // this._layerId is layer id of relation layer
   this._layerId = this.relation.child === this._mainLayerId ? this.relation.father : this.relation.child;
-  const { relationField} = this.getEditingService()._getRelationFieldsFromRelation({
-    layerId: this._layerId,
+  const { ownField, relationField} = this.getEditingService()._getRelationFieldsFromRelation({
+    layerId: this._mainLayerId,
     relation: this.relation
   });
-  this._isFatherFieldEditable = this.getLayer().isEditingFieldEditable(relationField);
-  this._layerType = this.getLayer().getType();
+  // layer in relation
+  const relationLayer = this.getLayer();
+  this._isFatherFieldEditable = relationLayer.isEditingFieldEditable(relationField);
+  this._layerType = relationLayer.getType();
   this._relationTools = [];
   this._parentWorkFlow = this.getCurrentWorkflow();
   this._add_link_workflow = null; 
   this._isExternalFieldRequired = this._checkIfExternalFieldRequired();
   this._currentFeatureRelationFieldValue = this._isFatherFieldEditable ?
-      this.getCurrentWorkflowData().feature.get(relationField) :
+      this.getCurrentWorkflowData().feature.get(ownField) :
       this.getCurrentWorkflowData().feature.getId();
   //get type of relation
-  const relationLayerType = this._layerType === Layer.LayerTypes.VECTOR ? this.getLayer().getGeometryType() : Layer.LayerTypes.TABLE;
+  const relationLayerType = this._layerType === Layer.LayerTypes.VECTOR ? relationLayer.getGeometryType() : Layer.LayerTypes.TABLE;
   let allrelationtools;
   if (relationLayerType === Layer.LayerTypes.TABLE) {
     this._relationTools.push({
@@ -47,7 +50,6 @@ const RelationService = function(layerId, options = {}) {
         icon: 'editAttributes.png',
         id: 'editattributes',
         name: "editing.tools.update_feature"
-
       }
     })
   } else {
