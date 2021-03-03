@@ -24,7 +24,7 @@ const RelationComponent = Vue.extend({
   },
   methods: {
     resize(){
-      relationsTable.columns.adjust();
+      relationsTable && relationsTable.columns.adjust();
     },
     unlinkRelation: function(index) {
       this._service.unlinkRelation(index)
