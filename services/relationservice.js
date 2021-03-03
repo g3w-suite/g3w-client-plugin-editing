@@ -326,7 +326,7 @@ proto.addRelation = function() {
   });
 
   const { parentFeature } = options;
-  const promise =   workflow.start(options);
+  const promise =  workflow.start(options);
   const percContent = isVector && workflow.bindEscKeyUp();
   promise.then((outputs) => {
     const {newFeatures, originalFeatures} = outputs.relationFeatures;

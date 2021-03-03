@@ -13,10 +13,10 @@ function ToolBox(options={}) {
   base(this);
   this._mapService = GUI.getComponent('map').getService();
   this._start = false;
-  this._initilized = false;
   this._constraints = options.constraints || {};
   this._layer = options.layer;
   this.uniqueFields = this.getUniqueFieldsType(this._layer.getEditingFields());
+  this.uniqueFields && this.getFieldUniqueValuesFromServer();
   this._layerType = options.type || 'vector';
   this._loadedExtent = null;
   this._tools = options.tools;
@@ -180,10 +180,6 @@ proto._resetUniqueValues = function(){
 };
 
 proto.start = function() {
-  if (!this._initilized) {
-    this.uniqueFields && this.getFieldUniqueValuesFromServer();
-    this._initilized = true;
-  }
   const EditingService = require('../services/editingservice');
   const EventName = 'start-editing';
   const d = $.Deferred();
