@@ -328,7 +328,6 @@ proto.addRelation = function() {
   const promise =   workflow.start(options);
   const percContent = isVector && workflow.bindEscKeyUp();
   promise.then((outputs) => {
-    console.log(outputs)
     const {newFeature, originalFeature} = outputs.relationFeature;
     const setRelationFieldValue = (value) =>{
       newFeature.set(ownField, value);
