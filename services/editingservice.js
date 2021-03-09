@@ -768,10 +768,15 @@ proto.createEditingDataOptions = function(filterType='all', options={}) {
       bbox: this._mapService.getMapBBOX()
     };
   } else if (filterType === 'fid' && !feature.isNew()) {
+    const {ownField} = this._getRelationFieldsFromRelation({
+      relation,
+      layerId
+    });
     if (options.operator !== 'not')
       filter = {
         fid: {
           fid: feature.getId(),
+          value: feature.get(ownField),//PATCH QGISERVER FID
           layer: {
             id: layerId
           },
