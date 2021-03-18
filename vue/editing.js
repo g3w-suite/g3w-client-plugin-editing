@@ -141,8 +141,9 @@ const vueComponentOptions = {
   }
 };
 
-function PanelComponent(options) {
+function PanelComponent(options={}) {
   base(this, options);
+  const {toolboxes} = options;
   this.vueComponent = vueComponentOptions;
   this.name = options.name || 'Gestione dati';
   merge(this, options);

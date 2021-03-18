@@ -760,27 +760,46 @@ proto._getRelationFieldsFromRelation = function({layerId, relation} = {}) {
 };
 
 proto.createEditingDataOptions = function(filterType='all', options={}) {
+  const {feature, relation, fids=[], layerId, operator} = options;
   let filter;
-  if (filterType === 'all') return {editing: true};
-  const {feature, relation, layerId} = options;
-  if (filterType === 'bbox') {
-    filter = {
-      bbox: this._mapService.getMapBBOX()
-    };
-  } else if (filterType === 'fid' && !feature.isNew()) {
-    if (options.operator !== 'not')
+  switch (filterType) {
+    case 'all':
+      filter = {
+        editing: true
+      };
+    break;
+    case 'bbox':
+      filter = {
+        bbox: this._mapService.getMapBBOX()
+      };
+      break;
+    case 'fids':
       filter = {
         fid: {
-          fid: feature.getId(),
+          fid: 10,
           layer: {
             id: layerId
           },
-          type: 'editing',
-          relation: relation.state
+          type: 'editing'
         }
       }
+      break;
+    case 'fid':
+      if (operator !== 'not')
+        filter = {
+          fid: {
+            fid: feature.getId(),
+            layer: {
+              id: layerId
+            },
+            type: 'editing',
+            relation: relation.state
+          }
+        };
+      break;
   }
   return {
+    registerEvents: true, // usefult to get register vent on toolbox example mapmoveend
     editing: true,
     filter
   }

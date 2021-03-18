@@ -38,6 +38,7 @@ function ToolBox(options={}) {
   const sessionstate = this._session.state;
   this.state = {
     id: options.id,
+    show: true, // used to show or not the toolbox if we nee to filtered
     color: options.color || 'blue',
     title: options.title || "Edit Layer",
     loading: false,
@@ -70,23 +71,26 @@ function ToolBox(options={}) {
     if (this.inEditing()) {
       const EditingService = require('../services/editingservice');
       ApplicationState.online && EditingService.stopSessionChildren(this.state.id);
-      this._unregisterGetFeaturesEvent();
+      this.getFeaturesOption.registerEvents && this._unregisterGetFeaturesEvent();
     }
   });
 
   this._session.onafter('start', options => {
-    this._getFeaturesEvent = {
-      event: null,
-      fnc: null
-    };
-    this._getFeaturesOption = options;
-    this._registerGetFeaturesEvent(this._getFeaturesOption);
-    if (options.type === Layer.LayerTypes.VECTOR && GUI.getContentLength())
-      GUI.once('closecontent', ()=> {
-        setTimeout(()=> {
-          this._mapService.getMap().dispatchEvent(this._getFeaturesEvent.event)
-        },)
-      });
+    if (options.registerEvents) {
+      this._getFeaturesEvent = {
+        event: null,
+        fnc: null
+      };
+      this._getFeaturesOption = options;
+      this._registerGetFeaturesEvent(this._getFeaturesOption);
+      if (options.type === Layer.LayerTypes.VECTOR && GUI.getContentLength())
+        GUI.once('closecontent', ()=> {
+          setTimeout(()=> {
+            this._mapService.getMap().dispatchEvent(this._getFeaturesEvent.event)
+          },)
+        });
+    }
+
   })
 
 }
@@ -97,6 +101,10 @@ const proto = ToolBox.prototype;
 
 proto.getState = function() {
   return this.state;
+};
+
+proto.setShow = function(bool=true){
+  this.state.show = bool;
 };
 
 proto.getLayer = function() {
@@ -179,15 +187,25 @@ proto._resetUniqueValues = function(){
   })
 };
 
-proto.start = function() {
+//added option objet to start method to have a control by other plugin how
+proto.start = function(options={}) {
+  const { filter } = options;
   const EditingService = require('../services/editingservice');
   const EventName = 'start-editing';
   const d = $.Deferred();
   const id = this.getId();
-  const filterType = this._layerType === Layer.LayerTypes.TABLE ? 'all': 'bbox';
-  this._getFeaturesOption = EditingService.createEditingDataOptions(filterType, {
-    layerId: this.getId()
-  });
+  if (filter) {
+    this._getFeaturesOption = {
+      filter,
+      editing: true,
+      listenEvents: false
+    };
+  } else {
+    const filterType = this._layerType === Layer.LayerTypes.TABLE ? 'all': 'bbox';
+    this._getFeaturesOption = EditingService.createEditingDataOptions(filterType, {
+      layerId: this.getId()
+    });
+  }
   const handlerAfterSessionGetFeatures = promise => {
     this.emit(EventName);
     EditingService.runEventHandler({
