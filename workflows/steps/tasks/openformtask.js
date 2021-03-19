@@ -88,6 +88,7 @@ proto._saveFeatures = function({fields, promise, session, inputs}){
       });
       GUI.setModal(false);
       promise.resolve(inputs);
+      this.fireEvent('savedfeature', newFeatures) // called afetr saved
     })
   } else {
     GUI.setModal(false);

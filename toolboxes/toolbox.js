@@ -90,7 +90,6 @@ function ToolBox(options={}) {
           },)
         });
     }
-
   })
 
 }
@@ -189,7 +188,7 @@ proto._resetUniqueValues = function(){
 
 //added option objet to start method to have a control by other plugin how
 proto.start = function(options={}) {
-  const { filter } = options;
+  const { filter, tools } = options;
   const EditingService = require('../services/editingservice');
   const EventName = 'start-editing';
   const d = $.Deferred();
@@ -215,7 +214,9 @@ proto.start = function(options={}) {
     promise
       .then(features => {
         this.state.loading = false;
-        this.setEditing(true);
+        this.setEditing(true, {
+          tools
+        });
         EditingService.runEventHandler({
           type: 'get-features-editing',
           id,
@@ -223,6 +224,9 @@ proto.start = function(options={}) {
             features
           }
         });
+        d.resolve({
+          features
+        })
       })
       .fail(error => {
         GUI.notify.error(error.message);
@@ -240,7 +244,9 @@ proto.start = function(options={}) {
     if (!this._session.isStarted()) {
       //added case of mobile
       if (ApplicationState.ismobile && this._mapService.isMapHidden() && this._layerType === Layer.LayerTypes.VECTOR) {
-        this.setEditing(true);
+        this.setEditing(true, {
+          tools
+        });
         GUI.getComponent('map').getService().onceafter('setHidden', () =>{
           setTimeout(()=>{
             this._start = true;
@@ -264,7 +270,9 @@ proto.start = function(options={}) {
           .then(handlerAfterSessionGetFeatures);
         this._start = true;
       }
-      this.setEditing(true);
+      this.setEditing(true, {
+        tools
+      });
     }
   }
   return d.promise();
@@ -367,11 +375,10 @@ proto._registerGetFeaturesEvent = function(options={}) {
   }
 };
 
-proto._setToolsEnabled = function(bool) {
-  this._tools.forEach((tool) => {
+proto._setToolsEnabled = function(bool=true) {
+  this._tools.forEach(tool => {
     tool.setEnabled(bool);
-    if (!bool)
-      tool.setActive(bool);
+    !bool && tool.setActive(bool);
   })
 };
 
@@ -447,10 +454,13 @@ proto.getLayer = function() {
   return this._layer;
 };
 
-proto.setEditing = function(bool) {
+proto.setEditing = function(bool=true, options={}) {
+  const {tools} = options; // get tools fro options usefult we want to ebnable certai, tools ate start
   this.setEnable(bool);
   this.state.editing.on = bool;
-  this.enableTools(bool);
+  tools === undefined ? this.enableTools(bool) : Array.isArray(tools) && this.getTools().forEach(tool =>{
+    tool.setEnabled(tools.indexOf(tool.getId()) !== -1)
+  });
 };
 
 proto.inEditing = function() {
@@ -488,13 +498,12 @@ proto.getTools = function() {
 };
 
 proto.getToolById = function(toolId) {
-  return this._tools.find((tool) => toolId === tool.getId());
+  return this._tools.find(tool => toolId === tool.getId());
 };
 
+// enable all tools
 proto.enableTools = function(bool) {
-  this._tools.forEach((tool) => {
-    tool.setEnabled(bool);
-  })
+  this._tools.forEach(tool => tool.setEnabled(bool))
 };
 
 proto.setActiveTool = function(tool) {

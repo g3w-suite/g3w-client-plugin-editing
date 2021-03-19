@@ -31,27 +31,26 @@ proto.getFeature = function() {
   return this._options.inputs.features[0];
 };
 
-proto.start = function(hideSidebar = false) {
-  const options = {
+proto.createOperatorOptions = function(options={features:[]}){
+  const {features=[]} = options;
+  return {
     inputs : {
       layer: this._layer,
-      features: []
+      features
     },
     context : {
       session: this._session
     }
   };
+};
+
+proto.start = function(hideSidebar = false) {
+  const options = this.createOperatorOptions();
   this._options = options;
-  const startOp = (options) => {
-    this._op.once('settoolsoftool', (tools) => {
-      this.emit('settoolsoftool', tools);
-    });
-    this._op.once('active', (index) => {
-      this.emit('active', index)
-    });
-    this._op.once('deactive', (index) => {
-      this.emit('deactive', index)
-    });
+  const startOp = options => {
+    this._op.once('settoolsoftool', tools => this.emit('settoolsoftool', tools));
+    this._op.once('active', index => this.emit('active', index));
+    this._op.once('deactive', index => this.emit('deactive', index));
     //reset features
     options.inputs.features = [];
     hideSidebar && GUI.hideSidebar();
@@ -137,8 +136,8 @@ proto.setIcon = function(icon) {
   this.state.icon = icon;
 };
 
-proto.setEnabled = function(bool) {
-  this.state.enabled = typeof bool === 'boolean' ? bool : false;
+proto.setEnabled = function(bool=false) {
+  this.state.enabled = bool
 };
 
 proto.isEnabled = function() {

@@ -23,8 +23,7 @@ const ToolboxComponent = Vue.extend({
     },
     toggleEditing() {
       this.select();
-      if (!this.state.layerstate.editing.ready || this.state.loading)
-        return;
+      if (!this.state.layerstate.editing.ready || this.state.loading) return;
       this.state.editing.on ? this.$emit('stoptoolbox', this.state.id): this.$emit('starttoolbox', this.state.id);
     },
     saveEdits() {

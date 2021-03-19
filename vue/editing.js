@@ -42,9 +42,7 @@ const vueComponentOptions = {
       const toolbox = this._getToolBoxById(toolboxId);
       if (toolbox.state.editing.history.commit)
         this.$options.service.commit()
-          .always(function() {
-            toolbox.stop()
-          });
+          .always(() => toolbox.stop());
       else
         toolbox.stop();
     },
@@ -61,7 +59,7 @@ const vueComponentOptions = {
     startActiveTool: function(toolId, toolboxId) {
       if (this.state.toolboxidactivetool && toolboxId !== this.state.toolboxidactivetool) {
         this._checkDirtyToolBoxes(this.state.toolboxidactivetool)
-          .then((toolbox) => {
+          .then(toolbox => {
             toolbox && toolbox.stopActiveTool();
             this._setActiveToolOfToolbooxSelected(toolId, toolboxId);
           })

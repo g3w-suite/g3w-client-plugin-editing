@@ -1,6 +1,5 @@
 import API from '../api'
-const inherit = g3wsdk.core.utils.inherit;
-const base =  g3wsdk.core.utils.base;
+const {base, inherit} = g3wsdk.core.utils;
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 const PluginService = g3wsdk.core.plugin.PluginService;
 const SessionsRegistry = g3wsdk.core.editing.SessionsRegistry;
@@ -8,6 +7,7 @@ const CatalogLayersStoresRegistry = g3wsdk.core.catalog.CatalogLayersStoresRegis
 const MapLayersStoreRegistry = g3wsdk.core.map.MapLayersStoreRegistry;
 const LayersStore = g3wsdk.core.layer.LayersStore;
 const Layer = g3wsdk.core.layer.Layer;
+const Feature = g3wsdk.core.layer.features.Feature;
 const GUI = g3wsdk.gui.GUI;
 const serverErrorParser= g3wsdk.core.errors.parsers.Server;
 const ToolBoxesFactory = require('../toolboxes/toolboxesfactory');
@@ -156,16 +156,30 @@ proto.getFeature = function({layerId} = {}) {
 };
 
 proto.subscribe = function(event, fnc) {
-  if (!this._subscribers[event])
-    this._subscribers[event] = [];
+  if (!this._subscribers[event]) this._subscribers[event] = [];
   return this._subscribers[event].push(fnc);
 };
 
 proto.unsubscribe = function(event, fnc) {
-  this._subscribers[event] = this._subscribers[event].filter(cb => cb !==fnc);
+  this._subscribers[event] = this._subscribers[event].filter(cb => cb !== fnc);
 };
 
 // END API
+
+// create a new feature
+proto.addNewFeature = function(layerId, options={}){
+  const {geometry, properties} = options;
+  const feature = new Feature()
+  geometry && feature.setGeometry(new ol.geom[geometry.type](geometry.coordinates));
+  feature.setProperties(properties);
+  feature.setTemporaryId();
+  const toolbox = this.getToolBoxById(layerId);
+  const editingLayer = toolbox.getLayer().getEditingLayer();
+  const session = toolbox.getSession();
+  editingLayer.getSource().addFeature(feature);
+  session.pushAdd(layerId, feature);
+  return feature;
+};
 
 proto.getLayersInError = function() {
   return this._layers_in_error;
@@ -760,7 +774,7 @@ proto._getRelationFieldsFromRelation = function({layerId, relation} = {}) {
 };
 
 proto.createEditingDataOptions = function(filterType='all', options={}) {
-  const {feature, relation, fids=[], layerId, operator} = options;
+  const {feature, relation, field, layerId, operator} = options;
   let filter;
   switch (filterType) {
     case 'all':
@@ -773,16 +787,13 @@ proto.createEditingDataOptions = function(filterType='all', options={}) {
         bbox: this._mapService.getMapBBOX()
       };
       break;
-    case 'fids':
+    case 'field': // case of field
       filter = {
-        fid: {
-          fid: 10,
-          layer: {
-            id: layerId
-          },
+        field: {
+          field,
           type: 'editing'
         }
-      }
+      };
       break;
     case 'fid':
       if (operator !== 'not')
@@ -985,6 +996,7 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
   const layerType = layer.getType();
   const items = commitItems;
   commitItems = commitItems || session.getCommitItems();
+  console.log(commitItems)
   const promise = modal ?  this.showCommitModalWindow({
     layer,
     commitItems,

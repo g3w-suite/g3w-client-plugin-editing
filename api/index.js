@@ -33,13 +33,37 @@ const API = function({service, plugin} = {}) {
   };
 
   this.startEditing = function(layerId, options={}){
-    const toolbox = service.getToolBoxById(layerId);
-    return toolbox && toolbox.start(options)
+    const {tools, feature} = options;
+    return new Promise((resolve, reject) =>{
+      const toolbox = service.getToolBoxById(layerId);
+      toolbox ? toolbox.start(options).then(opts => {
+        const {features} = opts;
+        const tool = toolbox.getToolById(tools[0]);
+        toolbox.setActiveTool(tool);
+        const {inputs, context} = tool.createOperatorOptions({
+          features: features.length ? features : [feature]
+        });
+        if (tool.getId()  === 'editattributes')
+          tool.getOperator()._steps[1].run(inputs, context).then(()=>{
+            toolbox.getSession().save();
+            resolve(toolbox)
+          });
+        else resolve(toolbox)
+      }).fail(err=> reject(err)) : reject(null)
+    })
+  };
+
+  this.addNewFeature = function(layerId, options={}) {
+    return service.addNewFeature(layerId, options);
   };
 
   this.stopEditing = function(layerId, options={}) {
     const toolbox = service.getToolBoxById(layerId);
     return toolbox && toolbox.stop(options);
+  };
+
+  this.commitChanges = function(options={}){
+    return service.commit(options);
   };
 
   //used to reste eventualli state modified by other plugin
