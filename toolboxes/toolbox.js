@@ -20,6 +20,7 @@ function ToolBox(options={}) {
   this._layerType = options.type || 'vector';
   this._loadedExtent = null;
   this._tools = options.tools;
+  this._enabledtools;
   this._getFeaturesOption = {};
   const toolsstate = [];
   this._tools.forEach(tool => toolsstate.push(tool.getState()));
@@ -188,7 +189,7 @@ proto._resetUniqueValues = function(){
 
 //added option objet to start method to have a control by other plugin how
 proto.start = function(options={}) {
-  const { filter, tools } = options;
+  const { filter } = options;
   const EditingService = require('../services/editingservice');
   const EventName = 'start-editing';
   const d = $.Deferred();
@@ -214,9 +215,7 @@ proto.start = function(options={}) {
     promise
       .then(features => {
         this.state.loading = false;
-        this.setEditing(true, {
-          tools
-        });
+        this.setEditing(true);
         EditingService.runEventHandler({
           type: 'get-features-editing',
           id,
@@ -244,9 +243,7 @@ proto.start = function(options={}) {
     if (!this._session.isStarted()) {
       //added case of mobile
       if (ApplicationState.ismobile && this._mapService.isMapHidden() && this._layerType === Layer.LayerTypes.VECTOR) {
-        this.setEditing(true, {
-          tools
-        });
+        this.setEditing(true);
         GUI.getComponent('map').getService().onceafter('setHidden', () =>{
           setTimeout(()=>{
             this._start = true;
@@ -270,9 +267,7 @@ proto.start = function(options={}) {
           .then(handlerAfterSessionGetFeatures);
         this._start = true;
       }
-      this.setEditing(true, {
-        tools
-      });
+      this.setEditing(true);
     }
   }
   return d.promise();
@@ -454,13 +449,11 @@ proto.getLayer = function() {
   return this._layer;
 };
 
-proto.setEditing = function(bool=true, options={}) {
-  const {tools} = options; // get tools fro options usefult we want to ebnable certai, tools ate start
+
+proto.setEditing = function(bool=true) {
   this.setEnable(bool);
   this.state.editing.on = bool;
-  tools === undefined ? this.enableTools(bool) : Array.isArray(tools) && this.getTools().forEach(tool =>{
-    tool.setEnabled(tools.indexOf(tool.getId()) !== -1)
-  });
+  this.enableTools(bool);
 };
 
 proto.inEditing = function() {
@@ -501,9 +494,14 @@ proto.getToolById = function(toolId) {
   return this._tools.find(tool => toolId === tool.getId());
 };
 
+proto.setEnablesTools = function(tools){
+  this._enabledtools = tools && Array.isArray(tools) && this._tools.filter(tool => tools.includes(tool.getId()));
+};
+
 // enable all tools
 proto.enableTools = function(bool) {
-  this._tools.forEach(tool => tool.setEnabled(bool))
+  const tools = this._enabledtools || this._tools;
+  tools.forEach(tool => tool.setEnabled(bool))
 };
 
 proto.setActiveTool = function(tool) {

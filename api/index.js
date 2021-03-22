@@ -36,6 +36,7 @@ const API = function({service, plugin} = {}) {
     const {tools, feature} = options;
     return new Promise((resolve, reject) =>{
       const toolbox = service.getToolBoxById(layerId);
+      toolbox.setEnablesTools(tools);
       toolbox ? toolbox.start(options).then(opts => {
         const {features} = opts;
         const tool = toolbox.getToolById(tools[0]);
@@ -68,10 +69,11 @@ const API = function({service, plugin} = {}) {
 
   //used to reste eventualli state modified by other plugin
   this.resetDefault = function(){
-    service.getToolBoxes().forEach(toolbox => toolbox.setShow(true));
+    service.getToolBoxes().forEach(toolbox => {
+      toolbox.setEnablesTools();
+      toolbox.setShow(true)
+    });
   };
-
-
 };
 
 export default API;
