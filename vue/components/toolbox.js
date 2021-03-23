@@ -51,6 +51,9 @@ const ToolboxComponent = Vue.extend({
     },
     isLayerReady() {
       return this.state.layerstate.editing.ready;
+    },
+    isDisabled(){
+      return !this.state.startstopediting;
     }
   },
   created() {
@@ -65,10 +68,9 @@ const ToolboxComponent = Vue.extend({
       this.state.toolmessages.help = help;
     })
   },
-  mounted() {
-    this.$nextTick(()=>{
-      $('.editbtn[data-toggle="tooltip"]').tooltip();
-    })
+  async mounted() {
+    await this.$nextTick();
+    $(this.$refs.editingbutton).tooltip();
   }
 });
 

@@ -59,7 +59,8 @@ proto._getForm = function(inputs, context) {
 proto._cancelFnc = function(promise, inputs) {
   return function() {
     GUI.setModal(false);
-    this.fireEvent('closeform', {});
+    // fire event cancel form to emit to subscrivers
+    this.fireEvent('cancelform');
     promise.reject(inputs);
   }
 };

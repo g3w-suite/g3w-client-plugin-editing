@@ -996,7 +996,6 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
   const layerType = layer.getType();
   const items = commitItems;
   commitItems = commitItems || session.getCommitItems();
-  console.log(commitItems)
   const promise = modal ?  this.showCommitModalWindow({
     layer,
     commitItems,

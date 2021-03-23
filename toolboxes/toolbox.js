@@ -44,6 +44,7 @@ function ToolBox(options={}) {
     title: options.title || "Edit Layer",
     loading: false,
     enabled: false,
+    startstopediting: true,
     message: null,
     toolmessages: {
       help: null
@@ -98,6 +99,12 @@ function ToolBox(options={}) {
 inherit(ToolBox, G3WObject);
 
 const proto = ToolBox.prototype;
+
+//disable start top editing 
+
+proto.setStartStopEditing = function(bool=true){
+  this.state.startstopediting = bool;
+};
 
 proto.getState = function() {
   return this.state;
@@ -286,6 +293,7 @@ proto.getFeaturesOption = function() {
 };
 
 proto.stop = function() {
+  console.log('qui')
   const EventName  = 'stop-editing';
   const d = $.Deferred();
   this.disableCanEditEvent && this.disableCanEditEvent();
@@ -560,9 +568,7 @@ proto.stopActiveTool = function(tool) {
         this.clearToolsOfTool();
         this.clearToolMessage();
         this.state.activetool = null;
-        requestAnimationFrame(() => {
-          d.resolve();
-        })
+        setTimeout(d.resolve);
       })
   } else {
     tool ? tool.removeAllListeners(): null;

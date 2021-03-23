@@ -33,24 +33,34 @@ const API = function({service, plugin} = {}) {
   };
 
   this.startEditing = function(layerId, options={}){
-    const {tools, feature} = options;
+    const {tools, feature, startstopediting=true} = options;
     return new Promise((resolve, reject) =>{
+      // get toolbox related to layer id
       const toolbox = service.getToolBoxById(layerId);
-      toolbox.setEnablesTools(tools);
-      toolbox ? toolbox.start(options).then(opts => {
+      // set enable disable start sto editing toobx
+      toolbox.setStartStopEditing(startstopediting);
+      //set enables tools
+      tools && toolbox.setEnablesTools(tools);
+      // start editing toolbox (options contain also filter type)
+      toolbox.start(options).then(opts => {
         const {features} = opts;
-        const tool = toolbox.getToolById(tools[0]);
-        toolbox.setActiveTool(tool);
-        const {inputs, context} = tool.createOperatorOptions({
-          features: features.length ? features : [feature]
-        });
-        if (tool.getId()  === 'editattributes')
-          tool.getOperator()._steps[1].run(inputs, context).then(()=>{
-            toolbox.getSession().save();
-            resolve(toolbox)
-          });
-        else resolve(toolbox)
-      }).fail(err=> reject(err)) : reject(null)
+        // TEMP set first toolbax active
+        if (tools){
+          const tool = toolbox.getToolById(tools[0]);
+          toolbox.setActiveTool(tool);
+          // in case of editattributes tool
+          if (tool.getId()  === 'editattributes') {
+            // create the operator configuration needed to run a certain step
+            const {inputs, context} = tool.createOperatorOptions({
+              features: features.length ? features : [feature]
+            });
+            tool.getOperator().getStep(1).run(inputs, context).then(()=>{
+              toolbox.getSession().save();
+              resolve(toolbox)
+            });
+          } else resolve(toolbox)
+        } else resolve(toolbox);
+      }).fail(err=> reject(err))
     })
   };
 
@@ -60,17 +70,18 @@ const API = function({service, plugin} = {}) {
 
   this.stopEditing = function(layerId, options={}) {
     const toolbox = service.getToolBoxById(layerId);
-    return toolbox && toolbox.stop(options);
+    return toolbox.stop(options);
   };
 
   this.commitChanges = function(options={}){
     return service.commit(options);
   };
 
-  //used to reste eventualli state modified by other plugin
+  //used to reset default toolbox state modified by other plugin
   this.resetDefault = function(){
     service.getToolBoxes().forEach(toolbox => {
       toolbox.setEnablesTools();
+      toolbox.setStartStopEditing(true);
       toolbox.setShow(true)
     });
   };

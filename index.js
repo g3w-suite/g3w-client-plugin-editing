@@ -35,11 +35,8 @@ const _Plugin = function() {
       this.service.once('ready', () => {
         //plugin registry
         if (this.registerPlugin(this.config.gid)) {
-          if (!GUI.isready) {
-            GUI.on('ready', this.setupGui.bind(this));
-          } else {
-            this.setupGui();
-          }
+          if (!GUI.isready) GUI.on('ready', this.setupGui.bind(this));
+          else this.setupGui();
         }
         this.setHookLoading({
           loading: false
@@ -50,13 +47,14 @@ const _Plugin = function() {
       });
       //inizialize service
       this.service.init(this.config);
-      this.addToolGroup(pluginGroupTool);
+
     }
   };
   //setup plugin interface
   this.setupGui = function() {
     if (this.config.visible === false) return false;
     this.config.name = this.config.name ||  "plugins.editing.editing_data";
+    this.addToolGroup(pluginGroupTool);
     this.addTools({
       action: this.showEditingPanel,
       offline: false,

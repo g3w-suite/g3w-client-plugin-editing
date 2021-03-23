@@ -1,5 +1,4 @@
-const inherit = g3wsdk.core.utils.inherit;
-const base =  g3wsdk.core.utils.base;
+const {base, inherit} = g3wsdk.core.utils;
 const GUI = g3wsdk.gui.GUI;
 const G3WObject = g3wsdk.core.G3WObject;
 
@@ -80,9 +79,7 @@ proto.stop = function(force=false) {
   if (this._op) {
     this._op.stop(force)
       .then(() => {})
-      .fail(() => {
-        this._session.rollback();
-      })
+      .fail(() => this._session.rollback())
       .always(() => {
         this._options = null;
         this.state.active = false;

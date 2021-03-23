@@ -1,6 +1,4 @@
-const inherit = g3wsdk.core.utils.inherit;
-const base =  g3wsdk.core.utils.base;
-const merge =  g3wsdk.core.utils.merge;
+const {base, inherit, merge} = g3wsdk.core.utils;
 const t = g3wsdk.core.i18n.tPlugin;
 const GUI = g3wsdk.gui.GUI;
 const Component = g3wsdk.gui.vue.Component;
@@ -40,11 +38,8 @@ const vueComponentOptions = {
     },
     stopToolBox: function(toolboxId) {
       const toolbox = this._getToolBoxById(toolboxId);
-      if (toolbox.state.editing.history.commit)
-        this.$options.service.commit()
-          .always(() => toolbox.stop());
-      else
-        toolbox.stop();
+      if (toolbox.state.editing.history.commit) this.$options.service.commit().always(() => toolbox.stop());
+      else toolbox.stop();
     },
     saveToolBox: function(toolboxId) {
       const toolbox = this._getToolBoxById(toolboxId);
