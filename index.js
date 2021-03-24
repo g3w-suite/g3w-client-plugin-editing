@@ -1,6 +1,5 @@
 import pluginConfig from './config';
-const inherit = g3wsdk.core.utils.inherit;
-const base = g3wsdk.core.utils.base;
+const {base, inherit} = g3wsdk.core.utils;
 const Plugin = g3wsdk.core.plugin.Plugin;
 const GUI = g3wsdk.gui.GUI;
 const Service = require('./services/editingservice');

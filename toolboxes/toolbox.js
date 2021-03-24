@@ -293,7 +293,6 @@ proto.getFeaturesOption = function() {
 };
 
 proto.stop = function() {
-  console.log('qui')
   const EventName  = 'stop-editing';
   const d = $.Deferred();
   this.disableCanEditEvent && this.disableCanEditEvent();
