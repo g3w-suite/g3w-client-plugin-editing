@@ -73,7 +73,7 @@ function ToolBox(options={}) {
     if (this.inEditing()) {
       const EditingService = require('../services/editingservice');
       ApplicationState.online && EditingService.stopSessionChildren(this.state.id);
-      this.getFeaturesOption.registerEvents && this._unregisterGetFeaturesEvent();
+      this._getFeaturesOption.registerEvents && this._unregisterGetFeaturesEvent();
     }
   });
 
@@ -205,7 +205,7 @@ proto.start = function(options={}) {
     this._getFeaturesOption = {
       filter,
       editing: true,
-      listenEvents: false
+      registerEvents: false
     };
   } else {
     const filterType = this._layerType === Layer.LayerTypes.TABLE ? 'all': 'bbox';
