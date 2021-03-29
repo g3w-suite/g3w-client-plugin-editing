@@ -1,16 +1,15 @@
 const ApplicationState = g3wsdk.core.ApplicationState;
-const inherit = g3wsdk.core.utils.inherit;
-const base =  g3wsdk.core.utils.base;
+const {base, inherit, debounce} = g3wsdk.core.utils;
 const G3WObject = g3wsdk.core.G3WObject;
 const GUI = g3wsdk.gui.GUI;
 const t = g3wsdk.core.i18n.tPlugin;
 const Layer = g3wsdk.core.layer.Layer;
 const Session = g3wsdk.core.editing.Session;
-const { debounce } = g3wsdk.core.utils;
 const getScaleFromResolution = g3wsdk.ol.utils.getScaleFromResolution;
 
 function ToolBox(options={}) {
   base(this);
+  this.editingService = require('../services/editingservice');
   this._mapService = GUI.getComponent('map').getService();
   this._start = false;
   this._constraints = options.constraints || {};
@@ -65,14 +64,11 @@ function ToolBox(options={}) {
     layerstate: this._layer.state
   };
 
-  this._tools.forEach((tool) => {
-    tool.setSession(this._session);
-  });
+  this._tools.forEach(tool => tool.setSession(this._session));
 
   this._session.onafter('stop', () => {
     if (this.inEditing()) {
-      const EditingService = require('../services/editingservice');
-      ApplicationState.online && EditingService.stopSessionChildren(this.state.id);
+      ApplicationState.online && this.editingService.stopSessionChildren(this.state.id);
       this._getFeaturesOption.registerEvents && this._unregisterGetFeaturesEvent();
     }
   });
@@ -197,7 +193,6 @@ proto._resetUniqueValues = function(){
 //added option objet to start method to have a control by other plugin how
 proto.start = function(options={}) {
   const { filter } = options;
-  const EditingService = require('../services/editingservice');
   const EventName = 'start-editing';
   const d = $.Deferred();
   const id = this.getId();
@@ -209,13 +204,13 @@ proto.start = function(options={}) {
     };
   } else {
     const filterType = this._layerType === Layer.LayerTypes.TABLE ? 'all': 'bbox';
-    this._getFeaturesOption = EditingService.createEditingDataOptions(filterType, {
+    this._getFeaturesOption = this.editingService.createEditingDataOptions(filterType, {
       layerId: this.getId()
     });
   }
   const handlerAfterSessionGetFeatures = promise => {
     this.emit(EventName);
-    EditingService.runEventHandler({
+    this.editingService.runEventHandler({
       type: EventName,
       id
     });
@@ -223,7 +218,7 @@ proto.start = function(options={}) {
       .then(features => {
         this.state.loading = false;
         this.setEditing(true);
-        EditingService.runEventHandler({
+        this.editingService.runEventHandler({
           type: 'get-features-editing',
           id,
           options: {
@@ -236,7 +231,7 @@ proto.start = function(options={}) {
       })
       .fail(error => {
         GUI.notify.error(error.message);
-        EditingService.runEventHandler({
+        this.editingService.runEventHandler({
           type: 'error-editing',
           id,
           error
@@ -255,7 +250,7 @@ proto.start = function(options={}) {
           setTimeout(()=>{
             this._start = true;
             this.state.loading = true;
-            this._getFeaturesOption = EditingService.createEditingDataOptions(filterType, {
+            this._getFeaturesOption = this.editingService.createEditingDataOptions(filterType, {
               layerId: this.getId()
             });
             this._session.start(this._getFeaturesOption)
@@ -297,8 +292,7 @@ proto.stop = function() {
   const d = $.Deferred();
   this.disableCanEditEvent && this.disableCanEditEvent();
   if (this._session && this._session.isStarted()) {
-    const EditingService = require('../services/editingservice');
-    const is_there_a_father_in_editing = EditingService.fatherInEditing(this.state.id);
+    const is_there_a_father_in_editing = this.editingService.fatherInEditing(this.state.id);
     if (ApplicationState.online && !is_there_a_father_in_editing) {
       this._session.stop()
         .then(() => {
@@ -325,7 +319,7 @@ proto.stop = function() {
       this._setToolsEnabled(false);
       this.clearToolboxMessages();
       this._unregisterGetFeaturesEvent();
-      EditingService.stopSessionChildren(this.state.id);
+      this.editingService.stopSessionChildren(this.state.id);
       this.setSelected(false);
     }
   } else {

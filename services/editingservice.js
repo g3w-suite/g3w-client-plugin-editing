@@ -40,6 +40,10 @@ function EditingService() {
   };
   // state of editing
   this.state = {
+    save: {
+      mode: "default", // default, autosave
+      ask: true // show or not modal
+    },
     toolboxes: [],
     toolboxselected: null,
     toolboxidactivetool: null,
@@ -455,6 +459,18 @@ proto.runEventHandler = function({type, id} = {}) {
   });
 };
 
+//set Save Mode to save each change
+proto.setSaveMode = function(mode = 'default', options={}){
+  const {ask= mode=== 'autosave' ? false : true} = options;
+  this.state.save.mode = mode;
+  this.state.save.ask = ask;
+};
+
+//return save mode
+proto.getSaveMode = function(){
+  return this.state.save;
+};
+
 proto._attachLayerWidgetsEvent = function(layer) {
   const fields = layer.getEditingFields();
   for (let i=0; i < fields.length; i++) {
@@ -777,10 +793,8 @@ proto.createEditingDataOptions = function(filterType='all', options={}) {
   const {feature, relation, field, layerId, operator} = options;
   let filter;
   switch (filterType) {
+    //case all leave filter undefined
     case 'all':
-      filter = {
-        editing: true
-      };
     break;
     case 'bbox':
       filter = {

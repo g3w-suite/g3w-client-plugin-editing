@@ -63,6 +63,15 @@ const API = function({service, plugin} = {}) {
       }).fail(err=> reject(err))
     })
   };
+  
+  /*
+  * Save mode editing : 
+  * default: each change is save temporary. Press floppy or stoop editing toolbox to save data permanently on database
+  * autosave: each change we ahe to commit
+  * */
+  this.setSaveMode = function(mode="default", options={}){
+    service.setSaveMode(mode);
+  };
 
   this.addNewFeature = function(layerId, options={}) {
     return service.addNewFeature(layerId, options);

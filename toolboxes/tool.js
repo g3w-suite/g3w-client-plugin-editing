@@ -4,6 +4,7 @@ const G3WObject = g3wsdk.core.G3WObject;
 
 function Tool(options = {}) {
   base(this);
+  this.editingService = require('../services/editingservice');
   this._options = null;
   this._session = options.session;
   this._layer = options.layer;
@@ -56,7 +57,12 @@ proto.start = function(hideSidebar = false) {
     this._op.start(options)
       .then(() => {
         this._session.save()
-          .then(() => {});
+          .then(() => {
+            const save = this.editingService.getSaveMode();
+            save.mode === 'autosave' && this.editingService.commit({
+              modal: save.ask
+            })
+          });
       })
       .fail(() =>  {
         hideSidebar && GUI.showSidebar();
