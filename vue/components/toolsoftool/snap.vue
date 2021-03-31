@@ -49,32 +49,26 @@
         this.showSnapAll = this.vectorToolboxesEditingState.find(editing => editing.on) && true || false;
         this.checkedAll = this.showSnapAll ? this.checkedAll : false;
       },
-      activeSnapInteraction({source, features, snaptype}={}) {
-        snaptype === 'snapall' ? this.checked = false : this.checkedAll = false;
+      activeSnapInteraction() {
+        const snap = this.add;
         snapInteraction &&  mapService.removeInteraction(snapInteraction);
         snapInteraction = null;
-        snapInteraction = new ol.interaction.Snap({
-          source,
-          features
-        });
-        mapService.addInteraction(snapInteraction);
+        if (snap) {
+          snapInteraction = new ol.interaction.Snap({
+            source: this.checked && !this.checkedAll && this.options.source,
+            features: this.checkedAll && this.features
+          });
+          mapService.addInteraction(snapInteraction);
+        }
+
       }
     },
     watch: {
-      add(add) {
-        !add && mapService.removeInteraction(snapInteraction);
+      checked() {
+        this.activeSnapInteraction()
       },
-      checked(bool) {
-        bool && this.activeSnapInteraction({
-            source: this.options.source,
-            type: 'snap'
-          });
-      },
-      checkedAll(bool) {
-        bool && this.activeSnapInteraction({
-            features: this.features,
-            type: 'snapall'
-          });
+      checkedAll() {
+        this.activeSnapInteraction()
       }
     },
     created() {
