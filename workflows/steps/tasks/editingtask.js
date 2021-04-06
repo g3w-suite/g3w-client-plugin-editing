@@ -13,15 +13,27 @@ function EditingTask(options = {}) {
   };
   this.removeInteraction = function(interaction) {
     //needed to avoid a issue on openlayer
-    setTimeout(()=>{
-      this._mapService.removeInteraction(interaction);
-    })
+    setTimeout(()=> this._mapService.removeInteraction(interaction))
   };
 }
 
 inherit(EditingTask, Task);
 
 const proto = EditingTask.prototype;
+
+proto.registerPointerMoveCursor = function(){
+  this._mapService.getMap().on("pointermove", this._pointerMoveCursor)
+};
+
+proto.unregisterPointerMoveCursor = function(){
+  this._mapService.getMap().un("pointermove", this._pointerMoveCursor)
+};
+
+proto._pointerMoveCursor = function(evt) {
+  const hit = this.forEachFeatureAtPixel(evt.pixel, () => true);
+  if (hit) this.getTargetElement().style.cursor = 'pointer';
+  else this.getTargetElement().style.cursor = '';
+};
 
 proto.setSteps = function(steps={}){
   this._steps = steps;
