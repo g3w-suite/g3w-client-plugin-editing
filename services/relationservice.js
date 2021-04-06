@@ -29,7 +29,8 @@ const RelationService = function(layerId, options = {}) {
   this._layerType = relationLayer.getType();
   this._relationTools = [];
   this._parentWorkFlow = this.getCurrentWorkflow();
-  this._add_link_workflow = null; 
+  this._parentFieldPk =  this._parentWorkFlow.getLayer().isPkField(ownField) || false;
+  this._add_link_workflow = null;
   this._isExternalFieldRequired = this._checkIfExternalFieldRequired();
   this._currentFeatureRelationFieldValue = this._isFatherFieldEditable ?
       this.getCurrentWorkflowData().feature.get(ownField) :
@@ -319,7 +320,6 @@ proto.addRelation = function() {
   const workflow = this._getAddFeatureWorkflow();
   const options = this._createWorkflowOptions();
   const session = options.context.session;
-
   const {ownField, relationField} = this.getEditingService()._getRelationFieldsFromRelation({
     layerId: this._layerId,
     relation: this.relation
@@ -330,11 +330,15 @@ proto.addRelation = function() {
   const percContent = isVector && workflow.bindEscKeyUp();
   promise.then((outputs) => {
     const {newFeatures, originalFeatures} = outputs.relationFeatures;
-    const setRelationFieldValue = (value) =>{
+    const setRelationFieldValue = value =>{
       newFeatures.forEach((newFeature, index) =>{
         const originalFeature = originalFeatures[index];
         newFeature.set(ownField, value);
-        parentFeature.isNew() && originalFeature.set(ownField, value);
+        if (parentFeature.isNew()) {
+          const value = this._parentFieldPk ? parentFeature.getId() : parentFeature.get(relationField)
+          originalFeature.set(ownField, value);
+          newFeature.set(ownField, value);
+        }
         this.getLayer().getEditingSource().updateFeature(newFeature);
         session.pushUpdate(this._layerId, newFeature, originalFeature);
       })
@@ -353,7 +357,8 @@ proto.addRelation = function() {
     newFeatures.forEach(newFeature =>{
       const newRelation = this._createRelationObj(newFeature);
       this.relations.push(newRelation);
-    })
+    });
+
     this.emitEventToParentWorkFlow()
   }).fail((err) => {
     session.rollbackDependecies([this._layerId]);
