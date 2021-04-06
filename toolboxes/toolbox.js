@@ -190,12 +190,11 @@ proto._resetUniqueValues = function(){
   })
 };
 
-//added option objet to start method to have a control by other plugin how
-proto.start = function(options={}) {
-  const { filter } = options;
-  const EventName = 'start-editing';
-  const d = $.Deferred();
-  const id = this.getId();
+/**
+ * Method to create getFeaures options
+ * @param filter
+ */
+proto.setFeaturesOptions = function({filter}={}){
   if (filter) {
     this._getFeaturesOption = {
       filter,
@@ -208,6 +207,18 @@ proto.start = function(options={}) {
       layerId: this.getId()
     });
   }
+};
+
+//added option object to start method to have a control by other plugin how
+proto.start = function(options={}) {
+  const { filter } = options;
+  const EventName = 'start-editing';
+  const d = $.Deferred();
+  const id = this.getId();
+  // set filterOptions
+  this.setFeaturesOptions({
+    filter
+  });
   const handlerAfterSessionGetFeatures = promise => {
     this.emit(EventName);
     this.editingService.runEventHandler({
@@ -250,8 +261,8 @@ proto.start = function(options={}) {
           setTimeout(()=>{
             this._start = true;
             this.state.loading = true;
-            this._getFeaturesOption = this.editingService.createEditingDataOptions(filterType, {
-              layerId: this.getId()
+            this.setFeaturesOptions({
+              filter
             });
             this._session.start(this._getFeaturesOption)
               .then(handlerAfterSessionGetFeatures).fail(()=>this.setEditing(false));

@@ -20,13 +20,19 @@
       </div>
       <bar-loader :loading="state.loading"></bar-loader>
       <div class="panel-body">
-        <div class="tools-content" style="display: flex; flex-wrap: wrap;">
-          <tool
-            :state="toolstate"
-            :resourcesurl="resourcesurl"
-            @stopactivetool="stopActiveTool"
-            @setactivetool="setActiveTool"
-            v-for="toolstate in state.tools" :key="toolstate.id">
+        <div class="tools-content row1" style="display: flex; flex-wrap: wrap;">
+          <tool :state="toolstate" :resourcesurl="resourcesurl" @stopactivetool="stopActiveTool" @setactivetool="setActiveTool"
+                v-for="toolstate in  toolsrow1" :key="toolstate.id">
+          </tool>
+        </div>
+        <div class="tools-content row2" style="display: flex; flex-wrap: wrap;">
+          <tool :state="toolstate" :resourcesurl="resourcesurl" @stopactivetool="stopActiveTool" @setactivetool="setActiveTool"
+                v-for="toolstate in toolsrow2" :key="toolstate.id">
+          </tool>
+        </div>
+        <div class="tools-content row3" style="display: flex; flex-wrap: wrap;">
+          <tool :state="toolstate" :resourcesurl="resourcesurl" @stopactivetool="stopActiveTool" @setactivetool="setActiveTool"
+                v-for="toolstate in toolsrow3" :key="toolstate.id">
           </tool>
         </div>
         <div class="message" style="margin-top: 5px;" :id="'id_toolbox_messages_'+ state.id">

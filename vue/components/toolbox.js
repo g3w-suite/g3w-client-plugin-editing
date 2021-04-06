@@ -37,6 +37,15 @@ const ToolboxComponent = Vue.extend({
     }
   },
   computed: {
+    toolsrow1(){
+      return this.state.tools.filter(tool => tool.row === 1);
+    },
+    toolsrow2(){
+      return this.state.tools.filter(tool => tool.row === 2);
+    },
+    toolsrow3(){
+      return this.state.tools.filter(tool => tool.row === 3);
+    },
     canEdit() {
       return this.state.editing.canEdit;
     },

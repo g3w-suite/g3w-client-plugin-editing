@@ -4,21 +4,24 @@ const G3WObject = g3wsdk.core.G3WObject;
 
 function Tool(options = {}) {
   base(this);
+  const {name, row, id, icon, session, layer, once=false} = options;
+
   this.editingService = require('../services/editingservice');
   this._options = null;
-  this._session = options.session;
-  this._layer = options.layer;
+  this._session = session;
+  this._layer = layer;
   this._op = new options.op({
-    layer: options.layer
+    layer
   });
-  this._once = options.once || false;
+  this._once = once;
   this.state = {
-    id: options.id,
-    name: options.name,
+    id,
+    name,
     enabled: false,
     active: false,
-    icon: options.icon,
+    icon,
     message: null,
+    row: row || 1,
     messages: this._op.getMessages()
   };
 }
