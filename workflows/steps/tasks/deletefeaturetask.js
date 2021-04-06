@@ -94,7 +94,7 @@ proto.run = function(inputs, context) {
   const session = context.session;
   this._selectInteraction = new ol.interaction.Select({
     layers: [editingLayer],
-    condition: ol.events.condition.doubleClick,
+    //condition: ol.events.condition.doubleClick,
     style(feature) {
       const style = styles[feature.getGeometry().getType()];
       return style;
