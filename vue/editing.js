@@ -70,7 +70,7 @@ const vueComponentOptions = {
       const service = this.$options.service;
       const toolbox = this._getToolBoxById(toolboxId);
       const toolboxes = service.getToolBoxes();
-      const toolboxSelected = toolboxes.find((toolbox) => toolbox.isSelected());
+      const toolboxSelected = toolboxes.find(toolbox => toolbox.isSelected());
       toolboxSelected && toolboxSelected.setSelected(false);
       toolbox.setSelected(true);
       this.state.toolboxselected = toolbox;

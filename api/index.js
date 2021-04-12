@@ -43,6 +43,8 @@ const API = function({service, plugin} = {}) {
     return new Promise((resolve, reject) =>{
       // get toolbox related to layer id
       const toolbox = service.getToolBoxById(layerId);
+      // set seletcted toolbox
+      service.setSelectedToolbox(toolbox);
       // set enable disable start sto editing toobx
       toolbox.setStartStopEditing(startstopediting);
       //set enables tools
@@ -76,7 +78,7 @@ const API = function({service, plugin} = {}) {
   * autosave: each change we ahe to commit
   * */
   this.setSaveMode = function(mode="default", options={}){
-    service.setSaveMode(mode);
+    service.setSaveMode(mode, options);
   };
 
   this.addNewFeature = function(layerId, options={}) {

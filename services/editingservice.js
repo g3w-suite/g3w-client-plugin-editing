@@ -54,11 +54,9 @@ function EditingService() {
   //mapservice
   this._mapService = GUI.getComponent('map').getService();
   // disable active tool on wehena a control is activated
-  this._mapService.on('mapcontrol:active', (interaction) => {
+  this._mapService.on('mapcontrol:active', () => {
     let toolboxselected = this.state.toolboxselected;
-    if (toolboxselected && toolboxselected.getActiveTool()) {
-      toolboxselected.getActiveTool().stop();
-    }
+    toolboxselected && toolboxselected.getActiveTool() && toolboxselected.getActiveTool().stop();
   });
   //plugin components
   this._formComponents = {};
@@ -169,6 +167,14 @@ proto.unsubscribe = function(event, fnc) {
 };
 
 // END API
+
+/**
+ * Used on commit if no toolbox is passed as parameter
+ * @param toolbox
+ */
+proto.setSelectedToolbox = function(toolbox){
+  this.state.toolboxselected = toolbox;
+};
 
 // create a new feature
 proto.addNewFeature = function(layerId, options={}){
@@ -461,9 +467,10 @@ proto.runEventHandler = function({type, id} = {}) {
 
 //set Save Mode to save each change
 proto.setSaveMode = function(mode = 'default', options={}){
-  const {ask= mode=== 'autosave' ? false : true} = options;
+  const {messages} = options;
   this.state.save.mode = mode;
-  this.state.save.ask = ask;
+  this.state.save.ask = mode === 'autosave' ? false : true;
+  this.state.save.messages = messages;
 };
 
 //return save mode
@@ -1002,7 +1009,7 @@ proto.showCommitModalWindow = function({layer, commitItems, close}) {
   })
 };
 
-proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
+proto.commit = function({toolbox, commitItems, messages, modal=true, close=false}={}) {
   const d = $.Deferred();
   toolbox = toolbox || this.state.toolboxselected;
   let session = toolbox.getSession();
@@ -1015,15 +1022,22 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
     commitItems,
     close
   }) : Promise.resolve();
-  promise.then((dialog)=> {
+  promise.then(dialog => {
     if (ApplicationState.online)
       session.commit({items: items || commitItems})
         .then((commitItems, response) => {
           if (ApplicationState.online) {
             if (response.result) {
               dialog && GUI.notify.success(t("editing.messages.saved"));
-              if (layerType === 'vector')
-                this._mapService.refreshMap({force: true});
+              //in case of custom message
+              if (messages && messages.success) {
+                GUI.showUserMessage({
+                  type: 'success',
+                  message: messages.success,
+                  autoclose: true
+                })
+              }
+              if (layerType === 'vector') this._mapService.refreshMap({force: true});
             } else {
               const parser = new serverErrorParser({
                 error: response.errors

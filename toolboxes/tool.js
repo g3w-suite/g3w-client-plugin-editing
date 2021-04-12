@@ -63,7 +63,8 @@ proto.start = function(hideSidebar = false) {
           .then(() => {
             const save = this.editingService.getSaveMode();
             save.mode === 'autosave' && this.editingService.commit({
-              modal: save.ask
+              modal: save.ask,
+              messages: save.messages
             })
           });
       })

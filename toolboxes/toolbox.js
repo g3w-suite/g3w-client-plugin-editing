@@ -475,8 +475,8 @@ proto.isEnabled = function() {
   return this.state.enabled;
 };
 
-proto.setEnable = function(bool) {
-  this.state.enabled = _.isBoolean(bool) ? bool : false;
+proto.setEnable = function(bool=false) {
+  this.state.enabled = bool;
   return this.state.enabled;
 };
 
@@ -492,8 +492,8 @@ proto.isSelected = function() {
   return this.state.selected;
 };
 
-proto.setSelected = function(bool) {
-  this.state.selected = _.isBoolean(bool) ? bool : false;
+proto.setSelected = function(bool=false) {
+  this.state.selected = bool;
   this.state.selected ? this._canEdit() : this._disableCanEdit();
 };
 
