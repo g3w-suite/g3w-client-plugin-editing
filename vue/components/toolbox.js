@@ -23,8 +23,7 @@ const ToolboxComponent = Vue.extend({
     },
     toggleEditing() {
       this.select();
-      if (!this.state.layerstate.editing.ready || this.state.loading)
-        return;
+      if (!this.state.layerstate.editing.ready || this.state.loading) return;
       this.state.editing.on ? this.$emit('stoptoolbox', this.state.id): this.$emit('starttoolbox', this.state.id);
     },
     saveEdits() {
@@ -38,6 +37,15 @@ const ToolboxComponent = Vue.extend({
     }
   },
   computed: {
+    toolsrow1(){
+      return this.state.tools.filter(tool => tool.row === 1);
+    },
+    toolsrow2(){
+      return this.state.tools.filter(tool => tool.row === 2);
+    },
+    toolsrow3(){
+      return this.state.tools.filter(tool => tool.row === 3);
+    },
     canEdit() {
       return this.state.editing.canEdit;
     },
@@ -52,6 +60,9 @@ const ToolboxComponent = Vue.extend({
     },
     isLayerReady() {
       return this.state.layerstate.editing.ready;
+    },
+    isDisabled(){
+      return !this.state.startstopediting;
     }
   },
   created() {
@@ -66,10 +77,9 @@ const ToolboxComponent = Vue.extend({
       this.state.toolmessages.help = help;
     })
   },
-  mounted() {
-    this.$nextTick(()=>{
-      $('.editbtn[data-toggle="tooltip"]').tooltip();
-    })
+  async mounted() {
+    await this.$nextTick();
+    $(this.$refs.editingbutton).tooltip();
   }
 });
 

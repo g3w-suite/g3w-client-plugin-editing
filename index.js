@@ -1,6 +1,5 @@
 import pluginConfig from './config';
-const inherit = g3wsdk.core.utils.inherit;
-const base = g3wsdk.core.utils.base;
+const {base, inherit} = g3wsdk.core.utils;
 const Plugin = g3wsdk.core.plugin.Plugin;
 const GUI = g3wsdk.gui.GUI;
 const Service = require('./services/editingservice');
@@ -17,6 +16,7 @@ const _Plugin = function() {
     some_layers: false
   };
   this.name = 'editing';
+  this.panel; // editing panel reference
   this.init = function() {
     //if (GUI.isMobile()) return;
     // add i18n of the plugin
@@ -34,11 +34,8 @@ const _Plugin = function() {
       this.service.once('ready', () => {
         //plugin registry
         if (this.registerPlugin(this.config.gid)) {
-          if (!GUI.isready) {
-            GUI.on('ready', this.setupGui.bind(this));
-          } else {
-            this.setupGui();
-          }
+          if (!GUI.isready) GUI.on('ready', this.setupGui.bind(this));
+          else this.setupGui();
         }
         this.setHookLoading({
           loading: false
@@ -49,13 +46,14 @@ const _Plugin = function() {
       });
       //inizialize service
       this.service.init(this.config);
-      this.addToolGroup(pluginGroupTool);
+
     }
   };
   //setup plugin interface
   this.setupGui = function() {
     if (this.config.visible === false) return false;
     this.config.name = this.config.name ||  "plugins.editing.editing_data";
+    this.addToolGroup(pluginGroupTool);
     this.addTools({
       action: this.showEditingPanel,
       offline: false,
@@ -64,10 +62,10 @@ const _Plugin = function() {
   };
 
   //method to show editing panel
-  this.showEditingPanel = function() {
+  this.showEditingPanel = function(options={}) {
     if (this.service.getLayers().length > 0) {
-      const panel = new EditingPanel();
-      GUI.showPanel(panel);
+      this.panel = new EditingPanel(options);
+      GUI.showPanel(this.panel);
       if (!show_errors.some_layers && this.service.getLayersInError()) {
         GUI.showUserMessage({
           type: 'warning',
@@ -82,6 +80,12 @@ const _Plugin = function() {
         message: 'plugins.editing.errors.no_layers'
       })
     }
+    return this.panel;
+  };
+
+  this.hideEditingPanel = function(options={}){
+    this.panel && GUI.closePanel();
+    this.panel = null;
   };
 
   this.load = function() {
@@ -89,6 +93,7 @@ const _Plugin = function() {
   };
 
   this.unload = function() {
+    this.panel = null;
     this.removeTools();
     this.service.clear()
   }

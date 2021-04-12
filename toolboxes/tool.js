@@ -1,24 +1,27 @@
-const inherit = g3wsdk.core.utils.inherit;
-const base =  g3wsdk.core.utils.base;
+const {base, inherit} = g3wsdk.core.utils;
 const GUI = g3wsdk.gui.GUI;
 const G3WObject = g3wsdk.core.G3WObject;
 
 function Tool(options = {}) {
   base(this);
+  const {name, row, id, icon, session, layer, once=false} = options;
+
+  this.editingService = require('../services/editingservice');
   this._options = null;
-  this._session = options.session;
-  this._layer = options.layer;
+  this._session = session;
+  this._layer = layer;
   this._op = new options.op({
-    layer: options.layer
+    layer
   });
-  this._once = options.once || false;
+  this._once = once;
   this.state = {
-    id: options.id,
-    name: options.name,
+    id,
+    name,
     enabled: false,
     active: false,
-    icon: options.icon,
+    icon,
     message: null,
+    row: row || 1,
     messages: this._op.getMessages()
   };
 }
@@ -31,34 +34,38 @@ proto.getFeature = function() {
   return this._options.inputs.features[0];
 };
 
-proto.start = function(hideSidebar = false) {
-  const options = {
+proto.createOperatorOptions = function(options={features:[]}){
+  const {features=[]} = options;
+  return {
     inputs : {
       layer: this._layer,
-      features: []
+      features
     },
     context : {
       session: this._session
     }
   };
+};
+
+proto.start = function(hideSidebar = false) {
+  const options = this.createOperatorOptions();
   this._options = options;
-  const startOp = (options) => {
-    this._op.once('settoolsoftool', (tools) => {
-      this.emit('settoolsoftool', tools);
-    });
-    this._op.once('active', (index) => {
-      this.emit('active', index)
-    });
-    this._op.once('deactive', (index) => {
-      this.emit('deactive', index)
-    });
+  const startOp = options => {
+    this._op.once('settoolsoftool', tools => this.emit('settoolsoftool', tools));
+    this._op.once('active', index => this.emit('active', index));
+    this._op.once('deactive', index => this.emit('deactive', index));
     //reset features
     options.inputs.features = [];
     hideSidebar && GUI.hideSidebar();
     this._op.start(options)
       .then(() => {
         this._session.save()
-          .then(() => {});
+          .then(() => {
+            const save = this.editingService.getSaveMode();
+            save.mode === 'autosave' && this.editingService.commit({
+              modal: save.ask
+            })
+          });
       })
       .fail(() =>  {
         hideSidebar && GUI.showSidebar();
@@ -81,9 +88,7 @@ proto.stop = function(force=false) {
   if (this._op) {
     this._op.stop(force)
       .then(() => {})
-      .fail(() => {
-        this._session.rollback();
-      })
+      .fail(() => this._session.rollback())
       .always(() => {
         this._options = null;
         this.state.active = false;
@@ -137,8 +142,8 @@ proto.setIcon = function(icon) {
   this.state.icon = icon;
 };
 
-proto.setEnabled = function(bool) {
-  this.state.enabled = typeof bool === 'boolean' ? bool : false;
+proto.setEnabled = function(bool=false) {
+  this.state.enabled = bool
 };
 
 proto.isEnabled = function() {

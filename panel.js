@@ -1,6 +1,4 @@
-const base = g3wsdk.core.utils.base;
-const inherit = g3wsdk.core.utils.inherit;
-const t = g3wsdk.core.i18n.tPlugin;
+const {base, inherit} = g3wsdk.core.utils;
 const EditingComponent = require('./vue/editing');
 
 function EditingPanelComponent(options={}) {

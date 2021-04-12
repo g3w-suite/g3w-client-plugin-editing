@@ -1,16 +1,15 @@
 const ApplicationState = g3wsdk.core.ApplicationState;
-const inherit = g3wsdk.core.utils.inherit;
-const base =  g3wsdk.core.utils.base;
+const {base, inherit, debounce} = g3wsdk.core.utils;
 const G3WObject = g3wsdk.core.G3WObject;
 const GUI = g3wsdk.gui.GUI;
 const t = g3wsdk.core.i18n.tPlugin;
 const Layer = g3wsdk.core.layer.Layer;
 const Session = g3wsdk.core.editing.Session;
-const { debounce } = g3wsdk.core.utils;
 const getScaleFromResolution = g3wsdk.ol.utils.getScaleFromResolution;
 
 function ToolBox(options={}) {
   base(this);
+  this.editingService = require('../services/editingservice');
   this._mapService = GUI.getComponent('map').getService();
   this._start = false;
   this._constraints = options.constraints || {};
@@ -20,6 +19,7 @@ function ToolBox(options={}) {
   this._layerType = options.type || 'vector';
   this._loadedExtent = null;
   this._tools = options.tools;
+  this._enabledtools;
   this._getFeaturesOption = {};
   const toolsstate = [];
   this._tools.forEach(tool => toolsstate.push(tool.getState()));
@@ -38,10 +38,12 @@ function ToolBox(options={}) {
   const sessionstate = this._session.state;
   this.state = {
     id: options.id,
+    show: true, // used to show or not the toolbox if we nee to filtered
     color: options.color || 'blue',
     title: options.title || "Edit Layer",
     loading: false,
     enabled: false,
+    startstopediting: true,
     message: null,
     toolmessages: {
       help: null
@@ -62,31 +64,30 @@ function ToolBox(options={}) {
     layerstate: this._layer.state
   };
 
-  this._tools.forEach((tool) => {
-    tool.setSession(this._session);
-  });
+  this._tools.forEach(tool => tool.setSession(this._session));
 
   this._session.onafter('stop', () => {
     if (this.inEditing()) {
-      const EditingService = require('../services/editingservice');
-      ApplicationState.online && EditingService.stopSessionChildren(this.state.id);
-      this._unregisterGetFeaturesEvent();
+      ApplicationState.online && this.editingService.stopSessionChildren(this.state.id);
+      this._getFeaturesOption.registerEvents && this._unregisterGetFeaturesEvent();
     }
   });
 
   this._session.onafter('start', options => {
-    this._getFeaturesEvent = {
-      event: null,
-      fnc: null
-    };
-    this._getFeaturesOption = options;
-    this._registerGetFeaturesEvent(this._getFeaturesOption);
-    if (options.type === Layer.LayerTypes.VECTOR && GUI.getContentLength())
-      GUI.once('closecontent', ()=> {
-        setTimeout(()=> {
-          this._mapService.getMap().dispatchEvent(this._getFeaturesEvent.event)
-        },)
-      });
+    if (options.registerEvents) {
+      this._getFeaturesEvent = {
+        event: null,
+        fnc: null
+      };
+      this._getFeaturesOption = options;
+      this._registerGetFeaturesEvent(this._getFeaturesOption);
+      if (options.type === Layer.LayerTypes.VECTOR && GUI.getContentLength())
+        GUI.once('closecontent', ()=> {
+          setTimeout(()=> {
+            this._mapService.getMap().dispatchEvent(this._getFeaturesEvent.event)
+          },)
+        });
+    }
   })
 
 }
@@ -95,8 +96,18 @@ inherit(ToolBox, G3WObject);
 
 const proto = ToolBox.prototype;
 
+//disable start top editing 
+
+proto.setStartStopEditing = function(bool=true){
+  this.state.startstopediting = bool;
+};
+
 proto.getState = function() {
   return this.state;
+};
+
+proto.setShow = function(bool=true){
+  this.state.show = bool;
 };
 
 proto.getLayer = function() {
@@ -179,18 +190,38 @@ proto._resetUniqueValues = function(){
   })
 };
 
-proto.start = function() {
-  const EditingService = require('../services/editingservice');
+/**
+ * Method to create getFeaures options
+ * @param filter
+ */
+proto.setFeaturesOptions = function({filter}={}){
+  if (filter) {
+    this._getFeaturesOption = {
+      filter,
+      editing: true,
+      registerEvents: false
+    };
+  } else {
+    const filterType = this._layerType === Layer.LayerTypes.TABLE ? 'all': 'bbox';
+    this._getFeaturesOption = this.editingService.createEditingDataOptions(filterType, {
+      layerId: this.getId()
+    });
+  }
+};
+
+//added option object to start method to have a control by other plugin how
+proto.start = function(options={}) {
+  const { filter } = options;
   const EventName = 'start-editing';
   const d = $.Deferred();
   const id = this.getId();
-  const filterType = this._layerType === Layer.LayerTypes.TABLE ? 'all': 'bbox';
-  this._getFeaturesOption = EditingService.createEditingDataOptions(filterType, {
-    layerId: this.getId()
+  // set filterOptions
+  this.setFeaturesOptions({
+    filter
   });
   const handlerAfterSessionGetFeatures = promise => {
     this.emit(EventName);
-    EditingService.runEventHandler({
+    this.editingService.runEventHandler({
       type: EventName,
       id
     });
@@ -198,17 +229,20 @@ proto.start = function() {
       .then(features => {
         this.state.loading = false;
         this.setEditing(true);
-        EditingService.runEventHandler({
+        this.editingService.runEventHandler({
           type: 'get-features-editing',
           id,
           options: {
             features
           }
         });
+        d.resolve({
+          features
+        })
       })
       .fail(error => {
         GUI.notify.error(error.message);
-        EditingService.runEventHandler({
+        this.editingService.runEventHandler({
           type: 'error-editing',
           id,
           error
@@ -227,8 +261,8 @@ proto.start = function() {
           setTimeout(()=>{
             this._start = true;
             this.state.loading = true;
-            this._getFeaturesOption = EditingService.createEditingDataOptions(filterType, {
-              layerId: this.getId()
+            this.setFeaturesOptions({
+              filter
             });
             this._session.start(this._getFeaturesOption)
               .then(handlerAfterSessionGetFeatures).fail(()=>this.setEditing(false));
@@ -269,8 +303,7 @@ proto.stop = function() {
   const d = $.Deferred();
   this.disableCanEditEvent && this.disableCanEditEvent();
   if (this._session && this._session.isStarted()) {
-    const EditingService = require('../services/editingservice');
-    const is_there_a_father_in_editing = EditingService.fatherInEditing(this.state.id);
+    const is_there_a_father_in_editing = this.editingService.fatherInEditing(this.state.id);
     if (ApplicationState.online && !is_there_a_father_in_editing) {
       this._session.stop()
         .then(() => {
@@ -297,7 +330,7 @@ proto.stop = function() {
       this._setToolsEnabled(false);
       this.clearToolboxMessages();
       this._unregisterGetFeaturesEvent();
-      EditingService.stopSessionChildren(this.state.id);
+      this.editingService.stopSessionChildren(this.state.id);
       this.setSelected(false);
     }
   } else {
@@ -349,11 +382,10 @@ proto._registerGetFeaturesEvent = function(options={}) {
   }
 };
 
-proto._setToolsEnabled = function(bool) {
-  this._tools.forEach((tool) => {
+proto._setToolsEnabled = function(bool=true) {
+  this._tools.forEach(tool => {
     tool.setEnabled(bool);
-    if (!bool)
-      tool.setActive(bool);
+    !bool && tool.setActive(bool);
   })
 };
 
@@ -429,7 +461,8 @@ proto.getLayer = function() {
   return this._layer;
 };
 
-proto.setEditing = function(bool) {
+
+proto.setEditing = function(bool=true) {
   this.setEnable(bool);
   this.state.editing.on = bool;
   this.enableTools(bool);
@@ -470,13 +503,17 @@ proto.getTools = function() {
 };
 
 proto.getToolById = function(toolId) {
-  return this._tools.find((tool) => toolId === tool.getId());
+  return this._tools.find(tool => toolId === tool.getId());
 };
 
+proto.setEnablesTools = function(tools){
+  this._enabledtools = tools && Array.isArray(tools) && this._tools.filter(tool => tools.includes(tool.getId()));
+};
+
+// enable all tools
 proto.enableTools = function(bool) {
-  this._tools.forEach((tool) => {
-    tool.setEnabled(bool);
-  })
+  const tools = this._enabledtools || this._tools;
+  tools.forEach(tool => tool.setEnabled(bool))
 };
 
 proto.setActiveTool = function(tool) {
@@ -535,9 +572,7 @@ proto.stopActiveTool = function(tool) {
         this.clearToolsOfTool();
         this.clearToolMessage();
         this.state.activetool = null;
-        requestAnimationFrame(() => {
-          d.resolve();
-        })
+        setTimeout(d.resolve);
       })
   } else {
     tool ? tool.removeAllListeners(): null;

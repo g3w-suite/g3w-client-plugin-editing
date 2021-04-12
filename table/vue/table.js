@@ -20,16 +20,17 @@ const InternalComponent = Vue.extend({
     }
   },
   methods: {
-    resize(){
+    async resize(){
+      await this.$nextTick();
       const tableHeight = $(".content").height();
       const tableHeaderHeight = $('#editing_table  div.dataTables_scrollHeadInner').height();
-      const OtherElementHeight = $('.navbar-header').height() + $('.editing_table_title').height() + $('.dataTables_length').height() +  $('.dataTables_filter').height() + $('.dataTables_scrollHeadInner').height() + $('.table_editing_footer_buttons').height();
-      $('#editing_table  div.dataTables_scrollBody').height(tableHeight - tableHeaderHeight - OtherElementHeight - 20);
+      const OtherElementHeight = $('.navbar-header').height() + $('.editing_table_title').height() +
+        $('.editing_table_header').height() +  $('.dataTables_length').height() + $('.dataTables_paginate paging_simple_numbers').height() +
+        $('.dataTables_filter').height() + $('.dataTables_scrollHeadInner').height() + $('.table_editing_footer_buttons').height();
+      $('#editing_table  div.dataTables_scrollBody').height(tableHeight - tableHeaderHeight - OtherElementHeight - 50);
     },
     showValue(key) {
-      return !!this.state.headers.find((header) => {
-        return header.name === key
-      })
+      return !!this.state.headers.find(header => header.name === key);
     },
     isMediaField(name) {
       return this.$options.service.isMediaField(name)

@@ -49,12 +49,12 @@ export default {
         edit_table: "Edita le features della tabella",
         draw_new_feature: "Disegna sulla mappa la feature",
         action_confirm: "Conferma azione",
-        double_click_delete: "Doppio click sulla feature che vuoi cancellare",
+        double_click_delete: "Seleziona la feature sulla mappa da cancellare",
         edit_feature_vertex: "Modifica o aggiungi un vertice alla feature selezionata",
         move: "Muovi la feature selezionata",
         select_feature_to_relation: "Seleziona la feature che vuoi mettere in relazione",
         show_edit_feature_form:  "Mostra il form della feature per poter editare gli attributi",
-        pick_feature: "Clicca su una feature per poterla modificare",
+        pick_feature: "Seleziona la feature sulla mappa da modificare",
         insert_attributes_feature: "Inserisci gli attributi della feature"
       }
     },
@@ -173,12 +173,12 @@ export default {
         edit_table: "Edit table features",
         draw_new_feature: "Draw feature on map",
         action_confirm: "Confirm action",
-        double_click_delete: "Double Click on the feature to delete",
+        double_click_delete: "Select feature on map to delete",
         edit_feature_vertex: "Modify or add a vertex on selected feature",
         move: "Move selected feature",
         select_feature_to_relation: "Select feature that you bind relation",
         show_edit_feature_form:  "Show feature form to edit attributes",
-        pick_feature: "Click on feature to modify",
+        pick_feature: "Select feature on map to modify",
         insert_attributes_feature: "Insert attributes of the feature"
       }
     },
@@ -302,12 +302,12 @@ export default {
         edit_table: "Muuta taulun ominaisuuksia",
         draw_new_feature: "Piirrä ominaisuus kartalle",
         action_confirm: "Hyväksy toiminto",
-        double_click_delete: "Kaksoisnapsauta poistettavaa ominaisuutta",
+        double_click_delete: "Valitse poistettava ominaisuus kartalta",
         edit_feature_vertex: "Muuta pistettä tai lisää piste valittuun ominaisuuteen",
         move: "Siirrä valittu ominaisuus",
         select_feature_to_relation: "Valitse relaatio",
         show_edit_feature_form:  "Näytä ominaisuuslomake muokataksesi attribuutteja",
-        pick_feature: "Paina muokattavaa ominaisuutta",
+        pick_feature: "Valitse muokattava ominaisuus kartalta",
         insert_attributes_feature: "Lisää ominaisuuden attribuutit"
       }
     },
@@ -431,12 +431,12 @@ export default {
         edit_table: "Ändra egenskaper i tabellen",
         draw_new_feature: "Piirrä ominaisuus kartalle",
         action_confirm: "Godkänn funktionen",
-        double_click_delete: "Dubbelklicka på den egenskap som ska tas bort",
+        double_click_delete: "Välj funktionen som du vill ta bort på kartan",
         edit_feature_vertex: "Ändra punkten eller lägg till punkten till den valda egenskapen",
         move: "Flytta den valda egenskapen",
         select_feature_to_relation: "Välj relation",
         show_edit_feature_form:  "Visa egenskapsformuläret för redigering av attribut",
-        pick_feature: "Tryck på den egenskap som ska redigeras",
+        pick_feature: "Välj funktion på kartan för att ändras",
         insert_attributes_feature: "Lägg till egenskapens attribut"
       }
     },

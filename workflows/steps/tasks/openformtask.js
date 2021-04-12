@@ -59,7 +59,8 @@ proto._getForm = function(inputs, context) {
 proto._cancelFnc = function(promise, inputs) {
   return function() {
     GUI.setModal(false);
-    this.fireEvent('closeform', {});
+    // fire event cancel form to emit to subscrivers
+    this.fireEvent('cancelform');
     promise.reject(inputs);
   }
 };
@@ -88,6 +89,7 @@ proto._saveFeatures = function({fields, promise, session, inputs}){
       });
       GUI.setModal(false);
       promise.resolve(inputs);
+      this.fireEvent('savedfeature', newFeatures) // called afetr saved
     })
   } else {
     GUI.setModal(false);

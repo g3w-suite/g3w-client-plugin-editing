@@ -1,6 +1,5 @@
 import API from '../api'
-const inherit = g3wsdk.core.utils.inherit;
-const base =  g3wsdk.core.utils.base;
+const {base, inherit} = g3wsdk.core.utils;
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 const PluginService = g3wsdk.core.plugin.PluginService;
 const SessionsRegistry = g3wsdk.core.editing.SessionsRegistry;
@@ -8,6 +7,7 @@ const CatalogLayersStoresRegistry = g3wsdk.core.catalog.CatalogLayersStoresRegis
 const MapLayersStoreRegistry = g3wsdk.core.map.MapLayersStoreRegistry;
 const LayersStore = g3wsdk.core.layer.LayersStore;
 const Layer = g3wsdk.core.layer.Layer;
+const Feature = g3wsdk.core.layer.features.Feature;
 const GUI = g3wsdk.gui.GUI;
 const serverErrorParser= g3wsdk.core.errors.parsers.Server;
 const ToolBoxesFactory = require('../toolboxes/toolboxesfactory');
@@ -40,6 +40,10 @@ function EditingService() {
   };
   // state of editing
   this.state = {
+    save: {
+      mode: "default", // default, autosave
+      ask: true // show or not modal
+    },
     toolboxes: [],
     toolboxselected: null,
     toolboxidactivetool: null,
@@ -156,16 +160,30 @@ proto.getFeature = function({layerId} = {}) {
 };
 
 proto.subscribe = function(event, fnc) {
-  if (!this._subscribers[event])
-    this._subscribers[event] = [];
+  if (!this._subscribers[event]) this._subscribers[event] = [];
   return this._subscribers[event].push(fnc);
 };
 
 proto.unsubscribe = function(event, fnc) {
-  this._subscribers[event] = this._subscribers[event].filter(cb => cb !==fnc);
+  this._subscribers[event] = this._subscribers[event].filter(cb => cb !== fnc);
 };
 
 // END API
+
+// create a new feature
+proto.addNewFeature = function(layerId, options={}){
+  const {geometry, properties} = options;
+  const feature = new Feature()
+  geometry && feature.setGeometry(new ol.geom[geometry.type](geometry.coordinates));
+  feature.setProperties(properties);
+  feature.setTemporaryId();
+  const toolbox = this.getToolBoxById(layerId);
+  const editingLayer = toolbox.getLayer().getEditingLayer();
+  const session = toolbox.getSession();
+  editingLayer.getSource().addFeature(feature);
+  session.pushAdd(layerId, feature);
+  return feature;
+};
 
 proto.getLayersInError = function() {
   return this._layers_in_error;
@@ -439,6 +457,18 @@ proto.runEventHandler = function({type, id} = {}) {
   this._events[type] && this._events[type][id] && this._events[type][id].forEach((fnc) => {
     fnc();
   });
+};
+
+//set Save Mode to save each change
+proto.setSaveMode = function(mode = 'default', options={}){
+  const {ask= mode=== 'autosave' ? false : true} = options;
+  this.state.save.mode = mode;
+  this.state.save.ask = ask;
+};
+
+//return save mode
+proto.getSaveMode = function(){
+  return this.state.save;
 };
 
 proto._attachLayerWidgetsEvent = function(layer) {
@@ -760,27 +790,41 @@ proto._getRelationFieldsFromRelation = function({layerId, relation} = {}) {
 };
 
 proto.createEditingDataOptions = function(filterType='all', options={}) {
+  const {feature, relation, field, layerId, operator} = options;
   let filter;
-  if (filterType === 'all') return {editing: true};
-  const {feature, relation, layerId} = options;
-  if (filterType === 'bbox') {
-    filter = {
-      bbox: this._mapService.getMapBBOX()
-    };
-  } else if (filterType === 'fid' && !feature.isNew()) {
-    if (options.operator !== 'not')
+  switch (filterType) {
+    //case all leave filter undefined
+    case 'all':
+    break;
+    case 'bbox':
       filter = {
-        fid: {
-          fid: feature.getId(),
-          layer: {
-            id: layerId
-          },
-          type: 'editing',
-          relation: relation.state
+        bbox: this._mapService.getMapBBOX()
+      };
+      break;
+    case 'field': // case of field
+      filter = {
+        field: {
+          field,
+          type: 'editing'
         }
-      }
+      };
+      break;
+    case 'fid':
+      if (operator !== 'not')
+        filter = {
+          fid: {
+            fid: feature.getId(),
+            layer: {
+              id: layerId
+            },
+            type: 'editing',
+            relation: relation.state
+          }
+        };
+      break;
   }
   return {
+    registerEvents: true, // usefult to get register vent on toolbox example mapmoveend
     editing: true,
     filter
   }

@@ -47,7 +47,7 @@ proto.run = function(inputs, context) {
       this.drawInteraction.on('drawend', (e) => {
         let feature;
         if (this._add) {
-          attributes.forEach((attribute) => {
+          attributes.forEach(attribute => {
             e.feature.set(attribute.name, null);
           });
           feature = new Feature({
@@ -58,6 +58,7 @@ proto.run = function(inputs, context) {
           session.pushAdd(layerId, feature);
         } else feature = e.feature;
         inputs.features.push(feature);
+        this.fireEvent('addfeature', feature); // emit event to get from subscribers
         d.resolve(inputs);
       });
       break;

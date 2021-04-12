@@ -1,6 +1,4 @@
-const inherit = g3wsdk.core.utils.inherit;
-const base =  g3wsdk.core.utils.base;
-const merge =  g3wsdk.core.utils.merge;
+const {base, inherit, merge} = g3wsdk.core.utils;
 const t = g3wsdk.core.i18n.tPlugin;
 const GUI = g3wsdk.gui.GUI;
 const Component = g3wsdk.gui.vue.Component;
@@ -40,13 +38,8 @@ const vueComponentOptions = {
     },
     stopToolBox: function(toolboxId) {
       const toolbox = this._getToolBoxById(toolboxId);
-      if (toolbox.state.editing.history.commit)
-        this.$options.service.commit()
-          .always(function() {
-            toolbox.stop()
-          });
-      else
-        toolbox.stop();
+      if (toolbox.state.editing.history.commit) this.$options.service.commit().always(() => toolbox.stop());
+      else toolbox.stop();
     },
     saveToolBox: function(toolboxId) {
       const toolbox = this._getToolBoxById(toolboxId);
@@ -61,7 +54,7 @@ const vueComponentOptions = {
     startActiveTool: function(toolId, toolboxId) {
       if (this.state.toolboxidactivetool && toolboxId !== this.state.toolboxidactivetool) {
         this._checkDirtyToolBoxes(this.state.toolboxidactivetool)
-          .then((toolbox) => {
+          .then(toolbox => {
             toolbox && toolbox.stopActiveTool();
             this._setActiveToolOfToolbooxSelected(toolId, toolboxId);
           })
@@ -138,11 +131,13 @@ const vueComponentOptions = {
     GUI.off('closecontent', this._enableEditingButtons);
     this.$options.service.unregisterOnLineOffLineEvent();
     GUI.getComponent('map').getService().seSelectionLayerVisible(true);
+    this.$options.service.fireEvent('closeeditingpanel');
   }
 };
 
-function PanelComponent(options) {
+function PanelComponent(options={}) {
   base(this, options);
+  const {toolboxes} = options;
   this.vueComponent = vueComponentOptions;
   this.name = options.name || 'Gestione dati';
   merge(this, options);
