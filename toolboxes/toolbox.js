@@ -461,7 +461,6 @@ proto.getLayer = function() {
   return this._layer;
 };
 
-
 proto.setEditing = function(bool=true) {
   this.setEnable(bool);
   this.state.editing.on = bool;

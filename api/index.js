@@ -32,6 +32,12 @@ const API = function({service, plugin} = {}) {
     service.getPlugin().hideEditingPanel(options);
   };
 
+  /**
+   * Method to start editing api
+   * @param layerId
+   * @param options
+   * @returns {Promise<unknown>}
+   */
   this.startEditing = function(layerId, options={}){
     const {tools, feature, startstopediting=true} = options;
     return new Promise((resolve, reject) =>{
@@ -49,7 +55,7 @@ const API = function({service, plugin} = {}) {
           const tool = toolbox.getToolById(tools[0]);
           toolbox.setActiveTool(tool);
           // in case of editattributes tool
-          if (tool.getId()  === 'editattributes') {
+          if (tool.getId()  === 'editattributes' && feature) {
             // create the operator configuration needed to run a certain step
             const {inputs, context} = tool.createOperatorOptions({
               features: features.length ? features : [feature]
