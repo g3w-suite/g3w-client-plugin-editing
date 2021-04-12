@@ -1028,9 +1028,9 @@ proto.commit = function({toolbox, commitItems, messages, modal=true, close=false
         .then((commitItems, response) => {
           if (ApplicationState.online) {
             if (response.result) {
-              dialog && GUI.notify.success(t("editing.messages.saved"));
+              if (dialog) GUI.notify.success(t("editing.messages.saved"));
               //in case of custom message
-              if (messages && messages.success) {
+              else if (messages && messages.success) {
                 GUI.showUserMessage({
                   type: 'success',
                   message: messages.success,
