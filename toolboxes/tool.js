@@ -4,9 +4,8 @@ const G3WObject = g3wsdk.core.G3WObject;
 
 function Tool(options = {}) {
   base(this);
-  const {name, row, id, icon, session, layer, once=false} = options;
-
   this.editingService = require('../services/editingservice');
+  const {name, row, id, icon, session, layer, once=false} = options;
   this._options = null;
   this._session = session;
   this._layer = layer;
@@ -47,6 +46,10 @@ proto.createOperatorOptions = function(options={features:[]}){
   };
 };
 
+/**
+ * 
+ * @param hideSidebar
+ */
 proto.start = function(hideSidebar = false) {
   const options = this.createOperatorOptions();
   this._options = options;
@@ -60,13 +63,7 @@ proto.start = function(hideSidebar = false) {
     this._op.start(options)
       .then(() => {
         this._session.save()
-          .then(() => {
-            const save = this.editingService.getSaveMode();
-            save.mode === 'autosave' && this.editingService.commit({
-              modal: save.ask,
-              messages: save.messages
-            })
-          });
+          .then(() => this.editingService.saveChange());
       })
       .fail(() =>  {
         hideSidebar && GUI.showSidebar();
@@ -127,8 +124,8 @@ proto.getName = function() {
   return this.state.name;
 };
 
-proto.setActive = function(bool) {
-  this.state.active = typeof bool === 'boolean' ? bool : false;
+proto.setActive = function(bool=false) {
+  this.state.active = bool;
 };
 
 proto.isActive = function() {

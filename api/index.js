@@ -77,8 +77,8 @@ const API = function({service, plugin} = {}) {
   * default: each change is save temporary. Press floppy or stoop editing toolbox to save data permanently on database
   * autosave: each change we ahe to commit
   * */
-  this.setSaveMode = function(mode="default", options={}){
-    service.setSaveMode(mode, options);
+  this.setSaveMode = function(options={}){
+    service.setSaveMode(options);
   };
 
   this.addNewFeature = function(layerId, options={}) {
@@ -101,6 +101,7 @@ const API = function({service, plugin} = {}) {
       toolbox.setStartStopEditing(true);
       toolbox.setShow(true)
     });
+    service.resetDefault();
   };
 };
 

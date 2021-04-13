@@ -1,4 +1,6 @@
 import API from '../api'
+const ApplicationService = g3wsdk.core.ApplicationService;
+const ApplicationState = g3wsdk.core.ApplicationState;
 const {base, inherit} = g3wsdk.core.utils;
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 const PluginService = g3wsdk.core.plugin.PluginService;
@@ -10,11 +12,10 @@ const Layer = g3wsdk.core.layer.Layer;
 const Feature = g3wsdk.core.layer.features.Feature;
 const GUI = g3wsdk.gui.GUI;
 const serverErrorParser= g3wsdk.core.errors.parsers.Server;
-const ToolBoxesFactory = require('../toolboxes/toolboxesfactory');
 const t = g3wsdk.core.i18n.tPlugin;
+const ToolBoxesFactory = require('../toolboxes/toolboxesfactory');
 const CommitFeaturesWorkflow = require('../workflows/commitfeaturesworkflow');
-const ApplicationService = g3wsdk.core.ApplicationService;
-const ApplicationState = g3wsdk.core.ApplicationState;
+
 const OFFLINE_ITEMS = {
   CHANGES: 'EDITING_CHANGES'
 };
@@ -38,12 +39,15 @@ function EditingService() {
       }
     }
   };
+
+  this.saveConfig = {
+    mode: "default", // default, autosave
+    messages:null, // object to set custom message
+    done: null // function Called after save
+  };
+
   // state of editing
   this.state = {
-    save: {
-      mode: "default", // default, autosave
-      ask: true // show or not modal
-    },
     toolboxes: [],
     toolboxselected: null,
     toolboxidactivetool: null,
@@ -466,16 +470,26 @@ proto.runEventHandler = function({type, id} = {}) {
 };
 
 //set Save Mode to save each change
-proto.setSaveMode = function(mode = 'default', options={}){
-  const {messages} = options;
-  this.state.save.mode = mode;
-  this.state.save.ask = mode === 'autosave' ? false : true;
-  this.state.save.messages = messages;
+proto.setSaveMode = function({mode = 'default', done, messages}={}){
+  this.saveConfig.mode = mode;
+  this.saveConfig.messages = messages;
+  this.saveConfig.done = done;
 };
 
 //return save mode
-proto.getSaveMode = function(){
-  return this.state.save;
+proto.getSaveConfig = function(){
+  return this.saveConfig;
+};
+
+/**
+ * Reset default values
+ */
+proto.resetDefault = function(){
+  this.saveConfig = {
+    mode: "default", // default, autosave
+    messages:null, // object to set custom message
+    done: null // function Called after save
+  }
 };
 
 proto._attachLayerWidgetsEvent = function(layer) {
@@ -1009,8 +1023,31 @@ proto.showCommitModalWindow = function({layer, commitItems, close}) {
   })
 };
 
-proto.commit = function({toolbox, commitItems, messages, modal=true, close=false}={}) {
+/**
+ * Functioncalled very single change saved temporary
+ */
+proto.saveChange = async function() {
+  switch (this.saveConfig.mode) {
+    case 'autosave':
+      return this.commit();
+  }
+};
+
+/**
+ * Metyhod to commit and save changes on server persistently
+ *
+ * @param toolbox
+ * @param commitItems
+ * @param messages
+ * @param done
+ * @param modal
+ * @param close
+ * @returns {*}
+ */
+proto.commit = function({toolbox, commitItems, modal, close=false}={}) {
   const d = $.Deferred();
+  const {mode, done, messages } = this.saveConfig;
+  modal = modal === undefined ? mode !== 'autosave' : modal;
   toolbox = toolbox || this.state.toolboxselected;
   let session = toolbox.getSession();
   let layer = toolbox.getLayer();
@@ -1053,6 +1090,7 @@ proto.commit = function({toolbox, commitItems, messages, modal=true, close=false
               d.reject();
             }
           }
+          done && done instanceof Function && done(toolbox);
           d.resolve(toolbox);
         })
         .fail((error) => {
