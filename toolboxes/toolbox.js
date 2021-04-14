@@ -123,9 +123,7 @@ proto.isFather = function() {
 };
 
 proto.addRelations = function(relations) {
-  relations.forEach((relation) => {
-    this.addRelation(relation);
-  })
+  relations.forEach(relation => this.addRelation(relation));
 };
 
 proto.revert = function() {
@@ -145,9 +143,7 @@ proto.hasDependencies = function() {
 };
 
 proto.addDependencies = function(dependencies) {
-  dependencies.forEach((dependency) => {
-    this.addDependency(dependency);
-  })
+  dependencies.forEach(dependency => this.addDependency(dependency));
 };
 
 proto.addDependency = function(dependency) {
@@ -163,13 +159,9 @@ proto.getFieldUniqueValuesFromServer = function({reset=false}={}) {
     const data = response.data;
     Object.entries(data).forEach(([fieldName, values]) => {
       reset && this.uniqueFields[fieldName].input.options.values.splice(0);
-      values.forEach((value) => {
-        this.uniqueFields[fieldName].input.options.values.push(value);
-      })
+      values.forEach(value => this.uniqueFields[fieldName].input.options.values.push(value));
     })
-  }).fail(err => {
-    console.log(err)
-  })
+  }).fail(err => console.log)
 };
 
 proto.getUniqueFieldsType = function(fields) {
@@ -195,13 +187,13 @@ proto._resetUniqueValues = function(){
  * @param filter
  */
 proto.setFeaturesOptions = function({filter}={}){
-  if (filter) {
+  if (filter)
     this._getFeaturesOption = {
       filter,
       editing: true,
       registerEvents: false
     };
-  } else {
+  else {
     const filterType = this._layerType === Layer.LayerTypes.TABLE ? 'all': 'bbox';
     this._getFeaturesOption = this.editingService.createEditingDataOptions(filterType, {
       layerId: this.getId()
@@ -270,14 +262,12 @@ proto.start = function(options={}) {
         })
       } else {
         this._start = true;
-        this._session.start(this._getFeaturesOption)
-          .then(handlerAfterSessionGetFeatures)
+        this._session.start(this._getFeaturesOption).then(handlerAfterSessionGetFeatures)
       }
     } else {
       if (!this._start) {
         this.state.loading = true;
-        this._session.getFeatures(this._getFeaturesOption)
-          .then(handlerAfterSessionGetFeatures);
+        this._session.getFeatures(this._getFeaturesOption).then(handlerAfterSessionGetFeatures);
         this._start = true;
       }
       this.setEditing(true);
@@ -319,13 +309,12 @@ proto.stop = function() {
           this.emit(EventName);
           d.resolve(true)
         })
-        .fail((err) => {
-          d.reject(err)
-        }).always(()=> {
-          this.setSelected(false);
-        })
+        .fail(err => d.reject(err))
+        .always(()=> this.setSelected(false))
     } else {
       this.stopActiveTool();
+      // need to be sure to clear
+      this._layer.getEditingLayer().getSource().clear();
       this.state.editing.on = false;
       this._setToolsEnabled(false);
       this.clearToolboxMessages();
@@ -503,6 +492,15 @@ proto.getTools = function() {
 
 proto.getToolById = function(toolId) {
   return this._tools.find(tool => toolId === tool.getId());
+};
+
+/**
+ *
+ * @param tool
+ */
+proto.setEnableTool = function(toolId){
+  const tool = this._tools.find(tool => tool.getId() === toolId);
+  tool.setEnabled(true)
 };
 
 proto.setEnablesTools = function(tools){

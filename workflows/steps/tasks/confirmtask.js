@@ -1,5 +1,4 @@
-const inherit = g3wsdk.core.utils.inherit;
-const base =  g3wsdk.core.utils.base;
+const {base, inherit}  = g3wsdk.core.utils;
 const GUI = g3wsdk.gui.GUI;
 const tPlugin = g3wsdk.core.i18n.tPlugin;
 const t = g3wsdk.core.i18n.t;
@@ -19,17 +18,15 @@ const Dialogs = {
       }).length > 0;
 
       GUI.dialog.confirm(`<h4>${tPlugin('editing.messages.delete_feature')}</h4>
-                        <div style="font-size:1.2em;">${ relationinediting ?tPlugin('editing.messages.delete_feature_relations') : ''}</div>`, (result) => {
-        if (result) {
-          d.resolve(inputs);
-        } else
-          d.reject(inputs);
+                        <div style="font-size:1.2em;">${ relationinediting ?tPlugin('editing.messages.delete_feature_relations') : ''}</div>`, result => {
+        result ?  d.resolve(inputs) : d.reject(inputs);
+
       });
       return d.promise();
     }
   },
   commit: {
-    fnc: function(inputs) {
+    fnc(inputs) {
       let d = $.Deferred();
       let close = inputs.close;
       const buttons = {

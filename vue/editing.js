@@ -15,43 +15,43 @@ const vueComponentOptions = {
   },
   transitions: {'addremovetransition': 'showhide'},
   methods: {
-    undo: function() {
+    undo() {
       const session = this.state.toolboxselected.getSession();
       const undoItems = session.undo();
       this.$options.service.undoRelations(undoItems)
     },
-    redo: function() {
+    redo() {
       const session = this.state.toolboxselected.getSession();
       const redoItems = session.redo();
       this.$options.service.redoRelations(redoItems)
     },
-    commit: function(toolboxId) {
+    commit(toolboxId) {
       const toolbox = this.$options.service.getToolBoxById(toolboxId);
       this.$options.service.commit({
         toolbox
       })
     },
-    saveAll: function() {},
-    startToolBox: function(toolboxId) {
+    saveAll() {},
+    startToolBox(toolboxId) {
       const toolbox = this._getToolBoxById(toolboxId);
       ApplicationState.online && toolbox.canEdit() && toolbox.start();
     },
-    stopToolBox: function(toolboxId) {
+    stopToolBox(toolboxId) {
       const toolbox = this._getToolBoxById(toolboxId);
       if (toolbox.state.editing.history.commit) this.$options.service.commit().always(() => toolbox.stop());
       else toolbox.stop();
     },
-    saveToolBox: function(toolboxId) {
+    saveToolBox(toolboxId) {
       const toolbox = this._getToolBoxById(toolboxId);
       toolbox.save();
     },
-    _setActiveToolOfToolbooxSelected: function(toolId, toolboxId) {
+    _setActiveToolOfToolbooxSelected(toolId, toolboxId) {
       const toolbox = this._getToolBoxById(toolboxId);
       this.state.toolboxidactivetool = toolboxId;
       const tool = toolbox.getToolById(toolId);
       toolbox.setActiveTool(tool);
     },
-    startActiveTool: function(toolId, toolboxId) {
+    startActiveTool(toolId, toolboxId) {
       if (this.state.toolboxidactivetool && toolboxId !== this.state.toolboxidactivetool) {
         this._checkDirtyToolBoxes(this.state.toolboxidactivetool)
           .then(toolbox => {
@@ -62,11 +62,11 @@ const vueComponentOptions = {
         this._setActiveToolOfToolbooxSelected(toolId, toolboxId);
       }
     },
-    stopActiveTool: function(toolboxId) {
+    stopActiveTool(toolboxId) {
       const toolbox = this._getToolBoxById(toolboxId);
       toolbox.stopActiveTool();
     },
-    setSelectedToolbox: function(toolboxId) {
+    setSelectedToolbox(toolboxId) {
       const service = this.$options.service;
       const toolbox = this._getToolBoxById(toolboxId);
       const toolboxes = service.getToolBoxes();
@@ -82,10 +82,10 @@ const vueComponentOptions = {
         this.state.message = null;
       }
     },
-    _checkDirtyToolBoxes: function(toolboxId) {
+    _checkDirtyToolBoxes(toolboxId) {
       return this.$options.service.commitDirtyToolBoxes(toolboxId);
     },
-    _getToolBoxById: function(toolboxId) {
+    _getToolBoxById(toolboxId) {
       const service = this.$options.service;
       const toolbox = service.getToolBoxById(toolboxId);
       return toolbox;
@@ -95,18 +95,18 @@ const vueComponentOptions = {
     }
   },
   computed: {
-    message: function() {
+    message() {
       const message = "";
       return message;
     },
     canCommit: function() {
-      return this.state.toolboxselected && this.state.toolboxselected.state.editing.history.commit && this.editingButtonsEnabled;
+      return this.$options.service.getSaveConfig().mode === 'default' && this.state.toolboxselected && this.state.toolboxselected.state.editing.history.commit && this.editingButtonsEnabled;
     },
-    canUndo: function() {
+    canUndo() {
       const toolbox = this.state.toolboxselected;
       return toolbox &&  toolbox.state.editing.history.undo && this.editingButtonsEnabled;
     },
-    canRedo: function() {
+    canRedo() {
       const toolbox = this.state.toolboxselected;
       return toolbox && toolbox.state.editing.history.redo && this.editingButtonsEnabled;
     }
@@ -137,9 +137,8 @@ const vueComponentOptions = {
 
 function PanelComponent(options={}) {
   base(this, options);
-  const {toolboxes} = options;
   this.vueComponent = vueComponentOptions;
-  this.name = options.name || 'Gestione dati';
+  this.name = options.name || 'Editing data';
   merge(this, options);
   this._resourcesUrl = options.resourcesUrl || GUI.getResourcesUrl();
   this._service = options.service || EditingService;
@@ -162,12 +161,10 @@ function PanelComponent(options={}) {
   this.unmount = function() {
     const d = $.Deferred();
     this._service.stop()
-      .then(() => {
+      .finally(() => {
         this.unmount = function() {
           base(this, 'unmount')
-            .then(() => {
-              d.resolve()
-            });
+            .then(() => d.resolve());
         };
         this.unmount();
       });

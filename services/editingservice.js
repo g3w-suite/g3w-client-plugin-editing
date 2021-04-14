@@ -42,8 +42,12 @@ function EditingService() {
 
   this.saveConfig = {
     mode: "default", // default, autosave
-    messages:null, // object to set custom message
-    done: null // function Called after save
+    modal: false,
+    messages: null, // object to set custom message
+    cb: {
+      done: null, // function after commit change done
+      error: null // function after commit chenges error
+    }
   };
 
   // state of editing
@@ -219,7 +223,8 @@ proto._handleOfflineChangesBeforeSave = function(data) {
       const find = current[layerId].update.find(updateItem => updateItem.id === id);
       !find && current[layerId].update.unshift(updateItem);
     });
-    previous[layerId].lockids.forEach(lockidItem => {
+    const lockids = previous[layerId].lockids|| [];
+    lockids.forEach(lockidItem => {
       const {featureid} = lockidItem;
       const find = current[layerId].lockids.find(lockidItem => lockidItem.featureid === featureid);
       !find && current[layerId].update.unshift(lockidItem);
@@ -269,12 +274,20 @@ proto.getOfflineItem = function(id){
   return ApplicationService.getOfflineItem(id);
 };
 
-proto.checkOfflineChanges = function({modal=true}={}) {
+/**
+ * Check if alread have off lines changes
+ * @param modal
+ * @returns {Promise<unknown>}
+ */
+proto.checkOfflineChanges = function({modal=true, unlock=false}={}) {
   return new Promise((resolve, reject) => {
     const changes = ApplicationService.getOfflineItem(OFFLINE_ITEMS.CHANGES);
+    // if find changes offline previously
     if (changes) {
       const promises = [];
+      const layerIds = [];
       for (const layerId in changes) {
+        layerIds.push(layerId);
         const toolbox = this.getToolBoxById(layerId);
         const commitItems = changes[layerId];
         promises.push(this.commit({
@@ -290,21 +303,32 @@ proto.checkOfflineChanges = function({modal=true}={}) {
         .fail((error)=>{
           reject(error);
         })
-        .always(()=>{
+        .always(() =>{
+          unlock && layerIds.forEach(layerId => {
+            this.getLayerById(layerId).unlock()
+          });
+          // always reset items to null
           this.setOfflineItem(OFFLINE_ITEMS.CHANGES);
         })
     }
   })
 };
 
+/**
+ * called by Editng Panel on creation time
+ */
 proto.registerOnLineOffLineEvent = function() {
-  if (ApplicationState.online) this.checkOfflineChanges();
+  // in case of starting panel editing check if there arae some chenging pending
+  // if true i have to commit chanhes on server and ulock all layers features temporary locked
+  if (ApplicationState.online) this.checkOfflineChanges({
+    unlock: true
+  });
   const offlineKey =  ApplicationService.onafter('offline', ()=>{});
   const onlineKey = ApplicationService.onafter('online', () =>{
     this.checkOfflineChanges({
       modal:false
     }).then(()=>{
-    }).catch((error)=>{
+    }).catch(error =>{
       GUI.notify.error(error);
     })
   });
@@ -399,8 +423,7 @@ proto._layerChildrenRelationInEditing = function(layer) {
   let relations = layer.getChildren();
   let childrenrealtioninediting = [];
   relations.forEach((relation) => {
-    if (this.getLayerById(relation))
-      childrenrealtioninediting.push(relation);
+    if (this.getLayerById(relation)) childrenrealtioninediting.push(relation);
   });
   return childrenrealtioninediting;
 };
@@ -449,31 +472,37 @@ proto.addToolBox = function(toolbox) {
   this._sessions[toolbox.getId()] = toolbox.getSession();
   this.state.toolboxes.push(toolbox.state);
 };
+
 /*
 * Add event
 * @param {String} type - Event Type
 * @param
 * */
-
 proto.addEvent = function({type, id, fnc}={}) {
-  if (!this._events[type])
-    this._events[type] = {};
-  if (!this._events[type][id])
-    this._events[type][id] = [];
+  if (!this._events[type]) this._events[type] = {};
+  if (!this._events[type][id]) this._events[type][id] = [];
   this._events[type][id].push(fnc);
 };
 
 proto.runEventHandler = function({type, id} = {}) {
-  this._events[type] && this._events[type][id] && this._events[type][id].forEach((fnc) => {
-    fnc();
-  });
+  this._events[type] && this._events[type][id] && this._events[type][id].forEach(fnc => fnc());
 };
 
-//set Save Mode to save each change
-proto.setSaveMode = function({mode = 'default', done, messages}={}){
+/**
+ *
+ * @param mode -  default or autosave
+ * @param cb object contain done/error two functions
+ * @param modal - Boolean true or false to show to ask
+ * @param messages - object success or error
+ */
+proto.setSaveConfig = function({mode = 'default', cb={}, modal=false, messages}={}){
   this.saveConfig.mode = mode;
+  this.saveConfig.modal = modal;
   this.saveConfig.messages = messages;
-  this.saveConfig.done = done;
+  this.saveConfig.cb = {
+    ...this.saveConfig.cb,
+    ...cb
+  }
 };
 
 //return save mode
@@ -487,8 +516,12 @@ proto.getSaveConfig = function(){
 proto.resetDefault = function(){
   this.saveConfig = {
     mode: "default", // default, autosave
-    messages:null, // object to set custom message
-    done: null // function Called after save
+    modal: false,
+    messages: null, // object to set custom message
+    cb: {
+      done: null, // function Called after save
+      error: null, // function called affte commit error
+    }
   }
 };
 
@@ -699,10 +732,8 @@ proto._cancelOrSave = function(){
 proto.stop = function() {
   return new Promise((resolve, reject) => {
     const commitpromises = [];
-    // vado a chiamare lo stop di ogni toolbox
-    this._toolboxes.forEach((toolbox) => {
-      // vado a verificare se c'è una sessione sporca e quindi
-      // chiedere se salvare
+    this._toolboxes.forEach(toolbox => {
+      // check if temp changes are waiting to save on server
       if (toolbox.getSession().getHistory().state.commit) {
         // ask to commit before exit
         commitpromises.push(this.commit(toolbox, true));
@@ -710,7 +741,7 @@ proto.stop = function() {
     });
     $.when.apply(this, commitpromises)
       .always(() => {
-        this._toolboxes.forEach((toolbox) => {
+        this._toolboxes.forEach(toolbox => {
           // stop toolbox
           toolbox.stop();
         });
@@ -995,7 +1026,12 @@ proto._createCommitMessage = function(commitItems) {
   return message;
 };
 
-proto.showCommitModalWindow = function({layer, commitItems, close}) {
+proto.showCommitModalWindow = function({layer, commitItems, close, commitPromise}) {
+  // messages set to commit
+  const messages = {
+    success: "plugins.editing.messages.saved"
+  };
+
   return new Promise((resolve, reject) =>{
     const workflow = new CommitFeaturesWorkflow({
       type: 'commit'
@@ -1012,14 +1048,11 @@ proto.showCommitModalWindow = function({layer, commitItems, close}) {
           message: `<h4 class="text-center"><i style="margin-right: 5px;" class=${GUI.getFontClass('spinner')}></i>${t('editing.messages.saving')}</h4>`,
           closeButton: false
         });
-        resolve(dialog);
+        resolve(messages);
+        commitPromise.always(()=>dialog.modal('hide')) // hide saving dialog
       })
-      .fail((error)=>{
-        reject(error)
-      })
-      .always(()=>{
-        workflow.stop();
-      })
+      .fail(error => reject(error))
+      .always(()=> workflow.stop())
   })
 };
 
@@ -1029,7 +1062,9 @@ proto.showCommitModalWindow = function({layer, commitItems, close}) {
 proto.saveChange = async function() {
   switch (this.saveConfig.mode) {
     case 'autosave':
-      return this.commit();
+      return this.commit({
+        modal: false // set to not show modal ask window
+      });
   }
 };
 
@@ -1044,37 +1079,36 @@ proto.saveChange = async function() {
  * @param close
  * @returns {*}
  */
-proto.commit = function({toolbox, commitItems, modal, close=false}={}) {
+proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
   const d = $.Deferred();
-  const {mode, done, messages } = this.saveConfig;
-  modal = modal === undefined ? mode !== 'autosave' : modal;
+  const commitPromise = d.promise();
+  const { cb={}, messages } = this.saveConfig;
   toolbox = toolbox || this.state.toolboxselected;
   let session = toolbox.getSession();
   let layer = toolbox.getLayer();
   const layerType = layer.getType();
   const items = commitItems;
   commitItems = commitItems || session.getCommitItems();
-  const promise = modal ?  this.showCommitModalWindow({
+  const promise = modal ? this.showCommitModalWindow({
     layer,
     commitItems,
-    close
-  }) : Promise.resolve();
-  promise.then(dialog => {
+    close,
+    commitPromise // add a commit promise
+  }) : Promise.resolve(messages);
+  promise.then(messages => {
     if (ApplicationState.online)
       session.commit({items: items || commitItems})
         .then((commitItems, response) => {
           if (ApplicationState.online) {
             if (response.result) {
-              if (dialog) GUI.notify.success(t("editing.messages.saved"));
-              //in case of custom message
-              else if (messages && messages.success) {
-                GUI.showUserMessage({
-                  type: 'success',
-                  message: messages.success,
-                  autoclose: true
-                })
-              }
-              if (layerType === 'vector') this._mapService.refreshMap({force: true});
+              if (messages && messages.success) GUI.showUserMessage({
+                type: 'success',
+                message: messages.success,
+                duration: 3000,
+                autoclose: true
+              });
+              layerType === Layer.LayerTypes && this._mapService.refreshMap({force: true});
+              cb.done && cb.done instanceof Function && cb.done(toolbox);
             } else {
               const parser = new serverErrorParser({
                 error: response.errors
@@ -1087,13 +1121,12 @@ proto.commit = function({toolbox, commitItems, modal, close=false}={}) {
                 message,
                 textMessage: true
               });
-              d.reject();
+              cb.error && cb.error instanceof Function && cb.error(toolbox);
             }
+            d.resolve(toolbox);
           }
-          done && done instanceof Function && done(toolbox);
-          d.resolve(toolbox);
         })
-        .fail((error) => {
+        .fail(error => {
           const parser = new serverErrorParser({
             error
           });
@@ -1104,9 +1137,7 @@ proto.commit = function({toolbox, commitItems, modal, close=false}={}) {
             textMessage: true,
            });
           d.reject(toolbox);
-        })
-        .always(() => {
-          dialog && dialog.modal('hide');
+          cb.error && cb.error instanceof Function && cb.error(toolbox);
         });
     //case offline
     else this.saveOfflineItem({
@@ -1115,18 +1146,22 @@ proto.commit = function({toolbox, commitItems, modal, close=false}={}) {
             },
             id: OFFLINE_ITEMS.CHANGES
           }).then(() =>{
-            GUI.notify.success(t("editing.messages.saved_local"));
+            GUI.showUserMessage({
+              type: 'success',
+              message: "plugins.editing.messages.saved_local",
+              autoclose: true
+            });
             session.clearHistory();
-          }).catch((error)=>{
-            GUI.notify.error(error);
-            d.reject();
-          }). finally(()=>{
-            dialog && dialog.modal('hide');
+            d.resolve(toolbox);
+          }).catch(error=>{
+              GUI.showUserMessage({
+                type: 'alert',
+                message: error
+              });
+            d.reject(toolbox);
           })
-    }).catch(() => {
-      d.reject(toolbox);
-    });
-  return d.promise();
+    }).catch(() => d.reject(toolbox));
+  return commitPromise;
 };
 
 EditingService.EDITING_FIELDS_TYPE = ['unique'];
