@@ -5,21 +5,23 @@ const ToolBox = require('./toolbox');
 function EditorToolBoxesFactory() {
   this.build = function(layer) {
     const constraints = layer.getEditingConstrains();
-    const layerType = layer.getType();
+    const type = layer.getType();
+    const id = layer.getId();
+    const color = layer.getColor();
     let tools;
-    switch (layerType) {
+    switch (type) {
       case Layer.LayerTypes.VECTOR:
         const geometryType = layer.getGeometryType();
         tools = EditToolsFactory.build({
           layer,
           geometryType: geometryType,
-          type: layerType
+          type
         });
         break;
       case Layer.LayerTypes.TABLE:
         tools = EditToolsFactory.build({
           layer,
-          type: layerType
+          type
         });
         break;
       default:
@@ -27,11 +29,11 @@ function EditorToolBoxesFactory() {
         break;
     }
     return new ToolBox({
-      id: layer.getId(),
-      color: layer.getColor(),
-      type: layerType,
+      id,
+      color,
+      type,
       layer,
-      tools: tools,
+      tools,
       lngTitle: 'editing.toolbox.title',
       title: ` ${layer.getName()}`,
       constraints

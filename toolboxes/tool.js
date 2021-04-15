@@ -13,21 +13,32 @@ function Tool(options = {}) {
     layer
   });
   this._once = once;
+  this.disabledtoolsoftools = [];
   this.state = {
     id,
     name,
     enabled: false,
+    visible: true,
     active: false,
     icon,
     message: null,
     row: row || 1,
     messages: this._op.getMessages()
   };
+
 }
 
 inherit(Tool, G3WObject);
 
 const proto = Tool.prototype;
+
+proto.setOptions = function(options={}){
+  const {messages, enabled=false, visible=true, disabledtoolsoftools = []} = options;
+  this.state.messages = messages;
+  this.state.visible = visible;
+  this.state.enabled = enabled;
+  this.disabledtoolsoftools = disabledtoolsoftools;
+};
 
 proto.getFeature = function() {
   return this._options.inputs.features[0];
@@ -54,7 +65,11 @@ proto.start = function(hideSidebar = false) {
   const options = this.createOperatorOptions();
   this._options = options;
   const startOp = options => {
-    this._op.once('settoolsoftool', tools => this.emit('settoolsoftool', tools));
+    this._op.once('settoolsoftool', tools => {
+      // filtere eventually disable tools of tools
+      tools = tools.filter(tool => !this.disabledtoolsoftools.includes(tool.type));
+      tools.length && this.emit('settoolsoftool', tools)
+    });
     this._op.once('active', index => this.emit('active', index));
     this._op.once('deactive', index => this.emit('deactive', index));
     //reset features
@@ -148,6 +163,14 @@ proto.isEnabled = function() {
   return this.state.enabled;
 };
 
+proto.setVisible = function(bool=true){
+  this.state.visible = bool;
+};
+
+proto.isVisible = function(){
+  return this.state.visible;
+};
+
 proto.getOperator = function() {
   return this._op;
 };
@@ -167,7 +190,7 @@ proto.clear = function() {
 
 proto.getMessage = function() {
   const operator = this.getOperator();
-  return operator.getHelpMessage() || (operator.getRunningStep() ? this.state.messages : null);
+  return operator.getHelpMessage() || operator.getRunningStep() ? this.state.messages : null;
 };
 
 proto.setMessage = function(message) {
@@ -176,6 +199,13 @@ proto.setMessage = function(message) {
 
 proto.clearMessage = function() {
   this.state.message = null;
+};
+
+proto.resetDefault = function(){
+  this.state.visible = true;
+  this.state.enabled = false;
+  this.state.messages =  this._op.getMessages();
+  this.disabledtoolsoftools = []; //reset disabled tools eventually set by other
 };
 
 module.exports = Tool;

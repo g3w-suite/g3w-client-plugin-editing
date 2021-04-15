@@ -60,9 +60,6 @@ const ToolboxComponent = Vue.extend({
     },
     isLayerReady() {
       return this.state.layerstate.editing.ready;
-    },
-    isDisabled(){
-      return !this.state.startstopediting;
     }
   },
   created() {

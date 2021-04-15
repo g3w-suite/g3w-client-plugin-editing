@@ -149,6 +149,7 @@ function PanelComponent(options={}) {
       return {
         state: this._service.state,
         resourcesurl: this._resourcesUrl,
+        showcommitbar: options.showcommitbar,
         editingButtonsEnabled: true
       }
     }

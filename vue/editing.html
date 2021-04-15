@@ -2,7 +2,7 @@
   <div v-if="!appState.online" id="onlineofflinemessage" style="margin-bottom: 5px; padding: 5px; border-radius: 3px; background-color: orange; color:white; font-weight: bold">
     <div v-t-plugin="'editing.messages.offline'"></div>
   </div>
-  <div style="display: flex; margin-bottom: 5px">
+  <div v-if="showcommitbar" style="display: flex; margin-bottom: 5px">
     <div style="margin-right: auto;" class="editing-button" @click="canCommit ? commit(): null" :class="{'enabled' : canCommit }">
       <span class="editing-icon" :class="g3wtemplate.font['save']"></span>
     </div>
@@ -13,6 +13,7 @@
       <span class="editing-icon" :class="g3wtemplate.font['arrow-right']"></span>
     </div>
   </div>
+  <div v-else style="height: 10px;"></div>
   <div id="toolboxes">
     <toolbox
       :state="toolboxstate"

@@ -36,14 +36,16 @@ function ToolBox(options={}) {
   this._getFeaturesOption = {};
   const historystate = this._session.getHistory().state;
   const sessionstate = this._session.state;
+ 
   this.state = {
     id: options.id,
     show: true, // used to show or not the toolbox if we nee to filtered
     color: options.color || 'blue',
     title: options.title || "Edit Layer",
+    customTitle: false,
     loading: false,
     enabled: false,
-    startstopediting: true,
+    toolboxheader: true,
     message: null,
     toolmessages: {
       help: null
@@ -64,6 +66,15 @@ function ToolBox(options={}) {
     layerstate: this._layer.state
   };
 
+  /**
+   *  save original value of state in case of custom changes
+   * 
+   */
+  this.originalState = {
+    title: this.state.title,
+    toolsoftool: [...this.state.toolsoftool]
+  };
+  
   this._tools.forEach(tool => tool.setSession(this._session));
 
   this._session.onafter('stop', () => {
@@ -95,12 +106,6 @@ function ToolBox(options={}) {
 inherit(ToolBox, G3WObject);
 
 const proto = ToolBox.prototype;
-
-//disable start top editing 
-
-proto.setStartStopEditing = function(bool=true){
-  this.state.startstopediting = bool;
-};
 
 proto.getState = function() {
   return this.state;
@@ -203,7 +208,8 @@ proto.setFeaturesOptions = function({filter}={}){
 
 //added option object to start method to have a control by other plugin how
 proto.start = function(options={}) {
-  const { filter } = options;
+  const { filter, toolboxheader=true } = options;
+  this.state.toolboxheader = toolboxheader;
   const EventName = 'start-editing';
   const d = $.Deferred();
   const id = this.getId();
@@ -442,6 +448,11 @@ proto.getTitle = function() {
   return this.state.title;
 };
 
+proto.setTitle = function(title){
+  this.state.customTitle = true;
+  this.state.title = title;
+};
+
 proto.getColor = function() {
   return this.state.color;
 };
@@ -504,11 +515,25 @@ proto.setEnableTool = function(toolId){
 };
 
 proto.setEnablesTools = function(tools){
-  this._enabledtools = tools && Array.isArray(tools) && this._tools.filter(tool => tools.includes(tool.getId()));
+  if (tools && Array.isArray(tools)) {
+    const toolsId = [];
+    tools.forEach(({id, options={}}) => {
+      const tool = this._tools.find(tool => tool.getId() === id);
+      if (tool) {
+        const {active=false} = options;
+        tool.setOptions(options);
+        tool.isVisible() && toolsId.push(id);
+        active && this.setActiveTool(tool);
+        this._enabledtools = this._enabledtools === undefined ? [tool] : this.enableTools.push(tool);
+      }
+    });
+    //set not visible
+    this._tools.forEach(tool => !toolsId.includes(tool.getId()) && tool.setVisible(false));
+  }
 };
 
 // enable all tools
-proto.enableTools = function(bool) {
+proto.enableTools = function(bool=false) {
   const tools = this._enabledtools || this._tools;
   tools.forEach(tool => tool.setEnabled(bool))
 };
@@ -518,12 +543,9 @@ proto.setActiveTool = function(tool) {
     .then(() => {
       this.clearToolsOfTool();
       this.state.activetool = tool;
-      tool.once('settoolsoftool', (tools) => {
-        tools.forEach((tool) => {
-          this.state.toolsoftool.push(tool);
-        })
+      tool.once('settoolsoftool', tools => {
+        tools.forEach(tool => this.state.toolsoftool.push(tool))
       });
-
       const _activedeactivetooloftools = (activetools, active) => {
         this.state.toolsoftool.forEach((tooloftool) => {
           if (activetools.indexOf(tooloftool.type) !== -1)
@@ -615,5 +637,18 @@ proto.hasRelations = function() {
   return this._layer.hasRelations();
 };
 
+/**
+ * Method to reset default values
+ */
+proto.resetDefault = function(){
+  this.state.title = this.originalState.title;
+  this.state.toolboxheader = true;
+  this.setShow(true);
+  if (this._enabledtools){
+    this._enabledtools = undefined;
+    this.enableTools();
+    this._tools.forEach(tool => tool.resetDefault());
+  }
+};
 
 module.exports = ToolBox;

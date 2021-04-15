@@ -58,10 +58,11 @@ function EditingService() {
     message: null,
     relations: [],
   };
+
   this._layers_in_error = false;
   //mapservice
   this._mapService = GUI.getComponent('map').getService();
-  // disable active tool on wehena a control is activated
+  // disable active tool on when a control is activated
   this._mapService.on('mapcontrol:active', () => {
     let toolboxselected = this.state.toolboxselected;
     toolboxselected && toolboxselected.getActiveTool() && toolboxselected.getActiveTool().stop();
@@ -183,6 +184,17 @@ proto.unsubscribe = function(event, fnc) {
 proto.setSelectedToolbox = function(toolbox){
   this.state.toolboxselected = toolbox;
 };
+
+/**
+ * 
+ */
+proto.getToolboxSelected = function(){
+  return this.state.toolboxselected;
+};
+
+/**
+ * 
+ */
 
 // create a new feature
 proto.addNewFeature = function(layerId, options={}){
@@ -1118,8 +1130,8 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
               });
               GUI.showUserMessage({
                 type: 'alert',
-                message,
-                textMessage: true
+                message: messages.error || message,
+                textMessage: !messages.error
               });
               cb.error && cb.error instanceof Function && cb.error(toolbox);
             }
@@ -1133,8 +1145,8 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
           const message = parser.parse();
           GUI.showUserMessage({
             type: 'alert',
-            message,
-            textMessage: true,
+            message: messages.error || message,
+            textMessage: !messages.error,
            });
           d.reject(toolbox);
           cb.error && cb.error instanceof Function && cb.error(toolbox);
@@ -1156,7 +1168,8 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
           }).catch(error=>{
               GUI.showUserMessage({
                 type: 'alert',
-                message: error
+                message: messages.error || error,
+                textMessage: !messages.error
               });
             d.reject(toolbox);
           })

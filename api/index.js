@@ -39,14 +39,15 @@ const API = function({service, plugin} = {}) {
    * @returns {Promise<unknown>}
    */
   this.startEditing = function(layerId, options={}){
-    const {tools, feature, startstopediting=true} = options;
+    const {tools, feature, startstopediting=true, title} = options;
     return new Promise((resolve, reject) =>{
       // get toolbox related to layer id
       const toolbox = service.getToolBoxById(layerId);
+      //setselected
+      toolbox.setSelected(true);
+      title && toolbox.setTitle(title);
       // set seletcted toolbox
       service.setSelectedToolbox(toolbox);
-      // set enable disable start sto editing toobx
-      toolbox.setStartStopEditing(startstopediting);
       //set enables tools
       tools && toolbox.setEnablesTools(tools);
       // start editing toolbox (options contain also filter type)
@@ -54,10 +55,10 @@ const API = function({service, plugin} = {}) {
         const {features} = opts;
         // TEMP set first toolbax active
         if (tools){
-          const tool = toolbox.getToolById(tools[0]);
-          toolbox.setActiveTool(tool);
+          const enabledTool = tools.find(tool => tool.options.active);
+          const tool = toolbox.getToolById(enabledTool.id);
           // in case of editattributes tool
-          if (tool.getId()  === 'editattributes' && feature) {
+          if (tool.getId() === 'editattributes' && feature) {
             // create the operator configuration needed to run a certain step
             const {inputs, context} = tool.createOperatorOptions({
               features: features.length ? features : [feature]
@@ -97,9 +98,7 @@ const API = function({service, plugin} = {}) {
   //used to reset default toolbox state modified by other plugin
   this.resetDefault = function(){
     service.getToolBoxes().forEach(toolbox => {
-      toolbox.setEnablesTools();
-      toolbox.setStartStopEditing(true);
-      toolbox.setShow(true)
+      toolbox.resetDefault();
     });
     service.resetDefault();
   };
