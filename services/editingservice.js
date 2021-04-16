@@ -62,11 +62,26 @@ function EditingService() {
   this._layers_in_error = false;
   //mapservice
   this._mapService = GUI.getComponent('map').getService();
-  // disable active tool on when a control is activated
-  this._mapService.on('mapcontrol:active', () => {
-    let toolboxselected = this.state.toolboxselected;
-    toolboxselected && toolboxselected.getActiveTool() && toolboxselected.getActiveTool().stop();
-  });
+
+  // this.mapControlActiveEventHandler = () => {
+  //   let toolboxselected = this.state.toolboxselected;
+  //   toolboxselected && toolboxselected.getActiveTool() && toolboxselected.getActiveTool().stop();
+  // };
+  // // disable active tool on when a control is activated
+  // this._mapService.on('mapcontrol:active', this.mapControlActiveEventHandler);
+
+
+  //set mapcontrol toggle event
+  this.mapControlToggleEventHandler = evt =>{
+    if (evt.target.isToggled() && evt.target.isClickMap()){
+      let toolboxselected = this.state.toolboxselected;
+      toolboxselected && toolboxselected.getActiveTool() && toolboxselected.getActiveTool().stop();
+    }
+  };
+
+  this._mapService.on('mapcontrol:toggled', this.mapControlToggleEventHandler);
+
+
   //plugin components
   this._formComponents = {};
   this._subscribers = {};
@@ -758,7 +773,7 @@ proto.stop = function() {
           toolbox.stop();
         });
         this.clearState();
-        this.activeQueryInfo();
+        //this.activeQueryInfo();
         this._mapService.refreshMap();
         resolve();
     });
@@ -769,6 +784,8 @@ proto.stop = function() {
 proto.clear = function() {
   MapLayersStoreRegistry.removeLayersStore(this._layersstore);
   SessionsRegistry.clear();
+  //turn off events
+  this._mapService.off('mapcontrol:toggled', this.mapControlToggleEventHandler);
 };
 
 proto.clearState = function() {
