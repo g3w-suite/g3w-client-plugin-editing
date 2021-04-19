@@ -62,15 +62,6 @@ function EditingService() {
   this._layers_in_error = false;
   //mapservice
   this._mapService = GUI.getComponent('map').getService();
-
-  // this.mapControlActiveEventHandler = () => {
-  //   let toolboxselected = this.state.toolboxselected;
-  //   toolboxselected && toolboxselected.getActiveTool() && toolboxselected.getActiveTool().stop();
-  // };
-  // // disable active tool on when a control is activated
-  // this._mapService.on('mapcontrol:active', this.mapControlActiveEventHandler);
-
-
   //set mapcontrol toggle event
   this.mapControlToggleEventHandler = evt =>{
     if (evt.target.isToggled() && evt.target.isClickMap()){
@@ -80,8 +71,6 @@ function EditingService() {
   };
 
   this._mapService.on('mapcontrol:toggled', this.mapControlToggleEventHandler);
-
-
   //plugin components
   this._formComponents = {};
   this._subscribers = {};

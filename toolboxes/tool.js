@@ -25,7 +25,6 @@ function Tool(options = {}) {
     row: row || 1,
     messages: this._op.getMessages()
   };
-
 }
 
 inherit(Tool, G3WObject);
