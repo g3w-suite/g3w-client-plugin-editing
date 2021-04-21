@@ -20,6 +20,7 @@ function ToolBox(options={}) {
   this._loadedExtent = null;
   this._tools = options.tools;
   this._enabledtools;
+  this._disabledtools;
   this._getFeaturesOption = {};
   const toolsstate = [];
   this._tools.forEach(tool => toolsstate.push(tool.getState()));
@@ -46,6 +47,7 @@ function ToolBox(options={}) {
     loading: false,
     enabled: false,
     toolboxheader: true,
+    startstopediting: true,
     message: null,
     toolmessages: {
       help: null
@@ -93,11 +95,7 @@ function ToolBox(options={}) {
       this._getFeaturesOption = options;
       this._registerGetFeaturesEvent(this._getFeaturesOption);
       if (options.type === Layer.LayerTypes.VECTOR && GUI.getContentLength())
-        GUI.once('closecontent', ()=> {
-          setTimeout(()=> {
-            this._mapService.getMap().dispatchEvent(this._getFeaturesEvent.event)
-          },)
-        });
+        GUI.once('closecontent', ()=> setTimeout(()=> this._mapService.getMap().dispatchEvent(this._getFeaturesEvent.event)));
     }
   })
 
@@ -208,8 +206,10 @@ proto.setFeaturesOptions = function({filter}={}){
 
 //added option object to start method to have a control by other plugin how
 proto.start = function(options={}) {
-  const { filter, toolboxheader=true } = options;
+  const { filter, toolboxheader=true, startstopediting=true, tools} = options;
+  tools && this.setEnablesDisablesTools(tools);
   this.state.toolboxheader = toolboxheader;
+  this.state.startstopediting = startstopediting;
   const EventName = 'start-editing';
   const d = $.Deferred();
   const id = this.getId();
@@ -225,7 +225,7 @@ proto.start = function(options={}) {
     });
     promise
       .then(features => {
-        this.state.loading = false;
+        this.stopLoading();
         this.setEditing(true);
         this.editingService.runEventHandler({
           type: 'get-features-editing',
@@ -234,6 +234,7 @@ proto.start = function(options={}) {
             features
           }
         });
+
         d.resolve({
           features
         })
@@ -246,7 +247,7 @@ proto.start = function(options={}) {
           error
         });
         this.stop();
-        this.state.loading = false;
+        this.stopLoading();
         d.reject(error);
       })
   };
@@ -258,7 +259,7 @@ proto.start = function(options={}) {
         GUI.getComponent('map').getService().onceafter('setHidden', () =>{
           setTimeout(()=>{
             this._start = true;
-            this.state.loading = true;
+            this.startLoading();
             this.setFeaturesOptions({
               filter
             });
@@ -268,11 +269,12 @@ proto.start = function(options={}) {
         })
       } else {
         this._start = true;
+        this.startLoading();
         this._session.start(this._getFeaturesOption).then(handlerAfterSessionGetFeatures)
       }
     } else {
       if (!this._start) {
-        this.state.loading = true;
+        this.startLoading();
         this._session.getFeatures(this._getFeaturesOption).then(handlerAfterSessionGetFeatures);
         this._start = true;
       }
@@ -306,7 +308,7 @@ proto.stop = function() {
           this._start = false;
           this.state.editing.on = false;
           this.state.enabled = false;
-          this.state.loading = false;
+          this.stopLoading();
           this._getFeaturesOption = {};
           this.stopActiveTool();
           this._setToolsEnabled(false);
@@ -461,6 +463,10 @@ proto.getLayer = function() {
   return this._layer;
 };
 
+/**
+ * Funtion thta enable toolbox
+ * @param bool
+ */
 proto.setEditing = function(bool=true) {
   this.setEnable(bool);
   this.state.editing.on = bool;
@@ -501,6 +507,12 @@ proto.getTools = function() {
   return this._tools;
 };
 
+/**
+ *
+ * Return tool by id
+ * @param toolId
+ * @returns {*|number|bigint|T|T}
+ */
 proto.getToolById = function(toolId) {
   return this._tools.find(tool => toolId === tool.getId());
 };
@@ -514,20 +526,39 @@ proto.setEnableTool = function(toolId){
   tool.setEnabled(true)
 };
 
-proto.setEnablesTools = function(tools){
-  if (tools && Array.isArray(tools)) {
-    const toolsId = [];
-    tools.forEach(({id, options={}}) => {
-      const tool = this._tools.find(tool => tool.getId() === id);
+/**
+ * Method to set enable tools
+ *
+ * @param tools
+ */
+proto.setEnablesDisablesTools = function(tools){
+  if (tools){
+    // Check if tools is an array
+    const {enabled:enableTools=[], disabled:disableTools=[]} = tools;
+    const toolsId = enableTools.length ? [] : this._tools.map(tool => tool.getId());
+    enableTools.forEach(({id, options={}}) => {
+      //check if id of tool passed as argument is right
+      const tool =this.getToolById(id);
       if (tool) {
         const {active=false} = options;
         tool.setOptions(options);
         tool.isVisible() && toolsId.push(id);
         active && this.setActiveTool(tool);
-        this._enabledtools = this._enabledtools === undefined ? [tool] : this.enableTools.push(tool);
+        if (this._enabledtools === undefined) this._enabledtools = [];
+        this._enabledtools.push(tool);
       }
     });
-    //set not visible
+    //disabled and visible
+    disableTools.forEach(({id, options}) =>{
+      const tool = this.getToolById(id);
+      if (tool){
+        if (this._disabledtools === undefined) this._disabledtools = [];
+        this._disabledtools.push(id);
+        //add it toi visible tools
+        toolsId.push(id);
+      }
+    });
+    //set not visible all remain
     this._tools.forEach(tool => !toolsId.includes(tool.getId()) && tool.setVisible(false));
   }
 };
@@ -535,7 +566,11 @@ proto.setEnablesTools = function(tools){
 // enable all tools
 proto.enableTools = function(bool=false) {
   const tools = this._enabledtools || this._tools;
-  tools.forEach(tool => tool.setEnabled(bool))
+  const disabledtools = this._disabledtools || [];
+  tools.forEach(tool => {
+    const enableTool = bool && disabledtools.length ? disabledtools.indexOf(tool.getId()) === -1 : bool;
+    tool.setEnabled(enableTool);
+  })
 };
 
 proto.setActiveTool = function(tool) {
@@ -547,7 +582,7 @@ proto.setActiveTool = function(tool) {
         tools.forEach(tool => this.state.toolsoftool.push(tool))
       });
       const _activedeactivetooloftools = (activetools, active) => {
-        this.state.toolsoftool.forEach((tooloftool) => {
+        this.state.toolsoftool.forEach(tooloftool => {
           if (activetools.indexOf(tooloftool.type) !== -1)
             tooloftool.options.active = active;
         });
@@ -643,12 +678,14 @@ proto.hasRelations = function() {
 proto.resetDefault = function(){
   this.state.title = this.originalState.title;
   this.state.toolboxheader = true;
+  this.state.startstopediting = true;
   this.setShow(true);
   if (this._enabledtools){
     this._enabledtools = undefined;
     this.enableTools();
     this._tools.forEach(tool => tool.resetDefault());
   }
+  this._disabledtools = null;
 };
 
 module.exports = ToolBox;

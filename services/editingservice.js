@@ -182,6 +182,13 @@ proto.unsubscribe = function(event, fnc) {
 // END API
 
 /**
+ *
+ */
+proto.disableMapControlsConflict = function(bool=true) {
+  this._mapService.disableClickMapControls(bool);
+};
+
+/**
  * Used on commit if no toolbox is passed as parameter
  * @param toolbox
  */
@@ -538,7 +545,8 @@ proto.resetDefault = function(){
       done: null, // function Called after save
       error: null, // function called affte commit error
     }
-  }
+  };
+  this.disableMapControlsConflict(false);
 };
 
 proto._attachLayerWidgetsEvent = function(layer) {
@@ -1047,7 +1055,11 @@ proto._createCommitMessage = function(commitItems) {
 proto.showCommitModalWindow = function({layer, commitItems, close, commitPromise}) {
   // messages set to commit
   const messages = {
-    success: "plugins.editing.messages.saved"
+    success: {
+      message: "plugins.editing.messages.saved",
+      autoclose: true
+    },
+    error: {}
   };
 
   return new Promise((resolve, reject) =>{
@@ -1100,7 +1112,7 @@ proto.saveChange = async function() {
 proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
   const d = $.Deferred();
   const commitPromise = d.promise();
-  const { cb={}, messages } = this.saveConfig;
+  const { cb={}, messages={success:{}, error:{}} } = this.saveConfig;
   toolbox = toolbox || this.state.toolboxselected;
   let session = toolbox.getSession();
   let layer = toolbox.getLayer();
@@ -1114,16 +1126,17 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
     commitPromise // add a commit promise
   }) : Promise.resolve(messages);
   promise.then(messages => {
-    if (ApplicationState.online)
+    if (ApplicationState.online) {
       session.commit({items: items || commitItems})
         .then((commitItems, response) => {
           if (ApplicationState.online) {
             if (response.result) {
+              const {autoclose=true, message="plugins.editing.messages.saved"} = messages.success;
               if (messages && messages.success) GUI.showUserMessage({
                 type: 'success',
-                message: messages.success,
+                message,
                 duration: 3000,
-                autoclose: true
+                autoclose
               });
               layerType === Layer.LayerTypes && this._mapService.refreshMap({force: true});
               cb.done && cb.done instanceof Function && cb.done(toolbox);
@@ -1131,13 +1144,15 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
               const parser = new serverErrorParser({
                 error: response.errors
               });
-              const message = parser.parse({
+              const errorMessage = parser.parse({
                 type: 'String'
               });
+              const {autoclose=false, message} = messages.error;
               GUI.showUserMessage({
                 type: 'alert',
-                message: messages.error || message,
-                textMessage: !messages.error
+                message: message || errorMessage,
+                textMessage: !message,
+                autoclose
               });
               cb.error && cb.error instanceof Function && cb.error(toolbox);
             }
@@ -1148,17 +1163,19 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
           const parser = new serverErrorParser({
             error
           });
-          const message = parser.parse();
+          const errorMessage = parser.parse();
+          const {autoclose = false, message} = messages.error;
           GUI.showUserMessage({
             type: 'alert',
-            message: messages.error || message,
-            textMessage: !messages.error,
-           });
+            message: message || errorMessage,
+            textMessage: !message,
+            autoclose
+          });
           d.reject(toolbox);
           cb.error && cb.error instanceof Function && cb.error(toolbox);
         });
-    //case offline
-    else this.saveOfflineItem({
+      //case offline
+    } else this.saveOfflineItem({
             data: {
               [session.getId()]: commitItems
             },
@@ -1172,11 +1189,11 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
             session.clearHistory();
             d.resolve(toolbox);
           }).catch(error=>{
-              GUI.showUserMessage({
-                type: 'alert',
-                message: messages.error || error,
-                textMessage: !messages.error
-              });
+            GUI.showUserMessage({
+              type: 'alert',
+              message: error,
+              textMessage: true,
+            });
             d.reject(toolbox);
           })
     }).catch(() => d.reject(toolbox));

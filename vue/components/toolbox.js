@@ -1,7 +1,6 @@
 const ApplicationState = g3wsdk.core.ApplicationState;
 const ToolComponent = require('./tool');
 const ToolsOfToolComponent = require('./toolsoftool');
-const t = g3wsdk.core.i18n.tPlugin;
 const compiledTemplate = Vue.compile(require('./toolbox.html'));
 
 const ToolboxComponent = Vue.extend({

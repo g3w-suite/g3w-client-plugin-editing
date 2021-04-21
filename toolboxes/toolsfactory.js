@@ -73,7 +73,7 @@ function EditorToolsFactory() {
                 op: MoveFeatureWorkflow
               }),
               new Tool({
-                id: 'copyfeaturespoint',
+                id: 'copyfeatures',
                 name: "editing.tools.copy",
                 icon: "copyPoint.png",
                 layer,
@@ -83,7 +83,7 @@ function EditorToolsFactory() {
               }),
               ...(isMultiGeometry ? [
                 new Tool({
-                  id: 'addPartToPoint',
+                  id: 'addPart',
                   name: "editing.tools.addpart",
                   icon: "addPart.png",
                   layer,
@@ -159,7 +159,7 @@ function EditorToolsFactory() {
                 op: MoveFeatureWorkflow
               }),
               new Tool({
-                id: 'copyfeaturespoly',
+                id: 'copyfeatures',
                 name: "editing.tools.copy",
                 icon: "copyLine.png",
                 layer,
@@ -169,7 +169,7 @@ function EditorToolsFactory() {
               }),
               ...(isMultiGeometry ? [
                 new Tool({
-                  id: 'addPartToPoint',
+                  id: 'addPart',
                   name: "editing.tools.addpart",
                   icon: "addPart.png",
                   layer,
@@ -189,7 +189,7 @@ function EditorToolsFactory() {
                 })
               ] : []),
               new Tool({
-                id: 'splitfeatureline',
+                id: 'splitfeature',
                 name: "editing.tools.split",
                 icon: "splitFeatures.png",
                 layer,
@@ -198,7 +198,7 @@ function EditorToolsFactory() {
                 op: SplitFeatureWorkflow
               }),
               new Tool({
-                id: 'mergefeaturespoly',
+                id: 'mergefeatures',
                 name: "editing.tools.merge",
                 icon: "mergeFeatures.png",
                 layer,
@@ -261,7 +261,7 @@ function EditorToolsFactory() {
                 op: MoveFeatureWorkflow
               }),
               new Tool({
-                id: 'copyfeaturespoly',
+                id: 'copyfeatures',
                 name: "editing.tools.copy",
                 icon: "copyPolygon.png",
                 layer,
@@ -271,7 +271,7 @@ function EditorToolsFactory() {
               }),
               ...(isMultiGeometry ? [
                 new Tool({
-                  id: 'addPartToPoint',
+                  id: 'addPart',
                   name: "editing.tools.addpart",
                   icon: "addPart.png",
                   layer,
@@ -291,7 +291,7 @@ function EditorToolsFactory() {
                 })
               ] : []),
               new Tool({
-                id: 'splitfeaturepoly',
+                id: 'splitfeature',
                 name: "editing.tools.split",
                 icon: "splitFeatures.png",
                 layer,
@@ -300,7 +300,7 @@ function EditorToolsFactory() {
                 op: SplitFeatureWorkflow
               }),
               new Tool({
-                id: 'mergefeaturespoly',
+                id: 'mergefeatures',
                 name: "editing.tools.merge",
                 icon: "mergeFeatures.png",
                 layer,

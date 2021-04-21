@@ -104,11 +104,15 @@ const vueComponentOptions = {
     },
     canUndo() {
       const toolbox = this.state.toolboxselected;
-      return toolbox &&  toolbox.state.editing.history.undo && this.editingButtonsEnabled;
+      const canUndo = toolbox &&  toolbox.state.editing.history.undo && this.editingButtonsEnabled;
+      this.$options.service.fireEvent('canUndo', canUndo);
+      return canUndo;
     },
     canRedo() {
       const toolbox = this.state.toolboxselected;
-      return toolbox && toolbox.state.editing.history.redo && this.editingButtonsEnabled;
+      const canRedo = toolbox && toolbox.state.editing.history.redo && this.editingButtonsEnabled;
+      this.$options.service.fireEvent('canRedo', canRedo);
+      return canRedo
     }
   },
   watch:{

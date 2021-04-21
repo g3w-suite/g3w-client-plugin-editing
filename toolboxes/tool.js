@@ -33,7 +33,7 @@ const proto = Tool.prototype;
 
 proto.setOptions = function(options={}){
   const {messages, enabled=false, visible=true, disabledtoolsoftools = []} = options;
-  this.state.messages = messages;
+  this.state.messages = messages || this.state.messages;
   this.state.visible = visible;
   this.state.enabled = enabled;
   this.disabledtoolsoftools = disabledtoolsoftools;

@@ -6,6 +6,10 @@ const API = function({service, plugin} = {}) {
     });
   };
 
+  this.getEditableLayersId = function(){
+    return Object.keys(service.getEditableLayers());
+  };
+
   this.getSession = function(options = {}) {
     return service.getSession(options)
   };
@@ -39,7 +43,7 @@ const API = function({service, plugin} = {}) {
    * @returns {Promise<unknown>}
    */
   this.startEditing = function(layerId, options={}){
-    const {tools, feature, startstopediting=true, title} = options;
+    const {tools, feature, title, disablemapcontrols=false} = options;
     return new Promise((resolve, reject) =>{
       // get toolbox related to layer id
       const toolbox = service.getToolBoxById(layerId);
@@ -48,28 +52,30 @@ const API = function({service, plugin} = {}) {
       title && toolbox.setTitle(title);
       // set seletcted toolbox
       service.setSelectedToolbox(toolbox);
-      //set enables tools
-      tools && toolbox.setEnablesTools(tools);
       // start editing toolbox (options contain also filter type)
       toolbox.start(options).then(opts => {
+        //disablemapcontrols in conflict
+        disablemapcontrols && service.disableMapControlsConflict(true);
         const {features} = opts;
-        // TEMP set first toolbax active
-        if (tools){
-          const enabledTool = tools.find(tool => tool.options.active);
-          const tool = toolbox.getToolById(enabledTool.id);
-          // in case of editattributes tool
-          if (tool.getId() === 'editattributes' && feature) {
-            // create the operator configuration needed to run a certain step
-            const {inputs, context} = tool.createOperatorOptions({
-              features: features.length ? features : [feature]
-            });
-            tool.getOperator().getStep(1).run(inputs, context).then(()=>{
-              toolbox.getSession().save();
-              resolve(toolbox)
-            });
-          } else resolve(toolbox)
-        } else resolve(toolbox);
-      }).fail(err=> reject(err))
+        // if (tools){
+        //   const enabledTool = tools.find(tool => tool.options.active);
+        //   const tool = toolbox.getToolById(enabledTool.id);
+        //   // in case of editattributes tool
+        //   if (tool.getId() === 'editattributes' && feature) {
+        //     // create the operator configuration needed to run a certain step
+        //     const {inputs, context} = tool.createOperatorOptions({
+        //       features: features.length ? features : [feature]
+        //     });
+        //     tool.getOperator().getStep(1).run(inputs, context).then(()=>{
+        //       toolbox.getSession().save();
+        //       resolve(toolbox)
+        //     });
+        //   } else resolve(toolbox)
+        // } else resolve(toolbox);
+        resolve(toolbox);
+      }).fail(err=> {
+        reject(err)
+      })
     })
   };
   
@@ -87,8 +93,10 @@ const API = function({service, plugin} = {}) {
   };
 
   this.stopEditing = function(layerId, options={}) {
-    const toolbox = service.getToolBoxById(layerId);
-    return toolbox.stop(options);
+    return new Promise((resolve, reject)=>{
+      const toolbox = service.getToolBoxById(layerId);
+      toolbox.stop(options).then(resolve).fail(reject)
+    })
   };
 
   this.commitChanges = function(options={}){
