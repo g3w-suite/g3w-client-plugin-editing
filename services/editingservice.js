@@ -1138,7 +1138,7 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
                 duration: 3000,
                 autoclose
               });
-              layerType === Layer.LayerTypes && this._mapService.refreshMap({force: true});
+              layerType === Layer.LayerTypes.VECTOR && this._mapService.refreshMap({force: true});
               cb.done && cb.done instanceof Function && cb.done(toolbox);
             } else {
               const parser = new serverErrorParser({
