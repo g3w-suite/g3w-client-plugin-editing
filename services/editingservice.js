@@ -1154,7 +1154,7 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
                 textMessage: !message,
                 autoclose
               });
-              cb.error && cb.error instanceof Function && cb.error(toolbox);
+              cb.error && cb.error instanceof Function && cb.error(toolbox, message || errorMessage);
             }
             d.resolve(toolbox);
           }
@@ -1172,7 +1172,7 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
             autoclose
           });
           d.reject(toolbox);
-          cb.error && cb.error instanceof Function && cb.error(toolbox);
+          cb.error && cb.error instanceof Function && cb.error(toolbox, message || errorMessage);
         });
       //case offline
     } else this.saveOfflineItem({
