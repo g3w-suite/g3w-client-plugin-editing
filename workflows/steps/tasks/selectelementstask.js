@@ -21,7 +21,7 @@ proto.addSingleSelectInteraction = function({layer, inputs, promise, buttonnext=
   const singleInteraction = new PickFeatureInteraction({
     layers: [layer.getEditingLayer()]
   });
-  singleInteraction.on('picked', (e) => {
+  singleInteraction.on('picked', e => {
     const feature = e.feature;
     if (feature) {
       const features = [feature];
@@ -49,7 +49,7 @@ proto.addRemoveToMultipleSelectFeatures = function(features=[], inputs){
     }
     inputs.features = this.multipleselectfeatures;
   });
-  this._steps.select.buttonnext.disabled = this.multipleselectfeatures.length === 0;
+  this._steps.select.buttonnext.disabled = this._steps.select.buttonnext.condition ? this._steps.select.buttonnext.condition({features:this.multipleselectfeatures}) : this.multipleselectfeatures.length === 0;
   if (this._steps.select.dynamic !== undefined) this._steps.select.dynamic = this.multipleselectfeatures.length;
 };
 
@@ -101,7 +101,6 @@ proto.addMultipleSelectInteraction = function({layer, inputs, promise, buttonnex
           promise.resolve(inputs);
         }
       } else this.addRemoveToMultipleSelectFeatures(features, inputs)
-
     });
   }
   this._selectInteractions.push(selectInteractionMultiple);

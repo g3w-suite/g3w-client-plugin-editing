@@ -181,7 +181,7 @@ function EditorToolsFactory() {
               ...(isMultiGeometry ? [
                 new Tool({
                   id: 'deletePart',
-                  name: "editing.tools.deletpart",
+                  name: "editing.tools.deletepart",
                   icon: "deletePart.png",
                   layer,
                   row:3,

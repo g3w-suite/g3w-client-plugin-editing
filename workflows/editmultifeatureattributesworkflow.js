@@ -15,6 +15,9 @@ function EditMultiFeatureAttributesWorkflow(options={}) {
       description: ApplicationState.ismobile ? 'editing.workflow.steps.selectDrawBox' : 'editing.workflow.steps.selectMultiPointSHIFT',
       buttonnext: {
         disabled: true,
+        condition:({features=[]})=> {
+          return features.length < 2
+        },
         done: ()=>{}
       },
       directive: 't-plugin',
