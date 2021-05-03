@@ -12,7 +12,7 @@ function EditMultiFeatureAttributesWorkflow(options={}) {
   });
   selectstep.getTask().setSteps({
     select: {
-      description: ApplicationState.ismobile ? 'editing.workflow.steps.selectDrawBox' : 'editing.workflow.steps.selectMultiPointSHIFT',
+      description: ApplicationState.ismobile ? 'editing.workflow.steps.selectDrawBoxAtLeast2Feature' : 'editing.workflow.steps.selectMultiPointSHIFTAtLeast2Feature',
       buttonnext: {
         disabled: true,
         condition:({features=[]})=> {

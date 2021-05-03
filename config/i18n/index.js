@@ -66,8 +66,10 @@ export default {
         selectPoint: "Clicca sulla feature per selezionarla",
         selectSHIFT: 'Seleziona le features tenedo premuto il tasto SHIFT',
         selectDrawBox: "Seleziona le features disegnando un rettangolo mediante la creazione dei due punti della diagonale",
+        selectDrawBoxAtLeast2Feature: "Seleziona almeno 2 features disegnando un rettangolo mediante la creazione dei due punti della diagonale",
         selectPointSHIFT: 'Seleziona le features tenedo premuto il tasto SHIFT (multiselezione) oppure cliccando sulla singola feature',
         selectMultiPointSHIFT: 'Seleziona le features tenedo premuto il tasto SHIFT oppure cliccando sulla singola feature',
+        selectMultiPointSHIFTAtLeast2Feature: 'Seleziona almeno 2 features tenedo premuto il tasto SHIFT oppure cliccando sulla singola feature',
         copyCTRL: 'Copia le features selezionate con CTRL+C',
         selectStartVertex: 'Seleziona il vertice di partenza delle feature selezionate',
         selectToPaste: 'Seleziona il punto dove verranno incollate le features selezionate',
@@ -189,9 +191,11 @@ export default {
         merge: 'Select featurewhere dissolve',
         selectSHIFT: 'Select features drawing a rectangle pressing SHIFT',
         selectDrawBox: "Select features drawing a rectangle by two point of opposite corners",
+        selectDrawBoxAtLeast2Feature: "Select at least features drawing a rectangle by two point of opposite corners",
         selectPoint: "Click on feature to select",
         selectPointSHIFT: 'Select features drawing a rectangle pressing SHIFT (multifeatures) or click on one feature',
         selectMultiPointSHIFT: 'Select features drawing a rectangle pressing SHIFT or click on feature',
+        selectMultiPointSHIFTAtLeast2Feature: 'Select at least 2 features drawing a rectangle pressing SHIFT or click on feature',
         copyCTRL: 'Copy selected features using CTRL+C',
         selectStartVertex: 'Select starting vertex of selected features',
         selectToPaste: 'Select the point where paste the features selected',
@@ -318,9 +322,11 @@ export default {
         merge: 'Valitse ominaisuus yhdistääksesi',
         selectSHIFT: 'Paina SHIFT, jos haluat valita kohteita suorakulmiovalinnalla.',  //Tero 10.12.2020
         selectDrawBox: "Piirrä suorakulmio, jonka siältä kohteet valitaan ", //Tero 10.12.2020
+        selectDrawBoxAtLeast2Feature: "Piirrä suorakulmio, jonka siältä kohteet vähintään 2 valitaan ",
         selectPoint: "Valitse ominaisuus",
         selectPointSHIFT: 'Paina SHIFT, jos haluat valita ominaisuuksia suorakulmiovalinnalla, tai valitse yksittäinen ominaisuus.',
         selectMultiPointSHIFT: 'Paina SHIFT, jos haluat valita ominaisuuksia suorakulmiovalinnalla, tai valitse yksittäinen ominaisuus.',
+        selectMultiPointSHIFTAtLeast2Feature: 'Paina SHIFT, jos haluat valita vähintään 2 ominaisuuksia suorakulmiovalinnalla, tai valitse yksittäinen ominaisuus.',
         copyCTRL: 'CTRL+C, voit kopioida valitut ominaisuudet.',  //Tero 10.12.2020
         selectStartVertex: 'Osoita valittujen ominaisuuksien alkupiste.',
         selectToPaste: 'Valitse kohta, johon liität valitut ominaisuudet.',
@@ -447,9 +453,11 @@ export default {
         merge: 'Välj egenskap att slå samman',
         selectSHIFT: 'Tryck SHIFT, om du vill välja objekt med hjälp av rektangel.',  //Tero 10.12.2020
         selectDrawBox: "Rita upp den rektangel inom vilken objekten väljs ", //Tero 10.12.2020
+        selectDrawBoxAtLeast2Feature: "Rita rektangeln inom vilken minst två objekt är markerade ",
         selectPoint: "Välj egenskap",
         selectPointSHIFT: 'Tryck SHIFT, om du vill välja objekt med hjälp av rektangel, eller välj en enskild egenskap.',
         selectMultiPointSHIFT: 'Tryck SHIFT, om du vill välja objekt med hjälp av rektangel, eller välj en enskild egenskap.',
+        selectMultiPointSHIFTAtLeast2Feature: 'Tryck på SKIFT för att välja minst två objekt med en rektangel eller välj en enda egenskap. ',
         copyCTRL: 'CTRL+C, du kan kopiera valda egenskaper.',  //Tero 10.12.2020
         selectStartVertex: 'Visa startpunkten för valda egenskaper.',
         selectToPaste: 'Välj punkt till vilken de valda egenskaperna ska fogas.',
