@@ -27,7 +27,15 @@ function EditorToolsFactory() {
         const isMultiGeometry = Geometry.isMultiGeometry(geometryType);
         switch (geometryType) {
           case Geometry.GeometryTypes.POINT:
+          case Geometry.GeometryTypes.POINTZ:
+          case Geometry.GeometryTypes.POINTM:
+          case Geometry.GeometryTypes.POINTZM:
+          case Geometry.GeometryTypes.POINT25D:
           case Geometry.GeometryTypes.MULTIPOINT:
+          case Geometry.GeometryTypes.MULTIPOINTZ:
+          case Geometry.GeometryTypes.MULTIPOINTM:
+          case Geometry.GeometryTypes.MULTIPOINTZM:
+          case Geometry.GeometryTypes.MULTIPOINT25D:
             tools = [
               new Tool({
                 id: 'addfeature',
@@ -88,9 +96,25 @@ function EditorToolsFactory() {
             ];
             break;
           case Geometry.GeometryTypes.LINESTRING:
+          case Geometry.GeometryTypes.LINESTRINGZ:
+          case Geometry.GeometryTypes.LINESTRINGM:
+          case Geometry.GeometryTypes.LINESTRINGZM:
+          case Geometry.GeometryTypes.LINESTRING25D:
           case Geometry.GeometryTypes.MULTILINESTRING:
+          case Geometry.GeometryTypes.MULTILINESTRINGZ:
+          case Geometry.GeometryTypes.MULTILINESTRINGM:
+          case Geometry.GeometryTypes.MULTILINESTRINGZM:
+          case Geometry.GeometryTypes.MULTILINESTRING25D:
           case Geometry.GeometryTypes.LINE:
+          case Geometry.GeometryTypes.LINEZ:
+          case Geometry.GeometryTypes.LINEM:
+          case Geometry.GeometryTypes.LINEZM:
+          case Geometry.GeometryTypes.LINE25D:
           case Geometry.GeometryTypes.MULTILINE:
+          case Geometry.GeometryTypes.MULTILINEZ:
+          case Geometry.GeometryTypes.MULTILINEM:
+          case Geometry.GeometryTypes.MULTILINEZM:
+          case Geometry.GeometryTypes.MULTILINE25D:
             tools = [
               new Tool({
                 id: 'addfeature',
@@ -173,7 +197,15 @@ function EditorToolsFactory() {
             ];
             break;
           case Geometry.GeometryTypes.POLYGON:
+          case Geometry.GeometryTypes.POLYGONZ:
+          case Geometry.GeometryTypes.POLYGONM:
+          case Geometry.GeometryTypes.POLYGONZM:
+          case Geometry.GeometryTypes.POLYGON25D:
           case Geometry.GeometryTypes.MULTIPOLYGON:
+          case Geometry.GeometryTypes.MULTIPOLYGONZ:
+          case Geometry.GeometryTypes.MULTIPOLYGONM:
+          case Geometry.GeometryTypes.MULTIPOLYGONZM:
+          case Geometry.GeometryTypes.MULTIPOLYGON25D:
             tools = [
               new Tool({
                 id: 'addfeature',
