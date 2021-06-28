@@ -74,7 +74,7 @@ function EditingService() {
   //plugin components
   this._formComponents = {};
   this._subscribers = {};
-  this.init = function(config) {
+  this.init = function(config={}) {
     this._vectorUrl = config.vectorurl;
     this._projectType = config.project_type;
     this._layersstore = new LayersStore({
@@ -210,7 +210,7 @@ proto.getToolboxSelected = function(){
 // create a new feature
 proto.addNewFeature = function(layerId, options={}){
   const {geometry, properties} = options;
-  const feature = new Feature()
+  const feature = new Feature();
   geometry && feature.setGeometry(new ol.geom[geometry.type](geometry.coordinates));
   feature.setProperties(properties);
   feature.setTemporaryId();
@@ -323,9 +323,7 @@ proto.checkOfflineChanges = function({modal=true, unlock=false}={}) {
         .then(() =>{
           resolve()
         })
-        .fail((error)=>{
-          reject(error);
-        })
+        .fail(error=>reject(error))
         .always(() =>{
           unlock && layerIds.forEach(layerId => {
             this.getLayerById(layerId).unlock()
@@ -445,9 +443,7 @@ proto.setLayersColor = function() {
 proto._layerChildrenRelationInEditing = function(layer) {
   let relations = layer.getChildren();
   let childrenrealtioninediting = [];
-  relations.forEach((relation) => {
-    if (this.getLayerById(relation)) childrenrealtioninediting.push(relation);
-  });
+  relations.forEach(relation => {if (this.getLayerById(relation)) childrenrealtioninediting.push(relation)});
   return childrenrealtioninediting;
 };
 
