@@ -51,6 +51,7 @@ const vueComponentOptions = {
       const tool = toolbox.getToolById(toolId);
       toolbox.setActiveTool(tool);
     },
+    // method to start tool of toolbox
     startActiveTool(toolId, toolboxId) {
       if (this.state.toolboxidactivetool && toolboxId !== this.state.toolboxidactivetool) {
         this._checkDirtyToolBoxes(this.state.toolboxidactivetool)
@@ -58,9 +59,7 @@ const vueComponentOptions = {
             toolbox && toolbox.stopActiveTool();
             this._setActiveToolOfToolbooxSelected(toolId, toolboxId);
           })
-      } else {
-        this._setActiveToolOfToolbooxSelected(toolId, toolboxId);
-      }
+      } else this._setActiveToolOfToolbooxSelected(toolId, toolboxId);
     },
     stopActiveTool(toolboxId) {
       const toolbox = this._getToolBoxById(toolboxId);

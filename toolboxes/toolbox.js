@@ -578,23 +578,17 @@ proto.setActiveTool = function(tool) {
     .then(() => {
       this.clearToolsOfTool();
       this.state.activetool = tool;
-      tool.once('settoolsoftool', tools => {
-        tools.forEach(tool => this.state.toolsoftool.push(tool))
-      });
+      tool.once('settoolsoftool', tools => tools.forEach(tool => this.state.toolsoftool.push(tool)));
+
       const _activedeactivetooloftools = (activetools, active) => {
         this.state.toolsoftool.forEach(tooloftool => {
-          if (activetools.indexOf(tooloftool.type) !== -1)
-            tooloftool.options.active = active;
+          if (activetools.indexOf(tooloftool.type) !== -1) tooloftool.options.active = active;
         });
       };
 
-      tool.on('active', (activetools=[]) => {
-        _activedeactivetooloftools(activetools, true);
-      });
+      tool.on('active', (activetools=[]) => _activedeactivetooloftools(activetools, true));
+      tool.on('deactive', (activetools=[]) => _activedeactivetooloftools(activetools, false));
 
-      tool.on('deactive', (activetools=[]) => {
-        _activedeactivetooloftools(activetools, false);
-      });
       const hideSidebar = this._mapService.isMapHidden();
       tool.start(hideSidebar);
       const message = this.getToolMessage();
