@@ -118,8 +118,10 @@ function EditingService() {
     this.setLayersColor();
     // after add layers to layerstore
     this._layersstore.addLayers(this.getLayers());
-    // vado a creare i toolboxes
-    this._buildToolBoxes();
+    // create toolboxes
+    this._buildToolBoxes({
+      editingtype: this.config.type
+    });
     // create a dependencies tree
     this._createToolBoxDependencies();
     //setApi
@@ -478,9 +480,14 @@ proto.getEditingLayer = function(id) {
   return this._editableLayers[id].getEditingLayer();
 };
 
-proto._buildToolBoxes = function() {
+/**
+ * options contain eventually editing type (create/update/delete)
+ * @param options
+ * @private
+ */
+proto._buildToolBoxes = function(options={}) {
   for (const layer of this.getLayers()) {
-    const toolbox = ToolBoxesFactory.build(layer);
+    const toolbox = ToolBoxesFactory.build(layer, options);
     this.addToolBox(toolbox);
   }
 };

@@ -21,6 +21,11 @@ inherit(EditingTask, Task);
 
 const proto = EditingTask.prototype;
 
+//get editing type from editing config
+proto.getEditingType = function(){
+  return this.getEditingService().getConfig().editingtype;
+};
+
 proto.registerPointerMoveCursor = function(){
   this._mapService.getMap().on("pointermove", this._pointerMoveCursor)
 };

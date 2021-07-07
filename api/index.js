@@ -18,20 +18,40 @@ const API = function({service, plugin} = {}) {
     return service.getFeature(options)
   };
 
+  /**
+   * Methos to subscrive editing event
+   * @param event
+   * @param fnc
+   * @returns {Promise<PushSubscription>}
+   */
   this.subscribe = function(event, fnc) {
     return service.subscribe(event, fnc);
   };
 
+  /**
+   * Method to unsubscrive editing event
+   * @param event
+   * @param fnc
+   * @returns {Promise<PushSubscription>}
+   */
   this.unsubscribe = function(event, fnc) {
     return service.unsubscribe(event, fnc);
   };
 
+  /**
+   * Show editing panel
+   * @param options
+   */
   this.showPanel = function(options={}){
     const {toolboxes} = options;
     toolboxes && Array.isArray(toolboxes) && service.getToolBoxes().forEach(toolbox => toolbox.setShow(toolboxes.indexOf(toolbox.getId()) !== -1));
     service.getPlugin().showEditingPanel(options);
   };
 
+  /**
+   * Method to hide Editing Panel
+   * @param options
+   */
   this.hidePanel = function(options={}){
     service.getPlugin().hideEditingPanel(options);
   };
@@ -77,6 +97,12 @@ const API = function({service, plugin} = {}) {
     return service.addNewFeature(layerId, options);
   };
 
+  /**
+   * Method to Stop editing on layerId
+   * @param layerId
+   * @param options
+   * @returns {Promise<unknown>}
+   */
   this.stopEditing = function(layerId, options={}) {
     return new Promise((resolve, reject)=>{
       const toolbox = service.getToolBoxById(layerId);
@@ -88,7 +114,10 @@ const API = function({service, plugin} = {}) {
     return service.commit(options);
   };
 
-  //used to reset default toolbox state modified by other plugin
+  /**
+   *   used to reset default toolbox state modified by other plugin
+   *
+  */
   this.resetDefault = function(){
     service.getToolBoxes().forEach(toolbox => {
       toolbox.resetDefault();

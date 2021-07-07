@@ -11,11 +11,13 @@ const TableService = function(options = {}) {
   this._workflow = null;
   this._deleteFeaturesIndexes = [];
   this._isrelation = options.isrelation || false;
+  const { editingtype } = options; 
   this.state = {
     headers: options.headers || [],
     features: [],
     title: options.title || 'Link relation',
-    isrelation: options.push
+    isrelation: options.push,
+    editingtype
   };
 
   this.init = function() {

@@ -39,6 +39,7 @@ proto.run = function(inputs, context) {
     headers,
     context,
     inputs,
+    editingtype: this.getEditingType(),
     fatherValue: context.fatherValue,
     foreignKey
   });

@@ -3,29 +3,32 @@ const EditToolsFactory = require('./toolsfactory');
 const ToolBox = require('./toolbox');
 
 function EditorToolBoxesFactory() {
-  this.build = function(layer) {
+  this.build = function(layer, options={}) {
     const constraints = layer.getEditingConstrains();
+    // get editing type (create, update, delete)
+    const { editingtype } = options;
     const type = layer.getType();
     const id = layer.getId();
     const color = layer.getColor();
-    let tools;
+    let tools = [];
     switch (type) {
       case Layer.LayerTypes.VECTOR:
         const geometryType = layer.getGeometryType();
         tools = EditToolsFactory.build({
           layer,
           geometryType: geometryType,
-          type
+          type,
+          editingtype
         });
         break;
       case Layer.LayerTypes.TABLE:
         tools = EditToolsFactory.build({
           layer,
-          type
+          type,
+          editingtype
         });
         break;
       default:
-        tools = [];
         break;
     }
     return new ToolBox({

@@ -15,352 +15,323 @@ const AddPartToMultigeometriesWorkflow = require('../workflows/addparttomultigeo
 const DeletePartFromMultigeometriesWorkflow = require('../workflows/deletepartfrommultigeometriesworkflow');
 const EditMultiFeatureAttributesWorkflow = require('../workflows/editmultifeatureattributesworkflow');
 
-
 function EditorToolsFactory() {
-  // create a single tool
-  this.buildTool = function(options={}) {};
+  /**
+   * Method to create tools base on type (point, Line, e..t) editing type (create/update/detele)
+   * @param type Point, Line, Polygon, Table
+   * @param layer
+   * @param editingtype (create/update, delete) or undefined meaning all possible tools base on type
+   */
+  this.createTools = function({type, isMultiGeometry, layer, editingtype}){
+    let tools = [];
+    switch (type) {
+      case 'Point':
+        tools = [
+          {
+            type: ['create'],
+            config: {
+              id: 'addfeature',
+              name: "editing.tools.add_feature",
+              icon: "addPoint.png",
+              layer,
+              row: 1,
+              op: AddFeatureWorkflow
+            },
+          },
+          {
+            type: ['update'],
+            config:{
+              id: 'editattributes',
+              name: "editing.tools.update_feature",
+              icon: "editAttributes.png",
+              layer,
+              row: 1,
+              op: EditFeatureAttributesWorkflow
+            }
+          },
+          {
+            type: ['delete'],
+            config: {
+              id: 'deletefeature',
+              name: "editing.tools.delete_feature",
+              icon: "deletePoint.png",
+              layer,
+              row: 1,
+              op: DeleteFeatureWorkflow
+            }
+          },
+          {
+            type: ['update'],
+            config: {
+              id: 'editmultiattributes',
+              name: "editing.tools.update_multi_features",
+              icon: "multiEditAttributes.png",
+              layer,
+              row: 2,
+              once: true,
+              op: EditMultiFeatureAttributesWorkflow
+            }
+          },
+          {
+            type: ['update'],
+            config: {
+              id: 'movefeature',
+              name: "editing.tools.move_feature",
+              icon: "movePoint.png",
+              layer,
+              row: 2,
+              op: MoveFeatureWorkflow
+            }
+          },
+          {
+            type: ['create'],
+            config: {
+              id: 'copyfeatures',
+              name: "editing.tools.copy",
+              icon: "copyPoint.png",
+              layer,
+              once: true,
+              row: 2,
+              op: CopyFeaturesWorflow
+            }
+          },
+          ...(isMultiGeometry ? [
+            {
+              type: ['create'],
+              config: {
+                id: 'addPart',
+                name: "editing.tools.addpart",
+                icon: "addPart.png",
+                layer,
+                once: true,
+                row: 3,
+                op: AddPartToMultigeometriesWorkflow
+              }
+            }
+          ] : []),
+          ...(isMultiGeometry ? [
+            {
+              type: ['delete'],
+              config: {
+                id: 'deletePart',
+                name: "editing.tools.deletepart",
+                icon: "deletePart.png",
+                layer,
+                row: 3,
+                op: DeletePartFromMultigeometriesWorkflow
+              }
+            }
+          ] : [])
+        ];
+        break;
+      case 'Line':
+      case 'Polygon':
+        tools = [
+          {
+            type: ['create'],
+            config: {
+              id: 'addfeature',
+              name: "editing.tools.add_feature",
+              icon: `add${type}.png`,
+              layer,
+              row: 1,
+              op: AddFeatureWorkflow
+            }
+          },
+          {
+            type: ['update'],
+            config: {
+              id: 'editattributes',
+              name: "editing.tools.update_feature",
+              icon: "editAttributes.png",
+              layer: layer,
+              row: 1,
+              op: EditFeatureAttributesWorkflow
+            }
+          },
+          {
+            type: ['update'],
+            config: {
+              id: 'movevertex',
+              name: "editing.tools.update_vertex",
+              icon: "moveVertex.png",
+              layer,
+              row: 1,
+              op: ModifyGeometryVertexWorkflow
+            }
+          },
+          {
+            type: ['delete'],
+            config: {
+              id: 'deletefeature',
+              name: "editing.tools.delete_feature",
+              icon: `delete${type}.png`,
+              layer,
+              row: 1,
+              op: DeleteFeatureWorkflow
+            }
+          },
+          {
+            type: ['update'],
+            config: {
+              id: 'editmultiattributes',
+              name: "editing.tools.update_multi_features",
+              icon: "multiEditAttributes.png",
+              layer,
+              row: 2,
+              once: true,
+              op: EditMultiFeatureAttributesWorkflow
+            }
+          },
+          {
+            type: ['update'],
+            config:{
+              id: 'movefeature',
+              name: "editing.tools.move_feature",
+              icon: `move${type}.png`,
+              layer,
+              row: 2,
+              op: MoveFeatureWorkflow
+            }
+          },
+          {
+            type: ['create'],
+            config: {
+              id: 'copyfeatures',
+              name: "editing.tools.copy",
+              icon: `copy${type}.png`,
+              layer,
+              row: 2,
+              once: true,
+              op: CopyFeaturesWorflow
+            }
+          },
+          ...(isMultiGeometry ? [
+            {
+              type: ['create'],
+              config: {
+                id: 'addPart',
+                name: "editing.tools.addpart",
+                icon: "addPart.png",
+                layer,
+                row: 3,
+                once: true,
+                op: AddPartToMultigeometriesWorkflow
+              }
+            }
+          ] : []),
+          ...(isMultiGeometry ? [
+            {
+              type: ['delete'],
+              config: {
+                id: 'deletePart',
+                name: "editing.tools.deletepart",
+                icon: "deletePart.png",
+                layer,
+                row: 3,
+                op: DeletePartFromMultigeometriesWorkflow
+              }
+            }
+          ] : []),
+          {
+            type:  ['update'],
+            config: {
+              id: 'splitfeature',
+              name: "editing.tools.split",
+              icon: "splitFeatures.png",
+              layer,
+              row: 3,
+              once: true,
+              op: SplitFeatureWorkflow
+            }
+          },
+          {
+            type: ['update'],
+            config:{
+              id: 'mergefeatures',
+              name: "editing.tools.merge",
+              icon: "mergeFeatures.png",
+              layer,
+              row: 3,
+              once: true,
+              op: MergeFeaturesWorkflow
+            }
+          }
+        ];
+        break;
+      case 'Table':
+        tools =  [
+          {
+            type: ['create'],
+            config: {
+              id: 'addfeature',
+              name: "editing.tools.add_feature",
+              icon: "addTableRow.png",
+              layer,
+              op: AddTableFeatureWorflow
+            }
+          },
+          {
+            type: ['update', 'delete'],
+            config: {
+              id: 'edittable',
+              name: "editing.tools.update_feature",
+              icon: "editAttributes.png",
+              layer,
+              op: EditTableFeaturesWorkflow
+            }
+          }
+        ];
+        break;
+    }
+    return editingtype ? tools.filter(tool => tool.type.indexOf(editingtype) !== -1 ).map(tool => {
+      // in case of editingtype all tools on line
+      tool.config.row = 1;
+      return new Tool(tool.config)
+    }) : tools.map(tool => new Tool(tool.config));
+  };
   this.build = function(options={}) {
-    const type = options.type || Layer.LayerTypes.VECTOR;
-    const layer = options.layer;
-    let tools;
+    const {type=Layer.LayerTypes.VECTOR, layer, editingtype} = options;
+    let tools = [];
     switch (type) {
       case Layer.LayerTypes.VECTOR:
         const geometryType = options.geometryType;
+        // check if multigeometry
         const isMultiGeometry = Geometry.isMultiGeometry(geometryType);
-        switch (geometryType) {
-          case Geometry.GeometryTypes.POINT:
-          case Geometry.GeometryTypes.POINTZ:
-          case Geometry.GeometryTypes.POINTM:
-          case Geometry.GeometryTypes.POINTZM:
-          case Geometry.GeometryTypes.POINT25D:
-          case Geometry.GeometryTypes.MULTIPOINT:
-          case Geometry.GeometryTypes.MULTIPOINTZ:
-          case Geometry.GeometryTypes.MULTIPOINTM:
-          case Geometry.GeometryTypes.MULTIPOINTZM:
-          case Geometry.GeometryTypes.MULTIPOINT25D:
-            tools = [
-              new Tool({
-                id: 'addfeature',
-                name: "editing.tools.add_feature",
-                icon: "addPoint.png",
-                layer,
-                row: 1,
-                op: AddFeatureWorkflow
-              }),
-              new Tool({
-                id: 'editattributes',
-                name: "editing.tools.update_feature",
-                icon: "editAttributes.png",
-                layer,
-                row:1,
-                op: EditFeatureAttributesWorkflow
-              }),
-              new Tool({
-                id: 'deletefeature',
-                name: "editing.tools.delete_feature",
-                icon: "deletePoint.png",
-                layer,
-                row:1,
-                op: DeleteFeatureWorkflow
-              }),
-              new Tool({
-                id: 'editmultiattributes',
-                name: "editing.tools.update_multi_features",
-                icon: "multiEditAttributes.png",
-                layer,
-                row:2,
-                once: true,
-                op: EditMultiFeatureAttributesWorkflow
-              }),
-              new Tool({
-                id: 'movefeature',
-                name: "editing.tools.move_feature",
-                icon: "movePoint.png",
-                layer,
-                row: 2,
-                op: MoveFeatureWorkflow
-              }),
-              new Tool({
-                id: 'copyfeatures',
-                name: "editing.tools.copy",
-                icon: "copyPoint.png",
-                layer,
-                once: true,
-                row:2,
-                op: CopyFeaturesWorflow
-              }),
-              ...(isMultiGeometry ? [
-                new Tool({
-                  id: 'addPart',
-                  name: "editing.tools.addpart",
-                  icon: "addPart.png",
-                  layer,
-                  once: true,
-                  row: 3,
-                  op: AddPartToMultigeometriesWorkflow
-                })
-              ] : []),
-              ...(isMultiGeometry ? [
-                new Tool({
-                  id: 'deletePart',
-                  name: "editing.tools.deletepart",
-                  icon: "deletePart.png",
-                  layer,
-                  row: 3,
-                  op: DeletePartFromMultigeometriesWorkflow
-                })
-              ] : [])
-            ];
-            break;
-          case Geometry.GeometryTypes.LINESTRING:
-          case Geometry.GeometryTypes.LINESTRINGZ:
-          case Geometry.GeometryTypes.LINESTRINGM:
-          case Geometry.GeometryTypes.LINESTRINGZM:
-          case Geometry.GeometryTypes.LINESTRING25D:
-          case Geometry.GeometryTypes.MULTILINESTRING:
-          case Geometry.GeometryTypes.MULTILINESTRINGZ:
-          case Geometry.GeometryTypes.MULTILINESTRINGM:
-          case Geometry.GeometryTypes.MULTILINESTRINGZM:
-          case Geometry.GeometryTypes.MULTILINESTRING25D:
-          case Geometry.GeometryTypes.LINE:
-          case Geometry.GeometryTypes.LINEZ:
-          case Geometry.GeometryTypes.LINEM:
-          case Geometry.GeometryTypes.LINEZM:
-          case Geometry.GeometryTypes.LINE25D:
-          case Geometry.GeometryTypes.MULTILINE:
-          case Geometry.GeometryTypes.MULTILINEZ:
-          case Geometry.GeometryTypes.MULTILINEM:
-          case Geometry.GeometryTypes.MULTILINEZM:
-          case Geometry.GeometryTypes.MULTILINE25D:
-            tools = [
-              new Tool({
-                id: 'addfeature',
-                name: "editing.tools.add_feature",
-                icon: "addLine.png",
-                layer,
-                row:1,
-                op: AddFeatureWorkflow
-              }),
-              new Tool({
-                id: 'editattributes',
-                name: "editing.tools.update_feature",
-                icon: "editAttributes.png",
-                layer: layer,
-                row: 1,
-                op: EditFeatureAttributesWorkflow
-              }),
-              new Tool({
-                id: 'movevertex',
-                name: "editing.tools.update_vertex",
-                icon: "moveVertex.png",
-                layer,
-                row:1,
-                op: ModifyGeometryVertexWorkflow
-              }),
-              new Tool({
-                id: 'deletefeature',
-                name: "editing.tools.delete_feature",
-                icon: "deleteLine.png",
-                layer,
-                row:1,
-                op: DeleteFeatureWorkflow
-              }),
-              new Tool({
-                id: 'editmultiattributes',
-                name: "editing.tools.update_multi_features",
-                icon: "multiEditAttributes.png",
-                layer,
-                row:2,
-                once: true,
-                op: EditMultiFeatureAttributesWorkflow
-              }),
-              new Tool({
-                id: 'movefeature',
-                name: "editing.tools.move_feature",
-                icon: "moveLine.png",
-                layer,
-                row:2,
-                op: MoveFeatureWorkflow
-              }),
-              new Tool({
-                id: 'copyfeatures',
-                name: "editing.tools.copy",
-                icon: "copyLine.png",
-                layer,
-                row:2,
-                once: true,
-                op: CopyFeaturesWorflow
-              }),
-              ...(isMultiGeometry ? [
-                new Tool({
-                  id: 'addPart',
-                  name: "editing.tools.addpart",
-                  icon: "addPart.png",
-                  layer,
-                  row:3,
-                  once: true,
-                  op: AddPartToMultigeometriesWorkflow
-                })
-              ] : []),
-              ...(isMultiGeometry ? [
-                new Tool({
-                  id: 'deletePart',
-                  name: "editing.tools.deletepart",
-                  icon: "deletePart.png",
-                  layer,
-                  row:3,
-                  op: DeletePartFromMultigeometriesWorkflow
-                })
-              ] : []),
-              new Tool({
-                id: 'splitfeature',
-                name: "editing.tools.split",
-                icon: "splitFeatures.png",
-                layer,
-                row:3,
-                once: true,
-                op: SplitFeatureWorkflow
-              }),
-              new Tool({
-                id: 'mergefeatures',
-                name: "editing.tools.merge",
-                icon: "mergeFeatures.png",
-                layer,
-                row:3,
-                once: true,
-                op: MergeFeaturesWorkflow
-              })
-            ];
-            break;
-          case Geometry.GeometryTypes.POLYGON:
-          case Geometry.GeometryTypes.POLYGONZ:
-          case Geometry.GeometryTypes.POLYGONM:
-          case Geometry.GeometryTypes.POLYGONZM:
-          case Geometry.GeometryTypes.POLYGON25D:
-          case Geometry.GeometryTypes.MULTIPOLYGON:
-          case Geometry.GeometryTypes.MULTIPOLYGONZ:
-          case Geometry.GeometryTypes.MULTIPOLYGONM:
-          case Geometry.GeometryTypes.MULTIPOLYGONZM:
-          case Geometry.GeometryTypes.MULTIPOLYGON25D:
-            tools = [
-              new Tool({
-                id: 'addfeature',
-                name: "editing.tools.add_feature",
-                icon: "addPolygon.png",
-                layer,
-                row:1,
-                op: AddFeatureWorkflow
-              }),
-              new Tool({
-                id: 'editattributes',
-                name: "editing.tools.update_feature",
-                icon: "editAttributes.png",
-                layer,
-                row:1,
-                op: EditFeatureAttributesWorkflow
-              }),
-              new Tool({
-                id: 'movevertex',
-                name: "editing.tools.update_vertex",
-                icon: "moveVertex.png",
-                layer,
-                row:1,
-                op: ModifyGeometryVertexWorkflow
-              }),
-              new Tool({
-                id: 'deletefeature',
-                name: "editing.tools.delete_feature",
-                icon: "deletePolygon.png",
-                layer,
-                row:1,
-                op: DeleteFeatureWorkflow
-              }),
-              new Tool({
-                id: 'editmultiattributes',
-                name: "editing.tools.update_multi_features",
-                icon: "multiEditAttributes.png",
-                layer,
-                row:2,
-                once: true,
-                op: EditMultiFeatureAttributesWorkflow
-              }),
-              new Tool({
-                id: 'movefeature',
-                name: "editing.tools.move_feature",
-                icon: "movePolygon.png",
-                layer,
-                row:2,
-                op: MoveFeatureWorkflow
-              }),
-              new Tool({
-                id: 'copyfeatures',
-                name: "editing.tools.copy",
-                icon: "copyPolygon.png",
-                layer,
-                row:2,
-                once: true,
-                op: CopyFeaturesWorflow
-              }),
-              ...(isMultiGeometry ? [
-                new Tool({
-                  id: 'addPart',
-                  name: "editing.tools.addpart",
-                  icon: "addPart.png",
-                  layer,
-                  row:3,
-                  once: true,
-                  op: AddPartToMultigeometriesWorkflow
-                })
-              ] : []),
-              ...(isMultiGeometry ? [
-                new Tool({
-                  id: 'deletePart',
-                  name: "editing.tools.deletepart",
-                  icon: "deletePart.png",
-                  layer,
-                  row:3,
-                  op: DeletePartFromMultigeometriesWorkflow
-                })
-              ] : []),
-              new Tool({
-                id: 'splitfeature',
-                name: "editing.tools.split",
-                icon: "splitFeatures.png",
-                layer,
-                row:3,
-                once: true,
-                op: SplitFeatureWorkflow
-              }),
-              new Tool({
-                id: 'mergefeatures',
-                name: "editing.tools.merge",
-                icon: "mergeFeatures.png",
-                layer,
-                row:3,
-                once: true,
-                op: MergeFeaturesWorkflow
-              })
-            ];
-            break;
+        // in case of Point Geometry
+        if (Geometry.isPointGeometryType(geometryType)) {
+          tools = this.createTools({
+            layer,
+            editingtype,
+            type: 'Point',
+            isMultiGeometry
+          })
+        }
+        // in case of Line geometry
+        else if (Geometry.isLineGeometryType(geometryType)) {
+          tools = this.createTools({
+            layer,
+            type: 'Line',
+            editingtype,
+            isMultiGeometry
+          })
+        }
+        // in case of Polygon Geometry
+        else if (Geometry.isPolygonGeometryType(geometryType)){
+            tools = tools = this.createTools({
+              layer,
+              type: 'Polygon',
+              editingtype,
+              isMultiGeometry
+            })
         }
         break;
       case Layer.LayerTypes.TABLE:
-        tools = [
-          new Tool({
-            id: 'addfeature',
-            name: "editing.tools.add_feature",
-            icon: "addTableRow.png",
-            layer,
-            op: AddTableFeatureWorflow
-          }),
-          new Tool({
-            id: 'edittable',
-            name: "editing.tools.update_feature",
-            icon: "editAttributes.png",
-            layer,
-            op: EditTableFeaturesWorkflow
-          })
-        ];
+        tools = this.createTools({
+          layer,
+          type: 'Table',
+          editingtype
+        });
         break;
       default:
         tools = [];
