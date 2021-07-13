@@ -4,9 +4,10 @@ const ToolBox = require('./toolbox');
 
 function EditorToolBoxesFactory() {
   this.build = function(layer, options={}) {
+    //get editing contsraints
     const constraints = layer.getEditingConstrains();
     // get editing type (create, update, delete)
-    const { editingtype } = options;
+    const {editingtype} = constraints;
     const type = layer.getType();
     const id = layer.getId();
     const color = layer.getColor();

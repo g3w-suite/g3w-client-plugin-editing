@@ -1,5 +1,4 @@
-const inherit = g3wsdk.core.utils.inherit;
-const base =  g3wsdk.core.utils.base;
+const {base, inherit} = g3wsdk.core.utils;
 const createSelectedStyle = g3wsdk.core.geoutils.createSelectedStyle;
 const GUI = g3wsdk.gui.GUI;
 const Task = g3wsdk.core.workflow.Task;
@@ -23,7 +22,8 @@ const proto = EditingTask.prototype;
 
 //get editing type from editing config
 proto.getEditingType = function(){
-  return this.getEditingService().getConfig().editingtype;
+  console.log(this)
+  return null;
 };
 
 proto.registerPointerMoveCursor = function(){

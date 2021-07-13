@@ -112,7 +112,6 @@ const InternalComponent = Vue.extend({
 
 const TableComponent = function(options={}) {
   base(this);
-
   const service = options.service || new TableService({
    ...options
   });

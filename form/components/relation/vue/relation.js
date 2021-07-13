@@ -9,7 +9,7 @@ const RelationComponent = Vue.extend({
   mixins: [mediaMixin, fieldsMixin, resizeMixin],
   name: 'g3w-relation',
   ...compiledTemplate,
-  data: function() {
+  data() {
     return {
       showallfieldsindex: null,
       tooltips: {
@@ -39,16 +39,16 @@ const RelationComponent = Vue.extend({
           console.log(error)
         })
     },
-    linkRelation: function() {
+    linkRelation() {
       this._service.linkRelation();
     },
-    updateExternalKeyValueRelations: function(input) {
+    updateExternalKeyValueRelations(input) {
       this._service.updateExternalKeyValueRelations(input);
     },
-    isRequired: function() {
+    isRequired() {
       return this._service.isRequired();
     },
-    relationAttributesSubset: function(relation) {
+    relationAttributesSubset(relation) {
       let attributes = [];
       const fields = this.relationsFields(relation);
       fields.forEach(field => {
@@ -61,20 +61,20 @@ const RelationComponent = Vue.extend({
       });
       return attributes;
     },
-    relationsAttributesSubsetLength: function(relation) {
+    relationsAttributesSubsetLength(relation) {
       return this.relationAttributesSubset(relation).length;
     },
-    relationsFields: function(relation) {
+    relationsFields(relation) {
       let attributes = this._service.relationFields(relation);
       return attributes;
     },
-    showAllRelationFields: function(index) {
+    showAllRelationFields(index) {
       this.showallfieldsindex = this.showallfieldsindex == index ? null : index;
     },
-    showAllFieds: function(index) {
+    showAllFieds(index) {
       return this.showallfieldsindex == index;
     },
-    getRelationTools: function() {
+    getRelationTools() {
       return this._service.getRelationTools();
     },
     isLink(value){
@@ -143,6 +143,7 @@ const RelationComponent = Vue.extend({
       relation: this.relation, // main relation between layerId (current in editing)
       relations: this.relations // relation related to current feature of current layer in editing
     });
+    this.editingtype = this._service.getEditingType();
     this.formeventbus.$on('changeinput', this.updateExternalKeyValueRelations);
   },
   async activated() {
@@ -158,7 +159,7 @@ const RelationComponent = Vue.extend({
     $('.g3w-icon[data-toggle="dropdown"]').tooltip();
     $('[data-toggle="tooltip"]').tooltip();
   },
-  destroyed: function() {}
+  destroyed() {}
  });
 
 

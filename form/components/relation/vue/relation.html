@@ -5,11 +5,13 @@
     </div>
     <div>
       <span class="g3w-icon add-link" align="center"
+            v-if="!editingtype.relation || editingtype.relation === 'update'"
             data-toggle="tooltip" data-placement="bottom"
             v-t-tooltip:plugin="tooltips.link_relation" @click="enableAddLinkButtons ? linkRelation() : null"
             :class="[{'disabled': !enableAddLinkButtons}, g3wtemplate.font['link']]">
       </span>
       <span data-toggle="tooltip" data-placement="bottom"
+            v-if="!editingtype.relation || editingtype.relation === 'create'"
             v-t-tooltip:plugin="tooltips.add_relation"
             @click="enableAddLinkButtons ? addRelationAndLink() : null"
             class="g3w-icon add-link pull-right"
@@ -42,7 +44,8 @@
                 </div>
               </td>
               <td class="action-cell">
-                <div v-if="!fieldrequired" class="g3w-mini-relation-icon skin-tooltip-right g3w-icon" :class="g3wtemplate.font['unlink']"
+                <div v-if="!fieldrequired && (!editingtype.relation || editingtype.relation === 'update')"
+                     class="g3w-mini-relation-icon skin-tooltip-right g3w-icon" :class="g3wtemplate.font['unlink']"
                      @click="unlinkRelation(index)"
                      data-toggle="tooltip" data-placement="right" v-t-tooltip:plugin="tooltips.unlink_relation"
                      aria-hidden="true">

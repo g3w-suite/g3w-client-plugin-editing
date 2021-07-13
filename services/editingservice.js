@@ -119,9 +119,7 @@ function EditingService() {
     // after add layers to layerstore
     this._layersstore.addLayers(this.getLayers());
     // create toolboxes
-    this._buildToolBoxes({
-      editingtype: this.config.type
-    });
+    this._buildToolBoxes();
     // create a dependencies tree
     this._createToolBoxDependencies();
     //setApi

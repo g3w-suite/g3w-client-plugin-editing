@@ -43,7 +43,6 @@ const RelationService = function(layerId, options = {}) {
   // check if father is editable field. It is useful to fill relation filed of relation feature
   this._isFatherFieldEditable = this._parentLayer.isEditingFieldEditable(fatherRelationField);
   this._isExternalFieldRequired = this._checkIfExternalFieldRequired();
-
   // check if parent field is editable. If not get the id of parent feature so the server can genratate the right value
   // to fill the field of relation layer feature when commit
   this._currentParentFeatureRelationFieldValue = this._isFatherFieldEditable ?
@@ -52,16 +51,21 @@ const RelationService = function(layerId, options = {}) {
   ///////////////////////////////////////
   this._relationTools = [];
   this._add_link_workflow = null;
+  //get editing contstraint type
+  this.editingtype= {
+    parent: this._parentLayer.getEditingConstrains().editingtype,
+    relation: relationLayer.getEditingConstrains().editingtype
+  };
   //check if relationLayer is a TABLE Layer
   if (relationLayerType === Layer.LayerTypes.TABLE) {
-    this._relationTools.push({
+    (!this.editingtype.relation || this.editingtype.relation === 'delete') && this._relationTools.push({
       state: {
         icon: 'deleteTableRow.png',
         id: 'deletefeature',
         name: "editing.tools.delete_feature"
       }
     });
-    this._relationTools.push({
+    (!this.editingtype.relation || this.editingtype.relation === 'update') && this._relationTools.push({
       state: {
         icon: 'editAttributes.png',
         id: 'editattributes',
@@ -79,6 +83,10 @@ const RelationService = function(layerId, options = {}) {
 };
 
 const proto = RelationService.prototype;
+
+proto.getEditingType = function(){
+  return this.editingtype;
+};
 
 proto._setAddLinkWorkflow = function() {
   const add_link_workflow = {
@@ -586,7 +594,5 @@ proto.relationFields = function(relation) {
   });
   return attributes
 };
-
-
 
 module.exports = RelationService;
