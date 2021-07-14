@@ -2,8 +2,8 @@ const t = g3wsdk.core.i18n.tPlugin;
 const toRawType = g3wsdk.core.utils.toRawType;
 const RelationService = require('../../../../services/relationservice');
 const {fieldsMixin, resizeMixin, mediaMixin} = g3wsdk.gui.vue.Mixins;
-let relationsTable;
 const compiledTemplate = Vue.compile( require('./relation.html'));
+let relationsTable;
 
 const RelationComponent = Vue.extend({
   mixins: [mediaMixin, fieldsMixin, resizeMixin],
@@ -35,9 +35,7 @@ const RelationComponent = Vue.extend({
     startTool: function(relationtool, index) {
       this._service.startTool(relationtool, index)
         .then(() => {})
-        .catch((error) => {
-          console.log(error)
-        })
+        .catch(error => console.log(error))
     },
     linkRelation() {
       this._service.linkRelation();
@@ -65,8 +63,7 @@ const RelationComponent = Vue.extend({
       return this.relationAttributesSubset(relation).length;
     },
     relationsFields(relation) {
-      let attributes = this._service.relationFields(relation);
-      return attributes;
+      return this._service.relationFields(relation);
     },
     showAllRelationFields(index) {
       this.showallfieldsindex = this.showallfieldsindex == index ? null : index;
@@ -82,10 +79,8 @@ const RelationComponent = Vue.extend({
       return ['photo', 'link'].indexOf(this.getFieldType(value)) !== -1;
     },
     getValue(value) {
-      if (value && toRawType(value) === 'Object') {
-        value = value.value;
-      } else if (typeof value == 'string' && value.indexOf('_new_') === 0)
-        value = null;
+      if (value && toRawType(value) === 'Object') value = value.value;
+      else if (typeof value == 'string' && value.indexOf('_new_') === 0) value = null;
       this.value = value;
       return value;
     },
@@ -147,9 +142,7 @@ const RelationComponent = Vue.extend({
     this.formeventbus.$on('changeinput', this.updateExternalKeyValueRelations);
   },
   async activated() {
-    if (!relationsTable && this.relationsLength) {
-      this._createDataTable();
-    }
+    if (!relationsTable && this.relationsLength) this._createDataTable();
   },
   deactivated() {
     this.destroyTable();

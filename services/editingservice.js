@@ -15,7 +15,7 @@ const serverErrorParser= g3wsdk.core.errors.parsers.Server;
 const t = g3wsdk.core.i18n.tPlugin;
 const ToolBoxesFactory = require('../toolboxes/toolboxesfactory');
 const CommitFeaturesWorkflow = require('../workflows/commitfeaturesworkflow');
-
+const MAPCONTROL_TOGGLED_EVENT_NAME = 'mapcontrol:toggled';
 const OFFLINE_ITEMS = {
   CHANGES: 'EDITING_CHANGES'
 };
@@ -70,7 +70,7 @@ function EditingService() {
     }
   };
 
-  this._mapService.on('mapcontrol:toggled', this.mapControlToggleEventHandler);
+  this._mapService.on(MAPCONTROL_TOGGLED_EVENT_NAME, this.mapControlToggleEventHandler);
   //plugin components
   this._formComponents = {};
   this._subscribers = {};
@@ -320,9 +320,7 @@ proto.checkOfflineChanges = function({modal=true, unlock=false}={}) {
         }))
       }
       $.when.apply(this, promises)
-        .then(() =>{
-          resolve()
-        })
+        .then(() =>resolve())
         .fail(error=>reject(error))
         .always(() =>{
           unlock && layerIds.forEach(layerId => {
@@ -349,9 +347,7 @@ proto.registerOnLineOffLineEvent = function() {
     this.checkOfflineChanges({
       modal:false
     }).then(()=>{
-    }).catch(error =>{
-      GUI.notify.error(error);
-    })
+    }).catch(error =>GUI.notify.error(error))
   });
 
   this._unByKeys.push({
@@ -380,7 +376,7 @@ proto.unregisterSettersEvents = function(setters=[]) {
 };
 
 proto.fireEvent = function(event, options={}) {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     this._subscribers[event] && this._subscribers[event].forEach(fnc => fnc(options));
     resolve();
   });
@@ -442,8 +438,7 @@ proto.setLayersColor = function() {
 
 proto._layerChildrenRelationInEditing = function(layer) {
   let relations = layer.getChildren();
-  let childrenrealtioninediting = [];
-  relations.forEach(relation => {if (this.getLayerById(relation)) childrenrealtioninediting.push(relation)});
+  const childrenrealtioninediting = relations.filter(relation => this.getLayerById(relation));
   return childrenrealtioninediting;
 };
 
@@ -610,7 +605,7 @@ proto._attachLayerWidgetsEvent = function(layer) {
 };
 
 proto._createToolBoxDependencies = function() {
-  this._toolboxes.forEach((toolbox) => {
+  this._toolboxes.forEach(toolbox => {
     const layer = toolbox.getLayer();
     toolbox.setFather(layer.isFather());
     toolbox.state.editing.dependencies = this._getToolBoxEditingDependencies(layer);
@@ -624,6 +619,12 @@ proto._createToolBoxDependencies = function() {
   })
 };
 
+/**
+ * Check if field of layer is required
+ * @param layerId
+ * @param fieldName
+ * @returns {*}
+ */
 proto.isFieldRequired = function(layerId, fieldName) {
   return this.getLayerById(layerId).isFieldRequired(fieldName);
 };
@@ -640,15 +641,11 @@ proto._hasEditingDependencies = function(layer) {
   return !!toolboxesIds.length;
 };
 
-// funzione che serve a manageggia
 proto.handleToolboxDependencies = function(toolbox) {
   let dependecyToolBox;
-  if (toolbox.isFather())
-  // verifico se le feature delle dipendenze sono state caricate
-    this.getLayersDependencyFeatures(toolbox.getId());
-  toolbox.getDependencies().forEach((toolboxId) => {
+  if (toolbox.isFather()) this.getLayersDependencyFeatures(toolbox.getId());
+  toolbox.getDependencies().forEach(toolboxId => {
     dependecyToolBox = this.getToolBoxById(toolboxId);
-    // disabilito visivamente l'editing
     dependecyToolBox.setEditing(false);
   })
 };
@@ -682,7 +679,7 @@ proto.getCurrentWorkflowData = function() {
 proto.getRelationsAttributesByFeature = function({layerId, relation, feature}={}) {
   const layer = this.getToolBoxById(layerId).getLayer();
   const relations = this.getRelationsByFeature({layerId, relation, feature});
-  return relations.map((relation) => {
+  return relations.map(relation => {
     return {
       fields: layer.getFieldsWithValues(relation, {
         relation: true
@@ -703,9 +700,7 @@ proto.getRelationsByFeature = function({layerId, relation, feature, layerType}={
   });
   const featureValue = feature.get(relationField);
   const features = this._getFeaturesByLayerId(layerId);
-  return features.filter(feature => {
-    return feature.get(ownField) == featureValue;
-  });
+  return features.filter(feature => feature.get(ownField) == featureValue);
 };
 
 proto.registerLeavePage = function(bool){
@@ -730,16 +725,8 @@ proto.afterEditingStart = function({layer}= {}) {
   //TODO
 };
 
-// vado a recuperare il toolbox a seconda del suo id
 proto.getToolBoxById = function(toolboxId) {
-  let toolBox = null;
-  this._toolboxes.forEach((toolbox) => {
-    if (toolbox.getId() === toolboxId) {
-      toolBox = toolbox;
-      return false;
-    }
-  });
-  return toolBox;
+  return this._toolboxes.find(toolbox => toolbox.getId() === toolboxId);
 };
 
 proto.getToolBoxes = function() {
@@ -766,10 +753,7 @@ proto.stop = function() {
     });
     $.when.apply(this, commitpromises)
       .always(() => {
-        this._toolboxes.forEach(toolbox => {
-          // stop toolbox
-          toolbox.stop();
-        });
+        this._toolboxes.forEach(toolbox => toolbox.stop());
         this.clearState();
         //this.activeQueryInfo();
         this._mapService.refreshMap();
@@ -783,7 +767,7 @@ proto.clear = function() {
   MapLayersStoreRegistry.removeLayersStore(this._layersstore);
   SessionsRegistry.clear();
   //turn off events
-  this._mapService.off('mapcontrol:toggled', this.mapControlToggleEventHandler);
+  this._mapService.off(MAPCONTROL_TOGGLED_EVENT_NAME, this.mapControlToggleEventHandler);
 };
 
 proto.clearState = function() {
@@ -792,11 +776,10 @@ proto.clearState = function() {
   this.state.message =  null;
 };
 
-
 proto.getRelationsInEditing = function({layerId, relations, feature}={}) {
   let relationsinediting = [];
   let relationinediting;
-  relations.forEach((relation) => {
+  relations.forEach(relation => {
     const relationLayerId = this._getRelationLayerId({layerId, relation});
     if (this.getLayerById(relationLayerId)) {
       relationinediting = {
@@ -832,7 +815,7 @@ proto.stopSessionChildren = function(layerId) {
     relations: layer.getRelations() ? layer.getRelations().getArray() : [],
     layerId
   });
-  relations.forEach((relation) => {
+  relations.forEach(relation => {
     const relationId = this._getRelationId({
       layerId,
       relation
@@ -845,7 +828,7 @@ proto.fatherInEditing = function(layerId) {
   let inEditing = false;
   let toolbox;
   let relationLayerFathers = this.getLayerById(layerId).getFathers();
-  relationLayerFathers.forEach((id) => {
+  relationLayerFathers.forEach(id => {
     toolbox = this.getToolBoxById(id);
     if (toolbox && toolbox.inEditing()) {
       inEditing = true;
@@ -914,7 +897,7 @@ proto._getFeaturesByLayerId = function(layerId) {
 };
 
 proto.getLayersDependencyFeaturesFromSource = function({layerId, relation, feature, operator='eq'}={}){
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     const features = this._getFeaturesByLayerId(layerId);
     const {ownField, relationField} = this._getRelationFieldsFromRelation({
       layerId,
@@ -943,12 +926,12 @@ proto.getLayersDependencyFeatures = function(layerId, opts={}) {
     layerId
   }) : [];
   const online = ApplicationState.online;
-  relations.forEach((relation) => {
+  relations.forEach(relation => {
     const id = this._getRelationId({
       layerId,
       relation
     });
-    const promise = new Promise((resolve) => {
+    const promise = new Promise(resolve => {
       const filterType = opts.filterType || 'fid';
       opts.relation = relation;
       opts.layerId = layerId;
@@ -976,7 +959,7 @@ proto.getLayersDependencyFeatures = function(layerId, opts={}) {
               resolve(id);
               toolbox.stopLoading();
             } else {
-              session.getFeatures(options).always((promise) => {
+              session.getFeatures(options).always(promise => {
                 promise.always(()=>{
                   toolbox.stopLoading();
                   resolve(id);
@@ -991,9 +974,7 @@ proto.getLayersDependencyFeatures = function(layerId, opts={}) {
           relation,
           feature: opts.feature,
           operator: opts.operator
-        }).then(()=>{
-          resolve(id);
-        })
+        }).then(()=>resolve(id))
       }
     });
     promises.push(promise);
@@ -1015,9 +996,7 @@ proto.commitDirtyToolBoxes = function(layerId) {
               })
             })
         })
-        .always(() => {
-          resolve(toolbox);
-        })
+        .always(() => resolve(toolbox))
     } else
       resolve(toolbox);
   });

@@ -12,13 +12,11 @@ const EditingFormService = function(options={}) {
   const feature = features[features.length - 1];
   let relations = layer.getRelations().getArray().filter(relation => relation.getType() !== 'ONE');
   relations = layer.isFather() ? EditingService.getRelationsInEditing({layerId, relations , feature}) : [];
-  this.hasRelations = function() {
-    return !!relations.length;
-  };
+  this.hasRelations = () => !!relations.length;
   this.buildRelationComponents = function() {
     const self = this;
     const relationComponents = [];
-    relations.forEach((relation) => {
+    relations.forEach(relation => {
       const relationComponent = Vue.extend({
         mixins: [RelationComponent],
         name: `relation_${Date.now()}`,

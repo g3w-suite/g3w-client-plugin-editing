@@ -56,7 +56,7 @@ const RelationService = function(layerId, options = {}) {
     parent: this._parentLayer.getEditingConstrains().editingtype,
     relation: relationLayer.getEditingConstrains().editingtype
   };
-  //check if relationLayer is a TABLE Layer
+  //check if relationLayer is a TABLE Layer and with editingtype value check add tools
   if (relationLayerType === Layer.LayerTypes.TABLE) {
     (!this.editingtype.relation || this.editingtype.relation === 'delete') && this._relationTools.push({
       state: {
