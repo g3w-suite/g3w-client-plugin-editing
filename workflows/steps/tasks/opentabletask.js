@@ -22,7 +22,7 @@ proto.run = function(inputs, context) {
   this._isContentChild = WorkflowsStack.getLength() > 1;
   const foreignKey = this._isContentChild ? context.excludeFields[0] :  null;
   const exclude = this._isContentChild && context.exclude;
-  const { editingtype } = originalLayer.getEditingConstrains();
+  const capabilities = originalLayer.getEditingCapabilities();
   const editingLayer = originalLayer.getEditingLayer();
   let features = editingLayer.readEditingFeatures();
   if (exclude && features.length) {
@@ -40,7 +40,7 @@ proto.run = function(inputs, context) {
     headers,
     context,
     inputs,
-    editingtype,
+    capabilities,
     fatherValue: context.fatherValue,
     foreignKey
   });

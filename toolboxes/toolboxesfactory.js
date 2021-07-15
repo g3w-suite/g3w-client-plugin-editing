@@ -6,8 +6,8 @@ function EditorToolBoxesFactory() {
   this.build = function(layer, options={}) {
     //get editing contsraints
     const constraints = layer.getEditingConstrains();
-    // get editing type (create, update, delete)
-    const {editingtype} = constraints;
+    // get editing capabilities (create, update_attributes, update_geometry, delete)
+    const capabilities = layer.getEditingCapabilities();
     const type = layer.getType();
     const id = layer.getId();
     const color = layer.getColor();
@@ -19,14 +19,14 @@ function EditorToolBoxesFactory() {
           layer,
           geometryType: geometryType,
           type,
-          editingtype
+          capabilities
         });
         break;
       case Layer.LayerTypes.TABLE:
         tools = EditToolsFactory.build({
           layer,
           type,
-          editingtype
+          capabilities
         });
         break;
       default:

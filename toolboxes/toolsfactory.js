@@ -20,9 +20,9 @@ function EditorToolsFactory() {
    * Method to create tools base on type (point, Line, e..t) editing type (create/update/detele)
    * @param type Point, Line, Polygon, Table
    * @param layer
-   * @param editingtype (create/update, delete) or undefined meaning all possible tools base on type
+   * @param capabilities (create/update, delete) or undefined meaning all possible tools base on type
    */
-  this.createTools = function({type, isMultiGeometry, layer, editingtype}){
+  this.createTools = function({type, isMultiGeometry, layer, capabilities}){
     let tools = [];
     switch (type) {
       case 'Point':
@@ -39,7 +39,7 @@ function EditorToolsFactory() {
             },
           },
           {
-            type: ['update'],
+            type: ['update_attributes'],
             config:{
               id: 'editattributes',
               name: "editing.tools.update_feature",
@@ -61,7 +61,7 @@ function EditorToolsFactory() {
             }
           },
           {
-            type: ['update'],
+            type: ['update_attributes'],
             config: {
               id: 'editmultiattributes',
               name: "editing.tools.update_multi_features",
@@ -73,7 +73,7 @@ function EditorToolsFactory() {
             }
           },
           {
-            type: ['update'],
+            type: ['update_geometry'],
             config: {
               id: 'movefeature',
               name: "editing.tools.move_feature",
@@ -111,7 +111,7 @@ function EditorToolsFactory() {
           ] : []),
           ...(isMultiGeometry ? [
             {
-              type: ['delete'],
+              type: ['update_geometry'],
               config: {
                 id: 'deletePart',
                 name: "editing.tools.deletepart",
@@ -139,7 +139,7 @@ function EditorToolsFactory() {
             }
           },
           {
-            type: ['update'],
+            type: ['update_attributes'],
             config: {
               id: 'editattributes',
               name: "editing.tools.update_feature",
@@ -150,7 +150,7 @@ function EditorToolsFactory() {
             }
           },
           {
-            type: ['update'],
+            type: ['update_geometry'],
             config: {
               id: 'movevertex',
               name: "editing.tools.update_vertex",
@@ -172,7 +172,7 @@ function EditorToolsFactory() {
             }
           },
           {
-            type: ['update'],
+            type: ['update_attributes'],
             config: {
               id: 'editmultiattributes',
               name: "editing.tools.update_multi_features",
@@ -184,7 +184,7 @@ function EditorToolsFactory() {
             }
           },
           {
-            type: ['update'],
+            type: ['update_geometry'],
             config:{
               id: 'movefeature',
               name: "editing.tools.move_feature",
@@ -222,7 +222,7 @@ function EditorToolsFactory() {
           ] : []),
           ...(isMultiGeometry ? [
             {
-              type: ['delete'],
+              type: ['update_geometry'],
               config: {
                 id: 'deletePart',
                 name: "editing.tools.deletepart",
@@ -234,7 +234,7 @@ function EditorToolsFactory() {
             }
           ] : []),
           {
-            type:  ['update'],
+            type:  ['update_geometry'],
             config: {
               id: 'splitfeature',
               name: "editing.tools.split",
@@ -246,7 +246,7 @@ function EditorToolsFactory() {
             }
           },
           {
-            type: ['update'],
+            type: ['update_geometry'],
             config:{
               id: 'mergefeatures',
               name: "editing.tools.merge",
@@ -272,7 +272,7 @@ function EditorToolsFactory() {
             }
           },
           {
-            type: ['update', 'delete'],
+            type: ['delete', 'update_attributes'],
             config: {
               id: 'edittable',
               name: "editing.tools.update_feature",
@@ -284,14 +284,14 @@ function EditorToolsFactory() {
         ];
         break;
     }
-    return editingtype ? tools.filter(tool => tool.type.indexOf(editingtype) !== -1 ).map(tool => {
-      // in case of editingtype all tools on line
+    return capabilities ? tools.filter(tool => tool.type.filter(type => capabilities.includes(type)).length > 0).map(tool => {
+      // in case of capabilities all tools on line
       tool.config.row = 1;
       return new Tool(tool.config)
-    }) : tools.map(tool => new Tool(tool.config));
+    }): tools.map(tool => new Tool(tool.config));
   };
   this.build = function(options={}) {
-    const {type=Layer.LayerTypes.VECTOR, layer, editingtype} = options;
+    const {type=Layer.LayerTypes.VECTOR, layer, capabilities} = options;
     let tools = [];
     switch (type) {
       case Layer.LayerTypes.VECTOR:
@@ -302,7 +302,7 @@ function EditorToolsFactory() {
         if (Geometry.isPointGeometryType(geometryType)) {
           tools = this.createTools({
             layer,
-            editingtype,
+            capabilities,
             type: 'Point',
             isMultiGeometry
           })
@@ -312,7 +312,7 @@ function EditorToolsFactory() {
           tools = this.createTools({
             layer,
             type: 'Line',
-            editingtype,
+            capabilities,
             isMultiGeometry
           })
         }
@@ -321,7 +321,7 @@ function EditorToolsFactory() {
             tools = tools = this.createTools({
               layer,
               type: 'Polygon',
-              editingtype,
+              capabilities,
               isMultiGeometry
             })
         }
@@ -330,7 +330,7 @@ function EditorToolsFactory() {
         tools = this.createTools({
           layer,
           type: 'Table',
-          editingtype
+          capabilities
         });
         break;
       default:

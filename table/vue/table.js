@@ -20,6 +20,9 @@ const InternalComponent = Vue.extend({
     }
   },
   methods: {
+    showTool(type){
+      return this.state.capabilities.find(capability => capability === type) !== undefined;
+    },
     async resize(){
       await this.$nextTick();
       const tableHeight = $(".content").height();

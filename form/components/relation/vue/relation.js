@@ -138,7 +138,7 @@ const RelationComponent = Vue.extend({
       relation: this.relation, // main relation between layerId (current in editing)
       relations: this.relations // relation related to current feature of current layer in editing
     });
-    this.editingtype = this._service.getEditingType();
+    this.capabilities = this._service.getEditingCapabilities();
     this.formeventbus.$on('changeinput', this.updateExternalKeyValueRelations);
   },
   async activated() {

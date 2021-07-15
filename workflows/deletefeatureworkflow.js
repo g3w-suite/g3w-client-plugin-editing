@@ -5,9 +5,10 @@ const DeleteFeatureStep = require('./steps/deletefeaturestep');
 const ConfirmStep = require('./steps/confirmstep');
 
 function DeleteFeatureWorflow(options={}) {
-  options.steps = [new DeleteFeatureStep(), new ConfirmStep({
-    type: 'delete'}
-    )];
+  options.steps = [
+    new DeleteFeatureStep(),
+    new ConfirmStep({type: 'delete'})
+  ];
   base(this, options);
 }
 

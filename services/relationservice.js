@@ -52,20 +52,20 @@ const RelationService = function(layerId, options = {}) {
   this._relationTools = [];
   this._add_link_workflow = null;
   //get editing contstraint type
-  this.editingtype= {
-    parent: this._parentLayer.getEditingConstrains().editingtype,
-    relation: relationLayer.getEditingConstrains().editingtype
+  this.capabilities= {
+    parent: this._parentLayer.getEditingCapabilities(),
+    relation: this._parentLayer.getEditingCapabilities()
   };
-  //check if relationLayer is a TABLE Layer and with editingtype value check add tools
+  //check if relationLayer is a TABLE Layer and with capabilities value check add tools
   if (relationLayerType === Layer.LayerTypes.TABLE) {
-    (!this.editingtype.relation || this.editingtype.relation === 'delete') && this._relationTools.push({
+    (this.capabilities.relation.find(capability => capability === 'delete') !== undefined) && this._relationTools.push({
       state: {
         icon: 'deleteTableRow.png',
         id: 'deletefeature',
         name: "editing.tools.delete_feature"
       }
     });
-    (!this.editingtype.relation || this.editingtype.relation === 'update') && this._relationTools.push({
+    (this.capabilities.relation.find(capability => capability === 'update_attributes') !== undefined) && this._relationTools.push({
       state: {
         icon: 'editAttributes.png',
         id: 'editattributes',
@@ -84,8 +84,8 @@ const RelationService = function(layerId, options = {}) {
 
 const proto = RelationService.prototype;
 
-proto.getEditingType = function(){
-  return this.editingtype;
+proto.getEditingCapabilities = function(){
+  return this.capabilities;
 };
 
 proto._setAddLinkWorkflow = function() {

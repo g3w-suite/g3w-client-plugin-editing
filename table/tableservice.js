@@ -11,13 +11,14 @@ const TableService = function(options = {}) {
   this._workflow = null;
   this._deleteFeaturesIndexes = [];
   this._isrelation = options.isrelation || false;
-  const { editingtype } = options; 
+  const { capabilities } = options;
+  console.log(capabilities)
   this.state = {
     headers: options.headers || [],
     features: [],
     title: options.title || 'Link relation',
     isrelation: options.push,
-    editingtype
+    capabilities
   };
 
   this.init = function() {
@@ -42,7 +43,6 @@ const TableService = function(options = {}) {
       });
     }
   };
-
   this.init();
 };
 
