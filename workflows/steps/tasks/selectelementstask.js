@@ -88,10 +88,13 @@ proto.addMultipleSelectInteraction = function({layer, inputs, promise, buttonnex
     selectInteractionMultiple = new ol.interaction.DragBox({
       condition: ol.events.condition.shiftKeyOnly
     });
-    selectInteractionMultiple.on('boxend', () => {
-      const bboxExtent = selectInteractionMultiple.getGeometry().getExtent();
+    selectInteractionMultiple.on('boxend', evt => {
+      const features = [];
+      const extent = selectInteractionMultiple.getGeometry().getExtent();
       const layerSource = layer.getEditingLayer().getSource();
-      const features = layerSource.getFeaturesInExtent(bboxExtent);
+      layerSource.forEachFeatureIntersectingExtent(extent, feature => {
+        features.push(feature)
+      });
       if (!buttonnext){
         if (!features.length) promise.reject();
         else {
