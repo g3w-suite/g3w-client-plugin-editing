@@ -12,7 +12,6 @@ const TableService = function(options = {}) {
   this._deleteFeaturesIndexes = [];
   this._isrelation = options.isrelation || false;
   const { capabilities } = options;
-  console.log(capabilities)
   this.state = {
     headers: options.headers || [],
     features: [],
