@@ -42,7 +42,7 @@ proto.run = function(inputs, context) {
     features: new ol.Collection(),
   });
 
-  this._drawInteraction.on('drawend', (evt)=> {
+  this._drawInteraction.on('drawend', evt => {
     const [x, y] = evt.feature.getGeometry().getCoordinates();
     const deltaXY = coordinates ? this.getDeltaXY({
       x, y, coordinates
