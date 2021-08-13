@@ -192,7 +192,7 @@ proto._resetUniqueValues = function(){
 proto.setFeaturesOptions = function({filter}={}){
   if (filter) {
     // in case of nofeatures filter request check if nofeatures_filed is present otherwise i get first field
-    if (filter.nofeatures) filter.nofeatures_field = filter.nofeatures_field || this._layer.getFields()[1].name;
+    if (filter.nofeatures) filter.nofeatures_field = filter.nofeatures_field || this._layer.getEditingFields()[0].name;
     this._getFeaturesOption = {
       filter,
       editing: true,
