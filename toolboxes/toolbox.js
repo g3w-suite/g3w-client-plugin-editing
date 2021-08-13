@@ -190,12 +190,15 @@ proto._resetUniqueValues = function(){
  * @param filter
  */
 proto.setFeaturesOptions = function({filter}={}){
-  if (filter)
+  if (filter) {
+    // in case of nofeatures filter request check if nofeatures_filed is present otherwise i get first field
+    if (filter.nofeatures) filter.nofeatures_field = filter.nofeatures_field || this._layer.getEditingFields()[0].name;
     this._getFeaturesOption = {
       filter,
       editing: true,
       registerEvents: false
     };
+  }
   else {
     const filterType = this._layerType === Layer.LayerTypes.TABLE ? 'all': 'bbox';
     this._getFeaturesOption = this.editingService.createEditingDataOptions(filterType, {
