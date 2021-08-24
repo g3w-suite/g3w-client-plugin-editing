@@ -5,13 +5,13 @@
     </div>
     <div>
       <span class="g3w-icon add-link" align="center"
-            v-if="capabilities.relation.find(capability => capability === 'update_attributes') !== undefined"
+            v-if="capabilities.relation.find(capability => capability === 'change_attr_feature') !== undefined"
             data-toggle="tooltip" data-placement="bottom"
             v-t-tooltip:plugin="tooltips.link_relation" @click="enableAddLinkButtons ? linkRelation() : null"
             :class="[{'disabled': !enableAddLinkButtons}, g3wtemplate.font['link']]">
       </span>
       <span data-toggle="tooltip" data-placement="bottom"
-            v-if="capabilities.relation.find(capability => capability === 'create') !== undefined"
+            v-if="capabilities.relation.find(capability => capability === 'add_feature') !== undefined"
             v-t-tooltip:plugin="tooltips.add_relation"
             @click="enableAddLinkButtons ? addRelationAndLink() : null"
             class="g3w-icon add-link pull-right"
@@ -44,7 +44,7 @@
                 </div>
               </td>
               <td class="action-cell">
-                <div v-if="!fieldrequired && capabilities.relation.find(capability => capability === 'update_attributes') !== undefined"
+                <div v-if="!fieldrequired && capabilities.relation.find(capability => capability === 'change_attr_feature') !== undefined"
                      class="g3w-mini-relation-icon skin-tooltip-right g3w-icon" :class="g3wtemplate.font['unlink']"
                      @click="unlinkRelation(index)"
                      data-toggle="tooltip" data-placement="right" v-t-tooltip:plugin="tooltips.unlink_relation"

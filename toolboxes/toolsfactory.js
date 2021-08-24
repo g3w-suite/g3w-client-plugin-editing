@@ -28,7 +28,7 @@ function EditorToolsFactory() {
       case 'Point':
         tools = [
           {
-            type: ['create'],
+            type: ['add_feature'],
             config: {
               id: 'addfeature',
               name: "editing.tools.add_feature",
@@ -39,7 +39,7 @@ function EditorToolsFactory() {
             },
           },
           {
-            type: ['update_attributes'],
+            type: ['change_attr_feature'],
             config:{
               id: 'editattributes',
               name: "editing.tools.update_feature",
@@ -50,7 +50,7 @@ function EditorToolsFactory() {
             }
           },
           {
-            type: ['delete'],
+            type: ['delete_feature'],
             config: {
               id: 'deletefeature',
               name: "editing.tools.delete_feature",
@@ -61,7 +61,7 @@ function EditorToolsFactory() {
             }
           },
           {
-            type: ['update_attributes'],
+            type: ['change_attr_feature'],
             config: {
               id: 'editmultiattributes',
               name: "editing.tools.update_multi_features",
@@ -73,7 +73,7 @@ function EditorToolsFactory() {
             }
           },
           {
-            type: ['update_geometry'],
+            type: ['change_feature'],
             config: {
               id: 'movefeature',
               name: "editing.tools.move_feature",
@@ -84,7 +84,7 @@ function EditorToolsFactory() {
             }
           },
           {
-            type: ['create'],
+            type: ['add_feature'],
             config: {
               id: 'copyfeatures',
               name: "editing.tools.copy",
@@ -97,7 +97,7 @@ function EditorToolsFactory() {
           },
           ...(isMultiGeometry ? [
             {
-              type: ['create'],
+              type: ['add_feature', 'change_feature'],
               config: {
                 id: 'addPart',
                 name: "editing.tools.addpart",
@@ -111,7 +111,7 @@ function EditorToolsFactory() {
           ] : []),
           ...(isMultiGeometry ? [
             {
-              type: ['update_geometry'],
+              type: ['change_feature'],
               config: {
                 id: 'deletePart',
                 name: "editing.tools.deletepart",
@@ -128,7 +128,7 @@ function EditorToolsFactory() {
       case 'Polygon':
         tools = [
           {
-            type: ['create'],
+            type: ['add_feature'],
             config: {
               id: 'addfeature',
               name: "editing.tools.add_feature",
@@ -139,7 +139,7 @@ function EditorToolsFactory() {
             }
           },
           {
-            type: ['update_attributes'],
+            type: ['change_attr_feature'],
             config: {
               id: 'editattributes',
               name: "editing.tools.update_feature",
@@ -150,7 +150,7 @@ function EditorToolsFactory() {
             }
           },
           {
-            type: ['update_geometry'],
+            type: ['change_feature'],
             config: {
               id: 'movevertex',
               name: "editing.tools.update_vertex",
@@ -161,7 +161,7 @@ function EditorToolsFactory() {
             }
           },
           {
-            type: ['delete'],
+            type: ['delete_feature'],
             config: {
               id: 'deletefeature',
               name: "editing.tools.delete_feature",
@@ -172,7 +172,7 @@ function EditorToolsFactory() {
             }
           },
           {
-            type: ['update_attributes'],
+            type: ['change_attr_feature'],
             config: {
               id: 'editmultiattributes',
               name: "editing.tools.update_multi_features",
@@ -184,7 +184,7 @@ function EditorToolsFactory() {
             }
           },
           {
-            type: ['update_geometry'],
+            type: ['change_feature'],
             config:{
               id: 'movefeature',
               name: "editing.tools.move_feature",
@@ -195,7 +195,7 @@ function EditorToolsFactory() {
             }
           },
           {
-            type: ['create'],
+            type: ['add_feature'],
             config: {
               id: 'copyfeatures',
               name: "editing.tools.copy",
@@ -208,7 +208,7 @@ function EditorToolsFactory() {
           },
           ...(isMultiGeometry ? [
             {
-              type: ['create'],
+              type: ['add_feature', 'change_feature'],
               config: {
                 id: 'addPart',
                 name: "editing.tools.addpart",
@@ -222,7 +222,7 @@ function EditorToolsFactory() {
           ] : []),
           ...(isMultiGeometry ? [
             {
-              type: ['update_geometry'],
+              type: ['change_feature'],
               config: {
                 id: 'deletePart',
                 name: "editing.tools.deletepart",
@@ -234,7 +234,7 @@ function EditorToolsFactory() {
             }
           ] : []),
           {
-            type:  ['update_geometry'],
+            type:  ['change_feature'],
             config: {
               id: 'splitfeature',
               name: "editing.tools.split",
@@ -246,7 +246,7 @@ function EditorToolsFactory() {
             }
           },
           {
-            type: ['update_geometry'],
+            type: ['change_feature'],
             config:{
               id: 'mergefeatures',
               name: "editing.tools.merge",
@@ -262,7 +262,7 @@ function EditorToolsFactory() {
       case 'Table':
         tools =  [
           {
-            type: ['create'],
+            type: ['add_feature'],
             config: {
               id: 'addfeature',
               name: "editing.tools.add_feature",
@@ -272,7 +272,7 @@ function EditorToolsFactory() {
             }
           },
           {
-            type: ['delete', 'update_attributes'],
+            type: ['delete_feature', 'change_attr_feature'],
             config: {
               id: 'edittable',
               name: "editing.tools.update_feature",

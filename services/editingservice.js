@@ -568,7 +568,7 @@ proto._attachLayerWidgetsEvent = function(layer) {
                 if (relationLayer) {
                   relationLayer.getDataTable({
                     ordering: key
-                  }).then((response) => {
+                  }).then(response => {
                     if (response && response.features) {
                       const features = response.features;
                       self.fireEvent('autocomplete', {
@@ -583,7 +583,7 @@ proto._attachLayerWidgetsEvent = function(layer) {
                       }
                       loading.state = 'ready';
                     }
-                  }).fail((error) => {
+                  }).fail(error => {
                     loading.state = 'error'
                   });
                 } else {

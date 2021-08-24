@@ -58,14 +58,14 @@ const RelationService = function(layerId, options = {}) {
   };
   //check if relationLayer is a TABLE Layer and with capabilities value check add tools
   if (relationLayerType === Layer.LayerTypes.TABLE) {
-    (this.capabilities.relation.find(capability => capability === 'delete') !== undefined) && this._relationTools.push({
+    (this.capabilities.relation.find(capability => capability === 'delete_feature') !== undefined) && this._relationTools.push({
       state: {
         icon: 'deleteTableRow.png',
         id: 'deletefeature',
         name: "editing.tools.delete_feature"
       }
     });
-    (this.capabilities.relation.find(capability => capability === 'update_attributes') !== undefined) && this._relationTools.push({
+    (this.capabilities.relation.find(capability => capability === 'change_attr_feature') !== undefined) && this._relationTools.push({
       state: {
         icon: 'editAttributes.png',
         id: 'editattributes',

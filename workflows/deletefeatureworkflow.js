@@ -1,5 +1,4 @@
-const inherit = g3wsdk.core.utils.inherit;
-const base =  g3wsdk.core.utils.base;
+const {inherit, base} = g3wsdk.core.utils;
 const EditingWorkflow = require('./editingworkflow');
 const DeleteFeatureStep = require('./steps/deletefeaturestep');
 const ConfirmStep = require('./steps/confirmstep');
