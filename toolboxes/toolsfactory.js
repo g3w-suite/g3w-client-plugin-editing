@@ -28,40 +28,39 @@ function EditorToolsFactory() {
       case 'Point':
         tools = [
           {
-            type: ['add_feature'],
             config: {
               id: 'addfeature',
               name: "editing.tools.add_feature",
               icon: "addPoint.png",
               layer,
               row: 1,
-              op: AddFeatureWorkflow
+              op: AddFeatureWorkflow,
+              type: ['add_feature']
             },
           },
           {
-            type: ['change_attr_feature'],
             config:{
               id: 'editattributes',
               name: "editing.tools.update_feature",
               icon: "editAttributes.png",
               layer,
               row: 1,
-              op: EditFeatureAttributesWorkflow
+              op: EditFeatureAttributesWorkflow,
+              type: ['change_attr_feature']
             }
           },
           {
-            type: ['delete_feature'],
             config: {
               id: 'deletefeature',
               name: "editing.tools.delete_feature",
               icon: "deletePoint.png",
               layer,
               row: 1,
-              op: DeleteFeatureWorkflow
+              op: DeleteFeatureWorkflow,
+              type: ['delete_feature']
             }
           },
           {
-            type: ['change_attr_feature'],
             config: {
               id: 'editmultiattributes',
               name: "editing.tools.update_multi_features",
@@ -69,22 +68,22 @@ function EditorToolsFactory() {
               layer,
               row: 2,
               once: true,
-              op: EditMultiFeatureAttributesWorkflow
+              op: EditMultiFeatureAttributesWorkflow,
+              type: ['change_attr_feature']
             }
           },
           {
-            type: ['change_feature'],
             config: {
               id: 'movefeature',
               name: "editing.tools.move_feature",
               icon: "movePoint.png",
               layer,
               row: 2,
-              op: MoveFeatureWorkflow
+              op: MoveFeatureWorkflow,
+              type: ['change_feature']
             }
           },
           {
-            type: ['add_feature'],
             config: {
               id: 'copyfeatures',
               name: "editing.tools.copy",
@@ -92,12 +91,12 @@ function EditorToolsFactory() {
               layer,
               once: true,
               row: 2,
-              op: CopyFeaturesWorflow
+              op: CopyFeaturesWorflow,
+              type: ['add_feature']
             }
           },
           ...(isMultiGeometry ? [
             {
-              type: ['add_feature', 'change_feature'],
               config: {
                 id: 'addPart',
                 name: "editing.tools.addpart",
@@ -105,20 +104,21 @@ function EditorToolsFactory() {
                 layer,
                 once: true,
                 row: 3,
-                op: AddPartToMultigeometriesWorkflow
+                op: AddPartToMultigeometriesWorkflow,
+                type: ['add_feature', 'change_feature']
               }
             }
           ] : []),
           ...(isMultiGeometry ? [
             {
-              type: ['change_feature'],
               config: {
                 id: 'deletePart',
                 name: "editing.tools.deletepart",
                 icon: "deletePart.png",
                 layer,
                 row: 3,
-                op: DeletePartFromMultigeometriesWorkflow
+                op: DeletePartFromMultigeometriesWorkflow,
+                type: ['change_feature'],
               }
             }
           ] : [])
@@ -128,51 +128,50 @@ function EditorToolsFactory() {
       case 'Polygon':
         tools = [
           {
-            type: ['add_feature'],
             config: {
               id: 'addfeature',
               name: "editing.tools.add_feature",
               icon: `add${type}.png`,
               layer,
               row: 1,
-              op: AddFeatureWorkflow
+              op: AddFeatureWorkflow,
+              type: ['add_feature']
             }
           },
           {
-            type: ['change_attr_feature'],
             config: {
               id: 'editattributes',
               name: "editing.tools.update_feature",
               icon: "editAttributes.png",
               layer: layer,
               row: 1,
-              op: EditFeatureAttributesWorkflow
+              op: EditFeatureAttributesWorkflow,
+              type: ['change_attr_feature']
             }
           },
           {
-            type: ['change_feature'],
             config: {
               id: 'movevertex',
               name: "editing.tools.update_vertex",
               icon: "moveVertex.png",
               layer,
               row: 1,
-              op: ModifyGeometryVertexWorkflow
+              op: ModifyGeometryVertexWorkflow,
+              type: ['change_feature']
             }
           },
           {
-            type: ['delete_feature'],
             config: {
               id: 'deletefeature',
               name: "editing.tools.delete_feature",
               icon: `delete${type}.png`,
               layer,
               row: 1,
-              op: DeleteFeatureWorkflow
+              op: DeleteFeatureWorkflow,
+              type: ['delete_feature']
             }
           },
           {
-            type: ['change_attr_feature'],
             config: {
               id: 'editmultiattributes',
               name: "editing.tools.update_multi_features",
@@ -180,22 +179,22 @@ function EditorToolsFactory() {
               layer,
               row: 2,
               once: true,
-              op: EditMultiFeatureAttributesWorkflow
+              op: EditMultiFeatureAttributesWorkflow,
+              type: ['change_attr_feature']
             }
           },
           {
-            type: ['change_feature'],
             config:{
               id: 'movefeature',
               name: "editing.tools.move_feature",
               icon: `move${type}.png`,
               layer,
               row: 2,
-              op: MoveFeatureWorkflow
+              op: MoveFeatureWorkflow,
+              type: ['change_feature']
             }
           },
           {
-            type: ['add_feature'],
             config: {
               id: 'copyfeatures',
               name: "editing.tools.copy",
@@ -203,12 +202,12 @@ function EditorToolsFactory() {
               layer,
               row: 2,
               once: true,
-              op: CopyFeaturesWorflow
+              op: CopyFeaturesWorflow,
+              type: ['add_feature']
             }
           },
           ...(isMultiGeometry ? [
             {
-              type: ['add_feature', 'change_feature'],
               config: {
                 id: 'addPart',
                 name: "editing.tools.addpart",
@@ -216,25 +215,25 @@ function EditorToolsFactory() {
                 layer,
                 row: 3,
                 once: true,
-                op: AddPartToMultigeometriesWorkflow
+                op: AddPartToMultigeometriesWorkflow,
+                type: ['add_feature', 'change_feature']
               }
             }
           ] : []),
           ...(isMultiGeometry ? [
             {
-              type: ['change_feature'],
               config: {
                 id: 'deletePart',
                 name: "editing.tools.deletepart",
                 icon: "deletePart.png",
                 layer,
                 row: 3,
-                op: DeletePartFromMultigeometriesWorkflow
+                op: DeletePartFromMultigeometriesWorkflow,
+                type: ['change_feature']
               }
             }
           ] : []),
           {
-            type:  ['change_feature'],
             config: {
               id: 'splitfeature',
               name: "editing.tools.split",
@@ -242,11 +241,11 @@ function EditorToolsFactory() {
               layer,
               row: 3,
               once: true,
-              op: SplitFeatureWorkflow
+              op: SplitFeatureWorkflow,
+              type:  ['change_feature']
             }
           },
           {
-            type: ['change_feature'],
             config:{
               id: 'mergefeatures',
               name: "editing.tools.merge",
@@ -254,7 +253,8 @@ function EditorToolsFactory() {
               layer,
               row: 3,
               once: true,
-              op: MergeFeaturesWorkflow
+              op: MergeFeaturesWorkflow,
+              type: ['change_feature']
             }
           }
         ];
@@ -262,29 +262,29 @@ function EditorToolsFactory() {
       case 'Table':
         tools =  [
           {
-            type: ['add_feature'],
             config: {
               id: 'addfeature',
               name: "editing.tools.add_feature",
               icon: "addTableRow.png",
               layer,
-              op: AddTableFeatureWorflow
+              op: AddTableFeatureWorflow,
+              type: ['add_feature'],
             }
           },
           {
-            type: ['delete_feature', 'change_attr_feature'],
             config: {
               id: 'edittable',
               name: "editing.tools.update_feature",
               icon: "editAttributes.png",
               layer,
-              op: EditTableFeaturesWorkflow
+              op: EditTableFeaturesWorkflow,
+              type: ['delete_feature', 'change_attr_feature'],
             }
           }
         ];
         break;
     }
-    return capabilities ? tools.filter(tool => tool.type.filter(type => capabilities.includes(type)).length > 0).map(tool => {
+    return capabilities ? tools.filter(tool => tool.config.type.filter(type => capabilities.includes(type)).length > 0).map(tool => {
       // in case of capabilities all tools on line
       tool.config.row = 1;
       return new Tool(tool.config)

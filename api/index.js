@@ -57,12 +57,21 @@ const API = function({service, plugin} = {}) {
   };
 
   /**
+   * Return Toolbx by id if exist
+   * @param toolboxId
+   * @returns {*}
+   */
+  this.getToolBoxById = function(toolboxId){
+    return service.getToolBoxById(toolboxId);
+  };
+
+  /**
    * Method to start editing api
    * @param layerId
    * @param options
    * @returns {Promise<unknown>}
    */
-  this.startEditing = function(layerId, options={}){
+  this.startEditing = function(layerId, options={}, info=false){
     const {tools, feature, selected=true, title, disablemapcontrols=false} = options;
     return new Promise((resolve, reject) =>{
       // get toolbox related to layer id
@@ -74,11 +83,14 @@ const API = function({service, plugin} = {}) {
         selected && service.setSelectedToolbox(toolbox);
         title && toolbox.setTitle(title);
         // start editing toolbox (options contain also filter type)
-        toolbox.start(options).then(opts => {
+        toolbox.start(options).then(info => {
           //disablemapcontrols in conflict
           disablemapcontrols && service.disableMapControlsConflict(true);
-          const {features} = opts;
-          resolve(toolbox);
+          //opts contain information about start editing has features loaded
+          info ? resolve({
+            toolbox,
+            info
+          }) : resolve(toolbox);
         }).fail(err=> {
           reject(err)
         })

@@ -24,6 +24,7 @@ function ToolBox(options={}) {
   this._getFeaturesOption = {};
   const toolsstate = [];
   this._tools.forEach(tool => toolsstate.push(tool.getState()));
+  this.constraintFeaturesFilter; // is used to contraint laoding featutes to a filter setted
   this._session = new Session({
     id: options.id,
     editor: this._layer.getEditor()
@@ -198,6 +199,8 @@ proto.setFeaturesOptions = function({filter}={}){
       editing: true,
       registerEvents: false
     };
+    // in case of constarint attribute set the filter as constraint
+    filter.constraint && this.setConstraintFeaturesFilter(filter);
   }
   else {
     const filterType = this._layerType === Layer.LayerTypes.TABLE ? 'all': 'bbox';
@@ -218,7 +221,7 @@ proto.start = function(options={}) {
   const id = this.getId();
   // set filterOptions
   this.setFeaturesOptions({
-    filter
+    filter: filter || this.constraintFeatureFilter
   });
   const handlerAfterSessionGetFeatures = promise => {
     this.emit(EventName);
@@ -382,6 +385,10 @@ proto._registerGetFeaturesEvent = function(options={}) {
   }
 };
 
+proto.setConstraintFeaturesFilter = function(filter){
+  this.constraintFeatureFilter = filter;
+};
+
 proto._setToolsEnabled = function(bool=true) {
   this._tools.forEach(tool => {
     tool.setEnabled(bool);
@@ -527,6 +534,43 @@ proto.getToolById = function(toolId) {
 proto.setEnableTool = function(toolId){
   const tool = this._tools.find(tool => tool.getId() === toolId);
   tool.setEnabled(true)
+};
+
+/**
+ * method to set tools bases on add
+ */
+
+proto.setAddEnableTools = function(options={}){
+  const tools = this._tools.filter(tool => tool.getType().find(type => type ==='add_feature')).map(tool => ({
+    ...tool.state
+  }));
+  this.setEnablesDisablesTools({
+    enabled: tools
+  })
+};
+
+/**
+ * method to set tools bases on update
+ */
+
+proto.setUpdateEnableTools = function(options={}){
+  console.log(this._tools)
+};
+
+/**
+ * method to set tools bases on delete
+ */
+
+proto.setDeleteEnableTools = function(options={}){
+  console.log(this._tools)
+};
+
+/**
+ * method to set tools bases on add
+ */
+
+proto.setUpdateEnableTools = function(options={}){
+  console.log(this._tools)
 };
 
 /**
@@ -682,6 +726,7 @@ proto.resetDefault = function(){
     this.enableTools();
     this._tools.forEach(tool => tool.resetDefault());
   }
+  this.constraintFeatureFilter = null;
   this._disabledtools = null;
 };
 

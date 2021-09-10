@@ -5,7 +5,7 @@ const G3WObject = g3wsdk.core.G3WObject;
 function Tool(options = {}) {
   base(this);
   this.editingService = require('../services/editingservice');
-  const {name, row, id, icon, session, layer, once=false} = options;
+  const {name, row, id, icon, session, layer, once=false, type=[]} = options;
   this._options = null;
   this._session = session;
   this._layer = layer;
@@ -13,6 +13,7 @@ function Tool(options = {}) {
     layer
   });
   this._once = once;
+  this.type = type;
   this.disabledtoolsoftools = [];
   this.state = {
     id,
@@ -37,6 +38,10 @@ proto.setOptions = function(options={}){
   this.state.visible = visible;
   this.state.enabled = enabled;
   this.disabledtoolsoftools = disabledtoolsoftools;
+};
+
+proto.getType = function(){
+  return this.type;
 };
 
 proto.getFeature = function() {
