@@ -71,7 +71,7 @@ const API = function({service, plugin} = {}) {
    * @param options
    * @returns {Promise<unknown>}
    */
-  this.startEditing = function(layerId, options={}, info=false){
+  this.startEditing = function(layerId, options={}, data=false){
     const {tools, feature, selected=true, title, disablemapcontrols=false} = options;
     return new Promise((resolve, reject) =>{
       // get toolbox related to layer id
@@ -87,9 +87,9 @@ const API = function({service, plugin} = {}) {
           //disablemapcontrols in conflict
           disablemapcontrols && service.disableMapControlsConflict(true);
           //opts contain information about start editing has features loaded
-          info ? resolve({
+          data ? resolve({
             toolbox,
-            info
+            data
           }) : resolve(toolbox);
         }).fail(err=> {
           reject(err)
@@ -132,12 +132,20 @@ const API = function({service, plugin} = {}) {
    *   used to reset default toolbox state modified by other plugin
    *
   */
-  this.resetDefault = function(){
+  this.resetDefault = function(options={constraints: true}){
     service.getToolBoxes().forEach(toolbox => {
-      toolbox.resetDefault();
+      toolbox.resetDefault(options);
     });
     service.resetDefault();
   };
+
+  /**
+   * Method to setup permanenty contraints on editing as filter to get features, filter layers to edit etc...
+   * @param options
+   */
+  this.setApplicationEditingConstraints = function(constraints={}){
+    service.setApplicationEditingConstraints(constraints);
+  }
 };
 
 export default API;

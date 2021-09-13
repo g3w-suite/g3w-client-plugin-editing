@@ -24,7 +24,11 @@ function ToolBox(options={}) {
   this._getFeaturesOption = {};
   const toolsstate = [];
   this._tools.forEach(tool => toolsstate.push(tool.getState()));
-  this.constraintFeaturesFilter; // is used to contraint laoding featutes to a filter setted
+  this.constraints = {
+    filter: null,
+    show: null,
+    tools: []
+  }; // is used to contraint laoding featutes to a filter setted
   this._session = new Session({
     id: options.id,
     editor: this._layer.getEditor()
@@ -210,18 +214,24 @@ proto.setFeaturesOptions = function({filter}={}){
   }
 };
 
+proto.setEditingConstraints = function(constraints={}){
+  Object.keys(constraints).forEach(constraint => this.constraints[constraint] = constraints[constraint]);
+};
+
 //added option object to start method to have a control by other plugin how
 proto.start = function(options={}) {
-  const { filter, toolboxheader=true, startstopediting=true, tools} = options;
+  let { filter, toolboxheader=true, startstopediting=true, showtools=true, tools} = options;
   tools && this.setEnablesDisablesTools(tools);
   this.state.toolboxheader = toolboxheader;
   this.state.startstopediting = startstopediting;
   const EventName = 'start-editing';
   const d = $.Deferred();
   const id = this.getId();
+  const applicationConstraint = this.editingService.getApplicationEditingConstraintById(this.getId());
+  filter = applicationConstraint && applicationConstraint.filter || this.constraints.filter || filter;
   // set filterOptions
   this.setFeaturesOptions({
-    filter: filter || this.constraintFeatureFilter
+    filter
   });
   const handlerAfterSessionGetFeatures = promise => {
     this.emit(EventName);
@@ -541,12 +551,17 @@ proto.setEnableTool = function(toolId){
  */
 
 proto.setAddEnableTools = function(options={}){
-  const tools = this._tools.filter(tool => tool.getType().find(type => type ==='add_feature')).map(tool => ({
-    ...tool.state
-  }));
+  const tools = this._tools.filter(tool => tool.getType().find(type => type ==='add_feature')).map(tool => {
+    const id = tool.getId();
+    return {
+      id,
+      options: options[id]
+    }
+  });
   this.setEnablesDisablesTools({
     enabled: tools
-  })
+  });
+  this.enableTools(true);
 };
 
 /**
@@ -716,17 +731,21 @@ proto.hasRelations = function() {
 /**
  * Method to reset default values
  */
-proto.resetDefault = function(){
+proto.resetDefault = function(options={}){
   this.state.title = this.originalState.title;
   this.state.toolboxheader = true;
   this.state.startstopediting = true;
+  this.constraints = {
+    filter: null,
+    show: null,
+    tools: []
+  };
   this.setShow(true);
   if (this._enabledtools){
     this._enabledtools = undefined;
     this.enableTools();
     this._tools.forEach(tool => tool.resetDefault());
   }
-  this.constraintFeatureFilter = null;
   this._disabledtools = null;
 };
 

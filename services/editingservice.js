@@ -50,6 +50,13 @@ function EditingService() {
     }
   };
 
+  //application editing contraints
+  //Usefult if some plgin or case we need to setup a editing contrains such as layer, filter to get features
+  this.applicationEditingConstraints = {
+    toolboxes: {},
+    showToolboxesExcluded: true
+  };
+
   // state of editing
   this.state = {
     toolboxes: [],
@@ -727,6 +734,41 @@ proto.afterEditingStart = function({layer}= {}) {
 
 proto.getToolBoxById = function(toolboxId) {
   return this._toolboxes.find(toolbox => toolbox.getId() === toolboxId);
+};
+
+/**
+ * Method to apply filter editing contsraint to toolbox editing 
+ * @param constinst
+ */
+proto.setApplicationEditingConstraints = function(constraints={showToolboxesExcluded: true, toolboxes:{}}){
+  this.applicationEditingConstraints = {
+    ...this.applicationEditingConstraints,
+    ...constraints
+  };
+  
+  const {toolboxes, showToolboxesExcluded} = constraints;
+  const toolboxIds = Object.keys(toolboxes);
+  !showToolboxesExcluded && this.state.toolboxes.forEach(toolbox => toolbox.show =  toolboxIds.indexOf(toolbox.id) !== -1);
+  toolboxIds.forEach(toolboxId => {
+    const toolbox = this.getToolBoxById(toolboxId);
+    toolbox.setEditingConstraints(toolboxes[toolboxId]);
+  });
+};
+
+/**
+ * Get application editing contraints if applied
+ */
+
+proto.getApplicationEditingConstraints = function(){
+  return this.applicationEditingConstraints;
+};
+
+/**
+ *
+ */
+
+proto.getApplicationEditingConstraintById = function(toolboxId){
+  return this.applicationEditingConstraints.toolboxes[toolboxId];
 };
 
 proto.getToolBoxes = function() {
