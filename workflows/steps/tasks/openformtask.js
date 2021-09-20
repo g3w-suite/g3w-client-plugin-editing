@@ -60,7 +60,7 @@ proto._cancelFnc = function(promise, inputs) {
   return function() {
     GUI.setModal(false);
     // fire event cancel form to emit to subscrivers
-    this.fireEvent('cancelform');
+    this.fireEvent('cancelform', inputs.features);
     promise.reject(inputs);
   }
 };
@@ -89,7 +89,7 @@ proto._saveFeatures = function({fields, promise, session, inputs}){
       });
       GUI.setModal(false);
       promise.resolve(inputs);
-      this.fireEvent('savedfeature', newFeatures) // called afetr saved
+      this.fireEvent('savedfeature', newFeatures) // called after saved
     })
   } else {
     GUI.setModal(false);

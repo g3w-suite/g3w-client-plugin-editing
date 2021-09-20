@@ -17,8 +17,8 @@
           <span style="font-size: 1.1em; padding: 5px; !important;"  :class="g3wtemplate.font['pencil']"></span>
         </div>
       </div>
-      <bar-loader :loading="state.loading"></bar-loader>
-      <div class="panel-body">
+      <bar-loader :loading="state.loading || state.changingtools"></bar-loader>
+      <div class="panel-body" v-show="!state.changingtools">
         <div class="tools-content row1" style="display: flex; flex-wrap: wrap;">
           <tool :state="toolstate" :resourcesurl="resourcesurl" @stopactivetool="stopActiveTool" @setactivetool="setActiveTool"
                 v-for="toolstate in  toolsrow1" :key="toolstate.id">

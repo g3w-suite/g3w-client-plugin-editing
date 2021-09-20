@@ -6,7 +6,7 @@ const compiledTemplate = Vue.compile(require('./toolbox.html'));
 const ToolboxComponent = Vue.extend({
   ...compiledTemplate,
   props: ['state', 'resourcesurl'],
-  data: function() {
+  data() {
     return {
       active: false
     }
@@ -16,7 +16,7 @@ const ToolboxComponent = Vue.extend({
     'toolsoftool': ToolsOfToolComponent
   },
   methods: {
-    select: function() {
+    select() {
       if (!this.isLayerReady) return;
       if (!this.state.selected) this.$emit('setselectedtoolbox', this.state.id);
     },
@@ -48,7 +48,7 @@ const ToolboxComponent = Vue.extend({
     canEdit() {
       return this.state.editing.canEdit;
     },
-    father: function() {
+    father() {
       return this.state.editing.father && !!this.state.editing.dependencies.length;
     },
     toolhelpmessage() {
@@ -76,6 +76,8 @@ const ToolboxComponent = Vue.extend({
   async mounted() {
     await this.$nextTick();
     $(this.$refs.editingbutton).tooltip();
+    // is usefult to wait a little bit is some plugin or editing has to chenge some thing to the toolbox
+    // ex. tools visibility etcc. different from default behaviour
   }
 });
 

@@ -45,6 +45,7 @@ function ToolBox(options={}) {
  
   this.state = {
     id: options.id,
+    changingtools: false, // used to show or not tools during change phase
     show: true, // used to show or not the toolbox if we nee to filtered
     color: options.color || 'blue',
     title: options.title || "Edit Layer",
@@ -103,7 +104,6 @@ function ToolBox(options={}) {
         GUI.once('closecontent', ()=> setTimeout(()=> this._mapService.getMap().dispatchEvent(this._getFeaturesEvent.event)));
     }
   })
-
 }
 
 inherit(ToolBox, G3WObject);
@@ -220,7 +220,8 @@ proto.setEditingConstraints = function(constraints={}){
 
 //added option object to start method to have a control by other plugin how
 proto.start = function(options={}) {
-  let { filter, toolboxheader=true, startstopediting=true, showtools=true, tools} = options;
+  let { filter, toolboxheader=true, startstopediting=true, showtools=true, tools, changingtools=false} = options;
+  this.state.changingtools = changingtools;
   tools && this.setEnablesDisablesTools(tools);
   this.state.toolboxheader = toolboxheader;
   this.state.startstopediting = startstopediting;
@@ -548,19 +549,28 @@ proto.setEnableTool = function(toolId){
 
 /**
  * method to set tools bases on add
+ * editing_constraints : true // follow the tools related toi editing conttraints configuration
  */
 
-proto.setAddEnableTools = function(options={}){
-  const tools = this._tools.filter(tool => tool.getType().find(type => type ==='add_feature')).map(tool => {
-    const id = tool.getId();
-    return {
-      id,
-      options: options[id]
-    }
+proto.setAddEnableTools = function({tools={}, options={editing_constraints: true}}={}){
+  const {editing_constraints=false} = options;
+  const ADDONEFEATUREONLYTOOLSID = ['addfeature', 'editattributes', 'movefeature', 'movevertex'];
+  const add_tools = this._tools.filter(tool => {
+    return editing_constraints ?
+      tool.getType().find(type => type ==='add_feature') :
+      ADDONEFEATUREONLYTOOLSID.indexOf(tool.getId()) !== -1;
+  }).map(tool => {
+      const id = tool.getId();
+      return {
+        id,
+        options: tools[id]
+      }
   });
+
   this.setEnablesDisablesTools({
-    enabled: tools
+    enabled: add_tools
   });
+
   this.enableTools(true);
 };
 
@@ -568,8 +578,25 @@ proto.setAddEnableTools = function(options={}){
  * method to set tools bases on update
  */
 
-proto.setUpdateEnableTools = function(options={}){
-  console.log(this._tools)
+proto.setUpdateEnableTools = function({tools={}, options={editing_constraints: true}}){
+  const {editing_constraints=false} = options;
+  const UPDATEONEFEATUREONLYTOOLSID = ['editattributes', 'movefeature', 'movevertex'];
+  const update_tools = this._tools.filter(tool => {
+    return editing_constraints ?
+      tool.getType().find(type => type ==='change_feature' || type ==='change_attr_feature') :
+      UPDATEONEFEATUREONLYTOOLSID.indexOf(tool.getId()) !== -1;
+  }).map(tool => {
+    const id = tool.getId();
+    return {
+      id,
+      options: tools[id]
+    }
+  });
+
+  this.setEnablesDisablesTools({
+    enabled: update_tools
+  });
+  this.enableTools(true);
 };
 
 /**
@@ -577,15 +604,7 @@ proto.setUpdateEnableTools = function(options={}){
  */
 
 proto.setDeleteEnableTools = function(options={}){
-  console.log(this._tools)
-};
-
-/**
- * method to set tools bases on add
- */
-
-proto.setUpdateEnableTools = function(options={}){
-  console.log(this._tools)
+  //TODO
 };
 
 /**
@@ -595,6 +614,7 @@ proto.setUpdateEnableTools = function(options={}){
  */
 proto.setEnablesDisablesTools = function(tools){
   if (tools){
+    this.state.changingtools = true;
     // Check if tools is an array
     const {enabled:enableTools=[], disabled:disableTools=[]} = tools;
     const toolsId = enableTools.length ? [] : this._tools.map(tool => tool.getId());
@@ -622,6 +642,7 @@ proto.setEnablesDisablesTools = function(tools){
     });
     //set not visible all remain
     this._tools.forEach(tool => !toolsId.includes(tool.getId()) && tool.setVisible(false));
+    this.state.changingtools = false;
   }
 };
 
@@ -731,7 +752,7 @@ proto.hasRelations = function() {
 /**
  * Method to reset default values
  */
-proto.resetDefault = function(options={}){
+proto.resetDefault = function(){
   this.state.title = this.originalState.title;
   this.state.toolboxheader = true;
   this.state.startstopediting = true;
@@ -740,13 +761,14 @@ proto.resetDefault = function(options={}){
     show: null,
     tools: []
   };
-  this.setShow(true);
+
   if (this._enabledtools){
     this._enabledtools = undefined;
     this.enableTools();
     this._tools.forEach(tool => tool.resetDefault());
   }
   this._disabledtools = null;
+  this.setShow(true);
 };
 
 module.exports = ToolBox;

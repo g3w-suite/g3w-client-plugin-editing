@@ -83,7 +83,7 @@ const API = function({service, plugin} = {}) {
         selected && service.setSelectedToolbox(toolbox);
         title && toolbox.setTitle(title);
         // start editing toolbox (options contain also filter type)
-        toolbox.start(options).then(info => {
+        toolbox.start(options).then(data => {
           //disablemapcontrols in conflict
           disablemapcontrols && service.disableMapControlsConflict(true);
           //opts contain information about start editing has features loaded
@@ -132,11 +132,11 @@ const API = function({service, plugin} = {}) {
    *   used to reset default toolbox state modified by other plugin
    *
   */
-  this.resetDefault = function(options={constraints: true}){
-    service.getToolBoxes().forEach(toolbox => {
+  this.resetDefault = function({plugin=true, toolboxes=true}={}){
+    toolboxes && service.getToolBoxes().forEach(toolbox => {
       toolbox.resetDefault(options);
     });
-    service.resetDefault();
+    plugin && service.resetDefault();
   };
 
   /**
@@ -145,6 +145,13 @@ const API = function({service, plugin} = {}) {
    */
   this.setApplicationEditingConstraints = function(constraints={}){
     service.setApplicationEditingConstraints(constraints);
+  };
+
+  /**
+   *
+   */
+  this.getMapService = function(){
+    return service.getMapService()
   }
 };
 
