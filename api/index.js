@@ -68,19 +68,21 @@ const API = function({service, plugin} = {}) {
       // get toolbox related to layer id
       const toolbox = service.getToolBoxById(layerId);
       //setselected
-      toolbox.setSelected(selected);
-      // set seletcted toolbox
-      selected && service.setSelectedToolbox(toolbox);
-      title && toolbox.setTitle(title);
-      // start editing toolbox (options contain also filter type)
-      toolbox.start(options).then(opts => {
-        //disablemapcontrols in conflict
-        disablemapcontrols && service.disableMapControlsConflict(true);
-        const {features} = opts;
-        resolve(toolbox);
-      }).fail(err=> {
-        reject(err)
-      })
+      if (toolbox) {
+        toolbox.setSelected(selected);
+        // set seletcted toolbox
+        selected && service.setSelectedToolbox(toolbox);
+        title && toolbox.setTitle(title);
+        // start editing toolbox (options contain also filter type)
+        toolbox.start(options).then(opts => {
+          //disablemapcontrols in conflict
+          disablemapcontrols && service.disableMapControlsConflict(true);
+          const {features} = opts;
+          resolve(toolbox);
+        }).fail(err=> {
+          reject(err)
+        })
+      } else reject();
     })
   };
   
