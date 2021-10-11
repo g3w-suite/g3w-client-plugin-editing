@@ -70,7 +70,7 @@ proto.start = function(hideSidebar = false) {
   this._options = options;
   const startOp = options => {
     this._op.once('settoolsoftool', tools => {
-      // filtere eventually disable tools of tools
+      // filter eventually disable tools of tools
       tools = tools.filter(tool => !this.disabledtoolsoftools.includes(tool.type));
       tools.length && this.emit('settoolsoftool', tools)
     });

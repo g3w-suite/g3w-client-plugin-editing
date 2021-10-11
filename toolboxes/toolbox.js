@@ -577,11 +577,12 @@ proto.setAddEnableTools = function({tools={}, options={editing_constraints: true
 /**
  * method to set tools bases on update
  */
-
-proto.setUpdateEnableTools = function({tools={}, options={editing_constraints: true}}){
+proto.setUpdateEnableTools = function({tools={}, excludetools=[], options={editing_constraints: true}}){
   const {editing_constraints=false} = options;
   const UPDATEONEFEATUREONLYTOOLSID = ['editattributes', 'movefeature', 'movevertex'];
   const update_tools = this._tools.filter(tool => {
+    // exclude
+    if (excludetools.indexOf(tool.getId()) !== -1) return false;
     return editing_constraints ?
       tool.getType().find(type => type ==='change_feature' || type ==='change_attr_feature') :
       UPDATEONEFEATUREONLYTOOLSID.indexOf(tool.getId()) !== -1;
