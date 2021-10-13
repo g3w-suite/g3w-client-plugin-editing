@@ -1,6 +1,6 @@
 const inherit = g3wsdk.core.utils.inherit;
 const base =  g3wsdk.core.utils.base;
-const { splitFeature, splitFeatures } = g3wsdk.core.geoutils;
+const {splitFeatures} = g3wsdk.core.geoutils;
 const Feature = g3wsdk.core.layer.features.Feature;
 const GUI = g3wsdk.gui.GUI;
 const EditingTask = require('./editingtask');
@@ -29,7 +29,7 @@ proto.run = function(inputs, context) {
     freehandCondition: ol.events.condition.never
   });
 
-  this._drawInteraction.on('drawend', (evt) => {
+  this._drawInteraction.on('drawend', evt => {
     const splitfeature = evt.feature;
     let isSplitted = false;
     const splittedGeometries = splitFeatures({
@@ -76,7 +76,6 @@ proto._handleSplitFeature = function({feature, inputs, session, splittedGeometri
       session.pushUpdate(layerId, feature, oriFeature)
     } else {
       const newFeature = oriFeature.cloneNew();
-
       newFeature.setGeometry(splittedGeometry);
       this.setNullMediaFields({
         layer,

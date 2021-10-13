@@ -1,5 +1,6 @@
 const {base, inherit} = g3wsdk.core.utils;
 const createSelectedStyle = g3wsdk.core.geoutils.createSelectedStyle;
+const {areCoordinatesEqual} = g3wsdk.core.geoutils;
 const GUI = g3wsdk.gui.GUI;
 const Task = g3wsdk.core.workflow.Task;
 
@@ -22,7 +23,6 @@ const proto = EditingTask.prototype;
 
 //get editing type from editing config
 proto.getEditingType = function(){
-  console.log(this)
   return null;
 };
 
@@ -55,6 +55,34 @@ proto.getMapService = function(){
 
 proto.getMap = function() {
   return this._mapService.getMap();
+};
+
+proto.areCoordinatesEqual = function({feature, coordinates}){
+  const featureGeometry = feature.getGeometry();
+  const geometryType = featureGeometry.getType();
+  switch (geometryType){
+    case 'MultiLineString':
+      return !!_.flatMap(featureGeometry.getCoordinates()).find( f_coordinates=> areCoordinatesEqual(coordinates, f_coordinates));
+      break;
+    case 'LineString':
+      return !!featureGeometry.getCoordinates().find(f_coordinates => areCoordinatesEqual(coordinates, f_coordinates));
+      break;
+    case 'Polygon':
+      return !!_.flatMap(featureGeometry.getCoordinates()).find(f_coordinates => areCoordinatesEqual(coordinates, f_coordinates));
+      break;
+    case 'MultiPolygon':
+      return !!featureGeometry.getPolygons().find(polygon =>{
+        return !!_.flatMap(polygon.getCoordinates()).find(f_coordinates => areCoordinatesEqual(coordinates, f_coordinates));
+      });
+      break;
+    case 'Point':
+      return areCoordinatesEqual(coordinates, featureGeometry.getCoordinates());
+      break;
+    case 'MultiPoint':
+      return !!featureGeometry.getCoordinates().find(f_coordinates => areCoordinatesEqual(coordinates, f_coordinates));
+      break;
+    }
+  return false;
 };
 
 proto.setFeaturesSelectedStyle = function(features=[]) {
