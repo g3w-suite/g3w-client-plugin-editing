@@ -7,7 +7,6 @@ const Task = g3wsdk.core.workflow.Task;
 function EditingTask(options = {}) {
   base(this, options);
   this._editingServive;
-  this._mapService = GUI.getComponent('map').getService();
   this.addInteraction = function(interaction) {
     this._mapService.addInteraction(interaction);
   };
@@ -20,6 +19,8 @@ function EditingTask(options = {}) {
 inherit(EditingTask, Task);
 
 const proto = EditingTask.prototype;
+
+proto._mapService = GUI.getComponent('map').getService();
 
 //get editing type from editing config
 proto.getEditingType = function(){

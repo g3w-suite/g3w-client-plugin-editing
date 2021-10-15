@@ -1,6 +1,5 @@
 const {base, inherit} = g3wsdk.core.utils;
-
-
+const {createMeasureTooltip, removeMeasureTooltip} = g3wsdk.ol.utils;
 const EditingTask = require('./editingtask');
 
 function ModifyGeometryVertexTask(options={}){
@@ -18,6 +17,8 @@ inherit(ModifyGeometryVertexTask, EditingTask);
 const proto = ModifyGeometryVertexTask.prototype;
 
 proto.run = function(inputs, context) {
+  let tooltip;
+  const map = this.getMap();
   const d = $.Deferred();
   const originalLayer = inputs.layer;
   const editingLayer = originalLayer.getEditingLayer() ;
@@ -61,6 +62,11 @@ proto.run = function(inputs, context) {
 
   this._modifyInteraction.on('modifystart', evt => {
     const feature = evt.features.getArray()[0];
+    tooltip = createMeasureTooltip({
+      map,
+      feature
+    });
+
     originalFeature = feature.clone();
   });
 
@@ -70,6 +76,11 @@ proto.run = function(inputs, context) {
       newFeature = feature.clone();
       session.pushUpdate(layerId, newFeature, originalFeature);
       inputs.features.push(newFeature);
+      removeMeasureTooltip({
+        map,
+        ...tooltip
+      });
+      tooltip = null;
       d.resolve(inputs);
     }
   });
