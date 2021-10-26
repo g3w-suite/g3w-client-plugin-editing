@@ -6,8 +6,9 @@
   "directories": {
     "test": "test"
   },
-  "dependencies": {},
-  "devDependencies": {},
+  "dependencies": {
+    "vue-cookie-law": "^1.13.3"
+  },
   "scripts": {
     "watch": "../../../node_modules/.bin/gulp watch",
     "build": "../../../node_modules/.bin/gulp default"
