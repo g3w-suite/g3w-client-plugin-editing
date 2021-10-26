@@ -1,14 +1,13 @@
 {
   "name": "editing",
-  "version": "3.1.0",
+  "version": "3.3.0",
   "description": "",
   "main": "index.js",
   "directories": {
     "test": "test"
   },
-  "dependencies": {
-    "vue-cookie-law": "^1.13.3"
-  },
+  "dependencies": {},
+  "devDependencies": {},
   "scripts": {
     "watch": "../../../node_modules/.bin/gulp watch",
     "build": "../../../node_modules/.bin/gulp default"
