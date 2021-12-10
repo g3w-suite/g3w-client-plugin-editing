@@ -42,11 +42,11 @@ function ToolBox(options={}) {
   this._getFeaturesOption = {};
   const historystate = this._session.getHistory().state;
   const sessionstate = this._session.state;
- 
+  const {show=true} = options;
   this.state = {
     id: options.id,
     changingtools: false, // used to show or not tools during change phase
-    show: true, // used to show or not the toolbox if we nee to filtered
+    show, // used to show or not the toolbox if we nee to filtered
     color: options.color || 'blue',
     title: options.title || "Edit Layer",
     customTitle: false,
@@ -296,6 +296,7 @@ proto.start = function(options={}) {
         this._start = true;
       }
       this.setEditing(true);
+      d.resolve();
     }
   }
   return d.promise();
@@ -311,6 +312,10 @@ proto.stopLoading = function() {
 
 proto.getFeaturesOption = function() {
   return this._getFeaturesOption;
+};
+
+proto.isStarted = function(){
+  return this._session.isStarted();
 };
 
 proto.stop = function() {
@@ -419,6 +424,14 @@ proto.canEdit = function() {
   return this.state.editing.canEdit;
 };
 
+proto.setEditable = function(bool=true){
+  this.state.editing.canEdit = bool;
+};
+
+proto.setShow = function(bool=true){
+  this.state.show = bool;
+};
+
 proto._canEdit = function() {
   if (this._constraints.scale) {
     const scale = this._constraints.scale;
@@ -484,8 +497,16 @@ proto.getLayer = function() {
   return this._layer;
 };
 
+proto.getEditingLayer = function(){
+  return this.getLayer().getEditingLayer();
+};
+
+proto.getEditingLayerSource = function(){
+  return this.getEditingLayer().getSource();
+};
+
 /**
- * Funtion thta enable toolbox
+ * Method that enable toolbox
  * @param bool
  */
 proto.setEditing = function(bool=true) {

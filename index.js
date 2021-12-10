@@ -52,7 +52,7 @@ const _Plugin = function() {
   //setup plugin interface
   this.setupGui = function() {
     if (this.config.visible === false) return false;
-    this.config.name = this.config.name ||  "plugins.editing.editing_data";
+    this.config.name = this.config.name ||  "plugins.editing.editing_reports";
     this.addToolGroup(pluginGroupTool);
     this.addTools({
       action: this.showEditingPanel,

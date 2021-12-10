@@ -1,5 +1,4 @@
-const inherit = g3wsdk.core.utils.inherit;
-const base =  g3wsdk.core.utils.base;
+const {base, inherit} = g3wsdk.core.utils;
 const EditingTask = require('./editingtask');
 
 function MoveFeatureTask(options){
@@ -11,6 +10,12 @@ inherit(MoveFeatureTask, EditingTask);
 
 const proto = MoveFeatureTask.prototype;
 
+/**
+ * Run funcion of task
+ * @param inputs
+ * @param context
+ * @returns {*}
+ */
 proto.run = function(inputs, context) {
   const d = $.Deferred();
   const originalLayer = inputs.layer;
@@ -24,13 +29,13 @@ proto.run = function(inputs, context) {
   });
   this.addInteraction(this._translateInteraction);
 
-  this._translateInteraction.on('translatestart',function(e){
-    const feature = e.features.getArray()[0];
+  this._translateInteraction.on('translatestart', evt => {
+    const feature = evt.features.getArray()[0];
     originalFeature = feature.clone();
   });
 
-  this._translateInteraction.on('translateend',function(e) {
-    const feature = e.features.getArray()[0];
+  this._translateInteraction.on('translateend', evt => {
+    const feature = evt.features.getArray()[0];
     const newFeature = feature.clone();
     session.pushUpdate(layerId, newFeature, originalFeature);
     d.resolve(inputs);

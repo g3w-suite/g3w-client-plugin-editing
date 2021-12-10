@@ -12,7 +12,7 @@ const InternalComponent = Vue.extend({
   components: {
     'g3w-media': Media_Field
   },
-  data: function() {
+  data() {
     this.dataTable = null;
     return {
       state: null,
@@ -38,21 +38,19 @@ const InternalComponent = Vue.extend({
     isMediaField(name) {
       return this.$options.service.isMediaField(name)
     },
-    stop: function() {
+    stop() {
       this.$options.service.cancel();
     },
-    save: function() {
-      this.state.isrelation ? this.$options.service.linkFeatures(this._linkFeatures) :this.$options.service.save();
+    addReport() {
+      this.$options.service.save();
     },
-    cancel: function() {
+    cancel() {
       this.$options.service.cancel();
     },
     deleteFeature: function(index) {
       const id = this.state.features[index].__gis3w_feature_uid;
       const element = $(`#editing_table table tr#${id}`);
-      this.$options.service.deleteFeature(index).then(()=>{
-        this.dataTable.row(element).remove().draw()
-      }).catch(()=>{})
+      this.$options.service.deleteFeature(index).then(()=>this.dataTable.row(element).remove().draw()).catch(()=>{})
     },
     copyFeature(index){
       this.$options.service.copyFeature(index).then(async feature =>{
@@ -64,14 +62,14 @@ const InternalComponent = Vue.extend({
         this.setDataTable();
       })
     },
-    editFeature: function(index) {
+    editFeature(index) {
       this.$options.service.editFeature(index);
     },
-    linkFeature: function(index, evt) {
+    linkFeature(index, evt) {
      if (evt.target.checked) this._linkFeatures.push(index);
       else this._linkFeatures = this._linkFeatures.filter(addindex => addindex !== index);
     },
-    _setLayout: function() {
+    _setLayout() {
       return this.$options.service._setLayout();
     },
     getValue(value) {
@@ -106,6 +104,7 @@ const InternalComponent = Vue.extend({
     await this.$nextTick();
     this.setDataTable();
     $('#table-editing-tools i').tooltip();
+    this.resize();
   },
   beforeDestroy() {
     if (this._linkFeatures) this._linkFeatures = null;
@@ -129,7 +128,6 @@ const TableComponent = function(options={}) {
     service.cancel();
     return base(this, 'unmount');
   };
-
 };
 
 inherit(TableComponent, Component);

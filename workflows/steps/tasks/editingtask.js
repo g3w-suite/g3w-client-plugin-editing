@@ -1,6 +1,5 @@
 const {base, inherit} = g3wsdk.core.utils;
-const createSelectedStyle = g3wsdk.core.geoutils.createSelectedStyle;
-const {areCoordinatesEqual} = g3wsdk.core.geoutils;
+const {areCoordinatesEqual, createSelectedStyle} = g3wsdk.core.geoutils;
 const GUI = g3wsdk.gui.GUI;
 const Task = g3wsdk.core.workflow.Task;
 
@@ -123,7 +122,6 @@ proto.setNullMediaFields = function({layer, feature}={}) {
   mediaFields.forEach(field => {
     feature.set(field, null);
   })
-
 };
 
 proto.run = function(inputs, context) {};

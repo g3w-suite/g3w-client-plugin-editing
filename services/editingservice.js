@@ -2,6 +2,7 @@ import API from '../api'
 const ApplicationService = g3wsdk.core.ApplicationService;
 const ApplicationState = g3wsdk.core.ApplicationState;
 const {base, inherit} = g3wsdk.core.utils;
+const {getPointFeaturesfromGeometryVertex} = g3wsdk.core.geoutils;
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 const PluginService = g3wsdk.core.plugin.PluginService;
 const SessionsRegistry = g3wsdk.core.editing.SessionsRegistry;
@@ -64,6 +65,18 @@ function EditingService() {
     toolboxidactivetool: null,
     message: null,
     relations: [],
+  };
+
+  // Object contain alla information about current report in editing
+  this.currentReport = {
+    id: null, // id of report
+    isNew: true, // is new report
+    valid: false, // form is valid
+    feature: {
+      id: null, // id feature
+      isNew: true, // is new feature
+      valid: false // form is valid
+    } // current editing feature
   };
 
   this._layers_in_error = false;
@@ -795,7 +808,11 @@ proto.stop = function() {
     });
     $.when.apply(this, commitpromises)
       .always(() => {
-        this._toolboxes.forEach(toolbox => toolbox.stop());
+        this._toolboxes.forEach(toolbox => {
+          const bool = toolbox.getId() === 'segnalazioni_d581ae5a_adce_4fab_aa33_49ebe1074163';
+          toolbox.stop();
+          toolbox.setShow(bool);
+        });
         this.clearState();
         //this.activeQueryInfo();
         this._mapService.refreshMap();
@@ -816,6 +833,7 @@ proto.clearState = function() {
   this.state.toolboxselected = null;
   this.state.toolboxidactivetool =  null;
   this.state.message =  null;
+  this.resetReportData();
 };
 
 proto.getRelationsInEditing = function({layerId, relations, feature}={}) {
@@ -1186,7 +1204,6 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
             error
           });
           const errorMessage = parser.parse();
-          const {autoclose = false, message} = messages.error;
           GUI.showUserMessage({
             type: 'alert',
             message: message || errorMessage,
@@ -1220,6 +1237,84 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
           })
     }).catch(() => d.reject(toolbox));
   return commitPromise;
+};
+
+proto.setCurrentReportData = function({id, isNew, valid}={}){
+  this.currentReport.id = id;
+  this.currentReport.isNew = isNew;
+  this.currentReport.valid = valid;
+};
+
+proto.getCurrentReportData = function({id, isNew, valid}={}){
+  return this.currentReport;
+};
+
+proto.setCurrentFeatureReportData = function({id, isNew, valid}={}){
+  this.currentReport.feature.id = id;
+  this.currentReport.feature.isNew = isNew;
+  this.currentReport.feature.valid = valid;
+};
+
+proto.getCurrentFeatureReportData = function(){
+  return this.currentReport.feature;
+};
+/**
+ * Reset report Data
+ *
+ */
+
+proto.resetReportData = function(){
+  this.currentReport = {
+    id: null,
+    isNew: true,
+    valid: false,
+    feature: {
+      id: null,
+      isNew: true,
+      valid: false
+    }
+  }
+};
+
+/**
+ * Method create vertex from report feature
+ */
+proto.createVertexfromReportFeatures = function(features=[]){
+  features.forEach(feature =>{
+    const featureIsNew = feature.isNew();
+    const value = featureIsNew ? feature.getId() : feature.get('id'); // get value of related vertex feature field
+    const options = featureIsNew ? {
+      filter: {
+        nofeatures:true
+      }
+    } : {
+      filter: {
+        field: `feature_id|eq|${value}`,
+      }
+    };
+    const featureSession = this.getToolBoxById('features_bdd79a41_6f26_4598_87fe_4a5ca8b8d759').getSession();
+    const vertexToolBox = this.getToolBoxById('vertex_e7494365_b08b_4a5b_879f_ac587532dd13');
+    vertexToolBox.start(options)
+      .then(()=>{
+        const pointFeatures = getPointFeaturesfromGeometryVertex(feature.getGeometry());
+        const vertexLayerAttributes = vertexToolBox.getLayer().getEditingFields();
+        const vertexLayerSource = vertexToolBox.getEditingLayerSource();
+        pointFeatures.forEach(olFeature => {
+          if (featureIsNew) {
+            vertexLayerAttributes.forEach(({name}) => {
+              name === 'feature_id' ? olFeature.set('feature_id', value) : olFeature.set(name, null)
+            });
+          }
+          const feature = new Feature({
+            feature: olFeature
+          });
+          feature.setTemporaryId();
+          vertexLayerSource.addFeature(olFeature);
+          featureSession.pushAdd('vertex_e7494365_b08b_4a5b_879f_ac587532dd13', feature)
+        })
+      })
+      .fail(err => console.log(err))
+  })
 };
 
 EditingService.EDITING_FIELDS_TYPE = ['unique'];

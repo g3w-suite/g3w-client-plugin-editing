@@ -5,7 +5,7 @@ export default {
       some_layers: "Si è verificato un errore nel caricamento di alcuni layers in editing"
     },
     search: "Cerca",
-    editing_data: "Edita Dati",
+    editing_reports: "Edita Segnalazioni",
     editing_attributes: "Edita attributi",
     relations: "Relazioni",
     edit_relation: "Edita relazione",
@@ -15,7 +15,8 @@ export default {
     relation_already_added : "Relazione già presente",
     list_of_relations_feature: "Elenco Relazioni della feature ",
     tooltip:{
-      edit_layer: "Modifica Layer"
+      edit_layer: "Modifica Layer",
+      back_to_report: "Ritorna alla Segnalazione"
     },
     toolbox: {
       title: 'Edita'
@@ -119,6 +120,7 @@ export default {
       },
       buttons: {
         save: "Salva",
+        add: "Aggiungi",
         save_and_back: "Salva e torna al padre",
         cancel: "Cancella"
       }
@@ -131,7 +133,7 @@ export default {
       some_layers: "An error occurs: It's no possible to edit some layers"
     },
     search: "Search",
-    editing_data: "Editing Layers",
+    editing_reports: "Editing Reports",
     editing_attributes: "Editing attributes",
     relations: "Relations",
     edit_relation: "Edit relation",
@@ -141,7 +143,8 @@ export default {
     relation_already_added: "Relation already added",
     list_of_relations_feature: "List of relations feature ",
     tooltip: {
-      edit_layer: "Edit Layer"
+      edit_layer: "Edit Layer",
+      back_to_report: "Back to Report"
     },
     toolbox: {
       title: 'Edit'
@@ -252,6 +255,7 @@ export default {
       },
       buttons: {
         save: "Save",
+        add: "Add",
         save_and_back: "Save and Back",
         cancel: "Cancel"
       }
@@ -263,7 +267,7 @@ export default {
       some_layers: "Tapahtui virhe. Jotkin tasot eivät ole muokattavissa."
     },
     search: "Haku",
-    editing_data: "Muokataan tasoja",
+    editing_reports: "Editing Reports",
     editing_attributes: "Muokataan attribuutteja",
     relations: "Relaatiot",
     edit_relation: "Muokkaa relaatiota",
@@ -273,7 +277,8 @@ export default {
     relation_already_added: "Relaatio on jo lisätty",
     list_of_relations_feature: "Lista relaation ominaisuuksista",
     tooltip: {
-      edit_layer: "Muokkaa tasoa"
+      edit_layer: "Muokkaa tasoa",
+      back_to_report: "Back to Report"
     },
     toolbox: {
       title: 'Muokkaa'
@@ -383,6 +388,7 @@ export default {
       },
       buttons: {
         save: "Tallenna",
+        add: "Add",
         save_and_back: "Tallenna ja palaa",
         cancel: "Peruuta"
       }
@@ -394,7 +400,7 @@ export default {
       some_layers: "Ett fel uppstod. Vissa nivåer kan inte redigeras."
     },
     search: "Sökning",
-    editing_data: "Nivåerna redigeras",
+    editing_reports: "Editing Reports",
     editing_attributes: "Attributen redigeras",
     relations: "Relationer",
     edit_relation: "Redigera relationen",
@@ -404,7 +410,8 @@ export default {
     relation_already_added: "Relationen har redan lagts till",
     list_of_relations_feature: "Lista på relationens egenskaper",
     tooltip: {
-      edit_layer: "Redigera nivån"
+      edit_layer: "Redigera nivån",
+      back_to_report: "Back to Report"
     },
     toolbox: {
       title: 'Redigera'
@@ -514,6 +521,7 @@ export default {
       },
       buttons: {
         save: "Spara",
+        add: "Add",
         save_and_back: "Spara och gå tillbaka",
         cancel: "Ångra"
       }
@@ -525,7 +533,7 @@ export default {
       some_layers: "Une erreur s'est produite lors du chargement de certaines layers dans l'édition."
     },
     search: "Recherche",
-    editing_data: "Modifier les donnes",
+    editing_reports: "Modifier les report",
     editing_attributes: "Modifier les attributs",
     relations: "Relations",
     edit_relation: "Modifier la relation",
@@ -535,7 +543,8 @@ export default {
     relation_already_added : "Relation déjà présente",
     list_of_relations_feature: "Lister les relations de la fonctionnalité",
     tooltip:{
-      edit_layer: "Modifier le layer"
+      edit_layer: "Modifier le layer",
+      back_to_report: "Back to Report"
     },
     toolbox: {
       title: 'Modifier'
@@ -639,6 +648,7 @@ export default {
       },
       buttons: {
         save: "Sauvegarder",
+        add: "Add",
         save_and_back: "Sauvegarder et retourner au parent",
         cancel: "Supprimer"
       }

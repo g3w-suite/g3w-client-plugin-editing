@@ -1,5 +1,5 @@
 <div class="toolbox" v-show="state.show">
-  <div :class="{'disableddiv' : !isLayerReady || !canEdit }" :id="'id_toolbox_'+ state.id">
+  <div v-disabled="!isLayerReady || !canEdit" :id="'id_toolbox_'+ state.id">
     <div @click="select" class="panel" style="margin-bottom: 8px;" :class="{'mobile': isMobile(), 'toolboxselected': state.selected }">
       <div v-show="!isLayerReady" class="bar-loader"></div>
       <div v-if="state.toolboxheader" class="panel-heading container" style="width:100%;" :style="{ background: state.color}">
@@ -13,8 +13,8 @@
         <div v-disabled="!state.startstopediting" data-placement="left" data-toggle="tooltip" ref="editingbutton"
              @click.stop="toggleEditing"
              class="start-editing editbtn skin-tooltip-left"
-             :class="{'pull-right': !isMobile(), 'enabled' : isLayerReady,  'g3w-icon-toggled' : state.editing.on}" v-t-title:plugin="edit_layer_tooltip">
-          <span style="font-size: 1.1em; padding: 5px; !important;"  :class="g3wtemplate.font['pencil']"></span>
+             :class="{'pull-right': !isMobile(), 'enabled' : isLayerReady,  'g3w-icon-toggled' : state.editing.on}" v-t-title:plugin="state.id === 'segnalazioni_d581ae5a_adce_4fab_aa33_49ebe1074163' ? 'editing.tooltip.edit_layer' : 'editing.tooltip.back_to_report'">
+          <span style="font-size: 1.1em; padding: 5px; !important;"  :class="g3wtemplate.font[state.id === 'segnalazioni_d581ae5a_adce_4fab_aa33_49ebe1074163' ? 'pencil' : 'marker']"></span>
         </div>
       </div>
       <bar-loader :loading="state.loading || state.changingtools"></bar-loader>

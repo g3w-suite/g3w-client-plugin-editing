@@ -92,43 +92,20 @@ proto.deleteFeature = function(index) {
   })
 };
 
-proto.copyFeature = function(index){
-  return new Promise((resolve, reject) =>{
-    const feature = this._features[index].cloneNew();
-    const addTableFeatureWorflow = require('../workflows/addtablefeatureworkflow');
-    this._workflow = new addTableFeatureWorflow();
-    const inputs = this._inputs;
-    inputs.features.push(feature);
-    const options = {
-      context: this._context,
-      inputs
-    };
-    this._workflow.start(options)
-      .then(outputs => {
-        const feature = outputs.features[outputs.features.length -1];
-        const newFeature = {};
-        Object.entries(this.state.features[0]).forEach(([key, value]) => {
-          newFeature[key] = feature.get(key);
-        });
-        newFeature.__gis3w_feature_uid = feature.getUid();
-        this.state.features.push(newFeature);
-        resolve(newFeature)
-      })
-      .fail((err) => {
-        reject();
-      })
-  })
-};
 
 proto.editFeature = function(index) {
   const feature = this._features[index];
   const EditTableFeatureWorkflow = require('../workflows/edittablefeatureworkflow');
   this._workflow = new EditTableFeatureWorkflow();
-  const inputs = this._inputs;
-  inputs.features.push(feature);
+  /**
+   *
+   * HOOK TO LOAD ALL FEATURES RELATED TO REPORT
+   */
+
+  this._inputs.features.push(feature);
   const options = {
     context: this._context,
-    inputs
+    inputs: this._inputs
   };
   this._workflow.start(options)
     .then(outputs => {
@@ -140,18 +117,6 @@ proto.editFeature = function(index) {
     .fail((err) => {})
 };
 
-proto.linkFeatures = function(featuresIndex=[]){
-  const features = featuresIndex.map(index => this._features[index]);
-  this._promise.resolve({
-    features
-  })
-};
 
-proto.linkFeature = function(index) {
-  const feature = this._features[index];
-  this._promise.resolve({
-      features: [feature]
-    });
-};
 
 module.exports = TableService;

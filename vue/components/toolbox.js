@@ -61,8 +61,12 @@ const ToolboxComponent = Vue.extend({
       return this.state.layerstate.editing.ready;
     }
   },
+  watch: {
+    'state.selected'(selected){
+      selected && this.$emit('setselectedtoolbox', this.state.id);
+    }
+  },
   created() {
-    this.edit_layer_tooltip = 'editing.tooltip.edit_layer';
     this.$emit('canEdit', {
       id: this.state.id
     });

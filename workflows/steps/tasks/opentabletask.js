@@ -1,5 +1,4 @@
-const inherit = g3wsdk.core.utils.inherit;
-const base =  g3wsdk.core.utils.base;
+const {base, inherit} = g3wsdk.core.utils;
 const GUI = g3wsdk.gui.GUI;
 const TableComponent = require('../../../table/vue/table');
 const EditingTask = require('./editingtask');

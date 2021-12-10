@@ -1,5 +1,4 @@
-const inherit = g3wsdk.core.utils.inherit;
-const base =  g3wsdk.core.utils.base;
+const {base, inherit}= g3wsdk.core.utils;
 const PickFeatureInteraction = g3wsdk.ol.interactions.PickFeatureInteraction;
 const EditingTask = require('./editingtask');
 
@@ -28,7 +27,7 @@ proto.run = function(inputs, context, queques) {
     features: inputs.features
   });
   this.addInteraction(this.pickFeatureInteraction);
-  this.pickFeatureInteraction.on('picked', (e) => {
+  this.pickFeatureInteraction.on('picked', e => {
     const feature = e.feature;
     originalStyle = this.setFeaturesSelectedStyle([feature]);
     inputs.features.length === 0 && inputs.features.push(feature);

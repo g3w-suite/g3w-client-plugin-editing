@@ -12,6 +12,7 @@ function AddFeatureTask(options={}) {
   this._snapInteraction = null;
   this._finishCondition = options.finishCondition || _.constant(true);
   this._condition = options.condition || _.constant(true);
+  this.layerId;
   base(this, options);
 }
 
@@ -24,7 +25,7 @@ proto.run = function(inputs, context) {
   const originalLayer = inputs.layer;
   const editingLayer = originalLayer.getEditingLayer();
   const session = context.session;
-  const layerId = originalLayer.getId();
+  this.layerId = originalLayer.getId();
   switch (originalLayer.getType()) {
     case Layer.LayerTypes.VECTOR:
       const originalGeometryType = originalLayer.getEditingGeometryType();
@@ -52,7 +53,7 @@ proto.run = function(inputs, context) {
           });
           feature.setTemporaryId();
           source.addFeature(feature);
-          session.pushAdd(layerId, feature);
+          session.pushAdd(this.layerId, feature);
         } else feature = e.feature;
         // set Z values based on layer Geoemtry
         feature = Geometry.addZValueToOLFeatureGeometry({
@@ -60,12 +61,23 @@ proto.run = function(inputs, context) {
           geometryType: originalGeometryType
         });
         inputs.features.push(feature);
+        this.getVertexToReportFeature(feature);
+        /**
+         * Method to get or add vertex to feature related to report
+         */
+
         this.fireEvent('addfeature', feature); // emit event to get from subscribers
         d.resolve(inputs);
       });
       break;
   }
   return d.promise();
+};
+
+proto.getVertexToReportFeature = function(feature){
+  if (this.layerId === 'features_bdd79a41_6f26_4598_87fe_4a5ca8b8d759') {
+    this.getEditingService().createVertexfromReportFeatures([feature]);
+  }
 };
 
 proto.stop = function() {

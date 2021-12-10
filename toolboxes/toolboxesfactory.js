@@ -38,6 +38,7 @@ function EditorToolBoxesFactory() {
       type,
       layer,
       tools,
+      show: id !== 'vertex_e7494365_b08b_4a5b_879f_ac587532dd13' && id !== 'features_bdd79a41_6f26_4598_87fe_4a5ca8b8d759',
       lngTitle: 'editing.toolbox.title',
       title: ` ${layer.getName()}`,
       constraints

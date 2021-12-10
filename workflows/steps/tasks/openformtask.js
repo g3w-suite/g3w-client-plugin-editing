@@ -1,6 +1,4 @@
-const ApplicationState = g3wsdk.core.ApplicationState;
-const inherit = g3wsdk.core.utils.inherit;
-const base =  g3wsdk.core.utils.base;
+const {base, inherit} = g3wsdk.core.utils;
 const GUI = g3wsdk.gui.GUI;
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 const EditingTask = require('./editingtask');
@@ -67,6 +65,7 @@ proto._cancelFnc = function(promise, inputs) {
 
 proto._saveFeatures = function({fields, promise, session, inputs}){
   fields = this._multi ? fields.filter(field => field.value !== null) : fields;
+  console.log(fields)
   if (fields.length) {
     const layerId = this._originalLayer.getId();
     const newFeatures = [];
@@ -110,12 +109,20 @@ proto._saveFnc = function(promise, context, inputs) {
 };
 
 proto.startForm = function(options = {}) {
-  const { inputs, context, promise } = options;
+  const {inputs, context, promise} = options;
   const { session } = context;
   const formComponent = options.formComponent || EditingFormComponent;
   const Form = this._getForm(inputs, context);
   const layerId = this._originalLayer.getId();
-  const isnew = this._originalFeatures.length > 1 ? false : this._originalFeatures[0].isNew();
+  const feature = this._originalFeatures[0];
+  const isnew = feature.isNew();
+  layerId === 'segnalazioni_d581ae5a_adce_4fab_aa33_49ebe1074163' ? this.getEditingService().setCurrentReportData({
+    id: feature.get('id'),
+    isNew: isnew
+  }) : this.getEditingService().setCurrentFeatureReportData({
+    id: feature.getId(),
+    isNew: isnew
+  });
   const formService = Form({
     formComponent,
     title: "plugins.editing.editing_attributes",
@@ -125,17 +132,13 @@ proto.startForm = function(options = {}) {
     layer: this._originalLayer,
     isnew,
     fields: this._fields,
-    context_inputs: !this._multi && this._edit_relations && {
-      context,
-      inputs
-    },
     formStructure: this._editorFormStructure,
     modal: true,
     perc: this._editorFormStructure ? 100 : null,
     push: this._isContentChild,
     showgoback: !this._isContentChild,
     buttons:[{
-      title: this._isContentChild ? "plugins.editing.form.buttons.save_and_back" : "plugins.editing.form.buttons.save",
+      title: "plugins.editing.form.buttons.save",
       type: "save",
       class: "btn-success",
       cbk: this._saveFnc(promise, context, inputs).bind(this)
@@ -173,6 +176,8 @@ proto._generateFormId = function(layerName) {
 
 proto.stop = function() {
   this.disableSidebar(false);
-  this._isContentChild ? GUI.popContent() : GUI.closeForm();
+  console.log('qui')
+  GUI.closeForm();
+  //this._isContentChild ? GUI.popContent() : GUI.closeForm();
 };
 

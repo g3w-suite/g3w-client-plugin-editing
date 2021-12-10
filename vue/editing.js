@@ -40,6 +40,9 @@ const vueComponentOptions = {
       const toolbox = this._getToolBoxById(toolboxId);
       if (toolbox.state.editing.history.commit) this.$options.service.commit().always(() => toolbox.stop());
       else toolbox.stop();
+      this.$options.service.getToolBoxes().forEach(toolbox =>{
+        toolbox.getId() !== toolboxId && toolbox.stop();
+      })
     },
     saveToolBox(toolboxId) {
       const toolbox = this._getToolBoxById(toolboxId);
