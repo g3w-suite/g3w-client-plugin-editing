@@ -1,13 +1,11 @@
-const inherit = g3wsdk.core.utils.inherit;
-const base =  g3wsdk.core.utils.base;
+const {base, inherit} = g3wsdk.core.utils;
 const Step = g3wsdk.core.workflow.Step;
-const t = g3wsdk.core.i18n.tPlugin;
 const OpenFormTask = require('./tasks/openformtask');
 
-//creato uno step per apriore il form
 const OpenFormStep = function(options={}) {
   options.task = new OpenFormTask(options);
   options.help = "editing.steps.help.insert_attributes_feature";
+  console.log(options)
   base(this, options)
 };
 

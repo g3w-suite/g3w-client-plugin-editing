@@ -20,15 +20,20 @@ const proto = ModifyFeatureTask.prototype;
 proto.run = function() {
   let origGeometry = null;
   this.pickedFeatures = new ol.Collection;
+  const layers = [this.layer];
+  if (this.getEditingService().getLayerFeaturesId() === this.layer.getId()){
+    const vertexLayer = this.getEditingService().getToolBoxById(this.getEditingService().getLayerVertexId()).getEditingLayer();
+    layers.push(vertexLayer);
+  }
   this._pickInteraction = new PickFeatureInteraction({
-    layers: [this.layer]
+    layers
   });
 
   this.addInteraction(this._pickInteraction);
 
-  this._pickInteraction.on('picked', (e) =>{
+  this._pickInteraction.on('picked', evt =>{
     this.pickedFeatures.clear();
-    this.pickedFeatures.push(e.feature);
+    this.pickedFeatures.push(evt.feature);
   });
 
   this._modifyInteraction = new ol.interaction.Modify({
@@ -43,8 +48,8 @@ proto.run = function() {
     origGeometry = feature.getGeometry().clone();
   });
 
-  this._modifyInteraction.on('modifyend', (e) => {
-    const feature = e.features.getArray()[0];
+  this._modifyInteraction.on('modifyend', evt => {
+    const feature = evt.features.getArray()[0];
     const isNew = feature.isNew();
     //try {
       if (!this._busy) {

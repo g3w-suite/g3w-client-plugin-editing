@@ -4,7 +4,7 @@ const ToolBox = require('./toolbox');
 
 function EditorToolBoxesFactory() {
   this.build = function(layer, options={}) {
-    //get editing contsraints
+    //get editing constraints
     const constraints = layer.getEditingConstrains();
     // get editing capabilities (create, update_attributes, update_geometry, delete)
     const capabilities = layer.getEditingCapabilities();
@@ -38,7 +38,7 @@ function EditorToolBoxesFactory() {
       type,
       layer,
       tools,
-      show: id !== 'vertex_e7494365_b08b_4a5b_879f_ac587532dd13' && id !== 'features_bdd79a41_6f26_4598_87fe_4a5ca8b8d759',
+      show: options.show ? options.show.indexOf(id) !== -1 : true,
       lngTitle: 'editing.toolbox.title',
       title: ` ${layer.getName()}`,
       constraints

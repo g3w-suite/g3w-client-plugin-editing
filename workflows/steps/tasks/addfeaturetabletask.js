@@ -21,6 +21,7 @@ proto.run = function(inputs, context) {
   session.pushAdd(layerId, feature);
   inputs.features.push(feature);
   d.resolve(inputs, context);
+  console.log('qui')
   return d.promise();
 };
 

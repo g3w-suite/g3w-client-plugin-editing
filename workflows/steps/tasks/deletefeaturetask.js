@@ -135,7 +135,7 @@ proto.run = function(inputs, context) {
         feature,
       });
       inputs.features = [feature];
-      relationsInEditing.forEach((relationInEditing) => {
+      relationsInEditing.forEach(relationInEditing => {
         const {relation, relations} = relationInEditing;
         const relationService = new RelationService(layerId, {
           relation,

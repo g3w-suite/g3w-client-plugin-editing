@@ -1,5 +1,6 @@
 const {base, inherit} = g3wsdk.core.utils;
-
+const Feature = g3wsdk.core.layer.features.Feature;
+const {getVertexLength, areCoordinatesEqual, getPointFeaturesfromGeometryVertex} = g3wsdk.core.geoutils;
 
 const EditingTask = require('./editingtask');
 
@@ -23,9 +24,12 @@ proto.run = function(inputs, context) {
   const editingLayer = originalLayer.getEditingLayer() ;
   const session = context.session;
   const layerId = originalLayer.getId();
-  let originalFeature,
-    newFeature;
+  this.startFeaturesLength = 0;
+  const originalFeatures = [];
   const feature = this._feature = inputs.features[0];
+  const geometry = feature.getGeometry();
+  const featureGeometryType = geometry.getType();
+  const startVertexLength = getVertexLength(geometry);
   this.deleteVertexKey;
   this._originalStyle = editingLayer.getStyle();
   const style = function() {
@@ -51,40 +55,75 @@ proto.run = function(inputs, context) {
     ];
   };
   feature.setStyle(style);
-  const features = new ol.Collection(inputs.features);
+  this.updateFeaturesCollection = new ol.Collection(inputs.features);
+  if (this.getEditingService().getLayerFeaturesId() === layerId){
+    const vertexLayerSource = this.getEditingService().getToolBoxById(this.getEditingService().getLayerVertexId()).getEditingLayerSource();
+    vertexLayerSource.getFeatures().forEach(vertex => {
+      this.updateFeaturesCollection.push(vertex)
+    })
+  }
+  this.startFeaturesLength = this.updateFeaturesCollection.getLength();
   this._modifyInteraction = new ol.interaction.Modify({
-    features,
+    features: this.updateFeaturesCollection,
     deleteCondition: this._deleteCondition
   });
 
   this.addInteraction(this._modifyInteraction);
 
-  this._modifyInteraction.on('modifystart', evt => {
-    const feature = evt.features.getArray()[0];
-    originalFeature = feature.clone();
+  this._modifyInteraction.on('modifystart', ({features}) => {
+    features.forEach(feature => originalFeatures.push(feature.clone()));
   });
 
-  this._modifyInteraction.on('modifyend', evt =>{
-    const feature = evt.features.getArray()[0];
+  this._modifyInteraction.on('modifyend', ({features=[]}) =>{
+    const [feature, ...vertexFeatures] = features.getArray();
+    const [originalFeature, ...originalVertexFeatures] = originalFeatures;
     if (feature.getGeometry().getExtent() !== originalFeature.getGeometry().getExtent()) {
-      newFeature = feature.clone();
+      const newFeature = feature.clone();
       session.pushUpdate(layerId, newFeature, originalFeature);
       inputs.features.push(newFeature);
+      // in case of change coordinate s of a vertex
+      if (startVertexLength === getVertexLength(feature.getGeometry())){
+        vertexFeatures.forEach((vertexFeature, index) =>{
+          const vertexCoordinates = vertexFeature.getGeometry().getCoordinates();
+          const originalVertexFeature = originalVertexFeatures[index];
+          const originalVertexCoordinates = originalVertexFeature.getGeometry().getCoordinates();
+          if (!areCoordinatesEqual(vertexCoordinates, originalVertexCoordinates)){
+            const newVertexFeature = vertexFeature.clone();
+            session.pushUpdate(this.getEditingService().getLayerVertexId(), newVertexFeature, originalVertexFeature);
+          }
+        })
+      } else {
+        const featureVertex = getPointFeaturesfromGeometryVertex(feature.getGeometry());
+        const vertexFeaturesCoordinates = vertexFeatures.map(vertexFeature => vertexFeature.getGeometry().getCoordinates());
+        const newVertex = featureVertex.find(featureVertex => {
+          const findCoordinates = vertexFeaturesCoordinates.find(vertexCoordinate =>{
+            return areCoordinatesEqual(vertexCoordinate, featureVertex.getGeometry().getCoordinates())
+          });
+          return !findCoordinates
+        });
+        newVertex && this.getEditingService().addNewVertexFeatureFromReportFeature({
+          reportFeature: feature,
+          vertexOlFeature: newVertex,
+          index: null
+        });
+      }
       d.resolve(inputs);
+      return false;
     }
   });
+
 
   return d.promise();
 };
 
 proto.stop = function(){
-  if (this._snapInteraction) {
-     this.removeInteraction(this._snapInteraction);
-     this._snapInteraction = null;
-  }
+  this._snapInteraction && this.removeInteraction(this._snapInteraction);
+  this._snapInteraction = null;
   this._feature.setStyle(this._originalStyle);
   this.removeInteraction(this._modifyInteraction);
   this._modifyInteraction = null;
+  this.updateFeaturesCollection.clear();
+  this.updateFeaturesCollection = null;
   return true;
 };
 

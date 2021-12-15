@@ -13,8 +13,8 @@
         <div v-disabled="!state.startstopediting" data-placement="left" data-toggle="tooltip" ref="editingbutton"
              @click.stop="toggleEditing"
              class="start-editing editbtn skin-tooltip-left"
-             :class="{'pull-right': !isMobile(), 'enabled' : isLayerReady,  'g3w-icon-toggled' : state.editing.on}" v-t-title:plugin="state.id === 'segnalazioni_d581ae5a_adce_4fab_aa33_49ebe1074163' ? 'editing.tooltip.edit_layer' : 'editing.tooltip.back_to_report'">
-          <span style="font-size: 1.1em; padding: 5px; !important;"  :class="g3wtemplate.font[state.id === 'segnalazioni_d581ae5a_adce_4fab_aa33_49ebe1074163' ? 'pencil' : 'marker']"></span>
+             :class="{'pull-right': !isMobile(), 'enabled' : isLayerReady,  'g3w-icon-toggled' : state.editing.on}" v-t-title:plugin="'editing.tooltip.edit_layer'">
+          <span style="font-size: 1.1em; padding: 5px; !important;"  :class="g3wtemplate.font['pencil']"></span>
         </div>
       </div>
       <bar-loader :loading="state.loading || state.changingtools"></bar-loader>

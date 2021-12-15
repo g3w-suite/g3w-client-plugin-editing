@@ -21,6 +21,12 @@ const OFFLINE_ITEMS = {
   CHANGES: 'EDITING_CHANGES'
 };
 
+const LAYERS_IDS= {
+  segnalazione: 'segnalazioni_75883438_bef9_4b9a_b093_9222b2dcc760',
+  features: 'features_a56039ab_a97f_4a3b_b56f_da74a9fa0339',
+  vertex: 'vertex_accd85b9_ba6d_4c64_a95d_afca4f4b9a4d'
+};
+
 function EditingService() {
   base(this);
   // contains alla sessions
@@ -499,6 +505,8 @@ proto.getEditingLayer = function(id) {
  * @private
  */
 proto._buildToolBoxes = function(options={}) {
+  // add id of toolbot to show at beginning
+  options.show = [this.getLayerSegnalazioniId()];
   for (const layer of this.getLayers()) {
     const toolbox = ToolBoxesFactory.build(layer, options);
     this.addToolBox(toolbox);
@@ -809,7 +817,7 @@ proto.stop = function() {
     $.when.apply(this, commitpromises)
       .always(() => {
         this._toolboxes.forEach(toolbox => {
-          const bool = toolbox.getId() === 'segnalazioni_d581ae5a_adce_4fab_aa33_49ebe1074163';
+          const bool = toolbox.getId() === this.getLayerSegnalazioniId();
           toolbox.stop();
           toolbox.setShow(bool);
         });
@@ -1245,7 +1253,7 @@ proto.setCurrentReportData = function({id, isNew, valid}={}){
   this.currentReport.valid = valid;
 };
 
-proto.getCurrentReportData = function({id, isNew, valid}={}){
+proto.getCurrentReportData = function(){
   return this.currentReport;
 };
 
@@ -1277,6 +1285,49 @@ proto.resetReportData = function(){
 };
 
 /**
+ * FAKE
+ */
+
+proto.getLayerSegnalazioniId = function(){
+  return LAYERS_IDS.segnalazione;
+};
+
+proto.getLayerFeaturesId = function(){
+  return LAYERS_IDS.features;
+};
+
+proto.getLayerVertexId = function(){
+  return LAYERS_IDS.vertex;
+};
+
+/**
+ * FAKE
+ */
+
+proto.getCurrentFeatureReportVertex = function(){
+  const {id, isNew} = this.getCurrentFeatureReportData();
+
+};
+
+proto.addNewVertexFeatureFromReportFeature = function({reportFeature, vertexOlFeature} = {}){
+  const featureIsNew = reportFeature.isNew();
+  const value = featureIsNew ? reportFeature.getId() : reportFeature.get('id'); // get value of related vertex feature field
+  const featureSession = this.getToolBoxById(this.getLayerFeaturesId()).getSession();
+  const vertexToolBox = this.getToolBoxById(this.getLayerVertexId());
+  const vertexLayerAttributes = vertexToolBox.getLayer().getEditingFields();
+  const vertexLayerSource = vertexToolBox.getEditingLayerSource();
+  featureIsNew && vertexLayerAttributes.forEach(({name}) => {
+    name === 'feature_id' ? vertexOlFeature.set('feature_id', value) : vertexOlFeature.set(name, null)
+  });
+  const feature = new Feature({
+    feature: vertexOlFeature
+  });
+  feature.setTemporaryId();
+  vertexLayerSource.addFeature(feature);
+  featureSession.pushAdd(this.getLayerVertexId(), feature)
+};
+
+/**
  * Method create vertex from report feature
  */
 proto.createVertexfromReportFeatures = function(features=[]){
@@ -1292,25 +1343,15 @@ proto.createVertexfromReportFeatures = function(features=[]){
         field: `feature_id|eq|${value}`,
       }
     };
-    const featureSession = this.getToolBoxById('features_bdd79a41_6f26_4598_87fe_4a5ca8b8d759').getSession();
-    const vertexToolBox = this.getToolBoxById('vertex_e7494365_b08b_4a5b_879f_ac587532dd13');
+    const vertexToolBox = this.getToolBoxById(this.getLayerVertexId());
     vertexToolBox.start(options)
       .then(()=>{
         const pointFeatures = getPointFeaturesfromGeometryVertex(feature.getGeometry());
-        const vertexLayerAttributes = vertexToolBox.getLayer().getEditingFields();
-        const vertexLayerSource = vertexToolBox.getEditingLayerSource();
-        pointFeatures.forEach(olFeature => {
-          if (featureIsNew) {
-            vertexLayerAttributes.forEach(({name}) => {
-              name === 'feature_id' ? olFeature.set('feature_id', value) : olFeature.set(name, null)
-            });
-          }
-          const feature = new Feature({
-            feature: olFeature
-          });
-          feature.setTemporaryId();
-          vertexLayerSource.addFeature(olFeature);
-          featureSession.pushAdd('vertex_e7494365_b08b_4a5b_879f_ac587532dd13', feature)
+        pointFeatures.forEach(vertexOlFeature => {
+          this.addNewVertexFeatureFromReportFeature({
+            reportFeature: feature,
+            vertexOlFeature
+          })
         })
       })
       .fail(err => console.log(err))

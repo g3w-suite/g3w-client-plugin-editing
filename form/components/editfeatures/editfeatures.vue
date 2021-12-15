@@ -1,7 +1,7 @@
 <template>
     <div class="edit_features" style="background-color: #FFFFFF; margin-top: 10px; padding: 10px;">
-        <button class="btn skin-button" style="width:100%" @click="addNewFeatures">Aggiungi Features</button>
-        <button v-if="!isNew" class="btn skin-button" style="width:100%; margin-top: 5px;" @click="startEditReportFeatures">Edita Features</button>
+        <button class="btn skin-button" style="width:100%" @click="addReportFeature">Aggiungi Features</button>
+        <button v-if="!isNew" class="btn skin-button" style="width:100%; margin-top: 5px;" @click="updateReportFeatures">Edita Features</button>
     </div>
 </template>
 
@@ -16,7 +16,7 @@
         },
         methods: {
             // method to add feature
-            addNewFeatures(){
+            addReportFeature(){
                 const content = ComponentsFactory.build({
                     vueComponentObject: AddFeaturesMethodComponent
                 });
@@ -25,10 +25,11 @@
                     closable: false
                 })
             },
-            startEditReportFeatures(){
+            updateReportFeatures(){
                 const EditingService = require('../../../services/editingservice');
-                const reportToolbox = EditingService.getToolBoxById('segnalazioni_d581ae5a_adce_4fab_aa33_49ebe1074163');
-                const featuresToolbox = EditingService.getToolBoxById('features_bdd79a41_6f26_4598_87fe_4a5ca8b8d759');
+                const reportToolbox = EditingService.getToolBoxById(EditingService.getLayerSegnalazioniId());
+                const featuresToolbox = EditingService.getToolBoxById(EditingService.getLayerFeaturesId());
+                const {id} = EditingService.getCurrentReportData();
                 const options = {
                     filter: {
                         field: `report_id|eq|${this.id}`,

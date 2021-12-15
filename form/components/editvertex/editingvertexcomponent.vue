@@ -14,11 +14,15 @@
                 <div style="justify-self: center">
                    Vertice {{v}}
                 </div>
-
+                <button class="btn skin-button" style="width: 50px;" @click="editVertex(v)">
+                    <i :class="g3wtemplate.font['plus']"></i>
+                </button>
             </div>
+
         </div>
-        <div class="buttons" style="align-self: center; font-weight: bold; width: 100%; display: flex; justify-content: center">
-            <button v-t-plugin="'editing.form.buttons.cancel'" class="btn btn-danger" style="width: 100%; font-weight: bold" @click="cancel"></button>
+        <div class="buttons" style="align-self: center; font-weight: bold; width: 100%; display: flex; justify-content: space-between">
+            <button v-t-plugin="'editing.form.buttons.save'" class="btn btn-success" style="width: 40%; font-weight: bold" @click="save"></button>
+            <button v-t-plugin="'editing.form.buttons.cancel'" class="btn btn-danger" style="width: 40%; font-weight: bold" @click="cancel"></button>
         </div>
     </div>
 </template>
@@ -33,6 +37,9 @@
             }
         },
         methods: {
+            save(){
+              console.log('qui')
+            },
             cancel(){
                 GUI.popContent();
             },
@@ -43,19 +50,21 @@
                 })
             },
             editVertex(index){
-                alert(index)
+                alert(this.featureVertex[index].getGeometry().getCoordinates())
             }
         },
         created(){
-
             const EditingService = require('../../../services/editingservice');
             const {id} = EditingService.getCurrentFeatureReportData();
-            const vertexLayer = EditingService.getLayerById('vertex_e7494365_b08b_4a5b_879f_ac587532dd13').getEditingLayer();
-            this.featureVertex = vertexLayer.getSource().getFeatures()
+            const vertexLayer = EditingService.getLayerById(EditingService.getLayerVertexId());
+            // load vertex of feature
+            this.featureVertex = vertexLayer.getSource().getFeatures().filter(feature => feature.get('feature_id') === id);
             this.featureVertex.forEach((feature, index) =>{
                 this.vertex.push(index)
             })
-
+        },
+        beforeDestroy() {
+            this.featureVertex = null;
         }
     };
 </script>

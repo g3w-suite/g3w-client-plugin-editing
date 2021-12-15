@@ -48,6 +48,10 @@ proto.run = function(inputs, context) {
           attributes.forEach(attribute => {
             e.feature.set(attribute.name, null);
           });
+          if (this.layerId === this.getEditingService().getLayerFeaturesId()){
+            console.log('qui')
+            e.feature.set('report_id', this.getEditingService().getCurrentReportData().id);
+          }
           feature = new Feature({
             feature: e.feature,
           });
@@ -75,7 +79,7 @@ proto.run = function(inputs, context) {
 };
 
 proto.getVertexToReportFeature = function(feature){
-  if (this.layerId === 'features_bdd79a41_6f26_4598_87fe_4a5ca8b8d759') {
+  if (this.layerId === this.getEditingService().getLayerFeaturesId()) {
     this.getEditingService().createVertexfromReportFeatures([feature]);
   }
 };

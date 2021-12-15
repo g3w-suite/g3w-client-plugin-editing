@@ -743,7 +743,7 @@ proto.getToolMessage = function() {
   return tool.getMessage();
 };
 
-proto.setToolMessage = function(messages) {
+proto.setToolMessage = function(messages={}) {
   this.state.toolmessages.help = messages.help;
 };
 

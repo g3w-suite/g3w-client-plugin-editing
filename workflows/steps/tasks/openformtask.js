@@ -1,5 +1,6 @@
+import AddFeatureMethodComponent from '../../../form/components/editfeatures/addfeaturemethod.vue';
 const {base, inherit} = g3wsdk.core.utils;
-const GUI = g3wsdk.gui.GUI;
+const {GUI, ComponentsFactory} = g3wsdk.gui
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 const EditingTask = require('./editingtask');
 const EditingFormComponent = require('../../../form/editingform');
@@ -65,7 +66,6 @@ proto._cancelFnc = function(promise, inputs) {
 
 proto._saveFeatures = function({fields, promise, session, inputs}){
   fields = this._multi ? fields.filter(field => field.value !== null) : fields;
-  console.log(fields)
   if (fields.length) {
     const layerId = this._originalLayer.getId();
     const newFeatures = [];
@@ -88,7 +88,31 @@ proto._saveFeatures = function({fields, promise, session, inputs}){
       });
       GUI.setModal(false);
       promise.resolve(inputs);
-      this.fireEvent('savedfeature', newFeatures) // called after saved
+      this.fireEvent('savedfeature', newFeatures); // called after saved
+      if (layerId === this.getEditingService().getLayerSegnalazioniId()) {
+        this.getEditingService().setSaveConfig({
+          mode: 'autosave',
+          messages: {
+            success: false
+          },
+          cb: {
+            done: () => {
+              this.getEditingService().resetDefault();
+              let content  = ComponentsFactory.build({
+                vueComponentObject: AddFeatureMethodComponent
+              });
+              GUI.showContent({
+                content,
+                closable: false
+              })
+            }
+          }
+        });
+        this.getEditingService().commit({
+          toolbox: this.getEditingService().getToolBoxById(layerId),
+          modal: false
+        });
+      }
     })
   } else {
     GUI.setModal(false);
@@ -115,14 +139,21 @@ proto.startForm = function(options = {}) {
   const Form = this._getForm(inputs, context);
   const layerId = this._originalLayer.getId();
   const feature = this._originalFeatures[0];
-  const isnew = feature.isNew();
-  layerId === 'segnalazioni_d581ae5a_adce_4fab_aa33_49ebe1074163' ? this.getEditingService().setCurrentReportData({
+  const isNew = feature.isNew();
+  if (layerId === this.getEditingService().getLayerSegnalazioniId())
+     this.getEditingService().setCurrentReportData({
     id: feature.get('id'),
-    isNew: isnew
-  }) : this.getEditingService().setCurrentFeatureReportData({
-    id: feature.getId(),
-    isNew: isnew
+    isNew
   });
+  else {
+    const featureId = feature.getId();
+    this.getEditingService().setCurrentFeatureReportData({
+      id: featureId ,
+      isNew
+    });
+    this.getEditingService().getCurrentFeatureReportVertex();
+  }
+
   const formService = Form({
     formComponent,
     title: "plugins.editing.editing_attributes",
@@ -176,8 +207,6 @@ proto._generateFormId = function(layerName) {
 
 proto.stop = function() {
   this.disableSidebar(false);
-  console.log('qui')
-  GUI.closeForm();
-  //this._isContentChild ? GUI.popContent() : GUI.closeForm();
+  this._isContentChild ? GUI.popContent() : GUI.closeForm();
 };
 

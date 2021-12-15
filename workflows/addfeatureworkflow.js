@@ -3,7 +3,7 @@ const EditingWorkflow = require('./editingworkflow');
 const AddFeatureStep = require('./steps/addfeaturestep');
 const OpenFormStep = require('./steps/openformstep');
 
-function AddFeatureWorflow(options={}) {
+function AddFeatureWorkflow(options={}) {
   const addfeaturestep = new AddFeatureStep(options);
   const openformstep = new OpenFormStep(options);
   addfeaturestep.on('run', ({inputs, context}) => {
@@ -28,6 +28,6 @@ function AddFeatureWorflow(options={}) {
   base(this, options);
 }
 
-inherit(AddFeatureWorflow, EditingWorkflow);
+inherit(AddFeatureWorkflow, EditingWorkflow);
 
-module.exports = AddFeatureWorflow;
+module.exports = AddFeatureWorkflow;

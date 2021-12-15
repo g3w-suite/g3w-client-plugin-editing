@@ -35,7 +35,7 @@
         },
         methods: {
             cancel(){
-                GUI.popContent();
+                GUI.closeContent();
             },
             async drawFeatures(){
                 const featuresToolbox = await this.addFeatures();
@@ -44,8 +44,8 @@
             },
             async addFeatures(){
                 const EditingService = require('../../../services/editingservice');
-                const reportToolbox = EditingService.getToolBoxById('segnalazioni_d581ae5a_adce_4fab_aa33_49ebe1074163');
-                const featuresToolbox = EditingService.getToolBoxById('features_bdd79a41_6f26_4598_87fe_4a5ca8b8d759');
+                const reportToolbox = EditingService.getToolBoxById(EditingService.getLayerSegnalazioniId());
+                const featuresToolbox = EditingService.getToolBoxById(EditingService.getLayerFeaturesId());
                 const options = {
                   filter: {
                       nofeatures:true
@@ -64,6 +64,7 @@
             },
             async addFileFeatures(evt) {
                 try {
+                    const EditingService = require('../../../services/editingservice');
                     const mapService = GUI.getComponent('map').getService();
                     let type = evt.target.files[0].name.split('.');
                     type = type[type.length-1].toLowerCase();
@@ -84,7 +85,6 @@
                             });
                             feature.setTemporaryId();
                             featuresToolbox.getEditingLayerSource().addFeature(feature);
-                            const EditingService = require('../../../services/editingservice');
                             EditingService.createVertexfromReportFeatures([feature]);
                         });
                         mapService.zoomToFeatures(newReportFeatures, {
