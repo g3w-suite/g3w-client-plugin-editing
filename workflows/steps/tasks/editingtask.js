@@ -128,4 +128,24 @@ proto.run = function(inputs, context) {};
 
 proto.stop = function() {};
 
+proto.getPointFeaturesfromGeometryVertex = function(geometry){
+  return this.getEditingService().getPointFeaturesfromGeometryVertex(geometry);
+};
+
+proto.getDeltaXY = function({x, y, coordinates} = {}){
+  const getCoordinates = (coordinates)=> {
+    if (Array.isArray(coordinates[0])){
+      return getCoordinates(coordinates[0])
+    } else return {
+      x: coordinates[0],
+      y: coordinates[1]
+    };
+  };
+  const xy = getCoordinates(coordinates);
+  return {
+    x: x - xy.x,
+    y: y - xy.y
+  }
+};
+
 module.exports = EditingTask;

@@ -689,6 +689,11 @@ proto.getLayers = function() {
   return this._editableLayers[Symbol.for('layersarray')];
 };
 
+proto.stopCurrentWorkFlow = function(){
+  const currentWorkflow = this.getCurrentWorkflow();
+  currentWorkflow.stop();
+};
+
 proto.getCurrentWorkflow = function() {
   return WorkflowsStack.getCurrent();
 };
@@ -1204,6 +1209,7 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
               });
               cb.error && cb.error instanceof Function && cb.error(toolbox, message || errorMessage);
             }
+            console.log(toolbox)
             d.resolve(toolbox);
           }
         })
@@ -1309,14 +1315,17 @@ proto.getCurrentFeatureReportVertex = function(){
 
 };
 
+proto.getPointFeaturesfromGeometryVertex = function(geometry){
+  return getPointFeaturesfromGeometryVertex(geometry);
+};
+
 proto.addNewVertexFeatureFromReportFeature = function({reportFeature, vertexOlFeature} = {}){
-  const featureIsNew = reportFeature.isNew();
-  const value = featureIsNew ? reportFeature.getId() : reportFeature.get('id'); // get value of related vertex feature field
+  const value = reportFeature.getId();
   const featureSession = this.getToolBoxById(this.getLayerFeaturesId()).getSession();
   const vertexToolBox = this.getToolBoxById(this.getLayerVertexId());
   const vertexLayerAttributes = vertexToolBox.getLayer().getEditingFields();
   const vertexLayerSource = vertexToolBox.getEditingLayerSource();
-  featureIsNew && vertexLayerAttributes.forEach(({name}) => {
+  vertexLayerAttributes.forEach(({name}) => {
     name === 'feature_id' ? vertexOlFeature.set('feature_id', value) : vertexOlFeature.set(name, null)
   });
   const feature = new Feature({
@@ -1346,7 +1355,7 @@ proto.createVertexfromReportFeatures = function(features=[]){
     const vertexToolBox = this.getToolBoxById(this.getLayerVertexId());
     vertexToolBox.start(options)
       .then(()=>{
-        const pointFeatures = getPointFeaturesfromGeometryVertex(feature.getGeometry());
+        const pointFeatures = this.getPointFeaturesfromGeometryVertex(feature.getGeometry());
         pointFeatures.forEach(vertexOlFeature => {
           this.addNewVertexFeatureFromReportFeature({
             reportFeature: feature,

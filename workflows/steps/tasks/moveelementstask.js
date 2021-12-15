@@ -1,5 +1,4 @@
-const inherit = g3wsdk.core.utils.inherit;
-const base =  g3wsdk.core.utils.base;
+const {base, inherit} = g3wsdk.core.utils;
 const EditingTask = require('./editingtask');
 
 function MoveElementsTask(options={}){
@@ -9,22 +8,6 @@ function MoveElementsTask(options={}){
 inherit(MoveElementsTask, EditingTask);
 
 const proto = MoveElementsTask.prototype;
-
-proto.getDeltaXY = function({x, y, coordinates} = {}){
-  const getCoordinates = (coordinates)=> {
-    if (Array.isArray(coordinates[0])){
-      return getCoordinates(coordinates[0])
-    } else return {
-      x: coordinates[0],
-      y: coordinates[1]
-    };
-  };
-  const xy = getCoordinates(coordinates);
-  return {
-    x: x - xy.x,
-    y: y - xy.y
-  }
-};
 
 proto.run = function(inputs, context) {
   const d = $.Deferred();

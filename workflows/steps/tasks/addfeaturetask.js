@@ -45,15 +45,9 @@ proto.run = function(inputs, context) {
       this.drawInteraction.on('drawend', e => {
         let feature;
         if (this._add) {
-          attributes.forEach(attribute => {
-            e.feature.set(attribute.name, null);
-          });
-          if (this.layerId === this.getEditingService().getLayerFeaturesId()){
-            console.log('qui')
-            e.feature.set('report_id', this.getEditingService().getCurrentReportData().id);
-          }
+          attributes.forEach(attribute => e.feature.set(attribute.name, null));
           feature = new Feature({
-            feature: e.feature,
+            feature: e.feature
           });
           feature.setTemporaryId();
           source.addFeature(feature);
@@ -64,6 +58,10 @@ proto.run = function(inputs, context) {
           feature,
           geometryType: originalGeometryType
         });
+        //add report id
+        if (this.layerId === this.getEditingService().getLayerFeaturesId()){
+          feature.set('report_id', this.getEditingService().getCurrentReportData().id);
+        }
         inputs.features.push(feature);
         this.getVertexToReportFeature(feature);
         /**

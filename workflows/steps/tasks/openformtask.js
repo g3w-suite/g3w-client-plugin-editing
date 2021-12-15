@@ -161,7 +161,7 @@ proto.startForm = function(options = {}) {
     id: this._generateFormId(this._layerName),
     dataid: this._layerName,
     layer: this._originalLayer,
-    isnew,
+    isnew: isNew,
     fields: this._fields,
     formStructure: this._editorFormStructure,
     modal: true,

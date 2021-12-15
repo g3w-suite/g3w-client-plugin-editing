@@ -1,22 +1,18 @@
 <template>
     <div class="editingvertexcomponent" style="display: flex; flex-direction: column; justify-content: space-between">
         <div>
-            <h4>Lista vertici della feature</h4>
+            <div style="display: flex; justify-content: space-between">
+                <h4 style="font-weight: bold">Lista vertici della feature</h4>
+            </div>
             <div style="display: flex; justify-content: space-between; align-items: center; background-color: #FFFFFF; margin: 5px; padding: 5px" v-for="v in vertex" :key="v">
                 <div>
-                    <button class="btn skin-button" style="width: 50px;" @click="zoomToVertex(v)">
+                    <button class="btn skin-button" style="width: 50px;" @mouseover="highLightVertex(v)"  @click="zoomToVertex(v)">
                         <i :class="g3wtemplate.font['marker']"></i>
-                    </button>
-                    <button class="btn skin-button" style="width: 50px;" @click="editVertex(v)">
-                        <i :class="g3wtemplate.font['pencil']"></i>
                     </button>
                 </div>
                 <div style="justify-self: center">
                    Vertice {{v}}
                 </div>
-                <button class="btn skin-button" style="width: 50px;" @click="editVertex(v)">
-                    <i :class="g3wtemplate.font['plus']"></i>
-                </button>
             </div>
 
         </div>
@@ -38,7 +34,7 @@
         },
         methods: {
             save(){
-              console.log('qui')
+              this.cancel();
             },
             cancel(){
                 GUI.popContent();
@@ -49,16 +45,19 @@
                     highlight: true
                 })
             },
-            editVertex(index){
-                alert(this.featureVertex[index].getGeometry().getCoordinates())
+            highLightVertex(index){
+                const mapService = GUI.getComponent('map').getService();
+                mapService.highlightFeatures([this.featureVertex[index]], {
+                    highlight: true,
+                    duration: 1000
+                })
             }
         },
         created(){
             const EditingService = require('../../../services/editingservice');
             const {id} = EditingService.getCurrentFeatureReportData();
-            const vertexLayer = EditingService.getLayerById(EditingService.getLayerVertexId());
-            // load vertex of feature
-            this.featureVertex = vertexLayer.getSource().getFeatures().filter(feature => feature.get('feature_id') === id);
+            const vertexLayerToolBox = EditingService.getToolBoxById(EditingService.getLayerVertexId());
+            this.featureVertex = vertexLayerToolBox.getEditingLayerSource().getFeatures().filter(feature => feature.get('feature_id') == id);
             this.featureVertex.forEach((feature, index) =>{
                 this.vertex.push(index)
             })

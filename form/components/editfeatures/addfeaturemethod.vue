@@ -35,7 +35,8 @@
         },
         methods: {
             cancel(){
-                GUI.closeContent();
+                const EditingService = require('../../../services/editingservice');
+                EditingService.stopCurrentWorkFlow();
             },
             async drawFeatures(){
                 const featuresToolbox = await this.addFeatures();
