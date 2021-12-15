@@ -489,6 +489,31 @@ proto._getRelationFeature = function(featureId) {
   return layer.getEditingSource().getFeatureById(featureId);
 };
 
+proto.deleteRelation = function(index, dialog=true) {
+  const d = $.Deferred();
+  const {ownField} = this.getEditingService()._getRelationFieldsFromRelation({
+    layerId: this._relationLayerId,
+    relation: this.relation
+  });
+  const unlink = () =>{
+    const relation = this.relations[index];
+    const sourceLayer = this.getLayer().getEditingSource();
+    const feature = sourceLayer.getFeatureById(relation.id);
+    sourceLayer.removeFeature(feature);
+    this.getCurrentWorkflowData().session.pushDelete(this._relationLayerId, feature);
+    this.relations.splice(index, 1);
+    d.resolve(true);
+  };
+  if (dialog) {
+    GUI.dialog.confirm(t("editing.messages.unlink_relation"), result => {
+      if (result) unlink() ;
+      else d.reject(false);
+    })
+  } else unlink();
+
+  return d.promise();
+};
+
 proto.unlinkRelation = function(index, dialog=true) {
   const d = $.Deferred();
   const {ownField} = this.getEditingService()._getRelationFieldsFromRelation({

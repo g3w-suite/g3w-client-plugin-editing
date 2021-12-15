@@ -6,7 +6,7 @@
     flex-direction: column;
     justify-content: space-between;
     align-items: center;">
-                <input type="file" @change="addFileFeatures($event)" :accept="'.zip, .csv'" style="position: absolute;margin: 0;padding: 0;width: 100%; height: 100%; outline: none;opacity: 0;cursor: pointer">
+                <input type="file" ref="externalinputfilefeatures" @change="addFileFeatures($event)" :accept="'.zip, .csv'" style="position: absolute;margin: 0;padding: 0;width: 100%; height: 100%; outline: none;opacity: 0;cursor: pointer">
                 <i :class="g3wtemplate.getFontClass('cloud-upload')" style="font-size: 60px;" aria-hidden="true"></i>
                 <p style="font-weight: bold">[.csv, .zip(shapefile)]</p>
             </div>
@@ -26,7 +26,7 @@
 
 <script>
     const GUI = g3wsdk.gui.GUI;
-    const {createVectorLayerFromFile} = g3wsdk.core.geoutils;
+    const {createVectorLayerFromFile, singleGeometriesToMultiGeometry} = g3wsdk.core.geoutils;
     const Feature = g3wsdk.core.layer.features.Feature;
     export default {
         name: 'Addfeaturemethod',
@@ -36,31 +36,21 @@
         methods: {
             cancel(){
                 const EditingService = require('../../../services/editingservice');
-                EditingService.stopCurrentWorkFlow();
+                EditingService.stopAllWorkflowsStack();
             },
             async drawFeatures(){
-                const featuresToolbox = await this.addFeatures();
+                this.cancel();
+                const featuresToolbox = await this.loadFeatures();
                 const tool = featuresToolbox.getToolById('addfeature');
                 featuresToolbox.setActiveTool(tool);
             },
-            async addFeatures(){
+            async loadFeatures(){
                 const EditingService = require('../../../services/editingservice');
-                const reportToolbox = EditingService.getToolBoxById(EditingService.getLayerSegnalazioniId());
                 const featuresToolbox = EditingService.getToolBoxById(EditingService.getLayerFeaturesId());
-                const options = {
-                  filter: {
-                      nofeatures:true
-                  }
-                };
-                reportToolbox.setShow(false);
-                featuresToolbox.setShow(true);
-                featuresToolbox.setSelected(true);
-                const promise = new Promise((resolve, reject) => {
-                    GUI.setModal(false);
-                    GUI.disableSideBar(false);
-                    featuresToolbox.start(options).then(resolve).fail(reject)
-                });
-                await promise;
+                await EditingService.getFeatureAndRelatedVertexReportByReportId();
+                EditingService.editingFeaturesReport();
+                GUI.setModal(false);
+                GUI.disableSideBar(false);
                 return featuresToolbox;
             },
             async addFileFeatures(evt) {
@@ -78,21 +68,42 @@
                             mapCrs,
                             crs:mapCrs
                         });
-                        const featuresToolbox = await this.addFeatures();
+                        const featuresToolbox = EditingService.getToolBoxById(EditingService.getLayerFeaturesId());
+                        const layerId = featuresToolbox.getId();
+                        const featureReportGeometryType = featuresToolbox.getLayer().getGeometryType();
+                        const featuresSession = featuresToolbox.getSession();
                         const newReportFeatures = layer.getSource().getFeatures();
-                        newReportFeatures.forEach(olFeature => {
-                            const feature = new Feature({
-                                feature: olFeature
-                            });
-                            feature.setTemporaryId();
-                            featuresToolbox.getEditingLayerSource().addFeature(feature);
-                            EditingService.createVertexfromReportFeatures([feature]);
-                        });
-                        mapService.zoomToFeatures(newReportFeatures, {
-                            highlight: true
-                        });
-                        const tool = featuresToolbox.getToolById('editattributes');
-                        featuresToolbox.setActiveTool(tool);
+                        if (newReportFeatures.length){
+                            const promises = [];
+                            const newGeometryType = newReportFeatures[0].getGeometry().getType();
+                            if (newGeometryType !== featureReportGeometryType){
+                                GUI.showUserMessage({
+                                    type: 'warning',
+                                    message: 'La tipologia di geometria inserita non è uguale quella di destinazione',
+                                    messageText: true
+                                });
+                                this.$refs.externalinputfilefeatures.value = null;
+                            } else {
+                                await this.loadFeatures();
+                                newReportFeatures.forEach(olFeature => {
+                                    const feature = new Feature({
+                                        feature: olFeature
+                                    });
+                                    feature.setTemporaryId();
+                                    featuresToolbox.getEditingLayerSource().addFeature(feature);
+                                    featuresSession.pushAdd(layerId, feature);
+                                    promises.push(EditingService.createVertexfromReportFeatures([feature]));
+                                });
+                                await Promise.allSettled(promises);
+                                featuresSession.save();
+                                mapService.zoomToFeatures(newReportFeatures, {
+                                    highlight: true
+                                });
+                                const tool = featuresToolbox.getToolById('editattributes');
+                                featuresToolbox.setActiveTool(tool);
+                            }
+                        }
+
                     }
                 } catch(err) {
                     console.log(err)

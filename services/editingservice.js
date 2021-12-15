@@ -694,6 +694,11 @@ proto.stopCurrentWorkFlow = function(){
   currentWorkflow.stop();
 };
 
+proto.stopAllWorkflowsStack = function(){
+  WorkflowsStack.clear();
+  GUI.setModal(false);
+};
+
 proto.getCurrentWorkflow = function() {
   return WorkflowsStack.getCurrent();
 };
@@ -821,13 +826,11 @@ proto.stop = function() {
     });
     $.when.apply(this, commitpromises)
       .always(() => {
+        this.editingReport();
         this._toolboxes.forEach(toolbox => {
-          const bool = toolbox.getId() === this.getLayerSegnalazioniId();
           toolbox.stop();
-          toolbox.setShow(bool);
         });
         this.clearState();
-        //this.activeQueryInfo();
         this._mapService.refreshMap();
         resolve();
     });
@@ -1209,7 +1212,6 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
               });
               cb.error && cb.error instanceof Function && cb.error(toolbox, message || errorMessage);
             }
-            console.log(toolbox)
             d.resolve(toolbox);
           }
         })
@@ -1319,6 +1321,14 @@ proto.getPointFeaturesfromGeometryVertex = function(geometry){
   return getPointFeaturesfromGeometryVertex(geometry);
 };
 
+proto.removeVertexFeatureFromReportFeature = function(vertex){
+  const featureSession = this.getToolBoxById(this.getLayerFeaturesId()).getSession();
+  const vertexToolBox = this.getToolBoxById(this.getLayerVertexId());
+  const vertexLayerSource = vertexToolBox.getEditingLayerSource();
+  vertexLayerSource.removeFeature(vertex);
+  featureSession.pushDelete(this.getLayerVertexId(), vertex)
+};
+
 proto.addNewVertexFeatureFromReportFeature = function({reportFeature, vertexOlFeature} = {}){
   const value = reportFeature.getId();
   const featureSession = this.getToolBoxById(this.getLayerFeaturesId()).getSession();
@@ -1340,31 +1350,77 @@ proto.addNewVertexFeatureFromReportFeature = function({reportFeature, vertexOlFe
  * Method create vertex from report feature
  */
 proto.createVertexfromReportFeatures = function(features=[]){
-  features.forEach(feature =>{
-    const featureIsNew = feature.isNew();
-    const value = featureIsNew ? feature.getId() : feature.get('id'); // get value of related vertex feature field
-    const options = featureIsNew ? {
+  return new Promise((resolve, reject) =>{
+    features.forEach(feature => {
+      const featureIsNew = feature.isNew();
+      const value = featureIsNew ? feature.getId() : feature.get('id'); // get value of related vertex feature field
+      const options = featureIsNew ? {
+        filter: {
+          nofeatures:true
+        }
+      } : {
+        filter: {
+          field: `feature_id|eq|${value}`,
+        }
+      };
+      const vertexToolBox = this.getToolBoxById(this.getLayerVertexId());
+      vertexToolBox.start(options)
+        .then(()=>{
+          const pointFeatures = this.getPointFeaturesfromGeometryVertex(feature.getGeometry());
+          pointFeatures.forEach(vertexOlFeature => {
+            this.addNewVertexFeatureFromReportFeature({
+              reportFeature: feature,
+              vertexOlFeature
+            })
+          });
+          resolve();
+        })
+        .fail(err => reject(err))
+    })
+  })
+};
+
+proto.getFeatureAndRelatedVertexReportByReportId = function(reportId=this.getCurrentReportData().id){
+  const featuresToolbox = this.getToolBoxById(this.getLayerFeaturesId());
+  const vertexToolbox = this.getToolBoxById(this.getLayerVertexId());
+  return new Promise((resolve, reject) => {
+    const options = {
       filter: {
-        nofeatures:true
-      }
-    } : {
-      filter: {
-        field: `feature_id|eq|${value}`,
+        field: `report_id|eq|${reportId}`,
       }
     };
-    const vertexToolBox = this.getToolBoxById(this.getLayerVertexId());
-    vertexToolBox.start(options)
-      .then(()=>{
-        const pointFeatures = this.getPointFeaturesfromGeometryVertex(feature.getGeometry());
-        pointFeatures.forEach(vertexOlFeature => {
-          this.addNewVertexFeatureFromReportFeature({
-            reportFeature: feature,
-            vertexOlFeature
-          })
-        })
+    featuresToolbox.start(options)
+      .then(({features=[]}) => {
+        if (features.length){
+          const feature = features[0];
+          const id = feature.getId();
+          const options = {
+            filter: {
+              field: `feature_id|eq|${id}`,
+            }
+          };
+          vertexToolbox.start(options);
+        }
+        resolve(features);
       })
-      .fail(err => console.log(err))
-  })
+      .fail(err => reject(err))
+  });
+};
+
+proto.editingReport = function(){
+  const reportToolbox = this.getToolBoxById(this.getLayerSegnalazioniId());
+  const featuresToolbox = this.getToolBoxById(this.getLayerFeaturesId());
+  reportToolbox.setShow(true);
+  featuresToolbox.setShow(false);
+  reportToolbox.setSelected(true);
+};
+
+proto.editingFeaturesReport = function(){
+  const reportToolbox = this.getToolBoxById(this.getLayerSegnalazioniId());
+  const featuresToolbox = this.getToolBoxById(this.getLayerFeaturesId());
+  reportToolbox.setShow(false);
+  featuresToolbox.setShow(true);
+  featuresToolbox.setSelected(true);
 };
 
 EditingService.EDITING_FIELDS_TYPE = ['unique'];

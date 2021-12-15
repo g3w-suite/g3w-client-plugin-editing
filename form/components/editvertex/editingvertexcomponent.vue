@@ -4,21 +4,21 @@
             <div style="display: flex; justify-content: space-between">
                 <h4 style="font-weight: bold">Lista vertici della feature</h4>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; background-color: #FFFFFF; margin: 5px; padding: 5px" v-for="v in vertex" :key="v">
+            <div style="display: flex; justify-content: space-between; align-items: center; background-color: #FFFFFF; margin: 5px; padding: 5px" v-for="(v, index) in vertex" :key="v">
                 <div>
-                    <button class="btn skin-button" style="width: 50px;" @mouseover="highLightVertex(v)"  @click="zoomToVertex(v)">
+                    <button class="btn skin-button" style="width: 50px;" @mouseover="highLightVertex(index)" @click="zoomToVertex(index)">
                         <i :class="g3wtemplate.font['marker']"></i>
                     </button>
                 </div>
-                <div style="justify-self: center">
-                   Vertice {{v}}
+                <div v-for="field in v" :key="field.name" style="display: flex; flex-direction: column; align-items: center" v-disabled="field.disabled">
+                    <label style="font-weight: bold" >{{field.name}}</label>
+                    <input class="form-control" :value="field.value">
                 </div>
             </div>
 
         </div>
         <div class="buttons" style="align-self: center; font-weight: bold; width: 100%; display: flex; justify-content: space-between">
-            <button v-t-plugin="'editing.form.buttons.save'" class="btn btn-success" style="width: 40%; font-weight: bold" @click="save"></button>
-            <button v-t-plugin="'editing.form.buttons.cancel'" class="btn btn-danger" style="width: 40%; font-weight: bold" @click="cancel"></button>
+            <button v-t-plugin="'editing.form.buttons.back_to_feature_report'" class="btn skin-button" style="width: 100%; font-weight: bold" @click="save"></button>
         </div>
     </div>
 </template>
@@ -57,9 +57,18 @@
             const EditingService = require('../../../services/editingservice');
             const {id} = EditingService.getCurrentFeatureReportData();
             const vertexLayerToolBox = EditingService.getToolBoxById(EditingService.getLayerVertexId());
+            const vertexLayer = vertexLayerToolBox.getLayer();
             this.featureVertex = vertexLayerToolBox.getEditingLayerSource().getFeatures().filter(feature => feature.get('feature_id') == id);
             this.featureVertex.forEach((feature, index) =>{
-                this.vertex.push(index)
+                const fieldsValues = [];
+                vertexLayer.getFieldsWithValues(feature).forEach(({name, editable,value}) =>{
+                    fieldsValues.push({
+                        name,
+                        value,
+                        disabled:!editable
+                    })
+                })
+                this.vertex.push(fieldsValues)
             })
         },
         beforeDestroy() {

@@ -122,6 +122,7 @@ export default {
         save: "Salva",
         add: "Aggiungi",
         save_and_back: "Salva e torna al padre",
+        back_to_feature_report: "Torna alla feature",
         cancel: "Cancella"
       }
     }
@@ -257,6 +258,7 @@ export default {
         save: "Save",
         add: "Add",
         save_and_back: "Save and Back",
+        back_to_feature_report: "Back To Feature",
         cancel: "Cancel"
       }
     },
@@ -390,6 +392,7 @@ export default {
         save: "Tallenna",
         add: "Add",
         save_and_back: "Tallenna ja palaa",
+        back_to_feature_report: "Back To Feature",
         cancel: "Peruuta"
       }
     },
@@ -523,6 +526,7 @@ export default {
         save: "Spara",
         add: "Add",
         save_and_back: "Spara och gå tillbaka",
+        back_to_feature_report: "Back To Feature",
         cancel: "Ångra"
       }
     },
@@ -650,6 +654,7 @@ export default {
         save: "Sauvegarder",
         add: "Add",
         save_and_back: "Sauvegarder et retourner au parent",
+        back_to_feature_report: "Back To Feature",
         cancel: "Supprimer"
       }
     }

@@ -1,5 +1,4 @@
-const inherit = g3wsdk.core.utils.inherit;
-const base =  g3wsdk.core.utils.base;
+const {base, inherit} = g3wsdk.core.utils;
 const EditingTask = require('./editingtask');
 
 function DeleteFeatureTask(options) {
@@ -90,10 +89,11 @@ proto.run = function(inputs, context) {
   const d = $.Deferred();
   const originaLayer = inputs.layer;
   const editingLayer = originaLayer.getEditingLayer();
+  const layers = [editingLayer];
   const layerId = originaLayer.getId();
   const session = context.session;
   this._selectInteraction = new ol.interaction.Select({
-    layers: [editingLayer],
+    layers,
     //condition: ol.events.condition.doubleClick,
     style(feature) {
       const style = styles[feature.getGeometry().getType()];
@@ -143,7 +143,7 @@ proto.run = function(inputs, context) {
         });
         const relationsLength = relations.length;
         for (let index = 0; index < relationsLength ; index++) {
-          relationService.unlinkRelation(0, false)
+          relationService.deleteRelation(0, false)
         }
       });
       editingLayer.getSource().removeFeature(feature);

@@ -1,5 +1,4 @@
 const {base, inherit} = g3wsdk.core.utils;
-const Feature = g3wsdk.core.layer.features.Feature;
 const {getVertexLength, areCoordinatesEqual, getPointFeaturesfromGeometryVertex} = g3wsdk.core.geoutils;
 
 const EditingTask = require('./editingtask');
@@ -28,7 +27,6 @@ proto.run = function(inputs, context) {
   const originalFeatures = [];
   const feature = this._feature = inputs.features[0];
   const geometry = feature.getGeometry();
-  const featureGeometryType = geometry.getType();
   const startVertexLength = getVertexLength(geometry);
   this.deleteVertexKey;
   this._originalStyle = editingLayer.getStyle();
@@ -77,6 +75,7 @@ proto.run = function(inputs, context) {
   this._modifyInteraction.on('modifyend', ({features=[]}) =>{
     const [feature, ...vertexFeatures] = features.getArray();
     const [originalFeature, ...originalVertexFeatures] = originalFeatures;
+    //check if extent of the feature is changed to be sure that is changed
     if (feature.getGeometry().getExtent() !== originalFeature.getGeometry().getExtent()) {
       const newFeature = feature.clone();
       session.pushUpdate(layerId, newFeature, originalFeature);
@@ -92,7 +91,7 @@ proto.run = function(inputs, context) {
             session.pushUpdate(this.getEditingService().getLayerVertexId(), newVertexFeature, originalVertexFeature);
           }
         })
-      } else {
+      } else if (startVertexLength < getVertexLength(feature.getGeometry())){
         const featureVertex = getPointFeaturesfromGeometryVertex(feature.getGeometry());
         const vertexFeaturesCoordinates = vertexFeatures.map(vertexFeature => vertexFeature.getGeometry().getCoordinates());
         const newVertex = featureVertex.find(featureVertex => {
@@ -103,9 +102,21 @@ proto.run = function(inputs, context) {
         });
         newVertex && this.getEditingService().addNewVertexFeatureFromReportFeature({
           reportFeature: feature,
-          vertexOlFeature: newVertex,
-          index: null
+          vertexOlFeature: newVertex
         });
+      } else {
+        // new vertex of changed feature
+        const featureVertex = getPointFeaturesfromGeometryVertex(feature.getGeometry());
+        // all coordinates
+        const vertexFeaturesCoordinates = vertexFeatures.map(vertexFeature => vertexFeature.getGeometry().getCoordinates());
+        const deleteVertexIndex = vertexFeaturesCoordinates.findIndex(vertexCoordinate => {
+          const findCoordinates = featureVertex.find(featureVertex =>{
+            return areCoordinatesEqual(vertexCoordinate, featureVertex.getGeometry().getCoordinates())
+          });
+          return !findCoordinates
+        });
+        const deleteVertex = vertexFeatures[deleteVertexIndex];
+        deleteVertex && this.getEditingService().removeVertexFeatureFromReportFeature(deleteVertex);
       }
       d.resolve(inputs);
       return false;

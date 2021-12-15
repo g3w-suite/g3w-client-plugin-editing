@@ -25,37 +25,19 @@
                     closable: false
                 })
             },
-            updateReportFeatures(){
+            async updateReportFeatures(){
                 const EditingService = require('../../../services/editingservice');
+                const features = await EditingService.getFeatureAndRelatedVertexReportByReportId(this.id);
                 const reportToolbox = EditingService.getToolBoxById(EditingService.getLayerSegnalazioniId());
                 const featuresToolbox = EditingService.getToolBoxById(EditingService.getLayerFeaturesId());
-                const options = {
-                    filter: {
-                        field: `report_id|eq|${this.id}`,
-                    }
-                };
                 reportToolbox.setShow(false);
                 featuresToolbox.setShow(true);
                 featuresToolbox.setSelected(true);
-                featuresToolbox.start(options).then(({features}) =>{
-                    if (features.length){
-                        const feature = features[0];
-                        const id = feature.getId();
-                        const options = {
-                            filter: {
-                                field: `feature_id|eq|${id}`,
-                            }
-                        };
-                        const vertexToolbox = EditingService.getToolBoxById(EditingService.getLayerVertexId());
-                        vertexToolbox.start(options);
-                    }
-
-                    GUI.getComponent('map').getService().zoomToFeatures(features);
-                    const tool = featuresToolbox.getToolById('editattributes');
-                    featuresToolbox.setActiveTool(tool);
-                    GUI.setModal(false);
-                    GUI.disableSideBar(false);
-                });
+                GUI.getComponent('map').getService().zoomToFeatures(features);
+                const tool = featuresToolbox.getToolById('editattributes');
+                featuresToolbox.setActiveTool(tool);
+                GUI.setModal(false);
+                GUI.disableSideBar(false);
             }
         }
     };
