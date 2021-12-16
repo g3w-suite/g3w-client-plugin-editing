@@ -768,8 +768,8 @@ proto.getToolBoxById = function(toolboxId) {
 };
 
 /**
- * Method to apply filter editing contsraint to toolbox editing 
- * @param constinst
+ * Method to apply filter editing constraints to toolbox editing 
+ * @param constraints
  */
 proto.setApplicationEditingConstraints = function(constraints={showToolboxesExcluded: true, toolboxes:{}}){
   this.applicationEditingConstraints = {
@@ -1380,7 +1380,8 @@ proto.createVertexfromReportFeatures = function(features=[]){
   })
 };
 
-proto.getFeatureAndRelatedVertexReportByReportId = function(reportId=this.getCurrentReportData().id){
+proto.getFeatureAndRelatedVertexReportByReportId = function(){
+  const {id:reportId, isNew}= this.getCurrentReportData(); 
   const featuresToolbox = this.getToolBoxById(this.getLayerFeaturesId());
   const vertexToolbox = this.getToolBoxById(this.getLayerVertexId());
   return new Promise((resolve, reject) => {
@@ -1407,20 +1408,42 @@ proto.getFeatureAndRelatedVertexReportByReportId = function(reportId=this.getCur
   });
 };
 
+/**
+ * Editing Report
+ */
 proto.editingReport = function(){
   const reportToolbox = this.getToolBoxById(this.getLayerSegnalazioniId());
-  const featuresToolbox = this.getToolBoxById(this.getLayerFeaturesId());
-  reportToolbox.setShow(true);
-  featuresToolbox.setShow(false);
-  reportToolbox.setSelected(true);
+  reportToolbox.start().then(()=>{
+    const featuresToolbox = this.getToolBoxById(this.getLayerFeaturesId());
+    const vertexToolbox =  this.getToolBoxById(this.getLayerVertexId());
+    vertexToolbox.stop();
+    featuresToolbox.stop();
+    reportToolbox.setShow(true);
+    featuresToolbox.setShow(false);
+    reportToolbox.setSelected(true);
+  });
 };
 
-proto.editingFeaturesReport = function(){
+/**
+ * Editing Feature Report
+ */
+proto.editingFeaturesReport = function({toolId}={}){
   const reportToolbox = this.getToolBoxById(this.getLayerSegnalazioniId());
   const featuresToolbox = this.getToolBoxById(this.getLayerFeaturesId());
-  reportToolbox.setShow(false);
-  featuresToolbox.setShow(true);
-  featuresToolbox.setSelected(true);
+  reportToolbox.stop().then(async ()=>{
+    const features = await this.getFeatureAndRelatedVertexReportByReportId();
+    GUI.getComponent('map').getService().zoomToFeatures(features);
+    GUI.setModal(false);
+    GUI.disableSideBar(false);
+    reportToolbox.setShow(false);
+    featuresToolbox.setShow(true);
+    featuresToolbox.setSelected(true);
+    if (toolId){
+      const tool = featuresToolbox.getToolById(toolId);
+      featuresToolbox.setActiveTool(tool);
+    }
+  })
+
 };
 
 EditingService.EDITING_FIELDS_TYPE = ['unique'];

@@ -11,8 +11,7 @@
     export default {
         name: 'editFeatures',
         data(){
-            const EditingService = require('../../../services/editingservice');
-            return EditingService.getCurrentReportData();
+            return {}
         },
         methods: {
             // method to add feature
@@ -27,17 +26,7 @@
             },
             async updateReportFeatures(){
                 const EditingService = require('../../../services/editingservice');
-                const features = await EditingService.getFeatureAndRelatedVertexReportByReportId(this.id);
-                const reportToolbox = EditingService.getToolBoxById(EditingService.getLayerSegnalazioniId());
-                const featuresToolbox = EditingService.getToolBoxById(EditingService.getLayerFeaturesId());
-                reportToolbox.setShow(false);
-                featuresToolbox.setShow(true);
-                featuresToolbox.setSelected(true);
-                GUI.getComponent('map').getService().zoomToFeatures(features);
-                const tool = featuresToolbox.getToolById('editattributes');
-                featuresToolbox.setActiveTool(tool);
-                GUI.setModal(false);
-                GUI.disableSideBar(false);
+                EditingService.editingFeaturesReport();
             }
         }
     };

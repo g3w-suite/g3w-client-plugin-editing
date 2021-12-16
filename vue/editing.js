@@ -32,16 +32,16 @@ const vueComponentOptions = {
       })
     },
     saveAll() {},
-    startToolBox(toolboxId) {
-      const toolbox = this._getToolBoxById(toolboxId);
-      ApplicationState.online && toolbox.canEdit() && toolbox.start();
+    startToolBox() {
+      ApplicationState.online && this.$options.service.editingReport();
     },
     stopToolBox(toolboxId) {
       const toolbox = this._getToolBoxById(toolboxId);
       if (toolbox.state.editing.history.commit) this.$options.service.commit().always(() => toolbox.stop());
       else toolbox.stop();
-      if (toolbox.getId() === this.$options.service.getLayerFeaturesId())
+      if (toolbox.getId() === this.$options.service.getLayerFeaturesId()) {
         this.$options.service.editingReport();
+      }
     },
     saveToolBox(toolboxId) {
       const toolbox = this._getToolBoxById(toolboxId);

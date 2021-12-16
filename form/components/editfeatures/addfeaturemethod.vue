@@ -40,18 +40,13 @@
             },
             async drawFeatures(){
                 this.cancel();
-                const featuresToolbox = await this.loadFeatures();
-                const tool = featuresToolbox.getToolById('addfeature');
-                featuresToolbox.setActiveTool(tool);
+                await this.editingFeaturesReport({
+                    toolId: 'addfeature'
+                });
             },
-            async loadFeatures(){
+            async editingFeaturesReport({toolId}={}){
                 const EditingService = require('../../../services/editingservice');
-                const featuresToolbox = EditingService.getToolBoxById(EditingService.getLayerFeaturesId());
-                await EditingService.getFeatureAndRelatedVertexReportByReportId();
-                EditingService.editingFeaturesReport();
-                GUI.setModal(false);
-                GUI.disableSideBar(false);
-                return featuresToolbox;
+                EditingService.editingFeaturesReport({toolId});
             },
             async addFileFeatures(evt) {
                 try {
@@ -84,7 +79,7 @@
                                 });
                                 this.$refs.externalinputfilefeatures.value = null;
                             } else {
-                                await this.loadFeatures();
+                                await this.editingFeaturesReport();
                                 newReportFeatures.forEach(olFeature => {
                                     const feature = new Feature({
                                         feature: olFeature
@@ -99,8 +94,6 @@
                                 mapService.zoomToFeatures(newReportFeatures, {
                                     highlight: true
                                 });
-                                const tool = featuresToolbox.getToolById('editattributes');
-                                featuresToolbox.setActiveTool(tool);
                             }
                         }
 

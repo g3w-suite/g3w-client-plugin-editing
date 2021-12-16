@@ -43,7 +43,6 @@ function ToolBox(options={}) {
   const historystate = this._session.getHistory().state;
   const sessionstate = this._session.state;
   const {show=true} = options;
-  console.log(options.color)
   this.state = {
     id: options.id,
     changingtools: false, // used to show or not tools during change phase
