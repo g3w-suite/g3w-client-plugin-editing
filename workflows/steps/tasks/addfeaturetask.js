@@ -37,6 +37,7 @@ proto.run = function(inputs, context) {
         type: geometryType,
         source: temporarySource,
         condition: this._condition,
+        geometryFunction: null,
         freehandCondition: ol.events.condition.never,
         finishCondition: this._finishCondition
       });
@@ -74,6 +75,10 @@ proto.run = function(inputs, context) {
       break;
   }
   return d.promise();
+};
+
+proto.changeDrawShapeStyle = function(type){
+
 };
 
 proto.getVertexToReportFeature = function(feature){

@@ -97,6 +97,11 @@ proto._saveFeatures = function({fields, promise, session, inputs}){
           },
           cb: {
             done: () => {
+              // set current report
+              this.getEditingService().setCurrentReportData({
+                id: this._features[0].getId(),
+                isNew: false
+              });
               this.getEditingService().resetDefault();
               let content  = ComponentsFactory.build({
                 vueComponentObject: AddFeatureMethodComponent
@@ -111,7 +116,9 @@ proto._saveFeatures = function({fields, promise, session, inputs}){
         this.getEditingService().commit({
           toolbox: this.getEditingService().getToolBoxById(layerId),
           modal: false
-        });
+        }).then(()=>{
+          console.log(newFeatures)
+        })
       }
     })
   } else {

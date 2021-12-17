@@ -26,7 +26,7 @@
 
 <script>
     const GUI = g3wsdk.gui.GUI;
-    const {createVectorLayerFromFile, singleGeometriesToMultiGeometry} = g3wsdk.core.geoutils;
+    const {createVectorLayerFromFile, singleGeometriesToMultiGeometry, getOLGeometry} = g3wsdk.core.geoutils;
     const Feature = g3wsdk.core.layer.features.Feature;
     export default {
         name: 'Addfeaturemethod',
@@ -71,6 +71,7 @@
                         if (newReportFeatures.length){
                             const promises = [];
                             const newGeometryType = newReportFeatures[0].getGeometry().getType();
+                            /// check if is the same geometry (Multi or single is doesn't matter)
                             if (newGeometryType !== featureReportGeometryType){
                                 GUI.showUserMessage({
                                     type: 'warning',

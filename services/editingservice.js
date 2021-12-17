@@ -697,6 +697,7 @@ proto.stopCurrentWorkFlow = function(){
 proto.stopAllWorkflowsStack = function(){
   WorkflowsStack.clear();
   GUI.setModal(false);
+  GUI.closeContent();
 };
 
 proto.getCurrentWorkflow = function() {

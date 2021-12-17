@@ -4,9 +4,9 @@ const ToolsOfToolComponent = Vue.extend({
   ...compiledTemplate,
   props: ['tools'],
   components: {
-    snap: Tools.snap
+    ...Tools
   },
-  data: function() {
+  data() {
     return {}
   }
 });
