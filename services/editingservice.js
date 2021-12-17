@@ -1,7 +1,7 @@
 import API from '../api'
 const ApplicationService = g3wsdk.core.ApplicationService;
 const ApplicationState = g3wsdk.core.ApplicationState;
-const {base, inherit} = g3wsdk.core.utils;
+const {base, inherit, createSingleFieldParameter} = g3wsdk.core.utils;
 const {getPointFeaturesfromGeometryVertex} = g3wsdk.core.geoutils;
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 const PluginService = g3wsdk.core.plugin.PluginService;
@@ -22,9 +22,9 @@ const OFFLINE_ITEMS = {
 };
 
 const LAYERS_IDS= {
-  segnalazione: 'segnalazioni_75883438_bef9_4b9a_b093_9222b2dcc760',
-  features: 'features_a56039ab_a97f_4a3b_b56f_da74a9fa0339',
-  vertex: 'vertex_accd85b9_ba6d_4c64_a95d_afca4f4b9a4d'
+  segnalazione: 'segnalazioni_9bb1d886_90aa_43da_bd09_405f1adddb89',
+  features: 'features_bc50979c_2fd6_4aec_802b_9a5b77ecc463',
+  vertex: 'vertex_d3e8ebaf_07ff_496e_b101_509498d8a148'
 };
 
 function EditingService() {
@@ -1083,8 +1083,8 @@ proto._createCommitMessage = function(commitItems) {
   function create_changes_list_dom_element(add, update, del) {
     const changeIds = {};
     changeIds[`${t('editing.messages.commit.add')}`] = add.length;
-    changeIds[`${t('editing.messages.commit.update')}`] = `[${update.map((item)=> item.id).join(',')}]`;
-    changeIds[`${t('editing.messages.commit.delete')}`] = `[${del.join(',')}]`;
+    changeIds[`${t('editing.messages.commit.update')}`] = `[${update.map((item)=> item.id).join(', ')}]`;
+    changeIds[`${t('editing.messages.commit.delete')}`] = `[${del.join(', ')}]`;
     let dom = `<h4>${t('editing.messages.commit.header')}</h4>`;
     dom+=`<h5>${t('editing.messages.commit.header_add')}</h5>`;
     dom+=`<h5>${t('editing.messages.commit.header_update_delete')}</h5>`;
@@ -1393,12 +1393,18 @@ proto.getFeatureAndRelatedVertexReportByReportId = function(){
     };
     featuresToolbox.start(options)
       .then(({features=[]}) => {
-        if (features.length){
-          const feature = features[0];
-          const id = feature.getId();
+        const featureLength = features.length;
+        if (featureLength){
+          const value = features.map(feature => feature.getId());
+          const field = createSingleFieldParameter({
+            field:'feature_id',
+            value,
+            operator:'eq',
+            logicop: 'OR'
+          });
           const options = {
             filter: {
-              field: `feature_id|eq|${id}`,
+              field
             }
           };
           vertexToolbox.start(options);

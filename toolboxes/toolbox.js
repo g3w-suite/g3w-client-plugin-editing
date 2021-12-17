@@ -251,7 +251,6 @@ proto.start = function(options={}) {
             features
           }
         });
-
         d.resolve({
           features
         })

@@ -1,6 +1,6 @@
 <template>
     <div class="editingvertexcomponent" style="display: flex; flex-direction: column; justify-content: space-between">
-        <div>
+        <div style="overflow-y: auto">
             <div style="display: flex; justify-content: space-between">
                 <h4 style="font-weight: bold">Lista vertici della feature</h4>
             </div>

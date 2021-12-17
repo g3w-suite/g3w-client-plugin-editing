@@ -7,10 +7,9 @@ const OpenFormStep = require('./steps/openformstep');
 function AddFeatureWorkflow(options={}) {
   const addfeaturestep = new AddFeatureStep(options);
   const openformstep = new OpenFormStep(options);
+  const toolsoftools = [];
   addfeaturestep.on('run', ({inputs, context}) => {
-    console.log(context)
     const layer = inputs.layer;
-    const toolsoftools = [];
     const snapTool = {
       type: 'snap',
       options: {
@@ -23,20 +22,19 @@ function AddFeatureWorkflow(options={}) {
     const drawTool = {
       type: 'draw',
       options: {
-        shape_types: ['Draw','Circle', 'Square', 'Box'],
+        shape_types: ['Draw', 'Square', 'Box', 'Triangle',  'Circle', 'Ellipse'],
         onChange(type){
-          console.log(console.log(type))
+          addfeaturestep.getTask().changeDrawShapeStyle(type);
         }
       }
     };
-    isPolygonGeometryType(layer.getGeometryType()) && toolsoftools.push(drawTool);
+    if (isPolygonGeometryType(layer.getGeometryType())) toolsoftools.push(drawTool);
+    this.emit('active', ['snap']);
     this.emit('settoolsoftool', toolsoftools);
   });
-  addfeaturestep.on('run', () => {
-    this.emit('active', ['snap']);
-  });
   addfeaturestep.on('stop', () => {
-    this.emit('deactive', ['snap']);
+    this.emit('deactive', toolsoftools.map(toolftools => toolftools.id));
+    toolsoftools.splice(0);
   });
   options.steps = [addfeaturestep, openformstep];
   base(this, options);

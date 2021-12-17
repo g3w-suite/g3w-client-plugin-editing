@@ -26,7 +26,13 @@
 
 <script>
     const GUI = g3wsdk.gui.GUI;
-    const {createVectorLayerFromFile, singleGeometriesToMultiGeometry, getOLGeometry} = g3wsdk.core.geoutils;
+    const {
+        isSingleGeometry,
+        singleGeometriesToMultiGeometry,
+        isSameBaseGeometryType,
+        createVectorLayerFromFile,
+        getOLGeometry
+    } = g3wsdk.core.geoutils;
     const Feature = g3wsdk.core.layer.features.Feature;
     export default {
         name: 'Addfeaturemethod',
@@ -70,9 +76,11 @@
                         const newReportFeatures = layer.getSource().getFeatures();
                         if (newReportFeatures.length){
                             const promises = [];
-                            const newGeometryType = newReportFeatures[0].getGeometry().getType();
+                            let singleToMultiple = false;
+                            const newFeatureGeometry = newReportFeatures[0].getGeometry();
+                            const newGeometryType = newFeatureGeometry.getType();
                             /// check if is the same geometry (Multi or single is doesn't matter)
-                            if (newGeometryType !== featureReportGeometryType){
+                            if (!isSameBaseGeometryType(featureReportGeometryType, newGeometryType)){
                                 GUI.showUserMessage({
                                     type: 'warning',
                                     message: 'La tipologia di geometria inserita non è uguale quella di destinazione',
@@ -80,8 +88,11 @@
                                 });
                                 this.$refs.externalinputfilefeatures.value = null;
                             } else {
+                                singleToMultiple = isSingleGeometry(newFeatureGeometry);
+                                console.log(singleToMultiple)
                                 await this.editingFeaturesReport();
                                 newReportFeatures.forEach(olFeature => {
+                                    singleToMultiple && olFeature.setGeometry(singleGeometriesToMultiGeometry([olFeature.getGeometry()]));
                                     const feature = new Feature({
                                         feature: olFeature
                                     });

@@ -133,10 +133,8 @@ proto.run = function(inputs, context, queques) {
   return promise.promise();
 };
 
-proto.stop = function(inputs, context) {
-  this._selectInteractions.forEach(interaction => {
-    this.removeInteraction(interaction);
-  });
+proto.stop = function() {
+  this._selectInteractions.forEach(interaction => this.removeInteraction(interaction));
   this._vectorLayer && this.getMap().removeLayer(this._vectorLayer);
   this._vectorLayer = null;
   this._originalStyle = null;

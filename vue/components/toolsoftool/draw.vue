@@ -23,7 +23,6 @@
           this.options.onChange(type);
         }
       }
-
     }
 </script>
 
