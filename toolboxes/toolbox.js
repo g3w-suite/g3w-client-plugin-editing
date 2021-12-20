@@ -680,10 +680,8 @@ proto.enableTools = function(bool=false) {
 proto.setActiveTool = function(tool) {
   this.stopActiveTool(tool)
     .then(() => {
-      this.clearToolsOfTool();
       this.state.activetool = tool;
-      tool.once('settoolsoftool', tools => tools.forEach(tool => this.state.toolsoftool.push(tool)));
-
+      tool.once('settoolsoftool', tools => this.state.toolsoftool = tools);
       const _activedeactivetooloftools = (activetools, active) => {
         this.state.toolsoftool.forEach(tooloftool => {
           if (activetools.indexOf(tooloftool.type) !== -1) tooloftool.options.active = active;

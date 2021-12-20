@@ -72,13 +72,14 @@ proto.setDrawInteraction = function({geometryFunction, type}={}){
 
 proto.run = function(inputs, context) {
   this.promise = $.Deferred();
+  const {current_shape_type} = inputs;
   this.originalLayer = inputs.layer;
   this.layerId = this.originalLayer.getId();
   this.editingLayer = this.originalLayer.getEditingLayer();
   this.session = context.session;
   switch (this.originalLayer.getType()) {
     case Layer.LayerTypes.VECTOR:
-      this.setDrawInteraction();
+      current_shape_type ? this.changeDrawShapeStyle(current_shape_type) : this.setDrawInteraction();
       break;
   }
   return this.promise.promise();

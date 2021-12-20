@@ -15,13 +15,18 @@
       props: ['options'],
       data() {
         return {
-          selected_shape_type: this.options.shape_types[0]
+          selected_shape_type: this.options.shape_type || this.options.shape_types[0]
         }
       },
       watch: {
         selected_shape_type(type){
+          this.options.shape_type = type;
           this.options.onChange(type);
         }
+      },
+      beforeDestroy() {
+        this.options.shape_type = null;
+        this.options.onBeforeDestroy();
       }
     }
 </script>
