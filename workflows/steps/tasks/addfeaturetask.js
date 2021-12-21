@@ -1,5 +1,6 @@
 const {base, inherit} =  g3wsdk.core.utils;
-const {isSingleGeometry, singleGeometriesToMultiGeometry} = g3wsdk.core.geoutils;
+const GUI = g3wsdk.gui.GUI;
+const {isSingleGeometry, singleGeometriesToMultiGeometry, findSelfIntersects} = g3wsdk.core.geoutils;
 const Layer = g3wsdk.core.layer.Layer;
 const Geometry = g3wsdk.core.geometry.Geometry;
 const EditingTask = require('./editingtask');
@@ -42,31 +43,39 @@ proto.setDrawInteraction = function({geometryFunction, type}={}){
   this.drawInteraction.on('drawend', evt => {
     if (evt.feature.getGeometry().getType() === 'Circle') evt.feature.setGeometry(ol.geom.Polygon.fromCircle(evt.feature.getGeometry()));
     if (isSingleGeometry(evt.feature.getGeometry())) evt.feature.setGeometry(singleGeometriesToMultiGeometry([evt.feature.getGeometry()]));
-    let feature;
-    if (this._add) {
-      attributes.forEach(attribute => evt.feature.set(attribute.name, null));
-      feature = new Feature({
-        feature: evt.feature
+    if (Geometry.isPolygonGeometryType(evt.feature.getGeometry().getType()) && findSelfIntersects(evt.feature.getGeometry()).length){
+      GUI.showUserMessage({
+        type: 'warning',
+        message: 'Self Intersection'
       });
-      feature.setTemporaryId();
-      source.addFeature(feature);
-      this.session.pushAdd(this.layerId, feature);
-    } else feature = evt.feature;
-    // set Z values based on layer geometry
-    feature = Geometry.addZValueToOLFeatureGeometry({
-      feature,
-      geometryType: originalGeometryType
-    });
-    //add report id
-    this.layerId === this.getEditingService().getLayerFeaturesId() && feature.set('report_id', this.getEditingService().getCurrentReportData().id);
-    const inputs = this.getInputs();
-    inputs.features.push(feature);
-    this.getVertexToReportFeature(feature);
-    /**
-     * Method to get or add vertex to feature related to report
-     */
-    this.fireEvent('addfeature', feature); // emit event to get from subscribers
-    this.promise.resolve(inputs);
+      this.promise.reject();
+    } else {
+      let feature;
+      if (this._add) {
+        attributes.forEach(attribute => evt.feature.set(attribute.name, null));
+        feature = new Feature({
+          feature: evt.feature
+        });
+        feature.setTemporaryId();
+        source.addFeature(feature);
+        this.session.pushAdd(this.layerId, feature);
+      } else feature = evt.feature;
+      // set Z values based on layer geometry
+      feature = Geometry.addZValueToOLFeatureGeometry({
+        feature,
+        geometryType: originalGeometryType
+      });
+      //add report id
+      this.layerId === this.getEditingService().getLayerFeaturesId() && feature.set('report_id', this.getEditingService().getCurrentReportData().id);
+      const inputs = this.getInputs();
+      inputs.features.push(feature);
+      this.getVertexToReportFeature(feature);
+      /**
+       * Method to get or add vertex to feature related to report
+       */
+      this.fireEvent('addfeature', feature); // emit event to get from subscribers
+      this.promise.resolve(inputs);
+    }
   });
 };
 
