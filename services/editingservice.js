@@ -89,7 +89,7 @@ function EditingService() {
   //mapservice
   this._mapService = GUI.getComponent('map').getService();
   //set mapcontrol toggle event
-  this.mapControlToggleEventHandler = evt =>{
+  this.mapControlToggleEventHandler = evt => {
     if (evt.target.isToggled() && evt.target.isClickMap()){
       let toolboxselected = this.state.toolboxselected;
       toolboxselected && toolboxselected.getActiveTool() && toolboxselected.getActiveTool().stop();
@@ -1313,9 +1313,19 @@ proto.getLayerVertexId = function(){
  * FAKE
  */
 
+/**
+ * Methods to get editing layer
+ */
+
+proto.getReportEditingLayer = function(){};
+
+proto.getFeatureReportEditingLayer = function(){};
+
+
+proto.getVertexEditingLayer = function(){};
+
 proto.getCurrentFeatureReportVertex = function(){
   const {id, isNew} = this.getCurrentFeatureReportData();
-
 };
 
 proto.getPointFeaturesfromGeometryVertex = function(geometry){
@@ -1439,7 +1449,7 @@ proto.editingFeaturesReport = function({toolId}={}){
   const featuresToolbox = this.getToolBoxById(this.getLayerFeaturesId());
   reportToolbox.stop().then(async ()=>{
     const features = await this.getFeatureAndRelatedVertexReportByReportId();
-    GUI.getComponent('map').getService().zoomToFeatures(features);
+    this._mapService.zoomToFeatures(features);
     GUI.setModal(false);
     GUI.disableSideBar(false);
     reportToolbox.setShow(false);

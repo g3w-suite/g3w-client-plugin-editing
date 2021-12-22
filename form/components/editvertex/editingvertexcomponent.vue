@@ -5,22 +5,22 @@
                 <h4 style="font-weight: bold">Lista vertici della feature</h4>
             </div>
             <div style="display: flex; flex-direction: column; align-items: center; background-color: #FFFFFF; margin: 5px; padding: 5px" v-for="(v, index) in vertex" :key="v">
-                <div style="width: 100%; display: flex; justify-content: space-between">
+                <div style="width: 100%; display: flex; justify-content: space-between;">
                     <button class="btn skin-button" style="width: 50px;" @mouseover="highLightVertex(index)" @click="zoomToVertex(index)">
                         <i :class="g3wtemplate.font['marker']"></i>
                     </button>
                     <div style="width:100%; display: flex; justify-content: space-around; margin-left: 5px;">
                         <div>
-                            <h5 style="font-weight: bold">DEGREE</h5>
+                            <h5 style="font-weight: bold; margin-top: 0; margin-bottom: 3px;">DEGREE</h5>
                             <input style="margin-right: 5px;" class="form-control" type="number" @change="changeVertexCoordinates(index, v)" v-model="v.coordinates[0]"/>
                             <input class="form-control" type="number" @change="changeVertexCoordinates(index, v)" v-model="v.coordinates[1]">
                         </div>
                         <div>
-                            <h5 style="font-weight: bold">DMS</h5>
+                            <h5 style="font-weight: bold; margin-top: 0; margin-bottom: 3px;">DMS</h5>
                             <input style="margin-right: 5px;" class="form-control" readonly="true" :value="v.coordinatesDHMS"/>
                         </div>
                         <div>
-                            <h5 style="font-weight: bold">EPSG:3857</h5>
+                            <h5 style="font-weight: bold; margin-top: 0; margin-bottom: 3px;">EPSG:3857</h5>
                             <input style="margin-right: 5px;" class="form-control"  readonly="true" v-model="v.coordinates3857[0]"/>
                             <input style="margin-right: 5px;" class="form-control"  readonly="true" v-model="v.coordinates3857[1]"/>
                         </div>
@@ -63,6 +63,9 @@
               this.featureVertex[index].getGeometry().setCoordinates(vertex.coordinates);
               this.toDHMS(vertex);
               this.to3857(vertex);
+            },
+            changeFeatureReportGeometry(){
+
             },
             close(){
                 GUI.popContent();
