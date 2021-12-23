@@ -172,10 +172,12 @@
             this.featureVertex = null;
             this.originalVertexCoordinates = null;
             this.originalfeatureReportGeometry = null;
+            this.originalFeatureReportFeature = null;
             this.originalfeatureReportGeometryCoordinates = null;
             this.changeFeatureReportCoordinates = null;
             this.originalVertexCoordinates = null;
             this.featureVertex = null;
+            this.originalVertexFeature = null;
         }
     };
 </script>
