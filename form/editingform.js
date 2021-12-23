@@ -1,6 +1,7 @@
 import EditVertexComponent from './components/editvertex/editvertex.vue';
 import EditFeaturesComponent from './components/editfeatures/editfeatures.vue';
 const {base, inherit} = g3wsdk.core.utils;
+const {isPointGeometryType} = g3wsdk.core.geometry.Geometry;
 const FormComponent = g3wsdk.gui.vue.FormComponent;
 
 function EditingFormComponent(options={}) {
@@ -10,7 +11,7 @@ function EditingFormComponent(options={}) {
   let component;
   if (layerId === EditingService.getLayerSegnalazioniId()){
     if (!isnew) component = EditFeaturesComponent;
-  } else component = EditVertexComponent;
+  } else if (!isPointGeometryType(layer.getGeometryType())) component = EditVertexComponent;
   base(this, options);
   this.addBodyFormComponent({
     component,

@@ -69,7 +69,8 @@ proto.setDrawInteraction = function({geometryFunction, type}={}){
       this.layerId === this.getEditingService().getLayerFeaturesId() && feature.set('report_id', this.getEditingService().getCurrentReportData().id);
       const inputs = this.getInputs();
       inputs.features.push(feature);
-      this.getVertexToReportFeature(feature);
+      // in case of not geometry Point
+      !Geometry.isPointGeometryType(feature.getGeometry().getType()) && this.getVertexToReportFeature(feature);
       /**
        * Method to get or add vertex to feature related to report
        */

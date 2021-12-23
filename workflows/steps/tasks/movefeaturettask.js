@@ -1,4 +1,5 @@
 const {base, inherit} = g3wsdk.core.utils;
+const {isPointGeometryType} = g3wsdk.core.geometry.Geometry;
 const EditingTask = require('./editingtask');
 
 function MoveFeatureTask(options){
@@ -44,14 +45,19 @@ proto.run = function(inputs, context) {
     });
     const feature = features.getArray()[0];
     const newFeature = feature.clone();
-    session.pushUpdate(layerId, newFeature, originalFeature);
-    const vertexLayerToolBox = this.getEditingService().getToolBoxById(this.getEditingService().getLayerVertexId());
-    const featureVertex = vertexLayerToolBox.getEditingLayerSource().getFeatures().filter(vertexFeature => vertexFeature.get('feature_id') == feature.getId());
-    featureVertex.forEach((feature, index) =>{
-      const originalVertexFeature = feature.clone();
-      feature.getGeometry().translate(deltaXY.x, deltaXY.y);
-      session.pushUpdate(this.getEditingService().getLayerVertexId(), feature, originalVertexFeature)
-    });
+    /**
+     * Check if no Point geometry
+     */
+    if (!isPointGeometryType(feature.getGeometry().getType())) {
+      session.pushUpdate(layerId, newFeature, originalFeature);
+      const vertexLayerToolBox = this.getEditingService().getToolBoxById(this.getEditingService().getLayerVertexId());
+      const featureVertex = vertexLayerToolBox.getEditingLayerSource().getFeatures().filter(vertexFeature => vertexFeature.get('feature_id') == feature.getId());
+      featureVertex.forEach((feature, index) =>{
+        const originalVertexFeature = feature.clone();
+        feature.getGeometry().translate(deltaXY.x, deltaXY.y);
+        session.pushUpdate(this.getEditingService().getLayerVertexId(), feature, originalVertexFeature)
+      });
+    }
     startCoordinate = null;
     d.resolve(inputs);
   });

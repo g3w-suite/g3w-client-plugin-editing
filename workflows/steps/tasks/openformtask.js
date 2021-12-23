@@ -3,7 +3,6 @@ const {base, inherit} = g3wsdk.core.utils;
 const {GUI, ComponentsFactory} = g3wsdk.gui
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 const EditingTask = require('./editingtask');
-const EditingFormComponent = require('../../../form/editingform');
 
 function OpenFormTask(options={}) {
   this._edit_relations = options.edit_relations === undefined ? true : options._edit_relations;
@@ -55,7 +54,7 @@ proto._getForm = function(inputs, context) {
   return GUI.showContentFactory('form');
 };
 
-proto._cancelFnc = function(promise, inputs) {
+proto._cancelFnc = function(promise, inputs, session) {
   return function() {
     GUI.setModal(false);
     // fire event cancel form to emit to subscrivers
@@ -116,9 +115,7 @@ proto._saveFeatures = function({fields, promise, session, inputs}){
         this.getEditingService().commit({
           toolbox: this.getEditingService().getToolBoxById(layerId),
           modal: false
-        }).then(()=>{
-          console.log(newFeatures)
-        })
+        }).then(()=>{})
       }
     })
   } else {
@@ -140,6 +137,7 @@ proto._saveFnc = function(promise, context, inputs) {
 };
 
 proto.startForm = function(options = {}) {
+  const EditingFormComponent = require('../../../form/editingform');
   const {inputs, context, promise} = options;
   const { session } = context;
   const formComponent = options.formComponent || EditingFormComponent;
@@ -149,16 +147,13 @@ proto.startForm = function(options = {}) {
   const isNew = feature.isNew();
   if (layerId === this.getEditingService().getLayerSegnalazioniId())
      this.getEditingService().setCurrentReportData({
-    id: feature.get('id'),
-    isNew
+       id: feature.get('id'),
+       isNew
   });
   else {
-    const featureId = feature.getId();
-    this.getEditingService().setCurrentFeatureReportData({
-      id: featureId ,
-      isNew
+    this.getEditingService().setCurrentFeatureReport({
+      feature
     });
-    this.getEditingService().getCurrentFeatureReportVertex();
   }
 
   const formService = Form({
@@ -184,7 +179,7 @@ proto.startForm = function(options = {}) {
       title: "plugins.editing.form.buttons.cancel",
       type: "cancel",
       class: "btn-danger",
-      cbk: this._cancelFnc(promise, inputs).bind(this)
+      cbk: this._cancelFnc(promise, inputs, session).bind(this)
     }]
   });
   this.fireEvent('openform',

@@ -1,5 +1,5 @@
-const inherit = g3wsdk.core.utils.inherit;
-const base =  g3wsdk.core.utils.base;
+const {base, inherit} = g3wsdk.core.utils;
+const {isPointGeometryType} = g3wsdk.core.geometry.Geometry;
 const PickFeatureInteraction = g3wsdk.ol.interactions.PickFeatureInteraction;
 
 const EditingTask = require('./editingtask');

@@ -21,10 +21,10 @@ const OFFLINE_ITEMS = {
   CHANGES: 'EDITING_CHANGES'
 };
 
-const LAYERS_IDS= {
-  segnalazione: 'segnalazioni_9bb1d886_90aa_43da_bd09_405f1adddb89',
-  features: 'features_bc50979c_2fd6_4aec_802b_9a5b77ecc463',
-  vertex: 'vertex_d3e8ebaf_07ff_496e_b101_509498d8a148'
+const LAYERS_IDS = {
+  segnalazioni: null,
+  features: null,
+  vertex: null
 };
 
 function EditingService() {
@@ -77,12 +77,8 @@ function EditingService() {
   this.currentReport = {
     id: null, // id of report
     isNew: true, // is new report
-    valid: false, // form is valid
-    feature: {
-      id: null, // id feature
-      isNew: true, // is new feature
-      valid: false // form is valid
-    } // current editing feature
+    feature: null, // current feature
+    vertex: null //current vertex
   };
 
   this._layers_in_error = false;
@@ -130,6 +126,11 @@ function EditingService() {
         if (status === "fulfilled") {
           const editableLayer = value;
           const layerId = editableLayer.getId();
+          /**
+           * FAKE
+           */
+          const layer_id_key = Object.keys(LAYERS_IDS).find(key => layerId.indexOf(key) !== -1);
+          if (layer_id_key) LAYERS_IDS[layer_id_key] = layerId;
           this._editableLayers[layerId] = editableLayer;
           this._editableLayers[Symbol.for('layersarray')].push(editableLayer);
           this._attachLayerWidgetsEvent(this._editableLayers[layerId]);
@@ -1266,14 +1267,21 @@ proto.getCurrentReportData = function(){
   return this.currentReport;
 };
 
-proto.setCurrentFeatureReportData = function({id, isNew, valid}={}){
-  this.currentReport.feature.id = id;
-  this.currentReport.feature.isNew = isNew;
-  this.currentReport.feature.valid = valid;
+proto.setCurrentFeatureReport = function({feature}={}){
+  this.currentReport.feature = feature;
 };
 
-proto.getCurrentFeatureReportData = function(){
+proto.getCurrentFeatureReport = function(){
   return this.currentReport.feature;
+};
+
+proto.setCurrentFeatureReportVertex = function(vertex){
+  this.currentReport.vertex = feature;
+};
+
+proto.getCurrentFeatureReportVertex = function(){
+  const {vertex} = this.getCurrentFeatureReportData();
+  return vertex;
 };
 /**
  * Reset report Data
@@ -1298,7 +1306,7 @@ proto.resetReportData = function(){
  */
 
 proto.getLayerSegnalazioniId = function(){
-  return LAYERS_IDS.segnalazione;
+  return LAYERS_IDS.segnalazioni;
 };
 
 proto.getLayerFeaturesId = function(){
@@ -1324,10 +1332,6 @@ proto.getFeatureReportEditingLayer = function(){};
 
 proto.getVertexEditingLayer = function(){};
 
-proto.getCurrentFeatureReportVertex = function(){
-  const {id, isNew} = this.getCurrentFeatureReportData();
-};
-
 proto.getPointFeaturesfromGeometryVertex = function(geometry){
   return getPointFeaturesfromGeometryVertex(geometry);
 };
@@ -1338,6 +1342,11 @@ proto.removeVertexFeatureFromReportFeature = function(vertex){
   const vertexLayerSource = vertexToolBox.getEditingLayerSource();
   vertexLayerSource.removeFeature(vertex);
   featureSession.pushDelete(this.getLayerVertexId(), vertex)
+};
+
+proto.getRelationFieldByLayerId = function(layerId){
+  const layer = this.getLayerById(layerId);
+  PIPPO = layer
 };
 
 proto.addNewVertexFeatureFromReportFeature = function({reportFeature, vertexOlFeature} = {}){
@@ -1392,9 +1401,8 @@ proto.createVertexfromReportFeatures = function(features=[]){
 };
 
 proto.getFeatureAndRelatedVertexReportByReportId = function(){
-  const {id:reportId, isNew}= this.getCurrentReportData(); 
+  const {id:reportId, isNew}= this.getCurrentReportData();
   const featuresToolbox = this.getToolBoxById(this.getLayerFeaturesId());
-  const vertexToolbox = this.getToolBoxById(this.getLayerVertexId());
   return new Promise((resolve, reject) => {
     const options = {
       filter: {
@@ -1404,20 +1412,24 @@ proto.getFeatureAndRelatedVertexReportByReportId = function(){
     featuresToolbox.start(options)
       .then(({features=[]}) => {
         const featureLength = features.length;
-        if (featureLength){
-          const value = features.map(feature => feature.getId());
-          const field = createSingleFieldParameter({
-            field:'feature_id',
-            value,
-            operator:'eq',
-            logicop: 'OR'
-          });
-          const options = {
-            filter: {
-              field
-            }
-          };
-          vertexToolbox.start(options);
+        if (featureLength) {
+          if (this.getLayerVertexId()){
+            const childField = this.getLayerById(this.getLayerFeaturesId()).getRelations().getArray()[0].getChildField();
+            const vertexToolbox = this.getToolBoxById(this.getLayerVertexId());
+            const value = features.map(feature => feature.getId());
+            const field = createSingleFieldParameter({
+              field: childField,
+              value,
+              operator:'eq',
+              logicop: 'OR'
+            });
+            const options = {
+              filter: {
+                field
+              }
+            };
+            vertexToolbox.start(options);
+          }
         }
         resolve(features);
       })
@@ -1446,18 +1458,20 @@ proto.editingReport = function(){
  */
 proto.editingFeaturesReport = function({toolId}={}){
   const reportToolbox = this.getToolBoxById(this.getLayerSegnalazioniId());
-  const featuresToolbox = this.getToolBoxById(this.getLayerFeaturesId());
   reportToolbox.stop().then(async ()=>{
-    const features = await this.getFeatureAndRelatedVertexReportByReportId();
-    this._mapService.zoomToFeatures(features);
-    GUI.setModal(false);
-    GUI.disableSideBar(false);
-    reportToolbox.setShow(false);
-    featuresToolbox.setShow(true);
-    featuresToolbox.setSelected(true);
-    if (toolId){
-      const tool = featuresToolbox.getToolById(toolId);
-      featuresToolbox.setActiveTool(tool);
+    if (this.getLayerFeaturesId()){
+      const featuresToolbox = this.getToolBoxById(this.getLayerFeaturesId());
+      const features = await this.getFeatureAndRelatedVertexReportByReportId();
+      this._mapService.zoomToFeatures(features);
+      GUI.setModal(false);
+      GUI.disableSideBar(false);
+      reportToolbox.setShow(false);
+      featuresToolbox.setShow(true);
+      featuresToolbox.setSelected(true);
+      if (toolId){
+        const tool = featuresToolbox.getToolById(toolId);
+        featuresToolbox.setActiveTool(tool);
+      }
     }
   })
 
