@@ -91,9 +91,7 @@ const API = function({service, plugin} = {}) {
             toolbox,
             data
           }) : resolve(toolbox);
-        }).fail(err=> {
-          reject(err)
-        })
+        }).fail(err=> reject(err))
       } else reject();
     })
   };

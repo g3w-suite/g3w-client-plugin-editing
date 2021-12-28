@@ -15,7 +15,7 @@ const _Plugin = function() {
   const show_errors = {
     some_layers: false
   };
-  this.name = 'editing';
+  this.name = 'signaler_iim';
   this.panel; // editing panel reference
   this.init = function() {
     //if (GUI.isMobile()) return;
@@ -32,6 +32,7 @@ const _Plugin = function() {
         loading: true
       });
       this.service.once('ready', () => {
+        this.showEditingPanel();
         //plugin registry
         if (this.registerPlugin(this.config.gid)) {
           if (!GUI.isready) GUI.on('ready', this.setupGui.bind(this));
@@ -46,7 +47,6 @@ const _Plugin = function() {
       });
       //inizialize service
       this.service.init(this.config);
-
     }
   };
   //setup plugin interface

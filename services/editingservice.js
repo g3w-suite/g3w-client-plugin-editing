@@ -76,6 +76,7 @@ function EditingService() {
   // Object contain alla information about current report in editing
   this.currentReport = {
     id: null, // id of report
+    report_id: null, //report id for child report
     isNew: true, // is new report
     feature: null, // current feature
     vertex: null //current vertex
@@ -156,6 +157,8 @@ function EditingService() {
       })
     });
     this.emit('ready');
+    // check if need start a child report
+    this.checkReportIdParam();
   }
 }
 
@@ -178,8 +181,7 @@ proto.getFormComponents = function() {
 };
 
 proto.addFormComponents = function({layerId, components= []} = {}) {
-  if (!this._formComponents[layerId])
-    this._formComponents[layerId] = [];
+  if (!this._formComponents[layerId]) this._formComponents[layerId] = [];
   for (let i=0; i < components.length; i++) {
     const component = components[i];
     this._formComponents[layerId].push(component)
@@ -207,6 +209,28 @@ proto.unsubscribe = function(event, fnc) {
 };
 
 // END API
+
+/**
+ *
+ * Check if called from parent report
+ */
+proto.checkReportIdParam = async function() {
+  const searchParams = new URLSearchParams(location.search);
+  const value = searchParams.get('report_id');
+  const {toolbox, features} = await this.editingReport(value ? {
+    filter: {
+      field: `report_id|eq|${value}`,
+    }
+  }: undefined);
+  if (value){
+    if (features.length) {}
+    else {
+      this.currentReport.report_id = 1*value;
+      const tool = toolbox.getToolById('addfeature');
+      toolbox.setActiveTool(tool);
+    }
+  }
+};
 
 /**
  *
@@ -1346,7 +1370,6 @@ proto.removeVertexFeatureFromReportFeature = function(vertex){
 
 proto.getRelationFieldByLayerId = function(layerId){
   const layer = this.getLayerById(layerId);
-  PIPPO = layer
 };
 
 proto.addNewVertexFeatureFromReportFeature = function({reportFeature, vertexOlFeature} = {}){
@@ -1376,7 +1399,7 @@ proto.createVertexfromReportFeatures = function(features=[]){
       const value = featureIsNew ? feature.getId() : feature.get('id'); // get value of related vertex feature field
       const options = featureIsNew ? {
         filter: {
-          nofeatures:true
+          nofeatures: true
         }
       } : {
         filter: {
@@ -1440,17 +1463,24 @@ proto.getFeatureAndRelatedVertexReportByReportId = function(){
 /**
  * Editing Report
  */
-proto.editingReport = function(){
-  const reportToolbox = this.getToolBoxById(this.getLayerSegnalazioniId());
-  reportToolbox.start().then(()=>{
-    const featuresToolbox = this.getToolBoxById(this.getLayerFeaturesId());
-    const vertexToolbox =  this.getToolBoxById(this.getLayerVertexId());
-    vertexToolbox.stop();
-    featuresToolbox.stop();
-    reportToolbox.setShow(true);
-    featuresToolbox.setShow(false);
-    reportToolbox.setSelected(true);
-  });
+proto.editingReport = function({filter}={}){
+  return new Promise((resolve, reject) => {
+    const reportToolbox = this.getToolBoxById(this.getLayerSegnalazioniId());
+    reportToolbox.start({filter}).then(features=>{
+      const featuresToolbox = this.getToolBoxById(this.getLayerFeaturesId());
+      const vertexToolbox =  this.getToolBoxById(this.getLayerVertexId());
+      vertexToolbox.stop();
+      featuresToolbox.stop();
+      reportToolbox.setShow(true);
+      featuresToolbox.setShow(false);
+      reportToolbox.setSelected(true);
+      resolve({
+        features,
+        toolbox: reportToolbox
+      });
+    }).fail(reject)
+  })
+
 };
 
 /**

@@ -13,8 +13,8 @@
                         <div>
                             <h5 style="font-weight: bold; margin-top: 0; margin-bottom: 3px;">DEGREE</h5>
                             <div style="display: flex; justify-content: space-between">
-                                <input v-for="(coordinate, indexCoordinate) in v.coordinates" :key="coordinate" class="form-control" type="number"
-                                    style="margin-right: 5px;" step="0.1" @change="changeVertexCoordinates(index, v)" v-model="v.coordinates[indexCoordinate]"/>
+                                <input v-for="(coordinate, indexCoordinate) in v['coordinatesEPSG:4326']" :key="coordinate" class="form-control" type="number"
+                                    style="margin-right: 5px;" step="0.1" @change="changeVertexCoordinatesDegree(index, v)" v-model="v['coordinatesEPSG:4326'][indexCoordinate]"/>
                             </div>
                         </div>
                         <div>
@@ -37,8 +37,8 @@
                         <div>
                             <h5 style="font-weight: bold; margin-top: 0; margin-bottom: 3px;">EPSG:3857</h5>
                             <div style="display: flex; justify-content: space-between">
-                                <input v-for="(coordinate3857, indexCoordinate) in v.coordinates3857" :key="coordinate3857" class="form-control" type="number"
-                                    style="margin-right: 5px;" step="0.1" @change="changeVertexCoordinates3857(index, v)" v-model="v.coordinates3857[indexCoordinate]"/>
+                                <input v-for="(coordinate3857, indexCoordinate) in v['coordinatesEPSG:3857']" :key="coordinate3857" class="form-control" type="number"
+                                    style="margin-right: 5px;" step="0.1" @change="changeVertexCoordinates3857(index, v)" v-model="v['coordinatesEPSG:3857'][indexCoordinate]"/>
                             </div>
                         </div>
                     </div>
@@ -72,17 +72,23 @@
             }
         },
         methods: {
+            toDegree(vertex){
+                vertex['coordinatesEPSG:4326'] = ol.proj.transform(vertex['coordinatesEPSG:3857'], 'EPSG:3857', 'EPSG:4326');
+            },
             toDHMS(vertex){
-                vertex.coordinatesDHMS = [...ConvertDEGToDMS({deg: vertex.coordinates[0], output: 'Array'}), ...ConvertDEGToDMS({deg:vertex.coordinates[1], output: 'Array'})];
+                vertex.coordinatesDHMS = [
+                    ...ConvertDEGToDMS({deg: vertex['coordinatesEPSG:4326'][0], output: 'Array'}),
+                    ...ConvertDEGToDMS({deg:vertex['coordinatesEPSG:4326'][1], output: 'Array'})
+                ];
             },
             to3857(vertex){
-                vertex.coordinates3857 = ol.proj.transform(vertex.coordinates, 'EPSG:4326', 'EPSG:3857');
+                vertex['coordinatesEPSG:3857'] = ol.proj.transform(vertex['coordinatesEPSG:4326'], 'EPSG:4326', 'EPSG:3857');
             },
             changeVertexFeatureCoordinatesDMS(index, vertex){
-                vertex.coordinates[0] = ConvertDMSToDEG({
+                vertex['coordinatesEPSG:4326'][0] = ConvertDMSToDEG({
                     dms: [vertex.coordinatesDHMS[0], vertex.coordinatesDHMS[1], vertex.coordinatesDHMS[2], vertex.coordinatesDHMS[3]]
                 });
-                vertex.coordinates[1] = ConvertDMSToDEG({
+                vertex['coordinatesEPSG:4326'][1] = ConvertDMSToDEG({
                     dms: [vertex.coordinatesDHMS[4], vertex.coordinatesDHMS[5], vertex.coordinatesDHMS[6], vertex.coordinatesDHMS[7]]
                 });
                 vertex.changed = true;
@@ -94,28 +100,28 @@
               let coordinates;
               switch (mapEpsg) {
                   case 'EPSG:4326':
-                      coordinates = vertex.coordinates;
+                      coordinates = vertex['coordinatesEPSG:4326'];
                       break;
                   case 'EPSG:3857':
-                      coordinates = vertex.coordinates3857;
+                      coordinates = vertex['coordinatesEPSG:3857'];
                       break;
                   default:
-                      coordinates = ol.proj.transform(vertex.coordinates, 'EPSG:4326', mapEpsg);
+                      coordinates = ol.proj.transform(vertex['coordinatesEPSG:4326'], 'EPSG:4326', mapEpsg);
               }
-              this.featureVertex[index].getGeometry().setCoordinates(vertex.coordinates);
+              this.featureVertex[index].getGeometry().setCoordinates(coordinates);
             },
             changeVertexCoordinates3857(index, vertex){
-                vertex.coordinates3857[0] = 1* vertex.coordinates3857[0];
-                vertex.coordinates3857[1] = 1* vertex.coordinates3857[1];
-                vertex.coordinates = ol.proj.transform(vertex.coordinates3857, 'EPSG:3857', 'EPSG:4326');
+                vertex['coordinatesEPSG:3857'][0] = 1* vertex['coordinatesEPSG:3857'][0];
+                vertex['coordinatesEPSG:3857'][1] = 1* vertex['coordinatesEPSG:3857'][1];
+                vertex['coordinatesEPSG:4326'] = ol.proj.transform(vertex['coordinatesEPSG:3857'], 'EPSG:3857', 'EPSG:4326');
                 vertex.changed = true;
                 this.changeVertexFeatureCoordinates(index, vertex);
                 this.toDHMS(vertex);
                 this.changeFeatureReportGeometry(vertex);
             },
-            changeVertexCoordinates(index, vertex){
-              vertex.coordinates[0] = 1* vertex.coordinates[0];
-              vertex.coordinates[1] = 1* vertex.coordinates[1];
+            changeVertexCoordinatesDegree(index, vertex){
+              vertex['coordinatesEPSG:4326'][0] = 1* vertex['coordinatesEPSG:4326'][0];
+              vertex['coordinatesEPSG:4326'][1] = 1* vertex['coordinatesEPSG:4326'][1];
               vertex.changed = true;
               this.toDHMS(vertex);
               this.to3857(vertex);
@@ -130,7 +136,7 @@
             changeFeatureReportGeometry(vertex){
                 const session = EditingService.getToolBoxById(EditingService.getLayerFeaturesId()).getSession();
                 const feature = this.getSourceFeatureReport();
-                vertex.featureReportIndexVertex.forEach(index =>this.changeFeatureReportCoordinates[index] = vertex.coordinates);
+                vertex.featureReportIndexVertex.forEach(index => this.changeFeatureReportCoordinates[index] = vertex[`coordinates${mapEpsg}`]);
                 feature.setGeometry(isPolygonGeometryType(feature.getGeometry().getType()) ?
                         new ol.geom.MultiPolygon([[this.changeFeatureReportCoordinates]])
                         : new ol.geom.MultiLineString([this.changeFeatureReportCoordinates]));
@@ -145,7 +151,7 @@
                   if (vertex.changed) {
                     const vertexFeature = this.featureVertex[index] ;
                     const originalVertex = this.originalVertexFeature[index];
-                    vertexFeature.setGeometry(new ol.geom.Point(vertex.coordinates));
+                    vertexFeature.setGeometry(new ol.geom.Point(vertex[`coordinates${mapEpsg}`]));
                     session.pushUpdate(EditingService.getLayerVertexId(), vertexFeature, originalVertex);
                   }
               });
@@ -190,19 +196,27 @@
             this.featureVertex.forEach(feature =>{
                 const vertex = {
                     fields: [],
-                    coordinates: null,
+                    'coordinatesEPSG:4326': null,
                     coordinatesDHMS: null,
-                    coordinates3857: null,
+                    'coordinatesEPSG:3857': null,
                     featureReportIndexVertex: [], // store index vertex of feature
                     changed: false
                 };
-                vertex.coordinates = feature.getGeometry().getCoordinates();
+                let vertex_coordinates;
+                if (mapEpsg === 'EPSG:3857') {
+                    vertex['coordinatesEPSG:3857'] = feature.getGeometry().getCoordinates();
+                    vertex_coordinates = vertex['coordinatesEPSG:3857'];
+                    this.toDegree(vertex);
+                } else if (mapEpsg === 'EPSG:4326'){
+                    vertex['coordinatesEPSG:4326'] = feature.getGeometry().getCoordinates();
+                    vertex_coordinates = vertex['coordinatesEPSG:4326'];
+                    this.to3857(vertex);
+                }
                 this.originalfeatureReportGeometryCoordinates.forEach((coordinates, index) =>{
-                    areCoordinatesEqual(coordinates, vertex.coordinates) && vertex.featureReportIndexVertex.push(index);
+                    areCoordinatesEqual(coordinates, vertex_coordinates) && vertex.featureReportIndexVertex.push(index);
                 });
                 this.toDHMS(vertex);
-                this.to3857(vertex);
-                this.originalVertexCoordinates.push([...vertex.coordinates]);
+                this.originalVertexCoordinates.push([...vertex_coordinates]);
                 vertexLayer.getFieldsWithValues(feature).forEach(({name, editable,value}) =>{
                     vertex.fields.push({
                         name,

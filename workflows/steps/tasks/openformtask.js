@@ -50,7 +50,6 @@ proto._getForm = function(inputs, context) {
     const editorFormStructure = this._originalLayer.getEditorFormStructure();
     this._editorFormStructure = editorFormStructure.length ? editorFormStructure : null;
   }
-
   return GUI.showContentFactory('form');
 };
 
@@ -139,17 +138,20 @@ proto._saveFnc = function(promise, context, inputs) {
 proto.startForm = function(options = {}) {
   const EditingFormComponent = require('../../../form/editingform');
   const {inputs, context, promise} = options;
-  const { session } = context;
+  const {session} = context;
   const formComponent = options.formComponent || EditingFormComponent;
   const Form = this._getForm(inputs, context);
   const layerId = this._originalLayer.getId();
   const feature = this._originalFeatures[0];
   const isNew = feature.isNew();
-  if (layerId === this.getEditingService().getLayerSegnalazioniId())
-     this.getEditingService().setCurrentReportData({
-       id: feature.get('id'),
-       isNew
-  });
+  if (layerId === this.getEditingService().getLayerSegnalazioniId()) {
+    const {report_id} = this.getEditingService().getCurrentReportData();
+    report_id !== undefined && feature.set('report_id', report_id);
+    this.getEditingService().setCurrentReportData({
+      id: feature.get('id'),
+      isNew
+    });
+  }
   else {
     this.getEditingService().setCurrentFeatureReport({
       feature
