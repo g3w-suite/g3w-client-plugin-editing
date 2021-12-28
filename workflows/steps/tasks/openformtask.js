@@ -145,8 +145,6 @@ proto.startForm = function(options = {}) {
   const feature = this._originalFeatures[0];
   const isNew = feature.isNew();
   if (layerId === this.getEditingService().getLayerSegnalazioniId()) {
-    const {report_id} = this.getEditingService().getCurrentReportData();
-    report_id !== undefined && feature.set('report_id', report_id);
     this.getEditingService().setCurrentReportData({
       id: feature.get('id'),
       isNew

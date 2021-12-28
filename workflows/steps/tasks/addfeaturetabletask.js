@@ -17,11 +17,14 @@ proto.run = function(inputs, context) {
   const editingLayer = originalLayer.getEditingLayer();
   const feature = inputs.features.length ? inputs.features[inputs.features.length -1] : originalLayer.createNewFeature();
   feature.setTemporaryId();
+  if (layerId === this.getEditingService().getLayerSegnalazioniId()) {
+    const {report_id} = this.getEditingService().getCurrentReportData();
+    report_id !== undefined && feature.set('report_id', report_id);
+  }
   editingLayer.getEditingSource().addFeature(feature);
   session.pushAdd(layerId, feature);
   inputs.features.push(feature);
   d.resolve(inputs, context);
-  console.log('qui')
   return d.promise();
 };
 

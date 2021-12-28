@@ -222,14 +222,14 @@ proto.checkReportIdParam = async function() {
       field: `report_id|eq|${value}`,
     }
   }: undefined);
+  let tool = toolbox.getToolById('edittable');
   if (value){
-    if (features.length) {}
-    else {
+    if (!features.length) {
       this.currentReport.report_id = 1*value;
-      const tool = toolbox.getToolById('addfeature');
-      toolbox.setActiveTool(tool);
+      tool = toolbox.getToolById('addfeature');
     }
   }
+  toolbox.setActiveTool(tool);
 };
 
 /**
