@@ -13,27 +13,40 @@
                         <div>
                             <h5 style="font-weight: bold; margin-top: 0; margin-bottom: 3px;">DEGREE</h5>
                             <div style="display: flex; justify-content: space-between">
-                                <input style="margin-right: 5px;" class="form-control" type="number" step="0.1" @change="changeVertexCoordinates(index, v)" v-model="v.coordinates[0]"/>
-                                <input class="form-control" type="number" step="0.1" @change="changeVertexCoordinates(index, v)" v-model="v.coordinates[1]">
+                                <input v-for="(coordinate, indexCoordinate) in v.coordinates" :key="coordinate" class="form-control" type="number"
+                                    style="margin-right: 5px;" step="0.1" @change="changeVertexCoordinates(index, v)" v-model="v.coordinates[indexCoordinate]"/>
                             </div>
                         </div>
                         <div>
                             <h5 style="font-weight: bold; margin-top: 0; margin-bottom: 3px;">DMS</h5>
-                            <input style="margin-right: 5px;" class="form-control" readonly="true" :value="v.coordinatesDHMS"/>
+                            <div style="display: flex; justify-content: space-between">
+                                <div style="display: grid; grid-template-columns: 1fr 5px 1fr 5px 1fr 5px 1fr; margin-bottom: 3px; margin-right: 5px; row-gap: 3px; column-gap: 3px;">
+                                    <input class="form-control" type="number" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[0]"/>°
+                                    <input class="form-control" type="number" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[1]"/>'
+                                    <input class="form-control" type="number" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[2]"/>"
+                                    <input class="form-control" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[3]"/>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 5px 1fr 5px 1fr 5px 1fr; row-gap: 3px; column-gap: 3px;">
+                                    <input class="form-control" type="number" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[4]"/>°
+                                    <input class="form-control" type="number" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[5]"/>'
+                                    <input class="form-control" type="number" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[6]"/>"
+                                    <input class="form-control" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[7]"/>
+                                </div>
+                            </div>
                         </div>
                         <div>
                             <h5 style="font-weight: bold; margin-top: 0; margin-bottom: 3px;">EPSG:3857</h5>
                             <div style="display: flex; justify-content: space-between">
-                                <input class="form-control" style="margin-right: 5px;"  readonly="true" v-model="v.coordinates3857[0]"/>
-                                <input class="form-control"  readonly="true" v-model="v.coordinates3857[1]"/>
+                                <input v-for="(coordinate3857, indexCoordinate) in v.coordinates3857" :key="coordinate3857" class="form-control" type="number"
+                                    style="margin-right: 5px;" step="0.1" @change="changeVertexCoordinates3857(index, v)" v-model="v.coordinates3857[indexCoordinate]"/>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div style="width: 100%; padding:5px; border: 2px solid #eee" class="fields_content">
-                    <div v-for="field in v.fields" :key="field.name" style="display: flex; flex-direction: column; align-items: center; margin: 5px">
-                        <label style="font-weight: bold" >{{field.name}}</label>
-                        <input class="form-control" v-disabled="!field.editable" :value="field.value">
+                    <div v-for="field in v.fields" :key="field.name" style="display: flex; justify-content: space-around; align-items: baseline; margin: 5px">
+                        <label style="font-weight: bold; margin-right: 5px; width: 20%" >{{field.name}}</label>
+                        <input class="form-control" v-disabled="!field.editable" style="width: 80%" :value="field.value">
                     </div>
                 </div>
             </div>
@@ -46,8 +59,9 @@
 </template>
 
 <script>
-    const {areCoordinatesEqual, getCoordinatesFromGeometry} = g3wsdk.core.geoutils;
+    const {areCoordinatesEqual, getCoordinatesFromGeometry, ConvertDEGToDMS, ConvertDMSToDEG} = g3wsdk.core.geoutils;
     const {isPolygonGeometryType} = g3wsdk.core.geometry.Geometry;
+    const mapEpsg = g3wsdk.core.ApplicationState.map.epsg;
     const EditingService = require('../../../services/editingservice');
     const GUI = g3wsdk.gui.GUI;
     export default {
@@ -59,18 +73,53 @@
         },
         methods: {
             toDHMS(vertex){
-                vertex.coordinatesDHMS = ol.coordinate.toStringHDMS(vertex.coordinates);
+                vertex.coordinatesDHMS = [...ConvertDEGToDMS({deg: vertex.coordinates[0], output: 'Array'}), ...ConvertDEGToDMS({deg:vertex.coordinates[1], output: 'Array'})];
             },
             to3857(vertex){
                 vertex.coordinates3857 = ol.proj.transform(vertex.coordinates, 'EPSG:4326', 'EPSG:3857');
+            },
+            changeVertexFeatureCoordinatesDMS(index, vertex){
+                vertex.coordinates[0] = ConvertDMSToDEG({
+                    dms: [vertex.coordinatesDHMS[0], vertex.coordinatesDHMS[1], vertex.coordinatesDHMS[2], vertex.coordinatesDHMS[3]]
+                });
+                vertex.coordinates[1] = ConvertDMSToDEG({
+                    dms: [vertex.coordinatesDHMS[4], vertex.coordinatesDHMS[5], vertex.coordinatesDHMS[6], vertex.coordinatesDHMS[7]]
+                });
+                vertex.changed = true;
+                this.to3857(vertex);
+                this.changeVertexFeatureCoordinates(index, vertex);
+                this.changeFeatureReportGeometry(vertex);
+            },
+            changeVertexFeatureCoordinates(index, vertex){
+              let coordinates;
+              switch (mapEpsg) {
+                  case 'EPSG:4326':
+                      coordinates = vertex.coordinates;
+                      break;
+                  case 'EPSG:3857':
+                      coordinates = vertex.coordinates3857;
+                      break;
+                  default:
+                      coordinates = ol.proj.transform(vertex.coordinates, 'EPSG:4326', mapEpsg);
+              }
+              this.featureVertex[index].getGeometry().setCoordinates(vertex.coordinates);
+            },
+            changeVertexCoordinates3857(index, vertex){
+                vertex.coordinates3857[0] = 1* vertex.coordinates3857[0];
+                vertex.coordinates3857[1] = 1* vertex.coordinates3857[1];
+                vertex.coordinates = ol.proj.transform(vertex.coordinates3857, 'EPSG:3857', 'EPSG:4326');
+                vertex.changed = true;
+                this.changeVertexFeatureCoordinates(index, vertex);
+                this.toDHMS(vertex);
+                this.changeFeatureReportGeometry(vertex);
             },
             changeVertexCoordinates(index, vertex){
               vertex.coordinates[0] = 1* vertex.coordinates[0];
               vertex.coordinates[1] = 1* vertex.coordinates[1];
               vertex.changed = true;
-              this.featureVertex[index].getGeometry().setCoordinates(vertex.coordinates);
               this.toDHMS(vertex);
               this.to3857(vertex);
+              this.changeVertexFeatureCoordinates(index, vertex);
               this.changeFeatureReportGeometry(vertex);
             },
             getSourceFeatureReport(){
