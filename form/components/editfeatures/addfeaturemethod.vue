@@ -10,7 +10,7 @@
                 <i :class="g3wtemplate.getFontClass('cloud-upload')" style="font-size: 60px;" aria-hidden="true"></i>
                 <p style="font-weight: bold">[.csv, .zip(shapefile)]</p>
             </div>
-            <button v-disabled="true" v-t-plugin="'editing.form.buttons.add'" class="btn btn-success" style="width: 100%; font-weight: bold" @click="addFeatures"></button>
+            <button v-disabled="true" v-t-plugin="'signaler_iim.form.buttons.add'" class="btn btn-success" style="width: 100%; font-weight: bold" @click="addFeatures"></button>
             <div>
                 <h4 style="font-weight: bold;" class="skin-color"> Disegna </h4>
                 <button class="btn skin-button" style="width: 100%; margin-top: 10px;" @click="drawFeatures">
@@ -19,7 +19,7 @@
             </div>
         </div>
         <div class="buttons" style="align-self: center; font-weight: bold; width: 100%; display: flex; justify-content: center">
-            <button v-t-plugin="'editing.form.buttons.cancel'" class="btn btn-danger" style="width: 100%; font-weight: bold" @click="cancel"></button>
+            <button v-t-plugin="'signaler_iim.form.buttons.cancel'" class="btn btn-danger" style="width: 100%; font-weight: bold" @click="cancel"></button>
         </div>
     </div>
 </template>

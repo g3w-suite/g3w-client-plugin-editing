@@ -5,7 +5,7 @@ const AddFeatureTask = require('./tasks/addfeaturetask');
 
 const SetFeatureCoordinatesStep = function(options={}) {
   options.task = new AddFeatureTask(options);
-  options.help = "editing.steps.help.draw_new_feature";
+  options.help = "signaler_iim.steps.help.draw_new_feature";
   base(this, options)
 };
 

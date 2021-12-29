@@ -62,14 +62,14 @@ const RelationService = function(layerId, options = {}) {
       state: {
         icon: 'deleteTableRow.png',
         id: 'deletefeature',
-        name: "editing.tools.delete_feature"
+        name: "signaler_iim.tools.delete_feature"
       }
     });
     (this.capabilities.relation.find(capability => capability === 'change_attr_feature') !== undefined) && this._relationTools.push({
       state: {
         icon: 'editAttributes.png',
         id: 'editattributes',
-        name: "editing.tools.update_feature"
+        name: "signaler_iim.tools.update_feature"
       }
     })
   } else {
@@ -168,7 +168,7 @@ proto.startTableTool = function(relationtool, index) {
   });
   // delete feature
   if (relationtool.state.id === 'deletefeature') {
-    GUI.dialog.confirm(t("editing.messages.delete_feature"), result => {
+    GUI.dialog.confirm(t("signaler_iim.messages.delete_feature"), result => {
       if (result) {
         this.getCurrentWorkflowData().session.pushDelete(this._relationLayerId, relationfeature);
         this.relations.splice(index, 1);
@@ -416,7 +416,7 @@ proto.linkRelation = function() {
       GUI.showUserMessage({
         type: 'info',
         size: 'small',
-        message: t('editing.messages.press_esc'),
+        message: t('signaler_iim.messages.press_esc'),
         closable: false
       })
     };
@@ -450,7 +450,7 @@ proto.linkRelation = function() {
             this.getCurrentWorkflowData().session.pushUpdate(this._relationLayerId , relation, originalRelation);
             this.relations.push(this._createRelationObj(relation));
             this.emitEventToParentWorkFlow();
-          } else GUI.notify.warning(t("editing.relation_already_added"));
+          } else GUI.notify.warning(t("signaler_iim.relation_already_added"));
         });
       }
     }).fail(() => {
@@ -505,7 +505,7 @@ proto.deleteRelation = function(index, dialog=true) {
     d.resolve(true);
   };
   if (dialog) {
-    GUI.dialog.confirm(t("editing.messages.unlink_relation"), result => {
+    GUI.dialog.confirm(t("signaler_iim.messages.unlink_relation"), result => {
       if (result) unlink() ;
       else d.reject(false);
     })
@@ -530,7 +530,7 @@ proto.unlinkRelation = function(index, dialog=true) {
     d.resolve(true);
   };
   if (dialog) {
-    GUI.dialog.confirm(t("editing.messages.unlink_relation"), result => {
+    GUI.dialog.confirm(t("signaler_iim.messages.unlink_relation"), result => {
       if (result) unlink() ;
       else d.reject(false);
     })

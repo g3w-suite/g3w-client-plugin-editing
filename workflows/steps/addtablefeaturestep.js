@@ -4,7 +4,7 @@ const AddFeatureTableTask = require('./tasks/addfeaturetabletask');
 
 const AddTableFeatureStep = function(options={}) {
   options.task = new AddFeatureTableTask(options);
-  options.help = "editing.steps.help.new";
+  options.help = "signaler_iim.steps.help.new";
   base(this, options)
 };
 

@@ -9,11 +9,11 @@
             <div v-for="dependency in state.editing.dependencies" style="font-weight: bold" >{{ dependency }}</div>
           </div>
         </div>
-        <div class="panel-title" :class="[father ? 'col-md-6' : 'col-md-8']" v-t-plugin:pre="'editing.toolbox.title'">{{ state.title }}</div>
+        <div class="panel-title" :class="[father ? 'col-md-6' : 'col-md-8']" v-t-plugin:pre="'signaler_iim.toolbox.title'">{{ state.title }}</div>
         <div v-disabled="!state.startstopediting" data-placement="left" data-toggle="tooltip" ref="editingbutton"
              @click.stop="toggleEditing"
              class="start-editing editbtn skin-tooltip-left"
-             :class="{'pull-right': !isMobile(), 'enabled' : isLayerReady,  'g3w-icon-toggled' : state.editing.on}" v-t-title:plugin="'editing.tooltip.edit_layer'">
+             :class="{'pull-right': !isMobile(), 'enabled' : isLayerReady,  'g3w-icon-toggled' : state.editing.on}" v-t-title:plugin="'signaler_iim.tooltip.edit_layer'">
           <span style="font-size: 1.1em; padding: 5px; !important;"  :class="g3wtemplate.font['pencil']"></span>
         </div>
       </div>

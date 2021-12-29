@@ -4,7 +4,7 @@ const OpenFormTask = require('./tasks/openformtask');
 
 const OpenFormStep = function(options={}) {
   options.task = new OpenFormTask(options);
-  options.help = "editing.steps.help.insert_attributes_feature";
+  options.help = "signaler_iim.steps.help.insert_attributes_feature";
   base(this, options)
 };
 

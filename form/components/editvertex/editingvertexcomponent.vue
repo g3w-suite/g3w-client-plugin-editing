@@ -52,8 +52,8 @@
             </div>
         </div>
         <div class="buttons" style="align-self: center; font-weight: bold; width: 100%; display: flex; justify-content: center">
-            <button v-t-plugin="'editing.form.buttons.save'" class="btn btn-success" style="min-width: 80px; font-weight: bold; margin: 5px;" @click="save"></button>
-            <button v-t-plugin="'editing.form.buttons.cancel'" class="btn btn-danger" style="min-width: 80px; margin: 5px; font-weight: bold" @click="cancel"></button>
+            <button v-t-plugin="'signaler_iim.form.buttons.save'" class="btn btn-success" style="min-width: 80px; font-weight: bold; margin: 5px;" @click="save"></button>
+            <button v-t-plugin="'signaler_iim.form.buttons.cancel'" class="btn btn-danger" style="min-width: 80px; margin: 5px; font-weight: bold" @click="cancel"></button>
         </div>
     </div>
 </template>

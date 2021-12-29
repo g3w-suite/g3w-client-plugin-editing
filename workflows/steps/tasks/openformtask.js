@@ -158,7 +158,7 @@ proto.startForm = function(options = {}) {
 
   const formService = Form({
     formComponent,
-    title: "plugins.editing.editing_attributes",
+    title: "plugins.signaler_iim.editing_attributes",
     name: this._layerName,
     id: this._generateFormId(this._layerName),
     dataid: this._layerName,
@@ -171,12 +171,12 @@ proto.startForm = function(options = {}) {
     push: this._isContentChild,
     showgoback: !this._isContentChild,
     buttons:[{
-      title: "plugins.editing.form.buttons.save",
+      title: "plugins.signaler_iim.form.buttons.save",
       type: "save",
       class: "btn-success",
       cbk: this._saveFnc(promise, context, inputs).bind(this)
     }, {
-      title: "plugins.editing.form.buttons.cancel",
+      title: "plugins.signaler_iim.form.buttons.cancel",
       type: "cancel",
       class: "btn-danger",
       cbk: this._cancelFnc(promise, inputs, session).bind(this)

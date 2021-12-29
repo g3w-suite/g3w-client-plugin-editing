@@ -77,8 +77,8 @@ proto.deleteFeature = function(index) {
     relations: layer.getRelations().getArray()
   }).length > 0;
   return new Promise((resolve, reject) =>{
-    GUI.dialog.confirm(`<h4>${t('editing.messages.delete_feature')}</h4>
-                        <div style="font-size:1.2em;">${ relationinediting ?t('editing.messages.delete_feature_relations') : ''}</div>`, (result) => {
+    GUI.dialog.confirm(`<h4>${t('signaler_iim.messages.delete_feature')}</h4>
+                        <div style="font-size:1.2em;">${ relationinediting ?t('signaler_iim.messages.delete_feature_relations') : ''}</div>`, (result) => {
       if (result) {
         const feature = this._features[index];
         const session = this._context.session;

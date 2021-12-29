@@ -6,13 +6,13 @@ const SelectElementsStep = require('./steps/selectelementsstep');
 const OpenFormStep = require('./steps/openformstep');
 
 function EditMultiFeatureAttributesWorkflow(options={}) {
-  options.helpMessage = 'editing.tools.update_multi_features';
+  options.helpMessage = 'signaler_iim.tools.update_multi_features';
   const selectstep = new SelectElementsStep({
     type: 'multiple'
   });
   selectstep.getTask().setSteps({
     select: {
-      description: ApplicationState.ismobile ? 'editing.workflow.steps.selectDrawBoxAtLeast2Feature' : 'editing.workflow.steps.selectMultiPointSHIFTAtLeast2Feature',
+      description: ApplicationState.ismobile ? 'signaler_iim.workflow.steps.selectDrawBoxAtLeast2Feature' : 'signaler_iim.workflow.steps.selectMultiPointSHIFTAtLeast2Feature',
       buttonnext: {
         disabled: true,
         condition:({features=[]})=> {

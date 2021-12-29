@@ -39,7 +39,7 @@ function EditorToolBoxesFactory() {
       layer,
       tools,
       show: options.show ? options.show.indexOf(id) !== -1 : true,
-      lngTitle: 'editing.toolbox.title',
+      lngTitle: 'signaler_iim.toolbox.title',
       title: ` ${layer.getName()}`,
       constraints
     })

@@ -1,7 +1,7 @@
 <div id="editing_table" class="g3w-editing-table">
   <div class="editing_table_header">
     <h3 class="editing_table_title">{{ state.title }}</h3>
-    <div class="editing_table_relation_messagge"  v-if="state.isrelation" style="font-weight: bold" v-t-plugin="'editing.relation.table.info'">
+    <div class="editing_table_relation_messagge"  v-if="state.isrelation" style="font-weight: bold" v-t-plugin="'signaler_iim.relation.table.info'">
     </div>
   </div>
   <table v-if="show" class="display" style="width:100%">
@@ -15,8 +15,8 @@
       <tr v-for="(feature, index) in state.features" :key="feature.__gis3w_feature_uid" :id="feature.__gis3w_feature_uid">
         <td v-if="!state.isrelation">
           <div id="table-editing-tools" style="display:flex; justify-content: space-between;">
-            <i v-if="showTool('change_attr_feature')" :class="g3wtemplate.font['pencil']" class="g3w-icon skin-tooltip-right"  data-placement="right"  style="color:#30cce7;" v-t-title:plugin="'editing.table.edit'" aria-hidden="true" @click="editFeature(index)"></i>
-            <i v-if="showTool('delete_feature')" :class="g3wtemplate.font['trash-o']" class="g3w-icon skin-tooltip-right"  data-placement="right"  style="color:red;" v-t-title:plugin="'editing.table.delete'" aria-hidden="true" @click="deleteFeature(index)"></i>
+            <i v-if="showTool('change_attr_feature')" :class="g3wtemplate.font['pencil']" class="g3w-icon skin-tooltip-right"  data-placement="right"  style="color:#30cce7;" v-t-title:plugin="'signaler_iim.table.edit'" aria-hidden="true" @click="editFeature(index)"></i>
+            <i v-if="showTool('delete_feature')" :class="g3wtemplate.font['trash-o']" class="g3w-icon skin-tooltip-right"  data-placement="right"  style="color:red;" v-t-title:plugin="'signaler_iim.table.delete'" aria-hidden="true" @click="deleteFeature(index)"></i>
           </div>
         </td>
 
@@ -28,7 +28,7 @@
       </tbody>
     </table>
   <div id="buttons"  class="table_editing_footer_buttons" style="position: absolute; bottom: 10px; width: 100%; display:flex; justify-content: center;">
-    <button v-t-plugin="'editing.form.buttons.save'" class="btn btn-success" style="margin-right: 10px" @click="addReport"></button>
-    <button v-t-plugin="'editing.form.buttons.cancel'" class="btn btn-danger" @click="cancel"></button>
+    <button v-t-plugin="'signaler_iim.form.buttons.save'" class="btn btn-success" style="margin-right: 10px" @click="addReport"></button>
+    <button v-t-plugin="'signaler_iim.form.buttons.cancel'" class="btn btn-danger" @click="cancel"></button>
   </div>
 </div>

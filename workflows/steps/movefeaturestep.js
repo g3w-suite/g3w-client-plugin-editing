@@ -4,7 +4,7 @@ const MoveFeatureTask = require('./tasks/movefeaturettask');
 
 const MoveFeatureStep = function(options={}) {
   options.task = new MoveFeatureTask(options);
-  options.help = "editing.steps.help.move";
+  options.help = "signaler_iim.steps.help.move";
   base(this, options)
 };
 

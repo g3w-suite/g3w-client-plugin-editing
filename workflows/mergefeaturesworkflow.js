@@ -6,11 +6,11 @@ const MergeFeaturesStep = require('./steps/mergefeaturesstep');
 const ApplicationState = g3wsdk.core.ApplicationState;
 function MergeFeaturesWorkflow(options={}) {
   options.type = 'bbox';
-  options.help = 'editing.steps.help.merge';
+  options.help = 'signaler_iim.steps.help.merge';
   const selectelementssteps = new SelectElementsStep(options, true);
   selectelementssteps.getTask().setSteps({
     select: {
-      description: ApplicationState.ismobile ? 'editing.workflow.steps.selectDrawBox' : 'editing.workflow.steps.selectSHIFT',
+      description: ApplicationState.ismobile ? 'signaler_iim.workflow.steps.selectDrawBox' : 'signaler_iim.workflow.steps.selectSHIFT',
       directive: 't-plugin',
       done: false
     }
@@ -18,7 +18,7 @@ function MergeFeaturesWorkflow(options={}) {
   const mergefeaturesstep = new MergeFeaturesStep(options, true);
   mergefeaturesstep.getTask().setSteps({
     choose: {
-      description: 'editing.workflow.steps.merge',
+      description: 'signaler_iim.workflow.steps.merge',
       directive: 't-plugin',
       done: false
     }

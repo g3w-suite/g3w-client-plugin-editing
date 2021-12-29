@@ -7,12 +7,12 @@ const AddPartToMultigeometriesStep = require('./steps/addparttomultigeometriesst
 
 function AddPartToMultigeometriesWorflow(options={}) {
   options.type = 'single';
-  options.helpMessage = 'editing.tools.addpart';
-  options.help = 'editing.steps.help.select_element';
+  options.helpMessage = 'signaler_iim.tools.addpart';
+  options.help = 'signaler_iim.steps.help.select_element';
   const selectelementssteps = new SelectElementsStep(options, true);
   selectelementssteps.getTask().setSteps({
     select: {
-      description: 'editing.workflow.steps.select',
+      description: 'signaler_iim.workflow.steps.select',
       directive: 't-plugin',
       done: false
     }
@@ -21,7 +21,7 @@ function AddPartToMultigeometriesWorflow(options={}) {
   const addfeaturestep = new AddFeatureStep(options);
   addfeaturestep.getTask().setSteps({
     addfeature: {
-      description: 'editing.workflow.steps.draw_part',
+      description: 'signaler_iim.workflow.steps.draw_part',
       directive: 't-plugin',
       done: false
     }

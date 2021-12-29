@@ -5,7 +5,7 @@ const ModifyGeometryVertexTask = require('./tasks/modifygeometryvertextask');
 const ModifyGeometryVertexStep = function(options={snap: true}) {
   const task = new ModifyGeometryVertexTask(options);
   options.task = task;
-  options.help = "editing.steps.help.edit_feature_vertex";
+  options.help = "signaler_iim.steps.help.edit_feature_vertex";
   base(this, options)
 };
 

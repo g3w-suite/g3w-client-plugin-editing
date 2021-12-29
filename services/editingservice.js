@@ -1,4 +1,5 @@
 import API from '../api'
+import {REPORT_FIELD} from '../constant';
 const ApplicationService = g3wsdk.core.ApplicationService;
 const ApplicationState = g3wsdk.core.ApplicationState;
 const {base, inherit, createSingleFieldParameter} = g3wsdk.core.utils;
@@ -76,7 +77,7 @@ function EditingService() {
   // Object contain alla information about current report in editing
   this.currentReport = {
     id: null, // id of report
-    report_id: null, //report id for child report
+    [REPORT_FIELD]: null, //report id for child report
     isNew: true, // is new report
     feature: null, // current feature
     vertex: null //current vertex
@@ -99,6 +100,8 @@ function EditingService() {
   this._subscribers = {};
   this.init = function(config={}) {
     this._vectorUrl = config.vectorurl;
+    const {vector_url} = config;
+    console.log(vector_url)
     this._projectType = config.project_type;
     this._layersstore = new LayersStore({
       id: 'editing',
@@ -115,6 +118,10 @@ function EditingService() {
     let layers = this._getEditableLayersFromCatalog();
     const EditableLayersPromises = [];
     for (const layer of layers) {
+      layer.config.urls.commit =  layer.config.urls.commit.replace('vector/api/', vector_url);
+      layer.config.urls.editing =  layer.config.urls.editing.replace('vector/api/', vector_url);
+      layer.config.urls.unlock =  layer.config.urls.unlock.replace('vector/api/', vector_url);
+      console.log(layer.config.urls)
       // getLayerForEditing return a promise with layer usefult for editing
       EditableLayersPromises.push(layer.getLayerForEditing({
         vectorurl: this._vectorUrl,
@@ -158,7 +165,7 @@ function EditingService() {
     });
     this.emit('ready');
     // check if need start a child report
-    this.checkReportIdParam();
+    this.checkChildReportIdParam();
   }
 }
 
@@ -214,22 +221,22 @@ proto.unsubscribe = function(event, fnc) {
  *
  * Check if called from parent report
  */
-proto.checkReportIdParam = async function() {
+proto.checkChildReportIdParam = async function() {
   const searchParams = new URLSearchParams(location.search);
-  const value = searchParams.get('report_id');
+  const value = searchParams.get(REPORT_FIELD);
   const {toolbox, features} = await this.editingReport(value ? {
     filter: {
-      field: `report_id|eq|${value}`,
+      field: `${REPORT_FIELD}|eq|${value}`,
     }
   }: undefined);
-  let tool = toolbox.getToolById('edittable');
   if (value){
-    if (!features.length) {
-      this.currentReport.report_id = 1*value;
+    let tool = toolbox.getToolById('edittable');
+    if (features.length === 0) {
+      this.currentReport[REPORT_FIELD] = 1*value;
       tool = toolbox.getToolById('addfeature');
     }
+    toolbox.setActiveTool(tool);
   }
-  toolbox.setActiveTool(tool);
 };
 
 /**
@@ -1107,12 +1114,12 @@ proto.commitDirtyToolBoxes = function(layerId) {
 proto._createCommitMessage = function(commitItems) {
   function create_changes_list_dom_element(add, update, del) {
     const changeIds = {};
-    changeIds[`${t('editing.messages.commit.add')}`] = add.length;
-    changeIds[`${t('editing.messages.commit.update')}`] = `[${update.map((item)=> item.id).join(', ')}]`;
-    changeIds[`${t('editing.messages.commit.delete')}`] = `[${del.join(', ')}]`;
-    let dom = `<h4>${t('editing.messages.commit.header')}</h4>`;
-    dom+=`<h5>${t('editing.messages.commit.header_add')}</h5>`;
-    dom+=`<h5>${t('editing.messages.commit.header_update_delete')}</h5>`;
+    changeIds[`${t('signaler_iim.messages.commit.add')}`] = add.length;
+    changeIds[`${t('signaler_iim.messages.commit.update')}`] = `[${update.map((item)=> item.id).join(', ')}]`;
+    changeIds[`${t('signaler_iim.messages.commit.delete')}`] = `[${del.join(', ')}]`;
+    let dom = `<h4>${t('signaler_iim.messages.commit.header')}</h4>`;
+    dom+=`<h5>${t('signaler_iim.messages.commit.header_add')}</h5>`;
+    dom+=`<h5>${t('signaler_iim.messages.commit.header_update_delete')}</h5>`;
     dom+= `<ul style='border-bottom-color: #f4f4f4;'>`;
     Object.entries(changeIds).forEach(([action, ids]) => {
       dom += `<li>${action} : ${ids} </li>`;
@@ -1125,7 +1132,7 @@ proto._createCommitMessage = function(commitItems) {
   message += create_changes_list_dom_element(commitItems.add, commitItems.update, commitItems.delete);
   if (!_.isEmpty(commitItems.relations)) {
     message += "<div style='height:1px; background:#f4f4f4;border-bottom:1px solid #f4f4f4;'></div>";
-    message += "<div style='margin-left: 40%'><h4>"+ t('editing.relations') +"</h4></div>";
+    message += "<div style='margin-left: 40%'><h4>"+ t('signaler_iim.relations') +"</h4></div>";
     Object.entries(commitItems.relations).forEach(([ relationName, commits]) => {
       message +=  "<div><span style='font-weight: bold'>" + relationName + "</span></div>";
       message += create_changes_list_dom_element(commits.add, commits.update, commits.delete);
@@ -1138,7 +1145,7 @@ proto.showCommitModalWindow = function({layer, commitItems, close, commitPromise
   // messages set to commit
   const messages = {
     success: {
-      message: "plugins.editing.messages.saved",
+      message: "plugins.signaler_iim.messages.saved",
       autoclose: true
     },
     error: {}
@@ -1157,7 +1164,7 @@ proto.showCommitModalWindow = function({layer, commitItems, close, commitPromise
     })
       .then(() => {
         const dialog = GUI.dialog.dialog({
-          message: `<h4 class="text-center"><i style="margin-right: 5px;" class=${GUI.getFontClass('spinner')}></i>${t('editing.messages.saving')}</h4>`,
+          message: `<h4 class="text-center"><i style="margin-right: 5px;" class=${GUI.getFontClass('spinner')}></i>${t('signaler_iim.messages.saving')}</h4>`,
           closeButton: false
         });
         resolve(messages);
@@ -1213,7 +1220,7 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
         .then((commitItems, response) => {
           if (ApplicationState.online) {
             if (response.result) {
-              const {autoclose=true, message="plugins.editing.messages.saved"} = messages.success;
+              const {autoclose=true, message="plugins.signaler_iim.messages.saved"} = messages.success;
               if (messages && messages.success) GUI.showUserMessage({
                 type: 'success',
                 message,
@@ -1264,7 +1271,7 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
           }).then(() =>{
             GUI.showUserMessage({
               type: 'success',
-              message: "plugins.editing.messages.saved_local",
+              message: "plugins.signaler_iim.messages.saved_local",
               autoclose: true
             });
             session.clearHistory();
@@ -1429,7 +1436,7 @@ proto.getFeatureAndRelatedVertexReportByReportId = function(){
   return new Promise((resolve, reject) => {
     const options = {
       filter: {
-        field: `report_id|eq|${reportId}`,
+        field: `${REPORT_FIELD}|eq|${reportId}`,
       }
     };
     featuresToolbox.start(options)
@@ -1466,7 +1473,7 @@ proto.getFeatureAndRelatedVertexReportByReportId = function(){
 proto.editingReport = function({filter}={}){
   return new Promise((resolve, reject) => {
     const reportToolbox = this.getToolBoxById(this.getLayerSegnalazioniId());
-    reportToolbox.start({filter}).then(features=>{
+    reportToolbox.start({filter}).then(({features})=>{
       const featuresToolbox = this.getToolBoxById(this.getLayerFeaturesId());
       const vertexToolbox =  this.getToolBoxById(this.getLayerVertexId());
       vertexToolbox.stop();

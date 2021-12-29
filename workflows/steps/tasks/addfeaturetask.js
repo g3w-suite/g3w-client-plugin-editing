@@ -1,3 +1,4 @@
+import {REPORT_FIELD} from '../../../constant';
 const {base, inherit} =  g3wsdk.core.utils;
 const GUI = g3wsdk.gui.GUI;
 const {isSingleGeometry, singleGeometriesToMultiGeometry, findSelfIntersects} = g3wsdk.core.geoutils;
@@ -66,7 +67,7 @@ proto.setDrawInteraction = function({geometryFunction, type}={}){
         geometryType: originalGeometryType
       });
       //add report id
-      this.layerId === this.getEditingService().getLayerFeaturesId() && feature.set('report_id', this.getEditingService().getCurrentReportData().id);
+      this.layerId === this.getEditingService().getLayerFeaturesId() && feature.set(REPORT_FIELD, this.getEditingService().getCurrentReportData().id);
       const inputs = this.getInputs();
       inputs.features.push(feature);
       // in case of not geometry Point

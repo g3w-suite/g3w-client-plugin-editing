@@ -17,8 +17,8 @@ const Dialogs = {
         relations: layer.getRelations().getArray()
       }).length > 0;
 
-      GUI.dialog.confirm(`<h4>${tPlugin('editing.messages.delete_feature')}</h4>
-                        <div style="font-size:1.2em;">${ relationinediting ?tPlugin('editing.messages.delete_feature_relations') : ''}</div>`, result => {
+      GUI.dialog.confirm(`<h4>${tPlugin('signaler_iim.messages.delete_feature')}</h4>
+                        <div style="font-size:1.2em;">${ relationinediting ?tPlugin('signaler_iim.messages.delete_feature_relations') : ''}</div>`, result => {
         result ?  d.resolve(inputs) : d.reject(inputs);
 
       });
@@ -57,7 +57,7 @@ const Dialogs = {
       // NOW I HAVE TO IMPLEMENT WHAT HAPPEND ID NO ACTION HAPPEND
       const dialog = GUI.dialog.dialog({
         message: inputs.message,
-        title: tPlugin("editing.messages.commit_feature") + " " +inputs.layer.getName() + "?",
+        title: tPlugin("signaler_iim.messages.commit_feature") + " " +inputs.layer.getName() + "?",
         buttons
       });
       return d.promise()

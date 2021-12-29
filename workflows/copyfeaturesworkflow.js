@@ -8,12 +8,12 @@ const ApplicationState = g3wsdk.core.ApplicationState;
 function CopyFeaturesWorflow(options={}) {
   const isPointLayer = options.layer.getGeometryType().indexOf('Point') !== -1;
   options.type = ApplicationState.ismobile ? 'single' :  'multiple';
-  options.help = 'editing.steps.help.copy';
+  options.help = 'signaler_iim.steps.help.copy';
   options.steps = [];
   const selectelementssteps = new SelectElementsStep(options, true);
   selectelementssteps.getTask().setSteps({
     select: {
-      description: options.type === 'multiple'  ? 'editing.workflow.steps.selectPointSHIFT' : 'editing.workflow.steps.selectPoint',
+      description: options.type === 'multiple'  ? 'signaler_iim.workflow.steps.selectPointSHIFT' : 'signaler_iim.workflow.steps.selectPoint',
       directive: 't-plugin',
       done: false
     }
@@ -23,7 +23,7 @@ function CopyFeaturesWorflow(options={}) {
     const getvertexstep = new GetVertexStep(options, true);
     getvertexstep.getTask().setSteps({
       from: {
-        description: 'editing.workflow.steps.selectStartVertex',
+        description: 'signaler_iim.workflow.steps.selectStartVertex',
         directive: 't-plugin',
         done: false
       }
@@ -33,7 +33,7 @@ function CopyFeaturesWorflow(options={}) {
   const moveelementssteps = new MoveElementsStep(options, true);
   moveelementssteps.getTask().setSteps({
     to: {
-      description: 'editing.workflow.steps.selectToPaste',
+      description: 'signaler_iim.workflow.steps.selectToPaste',
       directive: 't-plugin',
       done: false
     }

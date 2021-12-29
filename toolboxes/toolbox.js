@@ -434,7 +434,7 @@ proto.setShow = function(bool=true){
 proto._canEdit = function() {
   if (this._constraints.scale) {
     const scale = this._constraints.scale;
-    const message = `${t('editing.messages.constraints.enable_editing')}${scale}`.toUpperCase();
+    const message = `${t('signaler_iim.messages.constraints.enable_editing')}${scale}`.toUpperCase();
     this.state.editing.canEdit = getScaleFromResolution(this._mapService.getMap().getView().getResolution()) <= scale;
     GUI.setModal(!this.state.editing.canEdit, message);
     const fnc = (event) => {

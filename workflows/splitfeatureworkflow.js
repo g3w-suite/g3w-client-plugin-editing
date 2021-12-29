@@ -7,11 +7,11 @@ const ApplicationState = g3wsdk.core.ApplicationState;
 
 function SplitFeaturesWorflow(options={}) {
   options.type = ApplicationState.ismobile ? 'single' :  'multiple';
-  options.help = 'editing.steps.help.split';
+  options.help = 'signaler_iim.steps.help.split';
   const selectelementssteps = new SelectElementsStep(options, true);
   selectelementssteps.getTask().setSteps({
     select: {
-      description: options.type === 'multiple'  ? 'editing.workflow.steps.selectPointSHIFT' : 'editing.workflow.steps.selectPoint',
+      description: options.type === 'multiple'  ? 'signaler_iim.workflow.steps.selectPointSHIFT' : 'signaler_iim.workflow.steps.selectPoint',
       directive: 't-plugin',
       done: false
     }
@@ -19,7 +19,7 @@ function SplitFeaturesWorflow(options={}) {
   const splitfeaturestep = new SplitFeatureStep(options, true);
   splitfeaturestep.getTask().setSteps({
     draw_line: {
-      description: 'editing.workflow.steps.draw_split_line',
+      description: 'signaler_iim.workflow.steps.draw_split_line',
       directive: 't-plugin',
       done: false
     }

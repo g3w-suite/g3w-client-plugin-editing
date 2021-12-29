@@ -1,6 +1,6 @@
 <div class="g3w-editing-panel">
   <div v-if="!appState.online" id="onlineofflinemessage" style="margin-bottom: 5px; padding: 5px; border-radius: 3px; background-color: orange; color:white; font-weight: bold">
-    <div v-t-plugin="'editing.messages.offline'"></div>
+    <div v-t-plugin="'signaler_iim.messages.offline'"></div>
   </div>
   <div v-if="showcommitbar" style="display: flex; margin-bottom: 5px">
     <div style="margin-right: auto;" class="editing-button" @click="canCommit ? commit(): null" :class="{'enabled' : canCommit }">

@@ -4,7 +4,7 @@ const PickFeatureTask = require('./tasks/pickfeaturetask');
 
 const PickFeatureStep = function(options={}) {
   options.task = new PickFeatureTask(options) ;
-  options.help = "editing.steps.help.pick_feature";
+  options.help = "signaler_iim.steps.help.pick_feature";
   base(this, options)
 };
 

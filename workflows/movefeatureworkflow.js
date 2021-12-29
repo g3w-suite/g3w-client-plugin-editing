@@ -5,7 +5,7 @@ const PickFeatureStep = require('./steps/pickfeaturestep');
 const MoveFeatureStep = require('./steps/movefeaturestep');
 
 function MoveFeatureWorflow(options={}) {
-  options.helpMessage = 'editing.tools.move_feature';
+  options.helpMessage = 'signaler_iim.tools.move_feature';
   options.steps = [new PickFeatureStep(), new MoveFeatureStep()];
   base(this, options);
 }

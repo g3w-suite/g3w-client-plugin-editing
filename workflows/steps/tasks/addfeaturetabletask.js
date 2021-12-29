@@ -1,3 +1,4 @@
+import {REPORT_FIELD} from '../../../constant';
 const {base, inherit} = g3wsdk.core.utils;
 const EditingTask = require('./editingtask');
 
@@ -17,12 +18,14 @@ proto.run = function(inputs, context) {
   const editingLayer = originalLayer.getEditingLayer();
   const feature = inputs.features.length ? inputs.features[inputs.features.length -1] : originalLayer.createNewFeature();
   feature.setTemporaryId();
+  let removeEditableProperties = true;
   if (layerId === this.getEditingService().getLayerSegnalazioniId()) {
-    const {report_id} = this.getEditingService().getCurrentReportData();
-    report_id !== undefined && feature.set('report_id', report_id);
+    const value = this.getEditingService().getCurrentReportData()[REPORT_FIELD];
+    value !== undefined && feature.set(REPORT_FIELD, value);
+    removeEditableProperties = false;
   }
   editingLayer.getEditingSource().addFeature(feature);
-  session.pushAdd(layerId, feature);
+  session.pushAdd(layerId, feature, removeEditableProperties);
   inputs.features.push(feature);
   d.resolve(inputs, context);
   return d.promise();

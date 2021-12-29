@@ -4,7 +4,7 @@ const DeleteFeatureTask = require('./tasks/deletefeaturetask');
 
 const DeleteFeatureStep = function(options={}) {
   options.task = new DeleteFeatureTask();
-  options.help = "editing.steps.help.double_click_delete";
+  options.help = "signaler_iim.steps.help.double_click_delete";
   base(this, options)
 };
 

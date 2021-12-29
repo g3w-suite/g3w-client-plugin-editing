@@ -4,7 +4,7 @@ const GetVertexTask = require('./tasks/getvertextask');
 
 const GetVertexStep = function(options={}) {
   options.task = new GetVertexTask(options);
-  options.help = "editing.steps.help.select";
+  options.help = "signaler_iim.steps.help.select";
   base(this, options)
 };
 

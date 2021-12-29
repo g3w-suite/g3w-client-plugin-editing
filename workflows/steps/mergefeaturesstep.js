@@ -4,7 +4,7 @@ const MergeFeaturesTask = require('./tasks/mergefeaturestask');
 
 const MergeFeatureStep = function(options={}) {
   options.task = new MergeFeaturesTask();
-  options.help = "editing.steps.help.merge";
+  options.help = "signaler_iim.steps.help.merge";
   base(this, options)
 };
 

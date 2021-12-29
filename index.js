@@ -33,11 +33,8 @@ const _Plugin = function() {
       });
       this.service.once('ready', () => {
         this.showEditingPanel();
-        //plugin registry
-        if (this.registerPlugin(this.config.gid)) {
-          if (!GUI.isready) GUI.on('ready', this.setupGui.bind(this));
-          else this.setupGui();
-        }
+        if (!GUI.isready) GUI.on('ready', this.setupGui.bind(this));
+        else this.setupGui();
         this.setHookLoading({
           loading: false
         });
@@ -52,7 +49,7 @@ const _Plugin = function() {
   //setup plugin interface
   this.setupGui = function() {
     if (this.config.visible === false) return false;
-    this.config.name = this.config.name ||  "plugins.editing.editing_reports";
+    this.config.name = this.config.name ||  "plugins.signaler_iim.editing_reports";
     this.addToolGroup(pluginGroupTool);
     this.addTools({
       action: this.showEditingPanel,
@@ -69,7 +66,7 @@ const _Plugin = function() {
       if (!show_errors.some_layers && this.service.getLayersInError()) {
         GUI.showUserMessage({
           type: 'warning',
-          message: 'plugins.editing.errors.some_layers',
+          message: 'plugins.signaler_iim.errors.some_layers',
           closable: true
         });
         show_errors.some_layers = true;
@@ -77,7 +74,7 @@ const _Plugin = function() {
     } else {
       GUI.showUserMessage({
         type: 'alert',
-        message: 'plugins.editing.errors.no_layers'
+        message: 'plugins.signaler_iim.errors.no_layers'
       })
     }
     return this.panel;

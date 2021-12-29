@@ -52,7 +52,7 @@ proto.run = function(inputs, context) {
     else {
       GUI.showUserMessage({
         type: 'warning',
-        message: 'plugins.editing.messages.nosplittedfeature',
+        message: 'plugins.signaler_iim.messages.nosplittedfeature',
         autoclose: true
       });
       d.reject();
@@ -93,7 +93,7 @@ proto._handleSplitFeature = function({feature, inputs, session, splittedGeometri
   });
   GUI.showUserMessage({
     type: 'success',
-    message: 'plugins.editing.messages.splitted',
+    message: 'plugins.signaler_iim.messages.splitted',
     autoclose: true
   });
   return newFeatures;
