@@ -1,4 +1,4 @@
-import {REPORT_FIELD} from '../../../constant';
+import SIGNALER_IIM_CONFIG from '../../../constant';
 const {base, inherit} = g3wsdk.core.utils;
 const EditingTask = require('./editingtask');
 
@@ -12,6 +12,7 @@ const proto = AddFeatureTableTask.prototype;
 
 proto.run = function(inputs, context) {
   const d = $.Deferred();
+  const {signaler_field, signaler_layer_id} = SIGNALER_IIM_CONFIG;
   const session = context.session;
   const originalLayer = inputs.layer;
   const layerId = originalLayer.getId();
@@ -19,9 +20,9 @@ proto.run = function(inputs, context) {
   const feature = inputs.features.length ? inputs.features[inputs.features.length -1] : originalLayer.createNewFeature();
   feature.setTemporaryId();
   let removeEditableProperties = true;
-  if (layerId === this.getEditingService().getLayerSegnalazioniId()) {
-    const value = this.getEditingService().getCurrentReportData()[REPORT_FIELD];
-    value !== undefined && feature.set(REPORT_FIELD, value);
+  if (layerId === signaler_layer_id) {
+    const value = this.getEditingService().getCurrentReportData()[signaler_field];
+    value !== undefined && feature.set(signaler_field, value);
     removeEditableProperties = false;
   }
   editingLayer.getEditingSource().addFeature(feature);

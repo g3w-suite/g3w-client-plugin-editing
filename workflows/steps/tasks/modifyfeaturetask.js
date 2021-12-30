@@ -1,5 +1,5 @@
+import SIGNALER_IIM_CONFIG from '../../../constant';
 const {base, inherit} = g3wsdk.core.utils;
-const {isPointGeometryType} = g3wsdk.core.geometry.Geometry;
 const PickFeatureInteraction = g3wsdk.ol.interactions.PickFeatureInteraction;
 
 const EditingTask = require('./editingtask');
@@ -18,11 +18,12 @@ inherit(ModifyFeatureTask, EditingTask);
 const proto = ModifyFeatureTask.prototype;
 
 proto.run = function() {
+  const {geo_layer_id, vertex_layer_id} = SIGNALER_IIM_CONFIG;
   let origGeometry = null;
   this.pickedFeatures = new ol.Collection;
   const layers = [this.layer];
-  if (this.getEditingService().getLayerFeaturesId() === this.layer.getId()){
-    const vertexLayer = this.getEditingService().getToolBoxById(this.getEditingService().getLayerVertexId()).getEditingLayer();
+  if (geo_layer_id === this.layer.getId()){
+    const vertexLayer = this.getEditingService().getToolBoxById(vertex_layer_id).getEditingLayer();
     layers.push(vertexLayer);
   }
   this._pickInteraction = new PickFeatureInteraction({
@@ -118,7 +119,7 @@ proto.removePoint = function(){
     try{
       this._modifyInteraction.removePoint();
     }
-    catch (e){
+    catch(e){
       console.log(e);
     }
   }

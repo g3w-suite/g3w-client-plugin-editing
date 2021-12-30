@@ -25,6 +25,7 @@
 </template>
 
 <script>
+    import SIGNALER_IIM_CONFIG from '../../../constant';
     const GUI = g3wsdk.gui.GUI;
     const {
         isSingleGeometry,
@@ -56,6 +57,7 @@
             },
             async addFileFeatures(evt) {
                 try {
+                    const {geo_layer_id} = SIGNALER_IIM_CONFIG;
                     const EditingService = require('../../../services/editingservice');
                     const mapService = GUI.getComponent('map').getService();
                     let type = evt.target.files[0].name.split('.');
@@ -69,7 +71,7 @@
                             mapCrs,
                             crs:mapCrs
                         });
-                        const featuresToolbox = EditingService.getToolBoxById(EditingService.getLayerFeaturesId());
+                        const featuresToolbox = EditingService.getToolBoxById(geo_layer_id);
                         const layerId = featuresToolbox.getId();
                         const featureReportGeometryType = featuresToolbox.getLayer().getGeometryType();
                         const featuresSession = featuresToolbox.getSession();
@@ -89,7 +91,6 @@
                                 this.$refs.externalinputfilefeatures.value = null;
                             } else {
                                 singleToMultiple = isSingleGeometry(newFeatureGeometry);
-                                console.log(singleToMultiple)
                                 await this.editingFeaturesReport();
                                 newReportFeatures.forEach(olFeature => {
                                     singleToMultiple && olFeature.setGeometry(singleGeometriesToMultiGeometry([olFeature.getGeometry()]));

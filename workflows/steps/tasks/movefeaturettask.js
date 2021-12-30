@@ -1,3 +1,4 @@
+import SIGNALER_IIM_CONFIG from '../../../constant';
 const {base, inherit} = g3wsdk.core.utils;
 const {isPointGeometryType} = g3wsdk.core.geometry.Geometry;
 const EditingTask = require('./editingtask');
@@ -19,6 +20,7 @@ const proto = MoveFeatureTask.prototype;
  */
 proto.run = function(inputs, context) {
   const d = $.Deferred();
+  const {vertex_layer_id, geo_layer_id} = SIGNALER_IIM_CONFIG;
   const originalLayer = inputs.layer;
   const session = context.session;
   const layerId = originalLayer.getId();
@@ -48,14 +50,14 @@ proto.run = function(inputs, context) {
     /**
      * Check if no Point geometry
      */
-    if (!isPointGeometryType(feature.getGeometry().getType())) {
+    if (vertex_layer_id) {
       session.pushUpdate(layerId, newFeature, originalFeature);
-      const vertexLayerToolBox = this.getEditingService().getToolBoxById(this.getEditingService().getLayerVertexId());
+      const vertexLayerToolBox = this.getEditingService().getToolBoxById(vertex_layer_id);
       const featureVertex = vertexLayerToolBox.getEditingLayerSource().getFeatures().filter(vertexFeature => vertexFeature.get('feature_id') == feature.getId());
       featureVertex.forEach((feature, index) =>{
         const originalVertexFeature = feature.clone();
         feature.getGeometry().translate(deltaXY.x, deltaXY.y);
-        session.pushUpdate(this.getEditingService().getLayerVertexId(), feature, originalVertexFeature)
+        session.pushUpdate(vertex_layer_id, feature, originalVertexFeature)
       });
     }
     startCoordinate = null;

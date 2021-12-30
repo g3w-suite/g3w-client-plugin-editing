@@ -1,5 +1,5 @@
 import API from '../api'
-import {REPORT_FIELD} from '../constant';
+import SIGNALER_IIM_CONFIG from '../constant';
 const ApplicationService = g3wsdk.core.ApplicationService;
 const ApplicationState = g3wsdk.core.ApplicationState;
 const {base, inherit, createSingleFieldParameter} = g3wsdk.core.utils;
@@ -20,12 +20,6 @@ const CommitFeaturesWorkflow = require('../workflows/commitfeaturesworkflow');
 const MAPCONTROL_TOGGLED_EVENT_NAME = 'mapcontrol:toggled';
 const OFFLINE_ITEMS = {
   CHANGES: 'EDITING_CHANGES'
-};
-
-const LAYERS_IDS = {
-  segnalazioni: null,
-  features: null,
-  vertex: null
 };
 
 function EditingService() {
@@ -74,15 +68,6 @@ function EditingService() {
     relations: [],
   };
 
-  // Object contain alla information about current report in editing
-  this.currentReport = {
-    id: null, // id of report
-    [REPORT_FIELD]: null, //report id for child report
-    isNew: true, // is new report
-    feature: null, // current feature
-    vertex: null //current vertex
-  };
-
   this._layers_in_error = false;
   //mapservice
   this._mapService = GUI.getComponent('map').getService();
@@ -100,8 +85,19 @@ function EditingService() {
   this._subscribers = {};
   this.init = function(config={}) {
     this._vectorUrl = config.vectorurl;
-    const {vector_url} = config;
-    console.log(vector_url)
+    const {vector_url, signaler_layer_id, vertex_layer_id, geo_layer_id, signaler_field} = config;
+    SIGNALER_IIM_CONFIG.signaler_layer_id = signaler_layer_id;
+    SIGNALER_IIM_CONFIG.signaler_field = signaler_field || 'signaled_fid';
+    SIGNALER_IIM_CONFIG.vertex_layer_id = vertex_layer_id;
+    SIGNALER_IIM_CONFIG.geo_layer_id = geo_layer_id;
+    // Object contain alla information about current report in editing
+    this.currentReport = {
+      id: null, // id of report
+      [signaler_field]: null, //report id for child report
+      isNew: false, // is new report
+      feature: null, // current feature
+      vertex: null //current vertex
+    };
     this._projectType = config.project_type;
     this._layersstore = new LayersStore({
       id: 'editing',
@@ -118,10 +114,9 @@ function EditingService() {
     let layers = this._getEditableLayersFromCatalog();
     const EditableLayersPromises = [];
     for (const layer of layers) {
-      layer.config.urls.commit =  layer.config.urls.commit.replace('vector/api/', vector_url);
-      layer.config.urls.editing =  layer.config.urls.editing.replace('vector/api/', vector_url);
-      layer.config.urls.unlock =  layer.config.urls.unlock.replace('vector/api/', vector_url);
-      console.log(layer.config.urls)
+      layer.config.urls.commit =  layer.config.urls.commit.replace('/vector/api/', vector_url);
+      layer.config.urls.editing =  layer.config.urls.editing.replace('/vector/api/', vector_url);
+      layer.config.urls.unlock =  layer.config.urls.unlock.replace('/vector/api/', vector_url);
       // getLayerForEditing return a promise with layer usefult for editing
       EditableLayersPromises.push(layer.getLayerForEditing({
         vectorurl: this._vectorUrl,
@@ -137,8 +132,6 @@ function EditingService() {
           /**
            * FAKE
            */
-          const layer_id_key = Object.keys(LAYERS_IDS).find(key => layerId.indexOf(key) !== -1);
-          if (layer_id_key) LAYERS_IDS[layer_id_key] = layerId;
           this._editableLayers[layerId] = editableLayer;
           this._editableLayers[Symbol.for('layersarray')].push(editableLayer);
           this._attachLayerWidgetsEvent(this._editableLayers[layerId]);
@@ -222,17 +215,18 @@ proto.unsubscribe = function(event, fnc) {
  * Check if called from parent report
  */
 proto.checkChildReportIdParam = async function() {
+  const {signaler_field} = SIGNALER_IIM_CONFIG;
   const searchParams = new URLSearchParams(location.search);
-  const value = searchParams.get(REPORT_FIELD);
+  const value = searchParams.get(signaler_field);
   const {toolbox, features} = await this.editingReport(value ? {
     filter: {
-      field: `${REPORT_FIELD}|eq|${value}`,
+      field: `${signaler_field}|eq|${value}`,
     }
   }: undefined);
   if (value){
     let tool = toolbox.getToolById('edittable');
     if (features.length === 0) {
-      this.currentReport[REPORT_FIELD] = 1*value;
+      this.currentReport[signaler_field] = 1*value;
       tool = toolbox.getToolById('addfeature');
     }
     toolbox.setActiveTool(tool);
@@ -538,7 +532,7 @@ proto.getEditingLayer = function(id) {
  */
 proto._buildToolBoxes = function(options={}) {
   // add id of toolbot to show at beginning
-  options.show = [this.getLayerSegnalazioniId()];
+  options.show = [SIGNALER_IIM_CONFIG.signaler_layer_id];
   for (const layer of this.getLayers()) {
     const toolbox = ToolBoxesFactory.build(layer, options);
     this.addToolBox(toolbox);
@@ -1332,25 +1326,6 @@ proto.resetReportData = function(){
   }
 };
 
-/**
- * FAKE
- */
-
-proto.getLayerSegnalazioniId = function(){
-  return LAYERS_IDS.segnalazioni;
-};
-
-proto.getLayerFeaturesId = function(){
-  return LAYERS_IDS.features;
-};
-
-proto.getLayerVertexId = function(){
-  return LAYERS_IDS.vertex;
-};
-
-/**
- * FAKE
- */
 
 /**
  * Methods to get editing layer
@@ -1368,11 +1343,11 @@ proto.getPointFeaturesfromGeometryVertex = function(geometry){
 };
 
 proto.removeVertexFeatureFromReportFeature = function(vertex){
-  const featureSession = this.getToolBoxById(this.getLayerFeaturesId()).getSession();
-  const vertexToolBox = this.getToolBoxById(this.getLayerVertexId());
+  const featureSession = this.getToolBoxById(SIGNALER_IIM_CONFIG.geo_layer_id).getSession();
+  const vertexToolBox = this.getToolBoxById(SIGNALER_IIM_CONFIG.vertex_layer_id);
   const vertexLayerSource = vertexToolBox.getEditingLayerSource();
   vertexLayerSource.removeFeature(vertex);
-  featureSession.pushDelete(this.getLayerVertexId(), vertex)
+  featureSession.pushDelete(SIGNALER_IIM_CONFIG.vertex_layer_id, vertex)
 };
 
 proto.getRelationFieldByLayerId = function(layerId){
@@ -1381,8 +1356,8 @@ proto.getRelationFieldByLayerId = function(layerId){
 
 proto.addNewVertexFeatureFromReportFeature = function({reportFeature, vertexOlFeature} = {}){
   const value = reportFeature.getId();
-  const featureSession = this.getToolBoxById(this.getLayerFeaturesId()).getSession();
-  const vertexToolBox = this.getToolBoxById(this.getLayerVertexId());
+  const featureSession = this.getToolBoxById(SIGNALER_IIM_CONFIG.geo_layer_id).getSession();
+  const vertexToolBox = this.getToolBoxById(SIGNALER_IIM_CONFIG.vertex_layer_id);
   const vertexLayerAttributes = vertexToolBox.getLayer().getEditingFields();
   const vertexLayerSource = vertexToolBox.getEditingLayerSource();
   vertexLayerAttributes.forEach(({name}) => {
@@ -1393,7 +1368,7 @@ proto.addNewVertexFeatureFromReportFeature = function({reportFeature, vertexOlFe
   });
   feature.setTemporaryId();
   vertexLayerSource.addFeature(feature);
-  featureSession.pushAdd(this.getLayerVertexId(), feature)
+  featureSession.pushAdd(SIGNALER_IIM_CONFIG.vertex_layer_id, feature)
 };
 
 /**
@@ -1413,7 +1388,7 @@ proto.createVertexfromReportFeatures = function(features=[]){
           field: `feature_id|eq|${value}`,
         }
       };
-      const vertexToolBox = this.getToolBoxById(this.getLayerVertexId());
+      const vertexToolBox = this.getToolBoxById(SIGNALER_IIM_CONFIG.vertex_layer_id);
       vertexToolBox.start(options)
         .then(()=>{
           const pointFeatures = this.getPointFeaturesfromGeometryVertex(feature.getGeometry());
@@ -1431,21 +1406,22 @@ proto.createVertexfromReportFeatures = function(features=[]){
 };
 
 proto.getFeatureAndRelatedVertexReportByReportId = function(){
+  const {signaler_field} = SIGNALER_IIM_CONFIG;
   const {id:reportId, isNew}= this.getCurrentReportData();
-  const featuresToolbox = this.getToolBoxById(this.getLayerFeaturesId());
+  const featuresToolbox = this.getToolBoxById(SIGNALER_IIM_CONFIG.geo_layer_id);
   return new Promise((resolve, reject) => {
     const options = {
       filter: {
-        field: `${REPORT_FIELD}|eq|${reportId}`,
+        field: `${signaler_field}|eq|${reportId}`,
       }
     };
     featuresToolbox.start(options)
       .then(({features=[]}) => {
         const featureLength = features.length;
         if (featureLength) {
-          if (this.getLayerVertexId()){
-            const childField = this.getLayerById(this.getLayerFeaturesId()).getRelations().getArray()[0].getChildField();
-            const vertexToolbox = this.getToolBoxById(this.getLayerVertexId());
+          if (SIGNALER_IIM_CONFIG.vertex_layer_id){
+            const childField = this.getLayerById(SIGNALER_IIM_CONFIG.geo_layer_id).getRelations().getArray()[0].getChildField();
+            const vertexToolbox = this.getToolBoxById(SIGNALER_IIM_CONFIG.vertex_layer_id);
             const value = features.map(feature => feature.getId());
             const field = createSingleFieldParameter({
               field: childField,
@@ -1472,10 +1448,10 @@ proto.getFeatureAndRelatedVertexReportByReportId = function(){
  */
 proto.editingReport = function({filter}={}){
   return new Promise((resolve, reject) => {
-    const reportToolbox = this.getToolBoxById(this.getLayerSegnalazioniId());
+    const reportToolbox = this.getToolBoxById(SIGNALER_IIM_CONFIG.signaler_layer_id);
     reportToolbox.start({filter}).then(({features})=>{
-      const featuresToolbox = this.getToolBoxById(this.getLayerFeaturesId());
-      const vertexToolbox =  this.getToolBoxById(this.getLayerVertexId());
+      const featuresToolbox = this.getToolBoxById(SIGNALER_IIM_CONFIG.geo_layer_id);
+      const vertexToolbox =  this.getToolBoxById(SIGNALER_IIM_CONFIG.vertex_layer_id);
       vertexToolbox.stop();
       featuresToolbox.stop();
       reportToolbox.setShow(true);
@@ -1494,10 +1470,10 @@ proto.editingReport = function({filter}={}){
  * Editing Feature Report
  */
 proto.editingFeaturesReport = function({toolId}={}){
-  const reportToolbox = this.getToolBoxById(this.getLayerSegnalazioniId());
+  const reportToolbox = this.getToolBoxById(SIGNALER_IIM_CONFIG.signaler_layer_id);
   reportToolbox.stop().then(async ()=>{
-    if (this.getLayerFeaturesId()){
-      const featuresToolbox = this.getToolBoxById(this.getLayerFeaturesId());
+    if (SIGNALER_IIM_CONFIG.geo_layer_id){
+      const featuresToolbox = this.getToolBoxById(SIGNALER_IIM_CONFIG.geo_layer_id);
       const features = await this.getFeatureAndRelatedVertexReportByReportId();
       this._mapService.zoomToFeatures(features);
       GUI.setModal(false);

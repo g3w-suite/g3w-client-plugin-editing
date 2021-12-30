@@ -1,3 +1,4 @@
+import SIGNALER_IIM_CONFIG  from '../constant';
 const {base, inherit, merge} = g3wsdk.core.utils;
 const t = g3wsdk.core.i18n.tPlugin;
 const GUI = g3wsdk.gui.GUI;
@@ -36,10 +37,11 @@ const vueComponentOptions = {
       ApplicationState.online && this.$options.service.editingReport();
     },
     stopToolBox(toolboxId) {
+      const {geo_layer_id} = SIGNALER_IIM_CONFIG;
       const toolbox = this._getToolBoxById(toolboxId);
       if (toolbox.state.editing.history.commit) this.$options.service.commit().always(() => toolbox.stop());
       else toolbox.stop();
-      if (toolbox.getId() === this.$options.service.getLayerFeaturesId()) {
+      if (toolbox.getId() === geo_layer_id) {
         this.$options.service.editingReport();
       }
     },

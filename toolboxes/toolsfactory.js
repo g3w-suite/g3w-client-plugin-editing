@@ -30,7 +30,7 @@ function EditorToolsFactory() {
           {
             config: {
               id: 'addfeature',
-              name: "editing.tools.add_feature",
+              name: "signaler_iim.tools.add_feature",
               icon: "addPoint.png",
               layer,
               row: 1,
@@ -41,7 +41,7 @@ function EditorToolsFactory() {
           {
             config:{
               id: 'editattributes',
-              name: "editing.tools.update_feature",
+              name: "signaler_iim.tools.update_feature",
               icon: "editAttributes.png",
               layer,
               row: 1,
@@ -52,7 +52,7 @@ function EditorToolsFactory() {
           {
             config: {
               id: 'deletefeature',
-              name: "editing.tools.delete_feature",
+              name: "signaler_iim.tools.delete_feature",
               icon: "deletePoint.png",
               layer,
               row: 1,
@@ -63,7 +63,7 @@ function EditorToolsFactory() {
           {
             config: {
               id: 'editmultiattributes',
-              name: "editing.tools.update_multi_features",
+              name: "signaler_iim.tools.update_multi_features",
               icon: "multiEditAttributes.png",
               layer,
               row: 2,
@@ -75,7 +75,7 @@ function EditorToolsFactory() {
           {
             config: {
               id: 'movefeature',
-              name: "editing.tools.move_feature",
+              name: "signaler_iim.tools.move_feature",
               icon: "movePoint.png",
               layer,
               row: 2,
@@ -86,7 +86,7 @@ function EditorToolsFactory() {
           {
             config: {
               id: 'copyfeatures',
-              name: "editing.tools.copy",
+              name: "signaler_iim.tools.copy",
               icon: "copyPoint.png",
               layer,
               once: true,
@@ -99,7 +99,7 @@ function EditorToolsFactory() {
             {
               config: {
                 id: 'addPart',
-                name: "editing.tools.addpart",
+                name: "signaler_iim.tools.addpart",
                 icon: "addPart.png",
                 layer,
                 once: true,
@@ -113,7 +113,7 @@ function EditorToolsFactory() {
             {
               config: {
                 id: 'deletePart',
-                name: "editing.tools.deletepart",
+                name: "signaler_iim.tools.deletepart",
                 icon: "deletePart.png",
                 layer,
                 row: 3,
@@ -130,7 +130,7 @@ function EditorToolsFactory() {
           {
             config: {
               id: 'addfeature',
-              name: "editing.tools.add_feature",
+              name: "signaler_iim.tools.add_feature",
               icon: `add${type}.png`,
               layer,
               row: 1,
@@ -141,7 +141,7 @@ function EditorToolsFactory() {
           {
             config: {
               id: 'editattributes',
-              name: "editing.tools.update_feature",
+              name: "signaler_iim.tools.update_feature",
               icon: "editAttributes.png",
               layer: layer,
               row: 1,
@@ -152,7 +152,7 @@ function EditorToolsFactory() {
           {
             config: {
               id: 'movevertex',
-              name: "editing.tools.update_vertex",
+              name: "signaler_iim.tools.update_vertex",
               icon: "moveVertex.png",
               layer,
               row: 1,
@@ -163,7 +163,7 @@ function EditorToolsFactory() {
           {
             config: {
               id: 'deletefeature',
-              name: "editing.tools.delete_feature",
+              name: "signaler_iim.tools.delete_feature",
               icon: `delete${type}.png`,
               layer,
               row: 1,
@@ -174,7 +174,7 @@ function EditorToolsFactory() {
           {
             config: {
               id: 'editmultiattributes',
-              name: "editing.tools.update_multi_features",
+              name: "signaler_iim.tools.update_multi_features",
               icon: "multiEditAttributes.png",
               layer,
               row: 2,
@@ -186,7 +186,7 @@ function EditorToolsFactory() {
           {
             config:{
               id: 'movefeature',
-              name: "editing.tools.move_feature",
+              name: "signaler_iim.tools.move_feature",
               icon: `move${type}.png`,
               layer,
               row: 2,
@@ -197,7 +197,7 @@ function EditorToolsFactory() {
           {
             config: {
               id: 'copyfeatures',
-              name: "editing.tools.copy",
+              name: "signaler_iim.tools.copy",
               icon: `copy${type}.png`,
               layer,
               row: 2,
@@ -210,7 +210,7 @@ function EditorToolsFactory() {
             {
               config: {
                 id: 'addPart',
-                name: "editing.tools.addpart",
+                name: "signaler_iim.tools.addpart",
                 icon: "addPart.png",
                 layer,
                 row: 3,
@@ -224,7 +224,7 @@ function EditorToolsFactory() {
             {
               config: {
                 id: 'deletePart',
-                name: "editing.tools.deletepart",
+                name: "signaler_iim.tools.deletepart",
                 icon: "deletePart.png",
                 layer,
                 row: 3,
@@ -236,7 +236,7 @@ function EditorToolsFactory() {
           {
             config: {
               id: 'splitfeature',
-              name: "editing.tools.split",
+              name: "signaler_iim.tools.split",
               icon: "splitFeatures.png",
               layer,
               row: 3,
@@ -248,7 +248,7 @@ function EditorToolsFactory() {
           {
             config:{
               id: 'mergefeatures',
-              name: "editing.tools.merge",
+              name: "signaler_iim.tools.merge",
               icon: "mergeFeatures.png",
               layer,
               row: 3,
@@ -264,7 +264,7 @@ function EditorToolsFactory() {
           {
             config: {
               id: 'addfeature',
-              name: "editing.tools.add_feature",
+              name: "signaler_iim.tools.add_feature",
               icon: "addTableRow.png",
               layer,
               op: AddTableFeatureWorflow,
@@ -274,7 +274,7 @@ function EditorToolsFactory() {
           {
             config: {
               id: 'edittable',
-              name: "editing.tools.update_feature",
+              name: "signaler_iim.tools.update_feature",
               icon: "editAttributes.png",
               layer,
               op: EditTableFeaturesWorkflow,

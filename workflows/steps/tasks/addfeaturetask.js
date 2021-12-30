@@ -1,4 +1,4 @@
-import {REPORT_FIELD} from '../../../constant';
+import SIGNALER_IIM_CONFIG from '../../../constant';
 const {base, inherit} =  g3wsdk.core.utils;
 const GUI = g3wsdk.gui.GUI;
 const {isSingleGeometry, singleGeometriesToMultiGeometry, findSelfIntersects} = g3wsdk.core.geoutils;
@@ -67,7 +67,8 @@ proto.setDrawInteraction = function({geometryFunction, type}={}){
         geometryType: originalGeometryType
       });
       //add report id
-      this.layerId === this.getEditingService().getLayerFeaturesId() && feature.set(REPORT_FIELD, this.getEditingService().getCurrentReportData().id);
+      const {signaler_field, geo_layer_id} = SIGNALER_IIM_CONFIG;
+      this.layerId === geo_layer_id && feature.set(signaler_field, this.getEditingService().getCurrentReportData().id);
       const inputs = this.getInputs();
       inputs.features.push(feature);
       // in case of not geometry Point
@@ -177,7 +178,8 @@ proto.changeDrawShapeStyle = function(type) {
 };
 
 proto.getVertexToReportFeature = function(feature){
-  if (this.layerId === this.getEditingService().getLayerFeaturesId()) {
+  const {geo_layer_id} = SIGNALER_IIM_CONFIG;
+  if (this.layerId === geo_layer_id) {
     this.getEditingService().createVertexfromReportFeatures([feature]);
   }
 };

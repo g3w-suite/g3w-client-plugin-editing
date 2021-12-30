@@ -59,6 +59,7 @@
 </template>
 
 <script>
+    import SIGNALER_IIM_CONFIG from '../../../constant';
     const {areCoordinatesEqual, getCoordinatesFromGeometry, ConvertDEGToDMS, ConvertDMSToDEG} = g3wsdk.core.geoutils;
     const {isPolygonGeometryType} = g3wsdk.core.geometry.Geometry;
     const mapEpsg = g3wsdk.core.ApplicationState.map.epsg;
@@ -129,30 +130,33 @@
               this.changeFeatureReportGeometry(vertex);
             },
             getSourceFeatureReport(){
-                const featureLayerToolBox = EditingService.getToolBoxById(EditingService.getLayerFeaturesId());
+                const {geo_layer_id} = SIGNALER_IIM_CONFIG;
+                const featureLayerToolBox = EditingService.getToolBoxById(geo_layer_id);
                 const feature = featureLayerToolBox.getEditingLayerSource().getFeatures().find(feature => feature.getId() === this.featureReport.getId());
                 return feature;
             },
             changeFeatureReportGeometry(vertex){
-                const session = EditingService.getToolBoxById(EditingService.getLayerFeaturesId()).getSession();
+                const {geo_layer_id} = SIGNALER_IIM_CONFIG;
+                const session = EditingService.getToolBoxById(geo_layer_id).getSession();
                 const feature = this.getSourceFeatureReport();
                 vertex.featureReportIndexVertex.forEach(index => this.changeFeatureReportCoordinates[index] = vertex[`coordinates${mapEpsg}`]);
                 feature.setGeometry(isPolygonGeometryType(feature.getGeometry().getType()) ?
                         new ol.geom.MultiPolygon([[this.changeFeatureReportCoordinates]])
                         : new ol.geom.MultiLineString([this.changeFeatureReportCoordinates]));
-                session.pushUpdate(EditingService.getLayerFeaturesId(), feature, this.originalFeatureReportFeature);
+                session.pushUpdate(geo_layer_id, feature, this.originalFeatureReportFeature);
             },
             close(){
                 GUI.popContent();
             },
             save(){
-                const session = EditingService.getToolBoxById(EditingService.getLayerFeaturesId()).getSession();
+                const {geo_layer_id, vertex_layer_id} = SIGNALER_IIM_CONFIG;
+                const session = EditingService.getToolBoxById(geo_layer_id).getSession();
                 this.vertex.forEach((vertex, index) =>{
                   if (vertex.changed) {
                     const vertexFeature = this.featureVertex[index] ;
                     const originalVertex = this.originalVertexFeature[index];
                     vertexFeature.setGeometry(new ol.geom.Point(vertex[`coordinates${mapEpsg}`]));
-                    session.pushUpdate(EditingService.getLayerVertexId(), vertexFeature, originalVertex);
+                    session.pushUpdate(vertex_layer_id, vertexFeature, originalVertex);
                   }
               });
               this.close();
@@ -180,6 +184,7 @@
             }
         },
         created(){
+            const {vertex_layer_id} = SIGNALER_IIM_CONFIG;
             this.featureReport = EditingService.getCurrentFeatureReport();
             this.originalFeatureReportFeature = this.getSourceFeatureReport().clone();
             this.originalfeatureReportGeometry = this.featureReport.getGeometry();
@@ -188,7 +193,7 @@
                     this.originalfeatureReportGeometry.getCoordinates()[0];
             this.changeFeatureReportCoordinates = [...this.originalfeatureReportGeometryCoordinates];
             const id = this.featureReport.getId();
-            const vertexLayerToolBox = EditingService.getToolBoxById(EditingService.getLayerVertexId());
+            const vertexLayerToolBox = EditingService.getToolBoxById(vertex_layer_id);
             const vertexLayer = vertexLayerToolBox.getLayer();
             this.originalVertexCoordinates = [];
             this.featureVertex = vertexLayerToolBox.getEditingLayerSource().getFeatures().filter(feature => feature.get('feature_id') == id);

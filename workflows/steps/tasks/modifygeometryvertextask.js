@@ -1,3 +1,4 @@
+import SIGNALER_IIM_CONFIG from '../../../constant';
 const {base, inherit} = g3wsdk.core.utils;
 const {getVertexLength, areCoordinatesEqual, getPointFeaturesfromGeometryVertex} = g3wsdk.core.geoutils;
 
@@ -19,6 +20,7 @@ const proto = ModifyGeometryVertexTask.prototype;
 
 proto.run = function(inputs, context) {
   const d = $.Deferred();
+  const {geo_layer_id, vertex_layer_id} = SIGNALER_IIM_CONFIG;
   const originalLayer = inputs.layer;
   const editingLayer = originalLayer.getEditingLayer() ;
   const session = context.session;
@@ -54,11 +56,9 @@ proto.run = function(inputs, context) {
   };
   feature.setStyle(style);
   this.updateFeaturesCollection = new ol.Collection(inputs.features);
-  if (this.getEditingService().getLayerFeaturesId() === layerId){
-    const vertexLayerSource = this.getEditingService().getToolBoxById(this.getEditingService().getLayerVertexId()).getEditingLayerSource();
-    vertexLayerSource.getFeatures().forEach(vertex => {
-      this.updateFeaturesCollection.push(vertex)
-    })
+  if (geo_layer_id === layerId){
+    const vertexLayerSource = this.getEditingService().getToolBoxById(vertex_layer_id).getEditingLayerSource();
+    vertexLayerSource.getFeatures().forEach(vertex => this.updateFeaturesCollection.push(vertex));
   }
   this.startFeaturesLength = this.updateFeaturesCollection.getLength();
   this._modifyInteraction = new ol.interaction.Modify({
@@ -88,7 +88,7 @@ proto.run = function(inputs, context) {
           const originalVertexCoordinates = originalVertexFeature.getGeometry().getCoordinates();
           if (!areCoordinatesEqual(vertexCoordinates, originalVertexCoordinates)){
             const newVertexFeature = vertexFeature.clone();
-            session.pushUpdate(this.getEditingService().getLayerVertexId(), newVertexFeature, originalVertexFeature);
+            session.pushUpdate(vertex_layer_id, newVertexFeature, originalVertexFeature);
           }
         })
       } else if (startVertexLength < getVertexLength(feature.getGeometry())){

@@ -31,7 +31,6 @@ function AddFeatureWorkflow(options={}) {
         },
         onBeforeDestroy(){
           current_shape_type = null;
-          console.log('qui')
           delete inputs.current_shape_type;
         }
       }

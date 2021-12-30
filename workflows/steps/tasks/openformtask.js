@@ -1,6 +1,7 @@
+import SIGNALER_IIM_CONFIG from '../../../constant';
 import AddFeatureMethodComponent from '../../../form/components/editfeatures/addfeaturemethod.vue';
 const {base, inherit} = g3wsdk.core.utils;
-const {GUI, ComponentsFactory} = g3wsdk.gui
+const {GUI, ComponentsFactory} = g3wsdk.gui;
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 const EditingTask = require('./editingtask');
 
@@ -53,7 +54,7 @@ proto._getForm = function(inputs, context) {
   return GUI.showContentFactory('form');
 };
 
-proto._cancelFnc = function(promise, inputs, session) {
+proto._cancelFnc = function(promise, inputs) {
   return function() {
     GUI.setModal(false);
     // fire event cancel form to emit to subscrivers
@@ -63,9 +64,35 @@ proto._cancelFnc = function(promise, inputs, session) {
 };
 
 proto._saveFeatures = function({fields, promise, session, inputs}){
+  const {signaler_layer_id} = SIGNALER_IIM_CONFIG;
   fields = this._multi ? fields.filter(field => field.value !== null) : fields;
   if (fields.length) {
     const layerId = this._originalLayer.getId();
+    if (layerId === signaler_layer_id) {
+      this.getEditingService().setSaveConfig({
+        mode: 'autosave',
+        messages: {
+          success: false
+        },
+        cb: {
+          done: () => {
+            // set current report
+            this.getEditingService().setCurrentReportData({
+              id: this._features[0].getId(),
+              isNew: false
+            });
+            this.getEditingService().resetDefault();
+            let content  = ComponentsFactory.build({
+              vueComponentObject: AddFeatureMethodComponent
+            });
+            GUI.showContent({
+              content,
+              closable: false
+            })
+          }
+        }
+      });
+    }
     const newFeatures = [];
     this._features.forEach(feature =>{
       this._originalLayer.setFieldsWithValues(feature, fields);
@@ -86,36 +113,8 @@ proto._saveFeatures = function({fields, promise, session, inputs}){
       });
       GUI.setModal(false);
       promise.resolve(inputs);
+
       this.fireEvent('savedfeature', newFeatures); // called after saved
-      if (layerId === this.getEditingService().getLayerSegnalazioniId()) {
-        this.getEditingService().setSaveConfig({
-          mode: 'autosave',
-          messages: {
-            success: false
-          },
-          cb: {
-            done: () => {
-              // set current report
-              this.getEditingService().setCurrentReportData({
-                id: this._features[0].getId(),
-                isNew: false
-              });
-              this.getEditingService().resetDefault();
-              let content  = ComponentsFactory.build({
-                vueComponentObject: AddFeatureMethodComponent
-              });
-              GUI.showContent({
-                content,
-                closable: false
-              })
-            }
-          }
-        });
-        this.getEditingService().commit({
-          toolbox: this.getEditingService().getToolBoxById(layerId),
-          modal: false
-        }).then(()=>{})
-      }
     })
   } else {
     GUI.setModal(false);
@@ -137,6 +136,7 @@ proto._saveFnc = function(promise, context, inputs) {
 
 proto.startForm = function(options = {}) {
   const EditingFormComponent = require('../../../form/editingform');
+  const {signaler_layer_id} = SIGNALER_IIM_CONFIG;
   const {inputs, context, promise} = options;
   const {session} = context;
   const formComponent = options.formComponent || EditingFormComponent;
@@ -144,7 +144,7 @@ proto.startForm = function(options = {}) {
   const layerId = this._originalLayer.getId();
   const feature = this._originalFeatures[0];
   const isNew = feature.isNew();
-  if (layerId === this.getEditingService().getLayerSegnalazioniId()) {
+  if (layerId === signaler_layer_id) {
     this.getEditingService().setCurrentReportData({
       id: feature.get('id'),
       isNew
