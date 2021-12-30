@@ -1,6 +1,6 @@
 {
-  "name": "editing",
-  "version": "3.3.0",
+  "name": "signaler_iim",
+  "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "directories": {
