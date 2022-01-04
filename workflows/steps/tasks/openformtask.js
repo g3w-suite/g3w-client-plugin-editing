@@ -27,7 +27,7 @@ module.exports = OpenFormTask;
 
 const proto = OpenFormTask.prototype;
 
-proto._getForm = function(inputs, context) {
+proto._getForm =  function(inputs, context) {
   const excludeFields = context.excludeFields;
   this._isContentChild = !!(WorkflowsStack.getLength() > 1);
   this._session = context.session;
@@ -134,13 +134,13 @@ proto._saveFnc = function(promise, context, inputs) {
   }
 };
 
-proto.startForm = function(options = {}) {
+proto.startForm = async function(options = {}) {
   const EditingFormComponent = require('../../../form/editingform');
   const {signaler_layer_id} = SIGNALER_IIM_CONFIG;
   const {inputs, context, promise} = options;
   const {session} = context;
   const formComponent = options.formComponent || EditingFormComponent;
-  const Form = this._getForm(inputs, context);
+  const Form =  this._getForm(inputs, context);
   const layerId = this._originalLayer.getId();
   const feature = this._originalFeatures[0];
   const isNew = feature.isNew();
@@ -149,13 +149,11 @@ proto.startForm = function(options = {}) {
       id: feature.get('id'),
       isNew
     });
-  }
-  else {
-    this.getEditingService().setCurrentFeatureReport({
-      feature
-    });
-  }
-
+    await this.getEditingService().filterReportFieldsFormValues({
+      fields: this._fields
+    })
+  } else this.getEditingService().setCurrentFeatureReport({feature});
+  
   const formService = Form({
     formComponent,
     title: "plugins.signaler_iim.editing_attributes",

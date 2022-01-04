@@ -57,7 +57,7 @@
             },
             async addFileFeatures(evt) {
                 try {
-                    const {geo_layer_id} = SIGNALER_IIM_CONFIG;
+                    const {geo_layer_id, signaler_field} = SIGNALER_IIM_CONFIG;
                     const EditingService = require('../../../services/editingservice');
                     const mapService = GUI.getComponent('map').getService();
                     let type = evt.target.files[0].name.split('.');
@@ -73,6 +73,7 @@
                         });
                         const featuresToolbox = EditingService.getToolBoxById(geo_layer_id);
                         const layerId = featuresToolbox.getId();
+                        const editingFields = featuresToolbox.getLayer().getEditingFields().map(field=> field.name);
                         const featureReportGeometryType = featuresToolbox.getLayer().getGeometryType();
                         const featuresSession = featuresToolbox.getSession();
                         const newReportFeatures = layer.getSource().getFeatures();
@@ -95,9 +96,11 @@
                                 newReportFeatures.forEach(olFeature => {
                                     singleToMultiple && olFeature.setGeometry(singleGeometriesToMultiGeometry([olFeature.getGeometry()]));
                                     const feature = new Feature({
-                                        feature: olFeature
+                                        feature: olFeature,
+                                        properties: editingFields
                                     });
                                     feature.setTemporaryId();
+                                    feature.set(signaler_field, EditingService.getCurrentReportData().id);
                                     featuresToolbox.getEditingLayerSource().addFeature(feature);
                                     featuresSession.pushAdd(layerId, feature);
                                     promises.push(EditingService.createVertexfromReportFeatures([feature]));

@@ -16,7 +16,7 @@ function EditingFormComponent(options={}) {
   base(this, options);
   this.addBodyFormComponent({
     component,
-    where: 'after'
+    where: 'before'
   });
 }
 

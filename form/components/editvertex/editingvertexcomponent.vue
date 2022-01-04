@@ -44,15 +44,16 @@
                     </div>
                 </div>
                 <div style="width: 100%; padding:5px; border: 2px solid #eee" class="fields_content">
-                    <div v-for="field in v.fields" :key="field.name" style="display: flex; justify-content: space-around; align-items: baseline; margin: 5px">
-                        <label style="font-weight: bold; margin-right: 5px; width: 20%" >{{field.name}}</label>
-                        <input class="form-control" v-disabled="!field.editable" style="width: 80%" :value="field.value">
-                    </div>
+                    <g3w-input v-for="field in v.fields" :key="field.name"
+                        :changeInput="isValidInputVertex"
+                        @changeInput="isValidInputVertex"
+                        :state="field">
+                    </g3w-input>
                 </div>
             </div>
         </div>
         <div class="buttons" style="align-self: center; font-weight: bold; width: 100%; display: flex; justify-content: center">
-            <button v-t-plugin="'signaler_iim.form.buttons.save'" class="btn btn-success" style="min-width: 80px; font-weight: bold; margin: 5px;" @click="save"></button>
+            <button v-t-plugin="'signaler_iim.form.buttons.save'" class="btn btn-success" v-disabled="!valid" style="min-width: 80px; font-weight: bold; margin: 5px;" @click="save"></button>
             <button v-t-plugin="'signaler_iim.form.buttons.cancel'" class="btn btn-danger" style="min-width: 80px; margin: 5px; font-weight: bold" @click="cancel"></button>
         </div>
     </div>
@@ -60,19 +61,39 @@
 
 <script>
     import SIGNALER_IIM_CONFIG from '../../../constant';
+    const {findSelfIntersects} = g3wsdk.core.geoutils;
     const {areCoordinatesEqual, getCoordinatesFromGeometry, ConvertDEGToDMS, ConvertDMSToDEG} = g3wsdk.core.geoutils;
     const {isPolygonGeometryType} = g3wsdk.core.geometry.Geometry;
     const mapEpsg = g3wsdk.core.ApplicationState.map.epsg;
+    const G3WInput = g3wsdk.gui.vue.Inputs.G3WInput;
     const EditingService = require('../../../services/editingservice');
     const GUI = g3wsdk.gui.GUI;
     export default {
         name: 'Editingvertexcomponent',
         data(){
             return {
-                vertex: []
+                validForm: true, // set valid form,
+                validGeometry: true
+            }
+        },
+        components:{
+            'g3w-input':G3WInput
+        },
+        computed:{
+          valid(){
+              return this.validForm && this.validGeometry;
             }
         },
         methods: {
+            // INPUTS VALIDATION
+            isValidInputVertex(input) {
+                const index = input.indexVertex;
+                this.featureVertex[index].set(input.name, input.value);
+                this.vertex[index].changed = true;
+                this.validForm = this.vertex.map(vertex => {
+                    return vertex.fields
+                }).flat().reduce((previous, input) => previous && input.validate.valid, true);
+            },
             toDegree(vertex){
                 vertex['coordinatesEPSG:4326'] = ol.proj.transform(vertex['coordinatesEPSG:3857'], 'EPSG:3857', 'EPSG:4326');
             },
@@ -135,6 +156,10 @@
                 const feature = featureLayerToolBox.getEditingLayerSource().getFeatures().find(feature => feature.getId() === this.featureReport.getId());
                 return feature;
             },
+            /**
+             * Method to change feature geometry when some vertex change
+             * @param vertex
+             */
             changeFeatureReportGeometry(vertex){
                 const {geo_layer_id} = SIGNALER_IIM_CONFIG;
                 const session = EditingService.getToolBoxById(geo_layer_id).getSession();
@@ -143,7 +168,11 @@
                 feature.setGeometry(isPolygonGeometryType(feature.getGeometry().getType()) ?
                         new ol.geom.MultiPolygon([[this.changeFeatureReportCoordinates]])
                         : new ol.geom.MultiLineString([this.changeFeatureReportCoordinates]));
-                session.pushUpdate(geo_layer_id, feature, this.originalFeatureReportFeature);
+                if (findSelfIntersects(feature.getGeometry())) this.validGeometry = false;
+                else {
+                    session.pushUpdate(geo_layer_id, feature, this.originalFeatureReportFeature);
+                    this.validGeometry = true;
+                }
             },
             close(){
                 GUI.popContent();
@@ -151,9 +180,9 @@
             save(){
                 const {geo_layer_id, vertex_layer_id} = SIGNALER_IIM_CONFIG;
                 const session = EditingService.getToolBoxById(geo_layer_id).getSession();
-                this.vertex.forEach((vertex, index) =>{
+                this.vertex.forEach((vertex, index) => {
                   if (vertex.changed) {
-                    const vertexFeature = this.featureVertex[index] ;
+                    const vertexFeature = this.featureVertex[index];
                     const originalVertex = this.originalVertexFeature[index];
                     vertexFeature.setGeometry(new ol.geom.Point(vertex[`coordinates${mapEpsg}`]));
                     session.pushUpdate(vertex_layer_id, vertexFeature, originalVertex);
@@ -184,6 +213,7 @@
             }
         },
         created(){
+            this.vertex = [];
             const {vertex_layer_id} = SIGNALER_IIM_CONFIG;
             this.featureReport = EditingService.getCurrentFeatureReport();
             this.originalFeatureReportFeature = this.getSourceFeatureReport().clone();
@@ -222,14 +252,11 @@
                 });
                 this.toDHMS(vertex);
                 this.originalVertexCoordinates.push([...vertex_coordinates]);
-                vertexLayer.getFieldsWithValues(feature).forEach(({name, editable,value}) =>{
-                    vertex.fields.push({
-                        name,
-                        value,
-                        editable
-                    })
+                const indexVertex = this.vertex.push(vertex);
+                vertexLayer.getFieldsWithValues(feature).forEach(field => {
+                    field.indexVertex = indexVertex -1;
+                    vertex.fields.push(field)
                 });
-                this.vertex.push(vertex);
             })
         },
         async mounted() {

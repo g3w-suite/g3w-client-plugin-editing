@@ -44,7 +44,7 @@ proto.setDrawInteraction = function({geometryFunction, type}={}){
   this.drawInteraction.on('drawend', evt => {
     if (evt.feature.getGeometry().getType() === 'Circle') evt.feature.setGeometry(ol.geom.Polygon.fromCircle(evt.feature.getGeometry()));
     if (isSingleGeometry(evt.feature.getGeometry())) evt.feature.setGeometry(singleGeometriesToMultiGeometry([evt.feature.getGeometry()]));
-    if (Geometry.isPolygonGeometryType(evt.feature.getGeometry().getType()) && findSelfIntersects(evt.feature.getGeometry()).length){
+    if (Geometry.isPolygonGeometryType(evt.feature.getGeometry().getType()) && findSelfIntersects(evt.feature.getGeometry())){
       GUI.showUserMessage({
         type: 'warning',
         message: 'Self Intersection'
@@ -67,12 +67,12 @@ proto.setDrawInteraction = function({geometryFunction, type}={}){
         geometryType: originalGeometryType
       });
       //add report id
-      const {signaler_field, geo_layer_id} = SIGNALER_IIM_CONFIG;
+      const {signaler_field, geo_layer_id, vertex_layer_id} = SIGNALER_IIM_CONFIG;
       this.layerId === geo_layer_id && feature.set(signaler_field, this.getEditingService().getCurrentReportData().id);
       const inputs = this.getInputs();
       inputs.features.push(feature);
       // in case of not geometry Point
-      !Geometry.isPointGeometryType(feature.getGeometry().getType()) && this.getVertexToReportFeature(feature);
+      vertex_layer_id && this.getVertexToReportFeature(feature);
       /**
        * Method to get or add vertex to feature related to report
        */

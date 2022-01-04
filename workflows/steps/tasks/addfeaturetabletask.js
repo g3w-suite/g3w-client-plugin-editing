@@ -22,8 +22,8 @@ proto.run = function(inputs, context) {
   let removeEditableProperties = true;
   if (layerId === signaler_layer_id) {
     const value = this.getEditingService().getCurrentReportData()[signaler_field];
-    value !== undefined && feature.set(signaler_field, value);
-    removeEditableProperties = false;
+    //value !== undefined && feature.set(signaler_field, value);
+    //removeEditableProperties = false;
   }
   editingLayer.getEditingSource().addFeature(feature);
   session.pushAdd(layerId, feature, removeEditableProperties);

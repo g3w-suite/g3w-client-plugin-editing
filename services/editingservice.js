@@ -85,7 +85,7 @@ function EditingService() {
   this._subscribers = {};
   this.init = function(config={}) {
     this._vectorUrl = config.vectorurl;
-    const {vector_url, signaler_layer_id, vertex_layer_id, geo_layer_id, signaler_field} = config;
+    const {urls:{editing:editing_url}, signaler_layer_id, vertex_layer_id, geo_layer_id, signaler_field} = config;
     SIGNALER_IIM_CONFIG.signaler_layer_id = signaler_layer_id;
     SIGNALER_IIM_CONFIG.signaler_field = signaler_field || 'signaled_fid';
     SIGNALER_IIM_CONFIG.vertex_layer_id = vertex_layer_id;
@@ -114,9 +114,9 @@ function EditingService() {
     let layers = this._getEditableLayersFromCatalog();
     const EditableLayersPromises = [];
     for (const layer of layers) {
-      layer.config.urls.commit =  layer.config.urls.commit.replace('/vector/api/', vector_url);
-      layer.config.urls.editing =  layer.config.urls.editing.replace('/vector/api/', vector_url);
-      layer.config.urls.unlock =  layer.config.urls.unlock.replace('/vector/api/', vector_url);
+      layer.config.urls.commit =  layer.config.urls.commit.replace('/vector/api/', editing_url);
+      layer.config.urls.editing =  layer.config.urls.editing.replace('/vector/api/', editing_url);
+      layer.config.urls.unlock =  layer.config.urls.unlock.replace('/vector/api/', editing_url);
       // getLayerForEditing return a promise with layer usefult for editing
       EditableLayersPromises.push(layer.getLayerForEditing({
         vectorurl: this._vectorUrl,
@@ -599,6 +599,55 @@ proto.resetDefault = function(){
   this.disableMapControlsConflict(false);
 };
 
+proto.filterReportFieldsFormValues = async function({fields=[]}={}){
+  const promises = [];
+  const {urls:{ vector:vector_iim_url}, fields:dynamic_fields} = this.config;
+  for (const field of fields) {
+    if (dynamic_fields[SIGNALER_IIM_CONFIG.signaler_layer_id].indexOf(field.name) !== -1){
+      const {key, values, value, layer_id, loading} = field.input.options;
+      const promise = new Promise((resolve, reject) =>{
+        loading.state = 'loading';
+        values.splice(0);
+        const relationLayer = CatalogLayersStoresRegistry.getLayerById(layer_id);
+        const originalDataUrl = relationLayer.getUrl('data');
+        const newDataurl = originalDataUrl.replace('/vector/api/', vector_iim_url);
+        relationLayer.setUrl({
+          type: 'data',
+          url: newDataurl
+        });
+        relationLayer.getDataTable({
+          ordering: key,
+          custom_params: {
+            [SIGNALER_IIM_CONFIG.signaler_field]: this.currentReport.isNew ? '' : this.currentReport.id
+          }
+        }).then(response =>{
+          if (response && response.features) {
+            const features = response.features;
+            for (let i = 0; i < features.length; i++) {
+              values.push({
+                key: features[i].properties[key],
+                value: features[i].properties[value]
+              })
+            }
+            loading.state = 'ready';
+          } else loading.state = 'error';
+          resolve()
+        }).fail(()=>{
+          loading.state = 'error';
+          reject();
+        }).always(()=>{
+            relationLayer.setUrl({
+              type:'data',
+              url: originalDataUrl
+            })
+          });
+        promises.push(promise);
+      });
+    }
+  }
+  await Promise.allSettled(promises)
+};
+
 proto._attachLayerWidgetsEvent = function(layer) {
   const fields = layer.getEditingFields();
   for (let i=0; i < fields.length; i++) {
@@ -618,7 +667,6 @@ proto._attachLayerWidgetsEvent = function(layer) {
               values.splice(0);
               const relationLayer = CatalogLayersStoresRegistry.getLayerById(layer_id);
               if (relationLayer) {
-                const isVector = relationLayer.getType() === Layer.LayerTypes.VECTOR;
                 if (relationLayer) {
                   relationLayer.getDataTable({
                     ordering: key
@@ -636,7 +684,7 @@ proto._attachLayerWidgetsEvent = function(layer) {
                         })
                       }
                       loading.state = 'ready';
-                    }
+                    } else loading.state = 'error';
                   }).fail(error => {
                     loading.state = 'error'
                   });
@@ -1230,7 +1278,7 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
               const errorMessage = parser.parse({
                 type: 'String'
               });
-              const {autoclose=false, message} = messages.error;
+              const {autoclose=false, message} = messages.error || {};
               GUI.showUserMessage({
                 type: 'alert',
                 message: message || errorMessage,
@@ -1436,7 +1484,10 @@ proto.getFeatureAndRelatedVertexReportByReportId = function(){
             };
             vertexToolbox.start(options);
           }
-        }
+        } else GUI.showUserMessage({
+          type: 'info',
+          message: 'Non è stata trovata nessuna feature geometrica associata alla segnalazione'
+        });
         resolve(features);
       })
       .fail(err => reject(err))
@@ -1474,17 +1525,22 @@ proto.editingFeaturesReport = function({toolId}={}){
   reportToolbox.stop().then(async ()=>{
     if (SIGNALER_IIM_CONFIG.geo_layer_id){
       const featuresToolbox = this.getToolBoxById(SIGNALER_IIM_CONFIG.geo_layer_id);
-      const features = await this.getFeatureAndRelatedVertexReportByReportId();
-      this._mapService.zoomToFeatures(features);
-      GUI.setModal(false);
-      GUI.disableSideBar(false);
-      reportToolbox.setShow(false);
-      featuresToolbox.setShow(true);
-      featuresToolbox.setSelected(true);
-      if (toolId){
-        const tool = featuresToolbox.getToolById(toolId);
-        featuresToolbox.setActiveTool(tool);
+      try {
+        const features = await this.getFeatureAndRelatedVertexReportByReportId();
+        this._mapService.zoomToFeatures(features);
+        GUI.setModal(false);
+        GUI.disableSideBar(false);
+        reportToolbox.setShow(false);
+        featuresToolbox.setShow(true);
+        featuresToolbox.setSelected(true);
+        if (toolId){
+          const tool = featuresToolbox.getToolById(toolId);
+          featuresToolbox.setActiveTool(tool);
+        }
+      } catch(err){
+        console.log(err)
       }
+
     }
   })
 

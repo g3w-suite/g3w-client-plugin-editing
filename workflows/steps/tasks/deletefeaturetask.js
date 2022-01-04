@@ -104,7 +104,7 @@ proto.run = function(inputs, context) {
   this.addInteraction(this._selectInteraction);
   this._selectInteraction.on('select', e => {
     const feature = e.selected[0];
-    const EditingService = require('../../../services/editingservice');
+    const EditingService = this.getEditingService();
     const RelationService = require('../../../services/relationservice');
     const relations = EditingService._filterRelationsInEditing({
       layerId,
@@ -119,10 +119,10 @@ proto.run = function(inputs, context) {
         layerId: relationId,
         relation
       });
-      const field = relationLayer.getEditingFields().find((field) => {
+      const field = relationLayer.getEditingFields().find(field => {
         return field.name === ownField;
       });
-      return !field.validate.required;
+      return !!field;
     });
     const promise = relations.length ? EditingService.getLayersDependencyFeatures(layerId, {
       feature,

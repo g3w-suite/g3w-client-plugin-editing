@@ -171,18 +171,18 @@ function EditorToolsFactory() {
               type: ['delete_feature']
             }
           },
-          {
-            config: {
-              id: 'editmultiattributes',
-              name: "signaler_iim.tools.update_multi_features",
-              icon: "multiEditAttributes.png",
-              layer,
-              row: 2,
-              once: true,
-              op: EditMultiFeatureAttributesWorkflow,
-              type: ['change_attr_feature']
-            }
-          },
+          // {
+          //   config: {
+          //     id: 'editmultiattributes',
+          //     name: "signaler_iim.tools.update_multi_features",
+          //     icon: "multiEditAttributes.png",
+          //     layer,
+          //     row: 2,
+          //     once: true,
+          //     op: EditMultiFeatureAttributesWorkflow,
+          //     type: ['change_attr_feature']
+          //   }
+          // },
           {
             config:{
               id: 'movefeature',
@@ -194,69 +194,69 @@ function EditorToolsFactory() {
               type: ['change_feature']
             }
           },
-          {
-            config: {
-              id: 'copyfeatures',
-              name: "signaler_iim.tools.copy",
-              icon: `copy${type}.png`,
-              layer,
-              row: 2,
-              once: true,
-              op: CopyFeaturesWorflow,
-              type: ['add_feature']
-            }
-          },
-          ...(isMultiGeometry ? [
-            {
-              config: {
-                id: 'addPart',
-                name: "signaler_iim.tools.addpart",
-                icon: "addPart.png",
-                layer,
-                row: 3,
-                once: true,
-                op: AddPartToMultigeometriesWorkflow,
-                type: ['add_feature', 'change_feature']
-              }
-            }
-          ] : []),
-          ...(isMultiGeometry ? [
-            {
-              config: {
-                id: 'deletePart',
-                name: "signaler_iim.tools.deletepart",
-                icon: "deletePart.png",
-                layer,
-                row: 3,
-                op: DeletePartFromMultigeometriesWorkflow,
-                type: ['change_feature']
-              }
-            }
-          ] : []),
-          {
-            config: {
-              id: 'splitfeature',
-              name: "signaler_iim.tools.split",
-              icon: "splitFeatures.png",
-              layer,
-              row: 3,
-              once: true,
-              op: SplitFeatureWorkflow,
-              type:  ['change_feature']
-            }
-          },
-          {
-            config:{
-              id: 'mergefeatures',
-              name: "signaler_iim.tools.merge",
-              icon: "mergeFeatures.png",
-              layer,
-              row: 3,
-              once: true,
-              op: MergeFeaturesWorkflow,
-              type: ['change_feature']
-            }
-          }
+          // {
+          //   config: {
+          //     id: 'copyfeatures',
+          //     name: "signaler_iim.tools.copy",
+          //     icon: `copy${type}.png`,
+          //     layer,
+          //     row: 2,
+          //     once: true,
+          //     op: CopyFeaturesWorflow,
+          //     type: ['add_feature']
+          //   }
+          // },
+          // ...(isMultiGeometry ? [
+          //   {
+          //     config: {
+          //       id: 'addPart',
+          //       name: "signaler_iim.tools.addpart",
+          //       icon: "addPart.png",
+          //       layer,
+          //       row: 3,
+          //       once: true,
+          //       op: AddPartToMultigeometriesWorkflow,
+          //       type: ['add_feature', 'change_feature']
+          //     }
+          //   }
+          // ] : []),
+          // ...(isMultiGeometry ? [
+          //   {
+          //     config: {
+          //       id: 'deletePart',
+          //       name: "signaler_iim.tools.deletepart",
+          //       icon: "deletePart.png",
+          //       layer,
+          //       row: 3,
+          //       op: DeletePartFromMultigeometriesWorkflow,
+          //       type: ['change_feature']
+          //     }
+          //   }
+          // ] : []),
+          // {
+          //   config: {
+          //     id: 'splitfeature',
+          //     name: "signaler_iim.tools.split",
+          //     icon: "splitFeatures.png",
+          //     layer,
+          //     row: 3,
+          //     once: true,
+          //     op: SplitFeatureWorkflow,
+          //     type:  ['change_feature']
+          //   }
+          // },
+          // {
+          //   config:{
+          //     id: 'mergefeatures',
+          //     name: "signaler_iim.tools.merge",
+          //     icon: "mergeFeatures.png",
+          //     layer,
+          //     row: 3,
+          //     once: true,
+          //     op: MergeFeaturesWorkflow,
+          //     type: ['change_feature']
+          //   }
+          // }
         ];
         break;
       case 'Table':
