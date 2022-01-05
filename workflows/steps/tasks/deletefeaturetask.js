@@ -1,3 +1,4 @@
+import SIGNALER_IIM_CONFIG from '../../../constant';
 const {base, inherit} = g3wsdk.core.utils;
 const EditingTask = require('./editingtask');
 
@@ -108,7 +109,7 @@ proto.run = function(inputs, context) {
     const RelationService = require('../../../services/relationservice');
     const relations = EditingService._filterRelationsInEditing({
       layerId,
-      relations: originaLayer.getRelations() ? originaLayer.getRelations().getArray() : []
+      relations: layerId === SIGNALER_IIM_CONFIG.geo_layer_id ? [this.getEditingService().getGeoLayerVertexRelation()] : []
     }).filter(relation => {
       const relationId = EditingService._getRelationId({
         layerId,
@@ -152,7 +153,6 @@ proto.run = function(inputs, context) {
       d.resolve(inputs);
     })
   });
-
   return d.promise();
 };
 

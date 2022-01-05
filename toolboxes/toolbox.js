@@ -40,6 +40,11 @@ function ToolBox(options={}) {
   });
 
   this._getFeaturesOption = {};
+  // used to register event and fnc related to some events
+  this._getFeaturesEvent = {
+    event: null,
+    fnc: null
+  };
   const historystate = this._session.getHistory().state;
   const sessionstate = this._session.state;
   const {show=true} = options;
@@ -363,12 +368,14 @@ proto.save = function () {
 };
 
 proto._unregisterGetFeaturesEvent = function() {
-  switch(this._layerType) {
-    case Layer.LayerTypes.VECTOR:
-      this._mapService.getMap().un(this._getFeaturesEvent.event, this._getFeaturesEvent.fnc);
-      break;
-    default:
-      return;
+  if (this._getFeaturesEvent.event){
+    switch(this._layerType) {
+      case Layer.LayerTypes.VECTOR:
+        this._mapService.getMap().un(this._getFeaturesEvent.event, this._getFeaturesEvent.fnc);
+        break;
+      default:
+        return;
+    }
   }
 };
 

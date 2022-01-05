@@ -1453,6 +1453,15 @@ proto.createVertexfromReportFeatures = function(features=[]){
   })
 };
 
+/**
+ * Method to return relation between geo layer (feature) and vertex
+ * @returns Relation
+ */
+proto.getGeoLayerVertexRelation = function(){
+  const {geo_layer_id, vertex_layer_id} = SIGNALER_IIM_CONFIG;
+  return this.getLayerById(geo_layer_id).getRelations().getRelationByFatherChildren(geo_layer_id, vertex_layer_id);
+};
+
 proto.getFeatureAndRelatedVertexReportByReportId = function(){
   const {signaler_field} = SIGNALER_IIM_CONFIG;
   const {id:reportId, isNew}= this.getCurrentReportData();
@@ -1468,7 +1477,8 @@ proto.getFeatureAndRelatedVertexReportByReportId = function(){
         const featureLength = features.length;
         if (featureLength) {
           if (SIGNALER_IIM_CONFIG.vertex_layer_id){
-            const childField = this.getLayerById(SIGNALER_IIM_CONFIG.geo_layer_id).getRelations().getArray()[0].getChildField();
+
+            const childField = this.getGeoLayerVertexRelation().getChildField();
             const vertexToolbox = this.getToolBoxById(SIGNALER_IIM_CONFIG.vertex_layer_id);
             const value = features.map(feature => feature.getId());
             const field = createSingleFieldParameter({
