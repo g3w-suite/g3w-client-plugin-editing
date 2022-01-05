@@ -41,9 +41,11 @@ const vueComponentOptions = {
       const toolbox = this._getToolBoxById(toolboxId);
       if (toolbox.state.editing.history.commit) this.$options.service.commit().always(() => toolbox.stop());
       else toolbox.stop();
-      if (toolbox.getId() === geo_layer_id) {
-        this.$options.service.editingReport();
+      if (this.$options.service.isEditingSingleLayer()) {
+        this.$options.service.getPlugin().hideEditingPanel();
+        this.$options.service.setEditingSingleLayer(false);
       }
+      else if (toolbox.getId() === geo_layer_id) this.$options.service.editingReport();
     },
     saveToolBox(toolboxId) {
       const toolbox = this._getToolBoxById(toolboxId);
@@ -127,12 +129,14 @@ const vueComponentOptions = {
     this.appState = ApplicationState;
     this.$options.service.registerOnLineOffLineEvent();
     GUI.closeContent();
+    this.$options.service.state.open = true;
     GUI.on('opencontent', this._enableEditingButtons);
     GUI.on('closeform', this._enableEditingButtons);
     GUI.on('closecontent', this._enableEditingButtons);
     GUI.getComponent('map').getService().seSelectionLayerVisible(false);
   },
   beforeDestroy() {
+    this.$options.service.state.open = false;
     GUI.off('opencontent', this._enableEditingButtons);
     GUI.off('closeform', this._enableEditingButtons);
     GUI.off('closecontent', this._enableEditingButtons);

@@ -18,7 +18,6 @@ const _Plugin = function() {
   this.name = 'signaler_iim';
   this.panel; // editing panel reference
   this.init = function() {
-    //if (GUI.isMobile()) return;
     // add i18n of the plugin
     addI18nPlugin({
       name: this.name,

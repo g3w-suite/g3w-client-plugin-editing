@@ -1,5 +1,6 @@
 import API from '../api'
 import SIGNALER_IIM_CONFIG from '../constant';
+const {G3W_FID} = g3wsdk.constant;
 const ApplicationService = g3wsdk.core.ApplicationService;
 const ApplicationState = g3wsdk.core.ApplicationState;
 const {base, inherit, createSingleFieldParameter} = g3wsdk.core.utils;
@@ -61,11 +62,13 @@ function EditingService() {
 
   // state of editing
   this.state = {
+    open: false, // check if panel is open or not
     toolboxes: [],
     toolboxselected: null,
     toolboxidactivetool: null,
     message: null,
     relations: [],
+    edit_single_layer: false,
   };
 
   this._layers_in_error = false;
@@ -83,6 +86,8 @@ function EditingService() {
   //plugin components
   this._formComponents = {};
   this._subscribers = {};
+  //eventually action layer when result is showed
+  this.addActionKeys = [];
   this.init = function(config={}) {
     this._vectorUrl = config.vectorurl;
     const {urls:{editing:editing_url}, signaler_layer_id, vertex_layer_id, geo_layer_id, signaler_field} = config;
@@ -114,9 +119,6 @@ function EditingService() {
     let layers = this._getEditableLayersFromCatalog();
     const EditableLayersPromises = [];
     for (const layer of layers) {
-      layer.config.urls.commit =  layer.config.urls.commit.replace('/vector/api/', editing_url);
-      layer.config.urls.editing =  layer.config.urls.editing.replace('/vector/api/', editing_url);
-      layer.config.urls.unlock =  layer.config.urls.unlock.replace('/vector/api/', editing_url);
       // getLayerForEditing return a promise with layer usefult for editing
       EditableLayersPromises.push(layer.getLayerForEditing({
         vectorurl: this._vectorUrl,
@@ -128,10 +130,10 @@ function EditingService() {
         const {status, value} = promise;
         if (status === "fulfilled") {
           const editableLayer = value;
+          editableLayer.config.urls.commit =  editableLayer.config.urls.commit.replace('/vector/api/', editing_url);
+          editableLayer.config.urls.editing =  editableLayer.config.urls.editing.replace('/vector/api/', editing_url);
+          editableLayer.config.urls.unlock =  editableLayer.config.urls.unlock.replace('/vector/api/', editing_url);
           const layerId = editableLayer.getId();
-          /**
-           * FAKE
-           */
           this._editableLayers[layerId] = editableLayer;
           this._editableLayers[Symbol.for('layersarray')].push(editableLayer);
           this._attachLayerWidgetsEvent(this._editableLayers[layerId]);
@@ -156,6 +158,7 @@ function EditingService() {
         service:this
       })
     });
+    this.registerResultEditingAction();
     this.emit('ready');
     // check if need start a child report
     this.checkChildReportIdParam();
@@ -209,6 +212,49 @@ proto.unsubscribe = function(event, fnc) {
 };
 
 // END API
+
+/**
+ * Register action on after show result
+ */
+
+proto.isEditingSingleLayer = function(){
+  return this.state.edit_single_layer;
+};
+
+proto.setEditingSingleLayer = function(bool=false){
+  this.state.edit_single_layer = bool;
+};
+
+proto.registerResultEditingAction = function(){
+  const queryResultsService = GUI.getComponent('queryresults').getService();
+  this.addActionKeys.push(queryResultsService.onafter('addActionsForLayers', actions => {
+    Object.keys(actions).forEach(layerId =>{
+      if (!this.state.open && layerId !== SIGNALER_IIM_CONFIG.vertex_layer_id && this.getLayerById(layerId))
+        actions[layerId].push({
+            id: 'editing',
+            class: GUI.getFontClass('pencil'),
+            hint: 'plugins.signaler_iim.toolbox.title',
+            cbk: (layer, feature, action, index) => {
+              this.setEditingSingleLayer(true);
+              this.getPlugin().showEditingPanel({
+                toolboxes: [this.getToolBoxById(layerId)]
+              });
+              this.editingFeaturesReport({
+                toolId:'editattributes',
+                filter: {
+                  fids: feature.attributes[G3W_FID]
+                }
+              });
+            },
+          });
+    })
+  }))
+};
+
+proto.unregisterResultEditingAction = function(){
+  const queryResultsService = GUI.getComponent('queryresults').getService();
+  this.addActionKeys.forEach(addActionKey => queryResultsService.un('addActionsForLayers', addActionKey));
+};
 
 /**
  *
@@ -918,6 +964,7 @@ proto.clear = function() {
   SessionsRegistry.clear();
   //turn off events
   this._mapService.off(MAPCONTROL_TOGGLED_EVENT_NAME, this.mapControlToggleEventHandler);
+  this.unregisterResultEditingAction();
 };
 
 proto.clearState = function() {
@@ -1462,13 +1509,13 @@ proto.getGeoLayerVertexRelation = function(){
   return this.getLayerById(geo_layer_id).getRelations().getRelationByFatherChildren(geo_layer_id, vertex_layer_id);
 };
 
-proto.getFeatureAndRelatedVertexReportByReportId = function(){
+proto.getFeatureAndRelatedVertexReportByReportId = function(filter){
   const {signaler_field} = SIGNALER_IIM_CONFIG;
   const {id:reportId, isNew}= this.getCurrentReportData();
   const featuresToolbox = this.getToolBoxById(SIGNALER_IIM_CONFIG.geo_layer_id);
   return new Promise((resolve, reject) => {
     const options = {
-      filter: {
+      filter: filter || {
         field: `${signaler_field}|eq|${reportId}`,
       }
     };
@@ -1477,7 +1524,6 @@ proto.getFeatureAndRelatedVertexReportByReportId = function(){
         const featureLength = features.length;
         if (featureLength) {
           if (SIGNALER_IIM_CONFIG.vertex_layer_id){
-
             const childField = this.getGeoLayerVertexRelation().getChildField();
             const vertexToolbox = this.getToolBoxById(SIGNALER_IIM_CONFIG.vertex_layer_id);
             const value = features.map(feature => feature.getId());
@@ -1524,19 +1570,18 @@ proto.editingReport = function({filter}={}){
       });
     }).fail(reject)
   })
-
 };
 
 /**
  * Editing Feature Report
  */
-proto.editingFeaturesReport = function({toolId}={}){
+proto.editingFeaturesReport = function({toolId, filter}={}){
   const reportToolbox = this.getToolBoxById(SIGNALER_IIM_CONFIG.signaler_layer_id);
-  reportToolbox.stop().then(async ()=>{
+  reportToolbox.isStarted() && reportToolbox.stop().then(async ()=>{
     if (SIGNALER_IIM_CONFIG.geo_layer_id){
       const featuresToolbox = this.getToolBoxById(SIGNALER_IIM_CONFIG.geo_layer_id);
       try {
-        const features = await this.getFeatureAndRelatedVertexReportByReportId();
+        const features = await this.getFeatureAndRelatedVertexReportByReportId(filter);
         this._mapService.zoomToFeatures(features);
         GUI.setModal(false);
         GUI.disableSideBar(false);
