@@ -285,14 +285,13 @@ proto.getUrlParameters = async function(){
 
 proto.showSignalerOnResultContent = async function(fid){
   const layer = CatalogLayersStoresRegistry.getLayerById(SIGNALER_IIM_CONFIG.signaler_layer_id);
-  const search_endpoint = layer.getSearchEndPoint();
   await DataRouterService.getData('search:features', {
     inputs:{
       layer: CatalogLayersStoresRegistry.getLayerById(SIGNALER_IIM_CONFIG.signaler_layer_id),
       filter:`id|eq|${fid}`,
       formatter: 1, // set formatter to 1
       feature_count: 1,
-      search_endpoint
+      search_endpoint: 'api'
     },
     outputs:  {
       title: layer.getName()
