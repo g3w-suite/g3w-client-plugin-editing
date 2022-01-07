@@ -31,7 +31,6 @@ const _Plugin = function() {
         loading: true
       });
       this.service.once('ready', () => {
-        this.showEditingPanel();
         if (!GUI.isready) GUI.on('ready', this.setupGui.bind(this));
         else this.setupGui();
         this.setHookLoading({

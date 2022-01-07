@@ -159,9 +159,10 @@ function EditingService() {
       })
     });
     this.registerResultEditingAction();
-    this.emit('ready');
+    this.getPlugin().showEditingPanel();
     // check if need start a child report
     this.checkChildReportIdParam();
+    this.emit('ready');
   }
 }
 
@@ -947,10 +948,7 @@ proto.stop = function() {
     });
     $.when.apply(this, commitpromises)
       .always(() => {
-        this.editingReport();
-        this._toolboxes.forEach(toolbox => {
-          toolbox.stop();
-        });
+        this._toolboxes.forEach(toolbox => toolbox.stop());
         this.clearState();
         this._mapService.refreshMap();
         resolve();
@@ -972,6 +970,7 @@ proto.clearState = function() {
   this.state.toolboxidactivetool =  null;
   this.state.message =  null;
   this.resetReportData();
+  this.initEditingState();
 };
 
 proto.getRelationsInEditing = function({layerId, relations, feature}={}) {
@@ -1550,6 +1549,14 @@ proto.getFeatureAndRelatedVertexReportByReportId = function(filter){
   });
 };
 
+proto.initEditingState = function(){
+  const reportToolbox = this.getToolBoxById(SIGNALER_IIM_CONFIG.signaler_layer_id);
+  const featuresToolbox = this.getToolBoxById(SIGNALER_IIM_CONFIG.geo_layer_id);
+  reportToolbox.setShow(true);
+  featuresToolbox.setShow(false);
+  reportToolbox.setSelected(true);
+};
+
 /**
  * Editing Report
  */
@@ -1577,7 +1584,8 @@ proto.editingReport = function({filter}={}){
  */
 proto.editingFeaturesReport = function({toolId, filter}={}){
   const reportToolbox = this.getToolBoxById(SIGNALER_IIM_CONFIG.signaler_layer_id);
-  reportToolbox.isStarted() && reportToolbox.stop().then(async ()=>{
+  const promise = reportToolbox.isStarted() ? reportToolbox.stop() : Promise.resolve();
+  promise.then(async ()=>{
     if (SIGNALER_IIM_CONFIG.geo_layer_id){
       const featuresToolbox = this.getToolBoxById(SIGNALER_IIM_CONFIG.geo_layer_id);
       try {
@@ -1595,10 +1603,8 @@ proto.editingFeaturesReport = function({toolId, filter}={}){
       } catch(err){
         console.log(err)
       }
-
     }
   })
-
 };
 
 EditingService.EDITING_FIELDS_TYPE = ['unique'];

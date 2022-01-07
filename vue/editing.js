@@ -19,12 +19,12 @@ const vueComponentOptions = {
     undo() {
       const session = this.state.toolboxselected.getSession();
       const undoItems = session.undo();
-      this.$options.service.undoRelations(undoItems)
+      this.$options.service.undoRelations(undoItems);
     },
     redo() {
       const session = this.state.toolboxselected.getSession();
       const redoItems = session.redo();
-      this.$options.service.redoRelations(redoItems)
+      this.$options.service.redoRelations(redoItems);
     },
     commit(toolboxId) {
       const toolbox = this.$options.service.getToolBoxById(toolboxId);
@@ -44,8 +44,7 @@ const vueComponentOptions = {
       if (this.$options.service.isEditingSingleLayer()) {
         this.$options.service.getPlugin().hideEditingPanel();
         this.$options.service.setEditingSingleLayer(false);
-      }
-      else if (toolbox.getId() === geo_layer_id) this.$options.service.editingReport();
+      } else if (toolbox.getId() === geo_layer_id) this.$options.service.editingReport();
     },
     saveToolBox(toolboxId) {
       const toolbox = this._getToolBoxById(toolboxId);
