@@ -1,6 +1,7 @@
 import API from '../api'
 import SIGNALER_IIM_CONFIG from '../constant';
 const {G3W_FID} = g3wsdk.constant;
+const DataRouterService = g3wsdk.core.data.DataRouterService;
 const ApplicationService = g3wsdk.core.ApplicationService;
 const ApplicationState = g3wsdk.core.ApplicationState;
 const {base, inherit, createSingleFieldParameter} = g3wsdk.core.utils;
@@ -159,9 +160,8 @@ function EditingService() {
       })
     });
     this.registerResultEditingAction();
-    this.getPlugin().showEditingPanel();
     // check if need start a child report
-    this.checkChildReportIdParam();
+    this.getUrlParameters();
     this.emit('ready');
   }
 }
@@ -236,16 +236,28 @@ proto.registerResultEditingAction = function(){
             class: GUI.getFontClass('pencil'),
             hint: 'plugins.signaler_iim.toolbox.title',
             cbk: (layer, feature, action, index) => {
-              this.setEditingSingleLayer(true);
-              this.getPlugin().showEditingPanel({
-                toolboxes: [this.getToolBoxById(layerId)]
-              });
-              this.editingFeaturesReport({
-                toolId:'editattributes',
-                filter: {
-                  fids: feature.attributes[G3W_FID]
-                }
-              });
+              if (layerId === SIGNALER_IIM_CONFIG.geo_layer_id) {
+                this.setEditingSingleLayer(true);
+                this.getPlugin().showEditingPanel({
+                  toolboxes: [this.getToolBoxById(layerId)]
+                });
+                this.editingFeaturesReport({
+                  toolId:'editattributes',
+                  filter: {
+                    fids: feature.attributes[G3W_FID]
+                  }
+                });
+              } else if (layerId === SIGNALER_IIM_CONFIG.signaler_layer_id){
+                this.getPlugin().showEditingPanel({
+                  toolboxes: [this.getToolBoxById(layerId)]
+                });
+                this.editingReport({
+                  toolId:'edittable',
+                  filter: {
+                    fids: feature.attributes[G3W_FID]
+                  }
+                });
+              }
             },
           });
     })
@@ -259,12 +271,42 @@ proto.unregisterResultEditingAction = function(){
 
 /**
  *
- * Check if called from parent report
+ * get init url parameter
+ * @returns {Promise<void>}
  */
-proto.checkChildReportIdParam = async function() {
+proto.getUrlParameters = async function(){
   const {signaler_field} = SIGNALER_IIM_CONFIG;
   const searchParams = new URLSearchParams(location.search);
-  const value = searchParams.get(signaler_field);
+  const child_signaler_value = searchParams.get(signaler_field);
+  const show_signaler_on_result = searchParams.get('sid') || false;
+  if(!show_signaler_on_result) this.checkChildReportIdParam(child_signaler_value);
+  else this.showSignalerOnResultContent(show_signaler_on_result);
+};
+
+proto.showSignalerOnResultContent = async function(fid){
+  const layer = CatalogLayersStoresRegistry.getLayerById(SIGNALER_IIM_CONFIG.signaler_layer_id);
+  const search_endpoint = layer.getSearchEndPoint();
+  await DataRouterService.getData('search:features', {
+    inputs:{
+      layer: CatalogLayersStoresRegistry.getLayerById(SIGNALER_IIM_CONFIG.signaler_layer_id),
+      filter:`id|eq|${fid}`,
+      formatter: 1, // set formatter to 1
+      feature_count: 1,
+      search_endpoint
+    },
+    outputs:  {
+      title: layer.getName()
+    }
+  })
+};
+
+/**
+ *
+ * Check if called from parent report
+ */
+proto.checkChildReportIdParam = async function(value) {
+  this.getPlugin().showEditingPanel();
+  const {signaler_field} = SIGNALER_IIM_CONFIG;
   const {toolbox, features} = await this.editingReport(value ? {
     filter: {
       field: `${signaler_field}|eq|${value}`,
@@ -1560,7 +1602,7 @@ proto.initEditingState = function(){
 /**
  * Editing Report
  */
-proto.editingReport = function({filter}={}){
+proto.editingReport = function({filter, toolId}={}){
   return new Promise((resolve, reject) => {
     const reportToolbox = this.getToolBoxById(SIGNALER_IIM_CONFIG.signaler_layer_id);
     reportToolbox.start({filter}).then(({features})=>{
@@ -1571,6 +1613,10 @@ proto.editingReport = function({filter}={}){
       reportToolbox.setShow(true);
       featuresToolbox.setShow(false);
       reportToolbox.setSelected(true);
+      if (toolId){
+        const tool = reportToolbox.getToolById(toolId);
+        reportToolbox.setActiveTool(tool);
+      }
       resolve({
         features,
         toolbox: reportToolbox
