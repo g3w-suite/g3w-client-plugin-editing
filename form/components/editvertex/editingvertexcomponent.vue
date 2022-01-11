@@ -21,16 +21,16 @@
                             <h5 style="font-weight: bold; margin-top: 0; margin-bottom: 3px;">DMS</h5>
                             <div style="display: flex; justify-content: space-between">
                                 <div style="display: grid; grid-template-columns: 1fr 5px 1fr 5px 1fr 5px 1fr; margin-bottom: 3px; margin-right: 5px; row-gap: 3px; column-gap: 3px;">
-                                    <input class="form-control" type="number" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[0]"/>°
-                                    <input class="form-control" type="number" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[1]"/>'
-                                    <input class="form-control" type="number" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[2]"/>"
-                                    <input class="form-control" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[3]"/>
+                                    <input class="form-control" style="padding: 1px;" type="number" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[0]"/>°
+                                    <input class="form-control" style="padding: 1px;" type="number" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[1]"/>'
+                                    <input class="form-control" style="padding: 1px;" type="number" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[2]"/>"
+                                    <input class="form-control" style="padding: 1px;" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[3]"/>
                                 </div>
                                 <div style="display: grid; grid-template-columns: 1fr 5px 1fr 5px 1fr 5px 1fr; row-gap: 3px; column-gap: 3px;">
-                                    <input class="form-control" type="number" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[4]"/>°
-                                    <input class="form-control" type="number" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[5]"/>'
-                                    <input class="form-control" type="number" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[6]"/>"
-                                    <input class="form-control" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[7]"/>
+                                    <input class="form-control" style="padding: 1px;" type="number" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[4]"/>°
+                                    <input class="form-control" style="padding: 1px;" type="number" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[5]"/>'
+                                    <input class="form-control" style="padding: 1px;" type="number" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[6]"/>"
+                                    <input class="form-control" style="padding: 1px;" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[7]"/>
                                 </div>
                             </div>
                         </div>
@@ -99,8 +99,8 @@
             },
             toDHMS(vertex){
                 vertex.coordinatesDHMS = [
-                    ...ConvertDEGToDMS({deg: vertex['coordinatesEPSG:4326'][0], output: 'Array'}),
-                    ...ConvertDEGToDMS({deg:vertex['coordinatesEPSG:4326'][1], output: 'Array'})
+                    ...ConvertDEGToDMS({deg: vertex['coordinatesEPSG:4326'][0], lon:true, output: 'Array'}),
+                    ...ConvertDEGToDMS({deg:vertex['coordinatesEPSG:4326'][1], lat:true, output: 'Array'})
                 ];
             },
             to3857(vertex){

@@ -36,15 +36,31 @@ const vueComponentOptions = {
     startToolBox() {
       ApplicationState.online && this.$options.service.editingReport();
     },
-    stopToolBox(toolboxId) {
+    async stopToolBox(toolboxId) {
       const {geo_layer_id} = SIGNALER_IIM_CONFIG;
       const toolbox = this._getToolBoxById(toolboxId);
-      if (toolbox.state.editing.history.commit) this.$options.service.commit().always(() => toolbox.stop());
-      else toolbox.stop();
+      const promise = new Promise((resolve, reject) =>{
+        if (toolbox.state.editing.history.commit) this.$options.service.commit().always(() => {
+          toolbox.stop();
+          resolve();
+        });
+        else {
+          toolbox.stop();
+          resolve();
+        }
+      });
+      await promise;
       if (this.$options.service.isEditingSingleLayer()) {
         this.$options.service.getPlugin().hideEditingPanel();
         this.$options.service.setEditingSingleLayer(false);
-      } else if (toolbox.getId() === geo_layer_id) this.$options.service.editingReport();
+      } else if (toolbox.getId() === geo_layer_id) {
+        const {toolbox} = await this.$options.service.editingReport();
+        const tool = toolbox.getToolById('edittable');
+        toolbox.setActiveTool(tool);
+        await this.$nextTick();
+        // click on id of edit
+        $(`#signaler_edit_${this.$options.service.getCurrentReportData().id}`).click();
+      }
     },
     saveToolBox(toolboxId) {
       const toolbox = this._getToolBoxById(toolboxId);
@@ -133,6 +149,9 @@ const vueComponentOptions = {
     GUI.on('closeform', this._enableEditingButtons);
     GUI.on('closecontent', this._enableEditingButtons);
     GUI.getComponent('map').getService().seSelectionLayerVisible(false);
+  },
+  async mounted(){
+    await this.$nextTick();
   },
   beforeDestroy() {
     this.$options.service.state.open = false;

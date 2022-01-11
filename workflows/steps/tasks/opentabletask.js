@@ -1,3 +1,4 @@
+import SIGNALER_IIM_CONFIG from '../../../constant';
 const {base, inherit} = g3wsdk.core.utils;
 const GUI = g3wsdk.gui.GUI;
 const TableComponent = require('../../../table/vue/table');
@@ -15,8 +16,10 @@ const proto = OpenTableTask.prototype;
 
 proto.run = function(inputs, context) {
   const d = $.Deferred();
+  const {signaler_layer_id} = SIGNALER_IIM_CONFIG;
   const originalLayer = inputs.layer;
   const layerName = originalLayer.getName();
+  const layerId = originalLayer.getId();
   const headers = originalLayer.getEditingFields();
   this._isContentChild = WorkflowsStack.getLength() > 1;
   const foreignKey = this._isContentChild ? context.excludeFields[0] :  null;
@@ -45,11 +48,12 @@ proto.run = function(inputs, context) {
   });
   GUI.showContent({
     content,
-    push: this._isContentChild,
+    split: 'v',
     showgoback: false,
     closable: false
   });
   this.disableSidebar(true);
+  layerId === signaler_layer_id && this.getEditingService().subscribe('savedfeature', d.resolve);
   return d.promise();
 };
 

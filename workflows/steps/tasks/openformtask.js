@@ -64,11 +64,12 @@ proto._cancelFnc = function(promise, inputs) {
 };
 
 proto._saveFeatures = function({fields, promise, session, inputs}){
-  const {signaler_layer_id} = SIGNALER_IIM_CONFIG;
+  const {signaler_layer_id, geo_layer_id} = SIGNALER_IIM_CONFIG;
   fields = this._multi ? fields.filter(field => field.value !== null) : fields;
   if (fields.length) {
     const layerId = this._originalLayer.getId();
     if (layerId === signaler_layer_id) {
+      const isNew = inputs.features[0].isNew();
       this.getEditingService().setSaveConfig({
         mode: 'autosave',
         messages: {
@@ -76,23 +77,26 @@ proto._saveFeatures = function({fields, promise, session, inputs}){
         },
         cb: {
           done: () => {
+            this.disableSidebar(true);
             // set current report
             this.getEditingService().setCurrentReportData({
-              id: this._features[0].getId(),
-              isNew: false
+              feature: this._features[0]
             });
             this.getEditingService().resetDefault();
-            let content  = ComponentsFactory.build({
-              vueComponentObject: AddFeatureMethodComponent
-            });
-            GUI.showContent({
-              content,
-              closable: false
-            })
+            // only if is new show add feature
+            if (isNew && geo_layer_id){
+              const content  = ComponentsFactory.build({
+                vueComponentObject: AddFeatureMethodComponent
+              });
+              GUI.showContent({
+                content,
+                closable: false
+              })
+            }
           }
         }
       });
-    }
+    } else this.getEditingService().resetDefaultSaveConfig();
     const newFeatures = [];
     this._features.forEach(feature =>{
       this._originalLayer.setFieldsWithValues(feature, fields);
@@ -113,7 +117,6 @@ proto._saveFeatures = function({fields, promise, session, inputs}){
       });
       GUI.setModal(false);
       promise.resolve(inputs);
-
       this.fireEvent('savedfeature', newFeatures); // called after saved
     })
   } else {
@@ -146,8 +149,7 @@ proto.startForm = async function(options = {}) {
   const isNew = feature.isNew();
   if (layerId === signaler_layer_id) {
     this.getEditingService().setCurrentReportData({
-      id: feature.get('id'),
-      isNew
+      feature
     });
     await this.getEditingService().filterReportFieldsFormValues({
       fields: this._fields
@@ -165,7 +167,6 @@ proto.startForm = async function(options = {}) {
     fields: this._fields,
     formStructure: this._editorFormStructure,
     modal: true,
-    perc: this._editorFormStructure ? 100 : null,
     push: this._isContentChild,
     showgoback: !this._isContentChild,
     buttons:[{

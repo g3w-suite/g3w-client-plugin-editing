@@ -17,6 +17,10 @@ const _Plugin = function() {
   };
   this.name = 'signaler_iim';
   this.panel; // editing panel reference
+  Vue.prototype.g3wtemplate.addFontClass({
+    name: 'signaler',
+    className: "far fa-clipboard"
+  });
   this.init = function() {
     // add i18n of the plugin
     addI18nPlugin({

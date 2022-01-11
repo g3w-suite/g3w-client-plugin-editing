@@ -26,6 +26,7 @@
 
 <script>
     import SIGNALER_IIM_CONFIG from '../../../constant';
+    const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
     const GUI = g3wsdk.gui.GUI;
     const {
         isSingleGeometry,
@@ -112,12 +113,10 @@
                                 });
                             }
                         }
-
                     }
                 } catch(err) {
                     console.log(err)
                 }
-
             }
         }
     };
