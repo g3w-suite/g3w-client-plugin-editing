@@ -1,4 +1,4 @@
-import SIGNALER_IIM_CONFIG from '../../../constant';
+import SIGNALER_IIM_CONFIG from '../../../global_plugin_data';
 const {base, inherit} = g3wsdk.core.utils;
 const {isPointGeometryType} = g3wsdk.core.geometry.Geometry;
 const EditingTask = require('./editingtask');

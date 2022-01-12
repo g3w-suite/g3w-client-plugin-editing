@@ -6,7 +6,7 @@
 </template>
 
 <script>
-    import SIGNALER_IIM_CONFIG from '../../../constant';
+    import SIGNALER_IIM_CONFIG from '../../../global_plugin_data';
     const {GUI, ComponentsFactory} = g3wsdk.gui;
     import AddFeaturesMethodComponent from './addfeaturemethod.vue';
     const {signaler_field} = SIGNALER_IIM_CONFIG;

@@ -25,7 +25,7 @@
 </template>
 
 <script>
-    import SIGNALER_IIM_CONFIG from '../../../constant';
+    import SIGNALER_IIM_CONFIG from '../../../global_plugin_data';
     const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
     const GUI = g3wsdk.gui.GUI;
     const {

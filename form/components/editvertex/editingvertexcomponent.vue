@@ -60,7 +60,7 @@
 </template>
 
 <script>
-    import SIGNALER_IIM_CONFIG from '../../../constant';
+    import SIGNALER_IIM_CONFIG from '../../../global_plugin_data';
     const {findSelfIntersects} = g3wsdk.core.geoutils;
     const {areCoordinatesEqual, getCoordinatesFromGeometry, ConvertDEGToDMS, ConvertDMSToDEG} = g3wsdk.core.geoutils;
     const {isPolygonGeometryType} = g3wsdk.core.geometry.Geometry;

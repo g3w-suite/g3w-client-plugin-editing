@@ -1,4 +1,4 @@
-import SIGNALER_IIM_CONFIG  from '../constant';
+import SIGNALER_IIM_CONFIG  from '../global_plugin_data';
 const {base, inherit, merge} = g3wsdk.core.utils;
 const t = g3wsdk.core.i18n.tPlugin;
 const GUI = g3wsdk.gui.GUI;
@@ -37,7 +37,7 @@ const vueComponentOptions = {
       ApplicationState.online && this.$options.service.editingReport();
     },
     async stopToolBox(toolboxId) {
-      const {geo_layer_id} = SIGNALER_IIM_CONFIG;
+      const {geo_layer_id, result} = SIGNALER_IIM_CONFIG;
       const toolbox = this._getToolBoxById(toolboxId);
       const promise = new Promise((resolve, reject) =>{
         if (toolbox.state.editing.history.commit) this.$options.service.commit().always(() => {
@@ -54,12 +54,19 @@ const vueComponentOptions = {
         this.$options.service.getPlugin().hideEditingPanel();
         this.$options.service.setEditingSingleLayer(false);
       } else if (toolbox.getId() === geo_layer_id) {
-        const {toolbox} = await this.$options.service.editingReport();
-        const tool = toolbox.getToolById('edittable');
-        toolbox.setActiveTool(tool);
-        await this.$nextTick();
-        // click on id of edit
-        $(`#signaler_edit_${this.$options.service.getCurrentReportData().id}`).click();
+        const signaler_id = this.$options.service.getCurrentReportData().id;
+        if (result){
+          this.$options.service.editingReport({
+            filter: {
+              fids: signaler_id
+            }
+          });
+        } else {
+          await this.$options.service.editingReport({
+              toolId: 'edittable'
+          });
+          $(`#signaler_edit_${signaler_id}`).click();
+        }
       }
     },
     saveToolBox(toolboxId) {
@@ -151,7 +158,11 @@ const vueComponentOptions = {
     GUI.getComponent('map').getService().seSelectionLayerVisible(false);
   },
   async mounted(){
+    const {result, create_new_signaler} = SIGNALER_IIM_CONFIG;
     await this.$nextTick();
+    if (!result && !create_new_signaler) this.$options.service.editingReport({
+      toolId: 'edittable'
+    })
   },
   beforeDestroy() {
     this.$options.service.state.open = false;
@@ -161,6 +172,8 @@ const vueComponentOptions = {
     this.$options.service.unregisterOnLineOffLineEvent();
     GUI.getComponent('map').getService().seSelectionLayerVisible(true);
     this.$options.service.fireEvent('closeeditingpanel');
+    SIGNALER_IIM_CONFIG.result = false;
+    SIGNALER_IIM_CONFIG.create_new_signaler = false;
   }
 };
 

@@ -1,4 +1,4 @@
-import SIGNALER_IIM_CONFIG from '../../../constant';
+import SIGNALER_IIM_CONFIG from '../../../global_plugin_data';
 const {base, inherit} = g3wsdk.core.utils;
 const GUI = g3wsdk.gui.GUI;
 const TableComponent = require('../../../table/vue/table');

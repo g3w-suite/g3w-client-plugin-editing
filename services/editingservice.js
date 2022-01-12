@@ -1,5 +1,5 @@
 import API from '../api'
-import SIGNALER_IIM_CONFIG from '../constant';
+import SIGNALER_IIM_CONFIG from '../global_plugin_data';
 const {G3W_FID} = g3wsdk.constant;
 const DataRouterService = g3wsdk.core.data.DataRouterService;
 const ApplicationService = g3wsdk.core.ApplicationService;
@@ -248,6 +248,7 @@ proto.registerResultEditingAction = function(){
             class: GUI.getFontClass('pencil'),
             hint: 'plugins.signaler_iim.toolbox.title',
             cbk: (layer, feature, action, index) => {
+              SIGNALER_IIM_CONFIG.result = true;
               if (layerId === SIGNALER_IIM_CONFIG.geo_layer_id) {
                 this.setEditingSingleLayer(true);
                 this.getPlugin().showEditingPanel({
@@ -260,6 +261,7 @@ proto.registerResultEditingAction = function(){
                   }
                 });
               } else if (layerId === SIGNALER_IIM_CONFIG.signaler_layer_id){
+                this.currentReport.id = feature.attributes[G3W_FID];
                 this.getPlugin().showEditingPanel({
                   toolboxes: [this.getToolBoxById(layerId)]
                 });
@@ -297,7 +299,7 @@ proto.registerResultEditingAction = function(){
           cbk: async (layer, feature, action, index) => {
             const signaler_id = feature.attributes[G3W_FID];
             return new Promise((resolve, reject) =>{
-              GUI.dialog.confirm(`<h4>'Vuoi cancellare la segnalazione?'</h4>
+              GUI.dialog.confirm(`<h4>Vuoi cancellare la segnalazione?</h4>
                         <div style="font-size:1.2em;">Se canceli la segnalazione verranno cancellate tutte le eventuali features associate</div>`, result => {
                 if (result) {
                   const reportToolBox = this.getToolBoxById(SIGNALER_IIM_CONFIG.signaler_layer_id);
@@ -365,12 +367,24 @@ proto.getUrlParameters = async function(){
   const {signaler_field} = SIGNALER_IIM_CONFIG;
   const searchParams = new URLSearchParams(location.search);
   const child_signaler_value = searchParams.get(signaler_field);
-  const show_signaler_on_result = searchParams.get('sid') !== null ? searchParams.get('sid') :  false;
-  SIGNALER_IIM_CONFIG.sid = show_signaler_on_result;
-  if (show_signaler_on_result) this.showSignalerOnResultContent({
-    fid: show_signaler_on_result,
-    getGeoFeatures: true
-  });
+  const show_signaler_on_result = searchParams.get('sid') || false;
+  if (show_signaler_on_result) {
+    if (show_signaler_on_result === 'new') {
+      SIGNALER_IIM_CONFIG.create_new_signaler = true;
+      this.getPlugin().showEditingPanel({
+        toolboxes: [this.getToolBoxById(SIGNALER_IIM_CONFIG.signaler_layer_id)]
+      });
+      this.editingReport({
+        filter: {
+          nofeatures: true
+        },
+        toolId: 'addfeature'
+      })
+    } else this.showSignalerOnResultContent({
+      fid: show_signaler_on_result,
+      getGeoFeatures: true
+    });
+  }
   else if (child_signaler_value) this.checkChildReportIdParam(child_signaler_value);
 };
 
@@ -839,7 +853,7 @@ proto.filterReportFieldsFormValues = async function({fields=[]}={}){
         }).fail(()=>{
           loading.state = 'error';
           reject();
-        })
+        });
         promises.push(promise);
       });
     }
@@ -1565,6 +1579,7 @@ proto.getCurrentFeatureReportVertex = function(){
 proto.resetReportData = function(){
   this.currentReport = {
     id: null,
+    result: false,
     ab_signal_fields: Object.keys(this.currentReport.ab_signal_fields).reduce((accumulator, field) => {
       accumulator[field] = null;
       return accumulator
@@ -1699,7 +1714,8 @@ proto.getFeatureAndRelatedVertexReportByReportId = function(filter){
           }
         } else GUI.showUserMessage({
           type: 'info',
-          message: 'Non è stata trovata nessuna feature geometrica associata alla segnalazione'
+          message: 'Non è stata trovata nessuna feature geometrica associata alla segnalazione',
+          autoclose: true
         });
         resolve(features);
       })
@@ -1729,11 +1745,13 @@ proto.editingReport = function({filter, toolId}={}){
       reportToolbox.setShow(true);
       featuresToolbox.setShow(false);
       reportToolbox.setSelected(true);
-      if (toolId){
+      if (toolId) {
         const tool = reportToolbox.getToolById(toolId);
         reportToolbox.setActiveTool(tool);
       }
-      if (SIGNALER_IIM_CONFIG.sid !== false) {
+      const fid = this.currentReport.id;
+      const {result, create_new_signaler} = SIGNALER_IIM_CONFIG;
+      if (result || create_new_signaler){
         const EditTableFeatureWorkflow = require('../workflows/edittablefeatureworkflow');
         this._editSingleReportWorkflow = new EditTableFeatureWorkflow();
         const options = {
@@ -1765,8 +1783,8 @@ proto.editingReport = function({filter, toolId}={}){
         });
         await promise;
         this.showSignalerOnResultContent({
-          fid: SIGNALER_IIM_CONFIG.sid
-        })
+          fid
+        });
       }
       resolve({
         features,

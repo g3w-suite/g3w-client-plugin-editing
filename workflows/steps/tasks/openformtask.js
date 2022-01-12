@@ -1,4 +1,4 @@
-import SIGNALER_IIM_CONFIG from '../../../constant';
+import SIGNALER_IIM_CONFIG from '../../../global_plugin_data';
 import AddFeatureMethodComponent from '../../../form/components/editfeatures/addfeaturemethod.vue';
 const {base, inherit} = g3wsdk.core.utils;
 const {GUI, ComponentsFactory} = g3wsdk.gui;

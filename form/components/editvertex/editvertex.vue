@@ -1,6 +1,6 @@
 <template>
     <div>
-        <div style="background-color: #FFFFFF; margin-top: 5px; padding: 5px; font-weight: bold" class="skin-color">{{signal_info}}</div>
+<!--        <div style="background-color: #FFFFFF; margin-top: 5px; padding: 5px; font-weight: bold" class="skin-color">{{signal_info}}</div>-->
         <div class="vertex" style="background-color: #FFFFFF; padding: 5px;">
             <button class="btn skin-button" style="width:100%" @click="editVertex">Edita vertici</button>
         </div>
