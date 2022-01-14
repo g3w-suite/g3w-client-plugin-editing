@@ -49,6 +49,7 @@ proto.run = function(inputs, context) {
   GUI.showContent({
     content,
     split: 'v',
+    perc: 50,
     showgoback: false,
     closable: false
   });

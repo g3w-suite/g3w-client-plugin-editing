@@ -1,4 +1,4 @@
-<div id="editing_table" class="g3w-editing-table" style="display: flex; flex-direction: column; justify-content: space-between">
+<div id="editing_table" class="g3w-editing-table" style="display: flex; flex-direction: column;">
   <div class="editing_table_header">
     <h3 style="margin: 0" class="editing_table_title">{{ state.title }}</h3>
     <div class="editing_table_relation_messagge"  v-if="state.isrelation" style="font-weight: bold" v-t-plugin="'signaler_iim.relation.table.info'">
@@ -27,7 +27,7 @@
       </tr>
       </tbody>
     </table>
-  <div id="buttons"  class="table_editing_footer_buttons" style="width: 100%; display:flex; justify-content: center;">
+  <div id="buttons"  class="table_editing_footer_buttons" style="width: 100%; display:flex; justify-content: center; margin-top:auto;">
     <button v-t-plugin="'signaler_iim.form.buttons.save'" class="btn btn-success" style="margin-right: 10px" @click="addReport"></button>
     <button v-t-plugin="'signaler_iim.form.buttons.cancel'" class="btn btn-danger" @click="cancel"></button>
   </div>

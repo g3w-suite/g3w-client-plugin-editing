@@ -45,22 +45,24 @@ proto.run = function(inputs, context) {
       y: coordinate[1],
       coordinates: startTranslationCoordinates
     });
-    const feature = features.getArray()[0];
-    const newFeature = feature.clone();
-    /**
-     * Check if no Point geometry
-     */
-    if (vertex_layer_id) {
-      session.pushUpdate(layerId, newFeature, originalFeature);
-      const vertexLayerToolBox = this.getEditingService().getToolBoxById(vertex_layer_id);
-      const featureVertex = vertexLayerToolBox.getEditingLayerSource().getFeatures().filter(vertexFeature => vertexFeature.get('feature_id') == feature.getId());
-      featureVertex.forEach((feature, index) =>{
-        const originalVertexFeature = feature.clone();
-        feature.getGeometry().translate(deltaXY.x, deltaXY.y);
-        session.pushUpdate(vertex_layer_id, feature, originalVertexFeature)
-      });
-    }
-    startCoordinate = null;
+
+    features.getArray().forEach(feature => {
+      const newFeature = feature.clone();
+      /**
+       * Check if no Point geometry
+       */
+      if (vertex_layer_id) {
+        session.pushUpdate(layerId, newFeature, originalFeature);
+        const vertexLayerToolBox = this.getEditingService().getToolBoxById(vertex_layer_id);
+        const featureVertex = vertexLayerToolBox.getEditingLayerSource().getFeatures().filter(vertexFeature => vertexFeature.get('feature_id') == feature.getId());
+        featureVertex.forEach((feature, index) =>{
+          const originalVertexFeature = feature.clone();
+          feature.getGeometry().translate(deltaXY.x, deltaXY.y);
+          session.pushUpdate(vertex_layer_id, feature, originalVertexFeature)
+        });
+      }
+      startCoordinate = null;
+    })
     d.resolve(inputs);
   });
 

@@ -42,9 +42,16 @@
           return {}
         },
         methods: {
-            cancel(){
+            async cancel(){
                 const EditingService = require('../../../services/editingservice');
-                EditingService.stopAllWorkflowsStack();
+                const {id:signaler_id} = EditingService.getCurrentReportData();
+                const reportToolbox = EditingService.getToolBoxById(SIGNALER_IIM_CONFIG.signaler_layer_id);
+                const tool = reportToolbox.getToolById('edittable');
+                reportToolbox.setActiveTool(tool);
+                await this.$nextTick();
+                setTimeout(()=>{
+                    $(`#signaler_edit_${signaler_id}`).click();
+                })
             },
             async drawFeatures(){
                 this.cancel();

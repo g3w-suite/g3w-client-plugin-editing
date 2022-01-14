@@ -242,38 +242,42 @@ proto.registerResultEditingAction = function(){
     Object.keys(actions).forEach(layerId =>{
       if ([SIGNALER_IIM_CONFIG.geo_layer_id, SIGNALER_IIM_CONFIG.signaler_layer_id].indexOf(layerId) !== -1)
         actions[layerId] = actions[layerId].filter(action => ['gotogeometry', 'show-query-relations', 'printatlas'].indexOf(action.id) !== -1);
-      if (!this.state.open && layerId !== SIGNALER_IIM_CONFIG.vertex_layer_id && this.getLayerById(layerId))
+      if (!this.state.open && layerId !== SIGNALER_IIM_CONFIG.vertex_layer_id && this.getLayerById(layerId)) {
         actions[layerId].push({
-            id: 'editing',
-            class: GUI.getFontClass('pencil'),
-            hint: 'plugins.signaler_iim.toolbox.title',
-            cbk: (layer, feature, action, index) => {
-              SIGNALER_IIM_CONFIG.result = true;
-              if (layerId === SIGNALER_IIM_CONFIG.geo_layer_id) {
-                this.setEditingSingleLayer(true);
-                this.getPlugin().showEditingPanel({
-                  toolboxes: [this.getToolBoxById(layerId)]
-                });
-                this.editingFeaturesReport({
-                  toolId:'editattributes',
-                  filter: {
-                    fids: feature.attributes[G3W_FID]
-                  }
-                });
-              } else if (layerId === SIGNALER_IIM_CONFIG.signaler_layer_id){
-                this.currentReport.id = feature.attributes[G3W_FID];
-                this.getPlugin().showEditingPanel({
-                  toolboxes: [this.getToolBoxById(layerId)]
-                });
-                this.editingReport({
-                  toolId: 'edittable',
-                  filter: {
-                    fids: feature.attributes[G3W_FID]
-                  }
-                });
-              }
-            },
-          });
+          id: 'editing',
+          class: GUI.getFontClass('pencil'),
+          hint: 'plugins.signaler_iim.toolbox.title',
+          condition:({feature}={}) => {
+            return feature.attributes[this.config.signaler_user_field] == ApplicationState.user.id;
+          },
+          cbk: (layer, feature) => {
+            SIGNALER_IIM_CONFIG.result = true;
+            if (layerId === SIGNALER_IIM_CONFIG.geo_layer_id) {
+              this.setEditingSingleLayer(true);
+              this.getPlugin().showEditingPanel({
+                toolboxes: [this.getToolBoxById(layerId)]
+              });
+              this.editingFeaturesReport({
+                toolId:'editattributes',
+                filter: {
+                  fids: feature.attributes[G3W_FID]
+                }
+              });
+            } else if (layerId === SIGNALER_IIM_CONFIG.signaler_layer_id){
+              this.currentReport.id = feature.attributes[G3W_FID];
+              this.getPlugin().showEditingPanel({
+                toolboxes: [this.getToolBoxById(layerId)]
+              });
+              this.editingReport({
+                toolId: 'edittable',
+                filter: {
+                  fids: feature.attributes[G3W_FID]
+                }
+              });
+            }
+          },
+        });
+      }
       if (layerId === SIGNALER_IIM_CONFIG.geo_layer_id && this.getLayerById(layerId))
         actions[layerId].push({
           id: 'show_signaler',
@@ -299,8 +303,10 @@ proto.registerResultEditingAction = function(){
           cbk: async (layer, feature, action, index) => {
             const signaler_id = feature.attributes[G3W_FID];
             return new Promise((resolve, reject) =>{
-              GUI.dialog.confirm(`<h4>Vuoi cancellare la segnalazione?</h4>
-                        <div style="font-size:1.2em;">Se canceli la segnalazione verranno cancellate tutte le eventuali features associate</div>`, result => {
+              GUI.dialog.confirm(`
+                        <h4>Vuoi cancellare la segnalazione?</h4>
+                        <div style="font-size:1.2em;">Se cancelli la segnalazione verranno cancellate tutte le eventuali features associate</div>`,
+                  result => {
                 if (result) {
                   const reportToolBox = this.getToolBoxById(SIGNALER_IIM_CONFIG.signaler_layer_id);
                   const session = reportToolBox.getSession();
@@ -332,20 +338,30 @@ proto.registerResultEditingAction = function(){
           class: GUI.getFontClass('marker'),
           hint: 'Zoom to geo features',
           cbk: async (layer, feature, action, index) => {
+            GUI.setLoadingContent(true);
             const signaler_id = feature.attributes[G3W_FID];
-            const {data} = await DataRouterService.getData('search:features', {
-              inputs: {
-                layer: CatalogLayersStoresRegistry.getLayerById(SIGNALER_IIM_CONFIG.geo_layer_id),
-                filter:`${SIGNALER_IIM_CONFIG.signaler_field}|eq|${signaler_id}`,
-                formatter: 1, // set formatter to 1
-                search_endpoint: 'api'
-              },
-              outputs: null
-            });
-            const features = data && data[0] && data[0].features || [];
-            features.length && this._mapService.zoomToFeatures(features, {
-              highlight: true
-            })
+            try {
+              const {data} = await DataRouterService.getData('search:features', {
+                inputs: {
+                  layer: CatalogLayersStoresRegistry.getLayerById(SIGNALER_IIM_CONFIG.geo_layer_id),
+                  filter:`${SIGNALER_IIM_CONFIG.signaler_field}|eq|${signaler_id}`,
+                  formatter: 1, // set formatter to 1
+                  search_endpoint: 'api'
+                },
+                outputs: null
+              });
+              const features = data && data[0] && data[0].features || [];
+              features.length && this._mapService.zoomToFeatures(features, {
+                highlight: true
+              })
+            } catch(err){
+              GUI.showUserMessage({
+                type: 'alert',
+                message: err,
+                textMessage: true
+              })
+            }
+            GUI.setLoadingContent(false);
           }
         })
       }
@@ -370,7 +386,7 @@ proto.getUrlParameters = async function(){
   const show_signaler_on_result = searchParams.get('sid') || false;
   if (show_signaler_on_result) {
     if (show_signaler_on_result === 'new') {
-      SIGNALER_IIM_CONFIG.create_new_signaler = true;
+      SIGNALER_IIM_CONFIG.create_new_signaler = false;
       this.getPlugin().showEditingPanel({
         toolboxes: [this.getToolBoxById(SIGNALER_IIM_CONFIG.signaler_layer_id)]
       });
@@ -389,41 +405,45 @@ proto.getUrlParameters = async function(){
 };
 
 proto.showSignalerOnResultContent = async function({fid, getGeoFeatures=false}={}){
-  let features = [];
-  if (getGeoFeatures) {
-    try {
-      const {data} = await DataRouterService.getData('search:features', {
-        inputs:{
-          layer: CatalogLayersStoresRegistry.getLayerById(SIGNALER_IIM_CONFIG.geo_layer_id),
-          filter:`${SIGNALER_IIM_CONFIG.signaler_field}|eq|${fid}`,
-          formatter: 1, // set formatter to 1
-          search_endpoint: 'api'
-        },
-        outputs:  {
-          show(){
-            return false
+  const layer = CatalogLayersStoresRegistry.getLayerById(SIGNALER_IIM_CONFIG.signaler_layer_id);
+  try {
+    const {data=[]} = await DataRouterService.getData('search:features', {
+      inputs:{
+        layer,
+        filter:`id|eq|${fid}`,
+        formatter: 1, // set formatter to 1
+        feature_count: 1,
+        search_endpoint: 'api'
+      },
+      outputs:  {
+        title: layer.getName(),
+        show: {
+          loading: false,
+          condition({data=[]}={}){
+            return data.length && data[0].features.length;
           }
         }
-      });
-      features = data && data[0] && data[0].features || [];
-    } catch(err){}
-  }
-  const layer = CatalogLayersStoresRegistry.getLayerById(SIGNALER_IIM_CONFIG.signaler_layer_id);
-  await DataRouterService.getData('search:features', {
-    inputs:{
-      layer,
-      filter:`id|eq|${fid}`,
-      formatter: 1, // set formatter to 1
-      feature_count: 1,
-      search_endpoint: 'api'
-    },
-    outputs:  {
-      title: layer.getName()
+      }
+    });
+    const features = data && data[0] && data[0].features || [];
+    if (features.length && getGeoFeatures) {
+      try {
+        const {data} = await DataRouterService.getData('search:features', {
+          inputs:{
+            layer: CatalogLayersStoresRegistry.getLayerById(SIGNALER_IIM_CONFIG.geo_layer_id),
+            filter:`${SIGNALER_IIM_CONFIG.signaler_field}|eq|${fid}`,
+            formatter: 1, // set formatter to 1
+            search_endpoint: 'api'
+          },
+          outputs: false // need to specifi no output
+        });
+        const features = data && data[0] && data[0].features || [];
+        features.length && this._mapService.zoomToFeatures(features, {
+          highlight: true
+        });
+      } catch(err){}
     }
-  });
-  features.length && this._mapService.zoomToFeatures(features, {
-    highlight: true
-  });
+  } catch(err){}
 };
 
 /**
@@ -1740,20 +1760,19 @@ proto.editingReport = function({filter, toolId}={}){
     reportToolbox.start({filter}).then(async ({features})=>{
       const featuresToolbox = this.getToolBoxById(SIGNALER_IIM_CONFIG.geo_layer_id);
       const vertexToolbox =  this.getToolBoxById(SIGNALER_IIM_CONFIG.vertex_layer_id);
+      const fid = this.currentReport.id; // signaler id (in case of new is not setted)
       vertexToolbox.stop();
       featuresToolbox.stop();
       reportToolbox.setShow(true);
       featuresToolbox.setShow(false);
       reportToolbox.setSelected(true);
-      if (toolId) {
-        const tool = reportToolbox.getToolById(toolId);
-        reportToolbox.setActiveTool(tool);
-      }
-      const fid = this.currentReport.id;
+      const tool = toolId && reportToolbox.getToolById(toolId);
+      tool && reportToolbox.setActiveTool(tool);
       const {result, create_new_signaler} = SIGNALER_IIM_CONFIG;
-      if (result || create_new_signaler){
-        const EditTableFeatureWorkflow = require('../workflows/edittablefeatureworkflow');
-        this._editSingleReportWorkflow = new EditTableFeatureWorkflow();
+      // in case editing is started from result content
+      if (result) {
+        const workflow = require('../workflows/edittablefeatureworkflow');
+        this._editSingleReportWorkflow = new workflow();
         const options = {
           context: {
             session: reportToolbox.getSession()

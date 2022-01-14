@@ -118,8 +118,11 @@ proto.run = function(inputs, context, queques) {
       this.addSingleSelectInteraction({layer, inputs, promise});
       break;
     case 'multiple':
-      const buttonnext = !!this._steps.select.buttonnext;
-      if (buttonnext) this._steps.select.buttonnext.done = () =>{promise.resolve(inputs)};
+      let buttonnext;
+      if (this._steps){
+        buttonnext = !!this._steps.select.buttonnext;
+        if (buttonnext) this._steps.select.buttonnext.done = () =>{promise.resolve(inputs)};
+      }
       this.addSingleSelectInteraction({layer, inputs, promise, buttonnext});
       this.addMultipleSelectInteraction({layer, inputs, promise, buttonnext});
       break;

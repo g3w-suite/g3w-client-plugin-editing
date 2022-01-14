@@ -60,11 +60,13 @@ proto._cancelFnc = function(promise, inputs) {
     // fire event cancel form to emit to subscrivers
     this.fireEvent('cancelform', inputs.features);
     promise.reject(inputs);
+    const {create_new_signaler} = SIGNALER_IIM_CONFIG;
+    create_new_signaler && this.getEditingService().getPlugin().hideEditingPanel();
   }
 };
 
 proto._saveFeatures = function({fields, promise, session, inputs}){
-  const {signaler_layer_id, geo_layer_id} = SIGNALER_IIM_CONFIG;
+  const {signaler_layer_id, geo_layer_id, create_new_signaler} = SIGNALER_IIM_CONFIG;
   fields = this._multi ? fields.filter(field => field.value !== null) : fields;
   if (fields.length) {
     const layerId = this._originalLayer.getId();
@@ -92,7 +94,10 @@ proto._saveFeatures = function({fields, promise, session, inputs}){
                 content,
                 closable: false
               })
-            }
+            } else if (create_new_signaler) this.getEditingService().getPlugin().hideEditingPanel()
+          },
+          error: ()=> {
+            if (create_new_signaler) this.getEditingService().getPlugin().hideEditingPanel()
           }
         }
       });
@@ -155,7 +160,6 @@ proto.startForm = async function(options = {}) {
       fields: this._fields
     })
   } else this.getEditingService().setCurrentFeatureReport({feature});
-  
   const formService = Form({
     formComponent,
     title: "plugins.signaler_iim.editing_attributes",

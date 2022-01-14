@@ -23,7 +23,7 @@
                                 <div style="display: grid; grid-template-columns: 1fr 5px 1fr 5px 1fr 5px 1fr; margin-bottom: 3px; margin-right: 5px; row-gap: 3px; column-gap: 3px;">
                                     <input class="form-control" style="padding: 1px;" type="number" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[0]"/>°
                                     <input class="form-control" style="padding: 1px;" type="number" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[1]"/>'
-                                    <input class="form-control" style="padding: 1px;" type="number" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[2]"/>"
+                                    <input class="form-control" style="padding: 1px;" type="number" step="0.1" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[2]"/>"
                                     <input class="form-control" style="padding: 1px;" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[3]"/>
                                 </div>
                                 <div style="display: grid; grid-template-columns: 1fr 5px 1fr 5px 1fr 5px 1fr; row-gap: 3px; column-gap: 3px;">
@@ -72,6 +72,7 @@
         name: 'Editingvertexcomponent',
         data(){
             return {
+                vertex: [],
                 validForm: true, // set valid form,
                 validGeometry: true
             }
@@ -138,6 +139,7 @@
                 vertex['coordinatesEPSG:4326'] = ol.proj.transform(vertex['coordinatesEPSG:3857'], 'EPSG:3857', 'EPSG:4326');
                 vertex.changed = true;
                 this.changeVertexFeatureCoordinates(index, vertex);
+                this.toDegree(vertex);
                 this.toDHMS(vertex);
                 this.changeFeatureReportGeometry(vertex);
             },
@@ -213,7 +215,6 @@
             }
         },
         created(){
-            this.vertex = [];
             const {vertex_layer_id} = SIGNALER_IIM_CONFIG;
             this.featureReport = EditingService.getCurrentFeatureReport();
             this.originalFeatureReportFeature = this.getSourceFeatureReport().clone();

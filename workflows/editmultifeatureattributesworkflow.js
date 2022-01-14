@@ -18,7 +18,7 @@ function EditMultiFeatureAttributesWorkflow(options={}) {
         condition:({features=[]})=> {
           return features.length < 2
         },
-        done: ()=>{}
+        done:()=>{}
       },
       directive: 't-plugin',
       dynamic: 0,
