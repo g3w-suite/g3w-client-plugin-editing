@@ -1,5 +1,6 @@
 import API from '../api'
 import SIGNALER_IIM_CONFIG from '../global_plugin_data';
+import ExportFormats from '../vue/exportformats.vue';
 const {G3W_FID} = g3wsdk.constant;
 const DataRouterService = g3wsdk.core.data.DataRouterService;
 const ApplicationService = g3wsdk.core.ApplicationService;
@@ -91,6 +92,7 @@ function EditingService() {
   this.addActionKeys = [];
   this._editSingleReportWorkflow = null;
   this.init = function(config={}) {
+    this._mapService.addScaleLineUnits(['nautical']);
     this._vectorUrl = config.vectorurl;
     const {urls:{editing:editing_url, vector:vector_data_url}, signaler_layer_id, vertex_layer_id, geo_layer_id, signaler_field, ab_signal_fields} = config;
     SIGNALER_IIM_CONFIG.signaler_layer_id = signaler_layer_id;
@@ -105,7 +107,10 @@ function EditingService() {
     this.currentReport = {
       id: null, // id of report
       ab_signal_fields: ab_signal_fields.reduce((accumulator, field) => {
-        accumulator[field] = null;
+        accumulator[field] = {
+          label: null,
+          value: null
+        };
         return accumulator
       },{}),
       [signaler_field]: null, //report id for child report
@@ -140,6 +145,11 @@ function EditingService() {
         const {status, value} = promise;
         if (status === "fulfilled") {
           const editableLayer = value;
+          if (editableLayer.getId() === signaler_layer_id){
+            editableLayer.getEditingFields().forEach(field => {
+              if (this.currentReport.ab_signal_fields[field.name]) this.currentReport.ab_signal_fields[field.name].label = field.label;
+            })
+          }
           editableLayer.config.urls.commit = editableLayer.config.urls.commit.replace('/vector/api/', editing_url);
           editableLayer.config.urls.editing = editableLayer.config.urls.editing.replace('/vector/api/', editing_url);
           editableLayer.config.urls.unlock = editableLayer.config.urls.unlock.replace('/vector/api/', editing_url);
@@ -238,44 +248,44 @@ proto.setEditingSingleLayer = function(bool=false){
 
 proto.registerResultEditingAction = function(){
   const queryResultsService = GUI.getComponent('queryresults').getService();
-  this.addActionKeys.push(queryResultsService.onafter('addActionsForLayers', actions => {
-    Object.keys(actions).forEach(layerId =>{
+  this.addActionKeys.push(queryResultsService.onafter('addActionsForLayers', (actions, layers) => {
+    Object.keys(actions).forEach(layerId => {
       if ([SIGNALER_IIM_CONFIG.geo_layer_id, SIGNALER_IIM_CONFIG.signaler_layer_id].indexOf(layerId) !== -1)
         actions[layerId] = actions[layerId].filter(action => ['gotogeometry', 'show-query-relations', 'printatlas'].indexOf(action.id) !== -1);
-      if (!this.state.open && layerId !== SIGNALER_IIM_CONFIG.vertex_layer_id && this.getLayerById(layerId)) {
+      if (!this.state.open && layerId === SIGNALER_IIM_CONFIG.signaler_layer_id && this.getLayerById(layerId)) {
         actions[layerId].push({
           id: 'editing',
           class: GUI.getFontClass('pencil'),
           hint: 'plugins.signaler_iim.toolbox.title',
-          condition:({feature}={}) => {
+          condition: ({feature} = {}) => {
             return feature.attributes[this.config.signaler_user_field] == ApplicationState.user.id;
           },
           cbk: (layer, feature) => {
             SIGNALER_IIM_CONFIG.result = true;
-            if (layerId === SIGNALER_IIM_CONFIG.geo_layer_id) {
-              this.setEditingSingleLayer(true);
-              this.getPlugin().showEditingPanel({
-                toolboxes: [this.getToolBoxById(layerId)]
-              });
-              this.editingFeaturesReport({
-                toolId:'editattributes',
-                filter: {
-                  fids: feature.attributes[G3W_FID]
-                }
-              });
-            } else if (layerId === SIGNALER_IIM_CONFIG.signaler_layer_id){
-              this.currentReport.id = feature.attributes[G3W_FID];
-              this.getPlugin().showEditingPanel({
-                toolboxes: [this.getToolBoxById(layerId)]
-              });
-              this.editingReport({
-                toolId: 'edittable',
-                filter: {
-                  fids: feature.attributes[G3W_FID]
-                }
-              });
-            }
-          },
+            // if (layerId === SIGNALER_IIM_CONFIG.geo_layer_id) {
+            //   this.setEditingSingleLayer(true);
+            //   this.getPlugin().showEditingPanel({
+            //     toolboxes: [this.getToolBoxById(layerId)]
+            //   });
+            //   this.editingFeaturesReport({
+            //     toolId:'editattributes',
+            //     filter: {
+            //       fids: feature.attributes[G3W_FID]
+            //     }
+            //   });
+            // } else if (layerId === SIGNALER_IIM_CONFIG.signaler_layer_id){
+            this.currentReport.id = feature.attributes[G3W_FID];
+            this.getPlugin().showEditingPanel({
+              toolboxes: [this.getToolBoxById(layerId)]
+            });
+            this.editingReport({
+              toolId: 'edittable',
+              filter: {
+                fids: feature.attributes[G3W_FID]
+              }
+            });
+          }
+          //},
         });
       }
       if (layerId === SIGNALER_IIM_CONFIG.geo_layer_id && this.getLayerById(layerId))
@@ -300,38 +310,41 @@ proto.registerResultEditingAction = function(){
           style: {
             color: 'red'
           },
+          condition: ({feature} = {}) => {
+            return feature.attributes[this.config.signaler_user_field] == ApplicationState.user.id;
+          },
           cbk: async (layer, feature, action, index) => {
             const signaler_id = feature.attributes[G3W_FID];
-            return new Promise((resolve, reject) =>{
+            return new Promise((resolve, reject) => {
               GUI.dialog.confirm(`
                         <h4>Vuoi cancellare la segnalazione?</h4>
                         <div style="font-size:1.2em;">Se cancelli la segnalazione verranno cancellate tutte le eventuali features associate</div>`,
-                  result => {
-                if (result) {
-                  const reportToolBox = this.getToolBoxById(SIGNALER_IIM_CONFIG.signaler_layer_id);
-                  const session = reportToolBox.getSession();
-                  session.start({
-                    editing: true,
-                    filter: {
-                      fids: signaler_id
-                    }
-                  }).then(promise =>
-                    promise
-                      .then(features => {
-                        const feature = features[0];
-                        reportToolBox.getEditingLayerSource().removeFeature(feature);
-                        session.pushDelete(SIGNALER_IIM_CONFIG.signaler_layer_id, feature);
-                        session.save();
-                        session.commit();
-                        SIGNALER_IIM_CONFIG.geo_layer_id && this._mapService.refreshMap();
-                        GUI.closeContent();
-                        resolve()
-                      })
-                  )
-                } else reject()
-              });
-          })
-        }
+                result => {
+                  if (result) {
+                    const reportToolBox = this.getToolBoxById(SIGNALER_IIM_CONFIG.signaler_layer_id);
+                    const session = reportToolBox.getSession();
+                    session.start({
+                      editing: true,
+                      filter: {
+                        fids: signaler_id
+                      }
+                    }).then(promise =>
+                      promise
+                        .then(features => {
+                          const feature = features[0];
+                          reportToolBox.getEditingLayerSource().removeFeature(feature);
+                          session.pushDelete(SIGNALER_IIM_CONFIG.signaler_layer_id, feature);
+                          session.save();
+                          session.commit();
+                          SIGNALER_IIM_CONFIG.geo_layer_id && this._mapService.refreshMap();
+                          GUI.closeContent();
+                          resolve()
+                        })
+                    )
+                  } else reject()
+                });
+            })
+          }
         });
         actions[layerId].push({
           id: 'zoom',
@@ -344,7 +357,7 @@ proto.registerResultEditingAction = function(){
               const {data} = await DataRouterService.getData('search:features', {
                 inputs: {
                   layer: CatalogLayersStoresRegistry.getLayerById(SIGNALER_IIM_CONFIG.geo_layer_id),
-                  filter:`${SIGNALER_IIM_CONFIG.signaler_field}|eq|${signaler_id}`,
+                  filter: `${SIGNALER_IIM_CONFIG.signaler_field}|eq|${signaler_id}`,
                   formatter: 1, // set formatter to 1
                   search_endpoint: 'api'
                 },
@@ -354,7 +367,7 @@ proto.registerResultEditingAction = function(){
               features.length && this._mapService.zoomToFeatures(features, {
                 highlight: true
               })
-            } catch(err){
+            } catch (err) {
               GUI.showUserMessage({
                 type: 'alert',
                 message: err,
@@ -362,6 +375,52 @@ proto.registerResultEditingAction = function(){
               })
             }
             GUI.setLoadingContent(false);
+          }
+        });
+        const layer = layers.find(layer => layer.id === SIGNALER_IIM_CONFIG.signaler_layer_id);
+        const toggled = {};
+        layer.features.map((feature, index) => toggled[index] = false);
+        const state = Vue.observable({
+          toggled
+        });
+        const export_formats = [];
+        this.config.urls.export.forEach(urlLabel => {
+          export_formats.push({
+            id: `export_${urlLabel.label}_signal`,
+            class: GUI.getFontClass('download'),
+            hint: 'Download',
+            config: urlLabel,
+            cbk: async (layer, feature, action, index) => {
+              console.log(layer, feature, action.index)
+              GUI.setLoadingContent(true);
+              GUI.setLoadingContent(false);
+            }
+          })
+        });
+        const export_format_id = ExportFormats.name;
+        queryResultsService.state.actiontools[export_format_id] = {};
+        queryResultsService.state.actiontools[export_format_id][layer.id] = {
+          export_formats
+        };
+        actions[layerId].push({
+          id: `downloads`,
+          download: true,
+          class: GUI.getFontClass('download'),
+          state,
+          hint: `Export`,
+          change({features}) {
+            features.forEach((feature, index) =>{
+              if (this.state.toggled[index] === undefined) VM.$set(this.state.toggled, index, false);
+              else this.state.toggled[index] = false;
+            });
+          },
+          cbk: (layer, feature, action, index) => {
+            action.state.toggled[index] = !action.state.toggled[index];
+            queryResultsService.setCurrentActionLayerFeatureTool({
+              layer,
+              index,
+              component: action.state.toggled[index] ? ExportFormats : null
+            });
           }
         })
       }
@@ -386,7 +445,7 @@ proto.getUrlParameters = async function(){
   const show_signaler_on_result = searchParams.get('sid') || false;
   if (show_signaler_on_result) {
     if (show_signaler_on_result === 'new') {
-      SIGNALER_IIM_CONFIG.create_new_signaler = false;
+      SIGNALER_IIM_CONFIG.create_new_signaler = true;
       this.getPlugin().showEditingPanel({
         toolboxes: [this.getToolBoxById(SIGNALER_IIM_CONFIG.signaler_layer_id)]
       });
@@ -669,9 +728,6 @@ proto.fireEvent = function(event, options={}) {
   });
 };
 
-proto.onFireEvent = function(event){
-
-}
 
 proto.activeQueryInfo = function() {
   this._mapService.activeMapControl('query');
@@ -1568,7 +1624,7 @@ proto.setCurrentReportData = function({feature, valid}={}){
   this.currentReport.isNew = feature.isNew();
   this.currentReport.valid = valid;
   const properties = feature.getProperties();
-  Object.keys(this.currentReport.ab_signal_fields).forEach(field => this.currentReport.ab_signal_fields[field] = properties[field])
+  Object.keys(this.currentReport.ab_signal_fields).forEach(field => this.currentReport.ab_signal_fields[field].value = properties[field])
 };
 
 proto.getCurrentReportData = function(){
@@ -1732,11 +1788,12 @@ proto.getFeatureAndRelatedVertexReportByReportId = function(filter){
             };
             vertexToolbox.start(options);
           }
-        } else GUI.showUserMessage({
-          type: 'info',
-          message: 'Non è stata trovata nessuna feature geometrica associata alla segnalazione',
-          autoclose: true
-        });
+        }
+        // else GUI.showUserMessage({
+        //   type: 'info',
+        //   message: 'Non è stata trovata nessuna feature geometrica associata alla segnalazione',
+        //   autoclose: true
+        // });
         resolve(features);
       })
       .fail(err => reject(err))

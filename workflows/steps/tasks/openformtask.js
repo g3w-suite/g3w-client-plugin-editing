@@ -61,6 +61,7 @@ proto._cancelFnc = function(promise, inputs) {
     this.fireEvent('cancelform', inputs.features);
     promise.reject(inputs);
     const {create_new_signaler} = SIGNALER_IIM_CONFIG;
+    // in case of new create signalke (with sid=new) go outside editing
     create_new_signaler && this.getEditingService().getPlugin().hideEditingPanel();
   }
 };
@@ -86,14 +87,16 @@ proto._saveFeatures = function({fields, promise, session, inputs}){
             });
             this.getEditingService().resetDefault();
             // only if is new show add feature
-            if (isNew && geo_layer_id){
-              const content  = ComponentsFactory.build({
-                vueComponentObject: AddFeatureMethodComponent
-              });
-              GUI.showContent({
-                content,
-                closable: false
-              })
+            if (isNew){
+              if (geo_layer_id) {
+                const content  = ComponentsFactory.build({
+                  vueComponentObject: AddFeatureMethodComponent
+                });
+                GUI.pushContent({
+                  content,
+                  closable: false
+                })
+              }
             } else if (create_new_signaler) this.getEditingService().getPlugin().hideEditingPanel()
           },
           error: ()=> {
@@ -196,6 +199,7 @@ proto.startForm = async function(options = {}) {
 };
 
 proto.run = function(inputs, context) {
+  GUI.setLoadingContent(false);
   const d = $.Deferred();
   this.startForm({
     inputs,

@@ -97,6 +97,7 @@
             },
             toDegree(vertex){
                 vertex['coordinatesEPSG:4326'] = ol.proj.transform(vertex['coordinatesEPSG:3857'], 'EPSG:3857', 'EPSG:4326');
+                console.log(vertex['coordinatesEPSG:4326'])
             },
             toDHMS(vertex){
                 vertex.coordinatesDHMS = [

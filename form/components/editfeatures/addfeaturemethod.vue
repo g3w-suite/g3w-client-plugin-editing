@@ -45,16 +45,17 @@
             async cancel(){
                 const EditingService = require('../../../services/editingservice');
                 const {id:signaler_id} = EditingService.getCurrentReportData();
-                const reportToolbox = EditingService.getToolBoxById(SIGNALER_IIM_CONFIG.signaler_layer_id);
-                const tool = reportToolbox.getToolById('edittable');
-                reportToolbox.setActiveTool(tool);
-                await this.$nextTick();
+                await EditingService.editingReport({
+                  filter: {
+                      field: `id|eq|${signaler_id}`
+                  },
+                  toolId: 'edittable'
+                });
                 setTimeout(()=>{
                     $(`#signaler_edit_${signaler_id}`).click();
                 })
             },
             async drawFeatures(){
-                this.cancel();
                 await this.editingFeaturesReport({
                     toolId: 'addfeature'
                 });
@@ -82,6 +83,7 @@
                         const featuresToolbox = EditingService.getToolBoxById(geo_layer_id);
                         const layerId = featuresToolbox.getId();
                         const editingFields = featuresToolbox.getLayer().getEditingFields().map(field=> field.name);
+                        console.log(editingFields)
                         const featureReportGeometryType = featuresToolbox.getLayer().getGeometryType();
                         const featuresSession = featuresToolbox.getSession();
                         const newReportFeatures = layer.getSource().getFeatures();
@@ -108,9 +110,9 @@
                                         properties: editingFields
                                     });
                                     feature.setTemporaryId();
-                                    feature.set(signaler_field, EditingService.getCurrentReportData().id);
+                                    feature.set(signaler_field, 1*EditingService.getCurrentReportData().id);
                                     featuresToolbox.getEditingLayerSource().addFeature(feature);
-                                    featuresSession.pushAdd(layerId, feature);
+                                    featuresSession.pushAdd(layerId, feature, false);
                                     promises.push(EditingService.createVertexfromReportFeatures([feature]));
                                 });
                                 await Promise.allSettled(promises);
@@ -124,6 +126,7 @@
                 } catch(err) {
                     console.log(err)
                 }
+                GUI.closeContent();
             }
         }
     };

@@ -1,6 +1,12 @@
 <template>
     <div>
-<!--        <div style="background-color: #FFFFFF; margin-top: 5px; padding: 5px; font-weight: bold" class="skin-color">{{signal_info}}</div>-->
+        <div style="background-color: #FFFFFF; margin: 4px 0 5px 0; padding: 5px;">
+            <div v-for="info in signaler_father_info" style="margin-right: 3px; font-size: 1.3em">
+                <span style="font-weight: bold" class="skin-color-dark">{{info.label}}</span>
+                <span> : </span>
+                <span>{{info.value}}</span>
+            </div>
+        </div>
         <div class="vertex" style="background-color: #FFFFFF; padding: 5px;">
             <button class="btn skin-button" style="width:100%" @click="editVertex">Edita vertici</button>
         </div>
@@ -16,7 +22,7 @@
         name: 'Vertex',
         data(){
           return {
-              signal_info: null
+              signaler_father_info:[]
           }
         },
         methods :{
@@ -32,8 +38,11 @@
         },
         async mounted(){
             await this.$nextTick();
-            this.signal_info = EditingService.getCurrentReportData().ab_signal_fields
-            //EditingService.getCurrentFeatureReport().isNew() && this.editVertex();
+            Object.values(EditingService.getCurrentReportData().ab_signal_fields).forEach(({label, value}) =>{
+                this.signaler_father_info.push({
+                    label, value
+                });
+            })
         }
     };
 </script>

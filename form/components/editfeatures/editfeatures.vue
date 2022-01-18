@@ -19,7 +19,6 @@
             editReportChild(){
                 const EditingService = require('../../../services/editingservice');
                 const id = EditingService.getCurrentReportData().id;
-                window.open(`http://192.168.1.3:3000/?project=segnalatore-planetek-3857/qdjango/104&${signaler_field}=${id}`,'_blank');
             },
             // method to add feature
             addReportFeature(){

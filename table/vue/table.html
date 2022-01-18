@@ -21,8 +21,8 @@
         </td>
 
         <td v-if ="showValue(key)" v-for="(value, key) in feature" :key="key">
-          <g3w-media v-if=" getValue(value) && isMediaField(key)" :state="value"></g3w-media>
-          <p v-else>{{ getValue(value) }}</p>
+          <g3w-media v-if="isMediaField(key) && getValue(value)" :state="value"></g3w-media>
+          <p v-else>{{ getValue(key, value) }}</p>
         </td>
       </tr>
       </tbody>

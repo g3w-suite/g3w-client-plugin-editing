@@ -1,4 +1,5 @@
 const GUI = g3wsdk.gui.GUI;
+const {toRawType} = g3wsdk.core.utils;
 const t = g3wsdk.core.i18n.tPlugin;
 
 const TableService = function(options = {}) {
@@ -6,11 +7,13 @@ const TableService = function(options = {}) {
   this._promise = options.promise;
   this._context = options.context;
   this._inputs = options.inputs;
+  this.layerId = this._inputs.layer.getId();
   this._fatherValue = options.fatherValue;
   this._foreignKey = options.foreignKey;
   this._workflow = null;
   this._deleteFeaturesIndexes = [];
   this._isrelation = options.isrelation || false;
+  this.selectInpus;
   const { capabilities } = options;
   this.state = {
     headers: options.headers || [],
@@ -30,6 +33,10 @@ const TableService = function(options = {}) {
       const baseFeature = this._features[0];
       const properties = Object.keys(baseFeature.getProperties());
       this.state.headers = this.state.headers.filter(header => properties.indexOf(header.name) !== -1);
+      this.selectInpus = this.state.headers.filter(field => ['select_autocomplete', 'select'].indexOf(field.input.type) !== -1).reduce((accumulator, field) =>{
+        accumulator[field.name] = field.input.options.values;
+        return accumulator;
+      }, {});
       const headers = this.state.headers.map(header => header.name);
       this.state.features = this._features.map(feature => {
         const properties = feature.getProperties();
@@ -46,6 +53,15 @@ const TableService = function(options = {}) {
 };
 
 const proto = TableService.prototype;
+
+proto.getLabelValueFromLayerInput = function(fieldName, value){
+  let label;
+  if (this.selectInpus[fieldName]){
+    const findKeyValue = this.selectInpus[fieldName].find(keyValue => toRawType(keyValue) === 'Object' && value == value);
+    label = findKeyValue && findKeyValue.key;
+  }
+  return label;  
+};
 
 proto.isMediaField = function(name) {
   let isMedia = false;
@@ -69,11 +85,9 @@ proto.cancel = function() {
 
 proto.deleteFeature = function(index) {
   const EditingService = require('../services/editingservice');
-  const layer = this._inputs.layer;
-  const layerId = layer.getId();
   const childRelations = layer.getChildren();
   const relationinediting = childRelations.length &&  EditingService._filterRelationsInEditing({
-    layerId,
+    layerId: this.layerId,
     relations: layer.getRelations().getArray()
   }).length > 0;
   return new Promise((resolve, reject) =>{
@@ -82,16 +96,14 @@ proto.deleteFeature = function(index) {
       if (result) {
         const feature = this._features[index];
         const session = this._context.session;
-        const layerId = this._inputs.layer.getId();
         this._inputs.layer.getEditingSource().removeFeature(feature);
-        session.pushDelete(layerId, feature);
+        session.pushDelete(this.layerId, feature);
         this.state.features.splice(index, 1);
         resolve()
       } else reject()
     });
   })
 };
-
 
 proto.editFeature = function(index) {
   const feature = this._features[index];

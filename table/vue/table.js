@@ -71,7 +71,11 @@ const InternalComponent = Vue.extend({
     _setLayout() {
       return this.$options.service._setLayout();
     },
-    getValue(value) {
+    getValue(key, value) {
+       if (key){
+         const labelValue = this.$options.service.getLabelValueFromLayerInput(key, value);
+         if (labelValue !== undefined) return labelValue;
+       }
        if (value && typeof  value === 'object' && value.constructor === Object)
          value = value.value;
        else if (typeof value == 'string' && value.indexOf('_new_') === 0)
