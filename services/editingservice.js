@@ -419,7 +419,7 @@ proto.registerResultEditingAction = function(){
           download: true,
           class: GUI.getFontClass('export_signaler'),
           state,
-          togglable: true,
+          toggleable: true,
           hint: `Export`,
           change({features}) {
             features.forEach((feature, index) =>{
