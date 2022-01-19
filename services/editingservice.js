@@ -378,10 +378,8 @@ proto.registerResultEditingAction = function(){
           }
         });
         const layer = layers.find(layer => layer.id === SIGNALER_IIM_CONFIG.signaler_layer_id);
-        const toggled = {};
-        layer.features.map((feature, index) => toggled[index] = false);
-        const state = Vue.observable({
-          toggled
+        const state = queryResultsService.createActionState({
+          layer
         });
         const export_formats = [];
         this.config.urls.export.forEach(urlLabel => {
@@ -403,6 +401,11 @@ proto.registerResultEditingAction = function(){
                 filename: `${action.config.label}_${feature.attributes.id}${ext_mime_type.ext}`,
                 mime_type: ext_mime_type.mime_type
               });
+              const exportsaction = queryResultsService.getActionLayerById({
+                layer,
+                id: 'exports'
+              });
+              exportsaction.cbk(layer, feature, exportsaction, index);
             }
           })
         });
