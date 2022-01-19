@@ -14,23 +14,23 @@
                             <h5 style="font-weight: bold; margin-top: 0; margin-bottom: 3px;">DEGREE</h5>
                             <div style="display: flex; justify-content: space-between">
                                 <input v-for="(coordinate, indexCoordinate) in v['coordinatesEPSG:4326']" :key="coordinate" class="form-control" type="number"
-                                    style="margin-right: 5px;" step="0.1" @change="changeVertexCoordinatesDegree(index, v)" v-model="v['coordinatesEPSG:4326'][indexCoordinate]"/>
+                                    style="margin-right: 5px;" step="0.1" @change="changeVertexCoordinatesDegree(index, v)" @keyup.enter="loseFocusInput" v-model.lazy="v['coordinatesEPSG:4326'][indexCoordinate]"/>
                             </div>
                         </div>
                         <div>
                             <h5 style="font-weight: bold; margin-top: 0; margin-bottom: 3px;">DMS</h5>
                             <div style="display: flex; justify-content: space-between">
                                 <div style="display: grid; grid-template-columns: 1fr 5px 1fr 5px 1fr 5px 1fr; margin-bottom: 3px; margin-right: 5px; row-gap: 3px; column-gap: 3px;">
-                                    <input class="form-control" style="padding: 1px;" type="number" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[0]"/>°
-                                    <input class="form-control" style="padding: 1px;" type="number" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[1]"/>'
-                                    <input class="form-control" style="padding: 1px;" type="number" step="0.1" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[2]"/>"
-                                    <input class="form-control" style="padding: 1px;" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[3]"/>
+                                    <input class="form-control" style="padding: 1px;" type="number" @keyup.enter="loseFocusInput" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model.lazy="v.coordinatesDHMS[0]"/>°
+                                    <input class="form-control" style="padding: 1px;" type="number" @keyup.enter="loseFocusInput" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model.lazy="v.coordinatesDHMS[1]"/>'
+                                    <input class="form-control" style="padding: 1px;" type="number" @keyup.enter="loseFocusInput" step="0.1" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model.lazy="v.coordinatesDHMS[2]"/>"
+                                    <input class="form-control" style="padding: 1px;" @keyup.enter="loseFocusInput" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model.lazy="v.coordinatesDHMS[3]"/>
                                 </div>
                                 <div style="display: grid; grid-template-columns: 1fr 5px 1fr 5px 1fr 5px 1fr; row-gap: 3px; column-gap: 3px;">
-                                    <input class="form-control" style="padding: 1px;" type="number" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[4]"/>°
-                                    <input class="form-control" style="padding: 1px;" type="number" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[5]"/>'
-                                    <input class="form-control" style="padding: 1px;" type="number" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[6]"/>"
-                                    <input class="form-control" style="padding: 1px;" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[7]"/>
+                                    <input class="form-control" style="padding: 1px;" type="number" @keyup.enter="loseFocusInput" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[4]"/>°
+                                    <input class="form-control" style="padding: 1px;" type="number" @keyup.enter="loseFocusInput" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[5]"/>'
+                                    <input class="form-control" style="padding: 1px;" type="number" @keyup.enter="loseFocusInput" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model="v.coordinatesDHMS[6]"/>"
+                                    <input class="form-control" style="padding: 1px;" @keyup.enter="loseFocusInput" @change="changeVertexFeatureCoordinatesDMS(index, v)" v-model.lazy="v.coordinatesDHMS[7]"/>
                                 </div>
                             </div>
                         </div>
@@ -38,7 +38,7 @@
                             <h5 style="font-weight: bold; margin-top: 0; margin-bottom: 3px;">EPSG:3857</h5>
                             <div style="display: flex; justify-content: space-between">
                                 <input v-for="(coordinate3857, indexCoordinate) in v['coordinatesEPSG:3857']" :key="coordinate3857" class="form-control" type="number"
-                                    style="margin-right: 5px;" step="0.1" @change="changeVertexCoordinates3857(index, v)" v-model="v['coordinatesEPSG:3857'][indexCoordinate]"/>
+                                    style="margin-right: 5px;" step="0.1" @keyup.enter="loseFocusInput" @change="changeVertexCoordinates3857(index, v)" v-model.lazy="v['coordinatesEPSG:3857'][indexCoordinate]"/>
                             </div>
                         </div>
                     </div>
@@ -86,6 +86,9 @@
             }
         },
         methods: {
+            loseFocusInput(evt){
+              evt.target.blur()
+            },
             // INPUTS VALIDATION
             isValidInputVertex(input) {
                 const index = input.indexVertex;
@@ -97,7 +100,6 @@
             },
             toDegree(vertex){
                 vertex['coordinatesEPSG:4326'] = ol.proj.transform(vertex['coordinatesEPSG:3857'], 'EPSG:3857', 'EPSG:4326');
-                console.log(vertex['coordinatesEPSG:4326'])
             },
             toDHMS(vertex){
                 vertex.coordinatesDHMS = [
