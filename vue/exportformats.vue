@@ -1,12 +1,12 @@
 <template>
   <div class="g3w-export-formats-content" style="width: 100%; display: flex" @click.prevent.stop="">
-    <select  style="flex-grow: 1" v-select2="'download_format'" :search="false" class="form-control">
+    <select  style="flex-grow: 1" v-select2="'export_format'" :search="false" class="form-control">
       <option v-for="export_format in config.export_formats" :key="export_format.id" v-download :value="export_format.config.url">
         <span style="font-weight: bold">{{export_format.config.label}}</span>
       </option>
     </select>
     <button style="border-radius: 0 3px 3px 0;" class="btn skin-button" @click.stop=export_signaler_format v-download>
-      <span :class="g3wtemplate.getFontClass('download')">
+      <span :class="g3wtemplate.getFontClass('export_signaler')">
       </span>
     </button>
   </div>
@@ -46,9 +46,6 @@
           console.log(err)
         }
       }
-    },
-    created(){
-      console.log(this)
     }
   }
 </script>

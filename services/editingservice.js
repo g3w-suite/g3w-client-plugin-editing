@@ -5,7 +5,7 @@ const {G3W_FID} = g3wsdk.constant;
 const DataRouterService = g3wsdk.core.data.DataRouterService;
 const ApplicationService = g3wsdk.core.ApplicationService;
 const ApplicationState = g3wsdk.core.ApplicationState;
-const {base, inherit, createSingleFieldParameter} = g3wsdk.core.utils;
+const {base, inherit, createSingleFieldParameter, downloadFile} = g3wsdk.core.utils;
 const {getPointFeaturesfromGeometryVertex} = g3wsdk.core.geoutils;
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 const PluginService = g3wsdk.core.plugin.PluginService;
@@ -251,7 +251,7 @@ proto.registerResultEditingAction = function(){
   this.addActionKeys.push(queryResultsService.onafter('addActionsForLayers', (actions, layers) => {
     Object.keys(actions).forEach(layerId => {
       if ([SIGNALER_IIM_CONFIG.geo_layer_id, SIGNALER_IIM_CONFIG.signaler_layer_id].indexOf(layerId) !== -1)
-        actions[layerId] = actions[layerId].filter(action => ['gotogeometry', 'show-query-relations', 'printatlas'].indexOf(action.id) !== -1);
+        actions[layerId] = actions[layerId].filter(action => ['gotogeometry', 'show-query-relations', 'printatlas', 'downloads'].indexOf(action.id) !== -1);
       if (!this.state.open && layerId === SIGNALER_IIM_CONFIG.signaler_layer_id && this.getLayerById(layerId)) {
         actions[layerId].push({
           id: 'editing',
@@ -387,26 +387,39 @@ proto.registerResultEditingAction = function(){
         this.config.urls.export.forEach(urlLabel => {
           export_formats.push({
             id: `export_${urlLabel.label}_signal`,
-            class: GUI.getFontClass('download'),
-            hint: 'Download',
             config: urlLabel,
             cbk: async (layer, feature, action, index) => {
-              console.log(layer, feature, action.index)
-              GUI.setLoadingContent(true);
-              GUI.setLoadingContent(false);
+              const url = `${action.config.url}${feature.attributes.id}/`;
+              const ext_mime_type = url.indexOf('/png/') !== -1 ? {
+                ext:'.png',
+                mime_type: 'image/png'
+              } :
+                {
+                  ext: '.zip',
+                  mime_type:'application/zip'
+              };
+              await queryResultsService.downloadApplicationWrapper(downloadFile, {
+                url,
+                filename: `${action.config.label}_${feature.attributes.id}${ext_mime_type.ext}`,
+                mime_type: ext_mime_type.mime_type
+              });
             }
           })
         });
         const export_format_id = ExportFormats.name;
-        queryResultsService.state.actiontools[export_format_id] = {};
-        queryResultsService.state.actiontools[export_format_id][layer.id] = {
-          export_formats
-        };
+        queryResultsService.addCurrentActionToolsLayer({
+          id: export_format_id,
+          layer,
+          config: {
+            export_formats
+          }
+        });
         actions[layerId].push({
-          id: `downloads`,
+          id: `exports`,
           download: true,
-          class: GUI.getFontClass('download'),
+          class: GUI.getFontClass('export_signaler'),
           state,
+          togglable: true,
           hint: `Export`,
           change({features}) {
             features.forEach((feature, index) =>{
@@ -418,6 +431,7 @@ proto.registerResultEditingAction = function(){
             action.state.toggled[index] = !action.state.toggled[index];
             queryResultsService.setCurrentActionLayerFeatureTool({
               layer,
+              action,
               index,
               component: action.state.toggled[index] ? ExportFormats : null
             });
