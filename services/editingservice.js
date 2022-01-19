@@ -251,7 +251,7 @@ proto.registerResultEditingAction = function(){
   this.addActionKeys.push(queryResultsService.onafter('addActionsForLayers', (actions, layers) => {
     Object.keys(actions).forEach(layerId => {
       if ([SIGNALER_IIM_CONFIG.geo_layer_id, SIGNALER_IIM_CONFIG.signaler_layer_id].indexOf(layerId) !== -1)
-        actions[layerId] = actions[layerId].filter(action => ['gotogeometry', 'show-query-relations', 'printatlas', 'downloads'].indexOf(action.id) !== -1);
+        actions[layerId] = actions[layerId].filter(action => ['gotogeometry', 'show-query-relations', 'printatlas'].indexOf(action.id) !== -1 || action.id.indexOf('download') !== -1);
       if (!this.state.open && layerId === SIGNALER_IIM_CONFIG.signaler_layer_id && this.getLayerById(layerId)) {
         actions[layerId].push({
           id: 'editing',
