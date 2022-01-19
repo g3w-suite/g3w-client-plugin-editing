@@ -1641,7 +1641,9 @@ proto.setCurrentReportData = function({feature, valid}={}){
   this.currentReport.isNew = feature.isNew();
   this.currentReport.valid = valid;
   const properties = feature.getProperties();
-  Object.keys(this.currentReport.ab_signal_fields).forEach(field => this.currentReport.ab_signal_fields[field].value = properties[field])
+  Object.keys(this.currentReport.ab_signal_fields).forEach(field => {
+    this.currentReport.ab_signal_fields[field].value = properties[field]
+  })
 };
 
 proto.getCurrentReportData = function(){
@@ -1674,7 +1676,10 @@ proto.resetReportData = function(){
     id: null,
     result: false,
     ab_signal_fields: Object.keys(this.currentReport.ab_signal_fields).reduce((accumulator, field) => {
-      accumulator[field] = null;
+      accumulator[field] = {
+        label: null,
+        value: null
+      };
       return accumulator
     },{}),
     isNew: true,
