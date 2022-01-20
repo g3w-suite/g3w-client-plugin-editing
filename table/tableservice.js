@@ -40,7 +40,6 @@ const TableService = function(options = {}) {
       });
     }
   };
-
   this.init();
 };
 
@@ -66,7 +65,7 @@ proto.cancel = function() {
   this._promise.reject();
 };
 
-proto.deleteFeature = function(index) {
+proto.deleteFeature = function(uid) {
   const EditingService = require('../services/editingservice');
   const layer = this._inputs.layer;
   const layerId = layer.getId();
@@ -79,7 +78,13 @@ proto.deleteFeature = function(index) {
     GUI.dialog.confirm(`<h4>${t('editing.messages.delete_feature')}</h4>
                         <div style="font-size:1.2em;">${ relationinediting ?t('editing.messages.delete_feature_relations') : ''}</div>`, (result) => {
       if (result) {
-        const feature = this._features[index];
+        let index;
+        const feature = this._features.find((feature, featureIdx) => {
+          if (feature.getUid() === uid) {
+            index = featureIdx;
+            return true;
+          }
+        });
         const session = this._context.session;
         const layerId = this._inputs.layer.getId();
         this._inputs.layer.getEditingSource().removeFeature(feature);
@@ -91,9 +96,9 @@ proto.deleteFeature = function(index) {
   })
 };
 
-proto.copyFeature = function(index){
+proto.copyFeature = function(uid){
   return new Promise((resolve, reject) =>{
-    const feature = this._features[index].cloneNew();
+    const feature = this._features.find(feature => feature.getUid() === uid).cloneNew();
     const addTableFeatureWorflow = require('../workflows/addtablefeatureworkflow');
     this._workflow = new addTableFeatureWorflow();
     const inputs = this._inputs;
@@ -113,14 +118,18 @@ proto.copyFeature = function(index){
         this.state.features.push(newFeature);
         resolve(newFeature)
       })
-      .fail((err) => {
-        reject();
-      })
+      .fail(err => reject(err));
   })
 };
 
-proto.editFeature = function(index) {
-  const feature = this._features[index];
+proto.editFeature = function(uid) {
+  let index;
+  const feature = this._features.find((feature, featureIndex) => {
+    if (feature.getUid() === uid) {
+      index = featureIndex;
+      return true;
+    }
+  });
   const EditTableFeatureWorkflow = require('../workflows/edittablefeatureworkflow');
   this._workflow = new EditTableFeatureWorkflow();
   const inputs = this._inputs;

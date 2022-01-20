@@ -35,24 +35,24 @@ const InternalComponent = Vue.extend({
     isMediaField(name) {
       return this.$options.service.isMediaField(name)
     },
-    stop: function() {
+    stop() {
       this.$options.service.cancel();
     },
-    save: function() {
+    save() {
       this.state.isrelation ? this.$options.service.linkFeatures(this._linkFeatures) :this.$options.service.save();
     },
-    cancel: function() {
+    cancel() {
       this.$options.service.cancel();
     },
-    deleteFeature: function(index) {
-      const id = this.state.features[index].__gis3w_feature_uid;
-      const element = $(`#editing_table table tr#${id}`);
-      this.$options.service.deleteFeature(index).then(()=>{
-        this.dataTable.row(element).remove().draw()
-      }).catch(()=>{})
+    async deleteFeature(uid) {
+      const element = $(`#editing_table table tr#${uid}`);
+      this.$options.service.deleteFeature(uid).then(async ()=>{
+        this.dataTable.row(element).remove().draw();
+        await this.$nextTick();
+      }).catch(()=>{});
     },
-    copyFeature(index){
-      this.$options.service.copyFeature(index).then(async feature =>{
+    copyFeature(uid){
+      this.$options.service.copyFeature(uid).then(async feature =>{
         this.show = false;
         this.dataTable.destroy();
         await this.$nextTick();
@@ -61,14 +61,14 @@ const InternalComponent = Vue.extend({
         this.setDataTable();
       })
     },
-    editFeature: function(index) {
-      this.$options.service.editFeature(index);
+    editFeature(uid) {
+      this.$options.service.editFeature(uid);
     },
-    linkFeature: function(index, evt) {
+    linkFeature(index, evt) {
      if (evt.target.checked) this._linkFeatures.push(index);
       else this._linkFeatures = this._linkFeatures.filter(addindex => addindex !== index);
     },
-    _setLayout: function() {
+    _setLayout() {
       return this.$options.service._setLayout();
     },
     getValue(value) {
@@ -112,7 +112,6 @@ const InternalComponent = Vue.extend({
 
 const TableComponent = function(options={}) {
   base(this);
-
   const service = options.service || new TableService({
    ...options
   });
