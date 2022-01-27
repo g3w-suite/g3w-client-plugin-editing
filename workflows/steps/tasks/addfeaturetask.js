@@ -100,7 +100,7 @@ proto.removeMeasureInteraction = function(){
     this.removeInteraction(this.measureInteraction);
     this.measureInteraction = null;
   }
-}
+};
 
 proto.stop = function() {
   if (this._snapInteraction) {
