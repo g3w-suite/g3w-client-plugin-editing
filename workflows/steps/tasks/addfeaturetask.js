@@ -41,24 +41,23 @@ proto.run = function(inputs, context) {
         freehandCondition: ol.events.condition.never,
         finishCondition: this._finishCondition
       });
-
       this.addInteraction(this.drawInteraction);
       this.drawInteraction.setActive(true);
       // add measure interaction based on geometry type
       this.addMeasureInteraction(geometryType);
-      this.drawInteraction.on('drawend', evt => {
+      this.drawInteraction.on('drawend', e => {
         let feature;
         if (this._add) {
           attributes.forEach(attribute => {
-            evt.feature.set(attribute.name, null);
+            e.feature.set(attribute.name, null);
           });
           feature = new Feature({
-            feature: evt.feature,
+            feature: e.feature,
           });
           feature.setTemporaryId();
           source.addFeature(feature);
           session.pushAdd(layerId, feature);
-        } else feature = evt.feature;
+        } else feature = e.feature;
         // set Z values based on layer Geoemtry
         feature = Geometry.addZValueToOLFeatureGeometry({
           feature,

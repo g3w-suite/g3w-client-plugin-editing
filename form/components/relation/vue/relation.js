@@ -134,6 +134,7 @@ const RelationComponent = Vue.extend({
     this.delayType = 'debounce';
   },
   created() {
+    this.loadEventuallyRelationValuesForInputs = false;
     this._service = new RelationService(this.layerId, {
       relation: this.relation, // main relation between layerId (current in editing)
       relations: this.relations // relation related to current feature of current layer in editing
@@ -142,7 +143,18 @@ const RelationComponent = Vue.extend({
     this.formeventbus.$on('changeinput', this.updateExternalKeyValueRelations);
   },
   async activated() {
-    if (!relationsTable && this.relationsLength) this._createDataTable();
+    if (!this.loadEventuallyRelationValuesForInputs) {
+      const EditingService = require('../../../../services/editingservice');
+      EditingService.runEventHandler({
+        type: 'show-relation-editing-tab',
+        id: EditingService._getRelationId({
+          layerId: this.layerId,
+          relation: this.relation
+        })
+      });
+      this.loadEventuallyRelationValuesForInputs = true;
+    }
+    !relationsTable && this.relationsLength && this._createDataTable();
   },
   deactivated() {
     this.destroyTable();
@@ -152,7 +164,9 @@ const RelationComponent = Vue.extend({
     $('.g3w-icon[data-toggle="dropdown"]').tooltip();
     $('[data-toggle="tooltip"]').tooltip();
   },
-  destroyed() {}
+  beforeDestroy() {
+    this.loadEventuallyRelationValuesForInputs = true;
+  }
  });
 
 

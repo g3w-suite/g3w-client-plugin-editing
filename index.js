@@ -94,7 +94,7 @@ const _Plugin = function() {
 
   this.unload = function() {
     this.panel = null;
-    this.removeTools();
+    this.config.visible && this.removeTools();
     this.service.clear()
   }
 };

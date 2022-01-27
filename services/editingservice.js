@@ -510,6 +510,19 @@ proto.addEvent = function({type, id, fnc}={}) {
   this._events[type][id].push(fnc);
 };
 
+/*
+* Add event
+* @param {String} type - Event Type
+* @param
+* */
+proto.addEvents = function({types=[], id, fnc}={}) {
+  types.forEach(type => this.addEvent({
+    type,
+    id, 
+    fnc
+  }));
+};
+
 proto.runEventHandler = function({type, id} = {}) {
   this._events[type] && this._events[type][id] && this._events[type][id].forEach(fnc => fnc());
 };
@@ -562,8 +575,8 @@ proto._attachLayerWidgetsEvent = function(layer) {
         let {key, values, value, usecompleter, layer_id, loading} = options;
         const self = this;
         if (!usecompleter) {
-          this.addEvent({
-            type: 'start-editing',
+          this.addEvents({
+            types: ['start-editing', 'show-relation-editing-tab'],
             id: layer.getId(),
             fnc() {
               // remove all values
