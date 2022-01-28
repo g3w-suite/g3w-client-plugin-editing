@@ -15,8 +15,8 @@
       <tr v-for="(feature, index) in state.features" :key="feature.__gis3w_feature_uid" :id="feature.__gis3w_feature_uid">
         <td v-if="!state.isrelation">
           <div id="table-editing-tools" style="display:flex; justify-content: space-between;">
-            <i v-if="showTool('change_attr_feature')" :id="`signaler_edit_${feature.id}`" :class="g3wtemplate.font['pencil']" class="g3w-icon skin-tooltip-right"  data-placement="right"  style="color:#30cce7;" v-t-title:plugin="'signaler_iim.table.edit'" aria-hidden="true" @click="editFeature(index)"></i>
-            <i v-if="showTool('delete_feature')" :id="`signaler_delete_${feature.id}`" :class="g3wtemplate.font['trash-o']" class="g3w-icon skin-tooltip-right"  data-placement="right"  style="color:red;" v-t-title:plugin="'signaler_iim.table.delete'" aria-hidden="true" @click="deleteFeature(index)"></i>
+            <i v-if="showTool('change_attr_feature')" :id="`signaler_edit_${feature.id}`" :class="g3wtemplate.font['pencil']" class="g3w-icon skin-tooltip-right"  data-placement="right"  style="color:#30cce7;" v-t-title:plugin="'signaler_iim.table.edit'" aria-hidden="true" @click="editFeature(feature.__gis3w_feature_uid)"></i>
+            <i v-if="showTool('delete_feature')" :id="`signaler_delete_${feature.id}`" :class="g3wtemplate.font['trash-o']" class="g3w-icon skin-tooltip-right"  data-placement="right"  style="color:red;" v-t-title:plugin="'signaler_iim.table.delete'" aria-hidden="true" @click="deleteFeature(feature.__gis3w_feature_uid)"></i>
           </div>
         </td>
 

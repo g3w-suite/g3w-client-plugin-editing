@@ -46,23 +46,15 @@ const InternalComponent = Vue.extend({
     cancel() {
       this.$options.service.cancel();
     },
-    deleteFeature: function(index) {
-      const id = this.state.features[index].__gis3w_feature_uid;
-      const element = $(`#editing_table table tr#${id}`);
-      this.$options.service.deleteFeature(index).then(()=>this.dataTable.row(element).remove().draw()).catch(()=>{})
-    },
-    copyFeature(index){
-      this.$options.service.copyFeature(index).then(async feature =>{
-        this.show = false;
-        this.dataTable.destroy();
+    async deleteFeature(uid) {
+      const element = $(`#editing_table table tr#${uid}`);
+      this.$options.service.deleteFeature(uid).then(async ()=>{
+        this.dataTable.row(element).remove().draw();
         await this.$nextTick();
-        this.show = true;
-        await this.$nextTick();
-        this.setDataTable();
-      })
+      }).catch(()=>{});
     },
-    editFeature(index) {
-      this.$options.service.editFeature(index);
+    editFeature(uid) {
+      this.$options.service.editFeature(uid);
     },
     linkFeature(index, evt) {
      if (evt.target.checked) this._linkFeatures.push(index);

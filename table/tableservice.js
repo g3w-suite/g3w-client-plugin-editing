@@ -83,8 +83,9 @@ proto.cancel = function() {
   this._promise.reject();
 };
 
-proto.deleteFeature = function(index) {
+proto.deleteFeature = function(uid) {
   const EditingService = require('../services/editingservice');
+  const layer = this._inputs.layer;
   const childRelations = layer.getChildren();
   const relationinediting = childRelations.length &&  EditingService._filterRelationsInEditing({
     layerId: this.layerId,
@@ -94,7 +95,13 @@ proto.deleteFeature = function(index) {
     GUI.dialog.confirm(`<h4>${t('signaler_iim.messages.delete_feature')}</h4>
                         <div style="font-size:1.2em;">${ relationinediting ?t('signaler_iim.messages.delete_feature_relations') : ''}</div>`, (result) => {
       if (result) {
-        const feature = this._features[index];
+        let index;
+        const feature = this._features.find((feature, featureIdx) => {
+          if (feature.getUid() === uid) {
+            index = featureIdx;
+            return true;
+          }
+        });
         const session = this._context.session;
         this._inputs.layer.getEditingSource().removeFeature(feature);
         session.pushDelete(this.layerId, feature);
@@ -105,8 +112,14 @@ proto.deleteFeature = function(index) {
   })
 };
 
-proto.editFeature = function(index) {
-  const feature = this._features[index];
+proto.editFeature = function(uid) {
+  let index;
+  const feature = this._features.find((feature, featureIndex) => {
+    if (feature.getUid() === uid) {
+      index = featureIndex;
+      return true;
+    }
+  });
   const EditTableFeatureWorkflow = require('../workflows/edittablefeatureworkflow');
   this._workflow = new EditTableFeatureWorkflow();
   /**
@@ -126,7 +139,9 @@ proto.editFeature = function(index) {
         this.state.features[index][key] = feature.get(key);
       });
     })
-    .fail((err) => {})
+    .fail(err => {
+      console.log(err)
+    })
 };
 
 

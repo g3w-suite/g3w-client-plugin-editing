@@ -36,7 +36,7 @@ const RelationService = function(layerId, options = {}) {
   //get type of relation
   const relationLayerType = this._layerType === Layer.LayerTypes.VECTOR ? relationLayer.getGeometryType() : Layer.LayerTypes.TABLE;
   //
-  const { ownField: fatherRelationField} = this.getEditingService()._getRelationFieldsFromRelation({
+  const {ownField: fatherRelationField} = this.getEditingService()._getRelationFieldsFromRelation({
     layerId: this._parentLayerId,
     relation: this.relation
   });
@@ -57,29 +57,29 @@ const RelationService = function(layerId, options = {}) {
     relation: this._parentLayer.getEditingCapabilities()
   };
   //check if relationLayer is a TABLE Layer and with capabilities value check add tools
-  if (relationLayerType === Layer.LayerTypes.TABLE) {
-    (this.capabilities.relation.find(capability => capability === 'delete_feature') !== undefined) && this._relationTools.push({
-      state: {
-        icon: 'deleteTableRow.png',
-        id: 'deletefeature',
-        name: "signaler_iim.tools.delete_feature"
-      }
-    });
-    (this.capabilities.relation.find(capability => capability === 'change_attr_feature') !== undefined) && this._relationTools.push({
-      state: {
-        icon: 'editAttributes.png',
-        id: 'editattributes',
-        name: "signaler_iim.tools.update_feature"
-      }
-    })
-  } else {
-    const allrelationtools = this.getEditingService().getToolBoxById(this._relationLayerId).getTools();
-    allrelationtools.forEach(tool => {
-      if (_.concat(RELATIONTOOLS[relationLayerType], RELATIONTOOLS.default).indexOf(tool.getId()) !== -1)
-        this._relationTools.push(_.cloneDeep(tool));
-    });
-  }
-  this._setAddLinkWorkflow();
+  // if (relationLayerType === Layer.LayerTypes.TABLE) {
+  //   (this.capabilities.relation.find(capability => capability === 'delete_feature') !== undefined) && this._relationTools.push({
+  //     state: {
+  //       icon: 'deleteTableRow.png',
+  //       id: 'deletefeature',
+  //       name: "signaler_iim.tools.delete_feature"
+  //     }
+  //   });
+  //   (this.capabilities.relation.find(capability => capability === 'change_attr_feature') !== undefined) && this._relationTools.push({
+  //     state: {
+  //       icon: 'editAttributes.png',
+  //       id: 'editattributes',
+  //       name: "signaler_iim.tools.update_feature"
+  //     }
+  //   })
+  // } else {
+  //   const allrelationtools = this.getEditingService().getToolBoxById(this._relationLayerId).getTools();
+  //   allrelationtools.forEach(tool => {
+  //     if (_.concat(RELATIONTOOLS[relationLayerType], RELATIONTOOLS.default).indexOf(tool.getId()) !== -1)
+  //       this._relationTools.push(_.cloneDeep(tool));
+  //   });
+  // }
+  // this._setAddLinkWorkflow();
 };
 
 const proto = RelationService.prototype;

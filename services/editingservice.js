@@ -246,6 +246,10 @@ proto.setEditingSingleLayer = function(bool=false){
   this.state.edit_single_layer = bool;
 };
 
+proto.showEditingResultIcon = function({feature}={}){
+  return ApplicationState.user.username === 'iim' || feature.attributes[this.config.signaler_user_field] == ApplicationState.user.id;
+};
+
 proto.registerResultEditingAction = function(){
   const queryResultsService = GUI.getComponent('queryresults').getService();
   this.addActionKeys.push(queryResultsService.onafter('addActionsForLayers', (actions, layers) => {
@@ -258,7 +262,9 @@ proto.registerResultEditingAction = function(){
           class: GUI.getFontClass('pencil'),
           hint: 'plugins.signaler_iim.toolbox.title',
           condition: ({feature} = {}) => {
-            return feature.attributes[this.config.signaler_user_field] == ApplicationState.user.id;
+            return this.showEditingResultIcon({
+              feature
+            })
           },
           cbk: (layer, feature) => {
             SIGNALER_IIM_CONFIG.result = true;
@@ -311,7 +317,9 @@ proto.registerResultEditingAction = function(){
             color: 'red'
           },
           condition: ({feature} = {}) => {
-            return feature.attributes[this.config.signaler_user_field] == ApplicationState.user.id;
+            return this.showEditingResultIcon({
+              feature
+            })
           },
           cbk: async (layer, feature, action, index) => {
             const signaler_id = feature.attributes[G3W_FID];
