@@ -83,7 +83,6 @@
                         const featuresToolbox = EditingService.getToolBoxById(geo_layer_id);
                         const layerId = featuresToolbox.getId();
                         const editingFields = featuresToolbox.getLayer().getEditingFields().map(field=> field.name);
-                        console.log(editingFields)
                         const featureReportGeometryType = featuresToolbox.getLayer().getGeometryType();
                         const featuresSession = featuresToolbox.getSession();
                         const newReportFeatures = layer.getSource().getFeatures();

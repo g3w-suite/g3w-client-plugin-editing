@@ -67,13 +67,13 @@
 </template>
 
 <script>
-    import SIGNALER_IIM_CONFIG from '../../../global_plugin_data';
+    import SIGNALER_IIM_CONFIG from '../../../../global_plugin_data';
     const {findSelfIntersects} = g3wsdk.core.geoutils;
     const {areCoordinatesEqual, getCoordinatesFromGeometry, ConvertDEGToDMS, ConvertDMSToDEG} = g3wsdk.core.geoutils;
     const {isPolygonGeometryType} = g3wsdk.core.geometry.Geometry;
     const mapEpsg = g3wsdk.core.ApplicationState.map.epsg;
     const G3WInput = g3wsdk.gui.vue.Inputs.G3WInput;
-    const EditingService = require('../../../services/editingservice');
+    const EditingService = require('../../../../services/editingservice');
     const GUI = g3wsdk.gui.GUI;
     export default {
         name: 'Editingvertexcomponent',

@@ -62,16 +62,17 @@ proto.run = function(inputs, context) {
         });
       }
       startCoordinate = null;
-    })
+    });
     d.resolve(inputs);
   });
-
+  this.showErrorDraw();
   return d.promise()
 };
 
 proto.stop = function() {
   this.removeInteraction(this._translateInteraction);
   this._translateInteraction = null;
+  this.hideErrorDraw();
 };
 
 

@@ -150,6 +150,7 @@ proto.startForm = async function(options = {}) {
   const {signaler_layer_id} = SIGNALER_IIM_CONFIG;
   const {inputs, context, promise} = options;
   const {session} = context;
+  const isCircle = inputs.current_shape_type === 'Circle';
   const formComponent = options.formComponent || EditingFormComponent;
   const Form =  this._getForm(inputs, context);
   const layerId = this._originalLayer.getId();
@@ -171,6 +172,7 @@ proto.startForm = async function(options = {}) {
     dataid: this._layerName,
     layer: this._originalLayer,
     isnew: isNew,
+    isCircle,
     fields: this._fields,
     formStructure: this._editorFormStructure,
     modal: true,

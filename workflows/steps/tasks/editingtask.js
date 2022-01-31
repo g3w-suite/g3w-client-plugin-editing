@@ -10,6 +10,9 @@ function EditingTask(options = {}) {
   this.addInteraction = function(interaction) {
     this._mapService.addInteraction(interaction);
   };
+  this.unByKeys = {
+    'change:resolution': null
+  };
   this.removeInteraction = function(interaction) {
     //needed to avoid a issue on openlayer
     setTimeout(()=> this._mapService.removeInteraction(interaction))
@@ -146,6 +149,42 @@ proto.getDeltaXY = function({x, y, coordinates} = {}){
     x: x - xy.x,
     y: y - xy.y
   }
+};
+
+proto.setUnByKey = function({eventName, key}={}){
+  this.unByKeys[eventName] = key
+};
+
+proto.unByKey = function(eventName){
+  const key = this.unByKeys[eventName];
+  ol.Observable.unByKey(key);
+  this.unByKeys[eventName] = null;
+};
+
+proto.getInfoErrorMessage = function(){
+  return `${(3* this._mapService.getResolution()).toFixed(5)} m`;
+};
+
+proto.showErrorDraw = function() {
+  const eventName = 'change:resolution';
+  const messageConfig = {
+    info: this.getInfoErrorMessage(),
+    style: {
+      fontSize: '1.2em'
+    }
+  };
+  this._mapService.showMapInfo(messageConfig);
+  const key = this._mapService.getMap().getView().on(eventName, () =>{
+    this._mapService.showMapInfo({
+      info: this.getInfoErrorMessage()
+    });
+  });
+  this.setUnByKey({eventName, key});
+};
+
+proto.hideErrorDraw = function(){
+  this._mapService.hideMapInfo();
+  this.unByKey('change:resolution');
 };
 
 module.exports = EditingTask;

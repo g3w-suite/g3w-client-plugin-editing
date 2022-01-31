@@ -26,6 +26,7 @@ inherit(AddFeatureTask, EditingTask);
 const proto = AddFeatureTask.prototype;
 
 proto.setDrawInteraction = function({geometryFunction, type}={}){
+  const inputs = this.getInputs();
   const originalGeometryType = this.originalLayer.getEditingGeometryType();
   const geometryType = type || Geometry.getOLGeometry(originalGeometryType);
   const source = this.editingLayer.getSource();
@@ -42,7 +43,10 @@ proto.setDrawInteraction = function({geometryFunction, type}={}){
   this.addInteraction(this.drawInteraction);
   this.drawInteraction.setActive(true);
   this.drawInteraction.on('drawend', evt => {
-    if (evt.feature.getGeometry().getType() === 'Circle') evt.feature.setGeometry(ol.geom.Polygon.fromCircle(evt.feature.getGeometry()));
+    const addedFeatureGeometryType = evt.feature.getGeometry().getType();
+    inputs.current_shape_type = addedFeatureGeometryType;
+    if (addedFeatureGeometryType === 'Circle') 
+      evt.feature.setGeometry(ol.geom.Polygon.fromCircle(evt.feature.getGeometry()));
     if (isSingleGeometry(evt.feature.getGeometry())) evt.feature.setGeometry(singleGeometriesToMultiGeometry([evt.feature.getGeometry()]));
     if (Geometry.isPolygonGeometryType(evt.feature.getGeometry().getType()) && findSelfIntersects(evt.feature.getGeometry())){
       GUI.showUserMessage({
@@ -69,10 +73,9 @@ proto.setDrawInteraction = function({geometryFunction, type}={}){
       //add report id
       const {signaler_field, geo_layer_id, vertex_layer_id} = SIGNALER_IIM_CONFIG;
       this.layerId === geo_layer_id && feature.set(signaler_field, this.getEditingService().getCurrentReportData().id);
-      const inputs = this.getInputs();
       inputs.features.push(feature);
       // in case of not geometry Point
-      vertex_layer_id && this.getVertexToReportFeature(feature);
+      vertex_layer_id && addedFeatureGeometryType !== 'Circle' && this.getVertexToReportFeature(feature);
       /**
        * Method to get or add vertex to feature related to report
        */
@@ -91,9 +94,10 @@ proto.run = function(inputs, context) {
   this.session = context.session;
   switch (this.originalLayer.getType()) {
     case Layer.LayerTypes.VECTOR:
-      current_shape_type ? this.changeDrawShapeStyle(current_shape_type) : this.setDrawInteraction();
+      current_shape_type ? this.changeDrawShapeStyle(current_shape_type) : this.setDrawInteraction(inputs);
       break;
   }
+  this.showErrorDraw();
   return this.promise.promise();
 };
 
@@ -191,6 +195,7 @@ proto.stop = function(inputs, context) {
   }
   this.removeInteraction(this.drawInteraction);
   this.drawInteraction = null;
+  this.hideErrorDraw();
   return true;
 };
 

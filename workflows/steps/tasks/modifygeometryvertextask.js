@@ -122,8 +122,7 @@ proto.run = function(inputs, context) {
       return false;
     }
   });
-
-
+  this.showErrorDraw();
   return d.promise();
 };
 
@@ -135,6 +134,7 @@ proto.stop = function(){
   this._modifyInteraction = null;
   this.updateFeaturesCollection.clear();
   this.updateFeaturesCollection = null;
+  this.hideErrorDraw();
   return true;
 };
 
