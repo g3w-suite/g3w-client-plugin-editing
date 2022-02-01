@@ -7,9 +7,29 @@ const OpenFormStep = require('./steps/openformstep');
 function AddFeatureWorkflow(options={}) {
   const addfeaturestep = new AddFeatureStep(options);
   const openformstep = new OpenFormStep(options);
-  let current_shape_type = null;
+  const drawTool = {
+    type: 'draw',
+    options: {
+      shape_types: ['Draw', 'Square', 'Box', 'Triangle',  'Circle', 'Ellipse'],
+      current_shape_type: 'Draw',
+      edit_feature_geometry: null,
+      radius: 0,
+      onChange(type){
+        this.radius = type === 'Circle' ? 0 : null;
+        this.edit_feature_geometry = type === 'Circle' ? 'radius' : type === 'Ellipse' ? null: 'vertex';
+        this.edit_feature_geometry = this.edit_feature_geometry;
+        addfeaturestep.getTask().changeDrawShapeStyle(type);
+      },
+      onBeforeDestroy(){
+        this.current_shape_type = 'Draw';
+        this.edit_feature_geometry = null;
+        this.radius = 0;
+      }
+    }
+  };
   addfeaturestep.on('run', ({inputs, context}) => {
     const toolsoftools = [];
+    delete inputs.draw_options;
     const layer = inputs.layer;
     const snapTool = {
       type: 'snap',
@@ -20,24 +40,9 @@ function AddFeatureWorkflow(options={}) {
       }
     };
     toolsoftools.push(snapTool);
-    const drawTool = {
-      type: 'draw',
-      options: {
-        shape_types: ['Draw', 'Square', 'Box', 'Triangle',  'Circle', 'Ellipse'],
-        shape_type: current_shape_type,
-        onChange(type){
-          addfeaturestep.getTask().changeDrawShapeStyle(type);
-          current_shape_type = type;
-        },
-        onBeforeDestroy(){
-          current_shape_type = null;
-          delete inputs.current_shape_type;
-        }
-      }
-    };
     if (isPolygonGeometryType(layer.getGeometryType())) toolsoftools.push(drawTool);
     this.emit('settoolsoftool', toolsoftools);
-    inputs.current_shape_type = current_shape_type;
+    inputs.draw_options = drawTool.options;
   });
   addfeaturestep.on('stop', () => {
     this.emit('unsettoolsoftool');

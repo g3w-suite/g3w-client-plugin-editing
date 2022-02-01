@@ -8,13 +8,20 @@ const FormComponent = g3wsdk.gui.vue.FormComponent;
 
 function EditingFormComponent(options={}) {
   const {signaler_layer_id, vertex_layer_id} = SIGNALER_IIM_CONFIG;
-  const {layer, isnew, isCircle=false} = options;
+  const {layer, isnew, edit_feature_geometry} = options;
   const layerId = layer.getId();
   let component;
   if (layerId === signaler_layer_id){
     if (!isnew) component = EditFeaturesComponent;
   } else if (!isPointGeometryType(layer.getGeometryType()) && vertex_layer_id)
-    component = isCircle ? EditRadiusComponent : EditVertexComponent;
+    switch(edit_feature_geometry) {
+      case 'vertex':
+        component = EditVertexComponent;
+        break;
+      case 'radius':
+        component = EditRadiusComponent;
+        break;
+    }
   base(this, options);
   component && this.addBodyFormComponent({
     component,

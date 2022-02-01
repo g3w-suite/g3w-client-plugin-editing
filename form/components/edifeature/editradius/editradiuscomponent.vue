@@ -1,7 +1,7 @@
 <template>
     <div class="editingradiuscomponent" style="display: flex; flex-direction: column; justify-content: space-between">
       <div class="change_radius">
-        <label for="g3w_feature_report_radius">Raggio</label>
+        <label for="g3w_feature_report_radius">Raggio [m]</label>
         <input id="g3w_feature_report_radius" class="form-control"  type="number" min="0" step="1" v-model="radius">
       </div>
       <div class="buttons" style="align-self: center; font-weight: bold; width: 100%; display: flex; justify-content: center">

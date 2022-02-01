@@ -42,9 +42,16 @@ proto.setDrawInteraction = function({geometryFunction, type}={}){
   });
   this.addInteraction(this.drawInteraction);
   this.drawInteraction.setActive(true);
+  this.drawInteraction.on('drawstart', evt => {
+    const geometry = evt.feature.getGeometry();
+    if (geometry.getType() === 'Circle'){
+      geometry.on('change', ()=>{
+        inputs.draw_options.radius = geometry.getRadius();
+      })
+    }
+  });
   this.drawInteraction.on('drawend', evt => {
     const addedFeatureGeometryType = evt.feature.getGeometry().getType();
-    inputs.current_shape_type = addedFeatureGeometryType;
     if (addedFeatureGeometryType === 'Circle') 
       evt.feature.setGeometry(ol.geom.Polygon.fromCircle(evt.feature.getGeometry()));
     if (isSingleGeometry(evt.feature.getGeometry())) evt.feature.setGeometry(singleGeometriesToMultiGeometry([evt.feature.getGeometry()]));
@@ -75,7 +82,7 @@ proto.setDrawInteraction = function({geometryFunction, type}={}){
       this.layerId === geo_layer_id && feature.set(signaler_field, this.getEditingService().getCurrentReportData().id);
       inputs.features.push(feature);
       // in case of not geometry Point
-      vertex_layer_id && addedFeatureGeometryType !== 'Circle' && this.getVertexToReportFeature(feature);
+      vertex_layer_id && type !== 'Circle' && this.getVertexToReportFeature(feature);
       /**
        * Method to get or add vertex to feature related to report
        */
@@ -87,7 +94,8 @@ proto.setDrawInteraction = function({geometryFunction, type}={}){
 
 proto.run = function(inputs, context) {
   this.promise = $.Deferred();
-  const {current_shape_type} = inputs;
+  const {draw_options:{current_shape_type}} = inputs;
+  if (current_shape_type) inputs.draw_options.radius = 0;
   this.originalLayer = inputs.layer;
   this.layerId = this.originalLayer.getId();
   this.editingLayer = this.originalLayer.getEditingLayer();
@@ -110,13 +118,10 @@ proto.changeDrawShapeStyle = function(type) {
   if (type !== "Draw") {
     let geometryFunction;
     if (type === "Square") {
-      type = "Circle";
       geometryFunction = createRegularPolygon(4);
     } else if (type === "Box") {
-      type = "Circle";
       geometryFunction = createBox();
     } else if (type === "Triangle") {
-      type = "Circle";
       geometryFunction = function(coordinates, geometry) {
         const center = coordinates[0];
         const last = coordinates[1];
@@ -136,10 +141,11 @@ proto.changeDrawShapeStyle = function(type) {
         newCoordinates.push(newCoordinates[0].slice());
         if (!geometry) geometry = new ol.geom.Polygon([newCoordinates]);
         else geometry.setCoordinates([newCoordinates]);
+
         return geometry;
       };
     } else if (type === "Ellipse") {
-      type = "Circle";
+      type = 'Circle';
       geometryFunction = function(coordinates, geometry) {
         const center = coordinates[0];
         const last = coordinates[1];
@@ -149,29 +155,6 @@ proto.changeDrawShapeStyle = function(type) {
         const circle = new ol.geom.Circle(center, radius);
         const polygon = fromCircle(circle, 64);
         polygon.scale(dx / radius, dy / radius);
-        if (!geometry) geometry = polygon;
-        else geometry.setCoordinates(polygon.getCoordinates());
-        return geometry;
-      };
-    } else if (type === "Oblique Ellipse") {
-      type = "LineString";
-      geometryFunction = function(coordinates, geometry) {
-        const center = coordinates[0];
-        const first = coordinates[1];
-        let dx = center[0] - first[0];
-        let dy = center[1] - first[1];
-        var radius1 = Math.sqrt(dx * dx + dy * dy);
-        if (coordinates.length > 2) {
-          const last = coordinates[2];
-          dx = center[0] - last[0];
-          dy = center[1] - last[1];
-        }
-        const radius2 = Math.sqrt(dx * dx + dy * dy);
-        const rotation = Math.atan2(dy, dx);
-        const circle = new ol.geom.Circle(center, radius1);
-        const polygon = fromCircle(circle, 64);
-        polygon.scale(radius2 / radius1, 1);
-        polygon.rotate(rotation, center);
         if (!geometry) geometry = polygon;
         else geometry.setCoordinates(polygon.getCoordinates());
         return geometry;
