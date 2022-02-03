@@ -37,9 +37,7 @@ proto.run = function(inputs, context, queques) {
     if (this.featureCanPicked(feature)){
       originalStyle = this.setFeaturesSelectedStyle([feature]);
       inputs.features.length === 0 && inputs.features.push(feature);
-      queques.micro.addTask(()=>{
-        inputs.features.forEach((feature => feature.setStyle(originalStyle)));
-      });
+      queques.micro.addTask(() => inputs.features.forEach((feature => feature.setStyle(originalStyle))));
       this._steps && this.setUserMessageStepDone('select');
       d.resolve(inputs);
     } else d.reject();
