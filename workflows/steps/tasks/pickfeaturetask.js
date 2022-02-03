@@ -17,25 +17,32 @@ inherit(PickFeatureTask, EditingTask);
 
 const proto = PickFeatureTask.prototype;
 
+proto.featureCanPicked = function(feature){
+  return feature.get('shape') === null || feature.get('shape') === undefined;
+};
+
 proto.run = function(inputs, context, queques) {
   const d = $.Deferred();
   const editingLayer = inputs.layer.getEditingLayer();
   const layers = [editingLayer];
   let originalStyle;
+  const features = inputs.features.filter(feature => this.featureCanPicked(feature));
   this.pickFeatureInteraction = new PickFeatureInteraction({
     layers,
-    features: inputs.features
+    features
   });
   this.addInteraction(this.pickFeatureInteraction);
   this.pickFeatureInteraction.on('picked', e => {
     const feature = e.feature;
-    originalStyle = this.setFeaturesSelectedStyle([feature]);
-    inputs.features.length === 0 && inputs.features.push(feature);
-    queques.micro.addTask(()=>{
-      inputs.features.forEach((feature => feature.setStyle(originalStyle)));
-    });
-    this._steps && this.setUserMessageStepDone('select');
-    d.resolve(inputs);
+    if (this.featureCanPicked(feature)){
+      originalStyle = this.setFeaturesSelectedStyle([feature]);
+      inputs.features.length === 0 && inputs.features.push(feature);
+      queques.micro.addTask(()=>{
+        inputs.features.forEach((feature => feature.setStyle(originalStyle)));
+      });
+      this._steps && this.setUserMessageStepDone('select');
+      d.resolve(inputs);
+    } else d.reject();
   });
 
   return d.promise()

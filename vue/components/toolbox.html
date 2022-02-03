@@ -3,13 +3,7 @@
     <div @click="select" class="panel" style="margin-bottom: 8px;" :class="{'mobile': isMobile(), 'toolboxselected': state.selected }">
       <div v-show="!isLayerReady" class="bar-loader"></div>
       <div v-if="state.toolboxheader" class="panel-heading container" style="width:100%;" :style="{ background: state.color}">
-        <div v-if="father" style="margin-right:5px; cursor:pointer;" class="pull-left enabled dropdown">
-          <span :class="g3wtemplate.font['relation']"></span>
-          <div class="dropdown-content skin-background-color" style="padding: 5px; border-radius: 3px;">
-            <div v-for="dependency in state.editing.dependencies" style="font-weight: bold" >{{ dependency }}</div>
-          </div>
-        </div>
-        <div class="panel-title" :class="[father ? 'col-md-6' : 'col-md-8']" v-t-plugin:pre="'signaler_iim.toolbox.title'">{{ state.title }}</div>
+        <div class="panel-title" :class="[father ? 'col-md-8' : 'col-md-8']" v-t-plugin:pre="'signaler_iim.toolbox.title'">{{ state.title }}</div>
         <div v-disabled="!state.startstopediting" data-placement="left" data-toggle="tooltip" ref="editingbutton"
              @click.stop="toggleEditing"
              class="start-editing editbtn skin-tooltip-left"

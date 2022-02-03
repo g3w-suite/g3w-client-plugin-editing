@@ -42,15 +42,22 @@ proto.setDrawInteraction = function({geometryFunction, type}={}){
   });
   this.addInteraction(this.drawInteraction);
   this.drawInteraction.setActive(true);
+  let changeGeometryKeyEvent = null;
   this.drawInteraction.on('drawstart', evt => {
     const geometry = evt.feature.getGeometry();
     if (geometry.getType() === 'Circle'){
-      geometry.on('change', ()=>{
-        inputs.draw_options.radius = geometry.getRadius();
+      changeGeometryKeyEvent = geometry.on('change', ()=>{
+        this.setRadius({
+          radius: geometry.getRadius(),
+          inputs
+        });
       })
     }
   });
   this.drawInteraction.on('drawend', evt => {
+    changeGeometryKeyEvent && ol.Object.unByKey(changeGeometryKeyEvent);
+    changeGeometryKeyEvent = null;
+    const {draw_options:{current_shape_type}} = inputs;
     const addedFeatureGeometryType = evt.feature.getGeometry().getType();
     if (addedFeatureGeometryType === 'Circle') 
       evt.feature.setGeometry(ol.geom.Polygon.fromCircle(evt.feature.getGeometry()));
@@ -65,13 +72,15 @@ proto.setDrawInteraction = function({geometryFunction, type}={}){
       let feature;
       if (this._add) {
         attributes.forEach(attribute => evt.feature.set(attribute.name, null));
+        evt.feature.set('shape', current_shape_type ? ['Circle', 'Ellipse'].indexOf(current_shape_type) !== -1 ? current_shape_type: null : null);
         feature = new Feature({
           feature: evt.feature
         });
         feature.setTemporaryId();
         source.addFeature(feature);
-        this.session.pushAdd(this.layerId, feature);
+        this.session.pushAdd(this.layerId, feature, false);
       } else feature = evt.feature;
+      const isCircleOrEllipse = this.isFeatureCircleOrEllipse(feature);
       // set Z values based on layer geometry
       feature = Geometry.addZValueToOLFeatureGeometry({
         feature,
@@ -82,7 +91,7 @@ proto.setDrawInteraction = function({geometryFunction, type}={}){
       this.layerId === geo_layer_id && feature.set(signaler_field, this.getEditingService().getCurrentReportData().id);
       inputs.features.push(feature);
       // in case of not geometry Point
-      vertex_layer_id && type !== 'Circle' && this.getVertexToReportFeature(feature);
+      vertex_layer_id && !isCircleOrEllipse && this.getVertexToReportFeature(feature);
       /**
        * Method to get or add vertex to feature related to report
        */
@@ -92,16 +101,21 @@ proto.setDrawInteraction = function({geometryFunction, type}={}){
   });
 };
 
+proto.isFeatureCircleOrEllipse = function(feature){
+  return ['Circle', 'Ellipse'].indexOf(feature.get('shape')) !== -1;
+};
+
 proto.run = function(inputs, context) {
   this.promise = $.Deferred();
-  const {draw_options:{current_shape_type}} = inputs;
-  if (current_shape_type) inputs.draw_options.radius = 0;
+  const {draw_options={}} = inputs;
+  draw_options.init && draw_options.init();
   this.originalLayer = inputs.layer;
   this.layerId = this.originalLayer.getId();
   this.editingLayer = this.originalLayer.getEditingLayer();
   this.session = context.session;
   switch (this.originalLayer.getType()) {
     case Layer.LayerTypes.VECTOR:
+      const {current_shape_type} = draw_options;
       current_shape_type ? this.changeDrawShapeStyle(current_shape_type) : this.setDrawInteraction(inputs);
       break;
   }
@@ -118,10 +132,13 @@ proto.changeDrawShapeStyle = function(type) {
   if (type !== "Draw") {
     let geometryFunction;
     if (type === "Square") {
+      type = 'Circle';
       geometryFunction = createRegularPolygon(4);
     } else if (type === "Box") {
+      type = 'Circle';
       geometryFunction = createBox();
     } else if (type === "Triangle") {
+      type = 'Circle';
       geometryFunction = function(coordinates, geometry) {
         const center = coordinates[0];
         const last = coordinates[1];
@@ -146,7 +163,7 @@ proto.changeDrawShapeStyle = function(type) {
       };
     } else if (type === "Ellipse") {
       type = 'Circle';
-      geometryFunction = function(coordinates, geometry) {
+      geometryFunction = (coordinates, geometry) => {
         const center = coordinates[0];
         const last = coordinates[1];
         const dx = center[0] - last[0];
@@ -157,11 +174,26 @@ proto.changeDrawShapeStyle = function(type) {
         polygon.scale(dx / radius, dy / radius);
         if (!geometry) geometry = polygon;
         else geometry.setCoordinates(polygon.getCoordinates());
+        this.setEllipseRadius({
+          ellipse: {
+            horizontal: Math.abs(dx),
+            vertical: Math.abs(dy)
+          }
+        });
         return geometry;
       };
     }
     this.setDrawInteraction({geometryFunction, type});
   } else this.setDrawInteraction();
+};
+
+proto.setRadius = function({inputs=this.getInputs(), radius=null}){
+  inputs.draw_options.radius = radius;
+};
+
+proto.setEllipseRadius = function({inputs=this.getInputs(), ellipse={horizontal:null, vertical:null}}){
+  inputs.draw_options.ellipse.horizontal = ellipse.horizontal;
+  inputs.draw_options.ellipse.vertical = ellipse.vertical;
 };
 
 proto.getVertexToReportFeature = function(feature){
@@ -171,7 +203,9 @@ proto.getVertexToReportFeature = function(feature){
   }
 };
 
-proto.stop = function(inputs, context) {
+proto.stop = function() {
+  const inputs = this.getInputs();
+  if (inputs.draw_options) inputs.draw_options.radius = null;
   if (this._snapInteraction) {
      this.removeInteraction(this._snapInteraction);
      this._snapInteraction = null;

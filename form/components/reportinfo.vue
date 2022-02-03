@@ -7,16 +7,16 @@
                 <span>{{info.value}}</span>
             </div>
         </div>
-        <slot name="button"></slot>
+        <slot name="content"></slot>
     </div>
 
 </template>
 
 <script>
     const {GUI, ComponentsFactory} = g3wsdk.gui;
-    const EditingService = require('../../../services/editingservice');
+    const EditingService = require('../../services/editingservice');
     export default {
-        name: 'editfeature',
+        name: 'reportinfo',
         data(){
             return {
                 signaler_father_info:[]

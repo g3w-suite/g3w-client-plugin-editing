@@ -12,18 +12,40 @@ function AddFeatureWorkflow(options={}) {
     options: {
       shape_types: ['Draw', 'Square', 'Box', 'Triangle',  'Circle', 'Ellipse'],
       current_shape_type: 'Draw',
-      edit_feature_geometry: null,
-      radius: 0,
+      edit_feature_geometry: 'vertex',
+      radius: null,
+      ellipse: {
+        horizontal: null,
+        vertical: null
+      },
+      init(){
+        this.radius = null;
+        this.ellipse.horizontal = null;
+        this.ellipse.vertical = null;
+        switch (this.current_shape_type) {
+          case 'Circle':
+            this.radius = 0;
+            this.edit_feature_geometry = 'radius';
+            break;
+          case 'Ellipse':
+            this.ellipse.horizontal = 0;
+            this.ellipse.vertical = 0;
+            this.edit_feature_geometry = 'radius';
+            break;
+          default:
+            this.edit_feature_geometry = 'vertex';
+        }
+      },
       onChange(type){
-        this.radius = type === 'Circle' ? 0 : null;
-        this.edit_feature_geometry = type === 'Circle' ? 'radius' : type === 'Ellipse' ? null: 'vertex';
-        this.edit_feature_geometry = this.edit_feature_geometry;
+        this.init();
         addfeaturestep.getTask().changeDrawShapeStyle(type);
       },
       onBeforeDestroy(){
         this.current_shape_type = 'Draw';
         this.edit_feature_geometry = null;
-        this.radius = 0;
+        this.radius = null;
+        this.ellipse.horizontal = null;
+        this.ellipse.vertical = null;
       }
     }
   };

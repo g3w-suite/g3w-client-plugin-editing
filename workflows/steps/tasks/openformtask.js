@@ -150,11 +150,11 @@ proto.startForm = async function(options = {}) {
   const {signaler_layer_id} = SIGNALER_IIM_CONFIG;
   const {inputs, context, promise} = options;
   const {session} = context;
-  const edit_feature_geometry = inputs.draw_options ? inputs.draw_options.edit_feature_geometry : null;
   const formComponent = options.formComponent || EditingFormComponent;
   const Form =  this._getForm(inputs, context);
   const layerId = this._originalLayer.getId();
   const feature = this._originalFeatures[0];
+  let edit_feature_geometry = null;
   const isNew = feature.isNew();
   if (layerId === signaler_layer_id) {
     this.getEditingService().setCurrentReportData({
@@ -163,7 +163,10 @@ proto.startForm = async function(options = {}) {
     await this.getEditingService().filterReportFieldsFormValues({
       fields: this._fields
     })
-  } else this.getEditingService().setCurrentFeatureReport({feature});
+  } else {
+    edit_feature_geometry = feature.get('shape') ? 'radius' : 'vertex';
+    this.getEditingService().setCurrentFeatureReport({feature});
+  }
   const formService = Form({
     formComponent,
     title: "plugins.signaler_iim.editing_attributes",

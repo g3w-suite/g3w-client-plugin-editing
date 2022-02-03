@@ -1,23 +1,22 @@
 <template>
-    <edit-feature-component>
-        <template v-slot:button>
+    <report-info-component>
+        <template v-slot:content>
             <div class="vertex" style="background-color: #FFFFFF; padding: 5px;">
                 <button class="btn skin-button" style="width:100%" @click="editVertex">Edita vertici</button>
             </div>
         </template>
-    </edit-feature-component>
-
+    </report-info-component>
 </template>
 
 <script>
-    import EditFeatureComponent from '../editfeature.vue';
+    import ReportInfoComponent from '../../reportinfo.vue';
     import EditingVertexComponent from './editingvertexcomponent.vue';
     const {GUI, ComponentsFactory} = g3wsdk.gui;
     const EditingService = require('../../../../services/editingservice');
     export default {
         name: 'Vertex',
         components: {
-            EditFeatureComponent
+            ReportInfoComponent
         },
         data(){
           return {

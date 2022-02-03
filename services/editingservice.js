@@ -1819,15 +1819,16 @@ proto.getFeatureAndRelatedVertexReportByReportId = function(filter){
             vertexToolbox.start(options);
           }
         }
-        // else GUI.showUserMessage({
-        //   type: 'info',
-        //   message: 'Non è stata trovata nessuna feature geometrica associata alla segnalazione',
-        //   autoclose: true
-        // });
         resolve(features);
       })
       .fail(err => reject(err))
   });
+};
+
+proto.getVertexFromFeatureReport = function(feature){
+  const id = feature.getId();
+  const vertexLayerToolBox = this.getToolBoxById(SIGNALER_IIM_CONFIG.vertex_layer_id);
+  return vertexLayerToolBox.getEditingLayerSource().getFeatures().filter(feature => feature.get('feature_id') == id);
 };
 
 proto.initEditingState = function(){
@@ -1927,6 +1928,22 @@ proto.editingFeaturesReport = function({toolId, filter}={}){
       }
     }
   })
+};
+
+proto.getDeltaXY = function({x,y, coordinates}={}){
+  const getCoordinates = coordinates => {
+    if (Array.isArray(coordinates[0])){
+      return getCoordinates(coordinates[0])
+    } else return {
+      x: coordinates[0],
+      y: coordinates[1]
+    };
+  };
+  const xy = getCoordinates(coordinates);
+  return {
+    x: x - xy.x,
+    y: y - xy.y
+  }
 };
 
 EditingService.EDITING_FIELDS_TYPE = ['unique'];

@@ -126,7 +126,6 @@ proto.editFeature = function(uid) {
    *
    * HOOK TO LOAD ALL FEATURES RELATED TO REPORT
    */
-
   this._inputs.features.push(feature);
   const options = {
     context: this._context,
@@ -143,7 +142,5 @@ proto.editFeature = function(uid) {
       console.log(err)
     })
 };
-
-
 
 module.exports = TableService;

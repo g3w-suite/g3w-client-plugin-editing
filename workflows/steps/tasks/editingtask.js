@@ -7,21 +7,23 @@ function EditingTask(options = {}) {
   base(this, options);
   this._editingServive;
   this._mapService = GUI.getComponent('map').getService();
-  this.addInteraction = function(interaction) {
-    this._mapService.addInteraction(interaction);
-  };
   this.unByKeys = {
     'change:resolution': null
-  };
-  this.removeInteraction = function(interaction) {
-    //needed to avoid a issue on openlayer
-    setTimeout(()=> this._mapService.removeInteraction(interaction))
   };
 }
 
 inherit(EditingTask, Task);
 
 const proto = EditingTask.prototype;
+
+proto.addInteraction = function(interaction) {
+  this._mapService.addInteraction(interaction);
+};
+
+proto.removeInteraction = function(interaction) {
+  //needed to avoid a issue on openlayer
+  setTimeout(() => this._mapService.removeInteraction(interaction))
+};
 
 //get editing type from editing config
 proto.getEditingType = function(){
@@ -136,19 +138,11 @@ proto.getPointFeaturesfromGeometryVertex = function(geometry){
 };
 
 proto.getDeltaXY = function({x, y, coordinates} = {}){
-  const getCoordinates = (coordinates)=> {
-    if (Array.isArray(coordinates[0])){
-      return getCoordinates(coordinates[0])
-    } else return {
-      x: coordinates[0],
-      y: coordinates[1]
-    };
-  };
-  const xy = getCoordinates(coordinates);
-  return {
-    x: x - xy.x,
-    y: y - xy.y
-  }
+  this.getEditingService().getDeltaXY({
+    x,
+    y,
+    coordinates
+  })
 };
 
 proto.setUnByKey = function({eventName, key}={}){
