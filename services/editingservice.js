@@ -73,7 +73,7 @@ function EditingService() {
   this.mapControlToggleEventHandler = evt =>{
     if (evt.target.isToggled() && evt.target.isClickMap()){
       let toolboxselected = this.state.toolboxselected;
-      toolboxselected && toolboxselected.getActiveTool() && toolboxselected.getActiveTool().stop();
+      toolboxselected && toolboxselected.getActiveTool() && toolboxselected.stopActiveTool();
     }
   };
 
