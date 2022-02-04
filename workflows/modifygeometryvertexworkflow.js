@@ -5,6 +5,7 @@ const ModifyGeometryVertexStep = require('./steps/modifygeometryvertexstep');
 
 function ModifyGeometryVertexWorflow(options={}) {
   options.helpMessage = 'signaler_iim.tools.update_vertex';
+  options.filterFnc = feature => feature.get('shape') === null || feature.get('shape') === undefined;
   const pickstep = new PickFeatureStep(options);
   pickstep.on('run', ({inputs, context}) => {
     const layer = inputs.layer;
@@ -18,14 +19,15 @@ function ModifyGeometryVertexWorflow(options={}) {
     };
     this.emit('settoolsoftool', [snapTool]);
   });
-  const modifyvertex = new ModifyGeometryVertexStep();
-  modifyvertex.on('run', () => {
-    this.emit('active', ['snap']);
+  const modifyvertexstep = new ModifyGeometryVertexStep({
+    escKeyPressEventHandler({task}={}){
+      task.forceStop();
+    }
   });
-  modifyvertex.on('stop', () => {
-    this.emit('deactive', ['snap']);
-  });
-  options.steps = [pickstep, modifyvertex];
+
+  modifyvertexstep.on('run', () => this.emit('active', ['snap']));
+  modifyvertexstep.on('stop', () => this.emit('deactive', ['snap']));
+  options.steps = [pickstep, modifyvertexstep];
   base(this, options);
 }
 

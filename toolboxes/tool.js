@@ -5,11 +5,11 @@ const G3WObject = g3wsdk.core.G3WObject;
 function Tool(options = {}) {
   base(this);
   this.editingService = require('../services/editingservice');
-  const {name, row, id, icon, session, layer, once=false, type=[]} = options;
+  const {name, row, id, icon, session, layer, once=false, type=[], op} = options;
   this._options = null;
   this._session = session;
   this._layer = layer;
-  this._op = new options.op({
+  this._op = new op({
     layer
   });
   this._once = once;

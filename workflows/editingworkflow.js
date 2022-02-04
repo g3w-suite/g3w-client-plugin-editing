@@ -53,7 +53,7 @@ proto.getSession = function() {
 
 //bind interrupt event
 proto.escKeyUpHandler = function(evt) {
-  if (evt.keyCode === 27) {
+  if (evt.key === 'Escape') {
     evt.data.workflow.reject();
     evt.data.callback();
   }
@@ -73,12 +73,8 @@ proto.bindEscKeyUp = function(callback=()=>{}) {
 };
 
 proto.registerEscKeyEvent = function(callback){
-  this.on('start', ()=> {
-    this.bindEscKeyUp(callback);
-  });
-  this.on('stop', ()=>{
-    this.unbindEscKeyUp()
-  });
+  this.on('start', ()=> this.bindEscKeyUp(callback));
+  this.on('stop', ()=>this.unbindEscKeyUp());
 };
 /////
 

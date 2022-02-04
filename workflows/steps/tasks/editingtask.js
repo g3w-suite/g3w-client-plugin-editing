@@ -16,6 +16,10 @@ inherit(EditingTask, Task);
 
 const proto = EditingTask.prototype;
 
+proto.forceStop = function(){
+  this.promise && this.promise.reject();
+};
+
 proto.addInteraction = function(interaction) {
   this._mapService.addInteraction(interaction);
 };

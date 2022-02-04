@@ -158,7 +158,6 @@ proto.changeDrawShapeStyle = function(type) {
         newCoordinates.push(newCoordinates[0].slice());
         if (!geometry) geometry = new ol.geom.Polygon([newCoordinates]);
         else geometry.setCoordinates([newCoordinates]);
-
         return geometry;
       };
     } else if (type === "Ellipse") {

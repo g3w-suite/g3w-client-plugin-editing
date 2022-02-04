@@ -1,7 +1,6 @@
 import SIGNALER_IIM_CONFIG from '../../../global_plugin_data';
 const {base, inherit} = g3wsdk.core.utils;
 const {getVertexLength, areCoordinatesEqual, getPointFeaturesfromGeometryVertex} = g3wsdk.core.geoutils;
-
 const EditingTask = require('./editingtask');
 
 function ModifyGeometryVertexTask(options={}){
@@ -20,6 +19,7 @@ const proto = ModifyGeometryVertexTask.prototype;
 
 proto.run = function(inputs, context) {
   const d = $.Deferred();
+  this.promise = d;
   const {geo_layer_id, vertex_layer_id} = SIGNALER_IIM_CONFIG;
   const originalLayer = inputs.layer;
   const editingLayer = originalLayer.getEditingLayer() ;
@@ -135,6 +135,7 @@ proto.stop = function(){
   this.updateFeaturesCollection.clear();
   this.updateFeaturesCollection = null;
   this.hideErrorDraw();
+  this.promise = null;
   return true;
 };
 

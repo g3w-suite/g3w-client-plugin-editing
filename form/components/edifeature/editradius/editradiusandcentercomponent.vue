@@ -154,12 +154,14 @@
           const ext1 = Math.abs(extent[2] - extent[0]);
           const ext2 = Math.abs(extent[3] - extent[1]);
           this.isEllipse =  this.featureReport.get('shape') === 'Ellipse';
+          this.sourceFeature = this.getSourceFeatureReport();
           if (this.isEllipse){
             this.ellipse.horizontal = ext1/2;
             this.ellipse.vertical = ext2/2;
-          } else this.radius = Math.min(ext1, ext2) / 2;
-          this.sourceFeature = this.getSourceFeatureReport();
-          !this.isEllipse && this.sourceFeature.setGeometry(new ol.geom.Circle([this.center[0], this.center[1]], this.radius))
+          } else {
+            this.radius = Math.min(ext1, ext2) / 2;
+            this.sourceFeature.setGeometry(new ol.geom.Circle(this.center, this.radius))
+          }
         },
         async mounted(){},
         beforeDestroy() {
