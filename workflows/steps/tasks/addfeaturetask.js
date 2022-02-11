@@ -55,6 +55,7 @@ proto.setDrawInteraction = function({geometryFunction, type}={}){
     }
   });
   this.drawInteraction.on('drawend', evt => {
+    const {signaler_field, geo_layer_id, vertex_layer_id} = SIGNALER_IIM_CONFIG;
     changeGeometryKeyEvent && ol.Object.unByKey(changeGeometryKeyEvent);
     changeGeometryKeyEvent = null;
     const {draw_options:{current_shape_type}} = inputs;
@@ -71,8 +72,10 @@ proto.setDrawInteraction = function({geometryFunction, type}={}){
     } else {
       let feature;
       if (this._add) {
+        //add report id
         attributes.forEach(attribute => evt.feature.set(attribute.name, null));
         evt.feature.set('shape', current_shape_type ? ['Circle', 'Ellipse'].indexOf(current_shape_type) !== -1 ? current_shape_type: null : null);
+        this.layerId === geo_layer_id && evt.feature.set(signaler_field, this.getEditingService().getCurrentReportData().id);
         feature = new Feature({
           feature: evt.feature
         });
@@ -86,9 +89,6 @@ proto.setDrawInteraction = function({geometryFunction, type}={}){
         feature,
         geometryType: originalGeometryType
       });
-      //add report id
-      const {signaler_field, geo_layer_id, vertex_layer_id} = SIGNALER_IIM_CONFIG;
-      this.layerId === geo_layer_id && feature.set(signaler_field, this.getEditingService().getCurrentReportData().id);
       inputs.features.push(feature);
       // in case of not geometry Point
       vertex_layer_id && !isCircleOrEllipse && this.getVertexToReportFeature(feature);

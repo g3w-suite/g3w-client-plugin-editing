@@ -61,8 +61,8 @@ proto._cancelFnc = function(promise, inputs) {
     this.fireEvent('cancelform', inputs.features);
     promise.reject(inputs);
     const {create_new_signaler} = SIGNALER_IIM_CONFIG;
-    // in case of new create signalke (with sid=new) go outside editing
-    create_new_signaler && this.getEditingService().getPlugin().hideEditingPanel();
+    // in case of new create signaler (with sid=new or signaler_field) go outside editing
+    create_new_signaler && this.getEditingService().exitEditingAfterCreateNewSignalerFeature()
   }
 };
 
@@ -82,8 +82,9 @@ proto._saveFeatures = function({fields, promise, session, inputs}){
           done: () => {
             this.disableSidebar(true);
             // set current report
+            const feature = this._features[0];
             this.getEditingService().setCurrentReportData({
-              feature: this._features[0]
+              feature
             });
             this.getEditingService().resetDefault();
             // only if is new show add feature
@@ -97,10 +98,10 @@ proto._saveFeatures = function({fields, promise, session, inputs}){
                   closable: false
                 })
               }
-            } else if (create_new_signaler) this.getEditingService().getPlugin().hideEditingPanel()
+            } else if (create_new_signaler) this.getEditingService().exitEditingAfterCreateNewSignalerFeature()
           },
           error: ()=> {
-            if (create_new_signaler) this.getEditingService().getPlugin().hideEditingPanel()
+            create_new_signaler && this.getEditingService().exitEditingAfterCreateNewSignalerFeature()
           }
         }
       });
@@ -147,7 +148,7 @@ proto._saveFnc = function(promise, context, inputs) {
 
 proto.startForm = async function(options = {}) {
   const EditingFormComponent = require('../../../form/editingform');
-  const {signaler_layer_id} = SIGNALER_IIM_CONFIG;
+  const {signaler_layer_id, state_field, every_fields_editing_states} = SIGNALER_IIM_CONFIG;
   const {inputs, context, promise} = options;
   const {session} = context;
   const formComponent = options.formComponent || EditingFormComponent;
@@ -162,7 +163,14 @@ proto.startForm = async function(options = {}) {
     });
     await this.getEditingService().filterReportFieldsFormValues({
       fields: this._fields
-    })
+    });
+    if (!isNew){
+      if (every_fields_editing_states.indexOf(feature.get(state_field)) === -1) {
+        this._fields.forEach(field => {
+          if (field.name !== state_field) field.editable= false;
+        })
+      }
+    }
   } else {
     edit_feature_geometry = feature.get('shape') ? 'radius' : 'vertex';
     this.getEditingService().setCurrentFeatureReport({feature});

@@ -16,10 +16,6 @@
             return {}
         },
         methods: {
-            editReportChild(){
-                const EditingService = require('../../../services/editingservice');
-                const id = EditingService.getCurrentReportData().id;
-            },
             // method to add feature
             addReportFeature(){
                 const content = ComponentsFactory.build({

@@ -43,17 +43,22 @@
         },
         methods: {
             async cancel(){
-                const EditingService = require('../../../services/editingservice');
-                const {id:signaler_id} = EditingService.getCurrentReportData();
-                await EditingService.editingReport({
-                  filter: {
-                      field: `id|eq|${signaler_id}`
-                  },
-                  toolId: 'edittable'
-                });
-                setTimeout(()=>{
-                    $(`#signaler_edit_${signaler_id}`).click();
-                })
+                if (WorkflowsStack.getLength() > 1)  GUI.popContent();
+                else {
+                    const EditingService = require('../../../services/editingservice');
+                    EditingService.stopAllWorkflowsStack();
+                    const {id:signaler_id} = EditingService.getCurrentReportData();
+                    await EditingService.editingReport({
+                        filter: {
+                            field: `id|eq|${signaler_id}`
+                        },
+                        toolId: 'edittable'
+                    });
+                    setTimeout(()=>{
+                        $(`#signaler_edit_${signaler_id}`).click();
+                    })
+                }
+
             },
             async drawFeatures(){
                 await this.editingFeaturesReport({

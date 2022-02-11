@@ -1,6 +1,7 @@
 import API from '../api'
 import SIGNALER_IIM_CONFIG from '../global_plugin_data';
 import ExportFormats from '../vue/exportformats.vue';
+import ChildSignalerComponent from '../vue/childsignalercomponent.vue';
 const {G3W_FID} = g3wsdk.constant;
 const DataRouterService = g3wsdk.core.data.DataRouterService;
 const ApplicationService = g3wsdk.core.ApplicationService;
@@ -94,12 +95,20 @@ function EditingService() {
   this.init = function(config={}) {
     this._mapService.addScaleLineUnits(['nautical']);
     this._vectorUrl = config.vectorurl;
-    const {urls:{editing:editing_url, vector:vector_data_url}, signaler_layer_id, vertex_layer_id, geo_layer_id, signaler_field, ab_signal_fields} = config;
+    const {urls:{editing:editing_url, vector:vector_data_url}, signaler_layer_id,
+      vertex_layer_id, geo_layer_id, signaler_field, ab_signal_fields,
+      parent_signal_field="parent_signal_id",
+      states, roles_editing_acl, state_field, every_fields_editing_states} = config;
     SIGNALER_IIM_CONFIG.signaler_layer_id = signaler_layer_id;
     SIGNALER_IIM_CONFIG.signaler_field = signaler_field || 'signaled_fid';
     SIGNALER_IIM_CONFIG.vertex_layer_id = vertex_layer_id;
     SIGNALER_IIM_CONFIG.geo_layer_id = geo_layer_id;
     SIGNALER_IIM_CONFIG.ab_signal_fields = ab_signal_fields;
+    SIGNALER_IIM_CONFIG.parent_signal_field = parent_signal_field;
+    SIGNALER_IIM_CONFIG.states = states;
+    SIGNALER_IIM_CONFIG.roles_editing_acl = roles_editing_acl;
+    SIGNALER_IIM_CONFIG.state_field = state_field;
+    SIGNALER_IIM_CONFIG.every_fields_editing_states = every_fields_editing_states;
     CatalogLayersStoresRegistry.getLayers().forEach(layer => {
       if (layer.config.urls.data) layer.config.urls.data = layer.config.urls.data.replace('/vector/api/', vector_data_url);
     });
@@ -179,6 +188,7 @@ function EditingService() {
         service:this
       })
     });
+    //this.registerCustomComponentsResult();
     this.registerResultEditingAction();
     // check if need start a child report
     this.getUrlParameters();
@@ -247,7 +257,36 @@ proto.setEditingSingleLayer = function(bool=false){
 };
 
 proto.showEditingResultIcon = function({feature}={}){
-  return ApplicationState.user.username === 'iim' || feature.attributes[this.config.signaler_user_field] == ApplicationState.user.id;
+  let canEdit = ApplicationState.user.is_superuser;
+  if (canEdit) return true;
+  const {states, roles_editing_acl, state_field} = SIGNALER_IIM_CONFIG;
+  /*
+  * SIIM-CCP-REPORTERS:
+    SIIM-CCP-SUPERVISORS:
+     SIIM-IIM-EXAMINERS
+  * */
+  Object.keys(roles_editing_acl).find(role => {
+    if (ApplicationState.user.groups.indexOf(role) !== -1) {
+      const role_editing_rules_state_values = roles_editing_acl[role];
+      const state_field_feature_value = Object.entries(states).find(([value, label]) => feature.attributes[state_field] === label)
+      if (state_field_feature_value){
+        const value = state_field_feature_value[0];
+        canEdit = role_editing_rules_state_values.find(rule_state_value => rule_state_value === value) ? true: false;
+        return canEdit
+      }
+    }
+  });
+  return canEdit;
+};
+
+proto.registerCustomComponentsResult = function(){
+  const queryResultsService = GUI.getService('queryresults');
+  const id = queryResultsService.registerCustomComponent({
+    layerId: SIGNALER_IIM_CONFIG.signaler_layer_id,
+    type: 'feature',
+    component: ChildSignalerComponent
+  })
+  console.log(id)
 };
 
 proto.registerResultEditingAction = function(){
@@ -268,18 +307,6 @@ proto.registerResultEditingAction = function(){
           },
           cbk: (layer, feature) => {
             SIGNALER_IIM_CONFIG.result = true;
-            // if (layerId === SIGNALER_IIM_CONFIG.geo_layer_id) {
-            //   this.setEditingSingleLayer(true);
-            //   this.getPlugin().showEditingPanel({
-            //     toolboxes: [this.getToolBoxById(layerId)]
-            //   });
-            //   this.editingFeaturesReport({
-            //     toolId:'editattributes',
-            //     filter: {
-            //       fids: feature.attributes[G3W_FID]
-            //     }
-            //   });
-            // } else if (layerId === SIGNALER_IIM_CONFIG.signaler_layer_id){
             this.currentReport.id = feature.attributes[G3W_FID];
             this.getPlugin().showEditingPanel({
               toolboxes: [this.getToolBoxById(layerId)]
@@ -291,7 +318,6 @@ proto.registerResultEditingAction = function(){
               }
             });
           }
-          //},
         });
       }
       if (layerId === SIGNALER_IIM_CONFIG.geo_layer_id && this.getLayerById(layerId))
@@ -464,7 +490,7 @@ proto.unregisterResultEditingAction = function(){
  * @returns {Promise<void>}
  */
 proto.getUrlParameters = async function(){
-  const {signaler_field} = SIGNALER_IIM_CONFIG;
+  const {signaler_field, parent_signaler_field} = SIGNALER_IIM_CONFIG;
   const searchParams = new URLSearchParams(location.search);
   const child_signaler_value = searchParams.get(signaler_field);
   const show_signaler_on_result = searchParams.get('sid') || false;
@@ -486,6 +512,14 @@ proto.getUrlParameters = async function(){
     });
   }
   else if (child_signaler_value) this.checkChildReportIdParam(child_signaler_value);
+};
+
+proto.exitEditingAfterCreateNewSignalerFeature = function(){
+  const {id:fid, isNew} = this.currentReport;
+  this.getPlugin().hideEditingPanel();
+  !isNew && this.showSignalerOnResultContent({
+    fid
+  });
 };
 
 proto.showSignalerOnResultContent = async function({fid, getGeoFeatures=false}={}){
@@ -519,7 +553,7 @@ proto.showSignalerOnResultContent = async function({fid, getGeoFeatures=false}={
             formatter: 1, // set formatter to 1
             search_endpoint: 'api'
           },
-          outputs: false // need to specifi no output
+          outputs: false // need to specify no output
         });
         const features = data && data[0] && data[0].features || [];
         features.length && this._mapService.zoomToFeatures(features, {
@@ -932,16 +966,16 @@ proto.filterReportFieldsFormValues = async function({fields=[]}={}){
       const {key, values, value, layer_id, loading} = field.input.options;
       const promise = new Promise((resolve, reject) =>{
         loading.state = 'loading';
-        values.splice(0);
         const relationLayer = CatalogLayersStoresRegistry.getLayerById(layer_id);
         relationLayer.getDataTable({
           ordering: key,
           custom_params: {
-            [SIGNALER_IIM_CONFIG.signaler_field]: this.currentReport.isNew ? '' : this.currentReport.id
+            [SIGNALER_IIM_CONFIG.signaler_field]: this.currentReport.isNew ? '_new_' : this.currentReport.id
           }
         }).then(response =>{
           if (response && response.features) {
             const features = response.features;
+            values.splice(0);
             for (let i = 0; i < features.length; i++) {
               values.push({
                 key: features[i].properties[key],
@@ -976,6 +1010,8 @@ proto._attachLayerWidgetsEvent = function(layer) {
             type: 'start-editing',
             id: layer.getId(),
             fnc() {
+              const {create_new_signaler, result, state_field } = SIGNALER_IIM_CONFIG;
+              if ((create_new_signaler || result) && field.name === state_field) return;
               // remove all values
               loading.state = 'loading';
               values.splice(0);
@@ -994,7 +1030,8 @@ proto._attachLayerWidgetsEvent = function(layer) {
                       for (let i = 0; i < features.length; i++) {
                         values.push({
                           key: features[i].properties[key],
-                          value: features[i].properties[value]
+                          value: features[i].properties[value],
+                          color: features[i].properties['color']
                         })
                       }
                       loading.state = 'ready';
@@ -1649,9 +1686,8 @@ proto.setCurrentReportData = function({feature, valid}={}){
   this.currentReport.isNew = feature.isNew();
   this.currentReport.valid = valid;
   const properties = feature.getProperties();
-  Object.keys(this.currentReport.ab_signal_fields).forEach(field => {
-    this.currentReport.ab_signal_fields[field].value = properties[field]
-  })
+  Object.keys(this.currentReport.ab_signal_fields).forEach(field => this.currentReport.ab_signal_fields[field].value = properties[field]);
+  return this.currentReport.id;
 };
 
 proto.getCurrentReportData = function(){
@@ -1837,6 +1873,7 @@ proto.initEditingState = function(){
   reportToolbox.setShow(true);
   featuresToolbox.setShow(false);
   reportToolbox.setSelected(true);
+  this.setSelectedToolbox(reportToolbox);
 };
 
 /**
@@ -1854,6 +1891,7 @@ proto.editingReport = function({filter, toolId}={}){
       reportToolbox.setShow(true);
       featuresToolbox.setShow(false);
       reportToolbox.setSelected(true);
+      this.setSelectedToolbox(reportToolbox);
       const tool = toolId && reportToolbox.getToolById(toolId);
       tool && reportToolbox.setActiveTool(tool);
       const {result, create_new_signaler} = SIGNALER_IIM_CONFIG;
@@ -1889,6 +1927,7 @@ proto.editingReport = function({filter, toolId}={}){
             })
         });
         await promise;
+        //at the end sho signal to result
         this.showSignalerOnResultContent({
           fid
         });
@@ -1919,6 +1958,7 @@ proto.editingFeaturesReport = function({toolId, filter}={}){
         reportToolbox.setShow(false);
         featuresToolbox.setShow(true);
         featuresToolbox.setSelected(true);
+        this.setSelectedToolbox(featuresToolbox);
         if (toolId){
           const tool = featuresToolbox.getToolById(toolId);
           featuresToolbox.setActiveTool(tool);

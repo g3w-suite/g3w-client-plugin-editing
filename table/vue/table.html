@@ -19,10 +19,9 @@
             <i v-if="showTool('delete_feature')" :id="`signaler_delete_${feature.id}`" :class="g3wtemplate.font['trash-o']" class="g3w-icon skin-tooltip-right"  data-placement="right"  style="color:red;" v-t-title:plugin="'signaler_iim.table.delete'" aria-hidden="true" @click="deleteFeature(feature.__gis3w_feature_uid)"></i>
           </div>
         </td>
-
         <td v-if ="showValue(key)" v-for="(value, key) in feature" :key="key">
           <g3w-media v-if="isMediaField(key) && getValue(value)" :state="value"></g3w-media>
-          <p v-else>{{ getValue(key, value) }}</p>
+          <p :style="{color: getColor(key)}"v-else>{{ getValue(key, value) }}</p>
         </td>
       </tr>
       </tbody>

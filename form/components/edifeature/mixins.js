@@ -1,4 +1,4 @@
-const {ConvertDEGToDMS} = g3wsdk.core.geoutils;
+const {ConvertDEGToDMS, ConvertDEGToDM} = g3wsdk.core.geoutils;
 const mapEpsg = g3wsdk.core.ApplicationState.map.epsg;
 export default {
   methods: {
@@ -8,7 +8,7 @@ export default {
     setPointCoordinatesInMapProjection({point, coordinates}={}){
       switch (mapEpsg) {
         case 'EPSG:4326':
-          point['5_coordinatesEPSG:4326'] = coordinates;
+          point['coordinatesEPSG:4326'] = coordinates;
           this.to3857(point);
           break;
         case 'EPSG:3857':
@@ -22,30 +22,35 @@ export default {
       let coordinates;
       switch (mapEpsg) {
         case 'EPSG:4326':
-          coordinates = point['5_coordinatesEPSG:4326'];
+          coordinates = point['coordinatesEPSG:4326'];
           break;
         case 'EPSG:3857':
           coordinates = point['coordinatesEPSG:3857'];
           break;
         default:
-          coordinates = ol.proj.transform(point['5_coordinatesEPSG:4326'], 'EPSG:4326', mapEpsg);
+          coordinates = ol.proj.transform(point['coordinatesEPSG:4326'], 'EPSG:4326', mapEpsg);
       }
       // nee to convert no number
       return coordinates.map(coordinate => 1*coordinate);
     },
     toDegree(point){
       const coordinates = ol.proj.transform(point['coordinatesEPSG:3857'], 'EPSG:3857', 'EPSG:4326');
-      point['5_coordinatesEPSG:4326'] = coordinates;
-      point['3_coordinatesEPSG:4326'] = [...coordinates];
+      point['coordinatesEPSG:4326'] = coordinates;
     },
-    toDHMS(point){
-      point.coordinatesDHMS = [
-        ...ConvertDEGToDMS({deg: point['5_coordinatesEPSG:4326'][0], lon:true, output: 'Array'}),
-        ...ConvertDEGToDMS({deg:point['5_coordinatesEPSG:4326'][1], lat:true, output: 'Array'})
+    toDM(point){
+      point.coordinatesDM = [
+        ...ConvertDEGToDM({deg: point['coordinatesEPSG:4326'][0], output: 'Array'}),
+        ...ConvertDEGToDM({deg:point['coordinatesEPSG:4326'][1], output: 'Array'})
+      ];
+    },
+    toDMS(point){
+      point.coordinatesDMS = [
+        ...ConvertDEGToDMS({deg: point['coordinatesEPSG:4326'][0], lon:true, output: 'Array'}),
+        ...ConvertDEGToDMS({deg:point['coordinatesEPSG:4326'][1], lat:true, output: 'Array'})
       ];
     },
     to3857(point){
-      const coordinates = point['5_coordinatesEPSG:4326'].map(coordinate => 1*coordinate);
+      const coordinates = point['coordinatesEPSG:4326'].map(coordinate => 1*coordinate);
       point['coordinatesEPSG:3857'] = ol.proj.transform(coordinates, 'EPSG:4326', 'EPSG:3857');
     },
     toMinimunDecimals(value, min) {
@@ -61,9 +66,9 @@ export default {
     createPoint(coordinates, properties={}){
       const pointObject = {
         fields: [],
-        '5_coordinatesEPSG:4326': null,
-        coordinatesDHMS: null,
-        '3_coordinatesEPSG:4326': null,
+        'coordinatesEPSG:4326': null,
+        'coordinatesDMS': null,
+        'coordinatesDM': null,
         'coordinatesEPSG:3857': null,
         ...properties,
         changed: false
@@ -74,12 +79,13 @@ export default {
         point_coordinates = pointObject['coordinatesEPSG:3857'];
         this.toDegree(pointObject);
       } else if (mapEpsg === 'EPSG:4326'){
-        pointObject['5_coordinatesEPSG:4326'] = coordinates;
-        pointObject['3_coordinatesEPSG:4326'] = coordinates;
-        point_coordinates = pointObject['5_coordinatesEPSG:4326'];
+        pointObject['coordinatesEPSG:4326'] = coordinates;
+        point_coordinates = pointObject['coordinatesEPSG:4326'];
         this.to3857(pointObject);
       }
-      this.toDHMS(pointObject);
+      this.toDMS(pointObject);
+      this.toDM(pointObject);
+      console.log(pointObject)
       return {
         pointObject,
         point_coordinates

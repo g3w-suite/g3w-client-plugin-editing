@@ -160,9 +160,7 @@ const vueComponentOptions = {
   async mounted(){
     const {result, create_new_signaler} = SIGNALER_IIM_CONFIG;
     await this.$nextTick();
-    if (!result && !create_new_signaler) this.$options.service.editingReport({
-      //toolId: 'edittable'
-    })
+    if (!result && !create_new_signaler) this.$options.service.editingReport()
   },
   beforeDestroy() {
     this.$options.service.state.open = false;

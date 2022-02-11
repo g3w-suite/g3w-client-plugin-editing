@@ -14,7 +14,7 @@ const TableService = function(options = {}) {
   this._deleteFeaturesIndexes = [];
   this._isrelation = options.isrelation || false;
   this.selectInpus;
-  const { capabilities } = options;
+  const {capabilities} = options;
   this.state = {
     headers: options.headers || [],
     features: [],
@@ -25,9 +25,7 @@ const TableService = function(options = {}) {
 
   this.init = function() {
     //filter the original feature based on if is a relation
-    this._features = !this._isrelation ? this._features : this._features.filter(feature =>
-      feature.get(this._foreignKey) !== this._fatherValue
-    );
+    this._features = !this._isrelation ? this._features : this._features.filter(feature => feature.get(this._foreignKey) !== this._fatherValue);
     // set values
     if (this._features.length) {
       const baseFeature = this._features[0];
@@ -54,14 +52,30 @@ const TableService = function(options = {}) {
 
 const proto = TableService.prototype;
 
+/**
+ * Metod to get jey value instead of original value store in database for select Input
+ * @param fieldName
+ * @param value
+ * @returns {*}
+ */
 proto.getLabelValueFromLayerInput = function(fieldName, value){
   let label;
   if (this.selectInpus[fieldName]){
-    const findKeyValue = this.selectInpus[fieldName].find(keyValue => toRawType(keyValue) === 'Object' && value == value);
+    const findKeyValue = this.selectInpus[fieldName].find(keyValue => toRawType(keyValue) === 'Object' && keyValue.value == value);
     label = findKeyValue && findKeyValue.key;
   }
-  return label;  
+  return label;
 };
+
+proto.getColorFromLayerInput = function(fieldName, value){
+  let color;
+  if (this.selectInpus[fieldName]){
+    const findKeyValue = this.selectInpus[fieldName].find(keyValue => toRawType(keyValue) === 'Object' && keyValue.value == value);
+    color = findKeyValue && findKeyValue.color;
+  }
+  return color;
+};
+
 
 proto.isMediaField = function(name) {
   let isMedia = false;
