@@ -131,7 +131,6 @@ proto.startForm = function(options = {}) {
     },
     formStructure: this._editorFormStructure,
     modal: true,
-    perc: this._editorFormStructure ? 100 : null,
     push: this._isContentChild,
     showgoback: !this._isContentChild,
     buttons:[{

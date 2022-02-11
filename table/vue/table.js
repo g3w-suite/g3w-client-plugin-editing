@@ -20,17 +20,21 @@ const InternalComponent = Vue.extend({
     }
   },
   methods: {
+    async changeSize(){
+      await this.$nextTick();
+      setTimeout(() => this.resize())
+    },
     showTool(type){
       return this.state.capabilities.find(capability => capability === type) !== undefined;
     },
     async resize(){
       await this.$nextTick();
-      const tableHeight = $(".content").height();
-      const tableHeaderHeight = $('#editing_table  div.dataTables_scrollHeadInner').height();
-      const OtherElementHeight = $('.navbar-header').height() + $('.editing_table_title').height() +
-        $('.editing_table_header').height() +  $('.dataTables_length').height() + $('.dataTables_paginate paging_simple_numbers').height() +
-        $('.dataTables_filter').height() + $('.dataTables_scrollHeadInner').height() + $('.table_editing_footer_buttons').height();
-      $('#editing_table  div.dataTables_scrollBody').height(tableHeight - tableHeaderHeight - OtherElementHeight - 50);
+      const contentHeight = $(".content").height();
+      const OtherElementHeight = $('.navbar-header').height() +
+        this.$refs.editing_table_header.clientHeight + $('.dataTables_paginate').height() +
+        $('.dataTables_filter').height() + $('.dataTables_scrollHeadInner').height() + this.$refs.table_editing_footer_buttons.clientHeight;
+      $('#editing_table  div.dataTables_scrollBody').height(contentHeight  - OtherElementHeight);
+      this.dataTable && this.dataTable.columns.adjust();
     },
     showValue(key) {
       return !!this.state.headers.find(header => header.name === key);
