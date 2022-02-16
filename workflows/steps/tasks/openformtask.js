@@ -155,6 +155,7 @@ proto.startForm = async function(options = {}) {
   const Form =  this._getForm(inputs, context);
   const layerId = this._originalLayer.getId();
   const feature = this._originalFeatures[0];
+  let can_edit_signale_feature = true;
   let edit_feature_geometry = null;
   const isNew = feature.isNew();
   if (layerId === signaler_layer_id) {
@@ -166,8 +167,9 @@ proto.startForm = async function(options = {}) {
     });
     if (!isNew){
       if (every_fields_editing_states.indexOf(feature.get(state_field)) === -1) {
+        can_edit_signale_feature = false;
         this._fields.forEach(field => {
-          if (field.name !== state_field) field.editable= false;
+          if (field.name !== state_field) field.editable = false;
         })
       }
     }
@@ -185,6 +187,7 @@ proto.startForm = async function(options = {}) {
     isnew: isNew,
     edit_feature_geometry,
     fields: this._fields,
+    can_edit_signale_feature,
     formStructure: this._editorFormStructure,
     modal: true,
     push: this._isContentChild,

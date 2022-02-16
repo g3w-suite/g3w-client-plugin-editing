@@ -6,21 +6,25 @@
             </div>
             <report-info-component>
                 <template v-slot:content>
-                    <div style="display: flex; flex-direction: column; align-items: center; background-color: #FFFFFF; margin: 5px 0 5px 0; padding: 5px" v-for="(v, index) in vertex" :key="v">
-                                <div style="width: 100%; display: flex; justify-content: space-between; padding: 5px; border: 2px solid #eee; margin-bottom: 5px;">
-                                    <button class="btn skin-button" style="margin-right: 5px;" @mouseover="highLightVertex(index)" @click="zoomToVertex(index)">
-                                        <i :class="g3wtemplate.font['marker']"></i>
-                                    </button>
-                                    <change-point-component @change-point="changeVertex({index, vertex:v})" :point="v"></change-point-component>
-                                </div>
-                                <div style="width: 100%; padding:5px; border: 2px solid #eee" class="fields_content">
-                                    <g3w-input v-for="field in v.fields" :key="field.name"
-                                               :changeInput="isValidInputVertex"
-                                               @changeInput="isValidInputVertex"
-                                               :state="field">
-                                    </g3w-input>
-                                </div>
+                    <template v-for="(v, index) in vertex">
+                        <div style="display: flex; flex-direction: column; align-items: center; background-color: #FFFFFF; margin: 5px 0 5px 0; padding: 5px">
+                            <span :class="[v.show ? g3wtemplate.font['eye-close'] : g3wtemplate.font['eye']]" class="skin-color" @click="toggleVertexCoordinates(index)"
+                                  style="font-weight: bold; margin-left: auto; padding: 3px; cursor: pointer"></span>
+                            <div style="width: 100%; display: flex; justify-content: space-between; padding: 5px; border: 2px solid #eee; margin-bottom: 5px;" v-show="v.show">
+                                <button class="btn skin-button" style="margin-right: 5px;" @mouseover="highLightVertex(index)" @click="zoomToVertex(index)">
+                                    <i :class="g3wtemplate.font['marker']"></i>
+                                </button>
+                                <change-point-component @change-point="changeVertex({index, vertex:v})" :point="v"></change-point-component>
                             </div>
+                            <div style="width: 100%; padding:5px; border: 2px solid #eee" class="fields_content">
+                                <g3w-input v-for="field in v.fields" :key="field.name"
+                                           :changeInput="isValidInputVertex"
+                                           @changeInput="isValidInputVertex"
+                                           :state="field">
+                                </g3w-input>
+                            </div>
+                        </div>
+                    </template>
                 </template>
             </report-info-component>
         </div>
@@ -64,6 +68,9 @@
             }
         },
         methods: {
+            toggleVertexCoordinates(index){
+                this.vertex[index].show = !this.vertex[index].show;
+            },
             changeVertex({index, vertex}={}){
                 this.changeVertexFeatureCoordinates(index, vertex);
                 this.changeFeatureReportGeometry(vertex);
@@ -160,6 +167,7 @@
             this.featureVertex.forEach(feature =>{
                 const {pointObject:vertex, point_coordinates:vertex_coordinates} = this.createPoint(feature.getGeometry().getCoordinates(), {
                     featureReportIndexVertex: [], // store index vertex of feature
+                    show: true
                 });
                 this.originalfeatureReportGeometryCoordinates.forEach((coordinates, index) =>{
                     areCoordinatesEqual(coordinates, vertex_coordinates) && vertex.featureReportIndexVertex.push(index);

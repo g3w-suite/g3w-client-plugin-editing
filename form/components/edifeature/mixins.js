@@ -1,3 +1,4 @@
+import {EPSG_COORDINATES}  from '../../../global_plugin_data';
 const {ConvertDEGToDMS, ConvertDEGToDM} = g3wsdk.core.geoutils;
 const mapEpsg = g3wsdk.core.ApplicationState.map.epsg;
 export default {
@@ -6,36 +7,22 @@ export default {
       evt.target.blur()
     },
     setPointCoordinatesInMapProjection({point, coordinates}={}){
-      switch (mapEpsg) {
-        case 'EPSG:4326':
-          point['coordinatesEPSG:4326'] = coordinates;
-          this.to3857(point);
-          break;
-        case 'EPSG:3857':
-          point['coordinatesEPSG:3857'] = coordinates;
-          this.toDegree(point);
-          break;
-      }
+      point[`coordinates${mapEpsg}`] = coordinates;
+      this.covertToEPSG({
+        excludeEPSG: mapEpsg,
+        point
+      });
       this.toDHMS(point);
+      this.toDM(point);
+    },
+    covertToEPSG({excludeEPSG, point}){
+      this.changedEPSG = excludeEPSG;
+      EPSG_COORDINATES.forEach(epsg_code => epsg_code !== excludeEPSG && this.toEPSG(point, epsg_code));
     },
     getPointCoordinatesInMapProjection(point){
-      let coordinates;
-      switch (mapEpsg) {
-        case 'EPSG:4326':
-          coordinates = point['coordinatesEPSG:4326'];
-          break;
-        case 'EPSG:3857':
-          coordinates = point['coordinatesEPSG:3857'];
-          break;
-        default:
-          coordinates = ol.proj.transform(point['coordinatesEPSG:4326'], 'EPSG:4326', mapEpsg);
-      }
+      const coordinates= point[`coordinates${mapEpsg}`];
       // nee to convert no number
       return coordinates.map(coordinate => 1*coordinate);
-    },
-    toDegree(point){
-      const coordinates = ol.proj.transform(point['coordinatesEPSG:3857'], 'EPSG:3857', 'EPSG:4326');
-      point['coordinatesEPSG:4326'] = coordinates;
     },
     toDM(point){
       point.coordinatesDM = [
@@ -49,43 +36,38 @@ export default {
         ...ConvertDEGToDMS({deg:point['coordinatesEPSG:4326'][1], lat:true, output: 'Array'})
       ];
     },
-    to3857(point){
-      const coordinates = point['coordinatesEPSG:4326'].map(coordinate => 1*coordinate);
-      point['coordinatesEPSG:3857'] = ol.proj.transform(coordinates, 'EPSG:4326', 'EPSG:3857');
+    toEPSG(point, epsg_code){
+      const EPSG = this.changedEPSG || mapEpsg;
+      const coordinates = point[`coordinates${EPSG}`].map(coordinate => 1*coordinate);
+      point[`coordinates${epsg_code}`] = ol.proj.transform(coordinates, EPSG, epsg_code);
     },
     toMinimunDecimals(value, min) {
       value = value.toString();
       let decimalCount;
-      if (value.indexOf(".") !== -1 && value.indexOf("-") !== -1)
-        decimalCount = value.split("-")[1] || 0;
-      else if (value.indexOf(".") !== -1)
+      if (value.indexOf(".") !== -1)
         decimalCount = value.split(".")[1].length || 0;
-      else decimalCount = value.split("-")[1] || 0;
+      else decimalCount = 0;
       return decimalCount >= min ? 1*value: (1*value).toFixed(min);
     },
     createPoint(coordinates, properties={}){
       const pointObject = {
         fields: [],
-        'coordinatesEPSG:4326': null,
         'coordinatesDMS': null,
         'coordinatesDM': null,
-        'coordinatesEPSG:3857': null,
         ...properties,
         changed: false
       };
-      let point_coordinates;
-      if (mapEpsg === 'EPSG:3857') {
-        pointObject['coordinatesEPSG:3857'] = coordinates;
-        point_coordinates = pointObject['coordinatesEPSG:3857'];
-        this.toDegree(pointObject);
-      } else if (mapEpsg === 'EPSG:4326'){
-        pointObject['coordinatesEPSG:4326'] = coordinates;
-        point_coordinates = pointObject['coordinatesEPSG:4326'];
-        this.to3857(pointObject);
-      }
+      /**
+       * Add coordinates
+       */
+      EPSG_COORDINATES.forEach(epsg_code => pointObject[`coordinates${epsg_code}`] = mapEpsg === epsg_code ? coordinates : null);
+      const point_coordinates = pointObject[`coordinates${mapEpsg}`];
+      this.covertToEPSG({
+        exludeEPSG: mapEpsg,
+        point: pointObject
+      });
       this.toDMS(pointObject);
       this.toDM(pointObject);
-      console.log(pointObject)
       return {
         pointObject,
         point_coordinates

@@ -8,11 +8,11 @@ const FormComponent = g3wsdk.gui.vue.FormComponent;
 
 function EditingFormComponent(options={}) {
   const {signaler_layer_id, vertex_layer_id} = SIGNALER_IIM_CONFIG;
-  const {layer, isnew, edit_feature_geometry} = options;
+  const {layer, isnew, can_edit_signale_feature, edit_feature_geometry} = options;
   const layerId = layer.getId();
   let component;
   if (layerId === signaler_layer_id){
-    if (!isnew) component = EditFeaturesComponent;
+    if (!isnew && can_edit_signale_feature) component = EditFeaturesComponent;
   } else if (!isPointGeometryType(layer.getGeometryType()) && vertex_layer_id)
     switch(edit_feature_geometry) {
       case 'vertex':

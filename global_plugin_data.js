@@ -12,3 +12,4 @@ export default  {
   state_field: null,
   every_fields_editing_states: null
 };
+export const EPSG_COORDINATES = ['EPSG:4326', 'EPSG:3857', 'EPSG:32632', 'EPSG:32633', 'EPSG:32634'];

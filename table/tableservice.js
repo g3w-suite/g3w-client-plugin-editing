@@ -152,9 +152,7 @@ proto.editFeature = function(uid) {
         this.state.features[index][key] = feature.get(key);
       });
     })
-    .fail(err => {
-      console.log(err)
-    })
+    .fail(err => {})
 };
 
 module.exports = TableService;

@@ -4,7 +4,7 @@
             <h5 style="font-weight: bold; margin-top: 0; margin-bottom: 3px;">DEGREE</h5>
             <div style="display: flex; justify-content: space-between">
                 <input v-for="(coordinate, indexCoordinate) in point['coordinatesEPSG:4326']" :key="coordinate" class="form-control" type="number"
-                       style="margin-right: 5px;" step="0.00001" @change="changePointCoordinatesDegree(indexCoordinate, point)" @keyup.enter="loseFocusInput" v-model.lazy="point['coordinatesEPSG:4326'][indexCoordinate]"/>
+                       style="margin-right: 5px;" step="0.00001" @change="changePointCoordinatesEPSG('EPSG:4326', indexCoordinate, point)" @keyup.enter="loseFocusInput" v-model.lazy="point['coordinatesEPSG:4326'][indexCoordinate]"/>
             </div>
         </div>
         <div>
@@ -38,10 +38,24 @@
             </div>
         </div>
         <div>
-            <h5 style="font-weight: bold; margin-top: 0; margin-bottom: 3px;">EPSG:3857</h5>
+            <h5 style="font-weight: bold; margin-top: 0; margin-bottom: 3px;">EPSG:32632</h5>
             <div style="display: flex; justify-content: space-between">
-                <input v-for="(coordinate3857, indexCoordinate) in point['coordinatesEPSG:3857']" :key="coordinate3857" class="form-control" type="number"
-                       style="margin-right: 5px;" step="0.1" @keyup.enter="loseFocusInput" @change="changePointCoordinates3857(indexCoordinate, point)" v-model.lazy="point['coordinatesEPSG:3857'][indexCoordinate]"/>
+                <input v-for="(coordinates, indexCoordinate) in point['coordinatesEPSG:32632']" :key="coordinates" class="form-control" type="number"
+                       style="margin-right: 5px;" step="0.01" @keyup.enter="loseFocusInput" @change="changePointCoordinatesEPSG('EPSG:32632', indexCoordinate, point)" v-model.lazy="point['coordinatesEPSG:32632'][indexCoordinate]"/>
+            </div>
+        </div>
+        <div>
+            <h5 style="font-weight: bold; margin-top: 0; margin-bottom: 3px;">EPSG:32633</h5>
+            <div style="display: flex; justify-content: space-between">
+                <input v-for="(coordinates, indexCoordinate) in point['coordinatesEPSG:32633']" :key="coordinates" class="form-control" type="number"
+                       style="margin-right: 5px;" step="0.01" @keyup.enter="loseFocusInput" @change="changePointCoordinatesEPSG('EPSG:32633', indexCoordinate, point)" v-model.lazy="point['coordinatesEPSG:32633'][indexCoordinate]"/>
+            </div>
+        </div>
+        <div>
+            <h5 style="font-weight: bold; margin-top: 0; margin-bottom: 3px;">EPSG:32634</h5>
+            <div style="display: flex; justify-content: space-between">
+                <input v-for="(coordinates, indexCoordinate) in point['coordinatesEPSG:32634']" :key="coordinates" class="form-control" type="number"
+                       style="margin-right: 5px;" step="0.01" @keyup.enter="loseFocusInput" @change="changePointCoordinatesEPSG('EPSG:32634', indexCoordinate, point)" v-model.lazy="point['coordinatesEPSG:32634'][indexCoordinate]"/>
             </div>
         </div>
     </div>
@@ -64,20 +78,16 @@
               this.point.changed = true;
                 this.$emit('change-point');
             },
-            changePointCoordinates3857(index, point){
-                const value = point['coordinatesEPSG:3857'][index];
-                point['coordinatesEPSG:3857'][index] = this.toMinimunDecimals(value, 2);
-                this.toDegree(point);
+            changePointCoordinatesEPSG(epsg_code, index, point){
+                const value = point[`coordinates${epsg_code}`][index];
+                console.log(value, this.toMinimunDecimals(value, epsg_code === 'EPSG:4326' ? 5 : 2))
+                point[`coordinates${epsg_code}`][index] = this.toMinimunDecimals(value, epsg_code === 'EPSG:4326' ? 5 : 2);
+                this.covertToEPSG({
+                    excludeEPSG: epsg_code,
+                    point
+                });
                 this.toDMS(point);
                 this.toDM(point);
-                this.pointChanged();
-            },
-            changePointCoordinatesDegree(index, point){
-                const value = point[`coordinatesEPSG:4326`][index];
-                point[`coordinatesEPSG:4326`][index] = this.toMinimunDecimals(value, 5);
-                this.toDMS(point);
-                this.toDM(point);
-                this.to3857(point);
                 this.pointChanged();
             },
             changePointFeatureCoordinatesDMS(point, index){
@@ -91,7 +101,10 @@
                 point['coordinatesEPSG:4326'][1] = ConvertDMSToDEG({
                     dms: [point.coordinatesDMS[4], point.coordinatesDMS[5], point.coordinatesDMS[6], point.coordinatesDMS[7]]
                 });
-                this.to3857(point);
+                this.covertToEPSG({
+                    excludeEPSG: 'EPSG:4326',
+                    point
+                });
                 this.toDM(point);
                 this.pointChanged();
             },
@@ -106,8 +119,11 @@
                 point['coordinatesEPSG:4326'][1] = ConvertDMToDEG({
                     dms: [point.coordinatesDM[2], point.coordinatesDM[3]]
                 });
+                this.covertToEPSG({
+                    excludeEPSG: 'EPSG:4326',
+                    point
+                });
                 this.toDMS(point);
-                this.to3857(point);
                 this.pointChanged();
             }
         }
