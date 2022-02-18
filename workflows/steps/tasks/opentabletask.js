@@ -15,8 +15,9 @@ inherit(OpenTableTask, EditingTask);
 const proto = OpenTableTask.prototype;
 
 proto.run = function(inputs, context) {
+  this.getEditingService().setCurrentLayout();
   const d = $.Deferred();
-  const {signaler_layer_id} = SIGNALER_IIM_CONFIG;
+  const {signaler_layer_id, result, create_new_signaler} = SIGNALER_IIM_CONFIG;
   const originalLayer = inputs.layer;
   const layerName = originalLayer.getName();
   const layerId = originalLayer.getId();
@@ -54,7 +55,7 @@ proto.run = function(inputs, context) {
     closable: false
   });
   this.disableSidebar(true);
-  layerId === signaler_layer_id && this.getEditingService().subscribe('savedfeature', d.resolve);
+  //layerId === signaler_layer_id && !result && !create_new_signaler &&  this.getEditingService().subscribe('savedfeature', d.resolve);
   return d.promise();
 };
 
@@ -65,6 +66,7 @@ proto._generateFormId = function(layerName) {
 proto.stop = function() {
   this.disableSidebar(false);
   this._isContentChild ? GUI.popContent() : GUI.closeContent();
+  this.getEditingService().resetCurrentLayout();
 };
 
 module.exports = OpenTableTask;

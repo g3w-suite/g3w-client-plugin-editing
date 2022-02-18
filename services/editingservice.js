@@ -285,8 +285,7 @@ proto.registerCustomComponentsResult = function(){
     layerId: SIGNALER_IIM_CONFIG.signaler_layer_id,
     type: 'feature',
     component: ChildSignalerComponent
-  })
-  console.log(id)
+  });
 };
 
 proto.registerResultEditingAction = function(){
@@ -963,7 +962,7 @@ proto.filterReportFieldsFormValues = async function({fields=[]}={}){
   const {fields:dynamic_fields} = this.config;
   for (const field of fields) {
     if (dynamic_fields[SIGNALER_IIM_CONFIG.signaler_layer_id].indexOf(field.name) !== -1){
-      const {key, values, value, layer_id, loading} = field.input.options;
+      const {key, value, layer_id, loading} = field.input.options;
       const promise = new Promise((resolve, reject) =>{
         loading.state = 'loading';
         const relationLayer = CatalogLayersStoresRegistry.getLayerById(layer_id);
@@ -975,9 +974,9 @@ proto.filterReportFieldsFormValues = async function({fields=[]}={}){
         }).then(response =>{
           if (response && response.features) {
             const features = response.features;
-            values.splice(0);
+            field.input.options.values = [];
             for (let i = 0; i < features.length; i++) {
-              values.push({
+              field.input.options.values.push({
                 key: features[i].properties[key],
                 value: features[i].properties[value]
               })
@@ -1003,7 +1002,7 @@ proto._attachLayerWidgetsEvent = function(layer) {
     if (field.input) {
       if (field.input.type === 'select_autocomplete') {
         const options = field.input.options;
-        let {key, values, value, usecompleter, layer_id, loading} = options;
+        let {key, value, usecompleter, layer_id, loading} = options;
         const self = this;
         if (!usecompleter) {
           this.addEvent({
@@ -1014,7 +1013,7 @@ proto._attachLayerWidgetsEvent = function(layer) {
               if ((create_new_signaler || result) && field.name === state_field) return;
               // remove all values
               loading.state = 'loading';
-              values.splice(0);
+              field.input.options.values = [];
               const relationLayer = CatalogLayersStoresRegistry.getLayerById(layer_id);
               if (relationLayer) {
                 if (relationLayer) {
@@ -1028,7 +1027,7 @@ proto._attachLayerWidgetsEvent = function(layer) {
                         features
                       });
                       for (let i = 0; i < features.length; i++) {
-                        values.push({
+                        field.input.options.values.push({
                           key: features[i].properties[key],
                           value: features[i].properties[value],
                           color: features[i].properties['color']

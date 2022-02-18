@@ -30,7 +30,8 @@ const InternalComponent = Vue.extend({
         const OtherElementHeight =  $('.editing_table_title').height() +
           $('.editing_table_header').height() + $('.dataTables_length').height() + $('.dataTables_paginate paging_simple_numbers').height() +
           $('.dataTables_filter').height() + $('.table_editing_footer_buttons').height();
-        $('#editing_table  div.dataTables_scrollBody').height(tableHeight - tableHeaderHeight - OtherElementHeight - 30);
+        $('#editing_table  div.dataTables_scrollBody').height(tableHeight - tableHeaderHeight - OtherElementHeight - 50);
+        this.dataTable && this.dataTable.columns.adjust();
       }
     },
     showValue(key) {
