@@ -15,6 +15,7 @@ inherit(OpenTableTask, EditingTask);
 const proto = OpenTableTask.prototype;
 
 proto.run = function(inputs, context) {
+  this.getEditingService().setCurrentLayout();
   const d = $.Deferred();
   const originalLayer = inputs.layer;
   const layerName = originalLayer.getName();
@@ -62,6 +63,7 @@ proto._generateFormId = function(layerName) {
 proto.stop = function() {
   this.disableSidebar(false);
   this._isContentChild ? GUI.popContent() : GUI.closeContent();
+  this.getEditingService().resetCurrentLayout();
 };
 
 module.exports = OpenTableTask;

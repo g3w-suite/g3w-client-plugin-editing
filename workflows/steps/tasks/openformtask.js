@@ -110,6 +110,7 @@ proto._saveFnc = function(promise, context, inputs) {
 };
 
 proto.startForm = function(options = {}) {
+  this.getEditingService().setCurrentLayout();
   const { inputs, context, promise } = options;
   const { session } = context;
   const formComponent = options.formComponent || EditingFormComponent;
@@ -173,5 +174,6 @@ proto._generateFormId = function(layerName) {
 proto.stop = function() {
   this.disableSidebar(false);
   this._isContentChild ? GUI.popContent() : GUI.closeForm();
+  this.getEditingService().resetCurrentLayout();
 };
 
