@@ -116,7 +116,8 @@ proto.startForm = function(options = {}) {
   const formComponent = options.formComponent || EditingFormComponent;
   const Form = this._getForm(inputs, context);
   const layerId = this._originalLayer.getId();
-  const isnew = this._originalFeatures.length > 1 ? false : this._originalFeatures[0].isNew();
+  const feature = this._originalFeatures[0];
+  const isnew = this._originalFeatures.length > 1 ? false : feature.isNew();
   const formService = Form({
     formComponent,
     title: "plugins.editing.editing_attributes",
@@ -125,6 +126,7 @@ proto.startForm = function(options = {}) {
     dataid: this._layerName,
     layer: this._originalLayer,
     isnew,
+    feature,
     fields: this._fields,
     context_inputs: !this._multi && this._edit_relations && {
       context,
