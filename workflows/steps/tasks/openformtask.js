@@ -186,6 +186,7 @@ proto.startForm = async function(options = {}) {
     dataid: this._layerName,
     layer: this._originalLayer,
     isnew: isNew,
+    feature,
     edit_feature_geometry,
     fields: this._fields,
     can_edit_signaler_feature,
