@@ -570,7 +570,7 @@ proto._attachLayerWidgetsEvent = function(layer) {
   for (let i=0; i < fields.length; i++) {
     const field = fields[i];
     if (field.input) {
-      if (field.input.type === 'select_autocomplete') {
+      if (field.input.type === 'select_autocomplete' && !field.input.options.filter_expression) {
         const options = field.input.options;
         let {key, values, value, usecompleter, layer_id, loading} = options;
         const self = this;
@@ -584,7 +584,6 @@ proto._attachLayerWidgetsEvent = function(layer) {
               values.splice(0);
               const relationLayer = CatalogLayersStoresRegistry.getLayerById(layer_id);
               if (relationLayer) {
-                const isVector = relationLayer.getType() === Layer.LayerTypes.VECTOR;
                 if (relationLayer) {
                   relationLayer.getDataTable({
                     ordering: key

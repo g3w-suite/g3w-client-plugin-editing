@@ -16,7 +16,7 @@ function ToolBox(options={}) {
   this._layer = options.layer;
   this.uniqueFields = this.getUniqueFieldsType(this._layer.getEditingFields());
   this.uniqueFields && this.getFieldUniqueValuesFromServer();
-  this._layerType = options.type || 'vector';
+  this._layerType = options.type || Layer.LayerTypes.VECTOR;
   this._loadedExtent = null;
   this._tools = options.tools;
   this._enabledtools;

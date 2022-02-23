@@ -1,15 +1,13 @@
 const {base, inherit} = g3wsdk.core.utils;
-
-
+const {createMeasureTooltip, removeMeasureTooltip} = g3wsdk.ol.utils;
 const EditingTask = require('./editingtask');
 
 function ModifyGeometryVertexTask(options={}){
   this.drawInteraction = null;
   this._originalStyle = null;
   this._feature = null;
+  this.tooltip;
   this._deleteCondition = options.deleteCondition;
-  this._snap = options.snap === false ? false : true;
-  this._snapInteraction = null;
   base(this, options);
 }
 
@@ -23,8 +21,7 @@ proto.run = function(inputs, context) {
   const editingLayer = originalLayer.getEditingLayer() ;
   const session = context.session;
   const layerId = originalLayer.getId();
-  let originalFeature,
-    newFeature;
+  let newFeature, originalFeature;
   const feature = this._feature = inputs.features[0];
   this.deleteVertexKey;
   this._originalStyle = editingLayer.getStyle();
@@ -56,14 +53,11 @@ proto.run = function(inputs, context) {
     features,
     deleteCondition: this._deleteCondition
   });
-
-  this.addInteraction(this._modifyInteraction);
-
   this._modifyInteraction.on('modifystart', evt => {
     const feature = evt.features.getArray()[0];
     originalFeature = feature.clone();
   });
-
+  this.addInteraction(this._modifyInteraction);
   this._modifyInteraction.on('modifyend', evt =>{
     const feature = evt.features.getArray()[0];
     if (feature.getGeometry().getExtent() !== originalFeature.getGeometry().getExtent()) {
@@ -73,15 +67,31 @@ proto.run = function(inputs, context) {
       d.resolve(inputs);
     }
   });
-
   return d.promise();
 };
 
+proto.addMeasureInteraction = function(){
+  const map = this.getMap();
+  this._modifyInteraction.on('modifystart', evt => {
+    const feature = evt.features.getArray()[0];
+    this.tooltip = createMeasureTooltip({
+      map,
+      feature
+    });
+  });
+};
+
+proto.removeMeasureInteraction = function(){
+  const map = this.getMap();
+  this.tooltip && removeMeasureTooltip({
+    map,
+    ...this.tooltip
+  });
+  this.tooltip = null;
+};
+
+
 proto.stop = function(){
-  if (this._snapInteraction) {
-     this.removeInteraction(this._snapInteraction);
-     this._snapInteraction = null;
-  }
   this._feature.setStyle(this._originalStyle);
   this.removeInteraction(this._modifyInteraction);
   this._modifyInteraction = null;

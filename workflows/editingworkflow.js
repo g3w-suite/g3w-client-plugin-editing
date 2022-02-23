@@ -1,7 +1,8 @@
-const inherit = g3wsdk.core.utils.inherit;
-const base =  g3wsdk.core.utils.base;
+const {base, inherit} = g3wsdk.core.utils;
 const GUI = g3wsdk.gui.GUI;
 const Workflow = g3wsdk.core.workflow.Workflow;
+const Layer = g3wsdk.core.layer.Layer;
+const {isPointGeometryType} = g3wsdk.core.geometry.Geometry;
 
 function EditingWorkflow(options={}) {
   base(this, options);
@@ -12,6 +13,64 @@ function EditingWorkflow(options={}) {
 inherit(EditingWorkflow, Workflow);
 
 const proto = EditingWorkflow.prototype;
+
+proto.addToolsOfTools = function({step, tools=[]}){
+  const toolsOfTools = {
+    snap: {
+      type: 'snap',
+      options: {
+        checkedAll: false,
+        checked: false,
+        active: true,
+        run({layer}){
+          this.active = true;
+          this.layerId = this.layerId || layer.getId();
+          this.source = this.source || layer.getEditingLayer().getSource();
+        },
+        stop(){
+          this.active = false;
+        }
+      }
+    },
+    measure:  {
+      type: 'measure',
+      options: {
+        checked: false,
+        run(){
+          setTimeout(()=>{
+            this.onChange(this.checked);
+          })
+        },
+        stop(){
+          step.getTask().removeMeasureInteraction();
+        },
+        onChange(bool){
+          this.checked = bool;
+          step.getTask()[bool ? 'addMeasureInteraction':  'removeMeasureInteraction']();
+        },
+        onBeforeDestroy(){
+          this.onChange(false);
+        }
+      }
+    }
+  };
+  step.on('run', ({inputs, context}) => {
+    const layer = inputs.layer;
+    if (this._toolsoftool.length == 0) {
+      tools.forEach(tool =>{
+        if (tool === 'measure') {
+          if (layer.getType() === Layer.LayerTypes.VECTOR && !isPointGeometryType(layer.getGeometryType()))
+            this._toolsoftool.push(toolsOfTools[tool]);
+        } else this._toolsoftool.push(toolsOfTools[tool]);
+      });
+    }
+    this._toolsoftool.forEach(tooloftool=> tooloftool.options.run({layer}));
+    this.emit('settoolsoftool', this._toolsoftool);
+  });
+  step.on('stop', () => {
+    this._toolsoftool.forEach(tooloftool=> tooloftool.options.stop());
+  });
+};
 
 proto.setHelpMessage = function(message) {
   this.helpMessage = {
@@ -25,10 +84,6 @@ proto.getHelpMessage = function(){
 
 proto.getFeatures = function() {
   return this.getInputs().features;
-};
-
-proto.setToolsOfTool = function(tools=[]) {
-  this._toolsoftool = [tools]
 };
 
 proto.startFromLastStep = function(options) {

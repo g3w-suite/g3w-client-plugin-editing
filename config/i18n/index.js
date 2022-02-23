@@ -33,6 +33,11 @@ export default {
       update_feature: "Modifica attributi feature",
       update_multi_features: "Modifica gli attributi delle features selezionate",
     },
+    toolsoftool: {
+      measure: "Visualizza misura",
+      snap: "Snap sul layer",
+      snapall: "Snap su tutti i layer"
+    },
     table: {
       edit: "Edita feature",
       copy: "Crea una copia",
@@ -163,6 +168,11 @@ export default {
       update_vertex: "Update feature vertex",
       update_feature: "Update feature attribute",
       update_multi_features: "Update attributes of selected features",
+    },
+    toolsoftool: {
+      measure: "Show measure",
+      snap: "Snap layer",
+      snapall: "Snap to all layers"
     },
     steps: {
       help: {
@@ -295,6 +305,11 @@ export default {
       update_vertex: "Päivitä pisteen ominaisuutta",
       update_feature: "Päivitä ominaisuus"
     },
+    toolsoftool: {
+      measure: "Show measure",
+      snap: "Snap layer",
+      snapall: "Snap to all layers"
+    },
     steps: {
       help: {
         select_elements: "Valitse ominaisuudet",
@@ -426,6 +441,11 @@ export default {
       update_vertex: "Uppdatera punktens egenskap",
       update_feature: "Uppdatera egenskap"
     },
+    toolsoftool: {
+      measure: "Show measure",
+      snap: "Snap layer",
+      snapall: "Snap to all layers"
+    },
     steps: {
       help: {
         select_elements: "Välj egenskaper",
@@ -552,6 +572,11 @@ export default {
       update_vertex: "Mettre à jour les sommets des fonctionnalités",
       update_feature: "Modifier les attributs des fonctionnalités",
       update_multi_features: "Modifier les attributs des fonctionnalités sélectionnées",
+    },
+    toolsoftool: {
+      measure: "Show measure",
+      snap: "Snap layer",
+      snapall: "Snap to all layers"
     },
     table: {
       edit: "Modifier fonctionnalités",

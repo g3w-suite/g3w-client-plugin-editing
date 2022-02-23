@@ -1,5 +1,4 @@
-const inherit = g3wsdk.core.utils.inherit;
-const base =  g3wsdk.core.utils.base;
+const {base, inherit} = g3wsdk.core.utils;
 const EditingWorkflow = require('./editingworkflow');
 const PickFeatureStep = require('./steps/pickfeaturestep');
 const ModifyGeometryVertexStep = require('./steps/modifygeometryvertexstep');
@@ -7,27 +6,13 @@ const ModifyGeometryVertexStep = require('./steps/modifygeometryvertexstep');
 function ModifyGeometryVertexWorflow(options={}) {
   options.helpMessage = 'editing.tools.update_vertex';
   const pickstep = new PickFeatureStep(options);
-  pickstep.on('run', ({inputs, context}) => {
-    const layer = inputs.layer;
-    const snapTool = {
-      type: 'snap',
-      options: {
-        layerId: layer.getId(),
-        source: layer.getEditingLayer().getSource(),
-        active: false
-      }
-    };
-    this.emit('settoolsoftool', [snapTool]);
-  });
-  const modifyvertex = new ModifyGeometryVertexStep();
-  modifyvertex.on('run', () => {
-    this.emit('active', ['snap']);
-  });
-  modifyvertex.on('stop', () => {
-    this.emit('deactive', ['snap']);
-  });
-  options.steps = [pickstep, modifyvertex];
+  const modifyvertexstep = new ModifyGeometryVertexStep();
+  options.steps = [pickstep, modifyvertexstep];
   base(this, options);
+  this.addToolsOfTools({
+    step: modifyvertexstep,
+    tools:['snap', 'measure']
+  })
 }
 
 inherit(ModifyGeometryVertexWorflow, EditingWorkflow);

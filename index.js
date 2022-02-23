@@ -8,6 +8,16 @@ const addI18nPlugin = g3wsdk.core.i18n.addI18nPlugin;
 
 const _Plugin = function() {
   base(this);
+  this.addFontClasses([
+    {
+      name: 'measure',
+      className: "fas fa-ruler-combined"
+    },
+    {
+      name: 'dot-circle',
+      className: "far fa-dot-circle"
+    }
+  ]);
   const pluginGroupTool = {
     position: 0,
     title: 'EDITING'

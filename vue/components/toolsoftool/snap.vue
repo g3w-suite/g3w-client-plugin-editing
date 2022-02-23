@@ -1,10 +1,15 @@
 <template>
-  <div style="display: flex; justify-content: space-between; width: 100%">
+  <div style="display: flex;width: 100%; justify-content: space-between">
     <input type="checkbox" class="magic-checkbox snap_tools_of_tools" :id="id" v-model="checked">
-    <label :for="id">Snap</label>
-    <template v-if="showSnapAll">
-      <input type="checkbox" class="magic-checkbox snap_tools_of_tools"  :id="idAll" v-model="checkedAll">
-      <label :for="idAll">Snap All</label>
+    <label :for="id" v-t-tooltip:right.create="'plugins.editing.toolsoftool.snap'">
+      <span :class="g3wtemplate.font['dot-circle']" ></span>
+    </label>
+    <template v-if="showSnapAll" >
+      <input type="checkbox" class="magic-checkbox snap_tools_of_tools" :id="idAll" v-model="checkedAll">
+      <label :for="idAll" v-t-tooltip:left.create="'plugins.editing.toolsoftool.snapall'">
+        <span :class="g3wtemplate.font['dot-circle']" ></span>
+        <span style="font-weight: bold" :class="g3wtemplate.font['layers']" ></span>
+      </label>
     </template>
   </div>
 </template>
@@ -13,7 +18,7 @@
   const GUI = g3wsdk.gui.GUI;
   const Layer = g3wsdk.core.layer.Layer;
   let snapInteraction;
-  const mapService = GUI.getComponent('map').getService();
+  const mapService = GUI.getService('map');
   const editingService = require('../../../services/editingservice');
   export default {
     name: "snap",
@@ -29,10 +34,7 @@
     },
     computed: {
       add() {
-        return (this.checked || this.checkedAll) && this.active;
-      },
-      active() {
-        return this.options.active;
+        return (this.checked || this.checkedAll) && this.options.active;
       }
     },
     methods: {
@@ -60,15 +62,23 @@
           });
           mapService.addInteraction(snapInteraction);
         }
-
-      }
+      },
+      enableSnapInteraction(bool){
+        if (bool)this.activeSnapInteraction();
+        else snapInteraction && mapService.removeInteraction(snapInteraction);
+      },
     },
     watch: {
-      checked() {
+      checked(bool) {
+        this.options.checked = bool;
         this.activeSnapInteraction()
       },
-      checkedAll() {
+      checkedAll(bool) {
+        this.options.checkedAll = bool;
         this.activeSnapInteraction()
+      },
+      'options.active'(bool){
+        this.enableSnapInteraction(bool);
       }
     },
     created() {
@@ -112,7 +122,6 @@
       this.setShowSnapAll();
     },
     beforeDestroy() {
-      snapInteraction && mapService.removeInteraction(snapInteraction);
       this.sourcesAndEventsKeys.forEach(sourceAndKey =>{
         const {source, settersAndKeys, olKey} = sourceAndKey;
         Object.keys(settersAndKeys).forEach(eventName =>{
@@ -125,10 +134,13 @@
       snapInteraction = null;
       this.unwatches = null;
       this.vectorToolboxesEditingState = null;
+      this.sourcesAndEventsKeys = null;
     }
   }
 </script>
 
 <style scoped>
-
+  label span {
+    color: #222d32 !important;
+  }
 </style>

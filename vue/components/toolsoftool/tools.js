@@ -1,6 +1,8 @@
 import snap  from  './snap.vue';
+import measure from './measure.vue';
 const Tools = {
-  snap
+  snap,
+  measure
 };
 
 module.exports = Tools;

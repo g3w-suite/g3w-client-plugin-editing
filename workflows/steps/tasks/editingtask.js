@@ -120,10 +120,7 @@ proto.fireEvent = function(event, options={}) {
 
 proto.setNullMediaFields = function({layer, feature}={}) {
   const mediaFields = layer.getEditingMediaFields({});
-  mediaFields.forEach(field => {
-    feature.set(field, null);
-  })
-
+  mediaFields.forEach(field => feature.set(field, null))
 };
 
 proto.run = function(inputs, context) {};
