@@ -1880,20 +1880,24 @@ proto.initEditingState = function(){
  */
 proto.editingReport = function({filter, toolId}={}){
   return new Promise((resolve, reject) => {
-    const reportToolbox = this.getToolBoxById(SIGNALER_IIM_CONFIG.signaler_layer_id);
+    const {signaler_layer_id, geo_layer_id, vertex_layer_id, result, create_new_signaler} = SIGNALER_IIM_CONFIG;
+    const reportToolbox = this.getToolBoxById(signaler_layer_id);
     reportToolbox.start({filter}).then(async ({features})=>{
-      const featuresToolbox = this.getToolBoxById(SIGNALER_IIM_CONFIG.geo_layer_id);
-      const vertexToolbox =  this.getToolBoxById(SIGNALER_IIM_CONFIG.vertex_layer_id);
+      if (geo_layer_id) {
+        const featuresToolbox = this.getToolBoxById(geo_layer_id);
+        featuresToolbox.stop();
+        featuresToolbox.setShow(false);
+      }
+      if (vertex_layer_id) {
+        const vertexToolbox =  this.getToolBoxById(vertex_layer_id);
+        vertexToolbox.stop();
+      }
       const fid = this.currentReport.id; // signaler id (in case of new is not setted)
-      vertexToolbox.stop();
-      featuresToolbox.stop();
       reportToolbox.setShow(true);
-      featuresToolbox.setShow(false);
       reportToolbox.setSelected(true);
       this.setSelectedToolbox(reportToolbox);
       const tool = toolId && reportToolbox.getToolById(toolId);
       tool && reportToolbox.setActiveTool(tool);
-      const {result, create_new_signaler} = SIGNALER_IIM_CONFIG;
       // in case editing is started from result content
       if (result) {
         const workflow = require('../workflows/edittablefeatureworkflow');
