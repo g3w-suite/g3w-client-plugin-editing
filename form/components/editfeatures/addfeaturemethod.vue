@@ -45,16 +45,17 @@
             async cancel(){
                 if (WorkflowsStack.getLength() > 1)  GUI.popContent();
                 else {
+                    const {result, create_new_signaler} = SIGNALER_IIM_CONFIG;
                     const EditingService = require('../../../services/editingservice');
                     EditingService.stopAllWorkflowsStack();
-                    const {id:signaler_id} = EditingService.getCurrentReportData();
+                    const {feature} = EditingService.getCurrentReportData();
+                    const showTable = !result && !create_new_signaler;
                     await EditingService.editingReport({
-                        filter: {
-                            field: `id|eq|${signaler_id}`
-                        },
-                        toolId: 'edittable'
+                        feature,
+                        toolId:  showTable ? 'edittable' : null,
+                        openForm: !showTable
                     });
-                    setTimeout(()=>{
+                    showTable && setTimeout(()=>{
                         $(`#signaler_edit_${signaler_id}`).click();
                     })
                 }

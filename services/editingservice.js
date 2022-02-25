@@ -91,7 +91,7 @@ function EditingService() {
   this._subscribers = {};
   //eventually action layer when result is showed
   this.addActionKeys = [];
-  this._editSingleReportWorkflow = null;
+  this._editSingleReportFormTask = null;
   this.init = function(config={}) {
     this._mapService.addScaleLineUnits(['nautical']);
     this._vectorUrl = config.vectorurl;
@@ -311,10 +311,10 @@ proto.registerResultEditingAction = function(){
               toolboxes: [this.getToolBoxById(layerId)]
             });
             this.editingReport({
-              toolId: 'edittable',
               filter: {
                 fids: feature.attributes[G3W_FID]
-              }
+              },
+              openForm: true
             });
           }
         });
@@ -1684,6 +1684,7 @@ proto.setCurrentReportData = function({feature, valid}={}){
   this.currentReport.id = feature.getId();
   this.currentReport.isNew = feature.isNew();
   this.currentReport.valid = valid;
+  this.currentReport.feature = feature;
   const properties = feature.getProperties();
   Object.keys(this.currentReport.ab_signal_fields).forEach(field => this.currentReport.ab_signal_fields[field].value = properties[field]);
   return this.currentReport.id;
@@ -1878,11 +1879,20 @@ proto.initEditingState = function(){
 /**
  * Editing Report
  */
-proto.editingReport = function({filter, toolId}={}){
+proto.editingReport = function({filter, feature, toolId, openForm=false}={}){
   return new Promise((resolve, reject) => {
-    const {signaler_layer_id, geo_layer_id, vertex_layer_id, result, create_new_signaler} = SIGNALER_IIM_CONFIG;
+    const {signaler_layer_id, geo_layer_id, vertex_layer_id} = SIGNALER_IIM_CONFIG;
     const reportToolbox = this.getToolBoxById(signaler_layer_id);
-    reportToolbox.start({filter}).then(async ({features})=>{
+    let promise;
+    if (feature) {
+      const d = $.Deferred();
+      promise = d.promise();
+      d.resolve({features:[feature]})
+    } else promise = reportToolbox.start({filter});
+    promise.then(async ({features})=>{
+      /**
+       * check if geolayer and vertex layer is loaded in editing
+       */
       if (geo_layer_id) {
         const featuresToolbox = this.getToolBoxById(geo_layer_id);
         featuresToolbox.stop();
@@ -1892,6 +1902,9 @@ proto.editingReport = function({filter, toolId}={}){
         const vertexToolbox =  this.getToolBoxById(vertex_layer_id);
         vertexToolbox.stop();
       }
+      /*
+        end check
+       */
       const fid = this.currentReport.id; // signaler id (in case of new is not setted)
       reportToolbox.setShow(true);
       reportToolbox.setSelected(true);
@@ -1899,9 +1912,8 @@ proto.editingReport = function({filter, toolId}={}){
       const tool = toolId && reportToolbox.getToolById(toolId);
       tool && reportToolbox.setActiveTool(tool);
       // in case editing is started from result content
-      if (result) {
-        const workflow = require('../workflows/edittablefeatureworkflow');
-        this._editSingleReportWorkflow = new workflow();
+      if (openForm) {
+        const openFormTaskClass = require('../workflows/steps/tasks/openformtask');
         const options = {
           context: {
             session: reportToolbox.getSession()
@@ -1911,8 +1923,9 @@ proto.editingReport = function({filter, toolId}={}){
             features
           }
         };
+        this._editSingleReportFormTask = new openFormTaskClass();
         const promise = new Promise((resolve, reject)=>{
-          this._editSingleReportWorkflow.start(options)
+          this._editSingleReportFormTask.run(options.inputs, options.context)
             .then(() => {
               reportToolbox.getSession().save();
               reportToolbox.getSession().commit().then(()=>{
@@ -1925,8 +1938,7 @@ proto.editingReport = function({filter, toolId}={}){
               resolve();
             })
             .always(()=>{
-              this._editSingleReportWorkflow.stop();
-              this._editSingleReportWorkflow = null;
+              GUI.disableSideBar(false)
             })
         });
         await promise;
@@ -1950,7 +1962,8 @@ proto.editingFeaturesReport = function({toolId, filter}={}){
   const reportToolbox = this.getToolBoxById(SIGNALER_IIM_CONFIG.signaler_layer_id);
   const promise = reportToolbox.isStarted() ? reportToolbox.stop() : Promise.resolve();
   promise.then(async ()=>{
-    this._editSingleReportWorkflow && this._editSingleReportWorkflow.stop().always(() => this._editSingleReportWorkflow = null);
+    this._editSingleReportFormTask && this._editSingleReportFormTask.stop();
+    this._editSingleReportFormTask = null;
     if (SIGNALER_IIM_CONFIG.geo_layer_id){
       const featuresToolbox = this.getToolBoxById(SIGNALER_IIM_CONFIG.geo_layer_id);
       try {
@@ -1966,9 +1979,7 @@ proto.editingFeaturesReport = function({toolId, filter}={}){
           const tool = featuresToolbox.getToolById(toolId);
           featuresToolbox.setActiveTool(tool);
         }
-      } catch(err){
-        console.log(err)
-      }
+      } catch(err){}
     }
   })
 };

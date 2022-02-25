@@ -37,7 +37,7 @@ const vueComponentOptions = {
       ApplicationState.online && this.$options.service.editingReport();
     },
     async stopToolBox(toolboxId) {
-      const {geo_layer_id, result} = SIGNALER_IIM_CONFIG;
+      const {geo_layer_id, result, create_new_signaler} = SIGNALER_IIM_CONFIG;
       const toolbox = this._getToolBoxById(toolboxId);
       const promise = new Promise((resolve, reject) =>{
         if (toolbox.state.editing.history.commit) this.$options.service.commit().always(() => {
@@ -54,12 +54,14 @@ const vueComponentOptions = {
         this.$options.service.getPlugin().hideEditingPanel();
         this.$options.service.setEditingSingleLayer(false);
       } else if (toolbox.getId() === geo_layer_id) {
-        const signaler_id = this.$options.service.getCurrentReportData().id;
-        if (result){
+        const {id:signaler_id} = this.$options.service.getCurrentReportData();
+        // check if editing comeing from create new feature (sid=new) or from result icon
+        if (result || create_new_signaler){
           this.$options.service.editingReport({
             filter: {
               fids: signaler_id
-            }
+            },
+            openForm: true
           });
         } else {
           await this.$options.service.editingReport({

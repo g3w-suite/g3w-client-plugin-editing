@@ -213,7 +213,8 @@ proto.startForm = async function(options = {}) {
       feature: this._originalFeature,
       formService
     });
-  WorkflowsStack.getCurrent().setContextService(formService);
+  // in case when i call task directly
+  WorkflowsStack.getLength() && WorkflowsStack.getCurrent().setContextService(formService);
 };
 
 proto.run = function(inputs, context) {

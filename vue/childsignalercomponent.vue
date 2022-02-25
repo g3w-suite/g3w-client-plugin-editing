@@ -24,10 +24,7 @@
                 type: Object
             }
         },
-
-        created() {
-            console.log(this.layer, this.feature)
-        },
+        created() {},
         methods: {
             openEditTab(){
                 alert(this.feature.id)

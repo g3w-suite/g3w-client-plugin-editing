@@ -80,7 +80,6 @@
             },
             changePointCoordinatesEPSG(epsg_code, index, point){
                 const value = point[`coordinates${epsg_code}`][index];
-                console.log(value, this.toMinimunDecimals(value, epsg_code === 'EPSG:4326' ? 5 : 2))
                 point[`coordinates${epsg_code}`][index] = this.toMinimunDecimals(value, epsg_code === 'EPSG:4326' ? 5 : 2);
                 this.covertToEPSG({
                     excludeEPSG: epsg_code,
