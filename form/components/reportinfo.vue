@@ -22,14 +22,16 @@
                 signaler_father_info:[]
             }
         },
-        async mounted(){
-            await this.$nextTick();
-            Object.values(EditingService.getCurrentReportData().ab_signal_fields).forEach(({label, value}) =>{
-                this.signaler_father_info.push({
-                    label,
-                    value
-                });
+        mounted(){
+            setTimeout(()=>{
+                Object.values(EditingService.getCurrentReportData().ab_signal_fields).forEach(({label, value}) =>{
+                    this.signaler_father_info.push({
+                        label,
+                        value
+                    });
+                })
             })
+
         }
     };
 </script>

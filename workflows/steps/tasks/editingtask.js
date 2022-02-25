@@ -142,7 +142,7 @@ proto.getPointFeaturesfromGeometryVertex = function(geometry){
 };
 
 proto.getDeltaXY = function({x, y, coordinates} = {}){
-  this.getEditingService().getDeltaXY({
+  return this.getEditingService().getDeltaXY({
     x,
     y,
     coordinates
