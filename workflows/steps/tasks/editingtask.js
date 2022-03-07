@@ -127,4 +127,21 @@ proto.run = function(inputs, context) {};
 
 proto.stop = function() {};
 
+/**
+ * Function that handle single task 
+ */
+proto.saveSingle = function(input, context){
+  context.session.save()
+    .then(() => this.getEditingService().saveChange());
+};
+
+/**
+ * Function cancel single
+ * @param input
+ * @param context
+ */
+proto.cancelSingle = function(input, context){
+  context.session.rollback();
+};
+
 module.exports = EditingTask;

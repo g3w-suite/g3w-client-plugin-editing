@@ -198,8 +198,10 @@ proto.registerResultEditingAction = function(){
   const queryResultsService = GUI.getComponent('queryresults').getService();
   this.addActionKeys.push(queryResultsService.onafter('addActionsForLayers', (actions, layers) => {
     const showEditingIconOnResult = !this.state.open;
-    Object.keys(actions).forEach(layerId => {
-      if (this.getEditingLayer(layerId)) {
+    layers.forEach(layer => {
+      const layerId = layer.id;
+      if (this.getLayerById(layerId)) {
+        actions[layerId] = actions[layerId] || [];
         actions[layerId] = actions[layerId] || [];
         actions[layerId].push({
           id: 'editing',
@@ -208,7 +210,7 @@ proto.registerResultEditingAction = function(){
           condition: () => showEditingIconOnResult,
           cbk: (layer, feature) => {
             const layerId = layer.id;
-            const featureId =feature.attributes[G3W_FID];
+            const featureId = feature.attributes[G3W_FID];
             this.editResultLayerFeature({
               layerId,
               featureId
@@ -217,7 +219,14 @@ proto.registerResultEditingAction = function(){
         });
       }
     })
-  }))
+  }));
+  this.addActionKeys.push(queryResultsService.onafter('editFeature', ({layerId, featureId}) => {
+    console.log(layerId, featureId)
+    this.editResultLayerFeature({
+      layerId,
+      featureId
+    })
+  }));
 };
 
 proto.unregisterResultEditingAction = function(){
@@ -233,11 +242,30 @@ proto.unregisterResultEditingAction = function(){
 proto.editResultLayerFeature = function({layerId, featureId}={}){
   this.getPlugin().showEditingPanel();
   const toolBox = this.getToolBoxById(layerId);
-  toolBox.setSelected(true);
   toolBox.start().then(({features}) =>{
-    const feature = features.find(feature => feature.getId() == featureId);
+    const feature = features.find(feature => {
+      return feature.getId() == featureId
+    });
     if (feature){
-
+      toolBox.setSelected(true);
+      this.setSelectedToolbox(toolBox);
+      if (toolBox.isVectorLayer()){
+        const tool = toolBox.getToolById('editattributes');
+        toolBox.setActiveTool(tool);
+      }
+      const openFormTaskClass = require('../workflows/steps/tasks/openformtask');
+      const context = {
+        session: toolBox.getSession(),
+      };
+      const inputs = {
+        layer: toolBox.getLayer(),
+        features: [feature]
+      };
+      const openFormTask = new openFormTaskClass();
+      openFormTask.run(inputs, context)
+        .then(() => openFormTask.saveSingle(inputs, context))
+        .fail(() => openFormTask.cancelSingle(inputs, context))
+        .always(() => openFormTask.stop())
     } else {
       console.log('feature found')
     }

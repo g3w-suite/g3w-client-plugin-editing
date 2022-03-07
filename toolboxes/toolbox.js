@@ -190,6 +190,13 @@ proto._resetUniqueValues = function(){
   })
 };
 
+/*
+check if vectorLayer
+ */
+proto.isVectorLayer = function(){
+  return this._layerType ===  Layer.LayerTypes.VECTOR;
+};
+
 /**
  * Method to create getFeaures options
  * @param filter

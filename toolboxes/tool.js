@@ -84,7 +84,7 @@ proto.start = function(hideSidebar = false) {
         this._session.save()
           .then(() => this.editingService.saveChange()); // after save temp change check if editing service has a autosave
       })
-      .fail(() =>  {
+      .fail(() => {
         hideSidebar && GUI.showSidebar();
         this._session.rollback()
           .then(() => {})
