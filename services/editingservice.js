@@ -221,7 +221,6 @@ proto.registerResultEditingAction = function(){
     })
   }));
   this.addActionKeys.push(queryResultsService.onafter('editFeature', ({layerId, featureId}) => {
-    console.log(layerId, featureId)
     this.editResultLayerFeature({
       layerId,
       featureId
