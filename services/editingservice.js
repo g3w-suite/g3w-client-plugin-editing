@@ -1,17 +1,15 @@
 import API from '../api'
-const ApplicationService = g3wsdk.core.ApplicationService;
-const ApplicationState = g3wsdk.core.ApplicationState;
+const {ApplicationState, ApplicationService} = g3wsdk.core;
 const {base, inherit} = g3wsdk.core.utils;
-const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
-const PluginService = g3wsdk.core.plugin.PluginService;
-const SessionsRegistry = g3wsdk.core.editing.SessionsRegistry;
-const CatalogLayersStoresRegistry = g3wsdk.core.catalog.CatalogLayersStoresRegistry;
-const MapLayersStoreRegistry = g3wsdk.core.map.MapLayersStoreRegistry;
-const LayersStore = g3wsdk.core.layer.LayersStore;
-const Layer = g3wsdk.core.layer.Layer;
-const Feature = g3wsdk.core.layer.features.Feature;
-const GUI = g3wsdk.gui.GUI;
-const serverErrorParser= g3wsdk.core.errors.parsers.Server;
+const {WorkflowsStack} = g3wsdk.core.workflow;
+const {PluginService} = g3wsdk.core.plugin;
+const {SessionsRegistry} = g3wsdk.core.editing;
+const {CatalogLayersStoresRegistry} = g3wsdk.core.catalog;
+const {MapLayersStoreRegistry} = g3wsdk.core.map;
+const {Layer, LayersStore} = g3wsdk.core.layer;
+const {Feature} = g3wsdk.core.layer.features;
+const {GUI} = g3wsdk.gui;
+const {Server:serverErrorParser}= g3wsdk.core.errors.parsers;
 const t = g3wsdk.core.i18n.tPlugin;
 const ToolBoxesFactory = require('../toolboxes/toolboxesfactory');
 const CommitFeaturesWorkflow = require('../workflows/commitfeaturesworkflow');
