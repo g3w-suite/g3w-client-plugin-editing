@@ -18,12 +18,12 @@ const vueComponentOptions = {
     undo() {
       const session = this.state.toolboxselected.getSession();
       const undoItems = session.undo();
-      this.$options.service.undoRelations(undoItems)
+      this.$options.service.undoRelations(undoItems);
     },
     redo() {
       const session = this.state.toolboxselected.getSession();
       const redoItems = session.redo();
-      this.$options.service.redoRelations(redoItems)
+      this.$options.service.redoRelations(redoItems);
     },
     commit(toolboxId) {
       const toolbox = this.$options.service.getToolBoxById(toolboxId);
@@ -123,12 +123,14 @@ const vueComponentOptions = {
     this.appState = ApplicationState;
     this.$options.service.registerOnLineOffLineEvent();
     GUI.closeContent();
+    this.$options.service.state.open = true;
     GUI.on('opencontent', this._enableEditingButtons);
     GUI.on('closeform', this._enableEditingButtons);
     GUI.on('closecontent', this._enableEditingButtons);
     GUI.getComponent('map').getService().seSelectionLayerVisible(false);
   },
   beforeDestroy() {
+    this.$options.service.state.open = false;
     GUI.off('opencontent', this._enableEditingButtons);
     GUI.off('closeform', this._enableEditingButtons);
     GUI.off('closecontent', this._enableEditingButtons);
