@@ -227,7 +227,7 @@ proto.setEditingConstraints = function(constraints={}){
 
 //added option object to start method to have a control by other plugin how
 proto.start = function(options={}) {
-  let { filter, toolboxheader=true, startstopediting=true, showtools=true, tools, changingtools=false} = options;
+  let {filter, toolboxheader=true, startstopediting=true, showtools=true, tools, changingtools=false} = options;
   this.state.changingtools = changingtools;
   tools && this.setEnablesDisablesTools(tools);
   this.state.toolboxheader = toolboxheader;

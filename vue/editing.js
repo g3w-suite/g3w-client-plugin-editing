@@ -123,14 +123,14 @@ const vueComponentOptions = {
     this.appState = ApplicationState;
     this.$options.service.registerOnLineOffLineEvent();
     GUI.closeContent();
-    this.$options.service.state.open = true;
+    this.$options.service.setOpenEditingPanel(true);
     GUI.on('opencontent', this._enableEditingButtons);
     GUI.on('closeform', this._enableEditingButtons);
     GUI.on('closecontent', this._enableEditingButtons);
     GUI.getComponent('map').getService().seSelectionLayerVisible(false);
   },
   beforeDestroy() {
-    this.$options.service.state.open = false;
+    this.$options.service.setOpenEditingPanel(false);
     GUI.off('opencontent', this._enableEditingButtons);
     GUI.off('closeform', this._enableEditingButtons);
     GUI.off('closecontent', this._enableEditingButtons);

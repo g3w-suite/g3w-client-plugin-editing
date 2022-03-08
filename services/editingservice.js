@@ -237,38 +237,41 @@ proto.unregisterResultEditingAction = function(){
  * function to start to edit feature selected from results;
  *
  */
-
 proto.editResultLayerFeature = function({layerId, featureId}={}){
   this.getPlugin().showEditingPanel();
   const toolBox = this.getToolBoxById(layerId);
-  toolBox.start().then(({features}) =>{
-    const feature = features.find(feature => {
-      return feature.getId() == featureId
-    });
-    if (feature){
-      toolBox.setSelected(true);
-      this.setSelectedToolbox(toolBox);
-      if (toolBox.isVectorLayer()){
-        const tool = toolBox.getToolById('editattributes');
-        toolBox.setActiveTool(tool);
+  toolBox.start()
+    .then(({features}) =>{
+      const feature = features.find(feature => {
+        return feature.getId() == featureId
+      });
+      if (feature){
+        toolBox.setSelected(true);
+        this.setSelectedToolbox(toolBox);
+        if (toolBox.isVectorLayer()){
+          const tool = toolBox.getToolById('editattributes');
+          toolBox.setActiveTool(tool);
+        }
+        const openFormTaskClass = require('../workflows/steps/tasks/openformtask');
+        const context = {
+          session: toolBox.getSession(),
+        };
+        const inputs = {
+          layer: toolBox.getLayer(),
+          features: [feature]
+        };
+        const openFormTask = new openFormTaskClass();
+        openFormTask.run(inputs, context)
+          .then(() => {
+            openFormTask.saveSingle(inputs, context)
+          })
+          .fail(err => openFormTask.cancelSingle(inputs, context))
+          .always(() => {
+            openFormTask.stop()
+          })
       }
-      const openFormTaskClass = require('../workflows/steps/tasks/openformtask');
-      const context = {
-        session: toolBox.getSession(),
-      };
-      const inputs = {
-        layer: toolBox.getLayer(),
-        features: [feature]
-      };
-      const openFormTask = new openFormTaskClass();
-      openFormTask.run(inputs, context)
-        .then(() => openFormTask.saveSingle(inputs, context))
-        .fail(() => openFormTask.cancelSingle(inputs, context))
-        .always(() => openFormTask.stop())
-    } else {
-      console.log('feature found')
-    }
-  })
+    })
+    .fail(err =>console.log(err))
 };
 
 /**
@@ -580,6 +583,12 @@ proto.addToolBox = function(toolbox) {
   // add session
   this._sessions[toolbox.getId()] = toolbox.getSession();
   this.state.toolboxes.push(toolbox.state);
+};
+
+//** Method to set state in editing 
+proto.setOpenEditingPanel = function(bool){
+  this.state.open = bool;
+  this._getEditableLayersFromCatalog().forEach(layer => layer.setInEditing(bool));
 };
 
 /*

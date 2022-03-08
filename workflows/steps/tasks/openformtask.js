@@ -153,7 +153,9 @@ proto.startForm = function(options = {}) {
       feature: this._originalFeature,
       formService
     });
-  WorkflowsStack.getCurrent().setContextService(formService);
+  const currentWorkflow = WorkflowsStack.getCurrent();
+  // in case of called single task no workflow is set
+  currentWorkflow && currentWorkflow.setContextService(formService);
 };
 
 proto.run = function(inputs, context) {
@@ -173,6 +175,7 @@ proto._generateFormId = function(layerName) {
 
 proto.stop = function() {
   this.disableSidebar(false);
+  console.log(this._isContentChild)
   this._isContentChild ? GUI.popContent() : GUI.closeForm();
   this.getEditingService().resetCurrentLayout();
 };
