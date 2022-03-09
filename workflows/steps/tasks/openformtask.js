@@ -175,7 +175,6 @@ proto._generateFormId = function(layerName) {
 
 proto.stop = function() {
   this.disableSidebar(false);
-  console.log(this._isContentChild)
   this._isContentChild ? GUI.popContent() : GUI.closeForm();
   this.getEditingService().resetCurrentLayout();
 };

@@ -24,7 +24,7 @@ function EditingFormComponent(options={}) {
       //check if add components to add
       customFormComponents.length && this.addFormComponents(customFormComponents);
       // add relation component
-      RelationComponents.length &&this.addFormComponents(RelationComponents);
+      RelationComponents.length && this.addFormComponents(RelationComponents);
       Vue.nextTick(()=> GUI.setLoadingContent(false));
     })
   }

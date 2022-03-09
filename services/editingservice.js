@@ -211,10 +211,13 @@ proto.registerResultEditingAction = function(){
           cbk: (layer, feature) => {
             const layerId = layer.id;
             const featureId = feature.attributes[G3W_FID];
-            this.editResultLayerFeature({
-              layerId,
-              featureId
-            });
+            feature.geometry && this._mapService.zoomToGeometry(feature.geometry);
+            setTimeout(()=>{
+              this.editResultLayerFeature({
+                layerId,
+                featureId
+              });
+            })
           }
         });
       }
@@ -243,32 +246,27 @@ proto.editResultLayerFeature = function({layerId, featureId}={}){
   toolBox.start()
     .then(({features}) =>{
       const feature = features.find(feature => {
-        return feature.getId() == featureId
+        return feature.getId() == featureId;
       });
       if (feature){
         toolBox.setSelected(true);
+        const session = toolBox.getSession();
         this.setSelectedToolbox(toolBox);
-        if (toolBox.isVectorLayer()){
-          const tool = toolBox.getToolById('editattributes');
-          toolBox.setActiveTool(tool);
-        }
-        const openFormTaskClass = require('../workflows/steps/tasks/openformtask');
-        const context = {
-          session: toolBox.getSession(),
+        const workflow = require('../workflows/editnopickmapfeatureattributesworkflow');
+        const options = {
+          inputs: {
+            layer: toolBox.getLayer(),
+            features: [feature]
+          },
+          context: {
+            session
+          }
         };
-        const inputs = {
-          layer: toolBox.getLayer(),
-          features: [feature]
-        };
-        const openFormTask = new openFormTaskClass();
-        openFormTask.run(inputs, context)
-          .then(() => {
-            openFormTask.saveSingle(inputs, context)
-          })
-          .fail(err => openFormTask.cancelSingle(inputs, context))
-          .always(() => {
-            openFormTask.stop()
-          })
+        const eeditFeatureWorkFlow = new workflow();
+        eeditFeatureWorkFlow.start(options)
+          .then(() => session.save()
+            .then(() => this.saveChange()))
+          .fail(()=> session.rollback());
       }
     })
     .fail(err =>console.log(err))
