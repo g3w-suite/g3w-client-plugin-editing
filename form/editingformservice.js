@@ -12,8 +12,8 @@ const EditingFormService = function(options={}) {
   // get feature
   const feature = features[features.length - 1];
   // get only relation with type not ONE and layer is the father
-  let relations = layer.getRelations().getArray().filter(relation => relation.getType() !== 'ONE').filter(relation => relation.getFather() === layerId);
-  relations = EditingService.getRelationsInEditing({layerId, relations , feature}) || [];
+  let relations = layer.getRelations().getArray().filter(relation => relation.getType() !== 'ONE' && relation.getFather() === layerId);
+  relations = EditingService.getRelationsInEditing({layerId, relations , feature});
   this.hasRelations = () => !!relations.length;
   this.buildRelationComponents = function() {
     const self = this;
