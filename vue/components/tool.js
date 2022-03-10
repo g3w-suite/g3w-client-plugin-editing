@@ -7,8 +7,8 @@ const ToolComponent = Vue.extend({
   },
   methods: {
     toggletool() {
-    if (!this.state.active) this.$emit('setactivetool', this.state.id);
-      else this.$emit('stopactivetool');
+      if (!this.state.active) this.$emit('setactivetool', this.state.id);
+        else this.$emit('stopactivetool');
     }
   }
 });

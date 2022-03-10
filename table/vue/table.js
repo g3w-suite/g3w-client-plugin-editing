@@ -1,5 +1,4 @@
-const inherit = g3wsdk.core.utils.inherit;
-const base =  g3wsdk.core.utils.base;
+const {base, inherit} = g3wsdk.core.utils;
 const Component = g3wsdk.gui.vue.Component;
 const {resizeMixin} = g3wsdk.gui.vue.Mixins;
 const Media_Field = g3wsdk.gui.vue.Fields.media_field;
@@ -12,7 +11,7 @@ const InternalComponent = Vue.extend({
   components: {
     'g3w-media': Media_Field
   },
-  data: function() {
+  data() {
     this.dataTable = null;
     return {
       state: null,
@@ -82,10 +81,8 @@ const InternalComponent = Vue.extend({
       return this.$options.service._setLayout();
     },
     getValue(value) {
-       if (value && typeof  value === 'object' && value.constructor === Object)
-         value = value.value;
-       else if (typeof value == 'string' && value.indexOf('_new_') === 0)
-         value = null;
+       if (value && typeof  value === 'object' && value.constructor === Object) value = value.value;
+       else if (typeof value == 'string' && value.indexOf('_new_') === 0) value = null;
        return value;
     },
     setDataTable(){
@@ -109,10 +106,11 @@ const InternalComponent = Vue.extend({
     this.delayType = 'debounce';
   },
   async mounted() {
-    if (this.state.isrelation) this._linkFeatures = [];
     await this.$nextTick();
+    if (this.state.isrelation) this._linkFeatures = [];
     this.setDataTable();
     $('#table-editing-tools i').tooltip();
+    this.$options.service.emit('ready');
   },
   beforeDestroy() {
     if (this._linkFeatures) this._linkFeatures = null;
@@ -131,7 +129,7 @@ const TableComponent = function(options={}) {
   });
   this.setInternalComponent(internalComponent);
   internalComponent.state = service.state;
-
+  service.once('ready', ()=> this.emit('ready'));
   this.unmount = function() {
     service.cancel();
     return base(this, 'unmount');

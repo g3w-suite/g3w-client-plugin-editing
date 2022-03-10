@@ -96,7 +96,9 @@ proto.start = function(hideSidebar = false) {
   };
   if (this._op) {
     this.state.active = true;
-    startOp(options);
+    setTimeout(()=>{ // used to prevent renderind change state
+      startOp(options);
+    })
   }
 };
 

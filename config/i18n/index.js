@@ -106,7 +106,8 @@ export default {
         add: "Aggiunte (n. features)",
         delete: "Cancellate(id)",
         update: "Modificate(id)"
-      }
+      },
+      loading_table_data: "Costruzione tabella dati in corso. Attendere ..."
     },
     relation: {
       table: {
@@ -238,7 +239,8 @@ export default {
         add: "Added(n. features)",
         delete: "Deleted(id)",
         update: "Modified(id)"
-      }
+      },
+      loading_table_data: "Building Data Table. Please wait ..."
     },
     relation: {
       table: {
@@ -374,7 +376,8 @@ export default {
         add: "Lisätty(n. ominaisuutta)",
         delete: "Poistettu(id)",
         update: "Muokattu(id)"
-      }
+      },
+      loading_table_data: "Building Data Table. Please wait ..."
     },
     relation: {
       table: {
@@ -510,7 +513,8 @@ export default {
         add: "(n. egenskaper) har lagts till",
         delete: "Borttagen (id)",
         update: "Redigerad(id)"
-      }
+      },
+      loading_table_data: "Building Data Table. Please wait ..."
     },
     relation: {
       table: {
@@ -646,7 +650,8 @@ export default {
         add: "Ajouté (n. fonctionnalités)",
         delete: "Supprimé(id)",
         update: "Modifié(id)"
-      }
+      },
+      loading_table_data: "Building Data Table. Please wait ..."
     },
     relation: {
       table: {

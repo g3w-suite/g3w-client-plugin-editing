@@ -1,4 +1,6 @@
-const GUI = g3wsdk.gui.GUI;
+const {base, inherit} = g3wsdk.core.utils;
+const {G3WObject} = g3wsdk.core;
+const {GUI} = g3wsdk.gui;
 const t = g3wsdk.core.i18n.tPlugin;
 
 const TableService = function(options = {}) {
@@ -43,7 +45,10 @@ const TableService = function(options = {}) {
     }
   };
   this.init();
+  base(this);
 };
+
+inherit(TableService, G3WObject);
 
 const proto = TableService.prototype;
 

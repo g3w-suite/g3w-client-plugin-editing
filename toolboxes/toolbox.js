@@ -670,7 +670,6 @@ proto.setActiveTool = function(tool) {
       this.clearToolsOfTool();
       this.state.activetool = tool;
       tool.once('settoolsoftool', tools => tools.forEach(tool => this.state.toolsoftool.push(tool)));
-
       const _activedeactivetooloftools = (activetools, active) => {
         this.state.toolsoftool.forEach(tooloftool => {
           if (activetools.indexOf(tooloftool.type) !== -1) tooloftool.options.active = active;
@@ -729,8 +728,8 @@ proto.getToolMessage = function() {
   return tool.getMessage();
 };
 
-proto.setToolMessage = function(messages) {
-  this.state.toolmessages.help = messages.help;
+proto.setToolMessage = function(messages={}) {
+  this.state.toolmessages.help = messages && messages.help || null;
 };
 
 proto.getSession = function() {
