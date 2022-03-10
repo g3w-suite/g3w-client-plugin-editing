@@ -921,7 +921,14 @@ proto.clearState = function() {
   this.state.message =  null;
 };
 
-proto.getRelationsInEditing = function({layerId, relations, feature}={}) {
+/**
+ * Get Relation in editing
+ * @param layerId
+ * @param relations
+ * @param feature
+ * @returns {[]}
+ */
+proto.getRelationsInEditing = function({layerId, relations=[], feature}={}) {
   let relationsinediting = [];
   let relationinediting;
   relations.forEach(relation => {

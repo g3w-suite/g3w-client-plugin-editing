@@ -9,9 +9,11 @@ const EditingFormService = function(options={}) {
   const {layer, features} = options.inputs || {};
   this._formEventBus = options.formEventBus || null;
   const layerId = layer.getId();
+  // get feature
   const feature = features[features.length - 1];
-  let relations = layer.getRelations().getArray().filter(relation => relation.getType() !== 'ONE');
-  relations = layer.isFather() ? EditingService.getRelationsInEditing({layerId, relations , feature}) : [];
+  // get only relation with type not ONE and layer is the father
+  let relations = layer.getRelations().getArray().filter(relation => relation.getType() !== 'ONE').filter(relation => relation.getFather() === layerId);
+  relations = EditingService.getRelationsInEditing({layerId, relations , feature}) || [];
   this.hasRelations = () => !!relations.length;
   this.buildRelationComponents = function() {
     const self = this;

@@ -1,6 +1,6 @@
-const GUI = g3wsdk.gui.GUI;
+const {GUI} = g3wsdk.gui;
 const t = g3wsdk.core.i18n.tPlugin;
-const Layer = g3wsdk.core.layer.Layer;
+const {Layer} = g3wsdk.core.layer;
 
 // what we can do with each type of relation element
 const RELATIONTOOLS = {
