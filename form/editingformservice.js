@@ -1,4 +1,4 @@
-const GUI = g3wsdk.gui.GUI;
+const {GUI} = g3wsdk.gui;
 const t = g3wsdk.core.i18n.tPlugin;
 const RelationComponent = require('./components/relation/vue/relation');
 const EditingFormService = function(options={}) {
@@ -40,7 +40,9 @@ const EditingFormService = function(options={}) {
       relationComponents.push({
         title: "plugins.editing.edit_relation",
         name: relation.relation.name,
+        relation_id: relation.relation.id,
         id: `${t("editing.edit_relation")} ${relation.relation.name}`,
+        header: false, // not sho to header
         component: relationComponent
       })
     });

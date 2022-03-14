@@ -1,6 +1,6 @@
 const { base, inherit } = g3wsdk.core.utils;
-const FormComponent = g3wsdk.gui.vue.FormComponent;
-const GUI = g3wsdk.gui.GUI;
+const {FormComponent} = g3wsdk.gui.vue;
+const {GUI} = g3wsdk.gui;
 const EditingFormService = require('./editingformservice');
 
 function EditingFormComponent(options={}) {
@@ -25,6 +25,10 @@ function EditingFormComponent(options={}) {
       customFormComponents.length && this.addFormComponents(customFormComponents);
       // add relation component
       RelationComponents.length && this.addFormComponents(RelationComponents);
+      this.getService().handleRelation = function({relationId, feature}){
+        const indexRelationComponent = RelationComponents.findIndex(relationComponent => relationComponent.relation_id === relationId);
+        this.setComponentByIndex(indexRelationComponent+1);
+      };
       Vue.nextTick(()=> GUI.setLoadingContent(false));
     })
   }
