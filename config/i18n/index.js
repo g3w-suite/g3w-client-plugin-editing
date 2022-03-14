@@ -117,6 +117,7 @@ export default {
     form: {
       relations: {
         tooltips: {
+          back_to_father:"Torna ad editare il padre",
           add_relation: "Crea ed aggiungi nuova relazione",
           link_relation: "Associa una relazione esistente a questa feature",
           open_relation_tools: "Apri strumenti relatione",
@@ -256,6 +257,7 @@ export default {
     form: {
       relations: {
         tooltips: {
+          back_to_father:"Back to edit father",
           add_relation: "Create and link new relation",
           link_relation: "Join a relation to this feature",
           open_relation_tools: "Show relation tools",
@@ -393,6 +395,7 @@ export default {
     form: {
       relations: {
         tooltips: {
+          back_to_father:"Back to edit father",
           add_relation: "Luo ja linkitä uusi relaatio",
           link_relation: "Liitä relaatio tähän ominaisuuteen",
           open_relation_tools: "Näytä relaatiotyökalut",
@@ -530,6 +533,7 @@ export default {
     form: {
       relations: {
         tooltips: {
+          back_to_father:"Back to edit father",
           add_relation: "Skapa och länka ny relation",
           link_relation: "Foga relationen till denna egenskap",
           open_relation_tools: "Visa relationsverktyg",
@@ -661,6 +665,7 @@ export default {
     form: {
       relations: {
         tooltips: {
+          back_to_father:"Back to edit father",
           add_relation: "Créer et ajouter une nouvelle relation",
           link_relation: "Associer une relation existante à cette fonctionnalité",
           open_relation_tools: "Outils de relation ouverte",

@@ -7,6 +7,7 @@ const EditingFormService = function(options={}) {
     relations: []
   };
   const {layer, features} = options.inputs || {};
+  const {backToFather=()=>{}} = options;
   this._formEventBus = options.formEventBus || null;
   const layerId = layer.getId();
   // get feature
@@ -25,7 +26,8 @@ const EditingFormService = function(options={}) {
         methods: {
           getService() {
             return self._relationsService;
-          }
+          },
+          backToFather
         },
         data() {
           return {
@@ -35,14 +37,13 @@ const EditingFormService = function(options={}) {
             resourcesurl: GUI.getResourcesUrl(),
             formeventbus: self._formEventBus
           }
-        }
+        },
       });
       relationComponents.push({
         title: "plugins.editing.edit_relation",
         name: relation.relation.name,
-        relation_id: relation.relation.id,
-        id: `${t("editing.edit_relation")} ${relation.relation.name}`,
-        header: false, // not sho to header
+        id: relation.relation.id,
+        header: false, // not show to header form
         component: relationComponent
       })
     });

@@ -13,10 +13,11 @@ const RelationComponent = Vue.extend({
     return {
       showallfieldsindex: null,
       tooltips: {
-        add_relation: "editing.form.relations.tooltips.add_relation",
-        link_relation: "editing.form.relations.tooltips.link_relation",
-        open_relation_tool: "editing.form.relations.tooltips.open_relation_tools",
-        unlink_relation: "editing.form.relations.tooltips.unlink_relation"
+        back_to_father: "plugins.editing.form.relations.tooltips.back_to_father",
+        add_relation: "plugins.editing.form.relations.tooltips.add_relation",
+        link_relation: "plugins.editing.form.relations.tooltips.link_relation",
+        open_relation_tool: "plugins.editing.form.relations.tooltips.open_relation_tools",
+        unlink_relation: "plugins.editing.form.relations.tooltips.unlink_relation"
       },
       value: null,
       placeholdersearch: `${t('editing.search')} ...`
@@ -112,7 +113,7 @@ const RelationComponent = Vue.extend({
         relationsTable = null;
         $('#filterRelation').off();
       }
-    }
+    },
   },
   computed: {
     relationsLength() {
@@ -159,11 +160,7 @@ const RelationComponent = Vue.extend({
   deactivated() {
     this.destroyTable();
   },
-  async mounted() {
-    await this.$nextTick();
-    $('.g3w-icon[data-toggle="dropdown"]').tooltip();
-    $('[data-toggle="tooltip"]').tooltip();
-  },
+  async mounted() {},
   beforeDestroy() {
     this.loadEventuallyRelationValuesForInputs = true;
   }

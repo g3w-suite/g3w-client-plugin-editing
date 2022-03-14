@@ -18,6 +18,7 @@ function EditingFormComponent(options={}) {
     });
     promise.then(()=> {
       relationsOptions.formEventBus = this.getService().getEventBus();
+      relationsOptions.backToFather = ()=> this.getService().setRootComponent();
       const service = new EditingFormService(relationsOptions);
       const RelationComponents = service.buildRelationComponents();
       const customFormComponents = EditingService.getFormComponentsById(layerId);
@@ -26,13 +27,11 @@ function EditingFormComponent(options={}) {
       // add relation component
       RelationComponents.length && this.addFormComponents(RelationComponents);
       this.getService().handleRelation = function({relationId, feature}){
-        const indexRelationComponent = RelationComponents.findIndex(relationComponent => relationComponent.relation_id === relationId);
-        this.setComponentByIndex(indexRelationComponent+1);
+        this.setCurrentComponentById(relationId);
       };
       Vue.nextTick(()=> GUI.setLoadingContent(false));
     })
   }
-
 }
 
 inherit(EditingFormComponent, FormComponent);
