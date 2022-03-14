@@ -64,7 +64,7 @@ proto.run = function(inputs, context) {
       showgoback: false,
       closable: false
     });
-  }, 100);
+  }, 300);
   return d.promise();
 };
 
