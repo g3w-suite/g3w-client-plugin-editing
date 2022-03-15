@@ -1,5 +1,4 @@
 const {GUI} = g3wsdk.gui;
-const t = g3wsdk.core.i18n.tPlugin;
 const RelationComponent = require('./components/relation/vue/relation');
 const EditingFormService = function(options={}) {
   const EditingService = require('../services/editingservice');
@@ -7,6 +6,7 @@ const EditingFormService = function(options={}) {
     relations: []
   };
   const {layer, features} = options.inputs || {};
+  // get back to Father function
   const {backToFather=()=>{}} = options;
   this._formEventBus = options.formEventBus || null;
   const layerId = layer.getId();
