@@ -1,5 +1,4 @@
-const GUI = g3wsdk.gui.GUI;
-const t = g3wsdk.core.i18n.tPlugin;
+const {GUI} = g3wsdk.gui;
 const RelationComponent = require('./components/relation/vue/relation');
 const EditingFormService = function(options={}) {
   const EditingService = require('../services/editingservice');
@@ -7,13 +6,15 @@ const EditingFormService = function(options={}) {
     relations: []
   };
   const {layer, features} = options.inputs || {};
+  // get back to Father function
+  const {backToFather=()=>{}} = options;
   this._formEventBus = options.formEventBus || null;
   const layerId = layer.getId();
   // get feature
   const feature = features[features.length - 1];
   // get only relation with type not ONE and layer is the father
-  let relations = layer.getRelations().getArray().filter(relation => relation.getType() !== 'ONE').filter(relation => relation.getFather() === layerId);
-  relations = EditingService.getRelationsInEditing({layerId, relations , feature}) || [];
+  let relations = layer.getRelations().getArray().filter(relation => relation.getType() !== 'ONE' && relation.getFather() === layerId);
+  relations = EditingService.getRelationsInEditing({layerId, relations , feature});
   this.hasRelations = () => !!relations.length;
   this.buildRelationComponents = function() {
     const self = this;
@@ -25,7 +26,8 @@ const EditingFormService = function(options={}) {
         methods: {
           getService() {
             return self._relationsService;
-          }
+          },
+          backToFather
         },
         data() {
           return {
@@ -35,12 +37,13 @@ const EditingFormService = function(options={}) {
             resourcesurl: GUI.getResourcesUrl(),
             formeventbus: self._formEventBus
           }
-        }
+        },
       });
       relationComponents.push({
         title: "plugins.editing.edit_relation",
         name: relation.relation.name,
-        id: `${t("editing.edit_relation")} ${relation.relation.name}`,
+        id: relation.relation.id,
+        header: false, // not show to header form
         component: relationComponent
       })
     });

@@ -106,7 +106,8 @@ export default {
         add: "Aggiunte (n. features)",
         delete: "Cancellate(id)",
         update: "Modificate(id)"
-      }
+      },
+      loading_table_data: "Costruzione tabella dati in corso. Attendere ..."
     },
     relation: {
       table: {
@@ -116,6 +117,7 @@ export default {
     form: {
       relations: {
         tooltips: {
+          back_to_father:"Torna ad editare il padre",
           add_relation: "Crea ed aggiungi nuova relazione",
           link_relation: "Associa una relazione esistente a questa feature",
           open_relation_tools: "Apri strumenti relatione",
@@ -238,7 +240,8 @@ export default {
         add: "Added(n. features)",
         delete: "Deleted(id)",
         update: "Modified(id)"
-      }
+      },
+      loading_table_data: "Building Data Table. Please wait ..."
     },
     relation: {
       table: {
@@ -254,6 +257,7 @@ export default {
     form: {
       relations: {
         tooltips: {
+          back_to_father:"Back to edit father",
           add_relation: "Create and link new relation",
           link_relation: "Join a relation to this feature",
           open_relation_tools: "Show relation tools",
@@ -374,7 +378,8 @@ export default {
         add: "Lisätty(n. ominaisuutta)",
         delete: "Poistettu(id)",
         update: "Muokattu(id)"
-      }
+      },
+      loading_table_data: "Building Data Table. Please wait ..."
     },
     relation: {
       table: {
@@ -390,6 +395,7 @@ export default {
     form: {
       relations: {
         tooltips: {
+          back_to_father:"Back to edit father",
           add_relation: "Luo ja linkitä uusi relaatio",
           link_relation: "Liitä relaatio tähän ominaisuuteen",
           open_relation_tools: "Näytä relaatiotyökalut",
@@ -510,7 +516,8 @@ export default {
         add: "(n. egenskaper) har lagts till",
         delete: "Borttagen (id)",
         update: "Redigerad(id)"
-      }
+      },
+      loading_table_data: "Building Data Table. Please wait ..."
     },
     relation: {
       table: {
@@ -526,6 +533,7 @@ export default {
     form: {
       relations: {
         tooltips: {
+          back_to_father:"Back to edit father",
           add_relation: "Skapa och länka ny relation",
           link_relation: "Foga relationen till denna egenskap",
           open_relation_tools: "Visa relationsverktyg",
@@ -646,7 +654,8 @@ export default {
         add: "Ajouté (n. fonctionnalités)",
         delete: "Supprimé(id)",
         update: "Modifié(id)"
-      }
+      },
+      loading_table_data: "Building Data Table. Please wait ..."
     },
     relation: {
       table: {
@@ -656,6 +665,7 @@ export default {
     form: {
       relations: {
         tooltips: {
+          back_to_father:"Back to edit father",
           add_relation: "Créer et ajouter une nouvelle relation",
           link_relation: "Associer une relation existante à cette fonctionnalité",
           open_relation_tools: "Outils de relation ouverte",

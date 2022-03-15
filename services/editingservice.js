@@ -1,17 +1,16 @@
 import API from '../api'
-const ApplicationService = g3wsdk.core.ApplicationService;
-const ApplicationState = g3wsdk.core.ApplicationState;
+const {ApplicationState, ApplicationService} = g3wsdk.core;
+const {G3W_FID} = g3wsdk.constant;
 const {base, inherit} = g3wsdk.core.utils;
-const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
-const PluginService = g3wsdk.core.plugin.PluginService;
-const SessionsRegistry = g3wsdk.core.editing.SessionsRegistry;
-const CatalogLayersStoresRegistry = g3wsdk.core.catalog.CatalogLayersStoresRegistry;
-const MapLayersStoreRegistry = g3wsdk.core.map.MapLayersStoreRegistry;
-const LayersStore = g3wsdk.core.layer.LayersStore;
-const Layer = g3wsdk.core.layer.Layer;
-const Feature = g3wsdk.core.layer.features.Feature;
-const GUI = g3wsdk.gui.GUI;
-const serverErrorParser= g3wsdk.core.errors.parsers.Server;
+const {WorkflowsStack} = g3wsdk.core.workflow;
+const {PluginService} = g3wsdk.core.plugin;
+const {SessionsRegistry} = g3wsdk.core.editing;
+const {CatalogLayersStoresRegistry} = g3wsdk.core.catalog;
+const {MapLayersStoreRegistry} = g3wsdk.core.map;
+const {Layer, LayersStore} = g3wsdk.core.layer;
+const {Feature} = g3wsdk.core.layer.features;
+const {GUI} = g3wsdk.gui;
+const {Server:serverErrorParser}= g3wsdk.core.errors.parsers;
 const t = g3wsdk.core.i18n.tPlugin;
 const ToolBoxesFactory = require('../toolboxes/toolboxesfactory');
 const CommitFeaturesWorkflow = require('../workflows/commitfeaturesworkflow');
@@ -30,6 +29,8 @@ function EditingService() {
   this._projectType;
   // contain array of object setter(as key), key to unby (as value)
   this._unByKeys = [];
+  // store action result keys
+  this.addActionKeys = [];
   // events
   this._events = {
     layer: {
@@ -59,6 +60,7 @@ function EditingService() {
 
   // state of editing
   this.state = {
+    open: false, // check if panel is open or not
     toolboxes: [],
     toolboxselected: null,
     toolboxidactivetool: null,
@@ -135,6 +137,7 @@ function EditingService() {
         service:this
       })
     });
+    this.registerResultEditingAction();
     this.emit('ready');
   }
 }
@@ -187,6 +190,87 @@ proto.unsubscribe = function(event, fnc) {
 };
 
 // END API
+
+/**
+ * Register result aediting action
+ */
+proto.registerResultEditingAction = function(){
+  const queryResultsService = GUI.getComponent('queryresults').getService();
+  this.addActionKeys.push(queryResultsService.onafter('addActionsForLayers', (actions, layers) => {
+    const showEditingIconOnResult = !this.state.open;
+    layers.forEach(layer => {
+      const layerId = layer.id;
+      if (this.getLayerById(layerId)) {
+        actions[layerId] = actions[layerId] || [];
+        actions[layerId] = actions[layerId] || [];
+        actions[layerId].push({
+          id: 'editing',
+          class: GUI.getFontClass('pencil'),
+          hint: 'Editing',
+          condition: () => showEditingIconOnResult,
+          cbk: (layer, feature) => {
+            const layerId = layer.id;
+            const featureId = feature.attributes[G3W_FID];
+            feature.geometry && this._mapService.zoomToGeometry(feature.geometry);
+            setTimeout(()=>{
+              this.editResultLayerFeature({
+                layerId,
+                featureId
+              });
+            })
+          }
+        });
+      }
+    })
+  }));
+  this.addActionKeys.push(queryResultsService.onafter('editFeature', ({layerId, featureId}) => {
+    this.editResultLayerFeature({
+      layerId,
+      featureId
+    })
+  }));
+};
+
+proto.unregisterResultEditingAction = function(){
+  const queryResultsService = GUI.getComponent('queryresults').getService();
+  this.addActionKeys.forEach(addActionKey => queryResultsService.un('addActionsForLayers', addActionKey));
+};
+
+/**
+ * function to start to edit feature selected from results;
+ *
+ */
+proto.editResultLayerFeature = function({layerId, featureId}={}){
+  this.getPlugin().showEditingPanel();
+  const toolBox = this.getToolBoxById(layerId);
+  toolBox.start()
+    .then(({features}) =>{
+      const feature = features.find(feature => {
+        return feature.getId() == featureId;
+      });
+      if (feature){
+        toolBox.setSelected(true);
+        const session = toolBox.getSession();
+        this.setSelectedToolbox(toolBox);
+        const workflow = require('../workflows/editnopickmapfeatureattributesworkflow');
+        const options = {
+          inputs: {
+            layer: toolBox.getLayer(),
+            features: [feature]
+          },
+          context: {
+            session
+          }
+        };
+        const eeditFeatureWorkFlow = new workflow();
+        eeditFeatureWorkFlow.start(options)
+          .then(() => session.save()
+            .then(() => this.saveChange()))
+          .fail(()=> session.rollback());
+      }
+    })
+    .fail(err =>console.log(err))
+};
 
 /**
  *
@@ -499,6 +583,12 @@ proto.addToolBox = function(toolbox) {
   this.state.toolboxes.push(toolbox.state);
 };
 
+//** Method to set state in editing 
+proto.setOpenEditingPanel = function(bool){
+  this.state.open = bool;
+  this._getEditableLayersFromCatalog().forEach(layer => layer.setInEditing(bool));
+};
+
 /*
 * Add event
 * @param {String} type - Event Type
@@ -581,7 +671,7 @@ proto._attachLayerWidgetsEvent = function(layer) {
             fnc() {
               // remove all values
               loading.state = 'loading';
-              values.splice(0);
+              field.input.options.values = [];
               const relationLayer = CatalogLayersStoresRegistry.getLayerById(layer_id);
               if (relationLayer) {
                 if (relationLayer) {
@@ -595,7 +685,7 @@ proto._attachLayerWidgetsEvent = function(layer) {
                         features
                       });
                       for (let i = 0; i < features.length; i++) {
-                        values.push({
+                        field.input.options.values.push({
                           key: features[i].properties[key],
                           value: features[i].properties[value]
                         })
@@ -822,6 +912,7 @@ proto.clear = function() {
   SessionsRegistry.clear();
   //turn off events
   this._mapService.off(MAPCONTROL_TOGGLED_EVENT_NAME, this.mapControlToggleEventHandler);
+  this.unregisterResultEditingAction();
 };
 
 proto.clearState = function() {
@@ -830,7 +921,14 @@ proto.clearState = function() {
   this.state.message =  null;
 };
 
-proto.getRelationsInEditing = function({layerId, relations, feature}={}) {
+/**
+ * Get Relation in editing
+ * @param layerId
+ * @param relations
+ * @param feature
+ * @returns {[]}
+ */
+proto.getRelationsInEditing = function({layerId, relations=[], feature}={}) {
   let relationsinediting = [];
   let relationinediting;
   relations.forEach(relation => {

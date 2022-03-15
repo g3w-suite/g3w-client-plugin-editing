@@ -1,4 +1,6 @@
-const GUI = g3wsdk.gui.GUI;
+const {base, inherit} = g3wsdk.core.utils;
+const {G3WObject} = g3wsdk.core;
+const {GUI} = g3wsdk.gui;
 const t = g3wsdk.core.i18n.tPlugin;
 
 const TableService = function(options = {}) {
@@ -11,12 +13,12 @@ const TableService = function(options = {}) {
   this._workflow = null;
   this._deleteFeaturesIndexes = [];
   this._isrelation = options.isrelation || false;
-  const { capabilities } = options;
+  const { capabilities, headers=[], title='Link relation', push:isrelation } = options;
   this.state = {
-    headers: options.headers || [],
+    headers,
     features: [],
-    title: options.title || 'Link relation',
-    isrelation: options.push,
+    title ,
+    isrelation,
     capabilities
   };
 
@@ -43,7 +45,10 @@ const TableService = function(options = {}) {
     }
   };
   this.init();
+  base(this);
 };
+
+inherit(TableService, G3WObject);
 
 const proto = TableService.prototype;
 

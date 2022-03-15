@@ -1,18 +1,22 @@
 <div style="margin-bottom: 5px;">
+  <div class="box-header with-border skin-color" style="width:100%; display: flex; font-weight: bold; font-size: 1.3em; align-items: center; margin-button:3px; background-color: #ffffff; ">
+    <span v-t="'plugins.editing.edit_relation'"></span>
+    <span style="margin-left: 2px;">: {{relation.name.toUpperCase()}}</span>
+  </div>
   <div class="box-header with-border" style="width:100%; display: flex; justify-content: flex-end; margin-button:3px; background-color: #ffffff; ">
     <div id="search-box" style="margin-right: auto;">
       <input v-if="relationsLength" type="text" class="form-control" id="filterRelation" :placeholder="placeholdersearch">
     </div>
     <div>
       <span class="g3w-icon add-link" align="center"
+            :class="g3wtemplate.font['back']" v-t-tooltip:bottom.create="tooltips.back_to_father" @click="backToFather"></span>
+      <span class="g3w-icon add-link" align="center"
             v-if="capabilities.relation.find(capability => capability === 'change_attr_feature') !== undefined"
-            data-toggle="tooltip" data-placement="bottom"
-            v-t-tooltip:plugin="tooltips.link_relation" @click="enableAddLinkButtons ? linkRelation() : null"
+            v-t-tooltip:bottom.create="tooltips.link_relation" @click="enableAddLinkButtons ? linkRelation() : null"
             :class="[{'disabled': !enableAddLinkButtons}, g3wtemplate.font['link']]">
       </span>
-      <span data-toggle="tooltip" data-placement="bottom"
-            v-if="capabilities.relation.find(capability => capability === 'add_feature') !== undefined"
-            v-t-tooltip:plugin="tooltips.add_relation"
+      <span v-if="capabilities.relation.find(capability => capability === 'add_feature') !== undefined"
+            v-t-tooltip:bottom.create="tooltips.link_relation"
             @click="enableAddLinkButtons ? addRelationAndLink() : null"
             class="g3w-icon add-link pull-right"
             :class="[{'disabled' : !enableAddLinkButtons}, g3wtemplate.font['plus']]">
@@ -45,9 +49,9 @@
               </td>
               <td class="action-cell">
                 <div v-if="!fieldrequired && capabilities.relation.find(capability => capability === 'change_attr_feature') !== undefined"
-                     class="g3w-mini-relation-icon skin-tooltip-right g3w-icon" :class="g3wtemplate.font['unlink']"
+                     class="g3w-mini-relation-icon g3w-icon" :class="g3wtemplate.font['unlink']"
                      @click="unlinkRelation(index)"
-                     data-toggle="tooltip" data-placement="right" v-t-tooltip:plugin="tooltips.unlink_relation"
+                     v-t-tooltip:right.create="tooltips.unlink_relation"
                      aria-hidden="true">
                 </div>
               </td>

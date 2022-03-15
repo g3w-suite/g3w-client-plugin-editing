@@ -153,7 +153,9 @@ proto.startForm = function(options = {}) {
       feature: this._originalFeature,
       formService
     });
-  WorkflowsStack.getCurrent().setContextService(formService);
+  const currentWorkflow = WorkflowsStack.getCurrent();
+  // in case of called single task no workflow is set
+  currentWorkflow && currentWorkflow.setContextService(formService);
 };
 
 proto.run = function(inputs, context) {

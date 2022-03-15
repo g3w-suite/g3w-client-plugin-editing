@@ -190,6 +190,13 @@ proto._resetUniqueValues = function(){
   })
 };
 
+/*
+check if vectorLayer
+ */
+proto.isVectorLayer = function(){
+  return this._layerType ===  Layer.LayerTypes.VECTOR;
+};
+
 /**
  * Method to create getFeaures options
  * @param filter
@@ -220,7 +227,7 @@ proto.setEditingConstraints = function(constraints={}){
 
 //added option object to start method to have a control by other plugin how
 proto.start = function(options={}) {
-  let { filter, toolboxheader=true, startstopediting=true, showtools=true, tools, changingtools=false} = options;
+  let {filter, toolboxheader=true, startstopediting=true, showtools=true, tools, changingtools=false} = options;
   this.state.changingtools = changingtools;
   tools && this.setEnablesDisablesTools(tools);
   this.state.toolboxheader = toolboxheader;
@@ -663,7 +670,6 @@ proto.setActiveTool = function(tool) {
       this.clearToolsOfTool();
       this.state.activetool = tool;
       tool.once('settoolsoftool', tools => tools.forEach(tool => this.state.toolsoftool.push(tool)));
-
       const _activedeactivetooloftools = (activetools, active) => {
         this.state.toolsoftool.forEach(tooloftool => {
           if (activetools.indexOf(tooloftool.type) !== -1) tooloftool.options.active = active;
@@ -722,8 +728,8 @@ proto.getToolMessage = function() {
   return tool.getMessage();
 };
 
-proto.setToolMessage = function(messages) {
-  this.state.toolmessages.help = messages.help;
+proto.setToolMessage = function(messages={}) {
+  this.state.toolmessages.help = messages && messages.help || null;
 };
 
 proto.getSession = function() {

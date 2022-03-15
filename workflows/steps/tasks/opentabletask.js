@@ -1,9 +1,8 @@
-const inherit = g3wsdk.core.utils.inherit;
-const base =  g3wsdk.core.utils.base;
-const GUI = g3wsdk.gui.GUI;
+const {inherit, base} = g3wsdk.core.utils;
+const {GUI} = g3wsdk.gui;
+const {WorkflowsStack} = g3wsdk.core.workflow;
 const TableComponent = require('../../../table/vue/table');
 const EditingTask = require('./editingtask');
-const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 
 function OpenTableTask(options={}) {
   this._formIdPrefix = 'form_';
@@ -45,14 +44,27 @@ proto.run = function(inputs, context) {
     fatherValue: context.fatherValue,
     foreignKey
   });
-  GUI.showContent({
-    content,
-    perc: 100,
-    push: this._isContentChild,
-    showgoback: false,
+  GUI.disableSideBar(true);
+  GUI.showUserMessage({
+    type: 'loading',
+    message: 'plugins.editing.messages.loading_table_data',
+    autoclose: false,
     closable: false
   });
-  this.disableSidebar(true);
+
+  setTimeout(()=>{
+    content.once('ready', ()=> setTimeout(()=> {
+      GUI.disableSideBar(false);
+      GUI.closeUserMessage();
+    }));
+    GUI.showContent({
+      content,
+      perc: 100,
+      push: this._isContentChild,
+      showgoback: false,
+      closable: false
+    });
+  }, 300);
   return d.promise();
 };
 
