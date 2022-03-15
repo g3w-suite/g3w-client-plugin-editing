@@ -217,7 +217,7 @@ proto.registerResultEditingAction = function(){
                 layerId,
                 featureId
               });
-            })
+            }, 300)
           }
         });
       }
@@ -262,11 +262,14 @@ proto.editResultLayerFeature = function({layerId, featureId}={}){
             session
           }
         };
-        const eeditFeatureWorkFlow = new workflow();
-        eeditFeatureWorkFlow.start(options)
+        const editFeatureWorkFlow = new workflow();
+        editFeatureWorkFlow.start(options)
           .then(() => session.save()
             .then(() => this.saveChange()))
-          .fail(()=> session.rollback());
+          .fail(()=> session.rollback())
+          .always(()=>{
+            editFeatureWorkFlow.stop();
+          })
       }
     })
     .fail(err =>console.log(err))

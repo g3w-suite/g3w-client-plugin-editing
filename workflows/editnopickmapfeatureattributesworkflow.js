@@ -4,7 +4,8 @@ const OpenFormStep = require('./steps/openformstep');
 
 function EditFeatureAttributesWorkflow(options={}) {
   options.helpMessage = 'editing.tools.update_feature';
-  options.steps = [new OpenFormStep()];
+  const step = new OpenFormStep();
+  options.steps = [step];
   base(this, options);
 }
 
