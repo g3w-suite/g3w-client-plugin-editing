@@ -243,7 +243,11 @@ proto.unregisterResultEditingAction = function(){
 proto.editResultLayerFeature = function({layerId, featureId}={}){
   this.getPlugin().showEditingPanel();
   const toolBox = this.getToolBoxById(layerId);
-  toolBox.start()
+  toolBox.start({
+    filter: {
+      fids: featureId // filter by fid (feature id)
+    }
+  })
     .then(({features}) =>{
       const feature = features.find(feature => {
         return feature.getId() == featureId;
@@ -262,14 +266,13 @@ proto.editResultLayerFeature = function({layerId, featureId}={}){
             session
           }
         };
-        const editFeatureWorkFlow = new workflow();
+        const editFeatureWorkFlow = new workflow({
+          runOnce: true
+        });
         editFeatureWorkFlow.start(options)
           .then(() => session.save()
             .then(() => this.saveChange()))
           .fail(()=> session.rollback())
-          .always(()=>{
-            editFeatureWorkFlow.stop();
-          })
       }
     })
     .fail(err =>console.log(err))
