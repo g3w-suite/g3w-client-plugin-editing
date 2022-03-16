@@ -13,13 +13,14 @@ const EditingFormService = function(options={}) {
   // get feature
   const feature = features[features.length - 1];
   // get only relation with type not ONE and layer is the father
-  let relations = layer.getRelations().getArray().filter(relation => relation.getType() !== 'ONE' && relation.getFather() === layerId);
-  relations = EditingService.getRelationsInEditing({layerId, relations , feature});
+  const projectRelations = layer.getRelations().getArray().filter(relation => relation.getType() !== 'ONE' && relation.getFather() === layerId);
+  const relations = EditingService.getRelationsInEditing({layerId, relations:projectRelations , feature});
   this.hasRelations = () => !!relations.length;
   this.buildRelationComponents = function() {
     const self = this;
     const relationComponents = [];
-    relations.forEach(relation => {
+    relations.forEach(({relation, relations}, index) => {
+      const {name, id} = relation;
       const relationComponent = Vue.extend({
         mixins: [RelationComponent],
         name: `relation_${Date.now()}`,
@@ -32,17 +33,35 @@ const EditingFormService = function(options={}) {
         data() {
           return {
             layerId,
-            relation: relation.relation,
-            relations: relation.relations,
+            relation, // relation info
+            relations, // are the features relations
             resourcesurl: GUI.getResourcesUrl(),
             formeventbus: self._formEventBus
           }
         },
+        async created(){
+          await EditingService.getLayersDependencyFeatures(layerId, {
+            feature,
+            filterType: 'fid'
+          });
+          this.relations = EditingService.getRelationsInEditing({
+            layerId,
+            relations:[projectRelations[index]],
+            feature
+          })[0].relations;
+          this._service.relation = relation;
+          this._service.relations = this.relations;
+        },
+        async mounted(){
+          await this.$nextTick();
+          this.resize();
+
+        }
       });
       relationComponents.push({
         title: "plugins.editing.edit_relation",
-        name: relation.relation.name,
-        id: relation.relation.id,
+        name,
+        id,
         header: false, // not show to header form
         component: relationComponent
       })

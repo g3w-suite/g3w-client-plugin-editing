@@ -288,13 +288,16 @@ proto.start = function(options={}) {
               filter
             });
             this._session.start(this._getFeaturesOption)
-              .then(handlerAfterSessionGetFeatures).fail(()=>this.setEditing(false));
+              .then(handlerAfterSessionGetFeatures)
+              .fail(()=>this.setEditing(false))
           }, 300);
         })
       } else {
         this._start = true;
         this.startLoading();
-        this._session.start(this._getFeaturesOption).then(handlerAfterSessionGetFeatures)
+        this._session.start(this._getFeaturesOption)
+          .then(handlerAfterSessionGetFeatures)
+          .fail(()=>this.setEditing(false))
       }
     } else {
       if (!this._start) {

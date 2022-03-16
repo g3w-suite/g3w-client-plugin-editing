@@ -102,6 +102,11 @@ proto.start = function(hideSidebar = false) {
   }
 };
 
+/**
+ * stop tool
+ * @param force
+ * @returns {*}
+ */
 proto.stop = function(force=false) {
   const d = $.Deferred();
   if (this._op) {
