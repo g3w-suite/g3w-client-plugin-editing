@@ -137,6 +137,7 @@ const vueComponentOptions = {
     this.$options.service.unregisterOnLineOffLineEvent();
     GUI.getComponent('map').getService().seSelectionLayerVisible(true);
     this.$options.service.fireEvent('closeeditingpanel');
+    this.$options.service.showChangesToResult();
   }
 };
 

@@ -13,7 +13,6 @@ const RelationComponent = Vue.extend({
     return {
       showallfieldsindex: null,
       tooltips: {
-        back_to_father: "plugins.editing.form.relations.tooltips.back_to_father",
         add_relation: "plugins.editing.form.relations.tooltips.add_relation",
         link_relation: "plugins.editing.form.relations.tooltips.link_relation",
         open_relation_tool: "plugins.editing.form.relations.tooltips.open_relation_tools",

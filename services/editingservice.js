@@ -1,5 +1,6 @@
 import API from '../api'
 const {ApplicationState, ApplicationService} = g3wsdk.core;
+const {DataRouterService} = g3wsdk.core.data;
 const {G3W_FID} = g3wsdk.constant;
 const {base, inherit} = g3wsdk.core.utils;
 const {WorkflowsStack} = g3wsdk.core.workflow;
@@ -66,6 +67,12 @@ function EditingService() {
     toolboxidactivetool: null,
     message: null,
     relations: [],
+  };
+
+  /**
+   */
+  this.loadLayersFeaturesToResultWhenCloseEditing = {
+    // KEY LAYERID, VALUES ARRAY OF FEATURE FID CHANGES OR ADDED
   };
 
   this._layers_in_error = false;
@@ -963,7 +970,7 @@ proto._filterRelationsInEditing = function({layerId, relations=[]}) {
       layerId,
       relation
     });
-    return this.getLayerById(relationId)
+    return this.getToolBoxById(relationId)
   })
 };
 
@@ -1080,11 +1087,12 @@ proto.getLayersDependencyFeatures = function(layerId, opts={}) {
   const promises = [];
   const layer = this.getLayerById(layerId);
   const relations = opts.relations ? opts.relations : layer.getChildren().length && layer.getRelations() ? this._filterRelationsInEditing({
-    relations: layer.getRelations().getArray(),
+    relations: layer.getRelations().getArray().filter(relation => relation.getFather() === layerId),
     layerId
   }) : [];
   const online = ApplicationState.online;
   relations.forEach(relation => {
+    relation.setLoading(true);
     const id = this._getRelationId({
       layerId,
       relation
@@ -1137,6 +1145,8 @@ proto.getLayersDependencyFeatures = function(layerId, opts={}) {
     });
     promises.push(promise);
   });
+  // at the end se loading false
+  Promise.all(promises).finally(()=> relations.forEach(relation => relation.setLoading(false)));
   return Promise.all(promises);
 };
 
@@ -1236,6 +1246,39 @@ proto.saveChange = async function() {
   }
 };
 
+proto.addLayersFeaturesToShowOnResult = function({layerId, fids=[]}){
+  if (this.loadLayersFeaturesToResultWhenCloseEditing[layerId] === undefined)
+    this.loadLayersFeaturesToResultWhenCloseEditing[layerId] = new Set();
+  fids.forEach(fid => this.loadLayersFeaturesToResultWhenCloseEditing[layerId].add(fid))
+};
+
+proto.showChangesToResult = function(){
+  const layerIdChanges = Object.keys(this.loadLayersFeaturesToResultWhenCloseEditing);
+  if (layerIdChanges.length) {
+    const inputs = {
+      layers:[],
+      fids:[],
+      formatter:1
+    };
+    layerIdChanges.forEach(layerId => {
+      const fids = [...this.loadLayersFeaturesToResultWhenCloseEditing[layerId]];
+      const layer = CatalogLayersStoresRegistry.getLayerById(layerId);
+      inputs.layers.push(layer);
+      inputs.fids.push(fids);
+    });
+    DataRouterService.getData('search:layersfids', {
+      inputs,
+      outputs: {
+        title: 'plugins.editing.editing_changes',
+        show: {
+          loading: false
+        }
+      }
+    });
+  }
+  this.loadLayersFeaturesToResultWhenCloseEditing = {};
+};
+
 /**
  * Metyhod to commit and save changes on server persistently
  *
@@ -1278,6 +1321,10 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
               });
               layerType === Layer.LayerTypes.VECTOR && this._mapService.refreshMap({force: true});
               cb.done && cb.done instanceof Function && cb.done(toolbox);
+              this.addLayersFeaturesToShowOnResult({
+                layerId: toolbox.getId(),
+                fids: [...response.response.new.map(({id}) => id), ...commitItems.update.map(update => update.id)]
+              })
             } else {
               const parser = new serverErrorParser({
                 error: response.errors

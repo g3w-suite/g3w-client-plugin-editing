@@ -429,12 +429,9 @@ proto.linkRelation = function() {
       })
     });
   } else preWorkflowStart = new Promise((resolve) => {
-    GUI.setLoadingContent(true);
     getRelationFeatures()
       .then(()=>{
         resolve({})
-      }).finally(()=>{
-        GUI.setLoadingContent(false);
       })
   });
 

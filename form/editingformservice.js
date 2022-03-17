@@ -7,7 +7,6 @@ const EditingFormService = function(options={}) {
   };
   const {layer, features} = options.inputs || {};
   // get back to Father function
-  const {backToFather=()=>{}} = options;
   this._formEventBus = options.formEventBus || null;
   const layerId = layer.getId();
   // get feature
@@ -26,8 +25,7 @@ const EditingFormService = function(options={}) {
         methods: {
           getService() {
             return self._relationsService;
-          },
-          backToFather
+          }
         },
         data() {
           return {

@@ -5,6 +5,7 @@ export default {
       some_layers: "Si è verificato un errore nel caricamento di alcuni layers in editing"
     },
     search: "Cerca",
+    editing_changes: "Modifiche Editing",
     editing_data: "Edita Dati",
     editing_attributes: "Edita attributi",
     relations: "Relazioni",
@@ -138,6 +139,7 @@ export default {
       some_layers: "An error occurs: It's no possible to edit some layers"
     },
     search: "Search",
+    editing_changes: "Editing Changes",
     editing_data: "Editing Layers",
     editing_attributes: "Editing attributes",
     relations: "Relations",
@@ -277,6 +279,7 @@ export default {
       some_layers: "Tapahtui virhe. Jotkin tasot eivät ole muokattavissa."
     },
     search: "Haku",
+    editing_changes: "Editing Changes",
     editing_data: "Muokataan tasoja",
     editing_attributes: "Muokataan attribuutteja",
     relations: "Relaatiot",
@@ -415,6 +418,7 @@ export default {
       some_layers: "Ett fel uppstod. Vissa nivåer kan inte redigeras."
     },
     search: "Sökning",
+    editing_changes: "Editing Changes",
     editing_data: "Nivåerna redigeras",
     editing_attributes: "Attributen redigeras",
     relations: "Relationer",
@@ -553,6 +557,7 @@ export default {
       some_layers: "Une erreur s'est produite lors du chargement de certaines layers dans l'édition."
     },
     search: "Recherche",
+    editing_changes: "Editing Changes",
     editing_data: "Modifier les donnes",
     editing_attributes: "Modifier les attributs",
     relations: "Relations",
