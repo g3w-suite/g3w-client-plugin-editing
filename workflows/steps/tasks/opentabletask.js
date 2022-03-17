@@ -59,7 +59,7 @@ proto.run = function(inputs, context) {
     }));
     GUI.showContent({
       content,
-      perc: 100,
+      //perc: 100,
       push: this._isContentChild,
       showgoback: false,
       closable: false

@@ -1,9 +1,9 @@
 <div style="margin-bottom: 5px;">
-  <div class="box-header with-border skin-color" style="width:100%; display: flex; font-weight: bold; font-size: 1.3em; align-items: center; margin-button:3px; background-color: #ffffff; ">
+  <div ref="relation_header_title" class="box-header with-border skin-color" style="width:100%; display: flex; font-weight: bold; font-size: 1.3em; align-items: center; margin-button:3px; background-color: #ffffff; ">
     <span v-t="'plugins.editing.edit_relation'"></span>
     <span style="margin-left: 2px;">: {{relation.name.toUpperCase()}}</span>
   </div>
-  <div class="box-header with-border" style="width:100%; display: flex; justify-content: flex-end; margin-button:3px; background-color: #ffffff; ">
+  <div ref="relation_header_tools" class="box-header with-border" style="width:100%; display: flex; justify-content: flex-end; margin-button:3px; background-color: #ffffff; ">
     <div id="search-box" style="margin-right: auto;">
       <input v-if="relationsLength" type="text" class="form-control" id="filterRelation" :placeholder="placeholdersearch">
     </div>
@@ -21,7 +21,7 @@
           </span>
     </div>
   </div>
-  <div class="box-body" style="padding:0;">
+  <div ref="relation_body" class="box-body" style="padding:0;">
     <template v-if="relationsLength">
       <table class="table g3wform-relation-table table-striped" style="width:100%">
         <thead>

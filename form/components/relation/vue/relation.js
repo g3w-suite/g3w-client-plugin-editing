@@ -24,7 +24,15 @@ const RelationComponent = Vue.extend({
   },
   methods: {
     resize(){
-      relationsTable && relationsTable.columns.adjust();
+      if (this.$el.style.display !== 'none'){
+        const formBodyHeight = $(".g3wform_body").height();
+        const formFooterHeight = $('.g3wform_footer').height();
+        const relationHeaderTitle = $(this.$refs.relation_header_title).height();
+        const relationHeaderTools = $(this.$refs.relation_header_tools).height();
+        const dataTables_scrollHead_Height = $(this.$el).find('.dataTables_scrollHead').height();
+        $(this.$refs.relation_body).find('div.dataTables_scrollBody').height(formBodyHeight - formFooterHeight - relationHeaderTitle - relationHeaderTools - dataTables_scrollHead_Height - 50);
+        relationsTable && relationsTable.columns.adjust();
+      }
     },
     unlinkRelation: function(index) {
       this._service.unlinkRelation(index)
@@ -159,7 +167,6 @@ const RelationComponent = Vue.extend({
   deactivated() {
     this.destroyTable();
   },
-  async mounted() {},
   beforeDestroy() {
     this.loadEventuallyRelationValuesForInputs = true;
   }
