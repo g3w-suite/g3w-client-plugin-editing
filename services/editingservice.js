@@ -248,6 +248,7 @@ proto.unregisterResultEditingAction = function(){
  *
  */
 proto.editResultLayerFeature = function({layerId, featureId}={}){
+  this.getToolBoxes().forEach(toolbox => toolbox.setShow(toolbox.getId() === layerId));
   this.getPlugin().showEditingPanel();
   const toolBox = this.getToolBoxById(layerId);
   toolBox.start({
@@ -1250,6 +1251,14 @@ proto.addLayersFeaturesToShowOnResult = function({layerId, fids=[]}){
   if (this.loadLayersFeaturesToResultWhenCloseEditing[layerId] === undefined)
     this.loadLayersFeaturesToResultWhenCloseEditing[layerId] = new Set();
   fids.forEach(fid => this.loadLayersFeaturesToResultWhenCloseEditing[layerId].add(fid))
+};
+
+/**
+ * Called on close editingpanel panel
+ */
+proto.onCloseEditingPanel = function(){
+  this.showChangesToResult();
+  this.getToolBoxes().forEach(toolbox => toolbox.resetDefault());
 };
 
 proto.showChangesToResult = function(){
