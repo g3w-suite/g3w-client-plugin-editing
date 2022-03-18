@@ -2,12 +2,12 @@
   <div style="display: flex;width: 100%; justify-content: space-between">
     <input type="checkbox" class="magic-checkbox snap_tools_of_tools" :id="id" v-model="checked">
     <label :for="id" v-t-tooltip:right.create="'plugins.editing.toolsoftool.snap'">
-      <span :class="g3wtemplate.font['dot-circle']" ></span>
+      <span :class="g3wtemplate.font['magnete']" ></span>
     </label>
     <template v-if="showSnapAll" >
       <input type="checkbox" class="magic-checkbox snap_tools_of_tools" :id="idAll" v-model="checkedAll">
       <label :for="idAll" v-t-tooltip:left.create="'plugins.editing.toolsoftool.snapall'">
-        <span :class="g3wtemplate.font['dot-circle']" ></span>
+        <span :class="g3wtemplate.font['magnete']" ></span>
         <span style="font-weight: bold" :class="g3wtemplate.font['layers']" ></span>
       </label>
     </template>

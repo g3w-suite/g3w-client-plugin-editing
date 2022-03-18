@@ -14,8 +14,8 @@ const _Plugin = function() {
       className: "fas fa-ruler-combined"
     },
     {
-      name: 'dot-circle',
-      className: "far fa-dot-circle"
+      name: 'magnete',
+      className: "fas fa-magnet"
     }
   ]);
   const pluginGroupTool = {
