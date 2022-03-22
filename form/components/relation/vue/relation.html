@@ -64,7 +64,7 @@
                     <div class="filename">{{ getFileName(attribute.value) }}</div>
                   </div>
                 </template>
-                <a v-else-if="isLink(attribute.value)" :href="getValue(attribute.value)" target="_blank">{{ getValue(attribute.value) }}</a>
+                <a v-else-if="isLink(attribute)" :href="getValue(attribute.value)" target="_blank">{{ getValue(attribute.value) }}</a>
                 <span v-else>{{ getValue(attribute.value) }}</span>
               </td>
             </tr>

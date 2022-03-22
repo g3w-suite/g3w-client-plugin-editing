@@ -82,9 +82,8 @@ const RelationComponent = Vue.extend({
     getRelationTools() {
       return this._service.getRelationTools();
     },
-    isLink(value){
-      value = this.getValue(value);
-      return ['photo', 'link'].indexOf(this.getFieldType(value)) !== -1;
+    isLink(field){
+      return ['photo', 'link'].indexOf(this.getFieldType(field)) !== -1;
     },
     getValue(value) {
       if (value && toRawType(value) === 'Object') value = value.value;
@@ -142,6 +141,7 @@ const RelationComponent = Vue.extend({
     this.delayType = 'debounce';
   },
   created() {
+    console.log(this.cardinality)
     this.loadEventuallyRelationValuesForInputs = false;
     this._service = new RelationService(this.layerId, {
       relation: this.relation, // main relation between layerId (current in editing)
@@ -154,11 +154,12 @@ const RelationComponent = Vue.extend({
     if (!this.loadEventuallyRelationValuesForInputs) {
       const EditingService = require('../../../../services/editingservice');
       EditingService.runEventHandler({
-        type: 'show-relation-editing-tab',
+        type: 'show-relation-editing',
         id: EditingService._getRelationId({
           layerId: this.layerId,
           relation: this.relation
-        })
+        }),
+        component: this
       });
       this.loadEventuallyRelationValuesForInputs = true;
     }

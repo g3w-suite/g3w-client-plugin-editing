@@ -4,7 +4,7 @@ const RelationsComponent = {
   ...compiledTemplate,
   components: {
     'relation': RelationComponent
-  },
+  }
 };
 
 module.exports = RelationsComponent;

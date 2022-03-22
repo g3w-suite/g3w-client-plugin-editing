@@ -1,6 +1,5 @@
-const { base, inherit } = g3wsdk.core.utils;
+const {base, inherit} = g3wsdk.core.utils;
 const {FormComponent} = g3wsdk.gui.vue;
-const {GUI} = g3wsdk.gui;
 const EditingFormService = require('./editingformservice');
 
 function EditingFormComponent(options={}) {
@@ -24,7 +23,8 @@ function EditingFormComponent(options={}) {
       customFormComponents.length && this.addFormComponents(customFormComponents);
       // add relation component
       RelationComponents.length && this.addFormComponents(RelationComponents);
-      this.getService().handleRelation = function({relationId, feature}){
+      this.getService().handleRelation = function({relation, layer, feature}){
+        const {name: relationId, cardinality} = relation;
         this.setCurrentComponentById(relationId);
       };
     })

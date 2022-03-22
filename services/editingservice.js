@@ -680,7 +680,7 @@ proto._attachLayerWidgetsEvent = function(layer) {
         const self = this;
         if (!usecompleter) {
           this.addEvents({
-            types: ['start-editing', 'show-relation-editing-tab'],
+            types: ['start-editing', 'show-relation-editing'],
             id: layer.getId(),
             fnc() {
               // remove all values
