@@ -4,29 +4,41 @@ const {GUI} = g3wsdk.gui;
 const t = g3wsdk.core.i18n.tPlugin;
 
 const TableService = function(options = {}) {
-  this._features = options.features || []; // original features
-  this._promise = options.promise;
-  this._context = options.context;
-  this._inputs = options.inputs;
-  this._fatherValue = options.fatherValue;
-  this._foreignKey = options.foreignKey;
+  const {
+    features=[],
+    promise,
+    inputs,
+    context,
+    fatherValue,
+    foreignKey,
+    isrelation=false,
+    capabilities,
+    headers=[],
+    title='Link relation',
+    push
+  } = options;
+  this._features = features; // original features
+  this._promise = promise;
+  this._context = context;
+  const {nmRelation=false} = this._context;
+  this._inputs = inputs;
+  this._fatherValue = fatherValue;
+  this._foreignKey = foreignKey;
   this._workflow = null;
   this._deleteFeaturesIndexes = [];
-  this._isrelation = options.isrelation || false;
-  const { capabilities, headers=[], title='Link relation', push:isrelation } = options;
   this.state = {
     headers,
     features: [],
     title ,
-    isrelation,
+    isrelation: !nmRelation && push,
     capabilities
   };
 
   this.init = function() {
     //filter the original feature based on if is a relation
-    this._features = !this._isrelation ? this._features : this._features.filter(feature =>
-      feature.get(this._foreignKey) !== this._fatherValue
-    );
+    this._features = !isrelation ?
+      this._features.filter(feature => feature.isVisible()) :
+      this._features.filter(feature => feature.get(this._foreignKey) !== this._fatherValue && feature.isVisible());
     // set values
     if (this._features.length) {
       const baseFeature = this._features[0];
@@ -72,6 +84,13 @@ proto.cancel = function() {
   this._promise.reject();
 };
 
+proto.createContextForTableTool = function(){
+  return {
+    session: this._context.session,
+    ownerLayerId: this._context.ownerLayerId // in case of relation or child
+  }
+};
+
 proto.deleteFeature = function(uid) {
   const EditingService = require('../services/editingservice');
   const layer = this._inputs.layer;
@@ -111,7 +130,7 @@ proto.copyFeature = function(uid){
     const inputs = this._inputs;
     inputs.features.push(feature);
     const options = {
-      context: this._context,
+      context: this.createContextForTableTool(),
       inputs
     };
     this._workflow.start(options)
@@ -142,7 +161,7 @@ proto.editFeature = function(uid) {
   const inputs = this._inputs;
   inputs.features.push(feature);
   const options = {
-    context: this._context,
+    context: this.createContextForTableTool(),
     inputs
   };
   this._workflow.start(options)

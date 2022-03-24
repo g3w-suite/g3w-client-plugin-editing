@@ -141,7 +141,6 @@ const RelationComponent = Vue.extend({
     this.delayType = 'debounce';
   },
   created() {
-    console.log(this.cardinality)
     this.loadEventuallyRelationValuesForInputs = false;
     this._service = new RelationService(this.layerId, {
       relation: this.relation, // main relation between layerId (current in editing)

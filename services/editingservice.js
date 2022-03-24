@@ -13,6 +13,7 @@ const {Feature} = g3wsdk.core.layer.features;
 const {GUI} = g3wsdk.gui;
 const {Server:serverErrorParser}= g3wsdk.core.errors.parsers;
 const t = g3wsdk.core.i18n.tPlugin;
+const {ProjectsRegistry} = g3wsdk.core.project;
 const ToolBoxesFactory = require('../toolboxes/toolboxesfactory');
 const CommitFeaturesWorkflow = require('../workflows/commitfeaturesworkflow');
 const MAPCONTROL_TOGGLED_EVENT_NAME = 'mapcontrol:toggled';
@@ -826,6 +827,21 @@ proto.getRelationsByFeature = function({layerId, relation, feature, layerType}={
   return features.filter(feature => feature.get(ownField) == featureValue);
 };
 
+proto.setVisibilityOlLayerFeatureByFilterFields = function(layerId, filter){
+  if (filter) {
+    const features = this._getFeaturesByLayerId(layerId);
+    const {field, values=[]} = filter;
+    features.forEach(feature => {
+      feature.setVisible(values.indexOf(feature.get(field)) !== -1)
+    })
+  } else this.resetVisibilityOfLayerFeatures(layerId);
+};
+
+proto.resetVisibilityOfLayerFeatures = function(layerId){
+  const features = this._getFeaturesByLayerId(layerId);
+  features.forEach(feature => feature.setVisible(true))
+};
+
 proto.registerLeavePage = function(bool){
   ApplicationService.registerLeavePage({
     bool
@@ -979,14 +995,14 @@ proto.stopSessionChildren = function(layerId) {
   const layer = this.getLayerById(layerId);
   const relations = this._filterRelationsInEditing({
     relations: layer.getRelations() ? layer.getRelations().getArray() : [],
-    layerId
+    layerId,
   });
   relations.forEach(relation => {
     const relationId = this._getRelationId({
       layerId,
       relation
     });
-    !this.getToolBoxById(relationId).inEditing() && this._sessions[relationId].stop();
+    this.getToolBoxById(relationId).inEditing() && this._sessions[relationId].stop();
   })
 };
 
@@ -1002,6 +1018,10 @@ proto.fatherInEditing = function(layerId) {
     }
   });
   return inEditing;
+};
+
+proto.getRelationById = function(relationId){
+  return ProjectsRegistry.getCurrentProject().getRelationById(relationId);
 };
 
 proto._getRelationFieldsFromRelation = function({layerId, relation} = {}) {
@@ -1059,7 +1079,7 @@ proto.createEditingDataOptions = function(filterType='all', options={}) {
 };
 
 proto._getFeaturesByLayerId = function(layerId) {
-  return this.getLayerById(layerId).readEditingFeatures()
+  return this.getLayerById(layerId).readEditingFeatures();
 };
 
 proto.getLayersDependencyFeaturesFromSource = function({layerId, relation, feature, operator='eq'}={}){
@@ -1155,15 +1175,26 @@ proto.commitDirtyToolBoxes = function(layerId) {
   return new Promise(resolve => {
     const toolbox = this.getToolBoxById(layerId);
     const children = this.getLayerById(layerId).getChildren();
-    if (toolbox.isDirty() && toolbox.hasDependencies()) {
-      this.commit(toolbox)
+    if (toolbox.isDirty()) {
+      this.commit({toolbox})
         .fail(() => {
           toolbox.revert()
             .then(() => {
-              toolbox.getDependencies().forEach((layerId) => {
+              toolbox.getDependencies().forEach(layerId => {
                 children.indexOf(layerId) !== -1 && this.getToolBoxById(layerId).revert();
+              });
+              this.getToolBoxes().forEach(toolbox =>{
+                toolbox.getId() !== layerId && toolbox.isDirty() && toolbox.revert();
               })
             })
+        })
+        .then(()=>{
+          this.getToolBoxes().forEach(toolbox =>{
+            toolbox.getId() !== layerId && toolbox.isDirty() && this.commit({
+              toolbox,
+              modal:false
+            })
+          })
         })
         .always(() => resolve(toolbox))
     } else
@@ -1256,14 +1287,15 @@ proto.addLayersFeaturesToShowOnResult = function({layerId, fids=[]}){
 /**
  * Called on close editingpanel panel
  */
-proto.onCloseEditingPanel = function(){
-  this.showChangesToResult();
+proto.onCloseEditingPanel = async function(){
+  await this.showChangesToResult();
   this.getToolBoxes().forEach(toolbox => toolbox.resetDefault());
 };
 
-proto.showChangesToResult = function(){
+proto.showChangesToResult = async function(){
   const layerIdChanges = Object.keys(this.loadLayersFeaturesToResultWhenCloseEditing);
   if (layerIdChanges.length) {
+    const promises = [];
     const inputs = {
       layers:[],
       fids:[],
@@ -1275,7 +1307,7 @@ proto.showChangesToResult = function(){
       inputs.layers.push(layer);
       inputs.fids.push(fids);
     });
-    DataRouterService.getData('search:layersfids', {
+    promises.push(DataRouterService.getData('search:layersfids', {
       inputs,
       outputs: {
         title: 'plugins.editing.editing_changes',
@@ -1283,7 +1315,12 @@ proto.showChangesToResult = function(){
           loading: false
         }
       }
-    });
+    }));
+  }
+  try {
+    await Promise.allSettled(promises)
+  } catch(err) {
+
   }
   this.loadLayersFeaturesToResultWhenCloseEditing = {};
 };

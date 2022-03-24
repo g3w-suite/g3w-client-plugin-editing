@@ -49,14 +49,16 @@ proto.getFeature = function() {
 };
 
 proto.createOperatorOptions = function(options={features:[]}){
-  const {features=[]} = options;
+  const {features=[], context={}, inputs={}} = options;
   return {
     inputs : {
       layer: this._layer,
-      features
+      features,
+      ...inputs
     },
     context : {
-      session: this._session
+      session: this._session,
+      ...context
     }
   };
 };
@@ -65,8 +67,8 @@ proto.createOperatorOptions = function(options={features:[]}){
  * 
  * @param hideSidebar
  */
-proto.start = function(hideSidebar = false) {
-  const options = this.createOperatorOptions();
+proto.start = function(hideSidebar = false, customOptions={}) {
+  const options = this.createOperatorOptions(customOptions);
   this._options = options;
   const startOp = options => {
     this._op.once('settoolsoftool', tools => {
@@ -86,6 +88,7 @@ proto.start = function(hideSidebar = false) {
       })
       .fail(() => {
         hideSidebar && GUI.showSidebar();
+        console.log('qui')
         this._session.rollback()
           .then(() => {})
       })

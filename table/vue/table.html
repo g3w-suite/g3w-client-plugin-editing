@@ -10,7 +10,7 @@
   <table v-if="show" class="display" style="width:100%">
     <thead>
     <tr>
-      <th v-if="!state.isrelation"></th>
+      <th v-if="!state.isrelation" style="max-width: 60px"></th>
       <th v-if="state.isrelation"></th>
       <th v-for="header in state.headers">{{ header.label }}</th>
     </tr>

@@ -1,5 +1,5 @@
 <div class="toolbox" v-show="state.show">
-  <div :class="{'disableddiv' : !isLayerReady || !canEdit }" :id="'id_toolbox_'+ state.id">
+  <div v-disabled="state.disabled" :class="{'disableddiv' : !isLayerReady || !canEdit }" :id="'id_toolbox_'+ state.id">
     <div @click="select" class="panel" style="margin-bottom: 8px;" :class="{'mobile': isMobile(), 'toolboxselected': state.selected }">
       <div v-show="!isLayerReady" class="bar-loader"></div>
       <div v-if="state.toolboxheader" class="panel-heading container" style="width:100%;" :style="{ background: state.color}">

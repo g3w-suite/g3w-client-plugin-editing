@@ -47,6 +47,9 @@ const vueComponentOptions = {
     },
     _setActiveToolOfToolbooxSelected(toolId, toolboxId) {
       const toolbox = this._getToolBoxById(toolboxId);
+      // force to revert (needed in case of relation N:M)
+      toolbox.revert();
+      ///
       this.state.toolboxidactivetool = toolboxId;
       const tool = toolbox.getToolById(toolId);
       toolbox.setActiveTool(tool);
@@ -54,7 +57,8 @@ const vueComponentOptions = {
     // method to start tool of toolbox
     startActiveTool(toolId, toolboxId) {
       if (this.state.toolboxidactivetool && toolboxId !== this.state.toolboxidactivetool) {
-        this._checkDirtyToolBoxes(this.state.toolboxidactivetool)
+        const dirtyToolBox = this.state.toolboxidactivetool;
+        this._checkDirtyToolBoxes(dirtyToolBox)
           .then(toolbox => {
             toolbox && toolbox.stopActiveTool();
             this._setActiveToolOfToolbooxSelected(toolId, toolboxId);
@@ -70,7 +74,10 @@ const vueComponentOptions = {
       const toolbox = this._getToolBoxById(toolboxId);
       const toolboxes = service.getToolBoxes();
       const toolboxSelected = toolboxes.find(toolbox => toolbox.isSelected());
-      toolboxSelected && toolboxSelected.setSelected(false);
+      if (toolboxSelected) {
+        toolboxSelected.stopActiveTool();
+        toolboxSelected.setSelected(false);
+      }
       toolbox.setSelected(true);
       this.state.toolboxselected = toolbox;
       if (toolbox.getDependencies().length) {

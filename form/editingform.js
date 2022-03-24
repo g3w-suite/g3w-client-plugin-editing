@@ -1,4 +1,4 @@
-const {base, inherit} = g3wsdk.core.utils;
+const {base, inherit, createSingleFieldParameter, resolve} = g3wsdk.core.utils;
 const {FormComponent} = g3wsdk.gui.vue;
 const EditingFormService = require('./editingformservice');
 
@@ -23,9 +23,43 @@ function EditingFormComponent(options={}) {
       customFormComponents.length && this.addFormComponents(customFormComponents);
       // add relation component
       RelationComponents.length && this.addFormComponents(RelationComponents);
-      this.getService().handleRelation = function({relation, layer, feature}){
-        const {name: relationId, cardinality} = relation;
-        this.setCurrentComponentById(relationId);
+      this.getService().handleRelation = function({relation, layerId, feature}){
+        const {name: relationId, nmRelationId} = relation;
+        if (nmRelationId) {
+          const sessionOwner = EditingService.getToolboxSelected().getSession();
+          const relations = layer.getRelations().getArray().filter(relation => relation.getId() === relationId);
+          const featuresrelations = EditingService.getRelationsInEditing({layerId, relations, feature})[0].relations || [];
+          const {referencedLayer, fieldRef:{referencedField, referencingField}} = EditingService.getRelationById(nmRelationId);
+          const values = [];
+          featuresrelations.forEach(featurerelation => {
+            const field = featurerelation.fields.find(field => field.name === referencingField);
+            values.push(field.value)
+          });
+          const toolbox = EditingService.getToolBoxById(referencedLayer);
+          toolbox.setDisabled(true);
+          const isStarted = toolbox.isStarted();
+          let promise;
+          if (isStarted) promise = resolve();
+          else promise = toolbox.start();
+          promise.then(() => {
+            EditingService.setVisibilityOlLayerFeatureByFilterFields(referencedLayer, {
+              field: referencedField,
+              values
+            });
+            const tool = toolbox.getToolById('edittable');
+            toolbox.setActiveTool(tool, {
+              context: {
+                nmRelation: true,
+                isChild: true,
+                session: sessionOwner
+              },
+            });
+            tool.once('stop', () => {
+              EditingService.resetVisibilityOfLayerFeatures(referencedLayer);
+              toolbox.setDisabled(false);
+            });
+          });
+        } else this.setCurrentComponentById(relationId);
       };
     })
   }

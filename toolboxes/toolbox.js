@@ -52,6 +52,7 @@ function ToolBox(options={}) {
     customTitle: false,
     loading: false,
     enabled: false,
+    disabled: false,
     toolboxheader: true,
     startstopediting: true,
     message: null,
@@ -223,6 +224,14 @@ proto.setFeaturesOptions = function({filter}={}){
 
 proto.setEditingConstraints = function(constraints={}){
   Object.keys(constraints).forEach(constraint => this.constraints[constraint] = constraints[constraint]);
+};
+
+/**
+ * Check if is started (already load features)
+ * @returns {boolean}
+ */
+proto.isStarted = function(){
+  return this._start;
 };
 
 //added option object to start method to have a control by other plugin how
@@ -505,6 +514,10 @@ proto.inEditing = function() {
   return this.state.editing.on;
 };
 
+proto.setDisabled = function(bool=false){
+  this.state.disabled = bool;
+};
+
 proto.isEnabled = function() {
   return this.state.enabled;
 };
@@ -664,7 +677,7 @@ proto.enableTools = function(bool=false) {
   })
 };
 
-proto.setActiveTool = function(tool) {
+proto.setActiveTool = function(tool, options={}) {
   this.stopActiveTool(tool)
     .then(() => {
       this.clearToolsOfTool();
@@ -680,7 +693,7 @@ proto.setActiveTool = function(tool) {
       tool.on('deactive', (activetools=[]) => _activedeactivetooloftools(activetools, false));
 
       const hideSidebar = this._mapService.isMapHidden();
-      tool.start(hideSidebar);
+      tool.start(hideSidebar, options);
       const message = this.getToolMessage();
       this.setToolMessage(message);
     });
@@ -703,7 +716,7 @@ proto.restartActiveTool = function() {
 proto.stopActiveTool = function(tool) {
   const d = $.Deferred();
   const activeTool = this.getActiveTool();
-  if (activeTool && activeTool !== tool) {
+  if (activeTool && activeTool !== tool && activeTool.isActive()) {
     activeTool.removeAllListeners();
     activeTool.stop(true)
       .then(() => {
