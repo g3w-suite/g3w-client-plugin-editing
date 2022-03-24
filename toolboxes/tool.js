@@ -88,7 +88,6 @@ proto.start = function(hideSidebar = false, customOptions={}) {
       })
       .fail(() => {
         hideSidebar && GUI.showSidebar();
-        console.log('qui')
         this._session.rollback()
           .then(() => {})
       })
