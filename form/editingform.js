@@ -24,7 +24,7 @@ function EditingFormComponent(options={}) {
       // add relation component
       RelationComponents.length && this.addFormComponents(RelationComponents);
       this.getService().handleRelation = function({relation, layer, feature}){
-        const {name: relationId, cardinality} = relation;
+        const {name: relationId} = relation;
         this.setCurrentComponentById(relationId);
       };
     })

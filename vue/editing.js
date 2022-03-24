@@ -54,7 +54,8 @@ const vueComponentOptions = {
     // method to start tool of toolbox
     startActiveTool(toolId, toolboxId) {
       if (this.state.toolboxidactivetool && toolboxId !== this.state.toolboxidactivetool) {
-        this._checkDirtyToolBoxes(this.state.toolboxidactivetool)
+        const dirtyToolBox = this.state.toolboxidactivetool;
+        this._checkDirtyToolBoxes(dirtyToolBox)
           .then(toolbox => {
             toolbox && toolbox.stopActiveTool();
             this._setActiveToolOfToolbooxSelected(toolId, toolboxId);

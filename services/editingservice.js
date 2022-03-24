@@ -986,7 +986,7 @@ proto.stopSessionChildren = function(layerId) {
       layerId,
       relation
     });
-    !this.getToolBoxById(relationId).inEditing() && this._sessions[relationId].stop();
+    this.getToolBoxById(relationId).inEditing() && this._sessions[relationId].stop();
   })
 };
 
@@ -1059,7 +1059,7 @@ proto.createEditingDataOptions = function(filterType='all', options={}) {
 };
 
 proto._getFeaturesByLayerId = function(layerId) {
-  return this.getLayerById(layerId).readEditingFeatures()
+  return this.getLayerById(layerId).readEditingFeatures();
 };
 
 proto.getLayersDependencyFeaturesFromSource = function({layerId, relation, feature, operator='eq'}={}){
@@ -1256,14 +1256,15 @@ proto.addLayersFeaturesToShowOnResult = function({layerId, fids=[]}){
 /**
  * Called on close editingpanel panel
  */
-proto.onCloseEditingPanel = function(){
-  this.showChangesToResult();
+proto.onCloseEditingPanel = async function(){
+  await this.showChangesToResult();
   this.getToolBoxes().forEach(toolbox => toolbox.resetDefault());
 };
 
-proto.showChangesToResult = function(){
+proto.showChangesToResult = async function(){
   const layerIdChanges = Object.keys(this.loadLayersFeaturesToResultWhenCloseEditing);
   if (layerIdChanges.length) {
+    const promises = [];
     const inputs = {
       layers:[],
       fids:[],
@@ -1275,7 +1276,7 @@ proto.showChangesToResult = function(){
       inputs.layers.push(layer);
       inputs.fids.push(fids);
     });
-    DataRouterService.getData('search:layersfids', {
+    promises.push(DataRouterService.getData('search:layersfids', {
       inputs,
       outputs: {
         title: 'plugins.editing.editing_changes',
@@ -1283,8 +1284,11 @@ proto.showChangesToResult = function(){
           loading: false
         }
       }
-    });
+    }));
   }
+  try {
+    await Promise.allSettled(promises)
+  } catch(err) {}
   this.loadLayersFeaturesToResultWhenCloseEditing = {};
 };
 
