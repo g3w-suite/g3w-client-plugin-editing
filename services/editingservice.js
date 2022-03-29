@@ -31,8 +31,8 @@ function EditingService() {
   this._projectType;
   // contain array of object setter(as key), key to unby (as value)
   this._unByKeys = [];
-  // store action result keys
-  this.addActionKeys = [];
+  // store setter keys event listerner
+  this.setterKeys = [];
   // events
   this._events = {
     layer: {
@@ -204,44 +204,20 @@ proto.unsubscribe = function(event, fnc) {
  */
 proto.registerResultEditingAction = function(){
   const queryResultsService = GUI.getComponent('queryresults').getService();
-  this.addActionKeys.push(queryResultsService.onafter('addActionsForLayers', (actions, layers) => {
-    const showEditingIconOnResult = !this.state.open;
-    layers.forEach(layer => {
-      const layerId = layer.id;
-      if (this.getLayerById(layerId)) {
-        actions[layerId] = actions[layerId] || [];
-        actions[layerId] = actions[layerId] || [];
-        actions[layerId].push({
-          id: 'editing',
-          class: GUI.getFontClass('pencil'),
-          hint: 'Editing',
-          condition: () => showEditingIconOnResult,
-          cbk: (layer, feature) => {
-            const layerId = layer.id;
-            const featureId = feature.attributes[G3W_FID];
-            feature.geometry && this._mapService.zoomToGeometry(feature.geometry);
-            setTimeout(()=>{
-              this.editResultLayerFeature({
-                layerId,
-                featureId
-              });
-            }, 300)
-          }
-        });
-      }
+  this.setterKeys.push({
+    setter: 'editFeature',
+    key: queryResultsService.onafter('editFeature', ({layerId, featureId}) => {
+      this.editResultLayerFeature({
+        layerId,
+        featureId
+      })
     })
-  }));
-  this.addActionKeys.push(queryResultsService.onafter('editFeature', ({layerId, featureId}) => {
-    this.editResultLayerFeature({
-      layerId,
-      featureId
-    })
-  }));
+  });
 };
 
 proto.unregisterResultEditingAction = function(){
-  const queryResultsService = GUI.getComponent('queryresults').getService();
-  this.addActionKeys.forEach(addActionKey => queryResultsService.un('addActionsForLayers', addActionKey));
+  const queryResultsService = GUI.getService('queryresults');
+  this.setterKeys.forEach(({setter, key}) => queryResultsService.un(setter, key));
 };
 
 /**
