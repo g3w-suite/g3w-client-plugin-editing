@@ -9,7 +9,6 @@
         </div>
         <slot name="content"></slot>
     </div>
-
 </template>
 
 <script>

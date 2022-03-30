@@ -3,9 +3,8 @@ import SIGNALER_IIM_CONFIG from '../global_plugin_data';
 import ExportFormats from '../vue/exportformats.vue';
 import ChildSignalerComponent from '../vue/childsignalercomponent.vue';
 const {G3W_FID} = g3wsdk.constant;
-const DataRouterService = g3wsdk.core.data.DataRouterService;
-const ApplicationService = g3wsdk.core.ApplicationService;
-const ApplicationState = g3wsdk.core.ApplicationState;
+const {DataRouterService} = g3wsdk.core.data;
+const {ApplicationService, ApplicationState} = g3wsdk.core;
 const {base, inherit, createSingleFieldParameter, downloadFile, resolve} = g3wsdk.core.utils;
 const {getPointFeaturesfromGeometryVertex} = g3wsdk.core.geoutils;
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
@@ -98,7 +97,11 @@ function EditingService() {
     const {urls:{editing:editing_url, vector:vector_data_url}, signaler_layer_id,
       vertex_layer_id, geo_layer_id, signaler_field, ab_signal_fields,
       parent_signal_field="parent_signal_id",
-      states, roles_editing_acl, state_field, every_fields_editing_states} = config;
+      states, roles_editing_acl, state_field, every_fields_editing_states,
+      signal_type_maps={}, //object contains
+      relation_signal_types=[]
+      
+    } = config;
     SIGNALER_IIM_CONFIG.signaler_layer_id = signaler_layer_id;
     SIGNALER_IIM_CONFIG.signaler_field = signaler_field || 'signaled_fid';
     SIGNALER_IIM_CONFIG.vertex_layer_id = vertex_layer_id;

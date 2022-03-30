@@ -10,6 +10,9 @@ export default  {
   states: null, // states
   roles_editing_acl: null,
   state_field: null,
-  every_fields_editing_states: null
+  every_fields_editing_states: null,
+  signal_type_maps: {}, // object contain url of other type of signaler
+  relation_signal_types:[] // which are the children signaler
+  
 };
 export const EPSG_COORDINATES = ['EPSG:4326', 'EPSG:3857', 'EPSG:32632', 'EPSG:32633', 'EPSG:32634'];

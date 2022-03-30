@@ -2,8 +2,8 @@ import SIGNALER_IIM_CONFIG from '../global_plugin_data';
 import EditVertexComponent from './components/edifeature/editvertex/editvertex.vue';
 import EditRadiusComponent from './components/edifeature/editradius/editradius.vue';
 import EditFeaturesComponent from './components/editfeatures/editfeatures.vue';
+import ChildrenSignalerComponent from './components/childrensignaler/childrensignaler.vue';
 const {base, inherit} = g3wsdk.core.utils;
-const {isPointGeometryType} = g3wsdk.core.geometry.Geometry;
 const FormComponent = g3wsdk.gui.vue.FormComponent;
 
 function EditingFormComponent(options={}) {
@@ -11,8 +11,10 @@ function EditingFormComponent(options={}) {
   const {layer, isnew, can_edit_signaler_feature, edit_feature_geometry} = options;
   const layerId = layer.getId();
   let component;
+  let childrensignalercomponent;
   if (layerId === signaler_layer_id){
     if (!isnew && can_edit_signaler_feature) component = EditFeaturesComponent;
+    if (can_edit_signaler_feature) childrensignalercomponent = ChildrenSignalerComponent;
   } else if (vertex_layer_id)
     switch(edit_feature_geometry) {
       case 'vertex':
@@ -27,6 +29,13 @@ function EditingFormComponent(options={}) {
     component,
     where: 'before'
   });
+  
+  childrensignalercomponent && this.addBodyFormComponent({
+    component: childrensignalercomponent,
+    where: 'after'
+  });
+  
+  
 }
 
 inherit(EditingFormComponent, FormComponent);
