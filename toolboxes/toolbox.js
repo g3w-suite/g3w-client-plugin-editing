@@ -355,6 +355,7 @@ proto.stop = function() {
       this._unregisterGetFeaturesEvent();
       this.editingService.stopSessionChildren(this.state.id);
       this.setSelected(false);
+      d.resolve(true);
     }
   } else {
     this.setSelected(false);
@@ -393,7 +394,7 @@ proto._registerGetFeaturesEvent = function(options={}) {
           this._session.getFeatures(options).then(promise=> {
             promise.then(() => {
               this.state.loading = false;
-            });
+            }).fail(()=>{})
           })
         }
       };
@@ -702,7 +703,8 @@ proto.setActiveTool = function(tool) {
       tool.start(hideSidebar);
       const message = this.getToolMessage();
       this.setToolMessage(message);
-    });
+    })
+    .fail(()=>{})
 };
 
 proto.clearToolsOfTool = function() {
@@ -731,6 +733,7 @@ proto.stopActiveTool = function(tool) {
         this.state.activetool = null;
         setTimeout(d.resolve);
       })
+      .fail(()=>{})
   } else {
     tool ? tool.removeAllListeners(): null;
     d.resolve()

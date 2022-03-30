@@ -41,11 +41,11 @@ const vueComponentOptions = {
       const toolbox = this._getToolBoxById(toolboxId);
       const promise = new Promise((resolve, reject) =>{
         if (toolbox.state.editing.history.commit) this.$options.service.commit().always(() => {
-          toolbox.stop();
+          toolbox.stop().then(()=>{}).fail(()=>{});
           resolve();
         });
         else {
-          toolbox.stop();
+          toolbox.stop().then(()=>{}).fail(()=>{});
           resolve();
         }
       });
@@ -207,9 +207,11 @@ function PanelComponent(options={}) {
       .finally(() => {
         this.unmount = function() {
           base(this, 'unmount')
-            .then(() => d.resolve());
+            .then(()=>{})
+            .fail(()=>{})
+            .always(d.resolve)
         };
-        this.unmount();
+        this.unmount()
       });
     return d.promise();
   };

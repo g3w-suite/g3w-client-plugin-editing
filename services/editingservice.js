@@ -6,7 +6,7 @@ const {G3W_FID} = g3wsdk.constant;
 const DataRouterService = g3wsdk.core.data.DataRouterService;
 const ApplicationService = g3wsdk.core.ApplicationService;
 const ApplicationState = g3wsdk.core.ApplicationState;
-const {base, inherit, createSingleFieldParameter, downloadFile} = g3wsdk.core.utils;
+const {base, inherit, createSingleFieldParameter, downloadFile, resolve} = g3wsdk.core.utils;
 const {getPointFeaturesfromGeometryVertex} = g3wsdk.core.geoutils;
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 const PluginService = g3wsdk.core.plugin.PluginService;
@@ -388,14 +388,14 @@ proto.registerResultEditingAction = function(){
             const signaler_id = feature.attributes[G3W_FID];
             try {
               const {data} = await DataRouterService.getData('search:features', {
-                inputs: {
-                  layer: CatalogLayersStoresRegistry.getLayerById(SIGNALER_IIM_CONFIG.geo_layer_id),
-                  filter: `${SIGNALER_IIM_CONFIG.signaler_field}|eq|${signaler_id}`,
-                  formatter: 1, // set formatter to 1
-                  search_endpoint: 'api'
-                },
-                outputs: null
-              });
+                  inputs: {
+                    layer: CatalogLayersStoresRegistry.getLayerById(SIGNALER_IIM_CONFIG.geo_layer_id),
+                    filter: `${SIGNALER_IIM_CONFIG.signaler_field}|eq|${signaler_id}`,
+                    formatter: 1, // set formatter to 1
+                    search_endpoint: 'api'
+                  },
+                  outputs: null
+                });
               const features = data && data[0] && data[0].features || [];
               features.length && this._mapService.zoomToFeatures(features, {
                 highlight: true
@@ -495,6 +495,7 @@ proto.getUrlParameters = async function(){
   const show_signaler_on_result = searchParams.get('sid') || false;
   if (show_signaler_on_result) {
     if (show_signaler_on_result === 'new') {
+      this.config.visible = false; // set config to false to avoid to show editing tool on sidebar
       SIGNALER_IIM_CONFIG.create_new_signaler = true;
       this.getPlugin().showEditingPanel({
         toolboxes: [this.getToolBoxById(SIGNALER_IIM_CONFIG.signaler_layer_id)]
@@ -922,10 +923,14 @@ proto.runEventHandler = function({type, id} = {}) {
  * @param modal - Boolean true or false to show to ask
  * @param messages - object success or error
  */
-proto.setSaveConfig = function({mode = 'default', cb={}, modal=false, messages}={}){
+proto.setSaveConfig = function({mode = 'default', cb={}, modal=false, messages={success: false, error: false}}={}){
+  const {success=false, error=false} = messages;
   this.saveConfig.mode = mode;
   this.saveConfig.modal = modal;
-  this.saveConfig.messages = messages;
+  this.saveConfig.messages = {
+    success,
+    error
+  };
   this.saveConfig.cb = {
     ...this.saveConfig.cb,
     ...cb
@@ -1001,7 +1006,7 @@ proto._attachLayerWidgetsEvent = function(layer) {
     const field = fields[i];
     if (field.input) {
       if (field.input.type === 'select_autocomplete') {
-        const options = field.input.options;
+        const {options} = field.input;
         let {key, value, usecompleter, layer_id, loading} = options;
         const self = this;
         if (!usecompleter) {
@@ -1241,23 +1246,28 @@ proto._cancelOrSave = function(){
 };
 
 proto.stop = function() {
+  const {mode, modal=true} = this.saveConfig;
   return new Promise((resolve, reject) => {
     const commitpromises = [];
-    this._toolboxes.forEach(toolbox => {
+    mode !== 'autosave' && this._toolboxes.forEach(toolbox => {
       // check if temp changes are waiting to save on server
       if (toolbox.getSession().getHistory().state.commit) {
         // ask to commit before exit
-        commitpromises.push(this.commit(toolbox, true));
+        commitpromises.push(this.commit({
+          toolbox,
+          modal
+        }));
       }
     });
     $.when.apply(this, commitpromises)
+      .fail(() => {})
       .always(() => {
         this._toolboxes.forEach(toolbox => toolbox.stop());
         this.clearState();
         this._mapService.refreshMap();
         resolve();
-    });
-  });
+      });
+  })
 };
 
 // remove Editing LayersStore
@@ -1570,12 +1580,14 @@ proto.showCommitModalWindow = function({layer, commitItems, close, commitPromise
 /**
  * Functioncalled very single change saved temporary
  */
-proto.saveChange = async function() {
+proto.saveChange = function() {
   switch (this.saveConfig.mode) {
     case 'autosave':
       return this.commit({
         modal: false // set to not show modal ask window
       });
+    default:
+      return resolve();
   }
 };
 
@@ -1645,6 +1657,7 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
             error
           });
           const errorMessage = parser.parse();
+          const {autoclose = false, message} = messages.error;
           GUI.showUserMessage({
             type: 'alert',
             message: message || errorMessage,

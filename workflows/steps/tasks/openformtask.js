@@ -76,7 +76,8 @@ proto._saveFeatures = function({fields, promise, session, inputs}){
       this.getEditingService().setSaveConfig({
         mode: 'autosave',
         messages: {
-          success: false
+          success: false,
+          error: false
         },
         cb: {
           done: () => {
