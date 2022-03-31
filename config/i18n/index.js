@@ -1,5 +1,27 @@
 export default {
   it: {
+    signaler: {
+      signaler_types: {
+        byf:"Campi boe",
+        plt:"Piattaforme",
+        wel:"Pozzi",
+        sls:"Segnalementi sonori e luminosi",
+        cab:"Cavi",
+        pip:"Condotte",
+        obs:"Ostacoli",
+        wre:"Relitti",
+        fsa:"Zone ittiche",
+        pws:"Lavori portual",
+        dae:"Escavazioni e dragacci",
+        pla:"Planimetrie",
+        aeg:"Aereogeneratori",
+        iin:"Informazioni nautiche",
+        tes:"TEST"
+      },
+      reload: "Ricarica",
+      add_new_child_signaler: "Aggiungi nuova segnalazione figlio",
+      edit_child_signaler: "Edita Segnalazione figlio"
+    },
     errors: {
       no_layers: "Si è verificato un errore nel caricamento dei layers in editing.",
       some_layers: "Si è verificato un errore nel caricamento di alcuni layers in editing"
@@ -129,6 +151,28 @@ export default {
 
   },
   en: {
+    signaler: {
+      signaler_types: {
+        byf:"Buoy fields",
+        plt:"Platforms",
+        wel:"Wells",
+        sls:"Light and sound signals",
+        cab:"Cables",
+        pip:"Pipelines",
+        obs:"Obstacles",
+        wre:"Wrecks",
+        fsa:"Fish areas",
+        pws:"Port works",
+        dae:"Dredging and excavations",
+        pla:"Planimetries",
+        aeg:"Aereo generators",
+        iin:"Nutiche information ",
+        tes:"TEST"
+      },
+      reload: "Ricarica",
+      add_new_child_signaler: "Aggiungi nuova segnalazione figlio",
+      edit_child_signaler: "Edita Segnalazione figlio"
+    },
     errors: {
       no_layers: "An error occurs. It's no possible to edit layers",
       some_layers: "An error occurs: It's no possible to edit some layers"
@@ -264,6 +308,28 @@ export default {
     },
   },
   fi: {
+    signaler: {
+      signaler_types: {
+        byf:"Buoy fields",
+        plt:"Platforms",
+        wel:"Wells",
+        sls:"Light and sound signals",
+        cab:"Cables",
+        pip:"Pipelines",
+        obs:"Obstacles",
+        wre:"Wrecks",
+        fsa:"Fish areas",
+        pws:"Port works",
+        dae:"Dredging and excavations",
+        pla:"Planimetries",
+        aeg:"Aereo generators",
+        iin:"Nutiche information ",
+        tes:"TEST"
+      },
+      reload: "Ricarica",
+      add_new_child_signaler: "Aggiungi nuova segnalazione figlio",
+      edit_child_signaler: "Edita Segnalazione figlio"
+    },
     errors: {
       no_layers: "Tapahtui virhe. Tasoja ei ole mahdollista muokata.",
       some_layers: "Tapahtui virhe. Jotkin tasot eivät ole muokattavissa."
@@ -398,7 +464,29 @@ export default {
     },
   },
   se: {
-   errors: {
+    signaler: {
+      signaler_types: {
+        byf:"Buoy fields",
+        plt:"Platforms",
+        wel:"Wells",
+        sls:"Light and sound signals",
+        cab:"Cables",
+        pip:"Pipelines",
+        obs:"Obstacles",
+        wre:"Wrecks",
+        fsa:"Fish areas",
+        pws:"Port works",
+        dae:"Dredging and excavations",
+        pla:"Planimetries",
+        aeg:"Aereo generators",
+        iin:"Nutiche information ",
+        tes:"TEST"
+      },
+      reload: "Ricarica",
+      add_new_child_signaler: "Aggiungi nuova segnalazione figlio",
+      edit_child_signaler: "Edita Segnalazione figlio"
+    },
+    errors: {
       no_layers: "Ett fel uppstod. Nivåerna kan inte redigeras.",
       some_layers: "Ett fel uppstod. Vissa nivåer kan inte redigeras."
     },
@@ -532,6 +620,28 @@ export default {
     },
   },
   fr: {
+    signaler: {
+      signaler_types: {
+        byf:"Buoy fields",
+        plt:"Platforms",
+        wel:"Wells",
+        sls:"Light and sound signals",
+        cab:"Cables",
+        pip:"Pipelines",
+        obs:"Obstacles",
+        wre:"Wrecks",
+        fsa:"Fish areas",
+        pws:"Port works",
+        dae:"Dredging and excavations",
+        pla:"Planimetries",
+        aeg:"Aereo generators",
+        iin:"Nutiche information ",
+        tes:"TEST"
+      },
+      reload: "Ricarica",
+      add_new_child_signaler: "Aggiungi nuova segnalazione figlio",
+      edit_child_signaler: "Edita Segnalazione figlio"
+    },
     errors: {
       no_layers: "Une erreur s'est produite lors du chargement des layers dans l'édition.",
       some_layers: "Une erreur s'est produite lors du chargement de certaines layers dans l'édition."

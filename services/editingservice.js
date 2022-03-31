@@ -98,10 +98,10 @@ function EditingService() {
       vertex_layer_id, geo_layer_id, signaler_field, ab_signal_fields,
       parent_signal_field="parent_signal_id",
       states, roles_editing_acl, state_field, every_fields_editing_states,
-      signal_type_maps={}, //object contains
-      relation_signal_types=[]
-      
+      relation_signal_types={},
+      signal_type
     } = config;
+    SIGNALER_IIM_CONFIG.signal_type = signal_type;
     SIGNALER_IIM_CONFIG.signaler_layer_id = signaler_layer_id;
     SIGNALER_IIM_CONFIG.signaler_field = signaler_field || 'signaled_fid';
     SIGNALER_IIM_CONFIG.vertex_layer_id = vertex_layer_id;
@@ -112,6 +112,8 @@ function EditingService() {
     SIGNALER_IIM_CONFIG.roles_editing_acl = roles_editing_acl;
     SIGNALER_IIM_CONFIG.state_field = state_field;
     SIGNALER_IIM_CONFIG.every_fields_editing_states = every_fields_editing_states;
+    SIGNALER_IIM_CONFIG.urls = config.urls;
+    SIGNALER_IIM_CONFIG.relation_signal_types = relation_signal_types;
     CatalogLayersStoresRegistry.getLayers().forEach(layer => {
       if (layer.config.urls.data) layer.config.urls.data = layer.config.urls.data.replace('/vector/api/', vector_data_url);
     });
@@ -492,12 +494,15 @@ proto.unregisterResultEditingAction = function(){
  * @returns {Promise<void>}
  */
 proto.getUrlParameters = async function(){
-  const {signaler_field, parent_signaler_field} = SIGNALER_IIM_CONFIG;
+  const {signaler_field, signaler_parent_field} = SIGNALER_IIM_CONFIG;
   const searchParams = new URLSearchParams(location.search);
   const child_signaler_value = searchParams.get(signaler_field);
   const show_signaler_on_result = searchParams.get('sid') || false;
+  const edit = searchParams.get('edit') || false;
+  SIGNALER_IIM_CONFIG.edit_signaler = edit;
   if (show_signaler_on_result) {
     if (show_signaler_on_result === 'new') {
+      SIGNALER_IIM_CONFIG[signaler_parent_field] = searchParams.get(signaler_parent_field);
       this.config.visible = false; // set config to false to avoid to show editing tool on sidebar
       SIGNALER_IIM_CONFIG.create_new_signaler = true;
       this.getPlugin().showEditingPanel({
@@ -509,10 +514,20 @@ proto.getUrlParameters = async function(){
         },
         toolId: 'addfeature'
       })
+    } else if (edit) {
+      this.getPlugin().showEditingPanel({
+        toolboxes: [this.getToolBoxById(SIGNALER_IIM_CONFIG.signaler_layer_id)]
+      });
+      this.editingReport({
+        filter: {
+          fids: show_signaler_on_result
+        },
+        openForm: true
+      })
     } else this.showSignalerOnResultContent({
-      fid: show_signaler_on_result,
-      getGeoFeatures: true
-    });
+        fid: show_signaler_on_result,
+        getGeoFeatures: true
+      });
   }
   else if (child_signaler_value) this.checkChildReportIdParam(child_signaler_value);
 };
@@ -1895,7 +1910,7 @@ proto.initEditingState = function(){
 /**
  * Editing Report
  */
-proto.editingReport = function({filter, feature, toolId, openForm=false}={}){
+proto.editingReport = function({filter, feature, toolId, openForm=false, currentFid=null}={}){
   return new Promise((resolve, reject) => {
     const {signaler_layer_id, geo_layer_id, vertex_layer_id} = SIGNALER_IIM_CONFIG;
     const reportToolbox = this.getToolBoxById(signaler_layer_id);
@@ -1954,11 +1969,13 @@ proto.editingReport = function({filter, feature, toolId, openForm=false}={}){
               resolve();
             })
             .always(()=>{
+              this._editSingleReportFormTask.stop();
+              console.log('qui')
               GUI.disableSideBar(false)
             })
         });
         await promise;
-        //at the end sho signal to result
+        //at the end show signal to result
         this.showSignalerOnResultContent({
           fid
         });

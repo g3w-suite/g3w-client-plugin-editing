@@ -220,6 +220,7 @@ proto.startForm = async function(options = {}) {
 
 proto.run = function(inputs, context) {
   GUI.setLoadingContent(false);
+  this.getEditingService().disableMapControlsConflict(true);
   const d = $.Deferred();
   this.startForm({
     inputs,
@@ -236,6 +237,7 @@ proto._generateFormId = function(layerName) {
 
 proto.stop = function() {
   this.disableSidebar(false);
+  this.getEditingService().disableMapControlsConflict(false);
   this._isContentChild ? GUI.popContent() : GUI.closeForm();
   this.getEditingService().resetCurrentLayout();
 };

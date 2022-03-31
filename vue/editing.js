@@ -160,9 +160,9 @@ const vueComponentOptions = {
     GUI.getComponent('map').getService().seSelectionLayerVisible(false);
   },
   async mounted(){
-    const {result, create_new_signaler} = SIGNALER_IIM_CONFIG;
+    const {result, create_new_signaler, edit_signaler} = SIGNALER_IIM_CONFIG;
     await this.$nextTick();
-    if (!result && !create_new_signaler) this.$options.service.editingReport()
+    if (!result && !create_new_signaler && !edit_signaler) this.$options.service.editingReport()
   },
   beforeDestroy() {
     this.$options.service.state.open = false;

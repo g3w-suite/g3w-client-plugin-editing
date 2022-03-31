@@ -12,7 +12,7 @@ const proto = AddFeatureTableTask.prototype;
 
 proto.run = function(inputs, context) {
   const d = $.Deferred();
-  const {signaler_field, signaler_layer_id} = SIGNALER_IIM_CONFIG;
+  const {signaler_layer_id, signaler_parent_field} = SIGNALER_IIM_CONFIG;
   const session = context.session;
   const originalLayer = inputs.layer;
   const layerId = originalLayer.getId();
@@ -20,11 +20,8 @@ proto.run = function(inputs, context) {
   const feature = inputs.features.length ? inputs.features[inputs.features.length -1] : originalLayer.createNewFeature();
   feature.setTemporaryId();
   let removeEditableProperties = true;
-  if (layerId === signaler_layer_id) {
-    const value = this.getEditingService().getCurrentReportData()[signaler_field];
-    //value !== undefined && feature.set(signaler_field, value);
-    //removeEditableProperties = false;
-  }
+  if (layerId === signaler_layer_id)
+    SIGNALER_IIM_CONFIG[signaler_parent_field] && feature.set(signaler_parent_field, SIGNALER_IIM_CONFIG[signaler_parent_field]);
   editingLayer.getEditingSource().addFeature(feature);
   session.pushAdd(layerId, feature, removeEditableProperties);
   inputs.features.push(feature);
