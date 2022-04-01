@@ -65,20 +65,13 @@
                 Promise.allSettled(promises).then(responses =>{
                     responses.forEach(({status, value}, index) => {
                         const {result, vector:{data}} = value;
-                        if (status === 'fulfilled' && result) {
-                            data.features.forEach(feature =>{
-                                console.log(this.childrendsignaler[index])
-                                this.childrendsignaler[index].features.push(feature.id)
-                            });
-
-                        }
+                        if (status === 'fulfilled' && result)
+                            data.features.forEach(feature =>this.childrendsignaler[index].features.push(feature.id));
                     })
-                }).finally(()=>{
-                    this.loading = false;
-                })
+                }).finally(()=>this.loading = false);
             },
             editChildFeature({url, id}){
-                window.open(`${url}?sid=${id}`, '_blank').focus();
+                window.open(`${url}?sid_edit=${id}`, '_blank').focus();
             },
             addChildSignaler(url){
                 window.open(`${url}?sid=new&segn_pad_id=${this.currentChildSignalerFieldValue}`, '_blank').focus();

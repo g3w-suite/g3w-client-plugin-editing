@@ -286,7 +286,7 @@ proto.showEditingResultIcon = function({feature}={}){
 
 proto.registerCustomComponentsResult = function(){
   const queryResultsService = GUI.getService('queryresults');
-  const id = queryResultsService.registerCustomComponent({
+  queryResultsService.registerCustomComponent({
     layerId: SIGNALER_IIM_CONFIG.signaler_layer_id,
     type: 'feature',
     component: ChildSignalerComponent
@@ -294,9 +294,10 @@ proto.registerCustomComponentsResult = function(){
 };
 
 proto.registerResultEditingAction = function(){
-  const queryResultsService = GUI.getComponent('queryresults').getService();
+  const queryResultsService = GUI.getService('queryresults');
   this.addActionKeys.push(queryResultsService.onafter('addActionsForLayers', (actions, layers) => {
     Object.keys(actions).forEach(layerId => {
+      if ([SIGNALER_IIM_CONFIG.geo_layer_id,SIGNALER_IIM_CONFIG.vertex_layer_id].indexOf(layerId) !== -1) actions[layerId] = actions[layerId].filter(action => action.id !== 'editing');
       if ([SIGNALER_IIM_CONFIG.geo_layer_id, SIGNALER_IIM_CONFIG.signaler_layer_id].indexOf(layerId) !== -1)
         actions[layerId] = actions[layerId].filter(action => ['gotogeometry', 'show-query-relations', 'printatlas'].indexOf(action.id) !== -1 || action.id.indexOf('download') !== -1);
       if (!this.state.open && layerId === SIGNALER_IIM_CONFIG.signaler_layer_id && this.getLayerById(layerId)) {
@@ -498,8 +499,7 @@ proto.getUrlParameters = async function(){
   const searchParams = new URLSearchParams(location.search);
   const child_signaler_value = searchParams.get(signaler_field);
   const show_signaler_on_result = searchParams.get('sid') || false;
-  const edit = searchParams.get('edit') || false;
-  SIGNALER_IIM_CONFIG.edit_signaler = edit;
+  const sid_edit = searchParams.get('sid_edit') || null;
   if (show_signaler_on_result) {
     if (show_signaler_on_result === 'new') {
       SIGNALER_IIM_CONFIG[signaler_parent_field] = searchParams.get(signaler_parent_field);
@@ -514,22 +514,24 @@ proto.getUrlParameters = async function(){
         },
         toolId: 'addfeature'
       })
-    } else if (edit) {
-      this.getPlugin().showEditingPanel({
-        toolboxes: [this.getToolBoxById(SIGNALER_IIM_CONFIG.signaler_layer_id)]
-      });
-      this.editingReport({
-        filter: {
-          fids: show_signaler_on_result
-        },
-        openForm: true
-      })
     } else this.showSignalerOnResultContent({
         fid: show_signaler_on_result,
         getGeoFeatures: true
       });
   }
-  else if (child_signaler_value) this.checkChildReportIdParam(child_signaler_value);
+  else if (sid_edit) {
+    SIGNALER_IIM_CONFIG.edit_signaler = true;
+    SIGNALER_IIM_CONFIG.result = true;
+    this.getPlugin().showEditingPanel({
+      toolboxes: [this.getToolBoxById(SIGNALER_IIM_CONFIG.signaler_layer_id)]
+    });
+    this.editingReport({
+      filter: {
+        fids: sid_edit
+      },
+      openForm: true
+    })
+  } else if (child_signaler_value) this.checkChildReportIdParam(child_signaler_value);
 };
 
 proto.exitEditingAfterCreateNewSignalerFeature = function(){
@@ -1745,7 +1747,6 @@ proto.getCurrentFeatureReportVertex = function(){
  * Reset report Data
  *
  */
-
 proto.resetReportData = function(){
   this.currentReport = {
     id: null,
@@ -1936,7 +1937,6 @@ proto.editingReport = function({filter, feature, toolId, openForm=false, current
       /*
         end check
        */
-      const fid = this.currentReport.id; // signaler id (in case of new is not setted)
       reportToolbox.setShow(true);
       reportToolbox.setSelected(true);
       this.setSelectedToolbox(reportToolbox);
@@ -1961,19 +1961,18 @@ proto.editingReport = function({filter, feature, toolId, openForm=false, current
               reportToolbox.getSession().save();
               reportToolbox.getSession().commit().then(()=>{
                 this.getPlugin().hideEditingPanel();
-                resolve();
               })
             })
             .fail(()=>{
               this.getPlugin().hideEditingPanel();
-              resolve();
             })
             .always(()=>{
               this._editSingleReportFormTask.stop();
-              console.log('qui')
-              GUI.disableSideBar(false)
+              GUI.disableSideBar(false);
+              resolve();
             })
         });
+        const fid = this.currentReport.id; // signaler id (in case of new is not setted)
         await promise;
         //at the end show signal to result
         this.showSignalerOnResultContent({
