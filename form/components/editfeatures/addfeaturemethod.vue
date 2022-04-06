@@ -62,6 +62,7 @@
 
             },
             async drawFeatures(){
+                GUI.closeContent();
                 await this.editingFeaturesReport({
                     toolId: 'addfeature'
                 });

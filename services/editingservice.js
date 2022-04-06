@@ -1901,10 +1901,12 @@ proto.getVertexFromFeatureReport = function(feature){
 
 proto.initEditingState = function(){
   const reportToolbox = this.getToolBoxById(SIGNALER_IIM_CONFIG.signaler_layer_id);
-  const featuresToolbox = this.getToolBoxById(SIGNALER_IIM_CONFIG.geo_layer_id);
   reportToolbox.setShow(true);
-  featuresToolbox.setShow(false);
   reportToolbox.setSelected(true);
+  if (SIGNALER_IIM_CONFIG.geo_layer_id) {
+    const featuresToolbox = this.getToolBoxById(SIGNALER_IIM_CONFIG.geo_layer_id);
+    featuresToolbox.setShow(false);
+  }
   this.setSelectedToolbox(reportToolbox);
 };
 
