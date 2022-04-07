@@ -98,7 +98,7 @@ proto._saveFeatures = function({fields, promise, session, inputs}){
                   content,
                   closable: false
                 })
-              }
+              } else if (create_new_signaler) this.getEditingService().exitEditingAfterCreateNewSignalerFeature()
             } else if (create_new_signaler) this.getEditingService().exitEditingAfterCreateNewSignalerFeature()
           },
           error: ()=> {
@@ -150,7 +150,7 @@ proto._saveFnc = function(promise, context, inputs) {
 proto.startForm = async function(options = {}) {
   this.getEditingService().setCurrentLayout();
   const EditingFormComponent = require('../../../form/editingform');
-  const {signaler_layer_id, state_field, every_fields_editing_states} = SIGNALER_IIM_CONFIG;
+  const {signaler_layer_id, state_field, every_fields_editing_states, fields} = SIGNALER_IIM_CONFIG;
   const {inputs, context, promise} = options;
   const {session} = context;
   const formComponent = options.formComponent || EditingFormComponent;
@@ -168,10 +168,12 @@ proto.startForm = async function(options = {}) {
       fields: this._fields
     });
     if (!isNew){
+      const editableFieldsRemainAsConfiguration = new Set(fields[layerId]);
+      editableFieldsRemainAsConfiguration.add(state_field);
       if (every_fields_editing_states.indexOf(feature.get(state_field)) === -1) {
         can_edit_signaler_feature = false;
         this._fields.forEach(field => {
-          if (field.name !== state_field) field.editable = false;
+          if (!editableFieldsRemainAsConfiguration.has(field.name)) field.editable = false;
         })
       }
     }

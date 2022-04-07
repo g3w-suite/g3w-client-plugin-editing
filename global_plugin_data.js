@@ -7,6 +7,7 @@ export default  {
   vertex_layer_id: null, // vertex layer id
   signaler_field: null, // signaler field
   ab_signal_fields: null, // fields related to signaler to show info in geo feature layer form,
+  fields: {}, // object that has kea as layer id and for each layer if field that has to leave editable mode as it is whe every_fields_editing_states as satisfied
   parent_signaler_field: null, // field of signaler related to eventually parent signaler
   states: null, // states
   roles_editing_acl: null,

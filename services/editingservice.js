@@ -2,10 +2,11 @@ import API from '../api'
 import SIGNALER_IIM_CONFIG from '../global_plugin_data';
 import ExportFormats from '../vue/exportformats.vue';
 import ChildSignalerComponent from '../vue/childsignalercomponent.vue';
+import SignalerNotesComponent from '../vue/signalernotes.vue';
 const {G3W_FID} = g3wsdk.constant;
 const {DataRouterService} = g3wsdk.core.data;
 const {ApplicationService, ApplicationState} = g3wsdk.core;
-const {base, inherit, createSingleFieldParameter, downloadFile, resolve} = g3wsdk.core.utils;
+const {base, inherit, createSingleFieldParameter, downloadFile, resolve, XHR} = g3wsdk.core.utils;
 const {getPointFeaturesfromGeometryVertex} = g3wsdk.core.geoutils;
 const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
 const PluginService = g3wsdk.core.plugin.PluginService;
@@ -15,7 +16,7 @@ const MapLayersStoreRegistry = g3wsdk.core.map.MapLayersStoreRegistry;
 const LayersStore = g3wsdk.core.layer.LayersStore;
 const Layer = g3wsdk.core.layer.Layer;
 const Feature = g3wsdk.core.layer.features.Feature;
-const GUI = g3wsdk.gui.GUI;
+const {ComponentsFactory, GUI} = g3wsdk.gui;
 const serverErrorParser= g3wsdk.core.errors.parsers.Server;
 const t = g3wsdk.core.i18n.tPlugin;
 const ToolBoxesFactory = require('../toolboxes/toolboxesfactory');
@@ -95,7 +96,7 @@ function EditingService() {
     this._mapService.addScaleLineUnits(['nautical']);
     this._vectorUrl = config.vectorurl;
     const {urls:{editing:editing_url, vector:vector_data_url}, signaler_layer_id,
-      vertex_layer_id, geo_layer_id, signaler_field, ab_signal_fields,
+      vertex_layer_id, geo_layer_id, signaler_field, ab_signal_fields, fields={},
       parent_signal_field="parent_signal_id",
       states, roles_editing_acl, state_field, every_fields_editing_states,
       relation_signal_types={},
@@ -106,6 +107,7 @@ function EditingService() {
     SIGNALER_IIM_CONFIG.signaler_field = signaler_field || 'signaled_fid';
     SIGNALER_IIM_CONFIG.vertex_layer_id = vertex_layer_id;
     SIGNALER_IIM_CONFIG.geo_layer_id = geo_layer_id;
+    SIGNALER_IIM_CONFIG.fields = fields;
     SIGNALER_IIM_CONFIG.ab_signal_fields = ab_signal_fields;
     SIGNALER_IIM_CONFIG.parent_signal_field = parent_signal_field;
     SIGNALER_IIM_CONFIG.states = states;
@@ -148,6 +150,9 @@ function EditingService() {
     let layers = this._getEditableLayersFromCatalog();
     const EditableLayersPromises = [];
     for (const layer of layers) {
+      if (layer.getId() === SIGNALER_IIM_CONFIG.signaler_layer_id){
+        layer.getLayerEditingFormStructure()
+      }
       // getLayerForEditing return a promise with layer usefult for editing
       EditableLayersPromises.push(layer.getLayerForEditing({
         vectorurl: this._vectorUrl,
@@ -329,7 +334,7 @@ proto.registerResultEditingAction = function(){
         actions[layerId].push({
           id: 'show_signaler',
           class: GUI.getFontClass('signaler'),
-          hint: 'Visualizza segnalazione padre',
+          hint: 'plugins.signaler_iim.signaler.show_father_signaler',
           cbk: (layer, feature, action, index) => {
             const signaler_id = feature.attributes[SIGNALER_IIM_CONFIG.signaler_field];
             this.showSignalerOnResultContent({
@@ -385,7 +390,7 @@ proto.registerResultEditingAction = function(){
             })
           }
         });
-        actions[layerId].push({
+        SIGNALER_IIM_CONFIG.geo_layer_id && actions[layerId].push({
           id: 'zoom',
           class: GUI.getFontClass('marker'),
           hint: 'Zoom to geo features',
@@ -478,7 +483,18 @@ proto.registerResultEditingAction = function(){
               component: action.state.toggled[index] ? ExportFormats : null
             });
           }
-        })
+        });
+        actions[layerId].push({
+          id: 'signale_iim_notes',
+          class: GUI.getFontClass('signaler_iim_notes'),
+          hint: 'plugins.signaler_iim.signaler.notes',
+          cbk: async (layer, feature, action, index) => {
+            const signaler_id = feature.attributes[G3W_FID];
+            this.showSignalerNotes({
+              signaler_id
+            });
+          }
+        });
       }
     })
   }))
@@ -487,6 +503,28 @@ proto.registerResultEditingAction = function(){
 proto.unregisterResultEditingAction = function(){
   const queryResultsService = GUI.getComponent('queryresults').getService();
   this.addActionKeys.forEach(addActionKey => queryResultsService.un('addActionsForLayers', addActionKey));
+};
+
+proto.showSignalerNotes = async function({signaler_id=this.getCurrentReportData().id, back=false}={}){
+  GUI.setLoadingContent(true);
+  let notes = [];
+  try {
+    const response = await XHR.get({
+      url: `${SIGNALER_IIM_CONFIG.urls.note}${SIGNALER_IIM_CONFIG.signal_type}/${signaler_id}/`
+    });
+    notes = response ? response.results : [];
+  } catch(err){}
+  GUI.pushContent({
+    content: ComponentsFactory.build({
+      vueComponentObject: SignalerNotesComponent,
+      propsData: {
+        notes,
+        back
+      }
+    }),
+    closable: false
+  });
+  GUI.setLoadingContent(false);
 };
 
 /**
@@ -986,8 +1024,8 @@ proto.filterReportFieldsFormValues = async function({fields=[]}={}){
   const promises = [];
   const {fields:dynamic_fields} = this.config;
   for (const field of fields) {
-    if (dynamic_fields[SIGNALER_IIM_CONFIG.signaler_layer_id].indexOf(field.name) !== -1){
-      const {key, value, layer_id, loading} = field.input.options;
+    if (dynamic_fields[SIGNALER_IIM_CONFIG.signaler_layer_id].indexOf(field.name) !== -1 && field.name !== 'note'){
+      const {key, value, layer_id, loading={state: null}} = field.input.options;
       const promise = new Promise((resolve, reject) =>{
         loading.state = 'loading';
         const relationLayer = CatalogLayersStoresRegistry.getLayerById(layer_id);
@@ -1961,17 +1999,13 @@ proto.editingReport = function({filter, feature, toolId, openForm=false, current
           this._editSingleReportFormTask.run(options.inputs, options.context)
             .then(() => {
               reportToolbox.getSession().save();
-              reportToolbox.getSession().commit().then(()=>{
-                this.getPlugin().hideEditingPanel();
-              })
+              reportToolbox.getSession().commit().always(resolve);
             })
-            .fail(()=>{
-              this.getPlugin().hideEditingPanel();
-            })
+            .fail(resolve)
             .always(()=>{
+              this.getPlugin().hideEditingPanel();
               this._editSingleReportFormTask.stop();
               GUI.disableSideBar(false);
-              resolve();
             })
         });
         const fid = this.currentReport.id; // signaler id (in case of new is not setted)

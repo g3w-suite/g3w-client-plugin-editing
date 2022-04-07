@@ -1,7 +1,7 @@
 <template>
     <div class="addfeaturemethod" style="display: flex; flex-direction: column; justify-content: space-between">
         <div class="seleziona">
-            <h4 style="font-weight: bold;" class="skin-color"> Usa file </h4>
+            <h4 style="font-weight: bold;" class="skin-color" v-t-plugin="'signaler_iim.signaler.upload_file'"></h4>
             <div class="file-features skin-border-color skin-color"  style="display: flex; margin: 10px 0 10px 0; padding: 5px; position: relative; border: 2px dashed;     height: 100px;
     flex-direction: column;
     justify-content: space-between;
@@ -12,7 +12,7 @@
             </div>
             <button v-disabled="true" v-t-plugin="'signaler_iim.form.buttons.add'" class="btn btn-success" style="width: 100%; font-weight: bold" @click="addFeatures"></button>
             <div>
-                <h4 style="font-weight: bold;" class="skin-color"> Disegna </h4>
+                <h4 style="font-weight: bold;" class="skin-color" v-t-plugin="'signaler_iim.signaler.draw'"></h4>
                 <button class="btn skin-button" style="width: 100%; margin-top: 10px;" @click="drawFeatures">
                     <i :class="g3wtemplate.font['pencil']"></i>
                 </button>

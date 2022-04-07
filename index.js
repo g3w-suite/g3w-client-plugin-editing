@@ -25,6 +25,10 @@ const _Plugin = function() {
     {
       name: 'export_signaler',
       className: "far fa-arrow-alt-circle-down"
+    },
+    {
+      name: 'signaler_iim_notes',
+      className: "far fa-sticky-note"
     }
   ]);
 

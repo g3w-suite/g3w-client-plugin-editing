@@ -1,6 +1,21 @@
 export default {
   it: {
     signaler: {
+      show_father_signaler: "Visualizza segnalazione padre",
+      notes: "Note",
+      add_feature: "Aggiungi Feature",
+      edit_feature: "Edita Feature",
+      draw: "Disegna",
+      vertex_list: "Lista vertici della feature",
+      upload_file: "Upload File",
+      no_notes: "Nessuna nota associata",
+      note_info: {
+        from_state: "Da stato",
+        to_state: "a stato",
+        created: "Creato",
+        user: "Utente",
+        note: "Nota"
+      },
       signaler_types: {
         byf:"Campi boe",
         plt:"Piattaforme",
@@ -152,6 +167,21 @@ export default {
   },
   en: {
     signaler: {
+      show_father_signaler: "Show father signalere",
+      notes: "Notes",
+      add_feature: "Add Feature",
+      edit_feature: "Edit Feature",
+      draw: "Draw",
+      vertex_list: "Vertex list of feature",
+      upload_file: "Upload File",
+      no_notes: "No notes found",
+      note_info: {
+        from_state: "From state",
+        to_state: "to state",
+        created: "Created",
+        user: "User",
+        note: "Note"
+      },
       signaler_types: {
         byf:"Buoy fields",
         plt:"Platforms",
@@ -309,6 +339,21 @@ export default {
   },
   fi: {
     signaler: {
+      show_father_signaler: "Show father signalere",
+      notes: "Notes",
+      add_feature: "Add Feature",
+      edit_feature: "Edit Feature",
+      draw: "Draw",
+      vertex_list: "Vertex list of feature",
+      upload_file: "Upload File",
+      no_notes: "No notes found",
+      note_info: {
+        from_state: "From state",
+        to_state: "to state",
+        created: "Created",
+        user: "User",
+        note: "Note"
+      },
       signaler_types: {
         byf:"Buoy fields",
         plt:"Platforms",
@@ -465,6 +510,21 @@ export default {
   },
   se: {
     signaler: {
+      show_father_signaler: "Show father signalere",
+      notes: "Notes",
+      add_feature: "Add Feature",
+      edit_feature: "Edit Feature",
+      draw: "Draw",
+      vertex_list: "Vertex list of feature",
+      upload_file: "Upload File",
+      no_notes: "No notes found",
+      note_info: {
+        from_state: "From state",
+        to_state: "to state",
+        created: "Created",
+        user: "User",
+        note: "Note"
+      },
       signaler_types: {
         byf:"Buoy fields",
         plt:"Platforms",
@@ -621,6 +681,21 @@ export default {
   },
   fr: {
     signaler: {
+      show_father_signaler: "Show father signalere",
+      notes: "Notes",
+      add_feature: "Add Feature",
+      edit_feature: "Edit Feature",
+      draw: "Draw",
+      vertex_list: "Vertex list of feature",
+      upload_file: "Upload File",
+      no_notes: "No notes found",
+      note_info: {
+        from_state: "From state",
+        to_state: "to state",
+        created: "Created",
+        user: "User",
+        note: "Note"
+      },
       signaler_types: {
         byf:"Buoy fields",
         plt:"Platforms",

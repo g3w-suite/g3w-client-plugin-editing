@@ -22,8 +22,9 @@
             }
         },
         mounted(){
+            console.log(this.signaler_father_info)
             setTimeout(()=>{
-                Object.values(EditingService.getCurrentReportData().ab_signal_fields).forEach(({label, value}) =>{
+                Object.values(EditingService.getCurrentReportData().ab_signal_fields).filter(({label}) => label).forEach(({label, value}) =>{
                     this.signaler_father_info.push({
                         label,
                         value

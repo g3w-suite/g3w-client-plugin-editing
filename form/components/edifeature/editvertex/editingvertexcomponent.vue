@@ -2,7 +2,7 @@
     <div class="editingvertexcomponent" style="display: flex; flex-direction: column; justify-content: space-between">
         <div style="overflow-y: auto">
             <div style="display: flex; justify-content: space-between">
-                <h4 style="font-weight: bold">Lista vertici della feature</h4>
+                <h4 style="font-weight: bold" v-t-plugin="'signaler_iim.signaler.vertex_list'"></h4>
             </div>
             <report-info-component>
                 <template v-slot:content>

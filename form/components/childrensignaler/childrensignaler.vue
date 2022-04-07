@@ -5,7 +5,6 @@
             <div style="width: 100%" v-t-tooltip:top.create="'plugins.signaler_iim.signaler.reload'">
                 <button style="width: 100%" v-disabled="loading" class="btn skin-button"  @click.stop.prevent="loadChildrenData" :class="g3wtemplate.font['refresh']"></button>
             </div>
-
         </div>
         <bar-loader :loading="loading"></bar-loader>
         <div v-if="loading == false" class="g3w-signale_iim_plugin_children_signaler_data">
@@ -20,7 +19,7 @@
                     <div  v-t-tooltip:right.create="'plugins.signaler_iim.signaler.edit_child_signaler'">
                         <button class="btn skin-button" style="margin-right: 5px;" :class="g3wtemplate.font['pencil']" @click.stop.prevent="editChildFeature({url: childsignaler.url, id:child})"></button>
                     </div>
-                    <div style="font-weight: bold">{{child}}</div>
+                    <div style="font-weight: bold">{{child.id}}</div>
                 </div>
             </div>
         </div>
@@ -66,7 +65,7 @@
                     responses.forEach(({status, value}, index) => {
                         const {result, vector:{data}} = value;
                         if (status === 'fulfilled' && result)
-                            data.features.forEach(feature =>this.childrendsignaler[index].features.push(feature.id));
+                            data.features.forEach(feature => this.childrendsignaler[index].features.push(feature));
                     })
                 }).finally(()=>this.loading = false);
             },

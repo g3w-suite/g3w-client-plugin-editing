@@ -2,6 +2,7 @@ import SIGNALER_IIM_CONFIG from '../global_plugin_data';
 import EditVertexComponent from './components/edifeature/editvertex/editvertex.vue';
 import EditRadiusComponent from './components/edifeature/editradius/editradius.vue';
 import EditFeaturesComponent from './components/editfeatures/editfeatures.vue';
+import ShowSignalerNotesComponent from './components/notes/showsignalernotes.vue';
 import ChildrenSignalerComponent from './components/childrensignaler/childrensignaler.vue';
 const {base, inherit} = g3wsdk.core.utils;
 const FormComponent = g3wsdk.gui.vue.FormComponent;
@@ -30,17 +31,22 @@ function EditingFormComponent(options={}) {
         break;
     }
   base(this, options);
+  
   component && this.addBodyFormComponent({
     component,
     where: 'before'
   });
-  
+
+  if (!isnew && layerId === signaler_layer_id) {
+    this.addBodyFormComponent({
+      component: ShowSignalerNotesComponent,
+      where: 'after'
+    });
+  }
   childrensignalercomponent && this.addBodyFormComponent({
     component: childrensignalercomponent,
     where: 'after'
   });
-  
-  
 }
 
 inherit(EditingFormComponent, FormComponent);
