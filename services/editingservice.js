@@ -2003,13 +2003,13 @@ proto.editingReport = function({filter, feature, toolId, openForm=false, current
             })
             .fail(resolve)
             .always(()=>{
-              this.getPlugin().hideEditingPanel();
               this._editSingleReportFormTask.stop();
               GUI.disableSideBar(false);
             })
         });
         const fid = this.currentReport.id; // signaler id (in case of new is not setted)
         await promise;
+        this.getPlugin().hideEditingPanel(); // moved here because i need to unlock afet commit
         //at the end show signal to result
         this.showSignalerOnResultContent({
           fid

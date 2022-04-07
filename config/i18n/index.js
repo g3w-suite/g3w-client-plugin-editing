@@ -681,7 +681,7 @@ export default {
   },
   fr: {
     signaler: {
-      show_father_signaler: "Show father signalere",
+      show_father_signaler: "Show father signaler",
       notes: "Notes",
       add_feature: "Add Feature",
       edit_feature: "Edit Feature",
