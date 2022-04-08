@@ -198,7 +198,7 @@ function EditingService() {
         service:this
       })
     });
-    //this.registerCustomComponentsResult();
+    this.registerCustomComponentsResult();
     this.registerResultEditingAction();
     // check if need start a child report
     this.getUrlParameters();
@@ -361,8 +361,8 @@ proto.registerResultEditingAction = function(){
             const signaler_id = feature.attributes[G3W_FID];
             return new Promise((resolve, reject) => {
               GUI.dialog.confirm(`
-                        <h4>Vuoi cancellare la segnalazione?</h4>
-                        <div style="font-size:1.2em;">Se cancelli la segnalazione verranno cancellate tutte le eventuali features associate</div>`,
+                        <h4>${t("signaler_iim.signaler.delete_signaler.title")}</h4>
+                        <div style="font-size:1.2em;">${t("signaler_iim.signaler.delete_signaler.sub_title")}</div>`,
                 result => {
                   if (result) {
                     const reportToolBox = this.getToolBoxById(SIGNALER_IIM_CONFIG.signaler_layer_id);
@@ -505,6 +505,49 @@ proto.unregisterResultEditingAction = function(){
   this.addActionKeys.forEach(addActionKey => queryResultsService.un('addActionsForLayers', addActionKey));
 };
 
+/*
+Delete child signale
+ */
+proto.deleteChildFeature =  function({url, id}){
+  return new Promise((resolve, reject) => {
+    GUI.dialog.confirm(`
+                        <h4>${t("signaler_iim.signaler.delete_signaler.title")}</h4>
+                        <div style="font-size:1.2em;">${t("signaler_iim.signaler.delete_signaler.sub_title")}</div>`,
+      result => {
+        if (result) {
+          const session = reportToolBox.getSession();
+          session.start({
+            editing: true,
+            filter: {
+              fids: signaler_id
+            }
+          }).then(promise =>
+            promise
+              .then(features => {
+                const feature = features[0];
+                reportToolBox.getEditingLayerSource().removeFeature(feature);
+                session.pushDelete(SIGNALER_IIM_CONFIG.signaler_layer_id, feature);
+                session.save();
+                session.commit();
+                resolve()
+              })
+          )
+        } else reject()
+      });
+  })
+};
+
+proto.getChildrenSignaler = function({project_id, layer_id, signalerFieldValue}){
+  const {signaler_parent_field, urls:{vector}} = SIGNALER_IIM_CONFIG;
+  return XHR.get({
+    url: `${vector}data/qdjango/${project_id}/${layer_id}`,
+    params:{
+      field: `${signaler_parent_field}|eq|${signalerFieldValue}`,
+      formatter: 1
+    }
+  })
+};
+
 proto.showSignalerNotes = async function({signaler_id=this.getCurrentReportData().id, back=false}={}){
   GUI.setLoadingContent(true);
   let notes = [];
@@ -538,9 +581,9 @@ proto.getUrlParameters = async function(){
   const child_signaler_value = searchParams.get(signaler_field);
   const show_signaler_on_result = searchParams.get('sid') || false;
   const sid_edit = searchParams.get('sid_edit') || null;
+  SIGNALER_IIM_CONFIG[signaler_parent_field] = searchParams.get(signaler_parent_field);
   if (show_signaler_on_result) {
     if (show_signaler_on_result === 'new') {
-      SIGNALER_IIM_CONFIG[signaler_parent_field] = searchParams.get(signaler_parent_field);
       this.config.visible = false; // set config to false to avoid to show editing tool on sidebar
       SIGNALER_IIM_CONFIG.create_new_signaler = true;
       this.getPlugin().showEditingPanel({
@@ -556,8 +599,7 @@ proto.getUrlParameters = async function(){
         fid: show_signaler_on_result,
         getGeoFeatures: true
       });
-  }
-  else if (sid_edit) {
+  } else if (sid_edit) {
     SIGNALER_IIM_CONFIG.edit_signaler = true;
     SIGNALER_IIM_CONFIG.result = true;
     this.getPlugin().showEditingPanel({

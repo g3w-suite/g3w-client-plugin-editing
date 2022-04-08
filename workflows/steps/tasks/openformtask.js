@@ -150,7 +150,8 @@ proto._saveFnc = function(promise, context, inputs) {
 proto.startForm = async function(options = {}) {
   this.getEditingService().setCurrentLayout();
   const EditingFormComponent = require('../../../form/editingform');
-  const {signaler_layer_id, state_field, every_fields_editing_states, fields} = SIGNALER_IIM_CONFIG;
+  const {signaler_layer_id, state_field, every_fields_editing_states, fields, signaler_parent_field} = SIGNALER_IIM_CONFIG;
+  const isSignalerChilOnEditing = SIGNALER_IIM_CONFIG[signaler_parent_field];
   const {inputs, context, promise} = options;
   const {session} = context;
   const formComponent = options.formComponent || EditingFormComponent;
@@ -167,6 +168,13 @@ proto.startForm = async function(options = {}) {
     await this.getEditingService().filterReportFieldsFormValues({
       fields: this._fields
     });
+    if (isSignalerChilOnEditing) {
+      const field = this._fields.find(field => field.name === state_field);
+      field.visible = false;
+      field.validate.required = false;
+      field.editable = false;
+      field.value = field.value || '1IL';
+    }
     if (!isNew){
       const editableFieldsRemainAsConfiguration = new Set(fields[layerId]);
       editableFieldsRemainAsConfiguration.add(state_field);

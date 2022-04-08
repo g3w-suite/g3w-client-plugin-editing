@@ -2,6 +2,7 @@ export default {
   it: {
     signaler: {
       show_father_signaler: "Visualizza segnalazione padre",
+      no_childred_signaler: "Nessuna segnalazione figlio",
       notes: "Note",
       add_feature: "Aggiungi Feature",
       edit_feature: "Edita Feature",
@@ -9,6 +10,10 @@ export default {
       vertex_list: "Lista vertici della feature",
       upload_file: "Upload File",
       no_notes: "Nessuna nota associata",
+      delete_signaler: {
+        title: "Vuoi cancellare la segnalazione?",
+        sub_title:"Se cancelli la segnalazione verranno cancellate tutte le eventuali features associate"
+      },
       note_info: {
         from_state: "Da stato",
         to_state: "a stato",
@@ -35,7 +40,8 @@ export default {
       },
       reload: "Ricarica",
       add_new_child_signaler: "Aggiungi nuova segnalazione figlio",
-      edit_child_signaler: "Edita Segnalazione figlio"
+      edit_child_signaler: "Edita Segnalazione figlio",
+      show_child_signaler: "Visualizza segnalazione figlio"
     },
     errors: {
       no_layers: "Si è verificato un errore nel caricamento dei layers in editing.",
@@ -163,11 +169,11 @@ export default {
         cancel: "Cancella"
       }
     }
-
   },
   en: {
     signaler: {
-      show_father_signaler: "Show father signalere",
+      show_father_signaler: "Show father signaler",
+      no_childred_signaler: "No children signaler",
       notes: "Notes",
       add_feature: "Add Feature",
       edit_feature: "Edit Feature",
@@ -175,6 +181,10 @@ export default {
       vertex_list: "Vertex list of feature",
       upload_file: "Upload File",
       no_notes: "No notes found",
+      delete_signaler: {
+        title: "Are you sure to delete selected signaler?",
+        sub_title:"If you delete the signaler you delete all features related to it"
+      },
       note_info: {
         from_state: "From state",
         to_state: "to state",
@@ -199,9 +209,10 @@ export default {
         iin:"Nutiche information ",
         tes:"TEST"
       },
-      reload: "Ricarica",
-      add_new_child_signaler: "Aggiungi nuova segnalazione figlio",
-      edit_child_signaler: "Edita Segnalazione figlio"
+      reload: "Reload",
+      add_new_child_signaler: "Add new child signaler",
+      edit_child_signaler: "Edit child signaler",
+      show_child_signaler: "Show child signaler"
     },
     errors: {
       no_layers: "An error occurs. It's no possible to edit layers",
@@ -339,7 +350,8 @@ export default {
   },
   fi: {
     signaler: {
-      show_father_signaler: "Show father signalere",
+      show_father_signaler: "Show father signaler",
+      no_childred_signaler: "No children signaler",
       notes: "Notes",
       add_feature: "Add Feature",
       edit_feature: "Edit Feature",
@@ -347,6 +359,10 @@ export default {
       vertex_list: "Vertex list of feature",
       upload_file: "Upload File",
       no_notes: "No notes found",
+      delete_signaler: {
+        title: "Are you sure to delete selected signaler?",
+        sub_title:"If you delete the signaler you delete all features related to it"
+      },
       note_info: {
         from_state: "From state",
         to_state: "to state",
@@ -371,9 +387,10 @@ export default {
         iin:"Nutiche information ",
         tes:"TEST"
       },
-      reload: "Ricarica",
-      add_new_child_signaler: "Aggiungi nuova segnalazione figlio",
-      edit_child_signaler: "Edita Segnalazione figlio"
+      reload: "Reload",
+      add_new_child_signaler: "Add new child signaler",
+      edit_child_signaler: "Edit child signaler",
+      show_child_signaler: "Show child signaler"
     },
     errors: {
       no_layers: "Tapahtui virhe. Tasoja ei ole mahdollista muokata.",
@@ -510,14 +527,18 @@ export default {
   },
   se: {
     signaler: {
-      show_father_signaler: "Show father signalere",
+      show_father_signaler: "Show father signaler",
+      no_childred_signaler: "No children signaler",
       notes: "Notes",
       add_feature: "Add Feature",
       edit_feature: "Edit Feature",
       draw: "Draw",
       vertex_list: "Vertex list of feature",
       upload_file: "Upload File",
-      no_notes: "No notes found",
+      no_notes: "No notes found",delete_signaler: {
+        title: "Are you sure to delete selected signaler?",
+        sub_title:"If you delete the signaler you delete all features related to it"
+      },
       note_info: {
         from_state: "From state",
         to_state: "to state",
@@ -542,9 +563,10 @@ export default {
         iin:"Nutiche information ",
         tes:"TEST"
       },
-      reload: "Ricarica",
-      add_new_child_signaler: "Aggiungi nuova segnalazione figlio",
-      edit_child_signaler: "Edita Segnalazione figlio"
+      reload: "Reload",
+      add_new_child_signaler: "Add new child signaler",
+      edit_child_signaler: "Edit child signaler",
+      show_child_signaler: "Show child signaler"
     },
     errors: {
       no_layers: "Ett fel uppstod. Nivåerna kan inte redigeras.",
@@ -682,6 +704,7 @@ export default {
   fr: {
     signaler: {
       show_father_signaler: "Show father signaler",
+      no_childred_signaler: "No children signaler",
       notes: "Notes",
       add_feature: "Add Feature",
       edit_feature: "Edit Feature",
@@ -689,6 +712,10 @@ export default {
       vertex_list: "Vertex list of feature",
       upload_file: "Upload File",
       no_notes: "No notes found",
+      delete_signaler: {
+        title: "Are you sure to delete selected signaler?",
+        sub_title:"If you delete the signaler you delete all features related to it"
+      },
       note_info: {
         from_state: "From state",
         to_state: "to state",
@@ -713,9 +740,10 @@ export default {
         iin:"Nutiche information ",
         tes:"TEST"
       },
-      reload: "Ricarica",
-      add_new_child_signaler: "Aggiungi nuova segnalazione figlio",
-      edit_child_signaler: "Edita Segnalazione figlio"
+      reload: "Reload",
+      add_new_child_signaler: "Add new child signaler",
+      edit_child_signaler: "Edit child signaler",
+      show_child_signaler: "Show child signaler"
     },
     errors: {
       no_layers: "Une erreur s'est produite lors du chargement des layers dans l'édition.",
