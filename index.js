@@ -40,6 +40,7 @@ const _Plugin = function() {
     });
     this.setService(Service);
     this.config = this.getConfig();
+    this.config.visible = false;
     // check if exist any layer to edit
     if (this.service.loadPlugin()) {
       this.setHookLoading({

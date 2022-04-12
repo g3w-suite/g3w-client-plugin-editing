@@ -17,7 +17,7 @@ const LayersStore = g3wsdk.core.layer.LayersStore;
 const Layer = g3wsdk.core.layer.Layer;
 const Feature = g3wsdk.core.layer.features.Feature;
 const {ComponentsFactory, GUI} = g3wsdk.gui;
-const serverErrorParser= g3wsdk.core.errors.parsers.Server;
+const serverErrorParser = g3wsdk.core.errors.parsers.Server;
 const t = g3wsdk.core.i18n.tPlugin;
 const ToolBoxesFactory = require('../toolboxes/toolboxesfactory');
 const CommitFeaturesWorkflow = require('../workflows/commitfeaturesworkflow');
@@ -316,8 +316,10 @@ proto.registerResultEditingAction = function(){
             })
           },
           cbk: (layer, feature) => {
+            const {signaler_parent_field} = SIGNALER_IIM_CONFIG;
             SIGNALER_IIM_CONFIG.result = true;
             this.currentReport.id = feature.attributes[G3W_FID];
+            SIGNALER_IIM_CONFIG[signaler_parent_field] = feature.attributes[signaler_parent_field];
             this.getPlugin().showEditingPanel({
               toolboxes: [this.getToolBoxById(layerId)]
             });
@@ -508,32 +510,58 @@ proto.unregisterResultEditingAction = function(){
 /*
 Delete child signale
  */
-proto.deleteChildFeature =  function({url, id}){
+proto.deleteChildFeature =  function({layer_id, project_id, feature_id}={}){
+  const {urls:{editing}} = SIGNALER_IIM_CONFIG;
   return new Promise((resolve, reject) => {
-    GUI.dialog.confirm(`
-                        <h4>${t("signaler_iim.signaler.delete_signaler.title")}</h4>
-                        <div style="font-size:1.2em;">${t("signaler_iim.signaler.delete_signaler.sub_title")}</div>`,
-      result => {
-        if (result) {
-          const session = reportToolBox.getSession();
-          session.start({
-            editing: true,
-            filter: {
-              fids: signaler_id
-            }
-          }).then(promise =>
-            promise
-              .then(features => {
-                const feature = features[0];
-                reportToolBox.getEditingLayerSource().removeFeature(feature);
-                session.pushDelete(SIGNALER_IIM_CONFIG.signaler_layer_id, feature);
-                session.save();
-                session.commit();
-                resolve()
-              })
-          )
-        } else reject()
+    const unlock = () =>{
+      return XHR.get({
+        url:`${editing}unlock/qdjango/${project_id}/${layer_id}/`
       });
+    };
+    XHR.get({
+      url: `${editing}editing/qdjango/${project_id}/${layer_id}/`,
+      params: {
+        fids: feature_id
+      }
+    }).then(response => {
+      if (response.result && response.featurelocks.length === 1) {
+        const commitItems = {
+          add: [],
+          delete: [feature_id],
+          lockids: response.featurelocks,
+          relations: {},
+          update: []
+        };
+        GUI.dialog.confirm(`<h4>${t("signaler_iim.signaler.delete_signaler.title")}</h4>
+          <div style="font-size:1.2em;">${t("signaler_iim.signaler.delete_signaler.sub_title")}</div>`,
+          result => {
+            if (result) {
+              XHR.post({
+                url: `${editing}commit/qdjango/${project_id}/${layer_id}/`,
+                data: JSON.stringify(commitItems),
+                contentType: "application/json"
+              }).then(response =>{
+                if (response && response.result) resolve();
+                else {
+                  unlock();
+                  reject(response);
+                }
+              }).catch(error=>{
+                unlock();
+                reject(error)
+              })
+            } else {
+              unlock();
+              reject();
+            }
+        });
+      } else
+        GUI.showUserMessage({
+          type: 'warning',
+          message: 'Non è possibile cancellare la feature',
+          closable: true
+        });
+    }).fail(()=>unlock());
   })
 };
 
@@ -546,6 +574,20 @@ proto.getChildrenSignaler = function({project_id, layer_id, signalerFieldValue})
       formatter: 1
     }
   })
+};
+
+proto.getAncestorData = async function(feature){
+  const {urls:{ancestor}, signaler_parent_field} = SIGNALER_IIM_CONFIG;
+  const ancherstorValue = SIGNALER_IIM_CONFIG[signaler_parent_field]  || feature.get(signaler_parent_field);
+  const [id, type] = ancherstorValue.split(':');
+  let data = {};
+  try {
+    const response = await XHR.get({
+      url: `${ancestor}${type}/${id}/`
+    })
+    if (response.result) data = response.data;
+  } catch(err){}
+  return data;
 };
 
 proto.showSignalerNotes = async function({signaler_id=this.getCurrentReportData().id, back=false}={}){
@@ -1752,11 +1794,21 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
             d.resolve(toolbox);
           }
         })
-        .fail(error => {
-          const parser = new serverErrorParser({
-            error
-          });
-          const errorMessage = parser.parse();
+        .fail(response => {
+          let errorMessage;
+          if (response && response.errors) {
+            const parser = new serverErrorParser({
+              error: response.errors
+            });
+            errorMessage = parser.parse({
+              type: 'String'
+            });
+          } else {
+            const parser = new serverErrorParser({
+              error: response
+            });
+            errorMessage = parser.parse();
+          }
           const {autoclose = false, message} = messages.error;
           GUI.showUserMessage({
             type: 'alert',
@@ -2038,6 +2090,7 @@ proto.editingReport = function({filter, feature, toolId, openForm=false, current
         };
         this._editSingleReportFormTask = new openFormTaskClass();
         const promise = new Promise((resolve, reject)=>{
+
           this._editSingleReportFormTask.run(options.inputs, options.context)
             .then(() => {
               reportToolbox.getSession().save();
@@ -2045,12 +2098,16 @@ proto.editingReport = function({filter, feature, toolId, openForm=false, current
             })
             .fail(resolve)
             .always(()=>{
-              this._editSingleReportFormTask.stop();
-              GUI.disableSideBar(false);
+              GUI.disableContent(true);
+              GUI.setLoadingContent(true);
             })
         });
         const fid = this.currentReport.id; // signaler id (in case of new is not setted)
         await promise;
+        GUI.setLoadingContent(false);
+        GUI.disableContent(false);
+        this._editSingleReportFormTask.stop();
+        GUI.disableSideBar(false);
         this.getPlugin().hideEditingPanel(); // moved here because i need to unlock afet commit
         //at the end show signal to result
         this.showSignalerOnResultContent({

@@ -160,6 +160,7 @@ proto.startForm = async function(options = {}) {
   const feature = this._originalFeatures[0];
   let can_edit_signaler_feature = true;
   let edit_feature_geometry = null;
+  let enabled = true; // set enabled saev button
   const isNew = feature.isNew();
   if (layerId === signaler_layer_id) {
     this.getEditingService().setCurrentReportData({
@@ -173,7 +174,9 @@ proto.startForm = async function(options = {}) {
       field.visible = false;
       field.validate.required = false;
       field.editable = false;
-      field.value = field.value || '1IL';
+      const data = await this.getEditingService().getAncestorData(feature);
+      field.value = data[state_field];
+      enabled = field.value === '1IL';
     }
     if (!isNew){
       const editableFieldsRemainAsConfiguration = new Set(fields[layerId]);
@@ -209,11 +212,13 @@ proto.startForm = async function(options = {}) {
       title: "plugins.signaler_iim.form.buttons.save",
       type: "save",
       class: "btn-success",
+      enabled,
       cbk: this._saveFnc(promise, context, inputs).bind(this)
     }, {
       title: "plugins.signaler_iim.form.buttons.cancel",
       type: "cancel",
       class: "btn-danger",
+      enabled: true,
       cbk: this._cancelFnc(promise, inputs, session).bind(this)
     }]
   });

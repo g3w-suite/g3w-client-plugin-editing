@@ -9,7 +9,7 @@ const FormComponent = g3wsdk.gui.vue.FormComponent;
 
 function EditingFormComponent(options={}) {
   const {signaler_layer_id, vertex_layer_id, relation_signal_types} = SIGNALER_IIM_CONFIG;
-  const {layer, isnew, can_edit_signaler_feature, edit_feature_geometry, } = options;
+  const {layer, isnew, can_edit_signaler_feature, edit_feature_geometry } = options;
   const layerId = layer.getId();
   let component;
   let childrensignalercomponent;
@@ -36,7 +36,7 @@ function EditingFormComponent(options={}) {
     component,
     where: 'before'
   });
-
+  
   if (!isnew && layerId === signaler_layer_id) {
     this.addBodyFormComponent({
       component: ShowSignalerNotesComponent,

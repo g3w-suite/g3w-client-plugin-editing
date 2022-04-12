@@ -3,6 +3,10 @@ export default {
     signaler: {
       show_father_signaler: "Visualizza segnalazione padre",
       no_childred_signaler: "Nessuna segnalazione figlio",
+      children_signaler_message: {
+        1: "Al fine della compilazione delle Schede DDNN, si rappresenta che la mancata, incompleta o errata trasmissione dei dati, comporterà la non presa a carico da parte dell'IIM della documentazione inviata, con conseguente mancato aggiornamento dei Documenti Nautici.",
+        2: "Compilare OBBLIGATORIAMENTE le seguenti schede collegate alla segnalazione:"
+      },
       notes: "Note",
       add_feature: "Aggiungi Feature",
       edit_feature: "Edita Feature",
@@ -41,7 +45,8 @@ export default {
       reload: "Ricarica",
       add_new_child_signaler: "Aggiungi nuova segnalazione figlio",
       edit_child_signaler: "Edita Segnalazione figlio",
-      show_child_signaler: "Visualizza segnalazione figlio"
+      show_child_signaler: "Visualizza segnalazione figlio",
+      delete_child_signaler: "Cancella segnalazione figlio"
     },
     errors: {
       no_layers: "Si è verificato un errore nel caricamento dei layers in editing.",
@@ -174,6 +179,14 @@ export default {
     signaler: {
       show_father_signaler: "Show father signaler",
       no_childred_signaler: "No children signaler",
+      children_signaler_message: {
+        1: "In order to fill in the DDNN Forms, it is represented that the failure, incomplete or incorrect transmission of data will result in the IIM not taking charge of the documentation sent, with consequent failure to update the Nautical Documents.",
+        2: "It is MANDATORY to fill in the following forms linked to the report:"
+      },
+      max_number_childrend_signaler: {
+        pre: "Inserire al massimo ",
+        post: "segnalazioni figlie"
+      },
       notes: "Notes",
       add_feature: "Add Feature",
       edit_feature: "Edit Feature",
@@ -212,7 +225,8 @@ export default {
       reload: "Reload",
       add_new_child_signaler: "Add new child signaler",
       edit_child_signaler: "Edit child signaler",
-      show_child_signaler: "Show child signaler"
+      show_child_signaler: "Show child signaler",
+      delete_child_signaler: "Delete child signaler"
     },
     errors: {
       no_layers: "An error occurs. It's no possible to edit layers",
@@ -352,6 +366,10 @@ export default {
     signaler: {
       show_father_signaler: "Show father signaler",
       no_childred_signaler: "No children signaler",
+      children_signaler_message: {
+        1: "In order to fill in the DDNN Forms, it is represented that the failure, incomplete or incorrect transmission of data will result in the IIM not taking charge of the documentation sent, with consequent failure to update the Nautical Documents.",
+        2: "It is MANDATORY to fill in the following forms linked to the report:"
+      },
       notes: "Notes",
       add_feature: "Add Feature",
       edit_feature: "Edit Feature",
@@ -390,7 +408,8 @@ export default {
       reload: "Reload",
       add_new_child_signaler: "Add new child signaler",
       edit_child_signaler: "Edit child signaler",
-      show_child_signaler: "Show child signaler"
+      show_child_signaler: "Show child signaler",
+      delete_child_signaler: "Delete child signaler"
     },
     errors: {
       no_layers: "Tapahtui virhe. Tasoja ei ole mahdollista muokata.",
@@ -529,6 +548,10 @@ export default {
     signaler: {
       show_father_signaler: "Show father signaler",
       no_childred_signaler: "No children signaler",
+      children_signaler_message: {
+        1: "In order to fill in the DDNN Forms, it is represented that the failure, incomplete or incorrect transmission of data will result in the IIM not taking charge of the documentation sent, with consequent failure to update the Nautical Documents.",
+        2: "It is MANDATORY to fill in the following forms linked to the report:"
+      },
       notes: "Notes",
       add_feature: "Add Feature",
       edit_feature: "Edit Feature",
@@ -566,7 +589,8 @@ export default {
       reload: "Reload",
       add_new_child_signaler: "Add new child signaler",
       edit_child_signaler: "Edit child signaler",
-      show_child_signaler: "Show child signaler"
+      show_child_signaler: "Show child signaler",
+      delete_child_signaler: "Delete child signaler"
     },
     errors: {
       no_layers: "Ett fel uppstod. Nivåerna kan inte redigeras.",
@@ -705,6 +729,10 @@ export default {
     signaler: {
       show_father_signaler: "Show father signaler",
       no_childred_signaler: "No children signaler",
+      children_signaler_message: {
+        1: "In order to fill in the DDNN Forms, it is represented that the failure, incomplete or incorrect transmission of data will result in the IIM not taking charge of the documentation sent, with consequent failure to update the Nautical Documents.",
+        2: "It is MANDATORY to fill in the following forms linked to the report:"
+      },
       notes: "Notes",
       add_feature: "Add Feature",
       edit_feature: "Edit Feature",
@@ -743,7 +771,8 @@ export default {
       reload: "Reload",
       add_new_child_signaler: "Add new child signaler",
       edit_child_signaler: "Edit child signaler",
-      show_child_signaler: "Show child signaler"
+      show_child_signaler: "Show child signaler",
+      delete_child_signaler: "Delete child signaler"
     },
     errors: {
       no_layers: "Une erreur s'est produite lors du chargement des layers dans l'édition.",

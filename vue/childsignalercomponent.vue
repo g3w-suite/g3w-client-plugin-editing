@@ -7,11 +7,11 @@
                     <div class="child_title skin-color" style="font-weight: bold; font-size: 1.1em;" v-t-plugin="`signaler_iim.signaler.signaler_types.${childsignaler.type}`"></div>
                 </div>
                 <template v-if="childsignaler.features.length">
-                    <div v-for="child in childsignaler.features" style="display: flex; align-items: baseline; padding: 2px 0 2px 0; border-bottom: 1px solid #eeeeee">
-                        <div  v-t-tooltip:right.create="'plugins.signaler_iim.signaler.show_child_signaler'">
+                    <div v-for="child in childsignaler.features" style="display: flex; align-items: baseline; justify-content: space-between; padding: 2px 0 2px 0; border-bottom: 1px solid #eeeeee">
+                        <div style="font-weight: bold">{{child.id}}</div>
+                        <div  v-t-tooltip:left.create="'plugins.signaler_iim.signaler.show_child_signaler'">
                             <button class="btn skin-button" style="margin-right: 5px;" :class="g3wtemplate.font['signaler']" @click.stop.prevent="showChildFeature({url: childsignaler.url, id:child.id})"></button>
                         </div>
-                        <div style="font-weight: bold">{{child.id}}</div>
                     </div>
                 </template>
                 <template v-else>
