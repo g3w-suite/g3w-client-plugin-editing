@@ -111,7 +111,7 @@
         created(){
             const {every_fields_editing_states} = SIGNALER_IIM_CONFIG;
             const state_field = this.fields.find(field => field.name === SIGNALER_IIM_CONFIG.state_field);
-            this.disabled = every_fields_editing_states.indexOf(state_field.value) !== -1;
+            this.disabled = every_fields_editing_states.indexOf(state_field.value) === -1;
             this.currentChildSignalerFieldValue = `${EditingService.getCurrentReportData().id}:${SIGNALER_IIM_CONFIG.signal_type}`;
         },
         beforeMount() {
