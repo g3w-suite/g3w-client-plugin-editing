@@ -266,26 +266,37 @@ proto.setEditingSingleLayer = function(bool=false){
   this.state.edit_single_layer = bool;
 };
 
-proto.showEditingResultIcon = function({feature}={}){
-  let canEdit = ApplicationState.user.is_superuser;
-  if (canEdit) return true;
-  const {states, roles_editing_acl, state_field} = SIGNALER_IIM_CONFIG;
-  /*
-  * SIIM-CCP-REPORTERS:
-    SIIM-CCP-SUPERVISORS:
-     SIIM-IIM-EXAMINERS
-  * */
-  Object.keys(roles_editing_acl).find(role => {
-    if (ApplicationState.user.groups.indexOf(role) !== -1) {
-      const role_editing_rules_state_values = roles_editing_acl[role];
-      const state_field_feature_value = Object.entries(states).find(([value, label]) => feature.attributes[state_field] === label)
-      if (state_field_feature_value){
-        const value = state_field_feature_value[0];
-        canEdit = role_editing_rules_state_values.find(rule_state_value => rule_state_value === value) ? true: false;
-        return canEdit
+proto.showEditingResultIcon = async function({feature}={}){
+  const {states, roles_editing_acl, state_field, signaler_parent_field, every_fields_editing_states} = SIGNALER_IIM_CONFIG;
+  const isChild = feature.attributes[signaler_parent_field];
+  let canEdit = false;
+  if (isChild) {
+    try {
+      delete feature.attributes[state_field];
+      const data = await this.getAncestorData(feature);
+      canEdit = every_fields_editing_states.indexOf(data[state_field]) !== -1;
+    } catch(err) {}
+  } else {
+    canEdit = ApplicationState.user.is_superuser;
+    if (canEdit) return true;
+
+    /*
+    * SIIM-CCP-REPORTERS:
+      SIIM-CCP-SUPERVISORS:
+       SIIM-IIM-EXAMINERS
+    * */
+    Object.keys(roles_editing_acl).find(role => {
+      if (ApplicationState.user.groups.indexOf(role) !== -1) {
+        const role_editing_rules_state_values = roles_editing_acl[role];
+        const state_field_feature_value = Object.entries(states).find(([value, label]) => feature.attributes[state_field] === label)
+        if (state_field_feature_value){
+          const value = state_field_feature_value[0];
+          canEdit = role_editing_rules_state_values.find(rule_state_value => rule_state_value === value) ? true: false;
+          return canEdit
+        }
       }
-    }
-  });
+    });
+  }
   return canEdit;
 };
 
@@ -296,6 +307,7 @@ proto.registerCustomComponentsResult = function(){
     type: 'feature',
     component: ChildSignalerComponent
   });
+
 };
 
 proto.registerResultEditingAction = function(){
@@ -306,15 +318,17 @@ proto.registerResultEditingAction = function(){
       if ([SIGNALER_IIM_CONFIG.geo_layer_id, SIGNALER_IIM_CONFIG.signaler_layer_id].indexOf(layerId) !== -1)
         actions[layerId] = actions[layerId].filter(action => ['gotogeometry', 'show-query-relations', 'printatlas'].indexOf(action.id) !== -1 || action.id.indexOf('download') !== -1);
       if (!this.state.open && layerId === SIGNALER_IIM_CONFIG.signaler_layer_id && this.getLayerById(layerId)) {
+        const editingSignalerActionCondition = async ({feature} = {}) => {
+          const show = await this.showEditingResultIcon({
+            feature
+          });
+          return show;
+        };
         actions[layerId].push({
           id: 'editing',
           class: GUI.getFontClass('pencil'),
           hint: 'plugins.signaler_iim.toolbox.title',
-          condition: ({feature} = {}) => {
-            return this.showEditingResultIcon({
-              feature
-            })
-          },
+          condition: editingSignalerActionCondition,
           cbk: (layer, feature) => {
             const {signaler_parent_field} = SIGNALER_IIM_CONFIG;
             SIGNALER_IIM_CONFIG.result = true;
@@ -331,34 +345,14 @@ proto.registerResultEditingAction = function(){
             });
           }
         });
-      }
-      if (layerId === SIGNALER_IIM_CONFIG.geo_layer_id && this.getLayerById(layerId))
-        actions[layerId].push({
-          id: 'show_signaler',
-          class: GUI.getFontClass('signaler'),
-          hint: 'plugins.signaler_iim.signaler.show_father_signaler',
-          cbk: (layer, feature, action, index) => {
-            const signaler_id = feature.attributes[SIGNALER_IIM_CONFIG.signaler_field];
-            this.showSignalerOnResultContent({
-              fid: signaler_id,
-              getGeoFeatures: false,
-              push: true
-            });
-          }
-        });
-      if (layerId === SIGNALER_IIM_CONFIG.signaler_layer_id && this.getLayerById(layerId)) {
         actions[layerId].push({
           id: 'delete_signaler',
           class: GUI.getFontClass('trash'),
-          hint: 'Cancella segnalazione',
+          hint: 'plugins.signaler_iim.signaler.action_delete_signaler',
           style: {
             color: 'red'
           },
-          condition: ({feature} = {}) => {
-            return this.showEditingResultIcon({
-              feature
-            })
-          },
+          condition: editingSignalerActionCondition,
           cbk: async (layer, feature, action, index) => {
             const signaler_id = feature.attributes[G3W_FID];
             return new Promise((resolve, reject) => {
@@ -392,6 +386,22 @@ proto.registerResultEditingAction = function(){
             })
           }
         });
+      }
+      if (layerId === SIGNALER_IIM_CONFIG.geo_layer_id && this.getLayerById(layerId))
+        actions[layerId].push({
+          id: 'show_signaler',
+          class: GUI.getFontClass('signaler'),
+          hint: 'plugins.signaler_iim.signaler.show_father_signaler',
+          cbk: (layer, feature, action, index) => {
+            const signaler_id = feature.attributes[SIGNALER_IIM_CONFIG.signaler_field];
+            this.showSignalerOnResultContent({
+              fid: signaler_id,
+              getGeoFeatures: false,
+              push: true
+            });
+          }
+        });
+      if (layerId === SIGNALER_IIM_CONFIG.signaler_layer_id && this.getLayerById(layerId)) {
         SIGNALER_IIM_CONFIG.geo_layer_id && actions[layerId].push({
           id: 'zoom',
           class: GUI.getFontClass('marker'),
@@ -578,13 +588,13 @@ proto.getChildrenSignaler = function({project_id, layer_id, signalerFieldValue})
 
 proto.getAncestorData = async function(feature){
   const {urls:{ancestor}, signaler_parent_field} = SIGNALER_IIM_CONFIG;
-  const ancherstorValue = SIGNALER_IIM_CONFIG[signaler_parent_field]  || feature.get(signaler_parent_field);
+  const ancherstorValue = SIGNALER_IIM_CONFIG[signaler_parent_field]  || feature.get ? feature.get(signaler_parent_field) : feature.attributes[signaler_parent_field];
   const [id, type] = ancherstorValue.split(':');
   let data = {};
   try {
     const response = await XHR.get({
       url: `${ancestor}${type}/${id}/`
-    })
+    });
     if (response.result) data = response.data;
   } catch(err){}
   return data;
@@ -662,6 +672,7 @@ proto.exitEditingAfterCreateNewSignalerFeature = function(){
   !isNew && this.showSignalerOnResultContent({
     fid
   });
+  GUI.disableSideBar(false);
 };
 
 proto.showSignalerOnResultContent = async function({fid, getGeoFeatures=false}={}){
@@ -686,6 +697,7 @@ proto.showSignalerOnResultContent = async function({fid, getGeoFeatures=false}={
       }
     });
     const features = data && data[0] && data[0].features || [];
+    this.currentReport.feature = features.length ? features[0] : null;
     if (features.length && getGeoFeatures) {
       try {
         const {data} = await DataRouterService.getData('search:features', {
@@ -2090,7 +2102,6 @@ proto.editingReport = function({filter, feature, toolId, openForm=false, current
         };
         this._editSingleReportFormTask = new openFormTaskClass();
         const promise = new Promise((resolve, reject)=>{
-
           this._editSingleReportFormTask.run(options.inputs, options.context)
             .then(() => {
               reportToolbox.getSession().save();

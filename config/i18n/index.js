@@ -1,8 +1,11 @@
 export default {
   it: {
     signaler: {
+      action_delete_signaler: "Cancella Segnalazione",
       show_father_signaler: "Visualizza segnalazione padre",
       no_childred_signaler: "Nessuna segnalazione figlio",
+      ancestor_signaler_title: "Segnalazioni padre",
+      children_signaler_title: "Segnalazioni figlie",
       children_signaler_message: {
         1: "Al fine della compilazione delle Schede DDNN, si rappresenta che la mancata, incompleta o errata trasmissione dei dati, comporterà la non presa a carico da parte dell'IIM della documentazione inviata, con conseguente mancato aggiornamento dei Documenti Nautici.",
         2: "Compilare OBBLIGATORIAMENTE le seguenti schede collegate alla segnalazione:"
@@ -177,8 +180,11 @@ export default {
   },
   en: {
     signaler: {
+      action_delete_signaler: "Delete Signaler",
       show_father_signaler: "Show father signaler",
       no_childred_signaler: "No children signaler",
+      ancestor_signaler_title: "Ancestor signaler",
+      children_signaler_title: "Children signaler",
       children_signaler_message: {
         1: "In order to fill in the DDNN Forms, it is represented that the failure, incomplete or incorrect transmission of data will result in the IIM not taking charge of the documentation sent, with consequent failure to update the Nautical Documents.",
         2: "It is MANDATORY to fill in the following forms linked to the report:"
@@ -364,8 +370,11 @@ export default {
   },
   fi: {
     signaler: {
+      action_delete_signaler: "Delete Signaler",
       show_father_signaler: "Show father signaler",
       no_childred_signaler: "No children signaler",
+      ancestor_signaler_title: "Ancestor signaler",
+      children_signaler_title: "Children signaler",
       children_signaler_message: {
         1: "In order to fill in the DDNN Forms, it is represented that the failure, incomplete or incorrect transmission of data will result in the IIM not taking charge of the documentation sent, with consequent failure to update the Nautical Documents.",
         2: "It is MANDATORY to fill in the following forms linked to the report:"
@@ -546,8 +555,10 @@ export default {
   },
   se: {
     signaler: {
+      action_delete_signaler: "Delete Signaler",
       show_father_signaler: "Show father signaler",
       no_childred_signaler: "No children signaler",
+      children_signaler_title: "Children signaler",
       children_signaler_message: {
         1: "In order to fill in the DDNN Forms, it is represented that the failure, incomplete or incorrect transmission of data will result in the IIM not taking charge of the documentation sent, with consequent failure to update the Nautical Documents.",
         2: "It is MANDATORY to fill in the following forms linked to the report:"
@@ -727,8 +738,11 @@ export default {
   },
   fr: {
     signaler: {
+      action_delete_signaler: "Delete Signaler",
       show_father_signaler: "Show father signaler",
       no_childred_signaler: "No children signaler",
+      ancestor_signaler_title: "Ancestor signaler",
+      children_signaler_title: "Children signaler",
       children_signaler_message: {
         1: "In order to fill in the DDNN Forms, it is represented that the failure, incomplete or incorrect transmission of data will result in the IIM not taking charge of the documentation sent, with consequent failure to update the Nautical Documents.",
         2: "It is MANDATORY to fill in the following forms linked to the report:"
