@@ -307,7 +307,6 @@ proto.registerCustomComponentsResult = function(){
     type: 'feature',
     component: ChildSignalerComponent
   });
-
 };
 
 proto.registerResultEditingAction = function(){
