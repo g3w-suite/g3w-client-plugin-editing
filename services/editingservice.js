@@ -443,18 +443,8 @@ proto.registerResultEditingAction = function(){
             config: urlLabel,
             cbk: async (layer, feature, action, index) => {
               const url = `${action.config.url}${feature.attributes.id}/`;
-              const ext_mime_type = url.indexOf('/png/') !== -1 ? {
-                ext:'.png',
-                mime_type: 'image/png'
-              } :
-                {
-                  ext: '.zip',
-                  mime_type:'application/zip'
-              };
               await queryResultsService.downloadApplicationWrapper(downloadFile, {
-                url,
-                filename: `${action.config.label}_${feature.attributes.id}${ext_mime_type.ext}`,
-                mime_type: ext_mime_type.mime_type
+                url
               });
               const exportsaction = queryResultsService.getActionLayerById({
                 layer,
