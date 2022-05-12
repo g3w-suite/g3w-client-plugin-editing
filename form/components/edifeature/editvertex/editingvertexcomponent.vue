@@ -17,7 +17,7 @@
                                 <change-point-component @change-point="changeVertex({index, vertex:v})" :point="v"></change-point-component>
                             </div>
                             <div style="width: 100%; padding:5px; border: 2px solid #eee" class="fields_content">
-                                <g3w-input v-for="field in v.fields" :key="field.name"
+                                <g3w-input v-for="field in getVertexFieldsForm(v.fields)" :key="field.name"
                                            :changeInput="isValidInputVertex"
                                            @changeInput="isValidInputVertex"
                                            :state="field">
@@ -68,6 +68,9 @@
             }
         },
         methods: {
+            getVertexFieldsForm(fields) {
+                return fields.filter(field => SIGNALER_IIM_CONFIG.vertex_not_visible_fields_form.indexOf(field.name) === -1);
+            },
             toggleVertexCoordinates(index){
                 this.vertex[index].show = !this.vertex[index].show;
             },

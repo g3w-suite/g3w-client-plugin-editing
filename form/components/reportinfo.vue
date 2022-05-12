@@ -12,6 +12,7 @@
 </template>
 
 <script>
+    import SIGNALER_IIM_CONFIG from '../../global_plugin_data';
     const {GUI, ComponentsFactory} = g3wsdk.gui;
     const EditingService = require('../../services/editingservice');
     export default {
@@ -22,12 +23,14 @@
             }
         },
         mounted(){
-            console.log(this.signaler_father_info)
             setTimeout(()=>{
-                Object.values(EditingService.getCurrentReportData().ab_signal_fields).filter(({label}) => label).forEach(({label, value}) =>{
+                Object.entries(EditingService.getCurrentReportData().ab_signal_fields).filter(([field, label_value]) => {
+                    return label_value.label;
+                }).forEach(([field, label_value]) =>{
+                    const {label, value} = label_value;
                     this.signaler_father_info.push({
                         label,
-                        value
+                        value: field === SIGNALER_IIM_CONFIG.state_field ? SIGNALER_IIM_CONFIG.states[value] : value
                     });
                 })
             })

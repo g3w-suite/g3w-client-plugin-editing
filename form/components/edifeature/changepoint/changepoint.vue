@@ -38,21 +38,21 @@
             </div>
         </div>
         <div>
-            <h5 style="font-weight: bold; margin-top: 0; margin-bottom: 3px;">EPSG:32632</h5>
+            <h5 style="font-weight: bold; margin-top: 0; margin-bottom: 3px;">EPSG:32632 - WGS84/UTM 32N</h5>
             <div style="display: flex; justify-content: space-between">
                 <input v-for="(coordinates, indexCoordinate) in point['coordinatesEPSG:32632']" :key="coordinates" class="form-control" type="number"
                        style="margin-right: 5px;" step="0.01" @keyup.enter="loseFocusInput" @change="changePointCoordinatesEPSG('EPSG:32632', indexCoordinate, point)" v-model.lazy="point['coordinatesEPSG:32632'][indexCoordinate]"/>
             </div>
         </div>
         <div>
-            <h5 style="font-weight: bold; margin-top: 0; margin-bottom: 3px;">EPSG:32633</h5>
+            <h5 style="font-weight: bold; margin-top: 0; margin-bottom: 3px;">EPSG:32633 - WGS84/UTM 33N</h5>
             <div style="display: flex; justify-content: space-between">
                 <input v-for="(coordinates, indexCoordinate) in point['coordinatesEPSG:32633']" :key="coordinates" class="form-control" type="number"
                        style="margin-right: 5px;" step="0.01" @keyup.enter="loseFocusInput" @change="changePointCoordinatesEPSG('EPSG:32633', indexCoordinate, point)" v-model.lazy="point['coordinatesEPSG:32633'][indexCoordinate]"/>
             </div>
         </div>
         <div>
-            <h5 style="font-weight: bold; margin-top: 0; margin-bottom: 3px;">EPSG:32634</h5>
+            <h5 style="font-weight: bold; margin-top: 0; margin-bottom: 3px;">EPSG:32634 - WGS84/UTM 34N</h5>
             <div style="display: flex; justify-content: space-between">
                 <input v-for="(coordinates, indexCoordinate) in point['coordinatesEPSG:32634']" :key="coordinates" class="form-control" type="number"
                        style="margin-right: 5px;" step="0.01" @keyup.enter="loseFocusInput" @change="changePointCoordinatesEPSG('EPSG:32634', indexCoordinate, point)" v-model.lazy="point['coordinatesEPSG:32634'][indexCoordinate]"/>

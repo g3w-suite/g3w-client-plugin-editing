@@ -1,7 +1,6 @@
 <template>
     <div class="childrensignaler_content" style="margin-top: 10px; background-color: #FFFFFF; padding: 5px;">
         <div class="skin-color-dark" style="font-size: 1.2em; font-weight: bold"></div>
-
         <div class="g3w-signale_iim_plugin_children_signaler_tools" style="display: flex; justify-content: space-between; margin-bottom: 5px;">
             <div style="width: 100%" v-t-tooltip:top.create="'plugins.signaler_iim.signaler.reload'">
                 <button style="width: 100%" v-disabled="loading" class="btn skin-button"  @click.stop.prevent="loadChildrenData" :class="g3wtemplate.font['refresh']"></button>

@@ -40,6 +40,9 @@ export default {
       const EPSG = this.changedEPSG || mapEpsg;
       const coordinates = point[`coordinates${EPSG}`].map(coordinate => 1*coordinate);
       point[`coordinates${epsg_code}`] = ol.proj.transform(coordinates, EPSG, epsg_code);
+      if (epsg_code !== 'EPSG:4326' && epsg_code !== 'EPSG:3857'){
+        point[`coordinates${epsg_code}`] = [point[`coordinates${epsg_code}`][0].toFixed(2), point[`coordinates${epsg_code}`][1].toFixed(2)]
+      }
     },
     toMinimunDecimals(value, min) {
       value = value.toString();

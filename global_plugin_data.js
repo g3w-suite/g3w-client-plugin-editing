@@ -17,6 +17,7 @@ export default  {
   signal_type_maps: {}, // object contain url of other type of signaler
   relation_signal_types:[], // which are the children signaler
   signaler_parent_field: 'segn_pad_id', // field that link child to father,
-  edit_signaler: false // case of editing directly on url
+  edit_signaler: false, // case of editing directly on url,
+  vertex_not_visible_fields_form : ['id', 'feature_id', 'user', 'capit_porto']
 };
 export const EPSG_COORDINATES = ['EPSG:4326', 'EPSG:3857', 'EPSG:32632', 'EPSG:32633', 'EPSG:32634'];
