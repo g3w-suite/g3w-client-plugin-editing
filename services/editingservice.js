@@ -298,7 +298,7 @@ proto.addNewFeature = function(layerId, options={}){
   const editingLayer = toolbox.getLayer().getEditingLayer();
   const session = toolbox.getSession();
   editingLayer.getSource().addFeature(feature);
-  session.pushAdd(layerId, feature);
+  session.pushAdd(layerId, feature, false);
   return feature;
 };
 
@@ -1232,7 +1232,7 @@ proto.addLayersFeaturesToShowOnResult = function({layerId, fids=[]}){
  * Called on close editingpanel panel
  */
 proto.onCloseEditingPanel = async function(){
-  //await this.showChangesToResult();
+  await this.showChangesToResult();
   this.getToolBoxes().forEach(toolbox => toolbox.resetDefault());
 };
 
