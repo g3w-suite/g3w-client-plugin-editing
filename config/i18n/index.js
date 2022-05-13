@@ -33,6 +33,7 @@ export default {
       update_vertex: "Aggiorna vertici feature",
       update_feature: "Modifica attributi feature",
       update_multi_features: "Modifica gli attributi delle features selezionate",
+      copyfeaturefromexternallayer: "Crea feature dal layer esistente"
     },
     toolsoftool: {
       measure: "Visualizza misura",
@@ -172,6 +173,7 @@ export default {
       update_vertex: "Update feature vertex",
       update_feature: "Update feature attribute",
       update_multi_features: "Update attributes of selected features",
+      copyfeaturefromexternallayer: "Create Feature from existing feature"
     },
     toolsoftool: {
       measure: "Show measure",

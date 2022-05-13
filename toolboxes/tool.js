@@ -5,7 +5,7 @@ const G3WObject = g3wsdk.core.G3WObject;
 function Tool(options = {}) {
   base(this);
   this.editingService = require('../services/editingservice');
-  const {name, row, id, icon, session, layer, once=false, type=[]} = options;
+  const {name, row, id, icon, session, layer, once=false, type=[], visible=true} = options;
   this._options = null;
   this._session = session;
   this._layer = layer;
@@ -19,7 +19,7 @@ function Tool(options = {}) {
     id,
     name,
     enabled: false,
-    visible: true,
+    visible: visible instanceof Function ? (()=> visible(this))() : visible,
     active: false,
     icon,
     message: null,
@@ -38,6 +38,13 @@ proto.setOptions = function(options={}){
   this.state.visible = visible;
   this.state.enabled = enabled;
   this.disabledtoolsoftools = disabledtoolsoftools;
+};
+
+/**
+ * Return layer owner of tool
+ */
+proto.getLayer = function(){
+  return this._layer;
 };
 
 proto.getType = function(){

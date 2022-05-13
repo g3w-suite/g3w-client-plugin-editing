@@ -1,7 +1,7 @@
 const {base, inherit} = g3wsdk.core.utils;
-const GUI = g3wsdk.gui.GUI;
-const Workflow = g3wsdk.core.workflow.Workflow;
-const Layer = g3wsdk.core.layer.Layer;
+const {GUI} = g3wsdk.gui;
+const {Workflow} = g3wsdk.core.workflow;
+const {Layer} = g3wsdk.core.layer;
 const {isPointGeometryType} = g3wsdk.core.geometry.Geometry;
 
 function EditingWorkflow(options={}) {
@@ -119,21 +119,15 @@ proto.unbindEscKeyUp = function() {
 };
 
 proto.bindEscKeyUp = function(callback=()=>{}) {
-  const percContent = GUI.hideContent(true);
   $(document).on('keyup', {
     workflow: this,
     callback
   }, this.escKeyUpHandler);
-  return percContent;
 };
 
 proto.registerEscKeyEvent = function(callback){
-  this.on('start', ()=> {
-    this.bindEscKeyUp(callback);
-  });
-  this.on('stop', ()=>{
-    this.unbindEscKeyUp()
-  });
+  this.on('start', () => this.bindEscKeyUp(callback));
+  this.on('stop', () => this.unbindEscKeyUp());
 };
 /////
 

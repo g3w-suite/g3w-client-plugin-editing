@@ -1,8 +1,12 @@
-const ApplicationState = g3wsdk.core.ApplicationState;
-const inherit = g3wsdk.core.utils.inherit;
-const base =  g3wsdk.core.utils.base;
+const {ApplicationState} = g3wsdk.core;
+const {base, inherit} = g3wsdk.core.utils;
+const {
+  isSameBaseGeometryType,
+  convertSingleMultiGeometry
+} = g3wsdk.core.geoutils;
+const {Feature} = g3wsdk.core.layer.features;
 const EditingTask = require('./editingtask');
-const PickFeatureInteraction = g3wsdk.ol.interactions.PickFeatureInteraction;
+const {PickFeatureInteraction} = g3wsdk.ol.interactions;
 
 function SelectElementsTask(options={}) {
   this._type = options.type || 'bbox'; // 'single' 'bbox' 'multiple'
@@ -37,6 +41,61 @@ proto.addSingleSelectInteraction = function({layer, inputs, promise, buttonnext=
   this.addInteraction(singleInteraction);
 };
 
+/**
+ * Pick to add feature from external layer added to map
+ * @param layer
+ * @param inputs
+ * @param promise
+ * @param buttonnext
+ */
+proto.addExternalSelectInteraction = function({layer, inputs, promise, buttonnext=false}= {}){
+  const layerGeometryType = layer.getGeometryType();
+  const layerId = layer.getId();
+  const source = layer.getEditingLayer().getSource();
+  const {session} = this.getContext();
+  // filter external layer only vector - Exclude WMS
+  const layers = this.getMapService().getExternalLayers().filter(externaLayer => {
+    let sameBaseGeometry = true;
+    const type = externaLayer.getType();
+    if (type === 'VECTOR') {
+      const features = externaLayer.getSource().getFeatures();
+      if (features.length) {
+        const feature = features[0];
+        const geometryType = feature.getGeometry().getType();
+        sameBaseGeometry = isSameBaseGeometryType(geometryType, layerGeometryType)
+      }
+    }
+    return sameBaseGeometry;
+  });
+  const singleInteraction = new PickFeatureInteraction({
+    layers
+  });
+  singleInteraction.on('picked', evt => {
+    if (evt.feature) {
+      const attributes = layer.getEditingFields();
+      const geometry = evt.feature.getGeometry();
+      (geometry.getType() !== layerGeometryType) && evt.feature.setGeometry(convertSingleMultiGeometry(geometry, layerGeometryType));
+      const feature = new Feature({
+        feature: evt.feature,
+        properties: attributes.filter(attribute => {
+          //set media attribute to null
+          if (attribute.input.type === 'media') evt.feature.set(attribute.name, null);
+          return !attribute.pk
+        }).map(property => property.name)
+      });
+
+      feature.setTemporaryId();
+      source.addFeature(feature);
+      session.pushAdd(layerId, feature, false);
+      const features = [feature];
+      inputs.features = features;
+      promise.resolve(inputs);
+    } else promise.reject();
+  });
+  this._selectInteractions.push(singleInteraction);
+  this.addInteraction(singleInteraction);
+};
+
 proto.addRemoveToMultipleSelectFeatures = function(features=[], inputs){
   features.forEach(feature =>{
     const selIndex = this.multipleselectfeatures.indexOf(feature);
@@ -53,6 +112,13 @@ proto.addRemoveToMultipleSelectFeatures = function(features=[], inputs){
   if (this._steps.select.dynamic !== undefined) this._steps.select.dynamic = this.multipleselectfeatures.length;
 };
 
+/**
+ * Multiple interaction for select features
+ * @param layer
+ * @param inputs
+ * @param promise
+ * @param buttonnext
+ */
 proto.addMultipleSelectInteraction = function({layer, inputs, promise, buttonnext=false}={}){
   let selectInteractionMultiple;
   if (ApplicationState.ismobile) {
@@ -61,12 +127,14 @@ proto.addMultipleSelectInteraction = function({layer, inputs, promise, buttonnex
     this._vectorLayer = new ol.layer.Vector({
       source
     });
+    
     this.getMap().addLayer(this._vectorLayer);
     selectInteractionMultiple = new ol.interaction.Draw({
       type: 'Circle',
       source,
       geometryFunction
     });
+
     selectInteractionMultiple.on('drawend', evt => {
       const feature = evt.feature;
       const bboxExtent = feature.getGeometry().getExtent();
@@ -77,7 +145,7 @@ proto.addMultipleSelectInteraction = function({layer, inputs, promise, buttonnex
         else {
           inputs.features = features;
           this._originalStyle = this.setFeaturesSelectedStyle(features);
-          this._steps &&  this.setUserMessageStepDone('select');
+          this._steps && this.setUserMessageStepDone('select');
           setTimeout(()=>{
             promise.resolve(inputs);
           }, 500)
@@ -126,6 +194,9 @@ proto.run = function(inputs, context, queques) {
     case 'bbox':
       this.addMultipleSelectInteraction({layer, inputs, promise});
       break;
+    case 'external':
+      this.addExternalSelectInteraction({layer, inputs, promise});
+      break;
   }
   queques.micro.addTask(()=>{
    inputs.features.forEach((feature => feature.setStyle(this._originalStyle)));
@@ -133,10 +204,8 @@ proto.run = function(inputs, context, queques) {
   return promise.promise();
 };
 
-proto.stop = function(inputs, context) {
-  this._selectInteractions.forEach(interaction => {
-    this.removeInteraction(interaction);
-  });
+proto.stop = function() {
+  this._selectInteractions.forEach(interaction => this.removeInteraction(interaction));
   this._vectorLayer && this.getMap().removeLayer(this._vectorLayer);
   this._vectorLayer = null;
   this._originalStyle = null;

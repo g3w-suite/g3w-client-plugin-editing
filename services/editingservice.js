@@ -1,7 +1,6 @@
 import API from '../api'
 const {ApplicationState, ApplicationService} = g3wsdk.core;
 const {DataRouterService} = g3wsdk.core.data;
-const {G3W_FID} = g3wsdk.constant;
 const {base, inherit} = g3wsdk.core.utils;
 const {WorkflowsStack} = g3wsdk.core.workflow;
 const {PluginService} = g3wsdk.core.plugin;
@@ -77,7 +76,7 @@ function EditingService() {
 
   this._layers_in_error = false;
   //mapservice
-  this._mapService = GUI.getComponent('map').getService();
+  this._mapService = GUI.getService('map');
   //set mapcontrol toggle event
   this.mapControlToggleEventHandler = evt =>{
     if (evt.target.isToggled() && evt.target.isClickMap()){
@@ -1233,7 +1232,7 @@ proto.addLayersFeaturesToShowOnResult = function({layerId, fids=[]}){
  * Called on close editingpanel panel
  */
 proto.onCloseEditingPanel = async function(){
-  await this.showChangesToResult();
+  //await this.showChangesToResult();
   this.getToolBoxes().forEach(toolbox => toolbox.resetDefault());
 };
 

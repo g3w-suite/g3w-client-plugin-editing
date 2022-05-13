@@ -1,6 +1,10 @@
-const Layer = g3wsdk.core.layer.Layer;
-const Geometry = g3wsdk.core.geometry.Geometry;
+const {Layer} = g3wsdk.core.layer;
+const {Geometry} = g3wsdk.core.geometry;
+const {GUI} = g3wsdk.gui;
 const Tool = require('./tool');
+const {
+  isSameBaseGeometryType,
+} = g3wsdk.core.geoutils;
 const AddFeatureWorkflow = require('../workflows/addfeatureworkflow');
 const ModifyGeometryVertexWorkflow = require('../workflows/modifygeometryvertexworkflow');
 const MoveFeatureWorkflow = require('../workflows/movefeatureworkflow');
@@ -14,6 +18,7 @@ const MergeFeaturesWorkflow = require('../workflows/mergefeaturesworkflow');
 const AddPartToMultigeometriesWorkflow = require('../workflows/addparttomultigeometriesworkflow');
 const DeletePartFromMultigeometriesWorkflow = require('../workflows/deletepartfrommultigeometriesworkflow');
 const EditMultiFeatureAttributesWorkflow = require('../workflows/editmultifeatureattributesworkflow');
+const AddFeatureFromMapVectorLayersWorflow = require('../workflows/addfeaturefrommapvectorlayersworkflow');
 
 function EditorToolsFactory() {
   /**
@@ -24,6 +29,7 @@ function EditorToolsFactory() {
    */
   this.createTools = function({type, isMultiGeometry, layer, capabilities}){
     let tools = [];
+    const mapService = GUI.getService('map');
     switch (type) {
       case 'Point':
         tools = [
@@ -255,6 +261,51 @@ function EditorToolsFactory() {
               once: true,
               op: MergeFeaturesWorkflow,
               type: ['change_feature']
+            }
+          },
+          {
+            config:{
+              id: 'copyfeaturefromexternallayer',
+              name: "editing.tools.copyfeaturefromexternallayer",
+              icon: "copyPolygonFromFeature.png",
+              layer,
+              row: 3,
+              once: true,
+              visible: tool  => {
+                const layerGeometryType = tool.getLayer().getGeometryType();
+                const checkIfLayerHasTheSameBaseGeometryType = layer => {
+                  let sameBaseGeometry = true;
+                  const type = layer.getType();
+                  // check if too is visible and the layer is a Vector
+                  if (type === 'VECTOR') {
+                    const features = layer.getSource().getFeatures();
+                    if (features.length) {
+                      const feature = features[0];
+                      const geometryType = feature.getGeometry().getType();
+                      sameBaseGeometry = isSameBaseGeometryType(geometryType, layerGeometryType)
+                    }
+                  }
+                  return sameBaseGeometry;
+                };
+                mapService.onbefore('loadExternalLayer',  layer => !tool.isVisible() && tool.setVisible(checkIfLayerHasTheSameBaseGeometryType(layer)));
+                mapService.onafter('unloadExternalLayer', layer => {
+                  const type = layer.getType();
+                  if (tool.isVisible() && type === 'VECTOR') {
+                    const features = layer.getSource().getFeatures();
+                    if (features.length) {
+                      const feature = features[0];
+                      const geometryType = feature.getGeometry().getType();
+                      if (isSameBaseGeometryType(geometryType, layerGeometryType)){
+                        const visible = mapService.getExternalLayers().find(externalLayer => checkIfLayerHasTheSameBaseGeometryType(externalLayer)) !== undefined;
+                        tool.setVisible(visible);
+                      }
+                    }
+                  }
+                });
+                return false
+              },
+              op: AddFeatureFromMapVectorLayersWorflow,
+              type: ['add_feature']
             }
           }
         ];
