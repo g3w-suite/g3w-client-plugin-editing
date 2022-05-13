@@ -136,7 +136,7 @@ const vueComponentOptions = {
     GUI.off('closeform', this._enableEditingButtons);
     GUI.off('closecontent', this._enableEditingButtons);
     this.$options.service.unregisterOnLineOffLineEvent();
-    GUI.getComponent('map').getService().seSelectionLayerVisible(true);
+    GUI.getService('map').seSelectionLayerVisible(true);
     this.$options.service.fireEvent('closeeditingpanel');
     this.$options.service.onCloseEditingPanel();
   }
@@ -145,7 +145,8 @@ const vueComponentOptions = {
 function PanelComponent(options={}) {
   base(this, options);
   this.vueComponent = vueComponentOptions;
-  this.name = options.name || 'Editing data';
+  const {name='Editing data'} = options;
+  this.name = name;
   merge(this, options);
   this._resourcesUrl = options.resourcesUrl || GUI.getResourcesUrl();
   this._service = options.service || EditingService;

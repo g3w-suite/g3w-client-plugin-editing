@@ -218,7 +218,7 @@ proto.startVectorTool = function(relationtool, index) {
   this._highlightRelationSelect(relationfeature);
   const promise =(workflow instanceof workflows.DeleteFeatureWorkflow || workflow instanceof workflows.EditFeatureAttributesWorkflow ) && workflow.startFromLastStep(options)
     || workflow.start(options);
-  const percContent = workflow.bindEscKeyUp(() => {
+  workflow.bindEscKeyUp(() => {
     relationfeature.setStyle(this._originalLayerStyle);
   });
   promise.then(outputs => {
@@ -241,7 +241,7 @@ proto.startVectorTool = function(relationtool, index) {
     .fail(err => d.reject(err))
     .always(() => {
       workflow.stop();
-      GUI.hideContent(false, percContent);
+      GUI.hideContent(false);
       workflow.unbindEscKeyUp();
       GUI.setModal(true);
     });
@@ -340,7 +340,7 @@ proto.addRelation = function() {
 
   const { parentFeature } = options;
   const promise =  workflow.start(options);
-  const percContent = isVector && workflow.bindEscKeyUp();
+  isVector && workflow.bindEscKeyUp();
   promise.then(outputs => {
     const {newFeatures, originalFeatures} = outputs.relationFeatures;
     const setRelationFieldValue = value =>{
@@ -370,7 +370,7 @@ proto.addRelation = function() {
     this.emitEventToParentWorkFlow()
   }).fail(err => session.rollbackDependecies([this._relationLayerId])).always(() =>{
     if (isVector) {
-      GUI.hideContent(false, percContent);
+      GUI.hideContent(false);
       workflow.unbindEscKeyUp();
       GUI.setModal(true);
     }
@@ -421,11 +421,11 @@ proto.linkRelation = function() {
       })
     };
     preWorkflowStart = new Promise((resolve)=> {
-      const percContent = workflow.bindEscKeyUp();
+      workflow.bindEscKeyUp();
       const promise = workflow.start(options);
       resolve({
         promise,
-        percContent
+        showContent: true
       })
     });
   } else preWorkflowStart = new Promise((resolve) => {
@@ -435,7 +435,7 @@ proto.linkRelation = function() {
       })
   });
 
-  preWorkflowStart.then(({promise, percContent}={})=> {
+  preWorkflowStart.then(({promise, showContent=false}={})=> {
     promise = promise || workflow.start(options);
     promise.then(outputs => {
       if (outputs.features.length) {
@@ -453,9 +453,9 @@ proto.linkRelation = function() {
     }).fail(() => {
       session.rollbackDependecies([this._relationLayerId]);
     }).always(() =>{
-      if (percContent) {
+      if (showContent) {
         GUI.closeUserMessage();
-        GUI.hideContent(false, percContent);
+        GUI.hideContent(false);
         workflow.unbindEscKeyUp();
       }
       workflow.stop();

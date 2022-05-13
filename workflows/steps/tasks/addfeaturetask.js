@@ -1,9 +1,9 @@
 const {base, inherit} =  g3wsdk.core.utils;
-const Layer = g3wsdk.core.layer.Layer;
-const Geometry = g3wsdk.core.geometry.Geometry;
-const EditingTask = require('./editingtask');
-const Feature = g3wsdk.core.layer.features.Feature;
+const {Layer} = g3wsdk.core.layer;
+const {Geometry} = g3wsdk.core.geometry;
+const {Feature} = g3wsdk.core.layer.features;
 const {AreaInteraction, LengthInteraction} = g3wsdk.ol.interactions.measure;
+const EditingTask = require('./editingtask');
 
 function AddFeatureTask(options={}) {
   this._add = options.add === undefined ? true : options.add;
@@ -58,9 +58,9 @@ proto.run = function(inputs, context) {
           });
           feature.setTemporaryId();
           source.addFeature(feature);
-          session.pushAdd(layerId, feature);
+          session.pushAdd(layerId, feature, false);
         } else feature = e.feature;
-        // set Z values based on layer Geoemtry
+        // set Z values based on layer Geometry
         feature = Geometry.addZValueToOLFeatureGeometry({
           feature,
           geometryType: originalGeometryType

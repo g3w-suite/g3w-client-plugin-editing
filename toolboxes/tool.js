@@ -40,6 +40,13 @@ proto.setOptions = function(options={}){
   this.disabledtoolsoftools = disabledtoolsoftools;
 };
 
+/**
+ * Return layer owner of tool
+ */
+proto.getLayer = function(){
+  return this._layer;
+};
+
 proto.getType = function(){
   return this.type;
 };
