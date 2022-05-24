@@ -33,6 +33,7 @@ export default {
       update_vertex: "Aggiorna vertici feature",
       update_feature: "Modifica attributi feature",
       update_multi_features: "Modifica gli attributi delle features selezionate",
+      copyfeaturefromexternallayer: "Crea feature dal layer esistente"
     },
     toolsoftool: {
       measure: "Visualizza misura",
@@ -172,6 +173,7 @@ export default {
       update_vertex: "Update feature vertex",
       update_feature: "Update feature attribute",
       update_multi_features: "Update attributes of selected features",
+      copyfeaturefromexternallayer: "Create Feature from existing feature"
     },
     toolsoftool: {
       measure: "Show measure",
@@ -310,7 +312,8 @@ export default {
       delete_feature: "Poista ominaisuus",
       move_feature: "Siirrä ominaisuutta",
       update_vertex: "Päivitä pisteen ominaisuutta",
-      update_feature: "Päivitä ominaisuus"
+      update_feature: "Päivitä ominaisuus",
+      copyfeaturefromexternallayer: "Create Feature from existing feature"
     },
     toolsoftool: {
       measure: "Show measure",
@@ -449,7 +452,8 @@ export default {
       delete_feature: "Ta bort egenskap",
       move_feature: "Flytta egenskap",
       update_vertex: "Uppdatera punktens egenskap",
-      update_feature: "Uppdatera egenskap"
+      update_feature: "Uppdatera egenskap",
+      copyfeaturefromexternallayer: "Create Feature from existing feature"
     },
     toolsoftool: {
       measure: "Show measure",
@@ -585,6 +589,7 @@ export default {
       update_vertex: "Mettre à jour les sommets des fonctionnalités",
       update_feature: "Modifier les attributs des fonctionnalités",
       update_multi_features: "Modifier les attributs des fonctionnalités sélectionnées",
+      copyfeaturefromexternallayer: "Create Feature from existing feature"
     },
     toolsoftool: {
       measure: "Show measure",
@@ -723,6 +728,7 @@ export default {
       update_vertex: "Feature vertex aktualisieren",
       update_feature: "Feature-Attribut aktualisieren",
       update_multi_features: "Attribute ausgewählter Features aktualisieren",
+      copyfeaturefromexternallayer: "Create Feature from existing feature"
     },
     toolsoftool: {
       measure: "Messung anzeigen",
@@ -863,6 +869,7 @@ export default {
       update_vertex: "Actualizează vertecșii entității",
       update_feature: "Actualizează atributul entității",
       update_multi_features: "Actualizează atributele entităților selectate",
+      copyfeaturefromexternallayer: "Create Feature from existing feature"
     },
     toolsoftool: {
       measure: "Arată măsurătorile",
