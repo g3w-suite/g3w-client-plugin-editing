@@ -44,10 +44,10 @@ function EditingService() {
   this.saveConfig = {
     mode: "default", // default, autosave
     modal: false,
-    messages: null, // object to set custom message
+    messages: undefined, // object to set custom message
     cb: {
-      done: null, // function after commit change done
-      error: null // function after commit chenges error
+      done: undefined, // function after commit change done
+      error: undefined // function after commit chenges error
     }
   };
 
@@ -389,26 +389,30 @@ proto.checkOfflineChanges = function({modal=true, unlock=false}={}) {
     if (changes) {
       const promises = [];
       const layerIds = [];
-      for (const layerId in changes) {
-        layerIds.push(layerId);
-        const toolbox = this.getToolBoxById(layerId);
-        const commitItems = changes[layerId];
-        promises.push(this.commit({
-          toolbox,
-          commitItems,
-          modal
-        }))
-      }
-      $.when.apply(this, promises)
-        .then(() =>resolve())
-        .fail(error=>reject(error))
-        .always(() =>{
-          unlock && layerIds.forEach(layerId => {
-            this.getLayerById(layerId).unlock()
-          });
-          // always reset items to null
-          this.setOfflineItem(OFFLINE_ITEMS.CHANGES);
-        })
+      //FORCE TO WAIT OTHERWISE STILL OFF LINE
+      setTimeout(()=>{
+        for (const layerId in changes) {
+          layerIds.push(layerId);
+          const toolbox = this.getToolBoxById(layerId);
+          const commitItems = changes[layerId];
+          promises.push(this.commit({
+            toolbox,
+            commitItems,
+            modal
+          }))
+        }
+        $.when.apply(this, promises)
+          .then(() =>resolve())
+          .fail(error=>reject(error))
+          .always(() =>{
+            unlock && layerIds.forEach(layerId => {
+              this.getLayerById(layerId).unlock()
+            });
+            // always reset items to null
+            this.setOfflineItem(OFFLINE_ITEMS.CHANGES);
+          })
+      }, 1000)
+
     }
   })
 };
