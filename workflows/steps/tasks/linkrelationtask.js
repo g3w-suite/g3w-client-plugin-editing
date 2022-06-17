@@ -1,8 +1,7 @@
-const inherit = g3wsdk.core.utils.inherit;
-const base =  g3wsdk.core.utils.base;
+const {base, inherit} = g3wsdk.core.utils;
 const EditingTask = require('./editingtask');
-const GUI = g3wsdk.gui.GUI;
-const PickFeatureInteraction = g3wsdk.ol.interactions.PickFeatureInteraction;
+const {GUI} = g3wsdk.gui;
+const {PickFeatureInteraction} = g3wsdk.ol.interactions;
 
 
 function LinkRelationTask(options={}) {
@@ -41,7 +40,8 @@ proto.run = function(inputs, context) {
       GUI.setModal(true);
       d.resolve(inputs);
     });
-  }).catch(()=>{
+  }).catch(err =>{
+    console.log(err)
     d.reject();
   });
   return d.promise()

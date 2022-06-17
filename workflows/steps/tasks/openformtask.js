@@ -1,6 +1,6 @@
 const {base, inherit} = g3wsdk.core.utils;
-const GUI = g3wsdk.gui.GUI;
-const WorkflowsStack = g3wsdk.core.workflow.WorkflowsStack;
+const {GUI} = g3wsdk.gui;
+const {WorkflowsStack} = g3wsdk.core.workflow;
 const EditingTask = require('./editingtask');
 const EditingFormComponent = require('../../../form/editingform');
 

@@ -1072,7 +1072,8 @@ proto.getLayersDependencyFeatures = function(layerId, opts={}) {
   }) : [];
   const online = ApplicationState.online;
   relations.forEach(relation => {
-    relation.setLoading(true);
+    if (relation.setLoading) relation.setLoading(true);
+    else relation.loading = true;
     const id = this._getRelationId({
       layerId,
       relation
@@ -1126,7 +1127,10 @@ proto.getLayersDependencyFeatures = function(layerId, opts={}) {
     promises.push(promise);
   });
   // at the end se loading false
-  Promise.all(promises).finally(()=> relations.forEach(relation => relation.setLoading(false)));
+  Promise.all(promises).finally(()=> relations.forEach(relation => {
+    if (relation.setLoading) relation.setLoading(false);
+    else relation.loading = false;
+  }));
   return Promise.all(promises);
 };
 

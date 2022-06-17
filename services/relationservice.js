@@ -115,6 +115,7 @@ proto.getRelationTools = function() {
 };
 
 proto._highlightRelationSelect = function(relation) {
+  const originalStyle = this.getLayer().getEditingLayer().getStyle();
   const geometryType = this.getLayer().getGeometryType();
   let style;
   if (geometryType === 'LineString' || geometryType === 'MultiLineString') {
@@ -145,16 +146,24 @@ proto._highlightRelationSelect = function(relation) {
     });
   }
   relation.setStyle(style);
+  return originalStyle;
 };
 
 proto.startTool = function(relationtool, index) {
+  const MoveFeatureWorkflow = require('../workflows/movefeatureworkflow');
+  if (relationtool.getOperator() instanceof MoveFeatureWorkflow) {
+    GUI.hideContent(true);
+  }
   return new Promise((resolve, reject) => {
     const toolPromise = (this._layerType === Layer.LayerTypes.VECTOR) && this.startVectorTool(relationtool, index) ||
       (this._layerType === Layer.LayerTypes.TABLE) && this.startTableTool(relationtool, index);
-    toolPromise.then(() => {
-      this.emitEventToParentWorkFlow();
-      resolve();
-    }).fail(err => reject(err))
+    toolPromise
+      .then(() => {
+        this.emitEventToParentWorkFlow();
+        resolve();
+      })
+      .fail(err => reject(err))
+      .always(()=>GUI.hideContent(false));
   })
 };
 
@@ -215,7 +224,7 @@ proto.startVectorTool = function(relationtool, index) {
     return relationtool.getOperator() instanceof classworkflow
   });
   const workflow = new ClassWorkflow();
-  this._highlightRelationSelect(relationfeature);
+  const originalStyle = this._highlightRelationSelect(relationfeature);
   const promise =(workflow instanceof workflows.DeleteFeatureWorkflow || workflow instanceof workflows.EditFeatureAttributesWorkflow ) && workflow.startFromLastStep(options)
     || workflow.start(options);
   workflow.bindEscKeyUp(() => {
@@ -244,6 +253,7 @@ proto.startVectorTool = function(relationtool, index) {
       GUI.hideContent(false);
       workflow.unbindEscKeyUp();
       GUI.setModal(true);
+      relationfeature.setStyle(originalStyle);
     });
   return d.promise()
 };
@@ -329,7 +339,10 @@ proto._getRelationAsFatherStyleColor = function(type) {
 
 proto.addRelation = function() {
   const isVector = this._layerType === Layer.LayerTypes.VECTOR;
-  isVector && GUI.setModal(false);
+  if (isVector) {
+    GUI.setModal(false);
+    GUI.hideContent(true);
+  }
   const workflow = this._getAddFeatureWorkflow();
   const options = this._createWorkflowOptions();
   const session = options.context.session;
@@ -369,17 +382,22 @@ proto.addRelation = function() {
     });
     this.emitEventToParentWorkFlow()
   }).fail(err => session.rollbackDependecies([this._relationLayerId])).always(() =>{
+    workflow.stop();
+  }).always(()=>{
     if (isVector) {
       GUI.hideContent(false);
       workflow.unbindEscKeyUp();
       GUI.setModal(true);
     }
-    workflow.stop();
-  });
+  })
 };
 
 proto.linkRelation = function() {
   const isVector = this._layerType === Layer.LayerTypes.VECTOR;
+  if (isVector) {
+    GUI.setModal(false);
+    GUI.hideContent(true);
+  }
   const workflow = this._getLinkFeatureWorkflow();
   const options = this._createWorkflowOptions();
   const session = options.context.session;
@@ -450,7 +468,7 @@ proto.linkRelation = function() {
           } else GUI.notify.warning(t("editing.relation_already_added"));
         });
       }
-    }).fail(() => {
+    }).fail(err => {
       session.rollbackDependecies([this._relationLayerId]);
     }).always(() =>{
       if (showContent) {
