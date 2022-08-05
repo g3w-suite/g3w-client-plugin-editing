@@ -14,6 +14,14 @@ function AddFeatureTask(options={}) {
   this._snap = options.snap === false ? false : true;
   this._finishCondition = options.finishCondition || (()=>true);
   this._condition = options.condition || (()=>true) ;
+  /**
+   *
+   * @param event
+   * @returns {boolean|void}
+   * @private
+   * callback of pressing esc to remove last point drawed
+   */
+  this._delKeyRemoveLastPoint  = event => event.keyCode === 46 && this.removeLastPoint();
   base(this, options);
 }
 
@@ -46,6 +54,7 @@ proto.run = function(inputs, context) {
 
       this.drawInteraction.on('drawstart', ({feature}) => {
         this.drawingFeature = feature;
+        document.addEventListener('keydown', this._delKeyRemoveLastPoint);
       });
       this.drawInteraction.on('drawend', e => {
         let feature;
@@ -111,10 +120,11 @@ proto.stop = function() {
   this.removeMeasureInteraction();
   this.drawInteraction = null;
   this.drawingFeature = null;
+  document.removeEventListener('keydown', this._delKeyRemoveLastPoint);
   return true;
 };
 
-proto._removeLastPoint = function() {
+proto.removeLastPoint = function() {
   if (this.drawInteraction) {
     try {
       this.drawInteraction.removeLastPoint();
