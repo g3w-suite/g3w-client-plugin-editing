@@ -1,3 +1,7 @@
+/* ORIGINAL SOURCE:
+* vue/editing.js@v3.4
+*/
+
 import EditingVueComponent from '../components/Editing.vue';
 const {base, inherit, merge} = g3wsdk.core.utils;
 const { GUI } = g3wsdk.gui;

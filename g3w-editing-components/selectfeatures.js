@@ -1,3 +1,7 @@
+/* ORIGINAL SOURCE:
+* vue/components/selectfeatures/selectfeatures.js@v3.4
+*/
+
 const { toRawType } =  g3wsdk.core.utils;
 
 function SelectFeaturesDom({features, events}={}){

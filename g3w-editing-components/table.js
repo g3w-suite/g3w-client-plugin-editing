@@ -1,3 +1,7 @@
+/* ORIGINAL SOURCE:
+* table/table.js@v3.4
+*/
+
 import TableVueObject from '../components/Table.vue';
 const {base, inherit} = g3wsdk.core.utils;
 const Component = g3wsdk.gui.vue.Component;

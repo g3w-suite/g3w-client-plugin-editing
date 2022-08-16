@@ -1,3 +1,7 @@
+<!-- ORIGINAL SOURCE: -->
+<!-- vue/components/toolsoftool/snap.html@v3.4 -->
+<!-- vue/components/toolsoftool/snap.js@v3.4 -->
+
 <template>
   <div style="display: flex;width: 100%; justify-content: space-between">
     <input type="checkbox" class="magic-checkbox snap_tools_of_tools" :id="id" v-model="checked">
