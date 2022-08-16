@@ -1,3 +1,7 @@
+<!-- ORIGINAL SOURCE: -->
+<!-- vue/components/toolbox.html@v3.4 -->
+<!-- vue/components/toolbox.js@v3.4 -->
+
 <template>
   <div class="toolbox" v-show="state.show">
     <div :class="{'disableddiv' : !isLayerReady || !canEdit }" :id="'id_toolbox_'+ state.id">

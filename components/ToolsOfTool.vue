@@ -1,3 +1,7 @@
+<!-- ORIGINAL SOURCE: -->
+<!-- vue/components/toolsoftool.html@v3.4 -->
+<!-- vue/components/toolsoftool.js@v3.4 -->
+
 <template>
   <div id="toolsoftoolcontainer" style="display: flex; flex-direction: column;
     margin: 5px;

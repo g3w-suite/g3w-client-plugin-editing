@@ -1,3 +1,7 @@
+<!-- ORIGINAL SOURCE: -->
+<!-- vue/editing.html@v3.4 -->
+<!-- vue/editing.js@v3.4 -->
+
 <template>
   <div class="g3w-editing-panel">
     <div v-if="!appState.online" id="onlineofflinemessage" style="margin-bottom: 5px; padding: 5px; border-radius: 3px; background-color: orange; color:white; font-weight: bold">

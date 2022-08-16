@@ -1,3 +1,7 @@
+<!-- ORIGINAL SOURCE: -->
+<!-- form/components/relation/vue/relation.html@v3.4 -->
+<!-- form/components/relation/vue/relation.js@v3.4 -->
+
 <template>
     <div style="margin-bottom: 5px;">
       <div ref="relation_header_title" class="box-header with-border skin-color" style="width:100%; display: flex; font-weight: bold; font-size: 1.3em; align-items: center; margin-button:3px; background-color: #ffffff; ">

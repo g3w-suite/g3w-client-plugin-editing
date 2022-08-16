@@ -1,3 +1,7 @@
+<!-- ORIGINAL SOURCE: -->
+<!-- table/table.html@v3.4 -->
+<!-- table.js@v3.4 -->
+
 <template>
   <div id="editing_table" class="g3w-editing-table">
     <div ref="editing_table_header" class="editing_table_header">
