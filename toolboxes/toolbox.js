@@ -1,16 +1,15 @@
-const ApplicationState = g3wsdk.core.ApplicationState;
+const { ApplicationState, G3WObject } = g3wsdk.core;
 const {base, inherit, debounce} = g3wsdk.core.utils;
-const G3WObject = g3wsdk.core.G3WObject;
-const GUI = g3wsdk.gui.GUI;
-const t = g3wsdk.core.i18n.tPlugin;
-const Layer = g3wsdk.core.layer.Layer;
-const Session = g3wsdk.core.editing.Session;
-const getScaleFromResolution = g3wsdk.ol.utils.getScaleFromResolution;
+const { GUI } = g3wsdk.gui;
+const { tPlugin:t } = g3wsdk.core.i18n;
+const { Layer } = g3wsdk.core.layer;
+const { Session } = g3wsdk.core.editing;
+const { getScaleFromResolution } = g3wsdk.ol.utils;
 
 function ToolBox(options={}) {
   base(this);
   this.editingService = require('../services/editingservice');
-  this._mapService = GUI.getComponent('map').getService();
+  this._mapService = GUI.getService('map');
   this._start = false;
   this._constraints = options.constraints || {};
   this._layer = options.layer;

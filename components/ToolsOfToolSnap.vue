@@ -15,11 +15,11 @@
 </template>
 
 <script>
-  const GUI = g3wsdk.gui.GUI;
-  const Layer = g3wsdk.core.layer.Layer;
+  const { GUI } = g3wsdk.gui;
+  const { Layer } = g3wsdk.core.layer;
   let snapInteraction;
   const mapService = GUI.getService('map');
-  const editingService = require('../../../services/editingservice');
+  const editingService = require('../services/editingservice');
   export default {
     name: "snap",
     props: ['options'],

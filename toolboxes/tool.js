@@ -1,6 +1,6 @@
 const {base, inherit} = g3wsdk.core.utils;
-const GUI = g3wsdk.gui.GUI;
-const G3WObject = g3wsdk.core.G3WObject;
+const { GUI } = g3wsdk.gui;
+const { G3WObject } = g3wsdk.core;
 
 function Tool(options = {}) {
   base(this);

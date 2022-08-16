@@ -1,4 +1,4 @@
-const Layer = g3wsdk.core.layer.Layer;
+const { Layer } = g3wsdk.core.layer;
 const EditToolsFactory = require('./toolsfactory');
 const ToolBox = require('./toolbox');
 

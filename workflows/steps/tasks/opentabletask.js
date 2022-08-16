@@ -1,7 +1,7 @@
 const {inherit, base} = g3wsdk.core.utils;
 const {GUI} = g3wsdk.gui;
 const {WorkflowsStack} = g3wsdk.core.workflow;
-const TableComponent = require('../../../table/vue/table');
+const TableComponent = require('../../../g3w-editing-components/table');
 const EditingTask = require('./editingtask');
 
 function OpenTableTask(options={}) {

@@ -73,7 +73,7 @@ proto.cancel = function() {
 };
 
 proto.deleteFeature = function(uid) {
-  const EditingService = require('../services/editingservice');
+  const EditingService = require('./editingservice');
   const layer = this._inputs.layer;
   const layerId = layer.getId();
   const childRelations = layer.getChildren();

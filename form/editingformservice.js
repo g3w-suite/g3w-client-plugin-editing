@@ -1,5 +1,5 @@
 const {GUI} = g3wsdk.gui;
-const RelationComponent = require('./components/relation/vue/relation');
+const RelationComponent = require('../components/Relation.vue');
 const EditingFormService = function(options={}) {
   const EditingService = require('../services/editingservice');
   this.state = {

@@ -1,10 +1,10 @@
-const {Layer} = g3wsdk.core.layer;
-const {Geometry} = g3wsdk.core.geometry;
-const {GUI} = g3wsdk.gui;
-const Tool = require('./tool');
+const { Layer } = g3wsdk.core.layer;
+const { Geometry } = g3wsdk.core.geometry;
+const { GUI } = g3wsdk.gui;
 const {
   isSameBaseGeometryType,
 } = g3wsdk.core.geoutils;
+const Tool = require('./tool');
 const AddFeatureWorkflow = require('../workflows/addfeatureworkflow');
 const ModifyGeometryVertexWorkflow = require('../workflows/modifygeometryvertexworkflow');
 const MoveFeatureWorkflow = require('../workflows/movefeatureworkflow');

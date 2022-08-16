@@ -1,12 +1,14 @@
-const {toRawType} =  g3wsdk.core.utils;
+const { toRawType } =  g3wsdk.core.utils;
+
 function SelectFeaturesDom({features, events}={}){
   const Component = Vue.extend({
-    data(){
+    data() {
       return {
         selected: null
       }
     },
     render(h) {
+      console.log(features)
       const columns = Object.keys(features[0].getAlphanumericProperties());
       const header = columns.map(property => h('th', property));
       const thead = h('thead', [h('tr', header)]);
