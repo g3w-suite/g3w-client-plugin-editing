@@ -8,7 +8,6 @@ function SelectFeaturesDom({features, events}={}){
       }
     },
     render(h) {
-      console.log(features)
       const columns = Object.keys(features[0].getAlphanumericProperties());
       const header = columns.map(property => h('th', property));
       const thead = h('thead', [h('tr', header)]);

@@ -15,6 +15,7 @@
       </div>
     </div>
     <div v-else style="height: 10px;"></div>
+    <selectlayers></selectlayers>
     <div id="toolboxes">
       <toolbox :state="toolbox" :resourcesurl="resourcesurl"
         @setselectedtoolbox="setSelectedToolbox"
@@ -27,11 +28,11 @@
       </toolbox>
     </div>
   </div>
-
 </template>
 
 <script>
   import ToolboxComponent from './Toolbox.vue';
+  import SelectEditingLayersComponent from "./SelectEditingLayers.vue";
   const { GUI } = g3wsdk.gui;
   const { tPlugin:t } = g3wsdk.core.i18n;
   const { ApplicationState } = g3wsdk.core;
@@ -40,7 +41,8 @@
       name: 'Editing',
       data: null,
       components: {
-        'toolbox': ToolboxComponent
+        toolbox: ToolboxComponent,
+        selectlayers: SelectEditingLayersComponent
       },
       transitions: {'addremovetransition': 'showhide'},
       methods: {
