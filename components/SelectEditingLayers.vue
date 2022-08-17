@@ -1,5 +1,5 @@
 <template>
-  <div id="g3w-select-editable-layers-content">
+  <div id="g3w-select-editable-layers-content" class="skin-color">
     <label for="g3w-select-editable-layers-to-show" v-t="'Layers'"></label>
     <select id="g3w-select-editable-layers-to-show" multiple="multiple" clear="true" v-select2="'selectedlayers'">
       <option v-for="editinglayer in editinglayers" :value="editinglayer.id" :key="editinglayer.id">{{editinglayer.name}}</option>
@@ -40,6 +40,10 @@
 <style scoped>
   #g3w-select-editable-layers-content {
     margin-bottom: 10px;
+    font-weight: bold;
+  }
+  #g3w-select-editable-layers-content label {
+    color: #ffffff !important;
   }
   #g3w-select-editable-layers-to-show {
     cursor: pointer;
