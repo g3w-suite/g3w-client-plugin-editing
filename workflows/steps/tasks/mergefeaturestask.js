@@ -2,7 +2,7 @@ const { base, inherit } = g3wsdk.core.utils;
 const { dissolve } = g3wsdk.core.geoutils;
 const EditingTask = require('./editingtask');
 const { GUI } = g3wsdk.gui;
-const SelectFeaturesDom = require('../../../g3w-editing-components/selectfeatures');
+const SelectFeaturesDom = require('../../../g3w-editing-components/selectmergefeatures');
 
 function MergeFeaturesTask(options={}){
   base(this, options);

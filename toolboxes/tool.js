@@ -1,11 +1,11 @@
-const {base, inherit} = g3wsdk.core.utils;
+const {base, inherit, toRawType} = g3wsdk.core.utils;
 const { GUI } = g3wsdk.gui;
 const { G3WObject } = g3wsdk.core;
 
 function Tool(options = {}) {
   base(this);
   this.editingService = require('../services/editingservice');
-  const {name, row, id, icon, session, layer, once=false, type=[], visible=true} = options;
+  const {name, row, id, icon, session, layer, once=false, type=[], visible=true, conditions={}} = options;
   this._options = null;
   this._session = session;
   this._layer = layer;
@@ -14,6 +14,7 @@ function Tool(options = {}) {
   });
   this._once = once;
   this.type = type;
+  this.conditions = conditions;
   this.disabledtoolsoftools = [];
   this.state = {
     id,

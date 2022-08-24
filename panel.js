@@ -1,4 +1,4 @@
-const {base, inherit} = g3wsdk.core.utils;
+const { base, inherit } = g3wsdk.core.utils;
 const EditingComponent = require('./g3w-editing-components/editing');
 
 function EditingPanelComponent(options={}) {

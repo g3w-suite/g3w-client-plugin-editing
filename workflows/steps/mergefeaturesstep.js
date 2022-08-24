@@ -1,6 +1,4 @@
-const inherit = g3wsdk.core.utils.inherit;
-const base =  g3wsdk.core.utils.base;
-const t = g3wsdk.core.i18n.tPlugin;
+const { base, inherit } = g3wsdk.core.utils;
 const EditingStep = require('./editingstep');
 const MergeFeaturesTask = require('./tasks/mergefeaturestask');
 

@@ -1,6 +1,5 @@
-const inherit = g3wsdk.core.utils.inherit;
-const base =  g3wsdk.core.utils.base;
-const ApplicationState = g3wsdk.core.ApplicationState;
+const { base, inherit } = g3wsdk.core.utils;
+const { ApplicationState } = g3wsdk.core;
 const EditingWorkflow = require('./editingworkflow');
 const SelectElementsStep = require('./steps/selectelementsstep');
 const OpenFormStep = require('./steps/openformstep');
@@ -15,9 +14,7 @@ function EditMultiFeatureAttributesWorkflow(options={}) {
       description: ApplicationState.ismobile ? 'editing.workflow.steps.selectDrawBoxAtLeast2Feature' : 'editing.workflow.steps.selectMultiPointSHIFTAtLeast2Feature',
       buttonnext: {
         disabled: true,
-        condition:({features=[]})=> {
-          return features.length < 2
-        },
+        condition:({features=[]}) => features.length < 2,
         done: ()=>{}
       },
       directive: 't-plugin',

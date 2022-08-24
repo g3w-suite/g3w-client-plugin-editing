@@ -163,7 +163,7 @@
         GUI.on('opencontent', this._enableEditingButtons);
         GUI.on('closeform', this._enableEditingButtons);
         GUI.on('closecontent', this._enableEditingButtons);
-        GUI.getComponent('map').getService().seSelectionLayerVisible(false);
+        //GUI.getService('map').seSelectionLayerVisible(false);
       },
       beforeDestroy() {
         this.$options.service.setOpenEditingPanel(false);
@@ -171,7 +171,7 @@
         GUI.off('closeform', this._enableEditingButtons);
         GUI.off('closecontent', this._enableEditingButtons);
         this.$options.service.unregisterOnLineOffLineEvent();
-        GUI.getService('map').seSelectionLayerVisible(true);
+        //GUI.getService('map').seSelectionLayerVisible(true);
         this.$options.service.fireEvent('closeeditingpanel');
         this.$options.service.onCloseEditingPanel();
       }

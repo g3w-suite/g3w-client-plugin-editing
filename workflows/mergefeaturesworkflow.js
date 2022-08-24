@@ -1,9 +1,8 @@
-const inherit = g3wsdk.core.utils.inherit;
-const base =  g3wsdk.core.utils.base;
+const { base, inherit } = g3wsdk.core.utils;
+const { ApplicationState } = g3wsdk.core;
 const EditingWorkflow = require('./editingworkflow');
 const SelectElementsStep = require('./steps/selectelementsstep');
 const MergeFeaturesStep = require('./steps/mergefeaturesstep');
-const ApplicationState = g3wsdk.core.ApplicationState;
 function MergeFeaturesWorkflow(options={}) {
   options.type = 'bbox';
   options.help = 'editing.steps.help.merge';
