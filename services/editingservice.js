@@ -198,7 +198,7 @@ proto.unsubscribe = function(event, fnc) {
 // END API
 
 /**
- * Register result aediting action
+ * Register result editing action
  */
 proto.registerResultEditingAction = function(){
   const queryResultsService = GUI.getComponent('queryresults').getService();
@@ -232,9 +232,7 @@ proto.editResultLayerFeature = function({layerId, featureId}={}){
     }
   })
     .then(({features}) =>{
-      const feature = features.find(feature => {
-        return feature.getId() == featureId;
-      });
+      const feature = features.find(feature => feature.getId() == featureId);
       if (feature){
         toolBox.setSelected(true);
         const session = toolBox.getSession();
@@ -1244,22 +1242,28 @@ proto.onCloseEditingPanel = async function(){
   this.getToolBoxes().forEach(toolbox => toolbox.resetDefault());
 };
 
+/**
+ *
+ * Method to show feature that are updated or created with editing on result content
+ * @returns {Promise<void>}
+ */
 proto.showChangesToResult = async function(){
   const layerIdChanges = Object.keys(this.loadLayersFeaturesToResultWhenCloseEditing);
   if (layerIdChanges.length) {
-    const promises = [];
     const inputs = {
-      layers:[],
-      fids:[],
-      formatter:1
+      layers: [],
+      fids: [],
+      formatter: 1
     };
     layerIdChanges.forEach(layerId => {
       const fids = [...this.loadLayersFeaturesToResultWhenCloseEditing[layerId]];
-      const layer = CatalogLayersStoresRegistry.getLayerById(layerId);
-      inputs.layers.push(layer);
-      inputs.fids.push(fids);
+      if (fids.length) {
+        const layer = CatalogLayersStoresRegistry.getLayerById(layerId);
+        inputs.layers.push(layer);
+        inputs.fids.push(fids);
+      }
     });
-    promises.push(DataRouterService.getData('search:layersfids', {
+    const promise = inputs.layers.length ? DataRouterService.getData('search:layersfids', {
       inputs,
       outputs: {
         title: 'plugins.editing.editing_changes',
@@ -1267,11 +1271,11 @@ proto.showChangesToResult = async function(){
           loading: false
         }
       }
-    }));
+    }) : Promise.resolve();
+    try {
+      await promise;
+    } catch(err) {}
   }
-  try {
-    await Promise.allSettled(promises)
-  } catch(err) {}
   this.loadLayersFeaturesToResultWhenCloseEditing = {};
 };
 

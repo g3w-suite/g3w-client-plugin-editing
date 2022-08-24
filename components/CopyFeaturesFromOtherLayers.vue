@@ -18,11 +18,16 @@
 
   export default {
     name: 'Copyfeaturesfromotherlayers',
+    data(){
+      return {
+        selectedFeatures: this.$options.selectedFeatures
+      }
+    },
     methods: {
       selectFeature(feature){
-        const find = this.$options.selectedFeatures.find(selectedFeature => selectedFeature === feature);
-        if (find) this.$options.selectedFeatures = this.$options.selectedFeatures.filter(selectedFeature => selectedFeature === feature);
-        else this.$options.selectedFeatures.push(feature);
+        const find = this.selectedFeatures.find(selectedFeature => selectedFeature === feature);
+        if (find) this.selectedFeatures = this.selectedFeatures.filter(selectedFeature => selectedFeature !== feature);
+        else this.selectedFeatures.push(feature);
       },
       getLayerTitle(layerId){
         return MapLayersStoreRegistry.getLayerById(layerId).getTitle()

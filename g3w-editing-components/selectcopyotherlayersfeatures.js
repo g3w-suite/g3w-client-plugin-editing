@@ -1,6 +1,6 @@
 import CopyFeatureFromOtherLayersComponent from '../components/CopyFeaturesFromOtherLayers.vue';
 
-function SelectFeaturesDom({features=[], selectedFeatures=[]}={}){
+function SelectFeaturesFromOtherLayersComponent({features=[], selectedFeatures=[]}={}){
   const layers = {};
   features.forEach(feature => {
     const layerId = feature.__layerId;
@@ -11,7 +11,7 @@ function SelectFeaturesDom({features=[], selectedFeatures=[]}={}){
   return new Component({
     layers,
     selectedFeatures
-  }).$mount().$el;
+  })
 }
 
-module.exports = SelectFeaturesDom;
+module.exports = SelectFeaturesFromOtherLayersComponent;
