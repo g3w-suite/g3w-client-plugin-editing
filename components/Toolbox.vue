@@ -135,3 +135,9 @@
       }
     };
 </script>
+
+<style scoped>
+  .toolbox {
+    padding-bottom: 5px;
+  }
+</style>
