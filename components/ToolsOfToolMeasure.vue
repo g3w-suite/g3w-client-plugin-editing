@@ -1,3 +1,7 @@
+<!-- ORIGINAL SOURCE: -->
+<!-- vue/components/toolsoftool/measure.html@v3.4 -->
+<!-- vue/components/toolsoftool/measure.js@v3.4 -->
+
 <template>
   <div style="display: flex">
     <input type="checkbox" class="magic-checkbox snap_tools_of_tools" id="g3w_editing_show_measure_tool" v-model="checked">

@@ -1,10 +1,10 @@
-const {Layer} = g3wsdk.core.layer;
-const {Geometry} = g3wsdk.core.geometry;
-const {GUI} = g3wsdk.gui;
-const Tool = require('./tool');
+const { Layer } = g3wsdk.core.layer;
+const { Geometry } = g3wsdk.core.geometry;
+const { GUI } = g3wsdk.gui;
 const {
   isSameBaseGeometryType,
 } = g3wsdk.core.geoutils;
+const Tool = require('./tool');
 const AddFeatureWorkflow = require('../workflows/addfeatureworkflow');
 const ModifyGeometryVertexWorkflow = require('../workflows/modifygeometryvertexworkflow');
 const MoveFeatureWorkflow = require('../workflows/movefeatureworkflow');
@@ -19,6 +19,7 @@ const AddPartToMultigeometriesWorkflow = require('../workflows/addparttomultigeo
 const DeletePartFromMultigeometriesWorkflow = require('../workflows/deletepartfrommultigeometriesworkflow');
 const EditMultiFeatureAttributesWorkflow = require('../workflows/editmultifeatureattributesworkflow');
 const AddFeatureFromMapVectorLayersWorflow = require('../workflows/addfeaturefrommapvectorlayersworkflow');
+const CopyFeaturesFromOtherLayerWorkflow = require('../workflows/copyfeaturesfromotherlayerworkflow');
 
 function EditorToolsFactory() {
   /**
@@ -198,6 +199,43 @@ function EditorToolsFactory() {
               row: 2,
               op: MoveFeatureWorkflow,
               type: ['change_feature']
+            }
+          },
+          {
+            config: {
+              id: 'copyfeatures',
+              name: "editing.tools.copy",
+              icon: "copyPoint.png",
+              layer,
+              once: true,
+              conditions: {
+                enabled: (function(){
+                  const layerId = layer.getId();
+                  const geometryType = layer.getGeometryType();
+                  const selectionLayerSource = mapService.defaultsLayers.selectionLayer.getSource();
+                  const data = {
+                    bool: false,
+                    tool: undefined
+                  };
+                  const checkSelectedFeatureLayers = () => {
+                    const {bool, tool} = data;
+                    const featuresFilter =  selectionLayerSource.getFeatures().filter(feature => (feature.__layerId !== layerId) && feature.getGeometry().getType() === geometryType);
+                    const enabled = bool && featuresFilter.length > 0;
+                    tool.setEnabled(enabled);
+                    return enabled;
+                  };
+                  return ({bool, tool={}})=>{
+                    data.tool = tool;
+                    data.bool = bool;
+                    selectionLayerSource[bool ? 'on' : 'un']('addfeature', checkSelectedFeatureLayers);
+                    selectionLayerSource[bool ? 'on' : 'un']('removefeature', checkSelectedFeatureLayers);
+                    return checkSelectedFeatureLayers();
+                  }
+                }())
+              },
+              row: 2,
+              op: CopyFeaturesFromOtherLayerWorkflow,
+              type: ['add_feature']
             }
           },
           {

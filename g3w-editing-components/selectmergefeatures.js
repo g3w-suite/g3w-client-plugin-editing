@@ -1,7 +1,12 @@
-const {toRawType} =  g3wsdk.core.utils;
+/* ORIGINAL SOURCE:
+* vue/components/selectfeatures/selectfeatures.js@v3.4
+*/
+
+const { toRawType } =  g3wsdk.core.utils;
+
 function SelectFeaturesDom({features, events}={}){
   const Component = Vue.extend({
-    data(){
+    data() {
       return {
         selected: null
       }

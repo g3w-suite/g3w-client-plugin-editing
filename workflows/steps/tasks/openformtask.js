@@ -159,15 +159,19 @@ proto.startForm = function(options = {}) {
 };
 
 proto.run = function(inputs, context) {
+  const d = $.Deferred();
   GUI.setLoadingContent(false);
   this.getEditingService().disableMapControlsConflict(true);
-  const d = $.Deferred();
-  this.startForm({
-    inputs,
-    context,
-    promise: d
-  });
-  this.disableSidebar(true);
+  if (!this._multi && Array.isArray(inputs.features[inputs.features.length -1])) {
+    d.resolve();
+  } else {
+    this.startForm({
+      inputs,
+      context,
+      promise: d
+    });
+    this.disableSidebar(true);
+  }
   return d.promise();
 };
 

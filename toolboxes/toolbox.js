@@ -1,16 +1,15 @@
-const ApplicationState = g3wsdk.core.ApplicationState;
-const {base, inherit, debounce} = g3wsdk.core.utils;
-const G3WObject = g3wsdk.core.G3WObject;
-const GUI = g3wsdk.gui.GUI;
-const t = g3wsdk.core.i18n.tPlugin;
-const Layer = g3wsdk.core.layer.Layer;
-const Session = g3wsdk.core.editing.Session;
-const getScaleFromResolution = g3wsdk.ol.utils.getScaleFromResolution;
+const { ApplicationState, G3WObject } = g3wsdk.core;
+const {base, inherit, debounce, toRawType} = g3wsdk.core.utils;
+const { GUI } = g3wsdk.gui;
+const { tPlugin:t } = g3wsdk.core.i18n;
+const { Layer } = g3wsdk.core.layer;
+const { Session } = g3wsdk.core.editing;
+const { getScaleFromResolution } = g3wsdk.ol.utils;
 
 function ToolBox(options={}) {
   base(this);
   this.editingService = require('../services/editingservice');
-  this._mapService = GUI.getComponent('map').getService();
+  this._mapService = GUI.getService('map');
   this._start = false;
   this._constraints = options.constraints || {};
   this._layer = options.layer;
@@ -225,6 +224,7 @@ proto.setEditingConstraints = function(constraints={}){
   Object.keys(constraints).forEach(constraint => this.constraints[constraint] = constraints[constraint]);
 };
 
+
 //added option object to start method to have a control by other plugin how
 proto.start = function(options={}) {
   let {filter, toolboxheader=true, startstopediting=true, showtools=true, tools, changingtools=false} = options;
@@ -241,6 +241,7 @@ proto.start = function(options={}) {
   this.setFeaturesOptions({
     filter
   });
+  
   const handlerAfterSessionGetFeatures = promise => {
     this.emit(EventName);
     this.editingService.runEventHandler({
@@ -280,7 +281,7 @@ proto.start = function(options={}) {
       //added case of mobile
       if (ApplicationState.ismobile && this._mapService.isMapHidden() && this._layerType === Layer.LayerTypes.VECTOR) {
         this.setEditing(true);
-        GUI.getComponent('map').getService().onceafter('setHidden', () =>{
+        GUI.getService('map').onceafter('setHidden', () =>{
           setTimeout(()=>{
             this._start = true;
             this.startLoading();
@@ -305,6 +306,7 @@ proto.start = function(options={}) {
       this.setEditing(true);
     }
   }
+
   return d.promise();
 };
 
@@ -335,7 +337,7 @@ proto.stop = function() {
           this.stopLoading();
           this._getFeaturesOption = {};
           this.stopActiveTool();
-          this._setToolsEnabled(false);
+          this.enableTools(false);
           this.clearToolboxMessages();
           this.setSelected(false);
           this.emit(EventName);
@@ -348,7 +350,7 @@ proto.stop = function() {
       // need to be sure to clear
       this._layer.getEditingLayer().getSource().clear();
       this.state.editing.on = false;
-      this._setToolsEnabled(false);
+      this.enableTools(false);
       this.clearToolboxMessages();
       this._unregisterGetFeaturesEvent();
       this.editingService.stopSessionChildren(this.state.id);
@@ -405,13 +407,6 @@ proto._registerGetFeaturesEvent = function(options={}) {
 
 proto.setConstraintFeaturesFilter = function(filter){
   this.constraintFeatureFilter = filter;
-};
-
-proto._setToolsEnabled = function(bool=true) {
-  this._tools.forEach(tool => {
-    tool.setEnabled(bool);
-    !bool && tool.setActive(bool);
-  })
 };
 
 proto.getEditingConstraints = function() {
@@ -659,8 +654,13 @@ proto.enableTools = function(bool=false) {
   const tools = this._enabledtools || this._tools;
   const disabledtools = this._disabledtools || [];
   tools.forEach(tool => {
-    const enableTool = bool && disabledtools.length ? disabledtools.indexOf(tool.getId()) === -1 : bool;
+    const { conditions:{enabled=bool} } = tool;
+    const enableTool = bool && disabledtools.length ? disabledtools.indexOf(tool.getId()) === -1 : toRawType(enabled) === 'Boolean' ? enabled : enabled({
+      bool,
+      tool
+    });
     tool.setEnabled(enableTool);
+    !bool && tool.setActive(bool);
   })
 };
 

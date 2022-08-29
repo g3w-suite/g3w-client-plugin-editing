@@ -1,3 +1,7 @@
+<!-- ORIGINAL SOURCE: -->
+<!-- vue/components/toolsoftool/snap.html@v3.4 -->
+<!-- vue/components/toolsoftool/snap.js@v3.4 -->
+
 <template>
   <div style="display: flex;width: 100%; justify-content: space-between">
     <input type="checkbox" class="magic-checkbox snap_tools_of_tools" :id="id" v-model="checked">
@@ -15,11 +19,11 @@
 </template>
 
 <script>
-  const GUI = g3wsdk.gui.GUI;
-  const Layer = g3wsdk.core.layer.Layer;
+  const { GUI } = g3wsdk.gui;
+  const { Layer } = g3wsdk.core.layer;
   let snapInteraction;
   const mapService = GUI.getService('map');
-  const editingService = require('../../../services/editingservice');
+  const editingService = require('../services/editingservice');
   export default {
     name: "snap",
     props: ['options'],
