@@ -95,13 +95,20 @@ function EditingService() {
   this.init = function(config={}) {
     this._mapService.addScaleLineUnits(['nautical']);
     this._vectorUrl = config.vectorurl;
-    const {urls:{editing:editing_url, vector:vector_data_url}, signaler_layer_id,
+    const {enc_layer_id, urls:{editing:editing_url, vector:vector_data_url}, signaler_layer_id,
       vertex_layer_id, geo_layer_id, signaler_field, ab_signal_fields, fields={},
       parent_signal_field="parent_signal_id",
       states, roles_editing_acl, state_field, every_fields_editing_states,
       relation_signal_types={},
       signal_type
     } = config;
+    if (enc_layer_id) {
+      //Custom substitution of getWMSInfoLayerName in this case
+      const layer = CatalogLayersStoresRegistry.getLayerById(enc_layer_id);
+      layer.getWMSInfoLayerName = function() {
+        return this.getOrigName()
+      }
+    }
     SIGNALER_IIM_CONFIG.signal_type = signal_type;
     SIGNALER_IIM_CONFIG.signaler_layer_id = signaler_layer_id;
     SIGNALER_IIM_CONFIG.signaler_field = signaler_field || 'signaled_fid';
