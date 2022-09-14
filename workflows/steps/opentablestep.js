@@ -1,7 +1,5 @@
-const inherit = g3wsdk.core.utils.inherit;
-const base =  g3wsdk.core.utils.base;
-const t = g3wsdk.core.i18n.tPlugin;
-const Step = g3wsdk.core.workflow.Step;
+const {base, inherit}  = g3wsdk.core.utils;
+const { Step }  = g3wsdk.core.workflow;
 const OpenTableTask = require('./tasks/opentabletask');
 
 //creato uno step per apriore il form

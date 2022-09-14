@@ -19,7 +19,7 @@
       </div>
     </div>
     <div v-else style="height: 10px;"></div>
-    <selectlayers></selectlayers>
+    <selectlayers v-if="state.toolboxes.length > 1"></selectlayers>
     <div id="toolboxes">
       <toolbox :state="toolbox" :resourcesurl="resourcesurl"
         @setselectedtoolbox="setSelectedToolbox"

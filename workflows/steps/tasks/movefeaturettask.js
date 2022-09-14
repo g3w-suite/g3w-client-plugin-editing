@@ -16,22 +16,33 @@ proto.run = function(inputs, context) {
   const session = context.session;
   const layerId = originalLayer.getId();
   const features = new ol.Collection(inputs.features);
+  const originalStyle = this.setFeaturesSelectedStyle(inputs.features);
   let originalFeature = null;
+  this.changeKey = null; //
+  let isGeometryChange = false; // changed if geometry is changed
+
   this._translateInteraction = new ol.interaction.Translate({
     features,
     hitTolerance: (isMobile && isMobile.any) ? 10 : 0
   });
   this.addInteraction(this._translateInteraction);
 
-  this._translateInteraction.on('translatestart',function(e){
-    const feature = e.features.getArray()[0];
+
+
+  this._translateInteraction.on('translatestart', evt =>{
+    const feature = evt.features.getArray()[0];
+    this.changeKey = feature.once('change', () => isGeometryChange = true);
     originalFeature = feature.clone();
   });
 
-  this._translateInteraction.on('translateend',function(e) {
-    const feature = e.features.getArray()[0];
-    const newFeature = feature.clone();
-    session.pushUpdate(layerId, newFeature, originalFeature);
+  this._translateInteraction.on('translateend', evt => {
+    ol.Observable.unByKey(this.changeKey);
+    const feature = evt.features.getArray()[0];
+    feature.setStyle(originalStyle);
+    if (isGeometryChange) {
+      const newFeature = feature.clone();
+      session.pushUpdate(layerId, newFeature, originalFeature);
+    }
     d.resolve(inputs);
   });
 
@@ -41,8 +52,7 @@ proto.run = function(inputs, context) {
 proto.stop = function() {
   this.removeInteraction(this._translateInteraction);
   this._translateInteraction = null;
+  this.changeKey = null;
 };
-
-
 
 module.exports = MoveFeatureTask;

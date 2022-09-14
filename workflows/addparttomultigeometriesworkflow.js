@@ -1,7 +1,7 @@
-const inherit = g3wsdk.core.utils.inherit;
-const base =  g3wsdk.core.utils.base;
+const { base, inherit } = g3wsdk.core.utils;
 const EditingWorkflow = require('./editingworkflow');
-const SelectElementsStep = require('./steps/selectelementsstep');
+const PickFeatureStep = require('./steps/pickfeaturestep');
+const ChooseFeatureStep = require('./steps/choosefeaturestep');
 const AddFeatureStep = require('./steps/addfeaturestep');
 const AddPartToMultigeometriesStep = require('./steps/addparttomultigeometriesstep');
 
@@ -9,7 +9,7 @@ function AddPartToMultigeometriesWorflow(options={}) {
   options.type = 'single';
   options.helpMessage = 'editing.tools.addpart';
   options.help = 'editing.steps.help.select_element';
-  const selectelementssteps = new SelectElementsStep(options, true);
+  const selectelementssteps = new PickFeatureStep();
   selectelementssteps.getTask().setSteps({
     select: {
       description: 'editing.workflow.steps.select',
@@ -45,7 +45,7 @@ function AddPartToMultigeometriesWorflow(options={}) {
     this.emit('deactive', ['snap']);
   });
   const addparttogeometriesstep = new AddPartToMultigeometriesStep(options);
-  options.steps = [selectelementssteps, addfeaturestep, addparttogeometriesstep];
+  options.steps = [selectelementssteps, new ChooseFeatureStep(), addfeaturestep, addparttogeometriesstep];
   this.registerEscKeyEvent();
   base(this, options);
 }

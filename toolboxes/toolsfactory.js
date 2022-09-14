@@ -92,6 +92,43 @@ function EditorToolsFactory() {
           },
           {
             config: {
+              id: 'copyfeaturesfromotherlayer',
+              name: "editing.tools.copy",
+              icon: "copyPoint.png",
+              layer,
+              once: true,
+              conditions: {
+                enabled: (function(){
+                  const layerId = layer.getId();
+                  const geometryType = layer.getGeometryType();
+                  const selectionLayerSource = mapService.defaultsLayers.selectionLayer.getSource();
+                  const data = {
+                    bool: false,
+                    tool: undefined
+                  };
+                  const checkSelectedFeatureLayers = () => {
+                    const {bool, tool} = data;
+                    const featuresFilter =  selectionLayerSource.getFeatures().filter(feature => (feature.__layerId !== layerId) && feature.getGeometry().getType() === geometryType);
+                    const enabled = bool && featuresFilter.length > 0;
+                    tool.setEnabled(enabled);
+                    return enabled;
+                  };
+                  return ({bool, tool={}})=>{
+                    data.tool = tool;
+                    data.bool = bool;
+                    selectionLayerSource[bool ? 'on' : 'un']('addfeature', checkSelectedFeatureLayers);
+                    selectionLayerSource[bool ? 'on' : 'un']('removefeature', checkSelectedFeatureLayers);
+                    return checkSelectedFeatureLayers();
+                  }
+                }())
+              },
+              row: 2,
+              op: CopyFeaturesFromOtherLayerWorkflow,
+              type: ['add_feature']
+            }
+          },
+          {
+            config: {
               id: 'copyfeatures',
               name: "editing.tools.copy",
               icon: "copyPoint.png",
@@ -203,7 +240,7 @@ function EditorToolsFactory() {
           },
           {
             config: {
-              id: 'copyfeatures',
+              id: 'copyfeaturesfromotherlayer',
               name: "editing.tools.copy",
               icon: "copyPoint.png",
               layer,

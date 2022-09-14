@@ -1,7 +1,7 @@
 const {base, inherit}  = g3wsdk.core.utils;
-const GUI = g3wsdk.gui.GUI;
-const tPlugin = g3wsdk.core.i18n.tPlugin;
-const t = g3wsdk.core.i18n.t;
+const { GUI } = g3wsdk.gui;
+const {t, tPlugin} = g3wsdk.core.i18n;
+const { Layer } = g3wsdk.core.layer;
 const EditingTask = require('./editingtask');
 
 const Dialogs = {
@@ -10,6 +10,8 @@ const Dialogs = {
       let d = $.Deferred();
       const EditingService = require('../../../services/editingservice');
       const layer = inputs.layer;
+      const editingLayer = layer.getEditingLayer();
+      const feature = inputs.features[0];
       const layerId = layer.getId();
       const childRelations = layer.getChildren();
       const relationinediting = childRelations.length &&  EditingService._filterRelationsInEditing({
@@ -19,7 +21,10 @@ const Dialogs = {
 
       GUI.dialog.confirm(`<h4>${tPlugin('editing.messages.delete_feature')}</h4>
                         <div style="font-size:1.2em;">${ relationinediting ?tPlugin('editing.messages.delete_feature_relations') : ''}</div>`, result => {
-        result ?  d.resolve(inputs) : d.reject(inputs);
+        if (result) {
+          editingLayer.getSource().removeFeature(feature);
+          d.resolve(inputs)
+        }  else  d.reject(inputs);
 
       });
       return d.promise();
@@ -76,7 +81,17 @@ inherit(ConfirmTask, EditingTask);
 const proto = ConfirmTask.prototype;
 
 proto.run = function(inputs, context) {
-  return this._dialog.fnc(inputs, context);
+
+  const promise = this._dialog.fnc(inputs, context);
+  if (inputs.layer.getType() === Layer.LayerTypes.VECTOR){
+    const {features=[]} = inputs;
+    const originalStyle = this.setFeaturesSelectedStyle(features);
+    promise.always(()=>{
+      features.forEach((feature => feature.setStyle(originalStyle)));
+    });
+  }
+
+  return promise;
 };
 
 proto.stop = function() {

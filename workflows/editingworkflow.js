@@ -1,5 +1,4 @@
 const {base, inherit} = g3wsdk.core.utils;
-const {GUI} = g3wsdk.gui;
 const {Workflow} = g3wsdk.core.workflow;
 const {Layer} = g3wsdk.core.layer;
 const {isPointGeometryType} = g3wsdk.core.geometry.Geometry;

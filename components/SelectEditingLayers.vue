@@ -29,9 +29,12 @@
           const bool = layers.indexOf(id) !== -1; // check if editing layer is selected
           const toolbox =  EditingService.getToolBoxById(id); // show or not toolbox of layer based on bool value
           toolbox.setShow(bool);
-          (!bool) && toolbox.stop(); // in case of bool === false (not selected) need to stop editing on layer
-        });
-        else this.editinglayers.forEach(({id}) => EditingService.getToolBoxById(id).setShow(true));
+          if (!bool)  {
+            if (toolbox.state.editing.history.commit)
+              EditingService.commit({toolbox}).always(() => toolbox.stop());
+            else toolbox.stop();
+          } // in case of bool === false (not selected) need to stop editing on layer
+        }); else this.editinglayers.forEach(({id}) => EditingService.getToolBoxById(id).setShow(true));
       }
     }
   };

@@ -1,6 +1,5 @@
-const inherit = g3wsdk.core.utils.inherit;
-const base =  g3wsdk.core.utils.base;
-const PickFeatureInteraction = g3wsdk.ol.interactions.PickFeatureInteraction;
+import { PickFeaturesInteraction } from '../../../interactions/pickfeaturesinteraction';
+const { base, inherit }  = g3wsdk.core.utils;
 const EditingTask = require('./editingtask');
 
 function PickFeatureTask(options={}) {
@@ -21,19 +20,21 @@ const proto = PickFeatureTask.prototype;
 proto.run = function(inputs, context, queques) {
   const d = $.Deferred();
   const editingLayer = inputs.layer.getEditingLayer();
-  const layers = [editingLayer];
-  let originalStyle;
-  this.pickFeatureInteraction = new PickFeatureInteraction({
-    layers,
-    features: inputs.features
+
+  this.pickFeatureInteraction = new PickFeaturesInteraction({
+    layer: editingLayer,
   });
+
   this.addInteraction(this.pickFeatureInteraction);
-  this.pickFeatureInteraction.on('picked', (e) => {
-    const feature = e.feature;
-    originalStyle = this.setFeaturesSelectedStyle([feature]);
-    inputs.features.length === 0 && inputs.features.push(feature);
+  this.pickFeatureInteraction.on('picked', evt => {
+    const {features, coordinate} = evt;
+    const originalStyle = this.setFeaturesSelectedStyle(features);
+    if (inputs.features.length === 0) {
+      inputs.features = features;
+      inputs.coordinate = coordinate;
+    }
     queques.micro.addTask(()=>{
-      inputs.features.forEach((feature => feature.setStyle(originalStyle)));
+      features.forEach((feature => feature.setStyle(originalStyle)));
     });
     this._steps && this.setUserMessageStepDone('select');
     d.resolve(inputs);

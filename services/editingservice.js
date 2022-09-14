@@ -201,7 +201,7 @@ proto.unsubscribe = function(event, fnc) {
  * Register result editing action
  */
 proto.registerResultEditingAction = function(){
-  const queryResultsService = GUI.getComponent('queryresults').getService();
+  const queryResultsService = GUI.getService('queryresults');
   this.setterKeys.push({
     setter: 'editFeature',
     key: queryResultsService.onafter('editFeature', ({layerId, featureId}) => {
@@ -1306,7 +1306,8 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
     close,
     commitPromise // add a commit promise
   }) : Promise.resolve(messages);
-  promise.then(messages => {
+  promise
+    .then(messages => {
     if (ApplicationState.online) {
       session.commit({items: items || commitItems})
         .then((commitItems, response) => {
@@ -1345,6 +1346,7 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
           }
         })
         .fail(error => {
+          if (error.errors) error.error = error.errors
           const parser = new serverErrorParser({
             error
           });
@@ -1381,7 +1383,10 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
             });
             d.reject(toolbox);
           })
-    }).catch(() => d.reject(toolbox));
+    })
+    .catch(() => {
+      d.reject(toolbox)
+  });
   return commitPromise;
 };
 

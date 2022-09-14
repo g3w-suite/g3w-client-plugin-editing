@@ -58,7 +58,7 @@ proto.run = function(inputs, context) {
     originalFeature = feature.clone();
   });
   this.addInteraction(this._modifyInteraction);
-  this._modifyInteraction.on('modifyend', evt =>{
+  this._modifyInteraction.on('modifyend', evt => {
     const feature = evt.features.getArray()[0];
     if (feature.getGeometry().getExtent() !== originalFeature.getGeometry().getExtent()) {
       newFeature = feature.clone();
@@ -94,13 +94,8 @@ proto.removeMeasureInteraction = function(){
 proto.stop = function(){
   this._feature.setStyle(this._originalStyle);
   this.removeInteraction(this._modifyInteraction);
-  this._modifyInteraction = null;
   return true;
 };
 
-
-proto._isNew = function(feature){
-  return (!_.isNil(this.editingLayer.getEditingSource().getFeatureById(feature.getId())));
-};
 
 module.exports = ModifyGeometryVertexTask;

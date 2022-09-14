@@ -1,8 +1,7 @@
-const inherit = g3wsdk.core.utils.inherit;
-const base =  g3wsdk.core.utils.base;
-const {splitFeatures} = g3wsdk.core.geoutils;
-const Feature = g3wsdk.core.layer.features.Feature;
-const GUI = g3wsdk.gui.GUI;
+const { base, inherit }  = g3wsdk.core.utils;
+const { splitFeatures } = g3wsdk.core.geoutils;
+const { Feature } = g3wsdk.core.layer.features;
+const { GUI } = g3wsdk.gui;
 const EditingTask = require('./editingtask');
 
 function SplitFeatureTask(options={}){

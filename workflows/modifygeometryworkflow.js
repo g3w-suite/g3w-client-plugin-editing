@@ -1,6 +1,5 @@
-var inherit = g3wsdk.core.utils.inherit;
-var base =  g3wsdk.core.utils.base;
-var EditingWorkflow = require('./editingworkflow');
+const { base, inherit } = g3wsdk.core.utils;
+const EditingWorkflow = require('./editingworkflow');
 
 function ModifyGeometryWorflow(options={}) {
   options.steps = [];
@@ -8,7 +7,5 @@ function ModifyGeometryWorflow(options={}) {
 }
 
 inherit(ModifyGeometryWorflow, EditingWorkflow);
-
-const proto = ModifyGeometryWorflow.prototype;
 
 module.exports = ModifyGeometryWorflow;
