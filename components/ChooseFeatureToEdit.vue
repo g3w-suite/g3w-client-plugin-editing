@@ -1,6 +1,6 @@
 <template>
-    <div class="editing-layers-features">
-      <div v-for="(feature, index) in $options.features" style="padding: 5px; position: relative; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid #eeeeee; ">
+    <div id="editing-layers-choose-feature">
+      <div class="editing-choose-feature-radio-input" v-for="(feature, index) in $options.features">
         <input @click.stop="selectFeature(feature)" :id="`choose_feature_${index}`" name="radio" type="radio" class="magic-radio">
         <label :for="`choose_feature_${index}`">{{ feature.get($options.attributes[0]) }}</label>
         <template v-for="attribute in $options.attributes.slice(1,3)">
@@ -41,3 +41,13 @@
     }
   };
 </script>
+<style scoped>
+  #editing-layers-choose-feature .editing-choose-feature-radio-input{
+    padding: 5px;
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 1px solid #eeeeee;
+  }
+</style>

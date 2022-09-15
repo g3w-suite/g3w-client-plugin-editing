@@ -105,5 +105,4 @@ proto.stop = function(){
   this._snapIteraction = null;
 };
 
-
 module.exports = SplitFeatureTask;

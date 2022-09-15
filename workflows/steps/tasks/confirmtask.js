@@ -81,15 +81,11 @@ inherit(ConfirmTask, EditingTask);
 const proto = ConfirmTask.prototype;
 
 proto.run = function(inputs, context) {
-
   const promise = this._dialog.fnc(inputs, context);
-  if (inputs.layer.getType() === Layer.LayerTypes.VECTOR){
-    const {features=[]} = inputs;
-    const originalStyle = this.setFeaturesSelectedStyle(features);
-    promise.always(()=>{
-      features.forEach((feature => feature.setStyle(originalStyle)));
-    });
-  }
+
+  this.setAndUnsetSelectedFeaturesStyle({
+    promise
+  });
 
   return promise;
 };

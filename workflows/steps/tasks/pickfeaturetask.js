@@ -17,7 +17,7 @@ inherit(PickFeatureTask, EditingTask);
 
 const proto = PickFeatureTask.prototype;
 
-proto.run = function(inputs, context, queques) {
+proto.run = function(inputs, context) {
   const d = $.Deferred();
   const editingLayer = inputs.layer.getEditingLayer();
 
@@ -28,14 +28,14 @@ proto.run = function(inputs, context, queques) {
   this.addInteraction(this.pickFeatureInteraction);
   this.pickFeatureInteraction.on('picked', evt => {
     const {features, coordinate} = evt;
-    const originalStyle = this.setFeaturesSelectedStyle(features);
     if (inputs.features.length === 0) {
       inputs.features = features;
       inputs.coordinate = coordinate;
     }
-    queques.micro.addTask(()=>{
-      features.forEach((feature => feature.setStyle(originalStyle)));
+    this.setAndUnsetSelectedFeaturesStyle({
+      promise: d
     });
+
     this._steps && this.setUserMessageStepDone('select');
     d.resolve(inputs);
   });

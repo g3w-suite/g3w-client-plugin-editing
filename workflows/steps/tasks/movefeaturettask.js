@@ -16,7 +16,6 @@ proto.run = function(inputs, context) {
   const session = context.session;
   const layerId = originalLayer.getId();
   const features = new ol.Collection(inputs.features);
-  const originalStyle = this.setFeaturesSelectedStyle(inputs.features);
   let originalFeature = null;
   this.changeKey = null; //
   let isGeometryChange = false; // changed if geometry is changed
@@ -27,8 +26,6 @@ proto.run = function(inputs, context) {
   });
   this.addInteraction(this._translateInteraction);
 
-
-
   this._translateInteraction.on('translatestart', evt =>{
     const feature = evt.features.getArray()[0];
     this.changeKey = feature.once('change', () => isGeometryChange = true);
@@ -38,11 +35,15 @@ proto.run = function(inputs, context) {
   this._translateInteraction.on('translateend', evt => {
     ol.Observable.unByKey(this.changeKey);
     const feature = evt.features.getArray()[0];
-    feature.setStyle(originalStyle);
     if (isGeometryChange) {
       const newFeature = feature.clone();
       session.pushUpdate(layerId, newFeature, originalFeature);
     }
+
+    this.setAndUnsetSelectedFeaturesStyle({
+      promise: d,
+    })
+
     d.resolve(inputs);
   });
 

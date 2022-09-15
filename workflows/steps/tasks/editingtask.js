@@ -1,8 +1,9 @@
-const {base, inherit} = g3wsdk.core.utils;
-const createSelectedStyle = g3wsdk.core.geoutils.createSelectedStyle;
-const {areCoordinatesEqual} = g3wsdk.core.geoutils;
-const GUI = g3wsdk.gui.GUI;
-const Task = g3wsdk.core.workflow.Task;
+const { base, inherit } = g3wsdk.core.utils;
+const { createSelectedStyle } = g3wsdk.core.geoutils;
+const { areCoordinatesEqual } = g3wsdk.core.geoutils;
+const { Layer } = g3wsdk.core.layer;
+const { GUI } = g3wsdk.gui;
+const { Task } = g3wsdk.core.workflow;
 
 function EditingTask(options = {}) {
   base(this, options);
@@ -13,7 +14,7 @@ function EditingTask(options = {}) {
   };
   this.removeInteraction = function(interaction) {
     //needed to avoid a issue on openlayer
-    setTimeout(()=> this._mapService.removeInteraction(interaction))
+    setTimeout(() => this._mapService.removeInteraction(interaction))
   };
 }
 
@@ -91,6 +92,22 @@ proto.setFeaturesSelectedStyle = function(features=[]) {
     features.forEach(feature => feature.setStyle(selectedStyle));
     return originalStyle;
   }
+};
+
+proto.setAndUnsetSelectedFeaturesStyle = function({promise}={}){
+  /*
+  Temporary needed to fix issue on pending promise
+   */
+  const {layer, features} = this.getInputs();
+  setTimeout(()=>{
+    if (layer.getType() === Layer.LayerTypes.VECTOR){
+      const originalStyle = this.setFeaturesSelectedStyle(features);
+      promise.always(() => {
+        features.forEach((feature => feature.setStyle(originalStyle)))
+      })
+    }
+  })
+
 };
 
 proto.getSelectedStyle = function(feature){

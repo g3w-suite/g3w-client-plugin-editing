@@ -1,12 +1,12 @@
-const {ApplicationState} = g3wsdk.core;
-const {base, inherit} = g3wsdk.core.utils;
+const { ApplicationState } = g3wsdk.core;
+const { base, inherit } = g3wsdk.core.utils;
 const {
   isSameBaseGeometryType,
   convertSingleMultiGeometry
 } = g3wsdk.core.geoutils;
-const {Feature} = g3wsdk.core.layer.features;
+const { Feature } = g3wsdk.core.layer.features;
+const { PickFeatureInteraction } = g3wsdk.ol.interactions;
 const EditingTask = require('./editingtask');
-const {PickFeatureInteraction} = g3wsdk.ol.interactions;
 
 function SelectElementsTask(options={}) {
   this._type = options.type || 'bbox'; // 'single' 'bbox' 'multiple'

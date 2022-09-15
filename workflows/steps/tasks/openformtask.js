@@ -1,7 +1,6 @@
 const {base, inherit} = g3wsdk.core.utils;
 const {GUI} = g3wsdk.gui;
 const {WorkflowsStack} = g3wsdk.core.workflow;
-const { Layer } = g3wsdk.core.layer;
 const EditingTask = require('./editingtask');
 const EditingFormComponent = require('../../../form/editingform');
 
@@ -110,19 +109,14 @@ proto._saveFnc = function(promise, context, inputs) {
 
 proto.startForm = function(options = {}) {
   this.getEditingService().setCurrentLayout();
-  const { inputs, context, queques, promise } = options;
+  const { inputs, context, promise } = options;
   const { session } = context;
   const formComponent = options.formComponent || EditingFormComponent;
   const Form = this._getForm(inputs, context);
   const layerId = this._originalLayer.getId();
   const feature = this._originalFeatures[0];
   const isnew = this._originalFeatures.length > 1 ? false : feature.isNew();
-  if (inputs.layer.getType() === Layer.LayerTypes.VECTOR){
-    const originalStyle = this.setFeaturesSelectedStyle(inputs.features);
-    queques.micro.addTask(()=>{
-      inputs.features.forEach((feature => feature.setStyle(originalStyle)));
-    });
-  }
+
   const formService = Form({
     formComponent,
     title: "plugins.editing.editing_attributes",
@@ -165,21 +159,27 @@ proto.startForm = function(options = {}) {
   currentWorkflow && currentWorkflow.setContextService(formService);
 };
 
-proto.run = function(inputs, context, queques) {
+proto.run = function(inputs, context) {
   const d = $.Deferred();
+  const { features } = inputs;
   GUI.setLoadingContent(false);
   this.getEditingService().disableMapControlsConflict(true);
-  if (!this._multi && Array.isArray(inputs.features[inputs.features.length -1])) {
+
+  this.setAndUnsetSelectedFeaturesStyle({
+    promise: d
+  })
+
+  if (!this._multi && Array.isArray(features[features.length -1])) {
     d.resolve();
   } else {
     this.startForm({
       inputs,
       context,
-      queques,
       promise: d
     });
     this.disableSidebar(true);
   }
+
   return d.promise();
 };
 
