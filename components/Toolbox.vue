@@ -31,12 +31,12 @@
           </div>
           <div class="tools-content row2" style="display: flex; flex-wrap: wrap;">
             <tool :state="toolstate" :resourcesurl="resourcesurl" @stopactivetool="stopActiveTool" @setactivetool="setActiveTool"
-                  v-for="toolstate in toolsrow2" :key="toolstate.id">
+              v-for="toolstate in toolsrow2" :key="toolstate.id">
             </tool>
           </div>
           <div class="tools-content row3" style="display: flex; flex-wrap: wrap;">
             <tool :state="toolstate" :resourcesurl="resourcesurl" @stopactivetool="stopActiveTool" @setactivetool="setActiveTool"
-                  v-for="toolstate in toolsrow3" :key="toolstate.id">
+              v-for="toolstate in toolsrow3" :key="toolstate.id">
             </tool>
           </div>
           <div class="message" style="margin-top: 5px;" :id="'id_toolbox_messages_'+ state.id">
@@ -44,7 +44,7 @@
             <transition name="fade">
               <toolsoftool v-if="showtoolsoftool" :tools="state.toolsoftool"></toolsoftool>
             </transition>
-            <div class="toolbox_help_message">{{ toolhelpmessage | tPlugin }}</div>
+            <div v-if="currenttoolname" class="toolbox_help_message" v-t-plugin="currenttoolname"></div>
           </div>
         </div>
       </div>
@@ -62,7 +62,8 @@
       props: ['state', 'resourcesurl'],
       data() {
         return {
-          active: false
+          active: false,
+          currenttoolname: null
         }
       },
       components: {
@@ -105,9 +106,6 @@
         father() {
           return this.state.editing.father && !!this.state.editing.dependencies.length;
         },
-        toolhelpmessage() {
-          return this.state.toolmessages.help;
-        },
         showtoolsoftool() {
           return !!this.state.toolsoftool.length;
         },
@@ -120,19 +118,19 @@
         this.$emit('canEdit', {
           id: this.state.id
         });
-        // to transalte help message
-        this.$watch(()=> ApplicationState.lng, ()=>{
-          const help = this.toolhelpmessage;
-          this.state.toolmessages.help = null;
-          this.state.toolmessages.help = help;
-        })
       },
       async mounted() {
         await this.$nextTick();
         $(this.$refs.editingbutton).tooltip();
         // is usefult to wait a little bit is some plugin or editing has to chenge some thing to the toolbox
         // ex. tools visibility etcc. different from default behaviour
-      }
+      },
+    watch: {
+        async'state.activetool'(activetool){
+          await this.$nextTick();
+          this.currenttoolname = activetool && activetool.getName();
+        }
+       }
     };
 </script>
 
