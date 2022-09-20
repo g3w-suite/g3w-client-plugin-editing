@@ -150,7 +150,7 @@ proto._highlightRelationSelect = function(relation) {
 };
 
 proto.startTool = function(relationtool, index) {
-  if (relationtool.id === 'movefeature') GUI.hideContent(true);
+  if (relationtool.state.id === 'movefeature') GUI.hideContent(true);
   return new Promise((resolve, reject) => {
     const toolPromise = (this._layerType === Layer.LayerTypes.VECTOR) && this.startVectorTool(relationtool, index) ||
       (this._layerType === Layer.LayerTypes.TABLE) && this.startTableTool(relationtool, index);
