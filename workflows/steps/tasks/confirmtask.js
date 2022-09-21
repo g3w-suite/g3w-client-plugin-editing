@@ -1,12 +1,11 @@
 const {base, inherit}  = g3wsdk.core.utils;
 const { GUI } = g3wsdk.gui;
 const {t, tPlugin} = g3wsdk.core.i18n;
-const { Layer } = g3wsdk.core.layer;
 const EditingTask = require('./editingtask');
 
 const Dialogs = {
   delete: {
-    fnc: function(inputs, context) {
+    fnc: function(inputs) {
       let d = $.Deferred();
       const EditingService = require('../../../services/editingservice');
       const layer = inputs.layer;
@@ -82,11 +81,9 @@ const proto = ConfirmTask.prototype;
 
 proto.run = function(inputs, context) {
   const promise = this._dialog.fnc(inputs, context);
-
-  this.setAndUnsetSelectedFeaturesStyle({
+  inputs.features && this.setAndUnsetSelectedFeaturesStyle({
     promise
   });
-
   return promise;
 };
 
