@@ -93,8 +93,8 @@ function EditorToolsFactory() {
           {
             config: {
               id: 'copyfeaturesfromotherlayer',
-              name: "editing.tools.copy",
-              icon: "copyPoint.png",
+              name: "editing.tools.pastefeaturesfromotherlayers",
+              icon: "pasteFeaturesFromOtherLayers.png",
               layer,
               once: true,
               conditions: {
@@ -241,8 +241,8 @@ function EditorToolsFactory() {
           {
             config: {
               id: 'copyfeaturesfromotherlayer',
-              name: "editing.tools.copy",
-              icon: "copyPoint.png",
+              name: "editing.tools.pastefeaturesfromotherlayers",
+              icon: "pasteFeaturesFromOtherLayers.png",
               layer,
               once: true,
               conditions: {

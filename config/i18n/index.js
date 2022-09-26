@@ -23,6 +23,7 @@ export default {
     },
     tools: {
       copy: "Copia features",
+      pastefeaturesfromotherlayers: "Copia features da altro layer",
       addpart: "Aggiungi parte alla geometria",
       deletepart: "Cancella parte dalla geometria",
       merge: "Dissolvi features",
@@ -163,6 +164,7 @@ export default {
     },
     tools: {
       copy: "Copy features",
+      pastefeaturesfromotherlayers: "Paste features from other layer",
       addpart: "Add part to multipart",
       deletepart: "Delete part from multipart",
       merge: "Dissolve features",
@@ -304,6 +306,7 @@ export default {
     },
     tools: {
       copy: "Kopio ominaisuuksia",
+      pastefeaturesfromotherlayers: "Paste features from other layer",
       addpart: "Lisää osa",
       deletepart: "Poista osa",
       merge: "Yhdistä ominaisuudet",
@@ -444,6 +447,7 @@ export default {
     },
     tools: {
       copy: "Kopiera egenskaper",
+      pastefeaturesfromotherlayers: "Paste features from other layer",
       addpart: "Lägg till del",
       deletepart: "Ta bort del",
       merge: "Slå samman egenskaper",
@@ -579,6 +583,7 @@ export default {
     },
     tools: {
       copy: "Copier les fonctionnalités",
+      pastefeaturesfromotherlayers: "Paste features from other layer",
       addpart: "Ajouter une pièce à la géométrie",
       deletepart: "Supprimer la partie de la géométrie",
       merge: "Dissoudre les fonctionnalités",
@@ -718,6 +723,7 @@ export default {
     },
     tools: {
       copy: "Features kopieren",
+      pastefeaturesfromotherlayers: "Paste features from other layer",
       addpart: "Teil zu Multipart hinzufügen",
       deletepart: "Teil aus Multipart löschen",
       merge: "Feature auflösen",
@@ -859,6 +865,7 @@ export default {
     },
     tools: {
       copy: "Copiază entitățile",
+      pastefeaturesfromotherlayers: "Paste features from other layer",
       addpart: "Adaugă o parte la multiparte",
       deletepart: "Elimină partea din multiparte",
       merge: "Dizolvare entități",
