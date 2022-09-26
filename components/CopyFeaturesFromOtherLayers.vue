@@ -5,7 +5,7 @@
           <divider></divider>
           <div v-for="(feature, index) in features" style="padding: 5px; position: relative; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid #eeeeee; ">
             <input @click.stop="selectFeature(feature)" :id="`${layerId}_${index}_select_feature_from_layer`" type="checkbox" class="magic-checkbox">
-            <label :for="`${layerId}_${index}_select_feature_from_layer`"> Feature </label>
+            <label :for="`${layerId}_${index}_select_feature_from_layer`"> {{ feature.getId() }} </label>
             <div @click.stop="zoomToFeature(feature)" :class="g3wtemplate.font['marker']" class="skin-color" style="padding: 3px; font-size: 1.1em;  cursor: pointer; margin-right: 5px;"></div>
           </div>
         </div>
