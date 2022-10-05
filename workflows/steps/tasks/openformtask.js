@@ -27,7 +27,6 @@ module.exports = OpenFormTask;
 const proto = OpenFormTask.prototype;
 
 proto._getForm = function(inputs, context) {
-  const excludeFields = context.excludeFields;
   this._isContentChild = !!(WorkflowsStack.getLength() > 1);
   this._session = context.session;
   this._originalLayer = inputs.layer;
@@ -35,8 +34,10 @@ proto._getForm = function(inputs, context) {
   this._layerName = this._originalLayer.getName();
   this._features = this._multi ? inputs.features : [inputs.features[inputs.features.length - 1]];
   this._originalFeatures = this._features.map(feature => feature.clone());
-  this._fields = this._originalLayer.getFieldsWithValues(this._features[0], {
-    exclude: excludeFields
+  this._fields = this.getFormFields({
+    inputs,
+    context,
+    feature: this._features[0]
   });
   // in case of multi editing set all field to null //
   this._fields = this._multi ? this._fields.map(field => {

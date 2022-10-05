@@ -61,6 +61,17 @@ proto.run = function(inputs, context) {
   this._modifyInteraction.on('modifyend', evt => {
     const feature = evt.features.getArray()[0];
     if (feature.getGeometry().getExtent() !== originalFeature.getGeometry().getExtent()) {
+      /*
+      * evaluate expression geometry check
+       */
+      this.evaluateGeometryExpressionField({
+        inputs,
+        feature,
+      });
+      /**
+       *
+       * end of evaluate
+       */
       newFeature = feature.clone();
       session.pushUpdate(layerId, newFeature, originalFeature);
       inputs.features.push(newFeature);

@@ -71,6 +71,16 @@ proto._handleSplitFeature = function({feature, inputs, session, splittedGeometri
   inputs.features = splittedGeometries.length ? [] : inputs.features;
   splittedGeometries.forEach((splittedGeometry, index) => {
     if (index === 0) {
+      /**
+       * check geometry evaluated expression
+       */
+      this.evaluateGeometryExpressionField({
+        inputs,
+        feature
+      });
+      /**
+       * end
+       */
       feature.setGeometry(splittedGeometry);
       session.pushUpdate(layerId, feature, oriFeature)
     } else {
@@ -84,6 +94,16 @@ proto._handleSplitFeature = function({feature, inputs, session, splittedGeometri
       feature = new Feature({
         feature: newFeature
       });
+      /**
+       * evaluate geometry expression
+       */
+      this.evaluateGeometryExpressionField({
+        inputs,
+        feature
+      });
+      /**
+       * end
+       */
       feature.setTemporaryId();
       source.addFeature(feature);
       newFeatures.push(session.pushAdd(layerId, feature));

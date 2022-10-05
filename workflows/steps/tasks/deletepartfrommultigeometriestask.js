@@ -34,26 +34,38 @@ proto.run = function(inputs, context) {
   map.addLayer(tempLayer);
   map.once('postrender', function(){
     let found = false;
-    this.forEachFeatureAtPixel(pixel, (_feature)=>{
-      if(!found) {
-        source.removeFeature(_feature);
-        if (source.getFeatures().length) {
-          const newGeometry = singleGeometriesToMultiGeometry(source.getFeatures().map(feature => feature.getGeometry()));
-          feature.setGeometry(newGeometry);
-          session.pushUpdate(layerId, feature, originalFeature);
-        } else {
-          editingLayer.getSource().removeFeature(feature);
-          session.pushDelete(layerId, feature)
+    this.forEachFeatureAtPixel(pixel, _feature => {
+        if(!found) {
+          source.removeFeature(_feature);
+          if (source.getFeatures().length) {
+            const newGeometry = singleGeometriesToMultiGeometry(source.getFeatures().map(feature => feature.getGeometry()));
+            feature.setGeometry(newGeometry);
+            /**
+             * evaluated geometry expression
+             */
+            this.evaluateGeometryExpressionField({
+              inputs,
+              feature
+            });
+            /**
+             * end of evaluated
+             */
+            session.pushUpdate(layerId, feature, originalFeature);
+          } else {
+            editingLayer.getSource().removeFeature(feature);
+            session.pushDelete(layerId, feature)
+          }
+          d.resolve(inputs);
+          found = true;
         }
-        d.resolve(inputs);
-        found = true;
-      }
-      }, {
-      layerFilter(layer){
-        return layer === tempLayer
       },
-      hitTolerance: 1
-    });
+      {
+        layerFilter(layer){
+          return layer === tempLayer
+        },
+        hitTolerance: 1
+      }
+    );
     this.removeLayer(tempLayer);
     tempLayer = null;
   });

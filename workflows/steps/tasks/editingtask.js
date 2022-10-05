@@ -1,9 +1,14 @@
 const { base, inherit } = g3wsdk.core.utils;
-const { createSelectedStyle } = g3wsdk.core.geoutils;
-const { areCoordinatesEqual } = g3wsdk.core.geoutils;
+const { createSelectedStyle, areCoordinatesEqual, convertFeatureToGEOJSON} = g3wsdk.core.geoutils;
 const { Layer } = g3wsdk.core.layer;
 const { GUI } = g3wsdk.gui;
 const { Task } = g3wsdk.core.workflow;
+const { DataRouterService } = g3wsdk.core.data;
+/**
+ * List of placeholder in default_expression expression to call server for getting value of input
+ * @type {string[]}
+ */
+const GEOMETRY_DEFAULT_EXPRESSION_PLACEHOLDERS = ["$area", "$perimeter", "$length", "$x", "$y"];
 
 function EditingTask(options = {}) {
   base(this, options);
@@ -159,6 +164,47 @@ proto.saveSingle = function(input, context){
  */
 proto.cancelSingle = function(input, context){
   context.session.rollback();
+};
+
+/**
+ * get form fields
+ */
+
+proto.getFormFields = function({inputs, context, feature}={}){
+  const layer = inputs.layer;
+  const excludeFields = context.excludeFields;
+  return layer.getFieldsWithValues(feature, {
+    exclude: excludeFields
+  });
+};
+
+/**
+ * Evalue Expression
+ */
+
+proto.evaluateGeometryExpressionField = async function({inputs, feature}){
+  const form_data = convertFeatureToGEOJSON(feature);
+  inputs.layer.getEditingFields().forEach(field => {
+    const {default_expression} = field.input.options;
+    if (default_expression){
+      const evaluate = GEOMETRY_DEFAULT_EXPRESSION_PLACEHOLDERS.find(placeholder => default_expression.expression.indexOf(placeholder) !== -1)
+      if (evaluate){
+        const layer_id = inputs.layer.getId();
+        DataRouterService.getData('expression:expression_eval', {
+          inputs: {
+            layer_id, // layer id owner of the data
+            qgs_layer_id: layer_id , //
+            form_data,
+            formatter: 0,
+            expression: default_expression.expression
+          },
+          outputs: false
+        }).then(value => feature.set(field.name, value))
+      }
+    }
+
+  })
+
 };
 
 module.exports = EditingTask;

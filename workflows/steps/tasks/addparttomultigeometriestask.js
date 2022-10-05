@@ -18,6 +18,16 @@ proto.run = function(inputs, context) {
   const featureGeometry = feature.getGeometry();
   const originalFeature = feature.clone();
   featureGeometry.setCoordinates([...featureGeometry.getCoordinates(), ...features[1].getGeometry().getCoordinates()]);
+  /**
+   * evaluated geometry expression
+   */
+  this.evaluateGeometryExpressionField({
+    inputs,
+    feature
+  });
+  /**
+   * end of evaluated
+   */
   session.pushUpdate(layerId, feature, originalFeature);
   inputs.features = [feature];
   d.resolve(inputs);

@@ -37,12 +37,22 @@ proto.run = function(inputs, context) {
     const feature = evt.features.getArray()[0];
     if (isGeometryChange) {
       const newFeature = feature.clone();
+      /**
+       * evaluated geometry expression
+       */
+      this.evaluateGeometryExpressionField({
+        inputs,
+        feature: newFeature
+      });
+      /**
+       * end of evaluated
+       */
       session.pushUpdate(layerId, newFeature, originalFeature);
     }
 
     this.setAndUnsetSelectedFeaturesStyle({
       promise: d,
-    })
+    });
 
     d.resolve(inputs);
   });

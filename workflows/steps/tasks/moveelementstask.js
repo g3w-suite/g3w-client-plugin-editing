@@ -1,5 +1,4 @@
-const inherit = g3wsdk.core.utils.inherit;
-const base =  g3wsdk.core.utils.base;
+const {base, inherit} = g3wsdk.core.utils;
 const EditingTask = require('./editingtask');
 
 function MoveElementsTask(options={}){
@@ -62,6 +61,16 @@ proto.run = function(inputs, context) {
         feature,
         layer
       });
+      /**
+       * evaluated geometry expression
+       */
+      this.evaluateGeometryExpressionField({
+        inputs,
+        feature
+      });
+      /**
+       * end of evaluated
+       */
       source.addFeature(feature);
       session.pushAdd(layerId, feature);
       inputs.features.push(feature);
@@ -81,6 +90,5 @@ proto.stop = function() {
   this._snapIteraction = null;
   return true;
 };
-
 
 module.exports = MoveElementsTask;
