@@ -182,29 +182,32 @@ proto.getFormFields = function({inputs, context, feature}={}){
  * Evalue Expression
  */
 
-proto.evaluateGeometryExpressionField = async function({inputs, feature}){
-  const form_data = convertFeatureToGEOJSON(feature);
-  inputs.layer.getEditingFields().forEach(field => {
-    const {default_expression} = field.input.options;
-    if (default_expression){
-      const evaluate = GEOMETRY_DEFAULT_EXPRESSION_PLACEHOLDERS.find(placeholder => default_expression.expression.indexOf(placeholder) !== -1)
-      if (evaluate){
-        const layer_id = inputs.layer.getId();
-        DataRouterService.getData('expression:expression_eval', {
-          inputs: {
-            layer_id, // layer id owner of the data
-            qgs_layer_id: layer_id , //
-            form_data,
-            formatter: 0,
-            expression: default_expression.expression
-          },
-          outputs: false
-        }).then(value => feature.set(field.name, value))
+proto.evaluateGeometryExpressionField = function({inputs, feature}){
+  return new Promise((resolve, reject) => {
+    const form_data = convertFeatureToGEOJSON(feature);
+    inputs.layer.getEditingFields().forEach(field => {
+      const {default_expression} = field.input.options;
+      if (default_expression){
+        const evaluate = GEOMETRY_DEFAULT_EXPRESSION_PLACEHOLDERS.find(placeholder => default_expression.expression.indexOf(placeholder) !== -1)
+        if (evaluate){
+          const layer_id = inputs.layer.getId();
+          DataRouterService.getData('expression:expression_eval', {
+            inputs: {
+              layer_id, // layer id owner of the data
+              qgs_layer_id: layer_id , //
+              form_data,
+              formatter: 0,
+              expression: default_expression.expression
+            },
+            outputs: false
+          }).then(value => {
+            feature.set(field.name, value);
+            resolve(feature);
+          }).catch(reject)
+        }
       }
-    }
-
+    })
   })
-
 };
 
 module.exports = EditingTask;
