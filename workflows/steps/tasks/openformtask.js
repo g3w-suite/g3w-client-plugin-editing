@@ -168,7 +168,7 @@ proto.run = function(inputs, context) {
 
   this.setAndUnsetSelectedFeaturesStyle({
     promise: d
-  })
+  });
 
   if (!this._multi && Array.isArray(features[features.length -1])) {
     d.resolve();
