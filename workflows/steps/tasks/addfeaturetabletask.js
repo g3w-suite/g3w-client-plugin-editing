@@ -20,6 +20,7 @@ proto.run = function(inputs, context) {
   editingLayer.getEditingSource().addFeature(feature);
   session.pushAdd(layerId, feature);
   inputs.features.push(feature);
+  this.setContextGetDefaultValue(true);
   d.resolve(inputs, context);
   return d.promise();
 };

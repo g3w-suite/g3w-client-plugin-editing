@@ -79,6 +79,7 @@ proto.run = function(inputs, context) {
           feature
         }).finally(()=>{
           inputs.features.push(feature);
+          this.setContextGetDefaultValue(true);
           this.fireEvent('addfeature', feature); // emit event to get from subscribers
           d.resolve(inputs);
         })

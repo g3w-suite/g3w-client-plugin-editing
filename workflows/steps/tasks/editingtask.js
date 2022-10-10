@@ -112,7 +112,6 @@ proto.setAndUnsetSelectedFeaturesStyle = function({promise}={}){
       })
     }
   })
-
 };
 
 proto.getSelectedStyle = function(feature){
@@ -172,9 +171,10 @@ proto.cancelSingle = function(input, context){
 
 proto.getFormFields = function({inputs, context, feature}={}){
   const layer = inputs.layer;
-  const excludeFields = context.excludeFields;
+  const {excludeFields:exclude, get_default_value=false} = context;
   return layer.getFieldsWithValues(feature, {
-    exclude: excludeFields
+    exclude,
+    get_default_value
   });
 };
 
@@ -208,6 +208,11 @@ proto.evaluateGeometryExpressionField = function({inputs, feature}){
       }
     })
   })
+};
+
+proto.setContextGetDefaultValue = function(get_default_value=false){
+  const context = this.getContext();
+  context.get_default_value = get_default_value;
 };
 
 module.exports = EditingTask;
