@@ -179,18 +179,25 @@ proto.getFormFields = function({inputs, context, feature}={}){
 };
 
 /**
- * Evalue Expression
+ * Evaluated Expression checking inp
  */
 
-proto.evaluateGeometryExpressionField = function({inputs, feature}){
-  return new Promise((resolve, reject) => {
-    const form_data = convertFeatureToGEOJSON(feature);
-    inputs.layer.getEditingFields().forEach(field => {
-      const {default_expression} = field.input.options;
-      if (default_expression){
-        const evaluate = GEOMETRY_DEFAULT_EXPRESSION_PLACEHOLDERS.find(placeholder => default_expression.expression.indexOf(placeholder) !== -1)
-        if (evaluate){
-          const layer_id = inputs.layer.getId();
+proto.evaluateGeometryExpressionField = function({inputs, feature}={}){
+  const expression_eval_promises = []; // promises from expression evaluation
+  const form_data = convertFeatureToGEOJSON(feature);
+  const { layer } = inputs;
+  layer.getEditingFields().forEach(field => {
+    const {default_expression} = field.input.options;
+    if (default_expression){
+      let evaluate = false;
+      const {expression, apply_on_update = false} = default_expression;
+      /*
+      check if always update apply_on_update = true or only is is a new feature
+       */
+      if (apply_on_update || feature.isNew()) evaluate = GEOMETRY_DEFAULT_EXPRESSION_PLACEHOLDERS.find(placeholder => expression.indexOf(placeholder) !== -1);
+      if (evaluate){
+        const layer_id = inputs.layer.getId();
+        const expression_eval_promise = new Promise((resolve, reject) => {
           DataRouterService.getData('expression:expression_eval', {
             inputs: {
               layer_id, // layer id owner of the data
@@ -204,12 +211,18 @@ proto.evaluateGeometryExpressionField = function({inputs, feature}){
             feature.set(field.name, value);
             resolve(feature);
           }).catch(reject)
-        }
+        });
+        expression_eval_promises.push(expression_eval_promise);
       }
-    })
-  })
+    }
+  });
+  return Promise.allSettled(expression_eval_promises);
 };
 
+/**
+ * set
+ * @param get_default_value to context of task
+ */
 proto.setContextGetDefaultValue = function(get_default_value=false){
   const context = this.getContext();
   context.get_default_value = get_default_value;

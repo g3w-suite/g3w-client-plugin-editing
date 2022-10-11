@@ -125,7 +125,7 @@ proto.startForm = function(options = {}) {
     id: this._generateFormId(this._layerName),
     dataid: this._layerName,
     layer: this._originalLayer,
-    isnew,
+    isnew, // specify if is a new feature
     feature,
     fields: this._fields,
     context_inputs: !this._multi && this._edit_relations && {

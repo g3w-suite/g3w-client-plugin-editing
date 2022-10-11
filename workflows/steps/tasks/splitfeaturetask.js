@@ -28,27 +28,38 @@ proto.run = function(inputs, context) {
     freehandCondition: ol.events.condition.never
   });
 
-  this._drawInteraction.on('drawend', evt => {
+  this._drawInteraction.on('drawend', async evt => {
     const splitfeature = evt.feature;
     let isSplitted = false;
     const splittedGeometries = splitFeatures({
       splitfeature,
       features
     });
-    splittedGeometries.forEach(({uid, geometries}) => {
+    const splittedGeometriesLength = splittedGeometries.length;
+    for (let i=0; i < splittedGeometriesLength; i++) {
+      const {uid, geometries} = splittedGeometries[i];
       if (geometries.length > 1) {
         isSplitted = true;
         const feature = features.find(feature => feature.getUid() === uid);
-        this._handleSplitFeature({
+        await this._handleSplitFeature({
           feature,
           splittedGeometries: geometries,
           inputs,
           session
         });
       }
-    });
-    if (isSplitted) d.resolve(inputs);
-    else {
+    }
+
+    if (isSplitted) {
+      GUI.showUserMessage({
+        type: 'success',
+        message: 'plugins.editing.messages.splitted',
+        autoclose: true
+      });
+
+      d.resolve(inputs);
+
+    } else {
       GUI.showUserMessage({
         type: 'warning',
         message: 'plugins.editing.messages.nosplittedfeature',
@@ -62,30 +73,34 @@ proto.run = function(inputs, context) {
   return d.promise();
 };
 
-proto._handleSplitFeature = function({feature, inputs, session, splittedGeometries=[]}={}){
+proto._handleSplitFeature = async function({feature, inputs, session, splittedGeometries=[]}={}){
   const newFeatures = [];
   const {layer} = inputs;
   const source = layer.getEditingLayer().getSource();
   const layerId = layer.getId();
   const oriFeature = feature.clone();
   inputs.features = splittedGeometries.length ? [] : inputs.features;
-  splittedGeometries.forEach((splittedGeometry, index) => {
+  const splittedGeometriesLength = splittedGeometries.length;
+  for (let index=0; index < splittedGeometriesLength; index++) {
+    const splittedGeometry = splittedGeometries[index];
     if (index === 0) {
       /**
        * check geometry evaluated expression
        */
-      this.evaluateGeometryExpressionField({
-        inputs,
-        feature
-      });
-      /**
-       * end
-       */
       feature.setGeometry(splittedGeometry);
-      session.pushUpdate(layerId, feature, oriFeature)
+      try {
+        await this.evaluateGeometryExpressionField({
+          inputs,
+          feature
+        });
+      } catch(err){}
+
+      session.pushUpdate(layerId, feature, oriFeature);
+
     } else {
       const newFeature = oriFeature.cloneNew();
       newFeature.setGeometry(splittedGeometry);
+
       this.setNullMediaFields({
         layer,
         feature: newFeature
@@ -94,27 +109,24 @@ proto._handleSplitFeature = function({feature, inputs, session, splittedGeometri
       feature = new Feature({
         feature: newFeature
       });
-      /**
-       * evaluate geometry expression
-       */
-      this.evaluateGeometryExpressionField({
-        inputs,
-        feature
-      });
-      /**
-       * end
-       */
+
       feature.setTemporaryId();
       source.addFeature(feature);
+      /**
+       * * evaluate geometry expression
+      */
+      try {
+        await this.evaluateGeometryExpressionField({
+          inputs,
+          feature
+        });
+      } catch(err){}
+
       newFeatures.push(session.pushAdd(layerId, feature));
     }
     inputs.features.push(feature);
-  });
-  GUI.showUserMessage({
-    type: 'success',
-    message: 'plugins.editing.messages.splitted',
-    autoclose: true
-  });
+  }
+
   return newFeatures;
 };
 

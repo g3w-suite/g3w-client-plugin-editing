@@ -20,6 +20,10 @@ proto.run = function(inputs, context) {
   this.changeKey = null; //
   let isGeometryChange = false; // changed if geometry is changed
 
+  this.setAndUnsetSelectedFeaturesStyle({
+    promise: d,
+  });
+
   this._translateInteraction = new ol.interaction.Translate({
     features,
     hitTolerance: (isMobile && isMobile.any) ? 10 : 0
@@ -47,18 +51,16 @@ proto.run = function(inputs, context) {
       this.evaluateGeometryExpressionField({
         inputs,
         feature: newFeature
+      }).finally(() => {
+        session.pushUpdate(layerId, newFeature, originalFeature);
+        d.resolve(inputs);
       });
       /**
        * end of evaluated
        */
       session.pushUpdate(layerId, newFeature, originalFeature);
-    }
-
-    this.setAndUnsetSelectedFeaturesStyle({
-      promise: d,
-    });
-
-    d.resolve(inputs);
+      d.resolve(inputs);
+    } else d.resolve(inputs);
   });
 
   return d.promise()

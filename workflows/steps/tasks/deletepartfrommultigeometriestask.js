@@ -35,27 +35,29 @@ proto.run = function(inputs, context) {
   map.once('postrender', function(){
     let found = false;
     this.forEachFeatureAtPixel(pixel, _feature => {
-        if(!found) {
-          source.removeFeature(_feature);
-          if (source.getFeatures().length) {
-            const newGeometry = singleGeometriesToMultiGeometry(source.getFeatures().map(feature => feature.getGeometry()));
-            feature.setGeometry(newGeometry);
-            /**
-             * evaluated geometry expression
-             */
-            this.evaluateGeometryExpressionField({
-              inputs,
-              feature
-            });
-            /**
-             * end of evaluated
-             */
+      if (!found) {
+        source.removeFeature(_feature);
+        if (source.getFeatures().length) {
+          const newGeometry = singleGeometriesToMultiGeometry(source.getFeatures().map(feature => feature.getGeometry()));
+          feature.setGeometry(newGeometry);
+          /**
+           * evaluated geometry expression
+           */
+          this.evaluateGeometryExpressionField({
+            inputs,
+            feature
+          }).finally(()=>{
             session.pushUpdate(layerId, feature, originalFeature);
+            d.resolve(inputs);
+          });
+          /**
+           * end of evaluated
+           */
           } else {
             editingLayer.getSource().removeFeature(feature);
-            session.pushDelete(layerId, feature)
+            session.pushDelete(layerId, feature);
+            d.resolve(inputs);
           }
-          d.resolve(inputs);
           found = true;
         }
       },
@@ -72,8 +74,6 @@ proto.run = function(inputs, context) {
   return d.promise()
 };
 
-proto.stop = function() {
-};
-
+proto.stop = function() {};
 
 module.exports = DeletePartToMuligeometriesTask;

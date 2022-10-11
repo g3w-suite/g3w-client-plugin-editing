@@ -47,6 +47,7 @@ proto.run = function(inputs, context) {
       x, y, coordinates
     }) : null;
     const featuresLength = features.length;
+    const promisesDefaultEvaluation = [];
     for (let i =0; i < featuresLength; i++) {
       const feature = features[i].cloneNew();
       if (deltaXY) feature.getGeometry().translate(deltaXY.x, deltaXY.y);
@@ -64,19 +65,23 @@ proto.run = function(inputs, context) {
       /**
        * evaluated geometry expression
        */
-      this.evaluateGeometryExpressionField({
+      const promise = this.evaluateGeometryExpressionField({
         inputs,
         feature
+      }).finally(feature => {
+        source.addFeature(feature);
+        session.pushAdd(layerId, feature);
+        inputs.features.push(feature);
+        return Promise.resolve(feature)
       });
-      /**
-       * end of evaluated
-       */
-      source.addFeature(feature);
-      session.pushAdd(layerId, feature);
-      inputs.features.push(feature);
+      promisesDefaultEvaluation.push(promise)
     }
-    this._steps.to.done = true;
-    d.resolve(inputs)
+
+    Promise.allSettled(promisesDefaultEvaluation).finally(() =>{
+      this._steps.to.done = true;
+      d.resolve(inputs);
+    })
+
   });
 
   this.addInteraction(this._drawInteraction);

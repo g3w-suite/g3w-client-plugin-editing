@@ -24,13 +24,15 @@ proto.run = function(inputs, context) {
   this.evaluateGeometryExpressionField({
     inputs,
     feature
+  }).finally(()=>{
+    session.pushUpdate(layerId, feature, originalFeature);
+    inputs.features = [feature];
+    d.resolve(inputs);
   });
   /**
    * end of evaluated
    */
-  session.pushUpdate(layerId, feature, originalFeature);
-  inputs.features = [feature];
-  d.resolve(inputs);
+
   return d.promise();
 };
 
