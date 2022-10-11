@@ -170,12 +170,26 @@ proto.cancelSingle = function(input, context){
  */
 
 proto.getFormFields = function({inputs, context, feature}={}){
-  const layer = inputs.layer;
+  const {layer} = inputs;
+  const features = layer.getEditingSource().readFeatures();
   const {excludeFields:exclude, get_default_value=false} = context;
-  return layer.getFieldsWithValues(feature, {
+  const fields = layer.getFieldsWithValues(feature, {
     exclude,
     get_default_value
   });
+  /**
+   * check for unique validate
+   */
+  fields.forEach(field => {
+    if (field.validate.unique) {
+      features.forEach(feature => {
+        const value = feature.get(field.name);
+        if (value !== null && typeof value !== "undefined")
+          field.validate.exclude_values.add(value)
+      });
+    }
+  });
+  return fields;
 };
 
 /**
