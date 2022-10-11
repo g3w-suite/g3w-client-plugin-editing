@@ -8,7 +8,7 @@ const { DataRouterService } = g3wsdk.core.data;
  * List of placeholder in default_expression expression to call server for getting value of input
  * @type {string[]}
  */
-const GEOMETRY_DEFAULT_EXPRESSION_PLACEHOLDERS = ["$area", "$perimeter", "$length", "$x", "$y"];
+const GEOMETRY_DEFAULT_EXPRESSION_PLACEHOLDERS = ["$area", "$perimeter", "$length", "$x", "$y", "$geometry"];
 
 function EditingTask(options = {}) {
   base(this, options);

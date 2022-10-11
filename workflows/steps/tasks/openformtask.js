@@ -117,7 +117,13 @@ proto.startForm = function(options = {}) {
   const layerId = this._originalLayer.getId();
   const feature = this._originalFeatures[0];
   const isnew = this._originalFeatures.length > 1 ? false : feature.isNew();
-
+  /**
+   * In case of create a child relation feature set a father relation field value
+   */
+  if (this._isContentChild) {
+    const {fatherValue, fatherField} = context;
+    typeof fatherField !== "undefined" && feature.set(fatherField, fatherValue);
+  }
   const formService = Form({
     formComponent,
     title: "plugins.editing.editing_attributes",

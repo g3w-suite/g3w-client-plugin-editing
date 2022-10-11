@@ -378,7 +378,7 @@ proto.addRelation = function() {
       this.relations.push(newRelation);
     });
     this.emitEventToParentWorkFlow()
-  }).fail(err => session.rollbackDependecies([this._relationLayerId])).always(() =>{
+  }).fail(() => session.rollbackDependecies([this._relationLayerId])).always(() =>{
     workflow.stop();
   }).always(()=>{
     if (isVector) {
@@ -544,7 +544,8 @@ proto._createWorkflowOptions = function(options={}) {
     context: {
       session: this.getCurrentWorkflowData().session,
       excludeFields: [ownField],
-      fatherValue: this._currentParentFeatureRelationFieldValue,
+      fatherValue: this._currentParentFeatureRelationFieldValue, // field of father relation layer
+      fatherField: ownField // value of father relationField
     },
     inputs: {
       features: options.features || [],
