@@ -30,10 +30,6 @@ proto.run = function(inputs, context) {
   });
   this.addInteraction(this._translateInteraction);
 
-  this.setAndUnsetSelectedFeaturesStyle({
-    promise: d
-  });
-
   this._translateInteraction.on('translatestart', evt => {
     const feature = evt.features.getArray()[0];
     this.changeKey = feature.once('change', () => isGeometryChange = true);
