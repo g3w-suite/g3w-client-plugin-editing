@@ -195,8 +195,7 @@ proto.getFormFields = function({inputs, context, feature}={}){
 /**
  * Evaluated Expression checking inp
  */
-
-proto.evaluateGeometryExpressionField = function({inputs, feature}={}){
+proto.evaluateGeometryExpressionField = async function({inputs, feature}={}){
   const expression_eval_promises = []; // promises from expression evaluation
   const form_data = convertFeatureToGEOJSON(feature);
   const { layer } = inputs;
@@ -215,7 +214,7 @@ proto.evaluateGeometryExpressionField = function({inputs, feature}={}){
           DataRouterService.getData('expression:expression_eval', {
             inputs: {
               layer_id, // layer id owner of the data
-              qgs_layer_id: layer_id , //
+              qgs_layer_id: layer_id, //
               form_data,
               formatter: 0,
               expression: default_expression.expression
@@ -230,7 +229,8 @@ proto.evaluateGeometryExpressionField = function({inputs, feature}={}){
       }
     }
   });
-  return Promise.allSettled(expression_eval_promises);
+  await Promise.allSettled(expression_eval_promises);
+  return feature;
 };
 
 /**

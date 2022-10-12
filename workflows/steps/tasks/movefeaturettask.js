@@ -3,6 +3,7 @@ const EditingTask = require('./editingtask');
 
 function MoveFeatureTask(options){
   this.drawInteraction = null;
+  this.promise; // need to be set here in case of picked features
   base(this, options);
 }
 
@@ -11,7 +12,7 @@ inherit(MoveFeatureTask, EditingTask);
 const proto = MoveFeatureTask.prototype;
 
 proto.run = function(inputs, context) {
-  const d = $.Deferred();
+  this.promise = $.Deferred();
   const originalLayer = inputs.layer;
   const session = context.session;
   const layerId = originalLayer.getId();
@@ -21,7 +22,7 @@ proto.run = function(inputs, context) {
   let isGeometryChange = false; // changed if geometry is changed
 
   this.setAndUnsetSelectedFeaturesStyle({
-    promise: d,
+    promise: this.promise,
   });
 
   this._translateInteraction = new ol.interaction.Translate({
@@ -40,29 +41,25 @@ proto.run = function(inputs, context) {
     ol.Observable.unByKey(this.changeKey);
     const feature = evt.features.getArray()[0];
     if (isGeometryChange) {
-      const newFeature = feature.clone();
       /**
        * evaluated geometry expression
        */
       this.evaluateGeometryExpressionField({
         inputs,
-        feature: newFeature
+        feature
       }).finally(() => {
+        const newFeature = feature.clone();
         session.pushUpdate(layerId, newFeature, originalFeature);
-        d.resolve(inputs);
+        this.promise.resolve(inputs);
       });
-      /**
-       * end of evaluated
-       */
-      session.pushUpdate(layerId, newFeature, originalFeature);
-      d.resolve(inputs);
-    } else d.resolve(inputs);
+    } else this.promise.resolve(inputs);
   });
 
-  return d.promise()
+  return this.promise.promise()
 };
 
 proto.stop = function() {
+  this.promise.resolve();
   this.removeInteraction(this._translateInteraction);
   this._translateInteraction = null;
   this.changeKey = null;
