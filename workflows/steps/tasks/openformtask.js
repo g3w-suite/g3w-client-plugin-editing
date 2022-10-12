@@ -34,10 +34,18 @@ proto._getForm = function(inputs, context) {
   this._layerName = this._originalLayer.getName();
   this._features = this._multi ? inputs.features : [inputs.features[inputs.features.length - 1]];
   this._originalFeatures = this._features.map(feature => feature.clone());
+  const feature = this._features[0];
+  /**
+   * In case of create a child relation feature set a father relation field value
+   */
+  if (this._isContentChild) {
+    const {fatherValue, fatherField} = context;
+    typeof fatherField !== "undefined" && feature.set(fatherField, fatherValue);
+  }
   this._fields = this.getFormFields({
     inputs,
     context,
-    feature: this._features[0]
+    feature
   });
   // in case of multi editing set all field to null //
   this._fields = this._multi ? this._fields.map(field => {
@@ -117,13 +125,6 @@ proto.startForm = function(options = {}) {
   const layerId = this._originalLayer.getId();
   const feature = this._originalFeatures[0];
   const isnew = this._originalFeatures.length > 1 ? false : feature.isNew();
-  /**
-   * In case of create a child relation feature set a father relation field value
-   */
-  if (this._isContentChild) {
-    const {fatherValue, fatherField} = context;
-    typeof fatherField !== "undefined" && feature.set(fatherField, fatherValue);
-  }
   const formService = Form({
     formComponent,
     title: "plugins.editing.editing_attributes",
