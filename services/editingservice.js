@@ -1492,7 +1492,6 @@ proto.setLayerUniqueFieldValues = async function(layerId) {
       }
     }
   });
-  PIPPO = this.layersUniqueFieldsValues
 };
 
 proto.saveTemporaryRelationsUniqueFieldsValues = function(layerId) {
@@ -1507,7 +1506,6 @@ proto.saveTemporaryRelationsUniqueFieldsValues = function(layerId) {
 };
 
 proto.clearTemporaryRelationsUniqueFieldsValues = function(layerId) {
-  console.log(layerId)
   delete this.layersUniqueFieldsValues[layerId].__uniqueFieldsValuesRelations;
 };
 
