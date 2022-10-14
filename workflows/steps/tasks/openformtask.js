@@ -7,6 +7,7 @@ const EditingFormComponent = require('../../../form/editingform');
 function OpenFormTask(options={}) {
   this._edit_relations = options.edit_relations === undefined ? true : options._edit_relations;
   this._formIdPrefix = 'form_';
+  this.layerId;
   this._isContentChild = false;
   this._features;
   this._originalLayer;
@@ -26,7 +27,7 @@ module.exports = OpenFormTask;
 
 const proto = OpenFormTask.prototype;
 
-proto._getForm = function(inputs, context) {
+proto._getForm = async function(inputs, context) {
   this._isContentChild = !!(WorkflowsStack.getLength() > 1);
   this._session = context.session;
   this._originalLayer = inputs.layer;
@@ -40,12 +41,16 @@ proto._getForm = function(inputs, context) {
    */
   if (this._isContentChild) {
     const {fatherValue, fatherField} = context;
-    typeof fatherField !== "undefined" && feature.set(fatherField, fatherValue);
+    if (typeof fatherField !== "undefined")  {
+      feature.set(fatherField, fatherValue);
+      this._originalFeatures[0].set(fatherField, fatherValue);
+    }
   }
-  this._fields = this.getFormFields({
+  this._fields = await this.getFormFields({
     inputs,
     context,
-    feature
+    feature,
+    isChild: this._isContentChild
   });
   // in case of multi editing set all field to null //
   this._fields = this._multi ? this._fields.map(field => {
@@ -75,7 +80,6 @@ proto._cancelFnc = function(promise, inputs) {
 proto._saveFeatures = function({fields, promise, session, inputs}){
   fields = this._multi ? fields.filter(field => field.value !== null) : fields;
   if (fields.length) {
-    const layerId = this._originalLayer.getId();
     const newFeatures = [];
     this._features.forEach(feature =>{
       this._originalLayer.setFieldsWithValues(feature, fields);
@@ -92,11 +96,12 @@ proto._saveFeatures = function({fields, promise, session, inputs}){
       originalFeatures: this._originalFeatures
     }).then(()=> {
       newFeatures.forEach((newFeature, index)=>{
-        session.pushUpdate(layerId, newFeature, this._originalFeatures[index]);
+        session.pushUpdate(this.layerId, newFeature, this._originalFeatures[index]);
       });
       GUI.setModal(false);
+      this.fireEvent('savedfeature', newFeatures); // called after saved
+      this.fireEvent(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
       promise.resolve(inputs);
-      this.fireEvent('savedfeature', newFeatures) // called after saved
     })
   } else {
     GUI.setModal(false);
@@ -116,13 +121,12 @@ proto._saveFnc = function(promise, context, inputs) {
   }
 };
 
-proto.startForm = function(options = {}) {
+proto.startForm = async function(options = {}) {
   this.getEditingService().setCurrentLayout();
   const { inputs, context, promise } = options;
   const { session } = context;
   const formComponent = options.formComponent || EditingFormComponent;
-  const Form = this._getForm(inputs, context);
-  const layerId = this._originalLayer.getId();
+  const Form = await this._getForm(inputs, context);
   const feature = this._originalFeatures[0];
   const isnew = this._originalFeatures.length > 1 ? false : feature.isNew();
   const formService = Form({
@@ -157,7 +161,7 @@ proto.startForm = function(options = {}) {
   });
   this.fireEvent('openform',
     {
-      layerId,
+      layerId:this.layerId,
       session,
       feature: this._originalFeature,
       formService
@@ -169,7 +173,8 @@ proto.startForm = function(options = {}) {
 
 proto.run = function(inputs, context) {
   const d = $.Deferred();
-  const { features } = inputs;
+  const { layer, features } = inputs;
+  this.layerId = layer.getId();
   GUI.setLoadingContent(false);
   this.getEditingService().disableMapControlsConflict(true);
 
@@ -200,5 +205,7 @@ proto.stop = function() {
   this.getEditingService().disableMapControlsConflict(false);
   this._isContentChild ? GUI.popContent() : GUI.closeForm();
   this.getEditingService().resetCurrentLayout();
+  this.fireEvent('closeform');
+  this.fireEvent(`closeform_${this.layerId}`); // need to check layerId
+  this.layerId = null;
 };
-

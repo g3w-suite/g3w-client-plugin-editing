@@ -178,6 +178,11 @@ proto.startTableTool = function(relationtool, index) {
       if (result) {
         this.getCurrentWorkflowData().session.pushDelete(this._relationLayerId, relationfeature);
         this.relations.splice(index, 1);
+        this.getEditingService().removeRelationLayerUniqueFieldValuesFromFeature({
+          layerId: this._relationLayerId,
+          relationLayerId: this._parentLayerId,
+          feature: relationfeature
+        });
         featurestore.removeFeature(relationfeature);
         d.resolve(result);
       } else d.reject(result);
@@ -190,9 +195,8 @@ proto.startTableTool = function(relationtool, index) {
       .then(() => {
         const fields = this._getRelationFieldsValue(relationfeature);
         fields.forEach(_field => {
-          relation.fields.forEach((field) => {
-            if (field.name === _field.name)
-              field.value = _field.value;
+          relation.fields.forEach(field => {
+            if (field.name === _field.name) field.value = _field.value;
           })
         });
         d.resolve(true);
@@ -231,6 +235,7 @@ proto.startVectorTool = function(relationtool, index) {
       if (relationtool.getId() === 'deletefeature') {
         relationfeature.setStyle(this._originalLayerStyle);
         this.getEditingLayer().getSource().removeFeature(relationfeature);
+
         this.getCurrentWorkflowData().session.pushDelete(this._relationLayerId, relationfeature);
         this.relations.splice(index, 1)
       }

@@ -4,11 +4,20 @@ const { Layer } = g3wsdk.core.layer;
 const { GUI } = g3wsdk.gui;
 const { Task } = g3wsdk.core.workflow;
 const { DataRouterService } = g3wsdk.core.data;
+const {WorkflowsStack} = g3wsdk.core.workflow;
+
 /**
  * List of placeholder in default_expression expression to call server for getting value of input
  * @type {string[]}
  */
-const GEOMETRY_DEFAULT_EXPRESSION_PLACEHOLDERS = ["$area", "$perimeter", "$length", "$x", "$y", "$geometry"];
+const GEOMETRY_DEFAULT_EXPRESSION_PLACEHOLDERS = [
+  "$area",
+  "$perimeter",
+  "$length",
+  "$x",
+  "$y",
+  "$geometry"
+];
 
 function EditingTask(options = {}) {
   base(this, options);
@@ -18,7 +27,7 @@ function EditingTask(options = {}) {
     this._mapService.addInteraction(interaction);
   };
   this.removeInteraction = function(interaction) {
-    //needed to avoid a issue on openlayer
+    //needed to avoid a issue on Openlayers
     setTimeout(() => this._mapService.removeInteraction(interaction))
   };
 }
@@ -107,9 +116,7 @@ proto.setAndUnsetSelectedFeaturesStyle = function({promise}={}){
   setTimeout(()=>{
     if (layer.getType() === Layer.LayerTypes.VECTOR){
       const originalStyle = this.setFeaturesSelectedStyle(features);
-      promise.always(() => {
-        features.forEach((feature => feature.setStyle(originalStyle)))
-      })
+      promise.always(() => features.forEach((feature => feature.setStyle(originalStyle))));
     }
   })
 };
@@ -166,12 +173,23 @@ proto.cancelSingle = function(input, context){
 };
 
 /**
+ * method that return in case of relation child  workflow the layerId root
+ * @returns {*}
+ */
+proto.getRootWorkflowLayerId = function(){
+  return WorkflowsStack.getFirst().getInputs().layer.getId()
+};
+
+/**
  * get form fields
  */
 
-proto.getFormFields = function({inputs, context, feature}={}){
-  const {layer} = inputs;
-  const features = layer.getEditingSource().readFeatures();
+proto.getFormFields = async function({inputs, context, feature, isChild=false}={}){
+  let hasUniqueValue = false;
+  const relationLayerId = this.getRootWorkflowLayerId();
+  const {layer, features} = inputs;
+  const layerId = layer.getId();
+  const unique_values_feature_field_Obj = [];
   const {excludeFields:exclude, get_default_value=false} = context;
   const fields = layer.getFieldsWithValues(feature, {
     exclude,
@@ -182,13 +200,80 @@ proto.getFormFields = function({inputs, context, feature}={}){
    */
   fields.forEach(field => {
     if (field.validate.unique) {
-      features.forEach(feature => {
-        const value = feature.get(field.name);
-        if (value !== null && typeof value !== "undefined")
-          field.validate.exclude_values.add(value)
-      });
+      hasUniqueValue = true;
+      const current_feature_value = feature.get(field.name); // current editing feature field value
+      unique_values_feature_field_Obj.push({
+        current_feature_value,
+        field
+      })
     }
   });
+  unique_values_feature_field_Obj.forEach(({current_feature_value, field}) => {
+    /**
+     * current editing feature add to
+     */
+    let layerUniqueFieldValues;
+    if (isChild) {
+      layerUniqueFieldValues = this.getEditingService().getChildLayerUniqueFieldValues({
+        layerId,
+        relationLayerId,
+        field
+      })
+    } else {
+      layerUniqueFieldValues = this.getEditingService().getLayerUniqueFieldValues({
+        layerId,
+        field
+      });
+    }
+    layerUniqueFieldValues.forEach(value => field.validate.exclude_values.add(value));
+
+    /**
+     * add eventually current feature field unique value that are changed during editing
+     */
+    features.forEach(feature => {
+      const value = feature.get(field.name);
+      if (value !== null || typeof value !== "undefined") field.validate.exclude_values.add(value);
+    });
+    //remove current value from exclude_values
+    field.validate.exclude_values.delete(current_feature_value);
+  });
+
+  if (hasUniqueValue) {
+    const savedfeatureFnc = () => {
+       unique_values_feature_field_Obj.forEach(({current_feature_value, field}) => {
+        if (current_feature_value !== field.value) {
+          if (isChild)
+            this.getEditingService().changeRelationLayerUniqueFieldValues({
+              layerId,
+              relationLayerId,
+              field,
+              oldValue: current_feature_value,
+              newValue: field.value
+            });
+          else
+            this.getEditingService().changeLayerUniqueFieldValues({
+              layerId,
+              field,
+              oldValue: current_feature_value,
+              newValue: field.value
+            });
+        }
+      });
+       if (!isChild) this.getEditingService().saveTemporaryRelationsUniqueFieldsValues(layerId);
+       return {
+        once: true
+      }
+    };
+
+    this.getEditingService().subscribe(`savedfeature_${layerId}`, savedfeatureFnc);
+    this.getEditingService().subscribe(`closeform_${layerId}`, () => {
+      this.getEditingService().unsubscribe(`savedfeature_${layerId}`, savedfeatureFnc);
+      this.getEditingService().clearTemporaryRelationsUniqueFieldsValues(layerId);
+      return {
+        once: true
+      }
+    })
+  }
   return fields;
 };
 

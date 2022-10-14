@@ -40,6 +40,11 @@ function EditingService() {
       }
     }
   };
+  /**
+   * Store unique fields value for each layer
+   * @type {{mode: string, messages: undefined, modal: boolean, cb: {error: undefined, done: undefined}}}
+   */
+  this.layersUniqueFieldsValues = {};
 
   this.saveConfig = {
     mode: "default", // default, autosave
@@ -188,11 +193,12 @@ proto.getFeature = function({layerId} = {}) {
 
 proto.subscribe = function(event, fnc) {
   if (!this._subscribers[event]) this._subscribers[event] = [];
-  return this._subscribers[event].push(fnc);
+  if (!this._subscribers[event].find(subscribe => subscribe === fnc)) this._subscribers[event].push(fnc);
+  return fnc;
 };
 
 proto.unsubscribe = function(event, fnc) {
-  this._subscribers[event] = this._subscribers[event].filter(cb => cb !== fnc);
+  this._subscribers[event] = this._subscribers[event].filter(subscribe => subscribe !== fnc);
 };
 
 // END API
@@ -459,7 +465,10 @@ proto.unregisterSettersEvents = function(setters=[]) {
 
 proto.fireEvent = function(event, options={}) {
   return new Promise(resolve => {
-    this._subscribers[event] && this._subscribers[event].forEach(fnc => fnc(options));
+    this._subscribers[event] && this._subscribers[event].forEach(fnc => {
+      const response = fnc(options);
+      response && response.once && this.unsubscribe(event, fnc);
+    });
     resolve();
   });
 };
@@ -524,6 +533,28 @@ proto._layerChildrenRelationInEditing = function(layer) {
   return childrenrealtioninediting;
 };
 
+/**
+ * Undo method
+ */
+proto.undo = function(){
+  const session = this.state.toolboxselected.getSession();
+  const layerId = session.getId();
+  const sessionItems = session.getLastHistoryState().items;
+  this.undoRedoLayerUniqueFieldValues({
+    layerId,
+    sessionItems,
+    action: 'undo'
+  });
+  const undoItems = session.undo();
+
+  this.undoRedoRelationUniqueFieldValues({
+    relationSessionItems: undoItems,
+    action: 'undo'
+  });
+
+  this.undoRelations(undoItems);
+};
+
 // undo relations
 proto.undoRelations = function(undoItems) {
   Object.entries(undoItems).forEach(([toolboxId, items]) => {
@@ -540,6 +571,28 @@ proto.rollbackRelations = function(rollbackItems) {
     const session = toolbox.getSession();
     session.rollback(items);
   })
+};
+
+/**
+ *  method
+ */
+proto.redo = function(){
+  const session = this.state.toolboxselected.getSession();
+  const layerId = session.getId();
+  const sessionItems = session.getLastHistoryState().items;
+  this.undoRedoLayerUniqueFieldValues({
+    layerId,
+    sessionItems,
+    action: 'redo'
+  });
+  const redoItems = session.redo();
+
+  this.undoRedoRelationUniqueFieldValues({
+    relationSessionItems: redoItems,
+    action: 'redo'
+  });
+
+  this.redoRelations(redoItems);
 };
 
 // redo relations
@@ -1325,7 +1378,7 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
               this.addLayersFeaturesToShowOnResult({
                 layerId: toolbox.getId(),
                 fids: [...response.response.new.map(({id}) => id), ...commitItems.update.map(update => update.id)]
-              })
+              });
             } else {
               const parser = new serverErrorParser({
                 error: response.errors
@@ -1346,7 +1399,7 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
           }
         })
         .fail(error => {
-          if (error.errors) error.error = error.errors
+          if (error.errors) error.error = error.errors;
           const parser = new serverErrorParser({
             error
           });
@@ -1388,6 +1441,171 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
       d.reject(toolbox)
   });
   return commitPromise;
+};
+
+/**
+ * Unique field layer values handler
+ */
+
+proto.clearAllLayersUniqueFieldsValues = function(){
+  this.layersUniqueFieldsValues = {};
+};
+
+proto.clearLayerUniqueFieldsValues = function(layerId){
+  this.layersUniqueFieldsValues[layerId] = {};
+};
+
+proto.removeLayerUniqueFieldValuesFromFeature = function({layerId, feature}) {
+  if (this.layersUniqueFieldsValues[layerId]) {
+    Object.keys(feature.getProperties()).forEach(property =>{
+      if (typeof this.layersUniqueFieldsValues[layerId][property] !== "undefined")
+        this.layersUniqueFieldsValues[layerId][property].delete(feature.get(property));
+    })
+  }
+};
+
+proto.removeRelationLayerUniqueFieldValuesFromFeature = function({layerId, relationLayerId, feature}) {
+  if (typeof this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations === "undefined")
+    this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations = {};
+  Object.keys(feature.getProperties()).forEach(property =>{
+    if (typeof this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId] === "undefined")
+      this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId] = {};
+    if (typeof this.layersUniqueFieldsValues[layerId][property] !== "undefined") {
+      this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId][property] = new Set(this.layersUniqueFieldsValues[layerId][property]);
+      this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId][property].delete(feature.get(property));
+    }
+  });
+};
+
+
+proto.setLayerUniqueFieldValues = async function(layerId) {
+  const layer = CatalogLayersStoresRegistry.getLayerById(layerId);
+  layer.getEditingFields().forEach(field => {
+    if (field.validate.unique) {
+      if (typeof this.getLayerUniqueFieldValues({layerId, field}) === "undefined") {
+        layer.getFilterData({unique: field.name})
+          .then((values=[]) => {
+            if (typeof this.layersUniqueFieldsValues[layerId] === "undefined")
+              this.layersUniqueFieldsValues[layerId] = {};
+            this.layersUniqueFieldsValues[layerId][field.name] = new Set(values);
+          })
+      }
+    }
+  });
+  PIPPO = this.layersUniqueFieldsValues
+};
+
+proto.saveTemporaryRelationsUniqueFieldsValues = function(layerId) {
+  if (typeof this.layersUniqueFieldsValues[layerId].__uniqueFieldsValuesRelations !== "undefined") {
+    Object.keys(this.layersUniqueFieldsValues[layerId].__uniqueFieldsValuesRelations).forEach(relationLayerId =>{
+      Object.entries(this.layersUniqueFieldsValues[layerId].__uniqueFieldsValuesRelations[relationLayerId]).forEach(([fieldName, uniqueValues]) => {
+        this.layersUniqueFieldsValues[relationLayerId][fieldName] = uniqueValues;
+      })
+    });
+    this.clearTemporaryRelationsUniqueFieldsValues(layerId);
+  }
+};
+
+proto.clearTemporaryRelationsUniqueFieldsValues = function(layerId) {
+  console.log(layerId)
+  delete this.layersUniqueFieldsValues[layerId].__uniqueFieldsValuesRelations;
+};
+
+proto.getLayerUniqueFieldValues = function({layerId, field}){
+  return this.layersUniqueFieldsValues[layerId] && this.layersUniqueFieldsValues[layerId][field.name];
+};
+
+proto.getChildLayerUniqueFieldValues = function({layerId, relationLayerId, field}) {
+  if (typeof this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations !== "undefined") {
+    if (typeof this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId] !== "undefined")
+      if (typeof this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId][field.name] !== "undefined")
+        return this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId][field.name]
+  } 
+  return this.getLayerUniqueFieldValues({
+    layerId,
+    field
+  })
+};
+
+proto.changeLayerUniqueFieldValues = function({layerId, field, oldValue, newValue}){
+  this.layersUniqueFieldsValues[layerId][field.name].delete(oldValue);
+  this.layersUniqueFieldsValues[layerId][field.name].add(newValue);
+};
+
+proto.changeRelationLayerUniqueFieldValues = function({layerId, relationLayerId, field, oldValue, newValue}){
+  if (typeof this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations === "undefined")
+    this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations = {};
+  if (typeof this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId] === "undefined")
+    this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId] = {}
+  this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId][field.name] = new Set(this.layersUniqueFieldsValues[layerId][field.name])
+  this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId][field.name].delete(oldValue);
+  this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId][field.name].add(newValue);
+};
+
+proto.addLayerUniqueFieldValue = function({layerId, field, value}) {
+  this.layersUniqueFieldsValues[layerId][field.name].add(value);
+};
+
+proto.deleteLayerUniqueFieldValue = function({layerId, field, value}) {
+  this.layersUniqueFieldsValues[layerId][field.name].delete(value);
+};
+
+proto.undoRedoLayerUniqueFieldValues = function({layerId, sessionItems=[], action}) {
+  if (typeof this.layersUniqueFieldsValues[layerId] !== "undefined") {
+    sessionItems.forEach(item => {
+      Object.keys(this.layersUniqueFieldsValues[layerId]).forEach(name =>{
+        if (Array.isArray(item)) {
+          /**
+           * case of update feature that contain new and ol values of feature
+           */
+          const [{feature:oldfeature}, {feature:newfeature}] = item;
+          if (newfeature.get(name) != oldfeature.get(name)) {
+            const oldValue = action === 'undo' ? newfeature.get(name) :  oldfeature.get(name);
+            const newValue = action === 'undo' ? oldfeature.get(name) :  newfeature.get(name);
+            this.changeLayerUniqueFieldValues({
+              layerId,
+              field: {
+                name
+              },
+              oldValue,
+              newValue
+            })
+          }
+        } else {
+          const {feature} = item;
+          /**
+           * two possible state 'add' or 'delete'
+           *
+           */
+          const featureState = feature.getState();
+          /**
+           * in case of state add or delete
+           */
+          this[`${featureState === 'add' ? 'delete' : 'add'}LayerUniqueFieldValue`]({
+            layerId,
+            field: {
+              name
+            },
+            value: feature.get(name)
+          });
+        }
+      });
+    })
+  }
+};
+
+proto.undoRedoRelationUniqueFieldValues = function({relationSessionItems, action}){
+  Object.entries(relationSessionItems).forEach(([layerId, {own:sessionItems, dependencies:relationSessionItems}])=>{
+    this.undoRedoLayerUniqueFieldValues({
+      layerId,
+      sessionItems,
+      action
+    });
+    this.undoRedoRelationUniqueFieldValues({
+      relationSessionItems,
+      action
+    })
+  })
 };
 
 EditingService.EDITING_FIELDS_TYPE = ['unique'];

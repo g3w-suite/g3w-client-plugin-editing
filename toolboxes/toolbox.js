@@ -27,7 +27,7 @@ function ToolBox(options={}) {
     filter: null,
     show: null,
     tools: []
-  }; // is used to contraint laoding featutes to a filter setted
+  }; // is used to constraint loading features to a filter set
   this._session = new Session({
     id: options.id,
     editor: this._layer.getEditor()
@@ -168,7 +168,7 @@ proto.getFieldUniqueValuesFromServer = function({reset=false}={}) {
       reset && this.uniqueFields[fieldName].input.options.values.splice(0);
       values.forEach(value => this.uniqueFields[fieldName].input.options.values.push(value));
     })
-  }).fail(err => console.log)
+  }).fail(console.log)
 };
 
 proto.getUniqueFieldsType = function(fields) {
@@ -197,12 +197,12 @@ proto.isVectorLayer = function(){
 };
 
 /**
- * Method to create getFeaures options
+ * Method to create getFeatures options
  * @param filter
  */
 proto.setFeaturesOptions = function({filter}={}){
   if (filter) {
-    // in case of nofeatures filter request check if nofeatures_filed is present otherwise i get first field
+    // in case of no features filter request check if no features_filed is present otherwise i get first field
     if (filter.nofeatures) filter.nofeatures_field = filter.nofeatures_field || this._layer.getEditingFields()[0].name;
     this._getFeaturesOption = {
       filter,
@@ -225,6 +225,14 @@ proto.setEditingConstraints = function(constraints={}){
 };
 
 
+proto.setLayerUniqueFieldValues = async function() {
+  await this.editingService.setLayerUniqueFieldValues(this.getId());
+};
+
+proto.clearLayerUniqueFieldsValues = function(){
+  this.editingService.clearLayerUniqueFieldsValues(this.getId())
+};
+
 //added option object to start method to have a control by other plugin how
 proto.start = function(options={}) {
   let {filter, toolboxheader=true, startstopediting=true, showtools=true, tools, changingtools=false} = options;
@@ -244,6 +252,7 @@ proto.start = function(options={}) {
   
   const handlerAfterSessionGetFeatures = promise => {
     this.emit(EventName);
+    this.setLayerUniqueFieldValues();
     this.editingService.runEventHandler({
       type: EventName,
       id
@@ -306,7 +315,6 @@ proto.start = function(options={}) {
       this.setEditing(true);
     }
   }
-
   return d.promise();
 };
 
@@ -341,6 +349,7 @@ proto.stop = function() {
           this.clearToolboxMessages();
           this.setSelected(false);
           this.emit(EventName);
+          this.clearLayerUniqueFieldsValues();
           d.resolve(true)
         })
         .fail(err => d.reject(err))
@@ -355,6 +364,7 @@ proto.stop = function() {
       this._unregisterGetFeaturesEvent();
       this.editingService.stopSessionChildren(this.state.id);
       this.setSelected(false);
+      this.clearLayerUniqueFieldsValues();
     }
   } else {
     this.setSelected(false);
@@ -482,12 +492,8 @@ proto.getColor = function() {
   return this.state.color;
 };
 
-proto.getLayer = function() {
-  return this._layer;
-};
-
 /**
- * Funtion thta enable toolbox
+ * Function that enable toolbox
  * @param bool
  */
 proto.setEditing = function(bool=true) {

@@ -22,6 +22,10 @@ const Dialogs = {
                         <div style="font-size:1.2em;">${ relationinediting ?tPlugin('editing.messages.delete_feature_relations') : ''}</div>`, result => {
         if (result) {
           editingLayer.getSource().removeFeature(feature);
+          EditingService.removeLayerUniqueFieldValuesFromFeature({
+            layerId,
+            feature
+          });
           d.resolve(inputs)
         }  else  d.reject(inputs);
 

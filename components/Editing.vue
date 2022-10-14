@@ -7,10 +7,10 @@
     <div v-if="!appState.online" id="onlineofflinemessage" style="margin-bottom: 5px; padding: 5px; border-radius: 3px; background-color: orange; color:white; font-weight: bold">
       <div v-t-plugin="'editing.messages.offline'"></div>
     </div>
-    <div v-if="showcommitbar" style="display: flex; margin-bottom: 5px">
-      <div style="margin-right: auto;" class="editing-button" @click="canCommit ? commit(): null" :class="{'enabled' : canCommit }">
-        <span class="editing-icon" :class="g3wtemplate.font['save']"></span>
-      </div>
+    <div v-if="showcommitbar" style="display: flex; justify-content: flex-end; margin-bottom: 5px">
+<!--      <div style="margin-right: auto;" class="editing-button" @click="canCommit ? commit(): null" :class="{'enabled' : canCommit }">-->
+<!--        <span class="editing-icon" :class="g3wtemplate.font['save']"></span>-->
+<!--      </div>-->
       <div class="editing-button " @click="canUndo ? undo(): null" :class="{'enabled' : canUndo }">
         <span class="editing-icon" :class="g3wtemplate.font['arrow-left']"></span>
       </div>
@@ -51,14 +51,10 @@
       transitions: {'addremovetransition': 'showhide'},
       methods: {
         undo() {
-          const session = this.state.toolboxselected.getSession();
-          const undoItems = session.undo();
-          this.$options.service.undoRelations(undoItems);
+          this.$options.service.undo()
         },
         redo() {
-          const session = this.state.toolboxselected.getSession();
-          const redoItems = session.redo();
-          this.$options.service.redoRelations(redoItems);
+          this.$options.service.redo();
         },
         commit(toolboxId) {
           const toolbox = this.$options.service.getToolBoxById(toolboxId);
@@ -174,6 +170,7 @@
         //GUI.getService('map').seSelectionLayerVisible(true);
         this.$options.service.fireEvent('closeeditingpanel');
         this.$options.service.onCloseEditingPanel();
+        this.$options.service.clearAllLayersUniqueFieldsValues();
       }
     };
 </script>
