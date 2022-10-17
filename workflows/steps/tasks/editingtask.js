@@ -223,7 +223,7 @@ proto.getFormFields = async function({inputs, context, feature, isChild=false}={
       layerUniqueFieldValues = this.getEditingService().getLayerUniqueFieldValues({
         layerId,
         field
-      });
+      })
     }
     layerUniqueFieldValues.forEach(value => field.validate.exclude_values.add(value));
 
@@ -295,6 +295,7 @@ proto.evaluateGeometryExpressionField = async function({inputs, feature}={}){
       if (apply_on_update || feature.isNew()) evaluate = GEOMETRY_DEFAULT_EXPRESSION_PLACEHOLDERS.find(placeholder => expression.indexOf(placeholder) !== -1);
       if (evaluate){
         const layer_id = inputs.layer.getId();
+        const parentData = this.getParentFormData();
         const expression_eval_promise = new Promise((resolve, reject) => {
           DataRouterService.getData('expression:expression_eval', {
             inputs: {
@@ -302,7 +303,11 @@ proto.evaluateGeometryExpressionField = async function({inputs, feature}={}){
               qgs_layer_id: layer_id, //
               form_data,
               formatter: 0,
-              expression: default_expression.expression
+              expression: default_expression.expression,
+              parent: parentData && {
+                form_data: convertFeatureToGEOJSON(parentData.feature),
+                qgs_layer_id: parentData.qgs_layer_id
+              }
             },
             outputs: false
           }).then(value => {
@@ -325,6 +330,16 @@ proto.evaluateGeometryExpressionField = async function({inputs, feature}={}){
 proto.setContextGetDefaultValue = function(get_default_value=false){
   const context = this.getContext();
   context.get_default_value = get_default_value;
+};
+
+proto.getParentFormData = function(){
+  if (WorkflowsStack.getLength() > 1) {
+    const {features, layer } = WorkflowsStack.getParent().getInputs();
+    return {
+      feature: features[0],
+      qgs_layer_id: layer.getId()
+    }
+  }
 };
 
 module.exports = EditingTask;

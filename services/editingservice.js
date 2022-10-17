@@ -1479,21 +1479,29 @@ proto.removeRelationLayerUniqueFieldValuesFromFeature = function({layerId, relat
 
 
 proto.setLayerUniqueFieldValues = async function(layerId) {
+  const uniqueFieldValuesPromises = [];
   const layer = CatalogLayersStoresRegistry.getLayerById(layerId);
   layer.getEditingFields().forEach(field => {
     if (field.validate.unique) {
       if (typeof this.getLayerUniqueFieldValues({layerId, field}) === "undefined") {
-        layer.getFilterData({unique: field.name})
-          .then((values=[]) => {
-            if (typeof this.layersUniqueFieldsValues[layerId] === "undefined")
-              this.layersUniqueFieldsValues[layerId] = {};
-            this.layersUniqueFieldsValues[layerId][field.name] = new Set(values);
-          })
+        const promise = layer.getFilterData({unique: field.name});
+        promise.then((values=[]) => {
+          if (typeof this.layersUniqueFieldsValues[layerId] === "undefined")
+            this.layersUniqueFieldsValues[layerId] = {};
+          this.layersUniqueFieldsValues[layerId][field.name] = new Set(values);
+        });
+        uniqueFieldValuesPromises.push(promise);
       }
     }
   });
+  await Promise.allSettled(uniqueFieldValuesPromises);
+  return this.layersUniqueFieldsValues[layerId];
 };
 
+/**
+ * save tamperary relation feature changes on father (root) layer feature
+ * @param layerId
+ */
 proto.saveTemporaryRelationsUniqueFieldsValues = function(layerId) {
   if (typeof this.layersUniqueFieldsValues[layerId].__uniqueFieldsValuesRelations !== "undefined") {
     Object.keys(this.layersUniqueFieldsValues[layerId].__uniqueFieldsValuesRelations).forEach(relationLayerId =>{
@@ -1534,7 +1542,7 @@ proto.changeRelationLayerUniqueFieldValues = function({layerId, relationLayerId,
   if (typeof this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations === "undefined")
     this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations = {};
   if (typeof this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId] === "undefined")
-    this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId] = {}
+    this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId] = {};
   this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId][field.name] = new Set(this.layersUniqueFieldsValues[layerId][field.name])
   this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId][field.name].delete(oldValue);
   this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId][field.name].add(newValue);

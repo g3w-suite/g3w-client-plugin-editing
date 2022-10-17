@@ -28,7 +28,6 @@ module.exports = OpenFormTask;
 const proto = OpenFormTask.prototype;
 
 proto._getForm = async function(inputs, context) {
-  this._isContentChild = !!(WorkflowsStack.getLength() > 1);
   this._session = context.session;
   this._originalLayer = inputs.layer;
   this._editingLayer = this._originalLayer.getEditingLayer();
@@ -129,6 +128,8 @@ proto.startForm = async function(options = {}) {
   const Form = await this._getForm(inputs, context);
   const feature = this._originalFeatures[0];
   const isnew = this._originalFeatures.length > 1 ? false : feature.isNew();
+  let parentData;
+  
   const formService = Form({
     formComponent,
     title: "plugins.editing.editing_attributes",
@@ -138,6 +139,7 @@ proto.startForm = async function(options = {}) {
     layer: this._originalLayer,
     isnew, // specify if is a new feature
     feature,
+    parentData: this.getParentFormData(),
     fields: this._fields,
     context_inputs: !this._multi && this._edit_relations && {
       context,
@@ -173,6 +175,7 @@ proto.startForm = async function(options = {}) {
 
 proto.run = function(inputs, context) {
   const d = $.Deferred();
+  this._isContentChild = !!(WorkflowsStack.getLength() > 1);
   const { layer, features } = inputs;
   this.layerId = layer.getId();
   GUI.setLoadingContent(false);
