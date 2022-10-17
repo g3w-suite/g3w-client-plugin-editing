@@ -91,6 +91,7 @@ proto._handleSplitFeature = async function({feature, inputs, session, splittedGe
       try {
         await this.evaluateGeometryExpressionField({
           inputs,
+          context,
           feature
         });
       } catch(err){}
@@ -118,6 +119,7 @@ proto._handleSplitFeature = async function({feature, inputs, session, splittedGe
       try {
         await this.evaluateGeometryExpressionField({
           inputs,
+          context,
           feature
         });
       } catch(err){}

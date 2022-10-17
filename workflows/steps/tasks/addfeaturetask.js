@@ -76,6 +76,7 @@ proto.run = function(inputs, context) {
         });
         this.evaluateGeometryExpressionField({
           inputs,
+          context,
           feature
         }).finally(()=>{
           inputs.features.push(feature);

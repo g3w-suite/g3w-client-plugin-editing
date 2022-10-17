@@ -66,7 +66,8 @@ proto.run = function(inputs, context) {
        */
       this.evaluateGeometryExpressionField({
         inputs,
-        feature,
+        context,
+        feature
       }).finally(()=>{
         newFeature = feature.clone();
         session.pushUpdate(layerId, newFeature, originalFeature);

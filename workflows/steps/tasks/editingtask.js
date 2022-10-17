@@ -1,10 +1,10 @@
 const { base, inherit } = g3wsdk.core.utils;
-const { createSelectedStyle, areCoordinatesEqual, convertFeatureToGEOJSON} = g3wsdk.core.geoutils;
+const { createSelectedStyle, areCoordinatesEqual} = g3wsdk.core.geoutils;
 const { Layer } = g3wsdk.core.layer;
 const { GUI } = g3wsdk.gui;
 const { Task } = g3wsdk.core.workflow;
-const { DataRouterService } = g3wsdk.core.data;
-const {WorkflowsStack} = g3wsdk.core.workflow;
+const { WorkflowsStack } = g3wsdk.core.workflow;
+const { inputService } = g3wsdk.core.input;
 
 /**
  * List of placeholder in default_expression expression to call server for getting value of input
@@ -280,11 +280,15 @@ proto.getFormFields = async function({inputs, context, feature, isChild=false}={
 /**
  * Evaluated Expression checking inp
  */
-proto.evaluateGeometryExpressionField = async function({inputs, feature}={}){
+proto.evaluateGeometryExpressionField = async function({inputs, context,  feature}={}){
   const expression_eval_promises = []; // promises from expression evaluation
-  const form_data = convertFeatureToGEOJSON(feature);
   const { layer } = inputs;
-  layer.getEditingFields().forEach(field => {
+  const {excludeFields:exclude, get_default_value=false} = context;
+  const fields = layer.getFieldsWithValues(feature, {
+    exclude,
+    get_default_value
+  });
+  fields.forEach(field => {
     const {default_expression} = field.input.options;
     if (default_expression){
       let evaluate = false;
@@ -294,26 +298,22 @@ proto.evaluateGeometryExpressionField = async function({inputs, feature}={}){
        */
       if (apply_on_update || feature.isNew()) evaluate = GEOMETRY_DEFAULT_EXPRESSION_PLACEHOLDERS.find(placeholder => expression.indexOf(placeholder) !== -1);
       if (evaluate){
-        const layer_id = inputs.layer.getId();
+        const qgs_layer_id = inputs.layer.getId();
         const parentData = this.getParentFormData();
-        const expression_eval_promise = new Promise((resolve, reject) => {
-          DataRouterService.getData('expression:expression_eval', {
-            inputs: {
-              layer_id, // layer id owner of the data
-              qgs_layer_id: layer_id, //
-              form_data,
-              formatter: 0,
-              expression: default_expression.expression,
-              parent: parentData && {
-                form_data: convertFeatureToGEOJSON(parentData.feature),
-                qgs_layer_id: parentData.qgs_layer_id
-              }
-            },
-            outputs: false
-          }).then(value => {
-            feature.set(field.name, value);
-            resolve(feature);
-          }).catch(reject)
+        const expression_eval_promise = new Promise(async (resolve, reject) => {
+          try {
+            await inputService.handleDefaultExpressionFormInput({
+              field,
+              feature,
+              qgs_layer_id,
+              parentData
+            });
+            feature.set(field.name, field.value);
+            resolve(feature)
+          } catch(err) {
+            console.log(err)
+            reject(err)
+          }
         });
         expression_eval_promises.push(expression_eval_promise);
       }

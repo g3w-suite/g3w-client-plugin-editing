@@ -45,6 +45,7 @@ proto.run = function(inputs, context) {
            */
           this.evaluateGeometryExpressionField({
             inputs,
+            context,
             feature
           }).finally(()=>{
             session.pushUpdate(layerId, feature, originalFeature);

@@ -46,6 +46,7 @@ proto.run = function(inputs, context) {
        */
       this.evaluateGeometryExpressionField({
         inputs,
+        context,
         feature
       }).finally(() => {
         const newFeature = feature.clone();
