@@ -334,9 +334,14 @@ proto.setContextGetDefaultValue = function(get_default_value=false){
 
 proto.getParentFormData = function(){
   if (WorkflowsStack.getLength() > 1) {
-    const {features, layer } = WorkflowsStack.getParent().getInputs();
+    const {features, layer, fields=[] } = WorkflowsStack.getParent().getInputs();
+    // in case of fields (temporary set by form) set temporary value to feature (cloned) parent
+    const feature = features[features.length -1].clone();
+    fields.forEach(({name, value}) => {
+      feature.set(name, value)
+    });
     return {
-      feature: features[0],
+      feature,
       qgs_layer_id: layer.getId()
     }
   }

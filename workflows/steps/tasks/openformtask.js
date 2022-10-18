@@ -128,8 +128,15 @@ proto.startForm = async function(options = {}) {
   const Form = await this._getForm(inputs, context);
   const feature = this._originalFeatures[0];
   const isnew = this._originalFeatures.length > 1 ? false : feature.isNew();
-  let parentData;
-  
+
+  /**
+   * set fields. Useful getParentFormData
+   */
+  WorkflowsStack.getCurrent().setInput({
+    key: 'fields',
+    value: this._fields
+  });
+
   const formService = Form({
     formComponent,
     title: "plugins.editing.editing_attributes",
