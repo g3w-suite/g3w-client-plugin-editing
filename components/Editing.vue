@@ -8,13 +8,13 @@
       <div v-t-plugin="'editing.messages.offline'"></div>
     </div>
     <div v-if="showcommitbar" style="display: flex; justify-content: flex-end; margin-bottom: 5px">
-<!--      <div style="margin-right: auto;" class="editing-button" @click="canCommit ? commit(): null" :class="{'enabled' : canCommit }">-->
-<!--        <span class="editing-icon" :class="g3wtemplate.font['save']"></span>-->
-<!--      </div>-->
+      <div style="margin-right: auto;" class="editing-button" @click="canCommit ? commit(): null" :class="{'enabled' : canCommit }">
+        <span class="editing-icon" :class="g3wtemplate.font['save']"></span>
+      </div>
       <div class="editing-button " @click="canUndo ? undo(): null" :class="{'enabled' : canUndo }">
         <span class="editing-icon" :class="g3wtemplate.font['arrow-left']"></span>
       </div>
-      <div class="editing-button "  @click="canRedo ? redo(): null" :class="{'enabled' : canRedo }">
+      <div class="editing-button " @click="canRedo ? redo(): null" :class="{'enabled' : canRedo }">
         <span class="editing-icon" :class="g3wtemplate.font['arrow-right']"></span>
       </div>
     </div>
@@ -59,7 +59,8 @@
         commit(toolboxId) {
           const toolbox = this.$options.service.getToolBoxById(toolboxId);
           this.$options.service.commit({
-            toolbox
+            toolbox,
+            modal: false
           })
         },
         saveAll() {},
