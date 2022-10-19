@@ -8,11 +8,11 @@
         <span v-t="'plugins.editing.edit_relation'"></span>
         <span style="margin-left: 2px;">: {{relation.name.toUpperCase()}}</span>
       </div>
-      <div ref="relation_header_tools" class="box-header with-border" style="width:100%; display: flex; justify-content: flex-end; margin-button:3px; background-color: #ffffff; ">
+      <div ref="relation_header_tools" class="box-header with-border" style="width:100%; display: flex; margin-button:3px; background-color: #ffffff; ">
         <div id="search-box" style="margin-right: auto;">
           <input v-if="relationsLength" type="text" class="form-control" id="filterRelation" :placeholder="placeholdersearch">
         </div>
-        <div>
+        <div style="display: flex; justify-content: flex-end">
           <span class="g3w-icon add-link" align="center"
             v-if="capabilities.relation.find(capability => capability === 'change_attr_feature') !== undefined"
             v-t-tooltip:bottom.create="tooltips.link_relation" @click="enableAddLinkButtons ? linkRelation() : null"
