@@ -110,10 +110,12 @@
           if (this.$el.style.display !== 'none'){
             const formBodyHeight = $(".g3wform_body").height();
             const formFooterHeight = $('.g3wform_footer').height();
-            const relationHeaderTitle = $(this.$refs.relation_header_title).height();
-            const relationHeaderTools = $(this.$refs.relation_header_tools).height();
-            const dataTables_scrollHead_Height = $(this.$el).find('.dataTables_scrollHead').height();
-            $(this.$refs.relation_body).find('div.dataTables_scrollBody').height(formBodyHeight - formFooterHeight - relationHeaderTitle - relationHeaderTools - dataTables_scrollHead_Height - 50);
+            const relationHeaderTitle = $(this.$refs.relation_header_title).outerHeight();
+            const relationHeaderTools = $(this.$refs.relation_header_tools).outerHeight();
+            const dataTables_scrollHead_Height = $(this.$el).find('.dataTables_scrollHead').outerHeight();
+            const dataTables_paginate_Height = $(this.$el).find('.dataTables_paginate.paging_simple_numbers').outerHeight();
+            $(this.$refs.relation_body).find('div.dataTables_scrollBody')
+              .height(formBodyHeight - formFooterHeight - relationHeaderTitle - relationHeaderTools - dataTables_scrollHead_Height - dataTables_paginate_Height);
             relationsTable && relationsTable.columns.adjust();
           }
         },
@@ -248,8 +250,8 @@
         }
         await this.$nextTick();
         !relationsTable && this.relationsLength && this._createDataTable();
-        this.$forceUpdate();
         this.resize();
+
       },
       deactivated() {
         this.destroyTable();

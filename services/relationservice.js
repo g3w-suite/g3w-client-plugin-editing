@@ -359,8 +359,8 @@ proto.addRelation = function() {
   const { parentFeature } = options;
   const promise =  workflow.start(options);
   isVector && workflow.bindEscKeyUp();
-  promise.
-    then(outputs => {
+  promise
+    .then(outputs => {
       const {newFeatures, originalFeatures} = outputs.relationFeatures;
       const setRelationFieldValue = value =>{
         newFeatures.forEach((newFeature, index) =>{
@@ -388,8 +388,9 @@ proto.addRelation = function() {
       });
       this.emitEventToParentWorkFlow();
     })
-    .fail(() => session.rollbackDependecies([this._relationLayerId])).always(() =>workflow.stop())
+    .fail(() => session.rollbackDependecies([this._relationLayerId]))
     .always(()=>{
+      workflow.stop();
       if (isVector) {
         GUI.hideContent(false);
         workflow.unbindEscKeyUp();
