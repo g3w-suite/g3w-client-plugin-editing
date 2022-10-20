@@ -78,11 +78,15 @@
         if (this.$el.style.display !== 'none'){
           await this.$nextTick();
           const tableHeight = $(".content").height();
-          const tableHeaderHeight = $('#editing_table  div.dataTables_scrollHeadInner').height();
-          const OtherElementHeight =  $('.editing_table_title').height() +
-            $('.editing_table_header').height() + $('.dataTables_length').height() + $('.dataTables_paginate paging_simple_numbers').height() +
-            $('.dataTables_filter').height() + $('.table_editing_footer_buttons').height();
-          $('#editing_table  div.dataTables_scrollBody').height(tableHeight - tableHeaderHeight - OtherElementHeight - 50);
+          const tableHeaderHeight = $('#editing_table  div.dataTables_scrollHeadInner').outerHeight();
+          const OtherElementHeight =  $('.editing_table_title').outerHeight() +
+            $('.editing_table_header').outerHeight() +
+            $('.dataTables_length').outerHeight() +
+            $('.dataTables_paginate paging_simple_numbers').outerHeight() +
+            $('.dataTables_filter').outerHeight() +
+            $('.table_editing_footer_buttons').outerHeight() +
+            $('#editing_table .dataTables_paginate.paging_simple_numbers').outerHeight();
+          $('#editing_table  div.dataTables_scrollBody').height(tableHeight - tableHeaderHeight - OtherElementHeight - 30);
           this.dataTable && this.dataTable.columns.adjust();
         }
       },
@@ -159,6 +163,7 @@
       this.setDataTable();
       $('#table-editing-tools i').tooltip();
       this.$options.service.emit('ready');
+      this.resize();
     },
     beforeDestroy() {
       if (this._linkFeatures) this._linkFeatures = null;
