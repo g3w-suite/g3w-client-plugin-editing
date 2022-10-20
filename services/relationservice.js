@@ -339,6 +339,9 @@ proto._getRelationAsFatherStyleColor = function(type) {
   return fatherLayerStyleColor && fatherLayerStyleColor.getColor() || '#000000';
 };
 
+/**
+ * add relation method
+ */
 proto.addRelation = function() {
   const isVector = this._layerType === Layer.LayerTypes.VECTOR;
   if (isVector) {
@@ -356,41 +359,42 @@ proto.addRelation = function() {
   const { parentFeature } = options;
   const promise =  workflow.start(options);
   isVector && workflow.bindEscKeyUp();
-  promise.then(outputs => {
-    const {newFeatures, originalFeatures} = outputs.relationFeatures;
-    const setRelationFieldValue = value =>{
-      newFeatures.forEach((newFeature, index) =>{
-        const originalFeature = originalFeatures[index];
-        newFeature.set(ownField, value);
-        if (parentFeature.isNew()) originalFeature.set(ownField, value);
-        this.getLayer().getEditingSource().updateFeature(newFeature);
-        session.pushUpdate(this._relationLayerId, newFeature, originalFeature);
-      })
-    };
-    setRelationFieldValue(this._currentParentFeatureRelationFieldValue);
-    if (parentFeature.isNew() && this._isFatherFieldEditable) {
-      const keyRelationFeatureChange = parentFeature.on('propertychange', evt => {
-        if (parentFeature.isNew()) {
-          if (evt.key === relationField) {
-            const value = evt.target.get(relationField);
-            setRelationFieldValue(value, true);
-          }
-        } else ol.Observable.unByKey(keyRelationFeatureChange);
-      })
-    }
-    newFeatures.forEach(newFeature =>{
-      const newRelation = this._createRelationObj(newFeature);
-      this.relations.push(newRelation);
-    });
-    this.emitEventToParentWorkFlow()
-  }).fail(() => session.rollbackDependecies([this._relationLayerId])).always(() =>{
-    workflow.stop();
-  }).always(()=>{
-    if (isVector) {
-      GUI.hideContent(false);
-      workflow.unbindEscKeyUp();
-      GUI.setModal(true);
-    }
+  promise.
+    then(outputs => {
+      const {newFeatures, originalFeatures} = outputs.relationFeatures;
+      const setRelationFieldValue = value =>{
+        newFeatures.forEach((newFeature, index) =>{
+          const originalFeature = originalFeatures[index];
+          newFeature.set(ownField, value);
+          if (parentFeature.isNew()) originalFeature.set(ownField, value);
+          this.getLayer().getEditingSource().updateFeature(newFeature);
+          session.pushUpdate(this._relationLayerId, newFeature, originalFeature);
+        })
+      };
+      setRelationFieldValue(this._currentParentFeatureRelationFieldValue);
+      if (parentFeature.isNew() && this._isFatherFieldEditable) {
+        const keyRelationFeatureChange = parentFeature.on('propertychange', evt => {
+          if (parentFeature.isNew()) {
+            if (evt.key === relationField) {
+              const value = evt.target.get(relationField);
+              setRelationFieldValue(value, true);
+            }
+          } else ol.Observable.unByKey(keyRelationFeatureChange);
+        })
+      }
+      newFeatures.forEach(newFeature =>{
+        const newRelation = this._createRelationObj(newFeature);
+        this.relations.push(newRelation);
+      });
+      this.emitEventToParentWorkFlow();
+    })
+    .fail(() => session.rollbackDependecies([this._relationLayerId])).always(() =>workflow.stop())
+    .always(()=>{
+      if (isVector) {
+        GUI.hideContent(false);
+        workflow.unbindEscKeyUp();
+        GUI.setModal(true);
+      }
   })
 };
 

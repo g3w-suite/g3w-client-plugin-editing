@@ -13,6 +13,9 @@ const EditingFormService = function(options={}) {
   const feature = features[features.length - 1];
   // get only relation with type not ONE and layer is the father
   let relations = layer.getRelations().getArray().filter(relation => relation.getType() !== 'ONE' && relation.getFather() === layerId);
+  /**
+   * get relation layers that set in editing on g3w-admin
+   */
   relations = EditingService.getRelationsInEditing({layerId, relations , feature});
   this.hasRelations = () => !!relations.length;
   this.buildRelationComponents = function() {

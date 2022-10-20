@@ -1477,7 +1477,6 @@ proto.removeRelationLayerUniqueFieldValuesFromFeature = function({layerId, relat
   });
 };
 
-
 proto.setLayerUniqueFieldValues = async function(layerId) {
   const uniqueFieldValuesPromises = [];
   const layer = CatalogLayersStoresRegistry.getLayerById(layerId);

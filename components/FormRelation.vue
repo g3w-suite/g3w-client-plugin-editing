@@ -3,7 +3,7 @@
 <!-- form/components/relation/vue/relation.js@v3.4 -->
 
 <template>
-    <div style="margin-bottom: 5px;">
+    <div style="margin-bottom: 5px;" v-if="active">
       <div ref="relation_header_title" class="box-header with-border skin-color" style="width:100%; display: flex; font-weight: bold; font-size: 1.3em; align-items: center; margin-button:3px; background-color: #ffffff; ">
         <span v-t="'plugins.editing.edit_relation'"></span>
         <span style="margin-left: 2px;">: {{relation.name.toUpperCase()}}</span>
@@ -93,6 +93,7 @@
       name: 'g3w-relation',
       data() {
         return {
+          active: false,
           showallfieldsindex: null,
           tooltips: {
             add_relation: "plugins.editing.form.relations.tooltips.add_relation",
@@ -232,6 +233,7 @@
         this.formeventbus.$on('changeinput', this.updateExternalKeyValueRelations);
       },
       async activated() {
+        this.active = true;
         if (!this.loadEventuallyRelationValuesForInputs) {
           const EditingService = require('../services/editingservice');
           EditingService.runEventHandler({
@@ -244,10 +246,14 @@
           });
           this.loadEventuallyRelationValuesForInputs = true;
         }
+        await this.$nextTick();
         !relationsTable && this.relationsLength && this._createDataTable();
+        this.$forceUpdate();
+        this.resize();
       },
       deactivated() {
         this.destroyTable();
+        this.active = false;
       },
       beforeDestroy() {
         this.loadEventuallyRelationValuesForInputs = true;
