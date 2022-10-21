@@ -1076,7 +1076,8 @@ proto.createEditingDataOptions = function(filterType='all', options={}) {
               id: layerId
             },
             type: 'editing',
-            relation: relation.state
+            relation: relation.state,
+            formatter: 0 //add formatter 0 to get stored value
           }
         };
       break;
