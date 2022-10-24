@@ -1,0 +1,141 @@
+export default {
+  errors: {
+    no_layers: "Tapahtui virhe. Tasoja ei ole mahdollista muokata.",
+    some_layers: "Tapahtui virhe. Jotkin tasot eivät ole muokattavissa."
+  },
+  search: "Haku",
+  editing_changes: "Editing Changes",
+  editing_data: "Muokataan tasoja",
+  editing_attributes: "Muokataan attribuutteja",
+  relations: "Relaatiot",
+  edit_relation: "Muokkaa relaatiota",
+  back_to_relations: "Takaisin relaatioihin",
+  no_relations_found: "Relaatioita ei löytynyt",
+  relation_data: "Relaation tiedot",
+  relation_already_added: "Relaatio on jo lisätty",
+  list_of_relations_feature: "Lista relaation ominaisuuksista",
+  tooltip: {
+    edit_layer: "Muokkaa tasoa"
+  },
+  toolbox: {
+    title: 'Muokkaa'
+  },
+  table: {
+    edit: "Muokkaa ominaisuutta",
+    copy: "Luo kopio",
+    delete: "Poista ominaisuus"
+  },
+  tools: {
+    copy: "Kopio ominaisuuksia",
+    pastefeaturesfromotherlayers: "Paste features from other layer",
+    addpart: "Lisää osa",
+    deletepart: "Poista osa",
+    merge: "Yhdistä ominaisuudet",
+    split: "Leikkaa ominaisuus",
+    add_feature: "Lisää ominaisuus",
+    delete_feature: "Poista ominaisuus",
+    move_feature: "Siirrä ominaisuutta",
+    update_vertex: "Päivitä pisteen ominaisuutta",
+    update_feature: "Päivitä ominaisuus",
+    copyfeaturefromexternallayer: "Create Feature from existing feature"
+  },
+  toolsoftool: {
+    measure: "Show measure",
+    snap: "Snap layer",
+    snapall: "Snap to all layers"
+  },
+  steps: {
+    help: {
+      select_elements: "Valitse ominaisuudet",
+      select_element: "Valitse ominaisuus",
+      copy: "Luo kopio valituista ominaisuuksista",
+      merge: "Yhdistä ominaisuudet",
+      split: "Leikkaa ominaisuus",
+      new: "Luo uusi ominaisuus",
+      edit_table: "Muuta taulun ominaisuuksia",
+      draw_new_feature: "Piirrä ominaisuus kartalle",
+      action_confirm: "Hyväksy toiminto",
+      double_click_delete: "Valitse poistettava ominaisuus kartalta",
+      edit_feature_vertex: "Muuta pistettä tai lisää piste valittuun ominaisuuteen",
+      move: "Siirrä valittu ominaisuus",
+      select_feature_to_relation: "Valitse relaatio",
+      show_edit_feature_form:  "Näytä ominaisuuslomake muokataksesi attribuutteja",
+      pick_feature: "Valitse muokattava ominaisuus kartalta",
+      insert_attributes_feature: "Lisää ominaisuuden attribuutit"
+    }
+  },
+  workflow: {
+    steps: {
+      select: 'Valitse ominaisuus',
+      draw_part: "Piirrä uusi osa",
+      merge: 'Valitse ominaisuus yhdistääksesi',
+      selectSHIFT: 'Paina SHIFT, jos haluat valita kohteita suorakulmiovalinnalla.',  //Tero 10.12.2020
+      selectDrawBox: "Piirrä suorakulmio, jonka siältä kohteet valitaan ", //Tero 10.12.2020
+      selectDrawBoxAtLeast2Feature: "Piirrä suorakulmio, jonka siältä kohteet vähintään 2 valitaan ",
+      selectPoint: "Valitse ominaisuus",
+      selectPointSHIFT: 'Paina SHIFT, jos haluat valita ominaisuuksia suorakulmiovalinnalla, tai valitse yksittäinen ominaisuus.',
+      selectMultiPointSHIFT: 'Paina SHIFT, jos haluat valita ominaisuuksia suorakulmiovalinnalla, tai valitse yksittäinen ominaisuus.',
+      selectMultiPointSHIFTAtLeast2Feature: 'Paina SHIFT, jos haluat valita vähintään 2 ominaisuuksia suorakulmiovalinnalla, tai valitse yksittäinen ominaisuus.',
+      copyCTRL: 'CTRL+C, voit kopioida valitut ominaisuudet.',  //Tero 10.12.2020
+      selectStartVertex: 'Osoita valittujen ominaisuuksien alkupiste.',
+      selectToPaste: 'Valitse kohta, johon liität valitut ominaisuudet.',
+      draw_split_line: "Piirrä viiva, jonka mukaan valittu ominaisuus jaetaan."
+    }
+  },
+  messages: {
+    splitted: "Jaettu",
+    nosplittedfeature: "Ominaisuutta ei jaettu",
+    press_esc: "Paina ESC palataksesi",
+    online: "Yhteys muodostettu. Muutokset voidaan tallentaa tietokantaan.",
+    offline: "Olet offline-tilassa. Muutokset tallennetaan paikallisesti",
+    delete_feature: "Haluatko poistaa valitun ominaisuuden?",
+    delete_feature_relations: "Mikäli ominaisuudella on sitovia relaatioita, näistä relaatiosta tulee orpoja. Suosittelemme käsittelemään nämä relaatiot ennen poistamista",
+    unlink_relation: "Haluatko poistaa relaation?",
+    commit_feature: "Tallennetaanko muutokset?",
+    change_toolbox_relation: "Tasolla on relaatio/relaatiota. Ennen muokkauksen aloittamista tulee muutokset tallenttaa.",
+    saved: "Tiedot tallennettu onnistuneesti",
+    saved_local:"Tiedot on tallennettu onnistuneesti paikallisesti.",
+    loading_data: "Ladataan tietoja",
+    saving: "Tallentaan tietoja. Odota...",
+    constraints: {
+      enable_editing: "Lähennä ottaaksesi muokkaustyökalut käyttöön \nAktivointi mittakaava 1:"
+    },
+    pdf: "Dokumentin esikatselu ei ole saatavilla. Paina tästä ",
+    commit: {
+      header: "Seuraava luettelo näyttää kaikki muutokset.",
+      header_add: "<b>Lisätty</b> näytä lisättyjen ominaisuuksien lukumäärä",
+      header_update_delete: "<b>Muokattu</b> ja <b>Poistettu</b> Näytä listä ominaisuuksien id:stä",
+      add: "Lisätty(n. ominaisuutta)",
+      delete: "Poistettu(id)",
+      update: "Muokattu(id)"
+    },
+    loading_table_data: "Building Data Table. Please wait ..."
+  },
+  relation: {
+    table: {
+      info: `
+                  <div>
+					Valitse relaatiota linkittääksesi ne muokattavaan ominaisuuteen.
+                  </div>
+                  <div>
+               
+                `
+    }
+  },
+  form: {
+    relations: {
+      tooltips: {
+        back_to_father:"Back to edit father",
+        add_relation: "Luo ja linkitä uusi relaatio",
+        link_relation: "Liitä relaatio tähän ominaisuuteen",
+        open_relation_tools: "Näytä relaatiotyökalut",
+        unlink_relation: "Poista relaatio"
+      }
+    },
+    buttons: {
+      save: "Tallenna",
+      save_and_back: "Tallenna ja palaa",
+      cancel: "Peruuta"
+    }
+  },
+}

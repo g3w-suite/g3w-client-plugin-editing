@@ -102,7 +102,7 @@ function ToolBox(options={}) {
       if (options.type === Layer.LayerTypes.VECTOR && GUI.getContentLength())
         GUI.once('closecontent', ()=> setTimeout(()=> this._mapService.getMap().dispatchEvent(this._getFeaturesEvent.event)));
     }
-  })
+  });
 }
 
 inherit(ToolBox, G3WObject);
