@@ -84,6 +84,7 @@ export default  {
     }
   },
   messages: {
+    featureslockbyotheruser: "Some features are locked by another user",
     splitted: "Divizat",
     nosplittedfeature: "Entitate nedivizată",
     press_esc: "ESC pentru înapoi",

@@ -84,6 +84,7 @@ export default {
     }
   },
   messages: {
+    featureslockbyotheruser: "Some features are locked by another user",
     splitted: "Fonctionnalité(s) divisé(es)",
     nosplittedfeature: "La (les) fonctionnalité(s) n’a (n'ont) pas été divisé(es)",
     press_esc: "Appuyez sur ESC pour revenir",

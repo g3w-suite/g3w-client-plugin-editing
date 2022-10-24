@@ -83,6 +83,7 @@ export default {
     }
   },
   messages: {
+    featureslockbyotheruser: "Some features are locked by another user",
     splitted: "Uppdelad",
     nosplittedfeature: "Egenskapen har inte delats upp",
     press_esc: "Tryck ESC för att gå tillbaka",

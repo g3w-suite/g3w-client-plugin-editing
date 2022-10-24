@@ -84,6 +84,7 @@ export default {
     }
   },
   messages: {
+    featureslockbyotheruser: "Ci sono alcune feature bloccate da un altro utente",
     splitted: "Feature(s) splittata(e)",
     nosplittedfeature: "La(e) feature(s) non è stata splittata",
     press_esc: "Premi ESC per tornare indietro",

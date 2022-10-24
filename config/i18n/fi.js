@@ -83,6 +83,7 @@ export default {
     }
   },
   messages: {
+    featureslockbyotheruser: "Some features are locked by another user",
     splitted: "Jaettu",
     nosplittedfeature: "Ominaisuutta ei jaettu",
     press_esc: "Paina ESC palataksesi",

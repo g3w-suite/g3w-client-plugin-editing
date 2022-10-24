@@ -84,6 +84,7 @@ export default {
     }
   },
   messages: {
+    featureslockbyotheruser: "Some features are locked by another user",
     splitted: "Getrennt",
     nosplittedfeature: "Feature nicht getrennt",
     press_esc: "Mit ESC zurück",
