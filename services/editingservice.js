@@ -101,12 +101,10 @@ function EditingService() {
       id: 'editing',
       queryable: false
     });
-    //add edting layer store to mapstoreregistry
+    //add editing layer store to mapstoreregistry
     MapLayersStoreRegistry.addLayersStore(this._layersstore);
     this.config = config;
-    this._editableLayers = {
-      [Symbol.for('layersarray')]: []
-    };
+    this._editableLayers = {};
     this._toolboxes = [];
     this.state.toolboxes = [];
     let layers = this._getEditableLayersFromCatalog();
@@ -118,22 +116,23 @@ function EditingService() {
         project_type: this._projectType
       }))
     }
-    Promise.allSettled(EditableLayersPromises).then(editableLayers  => {
-      editableLayers.forEach(promise => {
-        const {status, value} = promise;
-        if (status === "fulfilled") {
-          const editableLayer = value;
-          const layerId = editableLayer.getId();
-          this._editableLayers[layerId] = editableLayer;
-          this._editableLayers[Symbol.for('layersarray')].push(editableLayer);
-          this._attachLayerWidgetsEvent(this._editableLayers[layerId]);
-          this._sessions[layerId] = null;
-        } else this._layers_in_error = true;
-      });
-      Promise.resolve().then(()=> this._ready());
+    Promise.allSettled(EditableLayersPromises)
+      .then(editableLayers  => {
+        editableLayers.forEach(promise => {
+          const {status, value} = promise;
+          if (status === "fulfilled") {
+            const editableLayer = value;
+            const layerId = editableLayer.getId();
+            this._editableLayers[layerId] = editableLayer;
+            this._attachLayerWidgetsEvent(editableLayer);
+            this._sessions[layerId] = null;
+          } else this._layers_in_error = true;
+        });
+      this._ready();
     })
   };
   this._ready = function() {
+    this.registerFeaturesLockByOtherUserSetterHandler();
     // set toolbox colors
     this.setLayersColor();
     // after add layers to layerstore
@@ -202,6 +201,18 @@ proto.unsubscribe = function(event, fnc) {
 };
 
 // END API
+
+proto.registerFeaturesLockByOtherUserSetterHandler = function(){
+  this.getLayers().forEach(editingLayer =>{
+    editingLayer.getFeaturesStore().onafter('featuresLockedByOtherUser', () => {
+      GUI.showUserMessage({
+        type: 'warning',
+        subtitle: editingLayer.getName(),
+        message: 'plugins.editing.messages.featureslockbyotheruser'
+      })
+    })
+  })
+};
 
 /**
  * Register result editing action
@@ -811,7 +822,7 @@ proto._getEditableLayersFromCatalog = function() {
 };
 
 proto.getLayers = function() {
-  return this._editableLayers[Symbol.for('layersarray')];
+  return Object.values(this._editableLayers);
 };
 
 proto.getCurrentWorkflow = function() {
@@ -1005,19 +1016,41 @@ proto._filterRelationsInEditing = function({layerId, relations=[]}) {
   })
 };
 
+proto.stopToolboxesChildren = function(layerId){
+  const layer = this.getLayerById(layerId);
+  const relations = this._filterRelationsInEditing({
+    relations: layer.getRelations() ? layer.getRelations().getArray() : [],
+    layerId
+  });
+  relations
+    .filter(relation => relation.getFather() === layerId)
+    .forEach(relation => {
+      const relationId = this._getRelationId({
+        layerId,
+        relation
+      });
+      this.getToolBoxById(relationId).inEditing() && this.getToolBoxById(relationId).stop();
+    })
+};
+
 proto.stopSessionChildren = function(layerId) {
   const layer = this.getLayerById(layerId);
   const relations = this._filterRelationsInEditing({
     relations: layer.getRelations() ? layer.getRelations().getArray() : [],
     layerId
   });
-  relations.forEach(relation => {
-    const relationId = this._getRelationId({
-      layerId,
-      relation
-    });
-    this.getToolBoxById(relationId).inEditing() && this._sessions[relationId].stop();
-  })
+  relations
+    .filter(relation => relation.getFather() === layerId)
+    .forEach(relation => {
+      const relationId = this._getRelationId({
+        layerId,
+        relation
+      });
+      // In case of no editing is started (click on pencil of relation layer) need to stop (unlock) features
+      if (!this.getToolBoxById(relationId).inEditing()) {
+        this._sessions[relationId].stop();
+      }
+    })
 };
 
 proto.fatherInEditing = function(layerId) {
@@ -1068,6 +1101,7 @@ proto.createEditingDataOptions = function(filterType='all', options={}) {
       };
       break;
     case 'fid':
+      // case to get relations of current feature
       if (operator !== 'not')
         filter = {
           fid: {

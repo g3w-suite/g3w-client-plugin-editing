@@ -84,7 +84,7 @@ export default {
     }
   },
   messages: {
-    featureslockbyotheruser: "Some features are locked by another user",
+    featureslockbyotheruser: "Certaines géométries/enregistrements ne sont pas modifiables car ils ont été modifiés par un autre utilisateur",
     splitted: "Fonctionnalité(s) divisé(es)",
     nosplittedfeature: "La (les) fonctionnalité(s) n’a (n'ont) pas été divisé(es)",
     press_esc: "Appuyez sur ESC pour revenir",

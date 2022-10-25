@@ -84,7 +84,7 @@ export default {
     }
   },
   messages: {
-    featureslockbyotheruser: "Some features are locked by another user",
+    featureslockbyotheruser: "Einige Geometrien/Datensätze können nicht bearbeitet werden, da sie von anderen Benutzern bearbeitet werden",
     splitted: "Getrennt",
     nosplittedfeature: "Feature nicht getrennt",
     press_esc: "Mit ESC zurück",

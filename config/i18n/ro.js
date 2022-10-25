@@ -84,7 +84,7 @@ export default  {
     }
   },
   messages: {
-    featureslockbyotheruser: "Some features are locked by another user",
+    featureslockbyotheruser: "Unele geometrii/înregistrări nu sunt editabile deoarece sunt editate de către alt utilizator",
     splitted: "Divizat",
     nosplittedfeature: "Entitate nedivizată",
     press_esc: "ESC pentru înapoi",
