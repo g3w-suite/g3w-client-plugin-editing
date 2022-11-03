@@ -207,7 +207,7 @@ proto.registerFeaturesLockByOtherUserSetterHandler = function(){
     editingLayer.getFeaturesStore().onafter('featuresLockedByOtherUser', () => {
       GUI.showUserMessage({
         type: 'warning',
-        subtitle: editingLayer.getName(),
+        subtitle: editingLayer.getName().toUpperCase(),
         message: 'plugins.editing.messages.featureslockbyotheruser'
       })
     })
