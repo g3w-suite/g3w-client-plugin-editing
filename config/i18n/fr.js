@@ -110,7 +110,8 @@ export default {
       delete: "Supprimé(id)",
       update: "Modifié(id)"
     },
-    loading_table_data: "Building Data Table. Please wait ..."
+    loading_table_data: "Building Data Table. Please wait ...",
+    copy_and_paste_from_other_layer_mandatory_fields: "Avant d'enregistrer, il est nécessaire de remplir tous les champs obligatoires du features saisi"
   },
   relation: {
     table: {

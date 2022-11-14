@@ -57,25 +57,24 @@ proto.run = function(inputs, context) {
             });
             const feature = new Feature({
               feature: selectedFeature,
+              properties: attributes.map(attribute => attribute.name)
             });
             feature.setTemporaryId();
             source.addFeature(feature);
             features.push(feature);
             session.pushAdd(layerId, feature, false);
-            this.fireEvent('addfeature', feature)
           });
-          if (features.length && features.length === 1) {
-            inputs.features.push(features[0]);
-          }
+          if (features.length && features.length === 1) inputs.features.push(features[0]);
           else {
             isThereEmptyFieldRequiredNotDefined && GUI.showUserMessage({
               type: 'warning',
-              message: 'Attenzione ci sono due features con campi obbligatori vuoti !!!',
+              message: 'plugins.editing.messages.copy_and_paste_from_other_layer_mandatory_fields',
               autoclose: true,
               duration: 2000
             });
             inputs.features.push(features);
           }
+          features.forEach(feature => this.fireEvent('addfeature', feature));
           d.resolve(inputs)
         }
       }
