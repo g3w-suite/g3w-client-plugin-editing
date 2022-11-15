@@ -1,4 +1,5 @@
 import API from '../api'
+const {G3W_FID} = g3wsdk.constant;
 const {ApplicationState, ApplicationService} = g3wsdk.core;
 const {DataRouterService} = g3wsdk.core.data;
 const {base, inherit} = g3wsdk.core.utils;
@@ -12,6 +13,7 @@ const {Feature} = g3wsdk.core.layer.features;
 const {GUI} = g3wsdk.gui;
 const {Server:serverErrorParser}= g3wsdk.core.errors.parsers;
 const t = g3wsdk.core.i18n.tPlugin;
+const {getScaleFromResolution, getResolutionFromScale} = g3wsdk.ol.utils;
 const ToolBoxesFactory = require('../toolboxes/toolboxesfactory');
 const CommitFeaturesWorkflow = require('../workflows/commitfeaturesworkflow');
 const MAPCONTROL_TOGGLED_EVENT_NAME = 'mapcontrol:toggled';
@@ -221,10 +223,10 @@ proto.registerResultEditingAction = function(){
   const queryResultsService = GUI.getService('queryresults');
   this.setterKeys.push({
     setter: 'editFeature',
-    key: queryResultsService.onafter('editFeature', ({layerId, featureId}) => {
+    key: queryResultsService.onafter('editFeature', ({layer, feature}) => {
       this.editResultLayerFeature({
-        layerId,
-        featureId
+        layer,
+        feature
       })
     })
   });
@@ -239,16 +241,40 @@ proto.unregisterResultEditingAction = function(){
  * function to start to edit feature selected from results;
  *
  */
-proto.editResultLayerFeature = function({layerId, featureId}={}){
+proto.editResultLayerFeature = function({layer, feature}={}){
+  // get Layer Id
+  const layerId = layer.id;
+  // get Feature id
+  const featureId = feature.attributes[G3W_FID];
   this.getToolBoxes().forEach(toolbox => toolbox.setShow(toolbox.getId() === layerId));
   this.getPlugin().showEditingPanel();
   const toolBox = this.getToolBoxById(layerId);
+  //get scale constraint from setting layer
+  const {scale} = toolBox.getEditingConstraints();
+  // if feature has geometry
+  if (feature.geometry) {
+    (typeof scale !== "undefined") && this._mapService.getMap().once('moveend', () => {
+      const mapUnits = this._mapService.getMapUnits();
+      const map = this._mapService.getMap();
+      //check current scale after zoom to feature
+      const currentScale = parseInt(getScaleFromResolution(map.getView().getResolution(), mapUnits));
+      // if currentScale is more that scale constraint set by layer editing
+      // need to go to scale setting by layer editing constraint
+      if (currentScale > scale) {
+        const resolution = getResolutionFromScale(scale, mapUnits);
+        map.getView().setResolution(resolution);
+      }
+    });
+    // zoom to feature geometry
+    this._mapService.zoomToGeometry(feature.geometry);
+  }
+  // start toolbox
   toolBox.start({
     filter: {
       fids: featureId // filter by fid (feature id)
     }
   })
-    .then(({features}) =>{
+    .then(({features=[]}) => {
       const feature = features.find(feature => feature.getId() == featureId);
       if (feature){
         toolBox.setSelected(true);
@@ -273,7 +299,7 @@ proto.editResultLayerFeature = function({layerId, featureId}={}){
           .fail(()=> session.rollback())
       }
     })
-    .fail(err =>console.log(err))
+    .fail(err => console.log(err))
 };
 
 /**
