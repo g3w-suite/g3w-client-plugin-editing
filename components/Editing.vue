@@ -4,10 +4,11 @@
 
 <template>
   <div class="g3w-editing-panel">
+    <bar-loader :loading="saving"></bar-loader>
     <div v-if="!appState.online" id="onlineofflinemessage" style="margin-bottom: 5px; padding: 5px; border-radius: 3px; background-color: orange; color:white; font-weight: bold">
       <div v-t-plugin="'editing.messages.offline'"></div>
     </div>
-    <div v-if="showcommitbar" style="display: flex; justify-content: flex-end; margin-bottom: 5px">
+    <div v-if="showcommitbar" v-disabled="saving" style="display: flex; justify-content: flex-end; margin-bottom: 5px">
       <div style="margin-right: auto;" class="editing-button" @click="canCommit ? commit(): null" :class="{'enabled' : canCommit }">
         <span class="editing-icon" :class="g3wtemplate.font['save']"></span>
       </div>
@@ -43,7 +44,11 @@
 
   export default {
       name: 'Editing',
-      data: null,
+      data() {
+        return {
+          saving: false // attribute useful to show loading bar when commit after click on save disk icon
+        }
+      },
       components: {
         toolbox: ToolboxComponent,
         selectlayers: SelectEditingLayersComponent
@@ -57,11 +62,12 @@
           this.$options.service.redo();
         },
         commit(toolboxId) {
+          this.saving = true;
           const toolbox = this.$options.service.getToolBoxById(toolboxId);
           this.$options.service.commit({
             toolbox,
             modal: false
-          })
+          }).always(() => this.saving = false);
         },
         saveAll() {},
         startToolBox(toolboxId) {
