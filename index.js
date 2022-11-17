@@ -18,6 +18,10 @@ const Plugin = function() {
       {
         name: 'magnete',
         className: "fas fa-magnet"
+      },
+      {
+        name: 'clipboard',
+        className: "fas fa-clipboard"
       }
     ]
   });

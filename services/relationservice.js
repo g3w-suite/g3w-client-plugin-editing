@@ -92,7 +92,8 @@ proto._setAddLinkWorkflow = function() {
   const add_link_workflow = {
     [Layer.LayerTypes.VECTOR]: {
       link: require('../workflows/linkrelationworkflow'),
-      add: require('../workflows/addfeatureworkflow')
+      add: require('../workflows/addfeatureworkflow'),
+      selectandcopy: require('../workflows/selectandcopyfeaturesfromotherlayerworkflow')
     },
     [Layer.LayerTypes.TABLE]: {
       link: require('../workflows/edittableworkflow'),
@@ -108,6 +109,10 @@ proto._getLinkFeatureWorkflow = function() {
 
 proto._getAddFeatureWorkflow = function() {
   return new this._add_link_workflow.add();
+};
+
+proto._getSelectCopyWorkflow = function(options={}){
+  return new this._add_link_workflow.selectandcopy(options)
 };
 
 proto.getRelationTools = function() {
@@ -331,6 +336,30 @@ proto._getRelationAsFatherStyleColor = function(type) {
       break;
   }
   return fatherLayerStyleColor && fatherLayerStyleColor.getColor() || '#000000';
+};
+
+proto.addRelationFromOtherProjectLayer = function(layer){
+  let workflow;
+  if (layer.isGeoLayer()) {
+    workflow = this._getSelectCopyWorkflow({
+      projectLayer: layer
+    });
+    const options = this._createWorkflowOptions();
+    const session = options.context.session;
+    const {ownField, relationField} = this.getEditingService()._getRelationFieldsFromRelation({
+      layerId: this._relationLayerId,
+      relation: this.relation
+    });
+    GUI.setModal(false);
+    GUI.hideContent(true);
+    const promise =  workflow.start(options)
+      .then(() => {})
+      .fail(err => console.log(err))
+      .always(()=> {
+        GUI.setModal(true);
+        GUI.hideContent(false);
+      })
+  }
 };
 
 /**

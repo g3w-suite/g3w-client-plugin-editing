@@ -26,6 +26,17 @@
           </span>
         </div>
       </div>
+      <section ref="relation_vector_tools" v-if="showAddVectorRelationTools" style="display: flex; justify-content:space-between; border:2px solid #eeeeee; background-color: #ffffff; padding: 10px;">
+        <span style="margin-right: 5px;" class="g3w-icon add-link" :class="g3wtemplate.font['pencil']" @click.stop="addVectorRelation" align="center"></span>
+        <div id="g3w-select-editable-layers-content" style="flex-grow: 1; display:flex;" class="skin-color">
+          <select id="g3w-select-editable-layers-to-copy" v-select2="'copylayerid'">
+            <option v-for="copyFeatureLayer in copyFeatureLayers" :value="copyFeatureLayer.id" :key="copyFeatureLayer.id">{{copyFeatureLayer.name}}</option>
+          </select>
+          <button class="btn skin-button" style="margin-left: 2px;" @click.stop="copyFeatureFromOtherLayer">
+            <i :class="g3wtemplate.font['clipboard']"></i>
+          </button>
+          </div>
+      </section>
       <div ref="relation_body" class="box-body" style="padding:0;">
         <template v-if="relationsLength">
           <table class="table g3wform-relation-table table-striped" style="width:100%">
@@ -33,9 +44,7 @@
               <tr>
                 <th v-t="'tools'"></th>
                 <th></th>
-                <th v-for="attribute in relationAttributesSubset(relations[0])">
-                  {{attribute.label}}
-                </th>
+                <th v-for="attribute in relationAttributesSubset(relations[0])">{{attribute.label}}</th>
               </tr>
             </thead>
             <tbody>
@@ -46,16 +55,14 @@
                       v-for="relationtool in getRelationTools()" :key="relationtool.state.name"
                       data-toggle="tooltip"
                       data-placement="right" v-t-tooltip:plugin="relationtool.state.name">
-                      <img height="20px" width="20px" :src="resourcesurl + 'images/'+ relationtool.state.icon"/>
+                      <img height="20px" width="20px" :src="`${resourcesurl}images/${relationtool.state.icon}`"/>
                     </div>
                   </div>
                 </td>
                 <td class="action-cell">
                   <div v-if="!fieldrequired && capabilities.relation.find(capability => capability === 'change_attr_feature') !== undefined"
-                       class="g3w-mini-relation-icon g3w-icon" :class="g3wtemplate.font['unlink']"
-                       @click="unlinkRelation(index)"
-                       v-t-tooltip:right.create="tooltips.unlink_relation"
-                       aria-hidden="true">
+                    class="g3w-mini-relation-icon g3w-icon" :class="g3wtemplate.font['unlink']" @click="unlinkRelation(index)"
+                    v-t-tooltip:right.create="tooltips.unlink_relation" aria-hidden="true">
                   </div>
                 </td>
                 <td v-show="!showAllFieds(index)" v-for="attribute in relationAttributesSubset(relation)">
@@ -84,6 +91,7 @@
   const t = g3wsdk.core.i18n.tPlugin;
   const {toRawType} = g3wsdk.core.utils;
   const RelationService = require('../services/relationservice');
+  const {Layer} = g3wsdk.core.layer;
   const {fieldsMixin, resizeMixin, mediaMixin} = g3wsdk.gui.vue.Mixins;
 
   let relationsTable;
@@ -93,6 +101,8 @@
       name: 'g3w-relation',
       data() {
         return {
+          showAddVectorRelationTools: false,
+          copylayerid: null,//used for vector relation layer
           active: false,
           showallfieldsindex: null,
           tooltips: {
@@ -114,18 +124,34 @@
             const relationHeaderTools = $(this.$refs.relation_header_tools).outerHeight();
             const dataTables_scrollHead_Height = $(this.$el).find('.dataTables_scrollHead').outerHeight();
             const dataTables_paginate_Height = $(this.$el).find('.dataTables_paginate.paging_simple_numbers').outerHeight();
-            $(this.$refs.relation_body).find('div.dataTables_scrollBody')
-              .height(formBodyHeight - formFooterHeight - relationHeaderTitle - relationHeaderTools - dataTables_scrollHead_Height - dataTables_paginate_Height);
+            let dataTables_scrollBody_Height = formBodyHeight - formFooterHeight - relationHeaderTitle - relationHeaderTools - dataTables_scrollHead_Height - dataTables_paginate_Height;
+            if (this.isVectorRelation && this.showAddVectorRelationTools) {
+              dataTables_scrollBody_Height = dataTables_scrollBody_Height - $(this.$refs.relation_vector_tools).outerHeight();
+            }
+            $(this.$refs.relation_body).find('div.dataTables_scrollBody').height(dataTables_scrollBody_Height);
             relationsTable && relationsTable.columns.adjust();
           }
         },
-        unlinkRelation: function(index) {
+        unlinkRelation(index) {
           this._service.unlinkRelation(index)
         },
-        addRelationAndLink: function() {
-          this._service.addRelation();
+        copyFeatureFromOtherLayer(){
+          const EditingService = require('../services/editingservice');
+          const projectLayer = EditingService.getProjectLayerById(this.copylayerid);
+          this._service.addRelationFromOtherProjectLayer(projectLayer);
         },
-        startTool: function(relationtool, index) {
+        addVectorRelation(){
+          this._service.addRelation();
+          this.showAddVectorRelationTools = false;
+        },
+        async addRelationAndLink() {
+          if (this.isVectorRelation && this.copyFeatureLayers.length) {
+            this.showAddVectorRelationTools = ! this.showAddVectorRelationTools;
+            await this.$nextTick();
+            this.resize();
+          } else this._service.addRelation();
+        },
+        startTool(relationtool, index) {
           this._service.startTool(relationtool, index)
             .then(() => {})
             .catch(error => console.log(error))
@@ -226,6 +252,16 @@
         this.delayType = 'debounce';
       },
       created() {
+        const EditingService = require('../services/editingservice');
+        const relationLayer = EditingService.getLayerById(this.relation.child);
+        this.isVectorRelation = relationLayer.getType() === Layer.LayerTypes.VECTOR;
+        if (this.isVectorRelation) {
+          this.copyFeatureLayers = EditingService.getProjectLayersWithSameGeometryOfLayer(relationLayer).map(layer => ({
+            id: layer.getId(),
+            name: layer.getName()
+          }));
+          this.copylayerid = this.copyFeatureLayers.length ? this.copyFeatureLayers[0].id : null;
+        }
         this.loadEventuallyRelationValuesForInputs = false;
         this._service = new RelationService(this.layerId, {
           relation: this.relation, // main relation between layerId (current in editing)
@@ -236,6 +272,7 @@
       },
       async activated() {
         this.active = true;
+        this.showAddVectorRelationTools = false;
         if (!this.loadEventuallyRelationValuesForInputs) {
           const EditingService = require('../services/editingservice');
           EditingService.runEventHandler({

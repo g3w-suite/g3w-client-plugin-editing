@@ -1674,6 +1674,19 @@ proto.undoRedoRelationUniqueFieldValues = function({relationSessionItems, action
   })
 };
 
+/*
+* end unique fields
+* */
+proto.getProjectLayerById = function(layerId){
+  return CatalogLayersStoresRegistry.getLayerById(layerId);
+};
+
+proto.getProjectLayersWithSameGeometryOfLayer = function(layer){
+ const layerId = layer.getId();
+ const geometryType = layer.getGeometryType();
+ return CatalogLayersStoresRegistry.getLayers().filter(layer => layer.isGeoLayer() && layer.getId() !== layerId && layer.getGeometryType() === geometryType);
+};
+
 EditingService.EDITING_FIELDS_TYPE = ['unique'];
 
 module.exports = new EditingService;

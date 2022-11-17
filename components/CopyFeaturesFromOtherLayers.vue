@@ -31,6 +31,7 @@
   export default {
     name: 'Copyfeaturesfromotherlayers',
     data(){
+      console.log(this.features)
       return {
         selectedFeatures: this.$options.selectedFeatures
       }
