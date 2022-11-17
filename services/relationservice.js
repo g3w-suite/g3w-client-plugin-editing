@@ -228,24 +228,18 @@ proto.startVectorTool = function(relationtool, index) {
   const originalStyle = this._highlightRelationSelect(relationfeature);
   const promise =(workflow instanceof workflows.DeleteFeatureWorkflow || workflow instanceof workflows.EditFeatureAttributesWorkflow ) && workflow.startFromLastStep(options)
     || workflow.start(options);
-  workflow.bindEscKeyUp(() => {
-    relationfeature.setStyle(this._originalLayerStyle);
-  });
+  workflow.bindEscKeyUp(() => relationfeature.setStyle(this._originalLayerStyle));
   promise.then(outputs => {
       if (relationtool.getId() === 'deletefeature') {
         relationfeature.setStyle(this._originalLayerStyle);
-        this.getEditingLayer().getSource().removeFeature(relationfeature);
-
         this.getCurrentWorkflowData().session.pushDelete(this._relationLayerId, relationfeature);
         this.relations.splice(index, 1)
       }
       if (relationtool.getId() === 'editattributes') {
         const fields = this._getRelationFieldsValue(relationfeature);
-        fields.forEach(_field => {
-          relation.fields.forEach(field => {
-            if (field.name === _field.name) field.value = _field.value;
-          })
-        });
+        fields.forEach(_field => relation.fields.forEach(field => {
+          if (field.name === _field.name) field.value = _field.value})
+        );
       }
       d.resolve(outputs)
     })
