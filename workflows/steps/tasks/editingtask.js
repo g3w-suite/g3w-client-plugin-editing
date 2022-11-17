@@ -113,12 +113,22 @@ proto.setAndUnsetSelectedFeaturesStyle = function({promise}={}){
   Temporary needed to fix issue on pending promise
    */
   const {layer, features} = this.getInputs();
-  setTimeout(()=>{
-    if (layer.getType() === Layer.LayerTypes.VECTOR){
-      const originalStyle = this.setFeaturesSelectedStyle(features);
-      promise.always(() => features.forEach((feature => feature.setStyle(originalStyle))));
-    }
-  })
+  /*
+  To improve: notice that if coming from relation ( WorkflowsStack.getLength() > 1 )
+  no need setTimeout because we already has selected style so original is the same selected.
+  In case of current layer need to wait. TO DO
+   */
+  const selectOriginalStyleHandle = () => {
+    const originalStyle = this.setFeaturesSelectedStyle(features);
+    promise.always(() => {
+      features.forEach((feature => feature.setStyle(originalStyle)))
+    });
+  };
+  if (layer.getType() === Layer.LayerTypes.VECTOR){
+    WorkflowsStack.getLength() == 1 ? setTimeout(() => {
+      selectOriginalStyleHandle();
+    }) : selectOriginalStyleHandle();
+  }
 };
 
 proto.getSelectedStyle = function(feature){
@@ -311,7 +321,6 @@ proto.evaluateGeometryExpressionField = async function({inputs, context,  featur
             feature.set(field.name, field.value);
             resolve(feature)
           } catch(err) {
-            console.log(err)
             reject(err)
           }
         });
