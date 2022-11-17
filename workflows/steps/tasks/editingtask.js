@@ -125,7 +125,7 @@ proto.setAndUnsetSelectedFeaturesStyle = function({promise}={}){
     });
   };
   if (layer.getType() === Layer.LayerTypes.VECTOR){
-    WorkflowsStack.getLength() == 1 ? setTimeout(() => {
+    WorkflowsStack.getLength() === 1 ? setTimeout(() => {
       selectOriginalStyleHandle();
     }) : selectOriginalStyleHandle();
   }
