@@ -1,8 +1,8 @@
-import { PickFeaturesInteraction } from '../../../interactions/pickfeaturesinteraction';
 const { PickCoordinatesInteraction } = g3wsdk.ol.interactions;
 const {DataRouterService} = g3wsdk.core.data;
 const {ProjectsRegistry} = g3wsdk.core.project;
 const { base, inherit }  = g3wsdk.core.utils;
+const { GUI } = g3wsdk.gui;
 const EditingTask = require('./editingtask');
 
 function PickProjectLayerFeaturesTask(options={}) {
@@ -35,6 +35,7 @@ proto.getFeaturesFromLayer = function({inputs, promise}={}){
     this.addInteraction(this.pickInteraction);
     this.pickInteraction.once('picked', async evt => {
       const coordinates = evt.coordinate;
+      let features;
       try {
         const {data=[]} = await DataRouterService.getData('query:coordinates', {
           inputs: {
@@ -45,16 +46,22 @@ proto.getFeaturesFromLayer = function({inputs, promise}={}){
           },
           outputs: null
         });
-        if (data.length) {
-          inputs.features = data[0].features;
-          promise.resolve(inputs)
-        } else {
-          alert('No Features')
-          promise.reject();
-        }
-
+        if (data.length) features = data[0].features.filter(feature => feature.getGeometry());
       } catch(error) {
-        promise.reject(error)
+        promise.reject(error);
+        return;
+      }
+      if (features.length) {
+        inputs.features = features;
+        promise.resolve(inputs);
+      } else {
+        GUI.showUserMessage({
+          type: 'warning',
+          message: 'Nessuna feature selezionata !! DA TRADURRE',
+          closable: false,
+          autoclose: true
+        });
+        promise.reject();
       }
     })
   } else {

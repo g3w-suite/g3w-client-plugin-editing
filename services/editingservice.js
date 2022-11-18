@@ -1681,10 +1681,10 @@ proto.getProjectLayerById = function(layerId){
   return CatalogLayersStoresRegistry.getLayerById(layerId);
 };
 
-proto.getProjectLayersWithSameGeometryOfLayer = function(layer){
- const layerId = layer.getId();
+proto.getProjectLayersWithSameGeometryOfLayer = function(layer, options={exclude:[]}){
+ const {exclude=[]} = options;
  const geometryType = layer.getGeometryType();
- return CatalogLayersStoresRegistry.getLayers().filter(layer => layer.isGeoLayer() && layer.getId() !== layerId && layer.getGeometryType() === geometryType);
+ return CatalogLayersStoresRegistry.getLayers().filter(layer => layer.isGeoLayer() && exclude.indexOf(layer.getId()) === -1 && layer.getGeometryType() === geometryType);
 };
 
 EditingService.EDITING_FIELDS_TYPE = ['unique'];

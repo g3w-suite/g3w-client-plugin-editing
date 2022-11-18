@@ -141,4 +141,14 @@ export default {
       cancel: "Abbrechen"
     }
   },
+  modal: {
+    tools: {
+      copyfeaturefromotherlayer: {
+        title: "Select feature/s"
+      },
+      copyfeaturefromprojectlayer: {
+        title: "Select one feature"
+      }
+    }
+  }
 }

@@ -26,8 +26,11 @@
           </span>
         </div>
       </div>
-      <section ref="relation_vector_tools" v-if="showAddVectorRelationTools" style="display: flex; justify-content:space-between; border:2px solid #eeeeee; background-color: #ffffff; padding: 10px;">
-        <span style="margin-right: 5px;" class="g3w-icon add-link" :class="g3wtemplate.font['pencil']" @click.stop="addVectorRelation" align="center"></span>
+      <section ref="relation_vector_tools" v-if="showAddVectorRelationTools" style="display: flex; flex-direction:column; border:2px solid #eeeeee; background-color: #ffffff; padding: 10px;">
+        <button class="btn skin-button" style="width: 100%" @click.stop="addVectorRelation">
+          <i :class="g3wtemplate.font['pencil']"></i>
+        </button>
+        <divider></divider>
         <div id="g3w-select-editable-layers-content" style="flex-grow: 1; display:flex;" class="skin-color">
           <select id="g3w-select-editable-layers-to-copy" v-select2="'copylayerid'">
             <option v-for="copyFeatureLayer in copyFeatureLayers" :value="copyFeatureLayer.id" :key="copyFeatureLayer.id">{{copyFeatureLayer.name}}</option>
@@ -255,11 +258,14 @@
         const EditingService = require('../services/editingservice');
         const relationLayer = EditingService.getLayerById(this.relation.child);
         this.isVectorRelation = relationLayer.getType() === Layer.LayerTypes.VECTOR;
+        // In case of vector relation
         if (this.isVectorRelation) {
-          this.copyFeatureLayers = EditingService.getProjectLayersWithSameGeometryOfLayer(relationLayer).map(layer => ({
+          // get all project layer that has same geometry
+          this.copyFeatureLayers = EditingService.getProjectLayersWithSameGeometryOfLayer(relationLayer, {exclude:[this.relation.father]}).map(layer => ({
             id: layer.getId(),
             name: layer.getName()
           }));
+          // in case of fin at least one layer, set current layer id
           this.copylayerid = this.copyFeatureLayers.length ? this.copyFeatureLayers[0].id : null;
         }
         this.loadEventuallyRelationValuesForInputs = false;

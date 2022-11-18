@@ -133,5 +133,15 @@ export default {
       save_and_back: "Sauvegarder et retourner au parent",
       cancel: "Supprimer"
     }
+  },
+  modal: {
+    tools: {
+      copyfeaturefromotherlayer: {
+        title: "Select feature/s"
+      },
+      copyfeaturefromprojectlayer: {
+        title: "Select one feature"
+      }
+    }
   }
 }

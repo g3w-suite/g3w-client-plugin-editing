@@ -1,5 +1,6 @@
 const { base, inherit } =  g3wsdk.core.utils;
 const { GUI } = g3wsdk.gui;
+const t = g3wsdk.core.i18n.tPlugin;
 const { Feature } = g3wsdk.core.layer.features;
 const EditingTask = require('./editingtask');
 const SelectCopyFeaturesFormOtherProjectLayerComponent = require('../../../g3w-editing-components/selectcopyotherprojectlayerfeatures');
@@ -27,7 +28,7 @@ proto.run = function(inputs, context) {
   });
   const message = vueInstance.$mount().$el;
   const dialog = GUI.showModalDialog({
-    title: 'Seleziona feature/s',
+    title: t('editing.modal.tools.copyfeaturefromprojectlayer.title'),
     className: 'modal-left',
     closeButton: false,
     message,

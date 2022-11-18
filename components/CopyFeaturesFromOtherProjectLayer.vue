@@ -5,7 +5,7 @@
         <div style="display: flex; flex-direction: column; border-right: 1px solid #eeeeee">
           <div @click.stop="zoomToFeature(feature)" :class="g3wtemplate.font['marker']" class="skin-color" style="padding: 0 5px 15px 5px; font-size: 1.1em;  cursor: pointer; margin-right: 5px;"></div>
           <div v-t-tooltip:right.create="'plugins.editing.steps.help.select_elements'">
-            <input @click.stop="selectFeature(feature)" :id="`${layerId}_${index}_select_feature_from_layer`" type="radio" class="magic-radio">
+            <input :id="`${layerId}_${index}_select_feature_from_layer`" :value="feature" name="radio" type="radio" v-model="selectfeature" class="magic-radio">
             <label :for="`${layerId}_${index}_select_feature_from_layer`" style="color: #FFFFFF">{{index}}</label>
           </div>
         </div>
@@ -19,6 +19,7 @@
 </template>
 
 <script>
+  const {G3W_FID} = g3wsdk.constant;
   const { GUI } = g3wsdk.gui;
   const {getAlphanumericPropertiesFromFeature} = g3wsdk.core.geoutils;
   const {MapLayersStoreRegistry} = g3wsdk.core.map;
@@ -28,21 +29,16 @@
     data(){
       return {
         features: this.$options.features,
+        selectfeature: null,
         selectedFeatures: this.$options.selectedFeatures
       }
     },
     methods: {
       getAttributesFeature(feature){
-        console.log(feature.getId())
         return getAlphanumericPropertiesFromFeature(feature.getProperties()).map(attribute => ({
           attribute,
           value: feature.get(attribute)
-        })).slice(2)
-      },
-      selectFeature(feature){
-        const find = this.selectedFeatures.find(selectedFeature => selectedFeature === feature);
-        if (find) this.selectedFeatures = this.selectedFeatures.filter(selectedFeature => selectedFeature !== feature);
-        else this.selectedFeatures.push(feature);
+        })).filter(attributeObject => attributeObject.attribute !== G3W_FID). slice(2);
       },
       getLayerTitle(layerId){
         return MapLayersStoreRegistry.getLayerById(layerId).getTitle()
@@ -53,11 +49,13 @@
         mapService.zoomToFeatures([feature] , {
           highlight: true,
           duration: 1000
-        }).then(()=> mapService.seSelectionLayerVisible(true))
+        }).then(() => mapService.seSelectionLayerVisible(true))
       }
     },
-    mounted(){
-      console.log(this.features)
+    watch: {
+      selectfeature(feature){
+        this.selectedFeatures.splice(0,1,feature);
+      }
     }
   };
 </script>

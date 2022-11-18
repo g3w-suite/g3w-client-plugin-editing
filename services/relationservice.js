@@ -338,28 +338,23 @@ proto._getRelationAsFatherStyleColor = function(type) {
   return fatherLayerStyleColor && fatherLayerStyleColor.getColor() || '#000000';
 };
 
+/**
+ * Add Relation from project layer
+ * @param layer
+ */
 proto.addRelationFromOtherProjectLayer = function(layer){
   let workflow;
+  let isVector = false;
   if (layer.isGeoLayer()) {
+    isVector = true;
     workflow = this._getSelectCopyWorkflow({
       projectLayer: layer
     });
-    const options = this._createWorkflowOptions();
-    const session = options.context.session;
-    const {ownField, relationField} = this.getEditingService()._getRelationFieldsFromRelation({
-      layerId: this._relationLayerId,
-      relation: this.relation
-    });
-    GUI.setModal(false);
-    GUI.hideContent(true);
-    const promise =  workflow.start(options)
-      .then(() => {})
-      .fail(err => console.log(err))
-      .always(()=> {
-        GUI.setModal(true);
-        GUI.hideContent(false);
-      })
   }
+  this.runAddRelationWorkflow({
+    workflow,
+    isVector
+  })
 };
 
 /**
@@ -367,11 +362,22 @@ proto.addRelationFromOtherProjectLayer = function(layer){
  */
 proto.addRelation = function() {
   const isVector = this._layerType === Layer.LayerTypes.VECTOR;
+  const workflow = this._getAddFeatureWorkflow();
+  this.runAddRelationWorkflow({
+    workflow,
+    isVector
+  })
+};
+
+/**
+ * Common method to add a relation
+ */
+
+proto.runAddRelationWorkflow = function({workflow, isVector=false}={}){
   if (isVector) {
     GUI.setModal(false);
     GUI.hideContent(true);
   }
-  const workflow = this._getAddFeatureWorkflow();
   const options = this._createWorkflowOptions();
   const session = options.context.session;
   const {ownField, relationField} = this.getEditingService()._getRelationFieldsFromRelation({
@@ -415,13 +421,16 @@ proto.addRelation = function() {
     .always(()=>{
       workflow.stop();
       if (isVector) {
-        GUI.hideContent(false);
         workflow.unbindEscKeyUp();
+        GUI.hideContent(false);
         GUI.setModal(true);
       }
-  })
+    })
 };
 
+/**
+ * Link relation (bind) to parent feature layer
+ */
 proto.linkRelation = function() {
   const isVector = this._layerType === Layer.LayerTypes.VECTOR;
   if (isVector) {

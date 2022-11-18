@@ -140,4 +140,14 @@ export default {
       cancel: "Ångra"
     }
   },
+  modal: {
+    tools: {
+      copyfeaturefromotherlayer: {
+        title: "Select feature/s"
+      },
+      copyfeaturefromprojectlayer: {
+        title: "Select one feature"
+      }
+    }
+  }
 }
