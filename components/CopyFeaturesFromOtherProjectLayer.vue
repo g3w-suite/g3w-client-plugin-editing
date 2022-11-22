@@ -38,7 +38,7 @@
         return getAlphanumericPropertiesFromFeature(feature.getProperties()).map(attribute => ({
           attribute,
           value: feature.get(attribute)
-        })).filter(attributeObject => attributeObject.attribute !== G3W_FID). slice(2);
+        })).filter(attributeObject => attributeObject.attribute !== G3W_FID).slice(2);
       },
       getLayerTitle(layerId){
         return MapLayersStoreRegistry.getLayerById(layerId).getTitle()
