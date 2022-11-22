@@ -35,7 +35,7 @@ proto.getFeaturesFromLayer = function({inputs, promise}={}){
     this.addInteraction(this.pickInteraction);
     this.pickInteraction.once('picked', async evt => {
       const coordinates = evt.coordinate;
-      let features;
+      let features = [];
       try {
         const {data=[]} = await DataRouterService.getData('query:coordinates', {
           inputs: {

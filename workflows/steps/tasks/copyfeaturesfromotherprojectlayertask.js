@@ -17,7 +17,7 @@ proto.run = function(inputs, context) {
   const d = $.Deferred();
   const {features, layer:originalLayer} = inputs;
   const layerId = originalLayer.getId();
-  const attributes = originalLayer.getEditingFields();
+  const attributes = originalLayer.getEditingFields().filter(attribute => !attribute.pk);
   const session = context.session;
   const editingLayer = originalLayer.getEditingLayer();
   const source = editingLayer.getSource();
