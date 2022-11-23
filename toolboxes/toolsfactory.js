@@ -108,7 +108,12 @@ function EditorToolsFactory() {
                   };
                   const checkSelectedFeatureLayers = () => {
                     const {bool, tool} = data;
-                    const featuresFilter =  selectionLayerSource.getFeatures().filter(feature => (feature.__layerId !== layerId) && feature.getGeometry().getType() === geometryType);
+                    const featuresFilter =  selectionLayerSource.getFeatures().filter(feature => {
+                      const featureGeometryType = feature.getGeometry() && feature.getGeometry().getType();
+                      if ((feature.__layerId !== layerId) && isSameBaseGeometryType(geometryType, featureGeometryType) ) {
+                        return (geometryType === featureGeometryType) || Geometry.isMultiGeometry(geometryType) || !Geometry.isMultiGeometry(featureGeometryType);
+                      }
+                      return false;                   });
                     const enabled = bool && featuresFilter.length > 0;
                     tool.setEnabled(enabled);
                     return enabled;
@@ -256,7 +261,13 @@ function EditorToolsFactory() {
                   };
                   const checkSelectedFeatureLayers = () => {
                     const {bool, tool} = data;
-                    const featuresFilter =  selectionLayerSource.getFeatures().filter(feature => (feature.__layerId !== layerId) && feature.getGeometry().getType() === geometryType);
+                    const featuresFilter =  selectionLayerSource.getFeatures().filter(feature => {
+                      const featureGeometryType = feature.getGeometry() && feature.getGeometry().getType();
+                      if ((feature.__layerId !== layerId) && isSameBaseGeometryType(geometryType, featureGeometryType) ) {
+                        return (geometryType === featureGeometryType) || Geometry.isMultiGeometry(geometryType) || !Geometry.isMultiGeometry(featureGeometryType);
+                      }
+                      return false;
+                    });
                     const enabled = bool && featuresFilter.length > 0;
                     tool.setEnabled(enabled);
                     return enabled;
@@ -351,7 +362,7 @@ function EditorToolsFactory() {
                 const checkIfLayerHasTheSameBaseGeometryType = layer => {
                   let sameBaseGeometry = true;
                   const type = layer.getType();
-                  // check if too is visible and the layer is a Vector
+                  // check if tool is visible and the layer is a Vector
                   if (type === 'VECTOR') {
                     const features = layer.getSource().getFeatures();
                     if (features.length) {

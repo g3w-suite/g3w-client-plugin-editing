@@ -1,3 +1,4 @@
+const {G3W_FID} = g3wsdk.constant;
 const { base, inherit } =  g3wsdk.core.utils;
 const { GUI } = g3wsdk.gui;
 const t = g3wsdk.core.i18n.tPlugin;
@@ -5,13 +6,14 @@ const { Feature } = g3wsdk.core.layer.features;
 const EditingTask = require('./editingtask');
 const SelectCopyFeaturesFormOtherProjectLayerComponent = require('../../../g3w-editing-components/selectcopyotherprojectlayerfeatures');
 
-function CopyFeaturesFromOtherLayerTask(options={}) {
+function CopyFeaturesFromOtherProjectLayerTask(options={}) {
+  this.projectLayer = options.projectLayer;
   base(this, options);
 }
 
-inherit(CopyFeaturesFromOtherLayerTask, EditingTask);
+inherit(CopyFeaturesFromOtherProjectLayerTask, EditingTask);
 
-const proto = CopyFeaturesFromOtherLayerTask.prototype;
+const proto = CopyFeaturesFromOtherProjectLayerTask.prototype;
 
 proto.run = function(inputs, context) {
   const d = $.Deferred();
@@ -43,24 +45,33 @@ proto.run = function(inputs, context) {
       ok: {
         label: 'Ok',
         className: 'btn-success',
-        callback: () => {
+        callback: async () => {
           const features = [];
           let isThereEmptyFieldRequiredNotDefined = false;
-          selectedFeatures.forEach(selectedFeature => {
-            attributes.forEach(({name, validate: {required=false}}) => {
-              const value = selectedFeature.get(name) || null;
-              isThereEmptyFieldRequiredNotDefined = isThereEmptyFieldRequiredNotDefined || (value === null && required);
-              selectedFeature.set(name, value );
-            });
-            const feature = new Feature({
-              feature: selectedFeature,
-              properties: attributes.map(attribute => attribute.name)
-            });
-            feature.setTemporaryId();
-            source.addFeature(feature);
-            features.push(feature);
-            session.pushAdd(layerId, feature, false);
-          });
+          if (selectedFeatures.length) {
+            const selectedFeature = selectedFeatures[0];
+            try {
+              const layerProjectFeature = await this.getEditingService().getProjectLayerFeatureById({
+                layerId: this.projectLayer.getId(),
+                fid: selectedFeature.get(G3W_FID)
+              });
+              if (layerProjectFeature) {
+                attributes.forEach(({name, validate: {required=false}}) => {
+                  const value = layerProjectFeature.properties[name] || null;
+                  isThereEmptyFieldRequiredNotDefined = isThereEmptyFieldRequiredNotDefined || (value === null && required);
+                  selectedFeature.set(name, value );
+                });
+                const feature = new Feature({
+                  feature: selectedFeature,
+                  properties: attributes.map(attribute => attribute.name)
+                });
+                feature.setTemporaryId();
+                source.addFeature(feature);
+                features.push(feature);
+                session.pushAdd(layerId, feature, false);
+              }
+            } catch(err){}
+          }
           if (features.length && features.length === 1) inputs.features.push(features[0]);
           else {
             isThereEmptyFieldRequiredNotDefined && GUI.showUserMessage({
@@ -86,5 +97,4 @@ proto.stop = function() {
   return true;
 };
 
-
-module.exports = CopyFeaturesFromOtherLayerTask;
+module.exports = CopyFeaturesFromOtherProjectLayerTask;

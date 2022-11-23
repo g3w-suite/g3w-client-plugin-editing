@@ -1,3 +1,4 @@
+const {G3W_FID} = g3wsdk.constant;
 const { base, inherit } =  g3wsdk.core.utils;
 const { GUI } = g3wsdk.gui;
 const t = g3wsdk.core.i18n.tPlugin;
@@ -18,13 +19,14 @@ proto.run = function(inputs, context) {
   const originalLayer = inputs.layer;
   const geometryType = originalLayer.getGeometryType();
   const layerId = originalLayer.getId();
-  const attributes = originalLayer.getEditingFields();
+  const attributes = originalLayer.getEditingFields().filter(attribute => !attribute.pk);
   const session = context.session;
   const editingLayer = originalLayer.getEditingLayer();
   const source = editingLayer.getSource();
-  const mapService = this.getMapService();
-  const selectionLayerSource = mapService.defaultsLayers.selectionLayer.getSource();
-  const features = selectionLayerSource.getFeatures().filter(feature => feature.__layerId !== layerId &&  feature.getGeometry().getType() === geometryType);
+  const features = this.getFeaturesFromSelectionFeatures({
+    layerId,
+    geometryType
+  });
   const selectedFeatures = [];
   const vueInstance = SelectCopyFeaturesFormOtherLayersComponent({
     features,
@@ -47,23 +49,34 @@ proto.run = function(inputs, context) {
       ok: {
         label: 'Ok',
         className: 'btn-success',
-        callback: () => {
+        callback: async () => {
           const features = [];
           let isThereEmptyFieldRequiredNotDefined = false;
+          const promisesFeatures = [];
           selectedFeatures.forEach(selectedFeature => {
-            attributes.forEach(({name, validate: {required=false}}) => {
-              const value = selectedFeature.get(name) || null;
-              isThereEmptyFieldRequiredNotDefined = isThereEmptyFieldRequiredNotDefined || (value === null && required);
-              selectedFeature.set(name, value );
-            });
-            const feature = new Feature({
-              feature: selectedFeature,
-              properties: attributes.map(attribute => attribute.name)
-            });
-            feature.setTemporaryId();
-            source.addFeature(feature);
-            features.push(feature);
-            session.pushAdd(layerId, feature, false);
+            promisesFeatures.push(this.getEditingService().getProjectLayerFeatureById({
+              layerId: selectedFeature.__layerId,
+              fid: selectedFeature.get(G3W_FID)
+            }));
+          });
+          const featurePromises = await Promise.allSettled(promisesFeatures);
+          featurePromises.forEach(({status, value:layerFeature}, index) => {
+            if (status === "fulfilled") {
+              const selectedFeature = selectedFeatures[index];
+              attributes.forEach(({name, validate: {required=false}}) => {
+                const value = layerFeature.properties[name] || null;
+                isThereEmptyFieldRequiredNotDefined = isThereEmptyFieldRequiredNotDefined || (value === null && required);
+                selectedFeature.set(name, value );
+              });
+              const feature = new Feature({
+                feature: selectedFeature,
+                properties: attributes.map(attribute => attribute.name)
+              });
+              feature.setTemporaryId();
+              source.addFeature(feature);
+              features.push(feature);
+              session.pushAdd(layerId, feature, false);
+            }
           });
           if (features.length && features.length === 1) inputs.features.push(features[0]);
           else {

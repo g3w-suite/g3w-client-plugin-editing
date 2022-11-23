@@ -1,6 +1,11 @@
 const { PickCoordinatesInteraction } = g3wsdk.ol.interactions;
 const {DataRouterService} = g3wsdk.core.data;
 const {ProjectsRegistry} = g3wsdk.core.project;
+const { Geometry } = g3wsdk.core.geometry;
+const {
+  convertSingleMultiGeometry,
+  isSameBaseGeometryType
+} = g3wsdk.core.geoutils;
 const { base, inherit }  = g3wsdk.core.utils;
 const { GUI } = g3wsdk.gui;
 const EditingTask = require('./editingtask');
@@ -31,6 +36,7 @@ proto.run = function(inputs, context) {
 proto.getFeaturesFromLayer = function({inputs, promise}={}){
   if (this.projectLayer.isGeoLayer()) {
     const project = ProjectsRegistry.getCurrentProject();
+    const geometryType = this.projectLayer.getGeometryType();
     this.pickInteraction = new PickCoordinatesInteraction();
     this.addInteraction(this.pickInteraction);
     this.pickInteraction.once('picked', async evt => {
@@ -46,7 +52,19 @@ proto.getFeaturesFromLayer = function({inputs, promise}={}){
           },
           outputs: null
         });
-        if (data.length) features = data[0].features.filter(feature => feature.getGeometry());
+        if (data.length) {
+         data[0].features.filter(feature => {
+           const featureGeometryType = feature.getGeometry() && feature.getGeometry().getType();
+           if (geometryType === featureGeometryType) features.push(feature);
+           else if (isSameBaseGeometryType(featureGeometryType, geometryType) &&
+             (Geometry.isMultiGeometry(geometryType) || !Geometry.isMultiGeometry(featureGeometryType))) {
+             const cloneFeature = feature.clone();
+             cloneFeature.__layerId = feature.__layerId;
+             cloneFeature.setGeometry(convertSingleMultiGeometry(feature.getGeometry(), geometryType));
+             features.push(cloneFeature);
+           }
+         });
+        }
       } catch(error) {
         promise.reject(error);
         return;

@@ -2,7 +2,8 @@ import API from '../api'
 const {G3W_FID} = g3wsdk.constant;
 const {ApplicationState, ApplicationService} = g3wsdk.core;
 const {DataRouterService} = g3wsdk.core.data;
-const {base, inherit} = g3wsdk.core.utils;
+const {base, inherit, XHR} = g3wsdk.core.utils;
+const {getFeaturesFromResponseVectorApi} = g3wsdk.core.geoutils;
 const {WorkflowsStack} = g3wsdk.core.workflow;
 const {PluginService} = g3wsdk.core.plugin;
 const {SessionsRegistry} = g3wsdk.core.editing;
@@ -1679,6 +1680,22 @@ proto.undoRedoRelationUniqueFieldValues = function({relationSessionItems, action
 * */
 proto.getProjectLayerById = function(layerId){
   return CatalogLayersStoresRegistry.getLayerById(layerId);
+};
+
+proto.getProjectLayerFeatureById = async function({layerId, fid}) {
+  let feature;
+  const layer = this.getProjectLayerById(layerId);
+  try {
+    const response = await XHR.get({
+      url: layer.getUrl('data'),
+      params: {
+        fids: fid
+      }
+    });
+    const features = getFeaturesFromResponseVectorApi(response);
+    if (features.length) feature = features[0];
+  } catch(err) {}
+  return feature;
 };
 
 proto.getProjectLayersWithSameGeometryOfLayer = function(layer, options={exclude:[]}){

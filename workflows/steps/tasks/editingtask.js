@@ -1,5 +1,11 @@
 const { base, inherit } = g3wsdk.core.utils;
-const { createSelectedStyle, areCoordinatesEqual} = g3wsdk.core.geoutils;
+const { Geometry } = g3wsdk.core.geometry;
+const {
+  convertSingleMultiGeometry,
+  isSameBaseGeometryType,
+  createSelectedStyle,
+  areCoordinatesEqual
+} = g3wsdk.core.geoutils;
 const { Layer } = g3wsdk.core.layer;
 const { GUI } = g3wsdk.gui;
 const { Task } = g3wsdk.core.workflow;
@@ -258,7 +264,7 @@ proto.getFormFields = async function({inputs, context, feature, isChild=false}={
               relationLayerId,
               field,
               oldValue: current_feature_value,
-              newValue: field.value
+              newValueconvertSingleMultiGeometry: field.value
             });
           else
             this.getEditingService().changeLayerUniqueFieldValues({
@@ -354,6 +360,26 @@ proto.getParentFormData = function(){
       qgs_layer_id: layer.getId()
     }
   }
+};
+
+proto.getFeaturesFromSelectionFeatures = function({layerId, geometryType}){
+  const features = [];
+  const selectionLayerSource = this._mapService.defaultsLayers.selectionLayer.getSource();
+  selectionLayerSource.getFeatures()
+    .forEach(feature => {
+      const featureGeometryType = feature.getGeometry().getType();
+      if (feature.__layerId !== layerId) {
+        if (geometryType === featureGeometryType) features.push(feature);
+        else if (isSameBaseGeometryType(featureGeometryType, geometryType) &&
+          (Geometry.isMultiGeometry(geometryType) || !Geometry.isMultiGeometry(featureGeometryType))) {
+          const cloneFeature = feature.clone();
+          cloneFeature.__layerId = feature.__layerId;
+          cloneFeature.setGeometry(convertSingleMultiGeometry(feature.getGeometry(), geometryType));
+          features.push(cloneFeature);
+        }
+      }
+    });
+  return features;
 };
 
 module.exports = EditingTask;

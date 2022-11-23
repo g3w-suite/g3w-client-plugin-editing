@@ -31,7 +31,6 @@
   export default {
     name: 'Copyfeaturesfromotherlayers',
     data(){
-      console.log(this.features)
       return {
         selectedFeatures: this.$options.selectedFeatures
       }
@@ -57,7 +56,7 @@
         mapService.zoomToFeatures([feature] , {
           highlight: true,
           duration: 1000
-        }).then(()=> mapService.seSelectionLayerVisible(true))
+        }).then(() => mapService.seSelectionLayerVisible(true))
       }
     },
     mounted(){
