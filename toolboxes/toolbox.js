@@ -392,25 +392,28 @@ proto._unregisterGetFeaturesEvent = function() {
 proto._registerGetFeaturesEvent = function(options={}) {
   switch(this._layerType) {
     case Layer.LayerTypes.VECTOR:
-      const fnc = () => {
-        const canEdit = this.state.editing.canEdit;
-        this._layer.getEditingLayer().setVisible(canEdit);
-        //added ApplicationState.online
-        if (ApplicationState.online && canEdit && GUI.getContentLength() === 0) {
-          const bbox = this._mapService.getMapBBOX();
-          options.filter.bbox = bbox;
-          this.state.loading = true;
-          this._session.getFeatures(options).then(promise=> {
-            promise.then(() => {
-              this.state.loading = false;
-            });
-          })
-        }
-      };
-      this._getFeaturesEvent.event = 'moveend';
-      this._getFeaturesEvent.fnc = debounce(fnc, 300);
-      const map = this._mapService.getMap();
-      map.on('moveend', this._getFeaturesEvent.fnc);
+      // only in case filter bbox
+      if (options.filter.bbox) {
+        const fnc = () => {
+          const canEdit = this.state.editing.canEdit;
+          this._layer.getEditingLayer().setVisible(canEdit);
+          //added ApplicationState.online
+          if (ApplicationState.online && canEdit && GUI.getContentLength() === 0) {
+            const bbox = this._mapService.getMapBBOX();
+            options.filter.bbox = bbox;
+            this.state.loading = true;
+            this._session.getFeatures(options).then(promise=> {
+              promise.then(() => {
+                this.state.loading = false;
+              });
+            })
+          }
+        };
+        this._getFeaturesEvent.event = 'moveend';
+        this._getFeaturesEvent.fnc = debounce(fnc, 300);
+        const map = this._mapService.getMap();
+        map.on('moveend', this._getFeaturesEvent.fnc);
+      }
       break;
     default:
       return;
