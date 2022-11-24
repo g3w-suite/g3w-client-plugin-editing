@@ -111,7 +111,8 @@ export default {
       update: "Modificate(id)"
     },
     loading_table_data: "Costruzione tabella dati in corso. Attendere ...",
-    copy_and_paste_from_other_layer_mandatory_fields: "Necessario compilare eventuali campi obbligatori sulle features incollate prima del salvataggio"
+    copy_and_paste_from_other_layer_mandatory_fields: "Necessario compilare eventuali campi obbligatori sulle features incollate prima del salvataggio",
+    no_feature_selected: "Nessuna feature selezionata"
   },
   relation: {
     table: {

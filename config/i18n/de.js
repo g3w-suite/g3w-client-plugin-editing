@@ -112,7 +112,8 @@ export default {
       update: "Bearbeitet(id)"
     },
     loading_table_data: "Datentabelle wird erstellt. Bitte warten ...",
-    copy_and_paste_from_other_layer_mandatory_fields: "Vor dem Speichern müssen alle Pflichtfelder des eingegebenen features ausgefüllt werden"
+    copy_and_paste_from_other_layer_mandatory_fields: "Vor dem Speichern müssen alle Pflichtfelder des eingegebenen features ausgefüllt werden",
+    no_feature_selected: "Keine feature ausgewählt"
   },
   relation: {
     table: {

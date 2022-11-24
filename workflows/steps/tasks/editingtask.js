@@ -363,23 +363,27 @@ proto.getParentFormData = function(){
 };
 
 proto.getFeaturesFromSelectionFeatures = function({layerId, geometryType}){
-  const features = [];
   const selectionLayerSource = this._mapService.defaultsLayers.selectionLayer.getSource();
-  selectionLayerSource.getFeatures()
-    .forEach(feature => {
-      const featureGeometryType = feature.getGeometry().getType();
-      if (feature.__layerId !== layerId) {
-        if (geometryType === featureGeometryType) features.push(feature);
-        else if (isSameBaseGeometryType(featureGeometryType, geometryType) &&
-          (Geometry.isMultiGeometry(geometryType) || !Geometry.isMultiGeometry(featureGeometryType))) {
-          const cloneFeature = feature.clone();
-          cloneFeature.__layerId = feature.__layerId;
-          cloneFeature.setGeometry(convertSingleMultiGeometry(feature.getGeometry(), geometryType));
-          features.push(cloneFeature);
-        }
-      }
-    });
-  return features;
+  return this.convertFeaturesGeometryToGeometryTypeOfLayer({
+    features: selectionLayerSource.getFeatures().filter(feature => feature.__layerId !== layerId),
+    geometryType
+  })
+};
+
+proto.convertFeaturesGeometryToGeometryTypeOfLayer = function({features=[], geometryType}){
+  const convertFeatures = [];
+  features.forEach(feature => {
+    const featureGeometryType = feature.getGeometry() && feature.getGeometry().getType();
+    if (geometryType === featureGeometryType) convertFeatures.push(feature);
+    else if (isSameBaseGeometryType(featureGeometryType, geometryType) &&
+      (Geometry.isMultiGeometry(geometryType) || !Geometry.isMultiGeometry(featureGeometryType))) {
+      const cloneFeature = feature.clone();
+      cloneFeature.__layerId = feature.__layerId;
+      cloneFeature.setGeometry(convertSingleMultiGeometry(feature.getGeometry(), geometryType));
+      convertFeatures.push(cloneFeature);
+    }
+  });
+  return convertFeatures;
 };
 
 module.exports = EditingTask;

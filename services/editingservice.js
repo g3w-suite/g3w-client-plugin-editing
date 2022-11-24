@@ -1460,12 +1460,13 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
             d.resolve(toolbox);
           }
         })
-        .fail(error => {
-          if (error.errors) error.error = error.errors;
+        .fail((error={}) => {
           const parser = new serverErrorParser({
-            error
+            error: error.errors ? error.errors : error
           });
-          const errorMessage = parser.parse();
+          const errorMessage = parser.parse({
+            type: 'String'
+          });
           const {autoclose = false, message} = messages.error;
           GUI.showUserMessage({
             type: 'alert',

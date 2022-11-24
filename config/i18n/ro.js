@@ -112,7 +112,8 @@ export default  {
       update: "Modificate(id)"
     },
     loading_table_data: "Încărcăm tabelul de date ...",
-    copy_and_paste_from_other_layer_mandatory_fields: "Înainte de a salva, este necesar să completați toate câmpurile obligatorii ale entități introduse"
+    copy_and_paste_from_other_layer_mandatory_fields: "Înainte de a salva, este necesar să completați toate câmpurile obligatorii ale entități introduse",
+    no_feature_selected: "Nicio feature selectată"
   },
   relation: {
     table: {

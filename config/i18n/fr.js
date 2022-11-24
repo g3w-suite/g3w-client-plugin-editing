@@ -111,7 +111,8 @@ export default {
       update: "Modifié(id)"
     },
     loading_table_data: "Building Data Table. Please wait ...",
-    copy_and_paste_from_other_layer_mandatory_fields: "Avant d'enregistrer, il est nécessaire de remplir tous les champs obligatoires du features saisi"
+    copy_and_paste_from_other_layer_mandatory_fields: "Avant d'enregistrer, il est nécessaire de remplir tous les champs obligatoires du features saisi",
+    no_feature_selected: "Aucune feature sélectionnée"
   },
   relation: {
     table: {

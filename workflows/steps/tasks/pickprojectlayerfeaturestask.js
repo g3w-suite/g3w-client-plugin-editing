@@ -53,17 +53,10 @@ proto.getFeaturesFromLayer = function({inputs, promise}={}){
           outputs: null
         });
         if (data.length) {
-         data[0].features.filter(feature => {
-           const featureGeometryType = feature.getGeometry() && feature.getGeometry().getType();
-           if (geometryType === featureGeometryType) features.push(feature);
-           else if (isSameBaseGeometryType(featureGeometryType, geometryType) &&
-             (Geometry.isMultiGeometry(geometryType) || !Geometry.isMultiGeometry(featureGeometryType))) {
-             const cloneFeature = feature.clone();
-             cloneFeature.__layerId = feature.__layerId;
-             cloneFeature.setGeometry(convertSingleMultiGeometry(feature.getGeometry(), geometryType));
-             features.push(cloneFeature);
-           }
-         });
+           features = this.convertFeaturesGeometryToGeometryTypeOfLayer({
+             features: data[0].features,
+             geometryType
+           });
         }
       } catch(error) {
         promise.reject(error);
@@ -75,7 +68,7 @@ proto.getFeaturesFromLayer = function({inputs, promise}={}){
       } else {
         GUI.showUserMessage({
           type: 'warning',
-          message: 'Nessuna feature selezionata !! DA TRADURRE',
+          message: 'plugins.editing.messages.no_feature_selected',
           closable: false,
           autoclose: true
         });

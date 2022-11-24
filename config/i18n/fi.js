@@ -111,7 +111,8 @@ export default {
       update: "Muokattu(id)"
     },
     loading_table_data: "Building Data Table. Please wait ...",
-    copy_and_paste_from_other_layer_mandatory_fields: "It is necessary to fill in any mandatory fields on the features pasted before saving"
+    copy_and_paste_from_other_layer_mandatory_fields: "It is necessary to fill in any mandatory fields on the features pasted before saving",
+    no_feature_selected: "No feature selected"
   },
   relation: {
     table: {
