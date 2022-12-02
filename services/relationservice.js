@@ -207,7 +207,9 @@ proto.startTableTool = function(relationtool, index) {
         d.resolve(true);
       })
       .fail(err => d.reject(false))
-      .always(() => workflow.stop())
+      .always(() => {
+        workflow.stop()
+      })
   }
   return d.promise()
 };

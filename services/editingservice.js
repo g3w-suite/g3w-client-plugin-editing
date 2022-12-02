@@ -1415,6 +1415,17 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
   const layerType = layer.getType();
   const items = commitItems;
   commitItems = commitItems || session.getCommitItems();
+  const {add=[], delete:cancel=[], update=[], relations={}} = commitItems;
+  if ([...add, ...cancel, ...update, ...Object.keys(relations)].length === 0) {
+    GUI.showUserMessage({
+      type: 'info',
+      message: 'Nothing to save',
+      autoclose: true,
+      closable: false
+    });
+    d.resolve(toolbox);
+    return d.promise();
+  }
   const promise = modal ? this.showCommitModalWindow({
     layer,
     commitItems,

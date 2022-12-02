@@ -1,3 +1,4 @@
+import SaveAll from "../../../components/SaveAll.vue";
 const {base, inherit} = g3wsdk.core.utils;
 const {GUI} = g3wsdk.gui;
 const {WorkflowsStack} = g3wsdk.core.workflow;
@@ -17,6 +18,7 @@ function OpenFormTask(options={}) {
   this._fields;
   this._session;
   this._editorFormStructure;
+  this.promise;
   this._multi = options.multi || false; // set if can handle multi edit features
   base(this, options);
 }
@@ -74,6 +76,46 @@ proto._cancelFnc = function(promise, inputs) {
     this.fireEvent('cancelform', inputs.features);
     promise.reject(inputs);
   }
+};
+
+/**
+ *
+ * @param fieldssetAndUnsetSelectedFeaturesStyle
+ * @returns {Promise<unknown>}
+ */
+proto.saveAll = function(fields){
+  return new Promise((resolve, reject) => {
+    const {session} = this.getContext();
+    const inputs = this.getInputs();
+    fields = this._multi ? fields.filter(field => field.value !== null) : fields;
+    if (fields.length) {
+      const newFeatures = [];
+      this._features.forEach(feature =>{
+        this._originalLayer.setFieldsWithValues(feature, fields);
+        newFeatures.push(feature.clone());
+      });
+      if (this._isContentChild) {
+        inputs.relationFeatures = {
+          newFeatures,
+          originalFeatures: this._originalFeatures
+        };
+      }
+      this.fireEvent('saveform', {
+        newFeatures,
+        originalFeatures: this._originalFeatures
+      }).then(()=> {
+        newFeatures.forEach((newFeature, index)=> {
+          session.pushUpdate(this.layerId, newFeature, this._originalFeatures[index]);
+        });
+        this.fireEvent('savedfeature', newFeatures); // called after saved
+        this.fireEvent(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
+        session.save();
+        resolve({
+          promise: this.promise
+        });
+      })
+    }
+  })
 };
 
 proto._saveFeatures = function({fields, promise, session, inputs}){
@@ -156,15 +198,28 @@ proto.startForm = async function(options = {}) {
     modal: true,
     push: this._isContentChild,
     showgoback: !this._isContentChild,
+    headerComponent:SaveAll,
     buttons:[{
+      id: 'save',
       title: this._isContentChild ? "plugins.editing.form.buttons.save_and_back" : "plugins.editing.form.buttons.save",
       type: "save",
       class: "btn-success",
       cbk: this._saveFnc(promise, context, inputs).bind(this)
     }, {
+      id: 'cancel',
       title: "plugins.editing.form.buttons.cancel",
       type: "cancel",
       class: "btn-danger",
+      state: {
+        update: {
+          false : {
+            id: 'close',
+            title: "close",
+            type: "cancel",
+            class: "btn-danger",
+          }
+        }
+      },
       cbk: this._cancelFnc(promise, inputs).bind(this)
     }]
   });
@@ -182,6 +237,7 @@ proto.startForm = async function(options = {}) {
 
 proto.run = function(inputs, context) {
   const d = $.Deferred();
+  this.promise = d;
   this._isContentChild = !!(WorkflowsStack.getLength() > 1);
   const { layer, features } = inputs;
   this.layerId = layer.getId();
@@ -218,4 +274,5 @@ proto.stop = function() {
   this.fireEvent('closeform');
   this.fireEvent(`closeform_${this.layerId}`); // need to check layerId
   this.layerId = null;
+  this.promise = null;
 };

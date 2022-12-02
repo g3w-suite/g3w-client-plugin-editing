@@ -127,7 +127,8 @@
             const relationHeaderTools = $(this.$refs.relation_header_tools).outerHeight();
             const dataTables_scrollHead_Height = $(this.$el).find('.dataTables_scrollHead').outerHeight();
             const dataTables_paginate_Height = $(this.$el).find('.dataTables_paginate.paging_simple_numbers').outerHeight();
-            let dataTables_scrollBody_Height = formBodyHeight - formFooterHeight - relationHeaderTitle - relationHeaderTools - dataTables_scrollHead_Height - dataTables_paginate_Height;
+            const editingSaveAllFormHeight = $('.editing-save-all-form').outerHeight();
+            let dataTables_scrollBody_Height = formBodyHeight - formFooterHeight - relationHeaderTitle - relationHeaderTools - dataTables_scrollHead_Height - dataTables_paginate_Height - editingSaveAllFormHeight;
             if (this.isVectorRelation && this.showAddVectorRelationTools) {
               dataTables_scrollBody_Height = dataTables_scrollBody_Height - $(this.$refs.relation_vector_tools).outerHeight();
             }
