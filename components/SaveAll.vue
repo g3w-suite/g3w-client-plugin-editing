@@ -15,6 +15,9 @@
     props: {
       update: {
         type: Boolean,
+      },
+      valid: {
+        type: Boolean
       }
     },
     name: 'Saveall',
@@ -26,7 +29,7 @@
     },
     computed: {
       disabled(){
-        return !this.enabled || !this.update;
+        return !this.enabled && (!this.valid || !this.update);
       }
     },
     methods: {
@@ -48,7 +51,7 @@
               savePromises[0].then(({
                 promise
               }) => {
-                WorkflowsStack._workflows.forEach(workflow => workflow.getContext().service.setUpdate(false))
+                WorkflowsStack._workflows.forEach(workflow => workflow.getContext().service.setUpdate(false));
                 promise.resolve();
               })
             }).fail(()=>{})
@@ -56,27 +59,17 @@
               this.loading = false
             });
         })
-      },
-      watchState(){
-        const current_state = WorkflowsStack.getCurrent().getContext().service.state;
-        this.enabled = current_state.valid;
-        this.unwatch = this.$watch(() => current_state.valid, valid => {
-          this.enabled = valid;
-        })
       }
     },
-    async mounted() {
-      await this.$nextTick();
-      if (WorkflowsStack.getLength() === 1) this.watchState();
-      else {
-        const enabled = WorkflowsStack._workflows.slice(0, WorkflowsStack.getLength())
-          .reduce((accumulator, workflow) => workflow.getContext().service.getState().valid && accumulator, true);
-        enabled && this.watchState();
+    created() {
+      if (WorkflowsStack.getLength() > 1) {
+        this.enabled = WorkflowsStack._workflows
+          .slice(0, WorkflowsStack.getLength() - 1)
+          .reduce((accumulator, workflow) => {
+            const {valid, update} = workflow.getContext().service.getState();
+            return valid && update && accumulator;
+            }, true);
       }
     },
-    beforeDestroy(){
-      this.unwatch && this.unwatch();
-
-    }
   };
 </script>

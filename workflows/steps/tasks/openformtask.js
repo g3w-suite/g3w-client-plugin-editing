@@ -210,7 +210,8 @@ proto.startForm = async function(options = {}) {
       title: "plugins.editing.form.buttons.cancel",
       type: "cancel",
       class: "btn-danger",
-      state: {
+      /// buttons in case of change
+      eventButtons: {
         update: {
           false : {
             id: 'close',
