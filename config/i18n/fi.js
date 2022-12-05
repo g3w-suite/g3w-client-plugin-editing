@@ -136,7 +136,7 @@ export default {
       }
     },
     buttons: {
-      save: "Tallenna",
+      save: "Tallenna ja poistu",
       save_and_back: "Tallenna ja palaa",
       cancel: "Peruuta"
     }

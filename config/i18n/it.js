@@ -130,9 +130,9 @@ export default {
       }
     },
     buttons: {
-      save: "Salva",
+      save: "Salva ed Esci",
       save_and_back: "Salva e torna al padre",
-      cancel: "Cancella"
+      cancel: "Ignora Modifiche"
     }
   },
   modal: {

@@ -136,9 +136,9 @@ export default  {
       }
     },
     buttons: {
-      save: "Salvează",
+      save: "Salvează și ieși",
       save_and_back: "Salvează și dă înapoi",
-      cancel: "Renunță"
+      cancel: "Ignorați modificările"
     }
   },
   modal: {

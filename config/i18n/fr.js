@@ -130,9 +130,9 @@ export default {
       }
     },
     buttons: {
-      save: "Sauvegarder",
+      save: "Sauvegarder et quitter",
       save_and_back: "Sauvegarder et retourner au parent",
-      cancel: "Supprimer"
+      cancel: "Ignorer modifications"
     }
   },
   modal: {

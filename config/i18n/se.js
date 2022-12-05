@@ -136,9 +136,9 @@ export default {
       }
     },
     buttons: {
-      save: "Spara",
+      save: "Spara och avsluta",
       save_and_back: "Spara och gå tillbaka",
-      cancel: "Ångra"
+      cancel: "Ignorera ändringar"
     }
   },
   modal: {

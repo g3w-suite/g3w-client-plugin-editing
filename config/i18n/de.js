@@ -137,9 +137,9 @@ export default {
       }
     },
     buttons: {
-      save: "Speichern",
+      save: "Speichern und schließen",
       save_and_back: "Speichern und zurück",
-      cancel: "Abbrechen"
+      cancel: "Änderungen ignorieren"
     }
   },
   modal: {

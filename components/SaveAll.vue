@@ -48,12 +48,7 @@
             EditingService.commit({
               modal: false
             }).then(() => {
-              savePromises[0].then(({
-                promise
-              }) => {
-                WorkflowsStack._workflows.forEach(workflow => workflow.getContext().service.setUpdate(false));
-                promise.resolve();
-              })
+              WorkflowsStack._workflows.forEach(workflow => workflow.getContext().service.setUpdate(false));
             }).fail(()=>{})
               .always(() => {
               this.loading = false

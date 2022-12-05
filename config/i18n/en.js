@@ -137,9 +137,9 @@ export default {
       }
     },
     buttons: {
-      save: "Save",
+      save: "Save and Exit",
       save_and_back: "Save and Back",
-      cancel: "Cancel"
+      cancel: "Ignore Changes"
     }
   },
   modal: {
