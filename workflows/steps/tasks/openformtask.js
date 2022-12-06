@@ -142,6 +142,10 @@ proto._saveFeatures = function({fields, promise, session, inputs}){
       GUI.setModal(false);
       this.fireEvent('savedfeature', newFeatures); // called after saved
       this.fireEvent(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
+      // In case of save of child it mean that child is updated so also parent
+      this._isContentChild && WorkflowsStack.getParents().forEach(workflow => workflow.getContext().service.setUpdate(true, {
+        force: true
+      }));
       promise.resolve(inputs);
     })
   } else {
@@ -239,7 +243,7 @@ proto.startForm = async function(options = {}) {
 proto.run = function(inputs, context) {
   const d = $.Deferred();
   this.promise = d;
-  this._isContentChild = !!(WorkflowsStack.getLength() > 1);
+  this._isContentChild = WorkflowsStack.getLength() > 1;
   const { layer, features } = inputs;
   this.layerId = layer.getId();
   GUI.setLoadingContent(false);
@@ -270,7 +274,14 @@ proto._generateFormId = function(layerName) {
 proto.stop = function() {
   this.disableSidebar(false);
   this.getEditingService().disableMapControlsConflict(false);
-  this._isContentChild ? GUI.popContent() : GUI.closeForm();
+  if (this._isContentChild) GUI.popContent();
+  else {
+    // at the end if is the parent form set it to false update, and force update
+    WorkflowsStack.getCurrent().getContext().service.setUpdate(false, {
+      force: false
+    });
+    GUI.closeForm();
+  }
   this.getEditingService().resetCurrentLayout();
   this.fireEvent('closeform');
   this.fireEvent(`closeform_${this.layerId}`); // need to check layerId

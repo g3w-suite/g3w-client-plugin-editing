@@ -120,7 +120,7 @@
       },
       methods: {
         resize(){
-          if (this.$el.style.display !== 'none'){
+          if (this.active && this.$el.style.display !== 'none'){
             const formBodyHeight = $(".g3wform_body").height();
             const formFooterHeight = $('.g3wform_footer').height();
             const relationHeaderTitle = $(this.$refs.relation_header_title).outerHeight();

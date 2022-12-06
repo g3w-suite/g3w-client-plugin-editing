@@ -48,7 +48,9 @@
             EditingService.commit({
               modal: false
             }).then(() => {
-              WorkflowsStack._workflows.forEach(workflow => workflow.getContext().service.setUpdate(false));
+              WorkflowsStack._workflows.forEach(workflow => workflow.getContext().service.setUpdate(false, {
+                force: false
+              }));
             }).fail(()=>{})
               .always(() => {
               this.loading = false
