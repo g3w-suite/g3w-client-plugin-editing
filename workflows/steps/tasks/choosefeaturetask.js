@@ -1,6 +1,6 @@
 const { base, inherit } =  g3wsdk.core.utils;
 const { GUI } = g3wsdk.gui;
-const { Feature } = g3wsdk.core.layer.features;
+const t = g3wsdk.core.i18n.tPlugin;
 const EditingTask = require('./editingtask');
 const ChooseFeatureToEditComponent = require('../../../g3w-editing-components/choosefeaturetoedit');
 
@@ -16,7 +16,10 @@ proto.run = function(inputs, context) {
   const d = $.Deferred();
   const originalLayer = inputs.layer;
   const features = inputs.features;
-  const attributes = originalLayer.getEditingFields().map(attribute => attribute.name);
+  const attributes = {};
+  originalLayer.getEditingFields().forEach(({name, label}) => {
+    attributes[name] = label
+  });
   if (features.length === 1) d.resolve(inputs);
   else {
     const feature = [];
@@ -27,7 +30,7 @@ proto.run = function(inputs, context) {
     });
     const message = vueInstance.$mount().$el;
     const dialog = GUI.showModalDialog({
-      title: 'Seleziona feature',
+      title: t('editing.modal.tools.copyfeaturefromprojectlayer.title'),
       className: 'modal-left',
       closeButton: false,
       message,

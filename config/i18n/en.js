@@ -148,7 +148,7 @@ export default {
         title: "Select feature/s"
       },
       copyfeaturefromprojectlayer: {
-        title: "Select one feature"
+        title: "Select a feature"
       }
     }
   }

@@ -4,16 +4,16 @@
         <section class="choose-and-zoom-to-feature">
           <div>
             <input @click.stop="selectFeature(feature)" :id="`choose_feature_${index}`" name="radio" type="radio" class="magic-radio">
-            <label :for="`choose_feature_${index}`" style="color: transparent">{{ feature.get($options.attributes[0]) }}</label>
+            <label :for="`choose_feature_${index}`" style="color: transparent">{{ feature.getId() }}</label>
           </div>
           <div @click.stop="zoomToFeature(feature)" :class="g3wtemplate.font['marker']" class="skin-color" style="padding-left: 3px; font-size: 1.3em; cursor: pointer; margin-top: 10px;"></div>
         </section>
-        <div style="overflow-x: auto; display: flex;" >
-          <div v-for="({attribute, value}) in getAttributesFeature(feature)" style="display: flex; flex-direction: column; padding: 5px;">
-            <span style="font-weight: bold; margin-bottom: 10px;">{{attribute}}</span>
+        <section style="overflow-x: auto; display: flex">
+          <div v-for="({attribute, value}) in getAttributesFeature(feature)" style="display: flex; flex-direction: column; justify-content: space-between;  padding: 5px;">
+            <span style="font-weight: bold; margin-bottom: 10px;">{{$options.attributes[attribute]}}</span>
             <span style="align-self: start">{{value}}</span>
           </div>
-        </div>
+        </section>
       </div>
     </div>
 </template>
