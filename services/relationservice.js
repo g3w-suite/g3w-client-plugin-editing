@@ -1,6 +1,7 @@
 const {GUI} = g3wsdk.gui;
 const t = g3wsdk.core.i18n.tPlugin;
 const {Layer} = g3wsdk.core.layer;
+const {WorkflowsStack} = g3wsdk.core.workflow;
 
 // what we can do with each type of relation element
 const RELATIONTOOLS = {
@@ -189,6 +190,10 @@ proto.startTableTool = function(relationtool, index) {
           feature: relationfeature
         });
         featurestore.removeFeature(relationfeature);
+        const workflowParents = WorkflowsStack.getParents() || [this.getCurrentWorkflow()];
+        workflowParents.forEach(workflow => workflow.getContext().service.setUpdate(true, {
+          force: true
+        }));
         d.resolve(result);
       } else d.reject(result);
     });
