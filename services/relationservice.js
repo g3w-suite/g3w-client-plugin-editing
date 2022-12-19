@@ -170,6 +170,16 @@ proto.startTool = function(relationtool, index) {
   })
 };
 
+/**
+ * force parent workflow form service to be update
+ */
+proto.forceParentsFromServiceWorkflowToUpdated = function() {
+  const workflowParents = WorkflowsStack.getParents() || [this.getCurrentWorkflow()];
+  workflowParents.forEach(workflow => workflow.getContext().service.setUpdate(true, {
+    force: true
+  }));
+};
+
 proto.startTableTool = function(relationtool, index) {
   const d = $.Deferred();
   const relation = this.relations[index];
@@ -190,10 +200,7 @@ proto.startTableTool = function(relationtool, index) {
           feature: relationfeature
         });
         featurestore.removeFeature(relationfeature);
-        const workflowParents = WorkflowsStack.getParents() || [this.getCurrentWorkflow()];
-        workflowParents.forEach(workflow => workflow.getContext().service.setUpdate(true, {
-          force: true
-        }));
+        this.forceParentsFromServiceWorkflowToUpdated();
         d.resolve(result);
       } else d.reject(result);
     });
@@ -349,13 +356,15 @@ proto._getRelationAsFatherStyleColor = function(type) {
  * Add Relation from project layer
  * @param layer
  */
-proto.addRelationFromOtherProjectLayer = function(layer){
+proto.addRelationFromOtherLayer = function({layer, external}){
   let workflow;
   let isVector = false;
-  if (layer.isGeoLayer()) {
+  if (external || layer.isGeoLayer() ) {
     isVector = true;
     workflow = this._getSelectCopyWorkflow({
-      projectLayer: layer
+      copyLayer: layer,
+      isVector,
+      external
     });
   }
   this.runAddRelationWorkflow({
@@ -379,7 +388,6 @@ proto.addRelation = function() {
 /**
  * Common method to add a relation
  */
-
 proto.runAddRelationWorkflow = function({workflow, isVector=false}={}){
   if (isVector) {
     GUI.setModal(false);
@@ -500,12 +508,14 @@ proto.linkRelation = function() {
   });
 
   preWorkflowStart.then(({promise, showContent=false}={})=> {
+    let linked = false;
     promise = promise || workflow.start(options);
     promise.then(outputs => {
       if (outputs.features.length) {
         outputs.features.forEach(relation => {
           const relationAlreadyLinked = this.relations.find(rel => rel.id === relation.getId());
           if (!relationAlreadyLinked) {
+            linked = linked || true;
             const originalRelation = relation.clone();
             relation.set(ownField, this._currentParentFeatureRelationFieldValue);
             this.getCurrentWorkflowData().session.pushUpdate(this._relationLayerId , relation, originalRelation);
@@ -522,6 +532,7 @@ proto.linkRelation = function() {
         GUI.hideContent(false);
         workflow.unbindEscKeyUp();
       }
+      linked && this.forceParentsFromServiceWorkflowToUpdated();
       workflow.stop();
     });
   })
@@ -563,6 +574,7 @@ proto.unlinkRelation = function(index, dialog=true) {
     feature.set(ownField, null);
     this.getCurrentWorkflowData().session.pushUpdate(this._relationLayerId, feature, originalRelation);
     this.relations.splice(index, 1);
+    this.forceParentsFromServiceWorkflowToUpdated();
     d.resolve(true);
   };
   if (dialog) {

@@ -3,7 +3,11 @@ const {G3W_FID} = g3wsdk.constant;
 const {ApplicationState, ApplicationService} = g3wsdk.core;
 const {DataRouterService} = g3wsdk.core.data;
 const {base, inherit, XHR} = g3wsdk.core.utils;
-const {getFeaturesFromResponseVectorApi} = g3wsdk.core.geoutils;
+const { Geometry } = g3wsdk.core.geometry;
+const {
+  getFeaturesFromResponseVectorApi,
+  isSameBaseGeometryType,
+} = g3wsdk.core.geoutils;
 const {WorkflowsStack} = g3wsdk.core.workflow;
 const {PluginService} = g3wsdk.core.plugin;
 const {SessionsRegistry} = g3wsdk.core.editing;
@@ -1713,7 +1717,33 @@ proto.getProjectLayerFeatureById = async function({layerId, fid}) {
 proto.getProjectLayersWithSameGeometryOfLayer = function(layer, options={exclude:[]}){
  const {exclude=[]} = options;
  const geometryType = layer.getGeometryType();
- return CatalogLayersStoresRegistry.getLayers().filter(layer => layer.isGeoLayer() && exclude.indexOf(layer.getId()) === -1 && layer.getGeometryType() === geometryType);
+ return CatalogLayersStoresRegistry.getLayers().filter(layer => {
+   return (layer.isGeoLayer()
+     && layer.getGeometryType && layer.getGeometryType()
+     && exclude.indexOf(layer.getId()) === -1
+   ) && (layer.getGeometryType() === geometryType
+     || (isSameBaseGeometryType(layer.getGeometryType(), geometryType) &&  Geometry.isMultiGeometry(geometryType))
+   )
+ });
+};
+
+/**
+ *  return (geometryType === featureGeometryType)
+ *  || Geometry.isMultiGeometry(geometryType)
+ *  || !Geometry.isMultiGeometry(featureGeometryType);
+ */
+
+proto.getExternalLayersWithSameGeometryOfLayer = function(layer){
+  const geometryType = layer.getGeometryType();
+  return this._mapService.getExternalLayers().filter(externalLayer => {
+    const features = externalLayer.getSource().getFeatures();
+    if (features && features.length) {
+      return features[0].getGeometry() ?
+        (geometryType === features[0].getGeometry().getType())
+        ||
+        isSameBaseGeometryType(geometryType, features[0].getGeometry().getType()) : false;
+    } else return false;
+  });
 };
 
 EditingService.EDITING_FIELDS_TYPE = ['unique'];

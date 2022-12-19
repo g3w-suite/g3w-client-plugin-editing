@@ -71,9 +71,11 @@ proto._getForm = async function(inputs, context) {
 
 proto._cancelFnc = function(promise, inputs) {
   return function() {
-    GUI.setModal(false);
-    // fire event cancel form to emit to subscrivers
-    this.fireEvent('cancelform', inputs.features);
+    if (!this._isContentChild){
+      GUI.setModal(false);
+      // fire event cancel form to emit to subscrivers
+      this.fireEvent('cancelform', inputs.features);
+    }
     promise.reject(inputs);
   }
 };
@@ -166,6 +168,11 @@ proto._saveFnc = function(promise, context, inputs) {
   }
 };
 
+/**
+ * Build form
+ * @param options
+ * @returns {Promise<void>}
+ */
 proto.startForm = async function(options = {}) {
   this.getEditingService().setCurrentLayout();
   const { inputs, context, promise } = options;
@@ -182,7 +189,6 @@ proto.startForm = async function(options = {}) {
     key: 'fields',
     value: this._fields
   });
-
   const formService = Form({
     formComponent,
     title: "plugins.editing.editing_attributes",
@@ -273,9 +279,9 @@ proto._generateFormId = function(layerName) {
 
 proto.stop = function() {
   this.disableSidebar(false);
-  this.getEditingService().disableMapControlsConflict(false);
   if (this._isContentChild) GUI.popContent();
   else {
+    this.getEditingService().disableMapControlsConflict(false);
     // at the end if is the parent form set it to false update, and force update
     WorkflowsStack.getCurrent().getContext().service.setUpdate(false, {
       force: false

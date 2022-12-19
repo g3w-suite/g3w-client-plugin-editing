@@ -141,8 +141,20 @@
         },
         copyFeatureFromOtherLayer(){
           const EditingService = require('../services/editingservice');
-          const projectLayer = EditingService.getProjectLayerById(this.copylayerid);
-          this._service.addRelationFromOtherProjectLayer(projectLayer);
+          const copyLayer = this.copyFeatureLayers.find(layerObj => layerObj.id === this.copylayerid);
+          if (copyLayer.external) {
+            const layer = EditingService.getMapService().getLayerById(this.copylayerid);
+            this._service.addRelationFromOtherLayer({
+              layer,
+              external: true
+            });
+          } else {
+            const layer = EditingService.getProjectLayerById(this.copylayerid);
+            this._service.addRelationFromOtherLayer({
+              layer,
+              external: false
+            });
+          }
         },
         addVectorRelation(){
           this._service.addRelation();
@@ -264,10 +276,30 @@
           // get all project layer that has same geometry
           this.copyFeatureLayers = EditingService.getProjectLayersWithSameGeometryOfLayer(relationLayer, {exclude:[this.relation.father]}).map(layer => ({
             id: layer.getId(),
-            name: layer.getName()
+            name: layer.getName(),
+            external: false
           }));
-          // in case of fin at least one layer, set current layer id
-          this.copylayerid = this.copyFeatureLayers.length ? this.copyFeatureLayers[0].id : null;
+          const externalLayerWithSameGeometryType = EditingService.getExternalLayersWithSameGeometryOfLayer(relationLayer);
+          externalLayerWithSameGeometryType.forEach(externalLayer => {
+            this.copyFeatureLayers.push({
+              id: externalLayer.get('id'),
+              name: externalLayer.get('name'),
+              external: true
+            })
+          });
+          if (this.copyFeatureLayers.length) {
+            // sort by name
+            this.copyFeatureLayers.sort(({name:name1}, {name:name2}) => {
+              name1 = name1.toLowerCase();
+              name2 = name2.toLowerCase();
+              if (name1 < name2) return -1;
+              if (name1 > name2) return 1;
+              return 0;
+            });
+            // in case of fin at least one layer, set current layer id
+            this.copylayerid = this.copyFeatureLayers[0].id;
+          } else this.copylayerid = null;
+
         }
         this.loadEventuallyRelationValuesForInputs = false;
         this._service = new RelationService(this.layerId, {

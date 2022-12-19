@@ -7,13 +7,17 @@ const EditingTask = require('./editingtask');
 const SelectCopyFeaturesFormOtherProjectLayerComponent = require('../../../g3w-editing-components/selectcopyotherprojectlayerfeatures');
 
 function CopyFeaturesFromOtherProjectLayerTask(options={}) {
-  this.projectLayer = options.projectLayer;
+  const {copyLayer, external, isVector} = options;
+  this.copyLayer = copyLayer;
+  this.external = external;
+  this.isVector = isVector;
   base(this, options);
 }
 
 inherit(CopyFeaturesFromOtherProjectLayerTask, EditingTask);
 
 const proto = CopyFeaturesFromOtherProjectLayerTask.prototype;
+
 
 proto.run = function(inputs, context) {
   const d = $.Deferred();
@@ -50,27 +54,38 @@ proto.run = function(inputs, context) {
           let isThereEmptyFieldRequiredNotDefined = false;
           if (selectedFeatures.length) {
             const selectedFeature = selectedFeatures[0];
-            try {
-              const layerProjectFeature = await this.getEditingService().getProjectLayerFeatureById({
-                layerId: this.projectLayer.getId(),
-                fid: selectedFeature.get(G3W_FID)
+            const createFeatureWithPropertiesOfSelectedFeature = properties => {
+              attributes.forEach(({name, validate: {required=false}}) => {
+                const value = properties[name] || null;
+                isThereEmptyFieldRequiredNotDefined = isThereEmptyFieldRequiredNotDefined || (value === null && required);
+                selectedFeature.set(name, value);
               });
-              if (layerProjectFeature) {
-                attributes.forEach(({name, validate: {required=false}}) => {
-                  const value = layerProjectFeature.properties[name] || null;
-                  isThereEmptyFieldRequiredNotDefined = isThereEmptyFieldRequiredNotDefined || (value === null && required);
-                  selectedFeature.set(name, value );
-                });
-                const feature = new Feature({
-                  feature: selectedFeature,
-                  properties: attributes.map(attribute => attribute.name)
-                });
-                feature.setTemporaryId();
-                source.addFeature(feature);
-                features.push(feature);
-                session.pushAdd(layerId, feature, false);
+              const feature = new Feature({
+                feature: selectedFeature,
+                properties: attributes.map(attribute => attribute.name)
+              });
+              feature.setTemporaryId();
+              source.addFeature(feature);
+              features.push(feature);
+              session.pushAdd(layerId, feature, false);
+            };
+            // case vector layer
+            if (this.isVector) {
+              if (this.external)
+                createFeatureWithPropertiesOfSelectedFeature(selectedFeature.getProperties());
+              else {
+                try {
+                  const layerProjectFeature = await this.getEditingService().getProjectLayerFeatureById({
+                    layerId: this.copyLayer.getId(),
+                    fid: selectedFeature.get(G3W_FID)
+                  });
+                  if (layerProjectFeature)
+                    createFeatureWithPropertiesOfSelectedFeature(layerProjectFeature.properties);
+                } catch(err){}
               }
-            } catch(err){}
+            } else {
+              //TODO case alphanumeric layer
+            }
           }
           if (features.length && features.length === 1) inputs.features.push(features[0]);
           else {

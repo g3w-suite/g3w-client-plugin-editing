@@ -54,10 +54,19 @@ proto.run = function(inputs, context) {
           let isThereEmptyFieldRequiredNotDefined = false;
           const promisesFeatures = [];
           selectedFeatures.forEach(selectedFeature => {
-            promisesFeatures.push(this.getEditingService().getProjectLayerFeatureById({
-              layerId: selectedFeature.__layerId,
-              fid: selectedFeature.get(G3W_FID)
-            }));
+            /**
+             * check if layer belong to project or not
+             */
+            if (this.getEditingService().getProjectLayerById(selectedFeature.__layerId)) {
+              promisesFeatures.push(this.getEditingService().getProjectLayerFeatureById({
+                layerId: selectedFeature.__layerId,
+                fid: selectedFeature.get(G3W_FID)
+              }));
+            } else {
+              promisesFeatures.push({
+                properties: selectedFeature.getProperties()
+              })
+            }
           });
           const featurePromises = await Promise.allSettled(promisesFeatures);
           featurePromises.forEach(({status, value:layerFeature}, index) => {
