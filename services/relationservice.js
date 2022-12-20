@@ -252,7 +252,8 @@ proto.startVectorTool = function(relationtool, index) {
       if (relationtool.getId() === 'deletefeature') {
         relationfeature.setStyle(this._originalLayerStyle);
         this.getCurrentWorkflowData().session.pushDelete(this._relationLayerId, relationfeature);
-        this.relations.splice(index, 1)
+        this.relations.splice(index, 1);
+        this.forceParentsFromServiceWorkflowToUpdated();
       }
       if (relationtool.getId() === 'editattributes') {
         const fields = this._getRelationFieldsValue(relationfeature);
@@ -432,7 +433,19 @@ proto.runAddRelationWorkflow = function({workflow, isVector=false}={}){
       });
       this.emitEventToParentWorkFlow();
     })
-    .fail(() => session.rollbackDependecies([this._relationLayerId]))
+    .fail((inputs) => {
+      if (inputs) {
+        /**
+         * needed in case of save all pressed on openformtask
+         */
+        const {relationFeatures:{newFeatures=[]}} = inputs;
+        newFeatures.forEach(newFeature =>{
+          const newRelation = this._createRelationObj(newFeature);
+          this.relations.push(newRelation);
+        });
+      }
+      session.rollbackDependecies([this._relationLayerId])
+    })
     .always(()=>{
       workflow.stop();
       if (isVector) {
