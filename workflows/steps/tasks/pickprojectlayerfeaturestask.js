@@ -34,6 +34,7 @@ proto.run = function(inputs, context) {
 
 proto.getFeaturesFromLayer = async function({inputs, promise}={}){
   let features = [];
+  const geometryType = inputs.layer.getGeometryType();
   const interactionPromise = new Promise(async (resolve, reject) => {
     if (this.isVector) {
       //In case of external layer
@@ -46,7 +47,7 @@ proto.getFeaturesFromLayer = async function({inputs, promise}={}){
           const {features:_features} = evt;
           features = this.convertFeaturesGeometryToGeometryTypeOfLayer({
             features: _features,
-            geometryType: _features[0].getGeometry().getType()
+            geometryType
            });
           resolve();
         });
@@ -54,7 +55,6 @@ proto.getFeaturesFromLayer = async function({inputs, promise}={}){
         this.pickInteraction = new PickCoordinatesInteraction();
         this.addInteraction(this.pickInteraction);
         const project = ProjectsRegistry.getCurrentProject();
-        const geometryType = this.copyLayer.getGeometryType();
         this.pickInteraction.once('picked', async evt => {
           const coordinates = evt.coordinate;
           try {
