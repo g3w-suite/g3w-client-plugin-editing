@@ -29,6 +29,8 @@ proto.run = function(inputs, context) {
   const source = editingLayer.getSource();
   const selectedFeatures = [];
   const vueInstance = SelectCopyFeaturesFormOtherProjectLayerComponent({
+    external: this.external,
+    layer: this.copyLayer,
     features,
     selectedFeatures
   });
