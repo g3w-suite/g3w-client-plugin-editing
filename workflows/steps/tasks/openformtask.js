@@ -177,7 +177,7 @@ proto.createFormServiceBreadcrumb = function(){
     }));
     breadcrumb.push({
       title: this._layerName,
-      cln: null
+      clb: null
     })
   }
   return breadcrumb
