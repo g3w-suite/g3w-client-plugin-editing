@@ -173,11 +173,11 @@ proto.createFormServiceBreadcrumb = function(){
   if (this._isContentChild) {
     WorkflowsStack.getParents().forEach(workflow => breadcrumb.push({
       title: workflow.getContext().service.name,
-      clb: null
+      cbk: null
     }));
     breadcrumb.push({
       title: this._layerName,
-      clb: null
+      cbk: null
     })
   }
   return breadcrumb
