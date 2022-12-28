@@ -168,21 +168,6 @@ proto._saveFnc = function(promise, context, inputs) {
   }
 };
 
-proto.createFormServiceBreadcrumb = function(){
-  const breadcrumb = [];
-  if (this._isContentChild) {
-    WorkflowsStack.getParents().forEach(workflow => breadcrumb.push({
-      title: workflow.getContext().service.name,
-      cbk: null
-    }));
-    breadcrumb.push({
-      title: this._layerName,
-      cbk: null
-    })
-  }
-  return breadcrumb
-};
-
 /**
  * Build form
  * @param options
@@ -208,7 +193,9 @@ proto.startForm = async function(options = {}) {
     formComponent,
     title: "plugins.editing.editing_attributes",
     name: this._layerName,
-    breadcrumb: this.createFormServiceBreadcrumb(),
+    crumb: {
+      title: this._layerName
+    },
     id: this._generateFormId(this._layerName),
     dataid: this._layerName,
     layer: this._originalLayer,

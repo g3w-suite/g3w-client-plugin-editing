@@ -8,18 +8,17 @@
       :relation="relation.relation"
       :relations="relation.relations"
       :resourcesurl="resourcesurl"
-      :formeventbus="formeventbus">
-    </relation>
+      :formeventbus="formeventbus"/>
   </div>
 </template>
 
 <script>
-    import FormRelationComponent from './FormRelation.vue';
+  import FormRelationComponent from './FormRelation.vue';
 
-    export default {
-      name: 'Relations',
-      components: {
-        'relation': FormRelationComponent
-      }
-    };
+  export default {
+    name: 'Relations',
+    components: {
+      'relation': FormRelationComponent
+    }
+  };
 </script>
