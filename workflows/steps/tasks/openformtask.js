@@ -189,6 +189,7 @@ proto.startForm = async function(options = {}) {
     key: 'fields',
     value: this._fields
   });
+
   const formService = Form({
     formComponent,
     title: "plugins.editing.editing_attributes",
@@ -282,15 +283,16 @@ proto._generateFormId = function(layerName) {
 
 proto.stop = function() {
   this.disableSidebar(false);
-  if (this._isContentChild) GUI.popContent();
-  else {
+  if (!this._isContentChild) {
     this.getEditingService().disableMapControlsConflict(false);
     // at the end if is the parent form set it to false update, and force update
     WorkflowsStack.getCurrent().getContext().service.setUpdate(false, {
       force: false
     });
-    GUI.closeForm();
   }
+  GUI.closeForm({
+    pop: this._isContentChild
+  });
   this.getEditingService().resetCurrentLayout();
   this.fireEvent('closeform');
   this.fireEvent(`closeform_${this.layerId}`); // need to check layerId

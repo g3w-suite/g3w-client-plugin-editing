@@ -152,7 +152,8 @@ proto.editFeature = function(uid) {
         this.state.features[index][key] = feature.get(key);
       });
     })
-    .fail((err) => {})
+    .fail(err => {})
+    .always(() =>  this._workflow.stop())
 };
 
 proto.linkFeatures = function(featuresIndex=[]){
