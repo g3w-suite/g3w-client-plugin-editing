@@ -434,7 +434,7 @@ proto.runAddRelationWorkflow = function({workflow, isVector=false}={}){
       this.emitEventToParentWorkFlow();
     })
     .fail((inputs) => {
-      if (inputs) {
+      if (inputs && inputs.relationFeatures) {
         /**
          * needed in case of save all pressed on openformtask
          */
