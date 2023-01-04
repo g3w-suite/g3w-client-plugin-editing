@@ -11,7 +11,8 @@
 
 <script>
   const {WorkflowsStack} = g3wsdk.core.workflow;
-  export default {
+  const {FormService} = g3wsdk.gui.vue.services;
+    export default {
     props: {
       update: {
         type: Boolean,
@@ -63,7 +64,7 @@
         this.enabled = WorkflowsStack._workflows
           .slice(0, WorkflowsStack.getLength() - 1)
           .reduce((accumulator, workflow) => {
-            const {valid, update} = workflow.getContext().service.getState();
+            const {valid=true, update=false} = (workflow.getContext().service instanceof FormService) ? workflow.getContext().service.getState() : {};
             return valid && update && accumulator;
             }, true);
       }

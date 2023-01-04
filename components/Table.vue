@@ -24,9 +24,9 @@
       <tr v-for="(feature, index) in state.features" :key="feature.__gis3w_feature_uid" :id="feature.__gis3w_feature_uid">
         <td v-if="!state.isrelation">
           <div id="table-editing-tools" style="display:flex; justify-content: space-between;">
-            <i v-if="showTool('change_attr_feature')" :class="g3wtemplate.font['pencil']" class="g3w-icon skin-tooltip-right"  data-placement="right"  style="color:#30cce7;" v-t-title:plugin="'editing.table.edit'" aria-hidden="true" @click="editFeature(feature.__gis3w_feature_uid)"></i>
-            <i v-if="showTool('add_feature')" :class="g3wtemplate.font['copy-paste']" class="g3w-icon skin-tooltip-right"  data-placement="right"  style="color:#d98b14; padding: 5px 7px 5px 7px;" v-t-title:plugin="'editing.table.copy'" aria-hidden="true" @click="copyFeature(feature.__gis3w_feature_uid)"></i>
-            <i v-if="showTool('delete_feature')" :class="g3wtemplate.font['trash-o']" class="g3w-icon skin-tooltip-right"  data-placement="right"  style="color:red;" v-t-title:plugin="'editing.table.delete'" aria-hidden="true" @click="deleteFeature(feature.__gis3w_feature_uid)"></i>
+            <i v-if="showTool('change_attr_feature')" :class="g3wtemplate.font['pencil']" class="g3w-icon skin-tooltip-right"  data-placement="right"  style="color:#30cce7;" v-t-title:plugin="'editing.table.edit'" aria-hidden="true" @click.stop="editFeature(feature.__gis3w_feature_uid)"></i>
+            <i v-if="showTool('add_feature')" :class="g3wtemplate.font['copy-paste']" class="g3w-icon skin-tooltip-right"  data-placement="right"  style="color:#d98b14; padding: 5px 7px 5px 7px;" v-t-title:plugin="'editing.table.copy'" aria-hidden="true" @click.stop="copyFeature(feature.__gis3w_feature_uid)"></i>
+            <i v-if="showTool('delete_feature')" :class="g3wtemplate.font['trash-o']" class="g3w-icon skin-tooltip-right"  data-placement="right"  style="color:red;" v-t-title:plugin="'editing.table.delete'" aria-hidden="true" @click.stop="deleteFeature(feature.__gis3w_feature_uid)"></i>
           </div>
         </td>
         <td v-if="state.isrelation">

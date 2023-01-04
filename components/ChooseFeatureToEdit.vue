@@ -11,7 +11,7 @@
         <section style="overflow-x: auto; display: flex">
           <div v-for="({attribute, value}) in getAttributesFeature(feature)" style="display: flex; flex-direction: column; justify-content: space-between;  padding: 5px;">
             <span style="font-weight: bold; margin-bottom: 10px;">{{$options.attributes[attribute]}}</span>
-            <span style="align-self: start">{{value}}</span>
+            <span style="align-self: start; white-space: nowrap;">{{value}}</span>
           </div>
         </section>
       </div>
@@ -20,8 +20,7 @@
 
 <script>
   const {G3W_FID} = g3wsdk.constant;
-  const { GUI } = g3wsdk.gui;
-  const {MapLayersStoreRegistry} = g3wsdk.core.map;
+  const {GUI} = g3wsdk.gui;
   const {getAlphanumericPropertiesFromFeature} = g3wsdk.core.geoutils;
 
   export default {
