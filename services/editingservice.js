@@ -7,6 +7,7 @@ const { Geometry } = g3wsdk.core.geometry;
 const {
   getFeaturesFromResponseVectorApi,
   isSameBaseGeometryType,
+  createFeatureFromGeometry
 } = g3wsdk.core.geoutils;
 const {WorkflowsStack} = g3wsdk.core.workflow;
 const {PluginService} = g3wsdk.core.plugin;
@@ -271,7 +272,12 @@ proto.editResultLayerFeature = function({layer, feature}={}){
       }
     });
     // zoom to feature geometry
-    this._mapService.zoomToGeometry(feature.geometry);
+    const geometry = createFeatureFromGeometry({
+      id:feature.id,
+      geometry: feature.geometry
+    }).getGeometry();
+
+    this._mapService.zoomToGeometry(geometry)
   }
   // start toolbox
   toolBox.start({
