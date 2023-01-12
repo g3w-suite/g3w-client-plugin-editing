@@ -270,8 +270,6 @@ proto.editResultLayerFeature = function({layer, feature}={}){
         map.getView().setResolution(resolution);
       }
     });
-    // zoom to feature geometry
-    this._mapService.zoomToGeometry(feature.geometry);
   }
   // start toolbox
   toolBox.start({
@@ -282,6 +280,7 @@ proto.editResultLayerFeature = function({layer, feature}={}){
     .then(({features=[]}) => {
       const feature = features.find(feature => feature.getId() == featureId);
       if (feature){
+        feature.getGeometry() && this._mapService.zoomToGeometry(feature.getGeometry());
         toolBox.setSelected(true);
         const session = toolBox.getSession();
         this.setSelectedToolbox(toolBox);
