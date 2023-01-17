@@ -125,7 +125,7 @@ proto.copyFeature = function(uid){
         this.state.features.push(newFeature);
         resolve(newFeature)
       })
-      .fail(err => reject(err));
+      .catch(err => reject(err));
   })
 };
 
@@ -152,8 +152,8 @@ proto.editFeature = function(uid) {
         this.state.features[index][key] = feature.get(key);
       });
     })
-    .fail(err => {})
-    .always(() =>  this._workflow.stop())
+    .catch(err => {})
+    .finally(() =>  this._workflow.stop())
 };
 
 proto.linkFeatures = function(featuresIndex=[]){

@@ -29,7 +29,7 @@ module.exports = function TestEditing({config={}, testConfig={}}={}) {
             promise.then(features =>{
               resolve(features)
             })
-          }).fail(err => {
+          }).catch(err => {
             reject(err)
           })
         });
@@ -49,7 +49,7 @@ module.exports = function TestEditing({config={}, testConfig={}}={}) {
                   .then(response =>{
                     resolve(response)
                   })
-                  .fail(err=> reject(err))
+                  .catch(err=> reject(err))
               })
             });
             const response = await promise;

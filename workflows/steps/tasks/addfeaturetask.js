@@ -30,64 +30,64 @@ inherit(AddFeatureTask, EditingTask);
 const proto = AddFeatureTask.prototype;
 
 proto.run = function(inputs, context) {
-  const d = $.Deferred();
-  const originalLayer = inputs.layer;
-  const editingLayer = originalLayer.getEditingLayer();
-  const session = context.session;
-  const layerId = originalLayer.getId();
-  switch (originalLayer.getType()) {
-    case Layer.LayerTypes.VECTOR:
-      const originalGeometryType = originalLayer.getEditingGeometryType();
-      this.geometryType = Geometry.getOLGeometry(originalGeometryType);
-      const source = editingLayer.getSource();
-      const attributes = originalLayer.getEditingFields();
-      const temporarySource = new ol.source.Vector();
-      this.drawInteraction = new ol.interaction.Draw({
-        type: this.geometryType,
-        source: temporarySource,
-        condition: this._condition,
-        freehandCondition: ol.events.condition.never,
-        finishCondition: this._finishCondition
-      });
-      this.addInteraction(this.drawInteraction);
-      this.drawInteraction.setActive(true);
-
-      this.drawInteraction.on('drawstart', ({feature}) => {
-        this.drawingFeature = feature;
-        document.addEventListener('keydown', this._delKeyRemoveLastPoint);
-      });
-      this.drawInteraction.on('drawend', e => {
-        let feature;
-        if (this._add) {
-          attributes.forEach(attribute => {
-            e.feature.set(attribute.name, null);
-          });
-          feature = new Feature({
-            feature: e.feature,
-          });
-          feature.setTemporaryId();
-          source.addFeature(feature);
-          session.pushAdd(layerId, feature, false);
-        } else feature = e.feature;
-        // set Z values based on layer Geometry
-        feature = Geometry.addZValueToOLFeatureGeometry({
-          feature,
-          geometryType: originalGeometryType
+  return new Promise((resolve, reject) => {
+    const originalLayer = inputs.layer;
+    const editingLayer = originalLayer.getEditingLayer();
+    const session = context.session;
+    const layerId = originalLayer.getId();
+    switch (originalLayer.getType()) {
+      case Layer.LayerTypes.VECTOR:
+        const originalGeometryType = originalLayer.getEditingGeometryType();
+        this.geometryType = Geometry.getOLGeometry(originalGeometryType);
+        const source = editingLayer.getSource();
+        const attributes = originalLayer.getEditingFields();
+        const temporarySource = new ol.source.Vector();
+        this.drawInteraction = new ol.interaction.Draw({
+          type: this.geometryType,
+          source: temporarySource,
+          condition: this._condition,
+          freehandCondition: ol.events.condition.never,
+          finishCondition: this._finishCondition
         });
-        this.evaluateGeometryExpressionField({
-          inputs,
-          context,
-          feature
-        }).finally(()=>{
-          inputs.features.push(feature);
-          this.setContextGetDefaultValue(true);
-          this.fireEvent('addfeature', feature); // emit event to get from subscribers
-          d.resolve(inputs);
-        })
-      });
-      break;
-  }
-  return d.promise();
+        this.addInteraction(this.drawInteraction);
+        this.drawInteraction.setActive(true);
+
+        this.drawInteraction.on('drawstart', ({feature}) => {
+          this.drawingFeature = feature;
+          document.addEventListener('keydown', this._delKeyRemoveLastPoint);
+        });
+        this.drawInteraction.on('drawend', e => {
+          let feature;
+          if (this._add) {
+            attributes.forEach(attribute => {
+              e.feature.set(attribute.name, null);
+            });
+            feature = new Feature({
+              feature: e.feature,
+            });
+            feature.setTemporaryId();
+            source.addFeature(feature);
+            session.pushAdd(layerId, feature, false);
+          } else feature = e.feature;
+          // set Z values based on layer Geometry
+          feature = Geometry.addZValueToOLFeatureGeometry({
+            feature,
+            geometryType: originalGeometryType
+          });
+          this.evaluateGeometryExpressionField({
+            inputs,
+            context,
+            feature
+          }).finally(()=>{
+            inputs.features.push(feature);
+            this.setContextGetDefaultValue(true);
+            this.fireEvent('addfeature', feature); // emit event to get from subscribers
+            resolve(inputs);
+          })
+        });
+        break;
+    }
+  })
 };
 
 /**

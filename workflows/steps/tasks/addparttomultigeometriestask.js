@@ -10,35 +10,30 @@ inherit(AddPartToMuligeometriesTask, EditingTask);
 const proto = AddPartToMuligeometriesTask.prototype;
 
 proto.run = function(inputs, context) {
-  const d = $.Deferred();
-  const { layer, features } = inputs;
-  const layerId = layer.getId();
-  const session = context.session;
-  const feature = features[0];
-  const featureGeometry = feature.getGeometry();
-  const originalFeature = feature.clone();
-  featureGeometry.setCoordinates([...featureGeometry.getCoordinates(), ...features[1].getGeometry().getCoordinates()]);
-  /**
-   * evaluated geometry expression
-   */
-  this.evaluateGeometryExpressionField({
-    inputs,
-    context,
-    feature
-  }).finally(()=>{
-    session.pushUpdate(layerId, feature, originalFeature);
-    inputs.features = [feature];
-    d.resolve(inputs);
+  return new Promise((resolve, reject) => {
+    const { layer, features } = inputs;
+    const layerId = layer.getId();
+    const session = context.session;
+    const feature = features[0];
+    const featureGeometry = feature.getGeometry();
+    const originalFeature = feature.clone();
+    featureGeometry.setCoordinates([...featureGeometry.getCoordinates(), ...features[1].getGeometry().getCoordinates()]);
+    /**
+     * evaluated geometry expression
+     */
+    this.evaluateGeometryExpressionField({
+      inputs,
+      context,
+      feature
+    }).finally(()=>{
+      session.pushUpdate(layerId, feature, originalFeature);
+      inputs.features = [feature];
+      resolve(inputs);
+    });
   });
-  /**
-   * end of evaluated
-   */
-
-  return d.promise();
 };
 
-proto.stop = function() {
-};
+proto.stop = function() {};
 
 
 module.exports = AddPartToMuligeometriesTask;

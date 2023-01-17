@@ -126,7 +126,7 @@ proto.setAndUnsetSelectedFeaturesStyle = function({promise}={}){
    */
   const selectOriginalStyleHandle = () => {
     const originalStyle = this.setFeaturesSelectedStyle(features);
-    promise.always(() => {
+    promise.finally(() => {
       features.forEach((feature => feature.setStyle(originalStyle)))
     });
   };

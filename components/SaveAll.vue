@@ -52,8 +52,8 @@
               WorkflowsStack._workflows.forEach(workflow => workflow.getContext().service.setUpdate(false, {
                 force: false
               }));
-            }).fail(()=>{})
-              .always(() => {
+            }).catch(()=>{})
+              .finally(() => {
               this.loading = false
             });
         })

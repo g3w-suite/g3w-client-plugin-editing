@@ -13,64 +13,64 @@ inherit(SplitFeatureTask, EditingTask);
 const proto = SplitFeatureTask.prototype;
 
 proto.run = function(inputs, context) {
-  const d = $.Deferred();
-  const { layer, features } = inputs;
-  const source = layer.getEditingLayer().getSource();
-  const session = context.session;
-  this._snapIteraction = new ol.interaction.Snap({
-    source,
-    edge: true
-  });
-
-  this._drawInteraction = new ol.interaction.Draw({
-    type: 'LineString',
-    features: new ol.Collection(),
-    freehandCondition: ol.events.condition.never
-  });
-
-  this._drawInteraction.on('drawend', async evt => {
-    const splitfeature = evt.feature;
-    let isSplitted = false;
-    const splittedGeometries = splitFeatures({
-      splitfeature,
-      features
+  return new Promise((resolve, reject) => {
+    const { layer, features } = inputs;
+    const source = layer.getEditingLayer().getSource();
+    const session = context.session;
+    this._snapIteraction = new ol.interaction.Snap({
+      source,
+      edge: true
     });
-    const splittedGeometriesLength = splittedGeometries.length;
-    for (let i=0; i < splittedGeometriesLength; i++) {
-      const {uid, geometries} = splittedGeometries[i];
-      if (geometries.length > 1) {
-        isSplitted = true;
-        const feature = features.find(feature => feature.getUid() === uid);
-        await this._handleSplitFeature({
-          feature,
-          splittedGeometries: geometries,
-          inputs,
-          session
-        });
+
+    this._drawInteraction = new ol.interaction.Draw({
+      type: 'LineString',
+      features: new ol.Collection(),
+      freehandCondition: ol.events.condition.never
+    });
+
+    this._drawInteraction.on('drawend', async evt => {
+      const splitfeature = evt.feature;
+      let isSplitted = false;
+      const splittedGeometries = splitFeatures({
+        splitfeature,
+        features
+      });
+      const splittedGeometriesLength = splittedGeometries.length;
+      for (let i=0; i < splittedGeometriesLength; i++) {
+        const {uid, geometries} = splittedGeometries[i];
+        if (geometries.length > 1) {
+          isSplitted = true;
+          const feature = features.find(feature => feature.getUid() === uid);
+          await this._handleSplitFeature({
+            feature,
+            splittedGeometries: geometries,
+            inputs,
+            session
+          });
+        }
       }
-    }
 
-    if (isSplitted) {
-      GUI.showUserMessage({
-        type: 'success',
-        message: 'plugins.editing.messages.splitted',
-        autoclose: true
-      });
+      if (isSplitted) {
+        GUI.showUserMessage({
+          type: 'success',
+          message: 'plugins.editing.messages.splitted',
+          autoclose: true
+        });
 
-      d.resolve(inputs);
+        resolve(inputs);
 
-    } else {
-      GUI.showUserMessage({
-        type: 'warning',
-        message: 'plugins.editing.messages.nosplittedfeature',
-        autoclose: true
-      });
-      d.reject();
-    }
-  });
-  this.addInteraction(this._drawInteraction);
-  this.addInteraction(this._snapIteraction);
-  return d.promise();
+      } else {
+        GUI.showUserMessage({
+          type: 'warning',
+          message: 'plugins.editing.messages.nosplittedfeature',
+          autoclose: true
+        });
+        reject();
+      }
+    });
+    this.addInteraction(this._drawInteraction);
+    this.addInteraction(this._snapIteraction);
+  })
 };
 
 proto._handleSplitFeature = async function({feature, inputs, session, splittedGeometries=[]}={}){

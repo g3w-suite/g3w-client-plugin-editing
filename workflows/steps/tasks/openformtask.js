@@ -251,30 +251,29 @@ proto.startForm = async function(options = {}) {
 };
 
 proto.run = function(inputs, context) {
-  const d = $.Deferred();
-  this.promise = d;
-  this._isContentChild = WorkflowsStack.getLength() > 1;
-  const { layer, features } = inputs;
-  this.layerId = layer.getId();
-  GUI.setLoadingContent(false);
-  this.getEditingService().disableMapControlsConflict(true);
+  this.promise = new Promise((resolve, reject) => {
+    this._isContentChild = WorkflowsStack.getLength() > 1;
+    const { layer, features } = inputs;
+    this.layerId = layer.getId();
+    GUI.setLoadingContent(false);
+    this.getEditingService().disableMapControlsConflict(true);
 
-  this.setAndUnsetSelectedFeaturesStyle({
-    promise: d
-  });
-
-  if (!this._multi && Array.isArray(features[features.length -1])) {
-    d.resolve();
-  } else {
-    this.startForm({
-      inputs,
-      context,
-      promise: d
+    this.setAndUnsetSelectedFeaturesStyle({
+      promise: this.promise
     });
-    this.disableSidebar(true);
-  }
 
-  return d.promise();
+    if (!this._multi && Array.isArray(features[features.length -1])) {
+      resolve();
+    } else {
+      this.startForm({
+        inputs,
+        context,
+        promise: this.promise
+      });
+      this.disableSidebar(true);
+    }
+  });
+  return this.promise;
 };
 
 proto._generateFormId = function(layerName) {

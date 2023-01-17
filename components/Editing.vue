@@ -67,7 +67,7 @@
           this.$options.service.commit({
             toolbox,
             modal: false
-          }).always(() => this.saving = false);
+          }).finally(() => this.saving = false);
         },
         saveAll() {},
         startToolBox(toolboxId) {
@@ -76,7 +76,7 @@
         },
         stopToolBox(toolboxId) {
           const toolbox = this._getToolBoxById(toolboxId);
-          if (toolbox.state.editing.history.commit) this.$options.service.commit().always(() => toolbox.stop());
+          if (toolbox.state.editing.history.commit) this.$options.service.commit().finally(() => toolbox.stop());
           else toolbox.stop();
         },
         saveToolBox(toolboxId) {

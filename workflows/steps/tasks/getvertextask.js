@@ -12,30 +12,29 @@ inherit(GetVertexTask, EditingTask);
 const proto = GetVertexTask.prototype;
 
 proto.run = function(inputs) {
-  const d = $.Deferred();
-  const {features} = inputs;
-  if (!features.length) return;
-  this._snapIteraction = new ol.interaction.Snap({
-    features: new ol.Collection(features),
-    edge: false
-  });
-  this._drawIteraction = new ol.interaction.Draw({
-    type: 'Point',
-    condition: evt => {
-      const coordinates = evt.coordinate;
-      return !!features.find(feature => this.areCoordinatesEqual({feature, coordinates}));
-    }
-  });
-  this._drawIteraction.on('drawend', (evt)=> {
-    inputs.coordinates = evt.feature.getGeometry().getCoordinates();
-    this.setUserMessageStepDone('from');
-    d.resolve(inputs);
-  });
+  return new Promise((resolve, reject) => {
+    const {features} = inputs;
+    if (!features.length) return;
+    this._snapIteraction = new ol.interaction.Snap({
+      features: new ol.Collection(features),
+      edge: false
+    });
+    this._drawIteraction = new ol.interaction.Draw({
+      type: 'Point',
+      condition: evt => {
+        const coordinates = evt.coordinate;
+        return !!features.find(feature => this.areCoordinatesEqual({feature, coordinates}));
+      }
+    });
+    this._drawIteraction.on('drawend', (evt)=> {
+      inputs.coordinates = evt.feature.getGeometry().getCoordinates();
+      this.setUserMessageStepDone('from');
+      resolve(inputs);
+    });
 
-  this.addInteraction(this._drawIteraction);
-  this.addInteraction(this._snapIteraction);
-
-  return d.promise();
+    this.addInteraction(this._drawIteraction);
+    this.addInteraction(this._snapIteraction);
+  })
 };
 
 proto.stop = function() {

@@ -20,16 +20,19 @@ inherit(PickProjectLayerFeaturesTask, EditingTask);
 const proto = PickProjectLayerFeaturesTask.prototype;
 
 proto.run = function(inputs, context) {
-  const d = $.Deferred();
-  if (this.copyLayer) {
-    this.getFeaturesFromLayer({
-      inputs,
-      promise: d
-    })
-  } else {
-    //TO DO  Create a component that ask which project layer would like to query
-  }
-  return d.promise()
+  return new Promise((resolve, reject) => {
+    if (this.copyLayer) {
+      this.getFeaturesFromLayer({
+        inputs,
+        promise: {
+          resolve,
+          reject
+        }
+      })
+    } else {
+      //@TODO  Create a component that ask which project layer would like to query
+    }
+  })
 };
 
 proto.getFeaturesFromLayer = async function({inputs, promise}={}){

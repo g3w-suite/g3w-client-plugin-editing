@@ -18,29 +18,31 @@ inherit(PickFeatureTask, EditingTask);
 const proto = PickFeatureTask.prototype;
 
 proto.run = function(inputs, context) {
-  const d = $.Deferred();
-  const editingLayer = inputs.layer.getEditingLayer();
+  return new Promise((resolve, reject) => {
+    const editingLayer = inputs.layer.getEditingLayer();
 
-  this.pickFeatureInteraction = new PickFeaturesInteraction({
-    layer: editingLayer,
-  });
-
-  this.addInteraction(this.pickFeatureInteraction);
-  this.pickFeatureInteraction.on('picked', evt => {
-    const {features, coordinate} = evt;
-    if (inputs.features.length === 0) {
-      inputs.features = features;
-      inputs.coordinate = coordinate;
-    }
-    this.setAndUnsetSelectedFeaturesStyle({
-      promise: d
+    this.pickFeatureInteraction = new PickFeaturesInteraction({
+      layer: editingLayer,
     });
 
-    this._steps && this.setUserMessageStepDone('select');
-    d.resolve(inputs);
-  });
+    this.addInteraction(this.pickFeatureInteraction);
+    this.pickFeatureInteraction.on('picked', evt => {
+      const {features, coordinate} = evt;
+      if (inputs.features.length === 0) {
+        inputs.features = features;
+        inputs.coordinate = coordinate;
+      }
+      this.setAndUnsetSelectedFeaturesStyle({
+        promise: {
+          resolve,
+          reject
+        }
+      });
 
-  return d.promise()
+      this._steps && this.setUserMessageStepDone('select');
+      d.resolve(inputs);
+    });
+  })
 };
 
 proto.stop = function() {

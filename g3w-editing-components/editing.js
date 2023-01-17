@@ -34,16 +34,16 @@ function PanelComponent(options={}) {
   };
 
   this.unmount = function() {
-    const d = $.Deferred();
-    this._service.stop()
-      .finally(() => {
-        this.unmount = function() {
-          base(this, 'unmount')
-            .then(() => d.resolve());
-        };
-        this.unmount();
-      });
-    return d.promise();
+    return new Promise((resolve, reject) => {
+      this._service.stop()
+        .finally(() => {
+          this.unmount = function() {
+            base(this, 'unmount')
+              .then(() => resolve());
+          };
+          this.unmount();
+        });
+    })
   };
 }
 

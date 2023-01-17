@@ -6,69 +6,68 @@ const EditingTask = require('./editingtask');
 const Dialogs = {
   delete: {
     fnc: function(inputs) {
-      let d = $.Deferred();
-      const EditingService = require('../../../services/editingservice');
-      const layer = inputs.layer;
-      const editingLayer = layer.getEditingLayer();
-      const feature = inputs.features[0];
-      const layerId = layer.getId();
-      const childRelations = layer.getChildren();
-      const relationinediting = childRelations.length &&  EditingService._filterRelationsInEditing({
-        layerId,
-        relations: layer.getRelations().getArray()
-      }).length > 0;
+      return new Promise((resolve, reject) => {
+        const EditingService = require('../../../services/editingservice');
+        const layer = inputs.layer;
+        const editingLayer = layer.getEditingLayer();
+        const feature = inputs.features[0];
+        const layerId = layer.getId();
+        const childRelations = layer.getChildren();
+        const relationinediting = childRelations.length &&  EditingService._filterRelationsInEditing({
+          layerId,
+          relations: layer.getRelations().getArray()
+        }).length > 0;
 
-      GUI.dialog.confirm(`<h4>${tPlugin('editing.messages.delete_feature')}</h4>
+        GUI.dialog.confirm(`<h4>${tPlugin('editing.messages.delete_feature')}</h4>
                         <div style="font-size:1.2em;">${ relationinediting ?tPlugin('editing.messages.delete_feature_relations') : ''}</div>`, result => {
-        if (result) {
-          editingLayer.getSource().removeFeature(feature);
-          EditingService.removeLayerUniqueFieldValuesFromFeature({
-            layerId,
-            feature
-          });
-          d.resolve(inputs)
-        }  else  d.reject(inputs);
-
-      });
-      return d.promise();
+          if (result) {
+            editingLayer.getSource().removeFeature(feature);
+            EditingService.removeLayerUniqueFieldValuesFromFeature({
+              layerId,
+              feature
+            });
+            resolve(inputs)
+          }  else reject(inputs);
+        });
+      })
     }
   },
   commit: {
     fnc(inputs) {
-      let d = $.Deferred();
-      let close = inputs.close;
-      const buttons = {
-        SAVE: {
-          label: t("save"),
-          className: "btn-success",
-          callback: function () {
-            d.resolve(inputs);
+      return new Promise((resolve, reject) => {
+        let close = inputs.close;
+        const buttons = {
+          SAVE: {
+            label: t("save"),
+            className: "btn-success",
+            callback() {
+              resolve(inputs);
+            }
+          },
+          CANCEL: {
+            label: close ? t("exitnosave") : t("annul"),
+            className: "btn-danger",
+            callback() {
+              reject();
+            }
           }
-        },
-        CANCEL: {
-          label: close ? t("exitnosave") : t("annul"),
-          className: "btn-danger",
-          callback: function () {
-            d.reject();
+        };
+        if (close) {
+          buttons.CLOSEMODAL = {
+            label:  t("annul"),
+            className: "btn-primary",
+            callback() {
+              dialog.modal('hide');
+            }
           }
         }
-      };
-      if (close) {
-        buttons.CLOSEMODAL = {
-          label:  t("annul"),
-          className: "btn-primary",
-          callback: function () {
-            dialog.modal('hide');
-          }
-        }
-      }
-      // NOW I HAVE TO IMPLEMENT WHAT HAPPEND ID NO ACTION HAPPEND
-      const dialog = GUI.dialog.dialog({
-        message: inputs.message,
-        title: tPlugin("editing.messages.commit_feature") + " " +inputs.layer.getName() + "?",
-        buttons
-      });
-      return d.promise()
+        // NOW I HAVE TO IMPLEMENT WHAT HAPPEND ID NO ACTION HAPPEND
+        const dialog = GUI.dialog.dialog({
+          message: inputs.message,
+          title: tPlugin("editing.messages.commit_feature") + " " +inputs.layer.getName() + "?",
+          buttons
+        });
+      })
     }
   }
 };
@@ -94,7 +93,5 @@ proto.run = function(inputs, context) {
 proto.stop = function() {
   return true;
 };
-
-
 
 module.exports = ConfirmTask;

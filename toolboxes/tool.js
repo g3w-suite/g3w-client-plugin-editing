@@ -92,12 +92,12 @@ proto.start = function(hideSidebar = false) {
         this._session.save()
           .then(() => this.editingService.saveChange()); // after save temp change check if editing service has a autosave
       })
-      .fail(() => {
+      .catch(() => {
         hideSidebar && GUI.showSidebar();
         this._session.rollback()
           .then(() => {})
       })
-      .always(() => {
+      .finally(() => {
         if (!this._once && this._layer.getType() !== 'table') startOp(options);
         else this.stop();
       })
@@ -111,26 +111,26 @@ proto.start = function(hideSidebar = false) {
 };
 
 proto.stop = function(force=false) {
-  const d = $.Deferred();
-  if (this._op) {
-    this._op.stop(force)
-      .then(() => {})
-      .fail(() => this._session.rollback())
-      .always(() => {
-        this._options = null;
-        this.state.active = false;
-        this.emit('stop', {
-          session: this._session
-        });
-        d.resolve();
-      })
-  } else {
-    this.emit('stop', {
-      session: this._session
-    });
-    d.resolve();
-  }
-  return d.promise();
+  return new Promise((resolve, reject) => {
+    if (this._op) {
+      this._op.stop(force)
+        .then(() => {})
+        .catch(() => this._session.rollback())
+        .finally(() => {
+          this._options = null;
+          this.state.active = false;
+          this.emit('stop', {
+            session: this._session
+          });
+          resolve();
+        })
+    } else {
+      this.emit('stop', {
+        session: this._session
+      });
+      resolve();
+    }
+  })
 };
 
 proto.getState = function() {

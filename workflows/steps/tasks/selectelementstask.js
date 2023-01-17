@@ -179,29 +179,34 @@ proto.addMultipleSelectInteraction = function({layer, inputs, promise, buttonnex
 };
 
 proto.run = function(inputs, context, queques) {
-  const layer = inputs.layer;
-  const promise = $.Deferred();
-  switch(this._type) {
-    case 'single':
-      this.addSingleSelectInteraction({layer, inputs, promise});
-      break;
-    case 'multiple':
-      const buttonnext = !!this._steps.select.buttonnext;
-      if (buttonnext) this._steps.select.buttonnext.done = () =>{promise.resolve(inputs)};
-      this.addSingleSelectInteraction({layer, inputs, promise, buttonnext});
-      this.addMultipleSelectInteraction({layer, inputs, promise, buttonnext});
-      break;
-    case 'bbox':
-      this.addMultipleSelectInteraction({layer, inputs, promise});
-      break;
-    case 'external':
-      this.addExternalSelectInteraction({layer, inputs, promise});
-      break;
-  }
-  queques.micro.addTask(()=>{
-   inputs.features.forEach((feature => feature.setStyle(this._originalStyle)));
-  });
-  return promise.promise();
+  return new Promise((resolve, reject) => {
+    const layer = inputs.layer;
+    /** Need to create an object that has resolve, reject methods **/
+    const promise = {
+      reolve,
+      reject
+    };
+    switch(this._type) {
+      case 'single':
+        this.addSingleSelectInteraction({layer, inputs, promise});
+        break;
+      case 'multiple':
+        const buttonnext = !!this._steps.select.buttonnext;
+        if (buttonnext) this._steps.select.buttonnext.done = () =>{promise.resolve(inputs)};
+        this.addSingleSelectInteraction({layer, inputs, promise, buttonnext});
+        this.addMultipleSelectInteraction({layer, inputs, promise, buttonnext});
+        break;
+      case 'bbox':
+        this.addMultipleSelectInteraction({layer, inputs, promise});
+        break;
+      case 'external':
+        this.addExternalSelectInteraction({layer, inputs, promise});
+        break;
+    }
+    queques.micro.addTask(()=>{
+      inputs.features.forEach((feature => feature.setStyle(this._originalStyle)));
+    });
+  })
 };
 
 proto.stop = function() {

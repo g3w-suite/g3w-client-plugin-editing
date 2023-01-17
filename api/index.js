@@ -91,9 +91,7 @@ const API = function({service, plugin} = {}) {
             toolbox,
             data
           }) : resolve(toolbox);
-        }).fail(err=> {
-          reject(err)
-        })
+        }).catch(err => reject(err))
       } else reject();
     })
   };
@@ -120,7 +118,7 @@ const API = function({service, plugin} = {}) {
   this.stopEditing = function(layerId, options={}) {
     return new Promise((resolve, reject)=>{
       const toolbox = service.getToolBoxById(layerId);
-      toolbox.stop(options).then(resolve).fail(reject)
+      toolbox.stop(options).then(resolve).catch(reject)
     })
   };
 

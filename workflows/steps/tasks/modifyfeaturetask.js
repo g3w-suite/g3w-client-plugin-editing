@@ -13,7 +13,6 @@ function ModifyFeatureTask(options={}){
 
 inherit(ModifyFeatureTask, EditingTask);
 
-
 const proto = ModifyFeatureTask.prototype;
 
 proto.run = function() {
@@ -50,10 +49,10 @@ proto.run = function() {
         this._busy = true;
         this.pause(true);
         this.modifyFeature(feature, isNew)
-        .fail(() => {
+        .catch(() => {
           feature.setGeometry(origGeometry);
         })
-        .always(() => {
+        .finally(() => {
           this._busy = false;
           this.pause(false);
         })

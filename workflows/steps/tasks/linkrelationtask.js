@@ -13,41 +13,37 @@ inherit(LinkRelationTask, EditingTask);
 const proto = LinkRelationTask.prototype;
 
 proto.run = function(inputs, context) {
-  const d = $.Deferred();
-  GUI.setModal(false);
-  const editingLayer = inputs.layer.getEditingLayer();
-  this._originalLayerStyle = editingLayer.getStyle();
-  const beforeRun = context.beforeRun;
-  const promise = beforeRun && typeof beforeRun === 'function' ? beforeRun() : Promise.resolve();
-  const {field, value} = context.exclude;
-  const style = context.style;
-  this._features = editingLayer.getSource().getFeatures();
-  this._features = field ? this._features.filter(feature => {
-    return  feature.get(field) != value;
-  }) : this._features;
-  style && this._features.forEach(feature =>{
-    feature.setStyle(style)
-  });
-  promise.then(()=> {
-    this.pickFeatureInteraction = new PickFeatureInteraction({
-      layers: [editingLayer],
-      features: this._features
+  return new Promise((resolve, reject) => {
+    GUI.setModal(false);
+    const editingLayer = inputs.layer.getEditingLayer();
+    this._originalLayerStyle = editingLayer.getStyle();
+    const beforeRun = context.beforeRun;
+    const promise = beforeRun && typeof beforeRun === 'function' ? beforeRun() : Promise.resolve();
+    const {field, value} = context.exclude;
+    const style = context.style;
+    this._features = editingLayer.getSource().getFeatures();
+    this._features = field ? this._features.filter(feature => {
+      return  feature.get(field) != value;
+    }) : this._features;
+    style && this._features.forEach(feature =>{
+      feature.setStyle(style)
     });
-    this.addInteraction(this.pickFeatureInteraction);
-    this.pickFeatureInteraction.on('picked', (e) => {
-      const relation = e.feature;
-      inputs.features.push(relation);
-      GUI.setModal(true);
-      d.resolve(inputs);
-    });
-  }).catch(err =>{
-    console.log(err)
-    d.reject();
-  });
-  return d.promise()
+    promise.then(()=> {
+      this.pickFeatureInteraction = new PickFeatureInteraction({
+        layers: [editingLayer],
+        features: this._features
+      });
+      this.addInteraction(this.pickFeatureInteraction);
+      this.pickFeatureInteraction.on('picked', (e) => {
+        const relation = e.feature;
+        inputs.features.push(relation);
+        GUI.setModal(true);
+        resolve(inputs);
+      });
+    }).catch(err =>reject());
+  })
 };
 
-// metodo eseguito alla disattivazione del tool
 proto.stop = function() {
   GUI.setModal(true);
   this.removeInteraction(this.pickFeatureInteraction);

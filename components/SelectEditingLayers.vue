@@ -31,7 +31,7 @@
           toolbox.setShow(bool);
           if (!bool)  {
             if (toolbox.state.editing.history.commit)
-              EditingService.commit({toolbox}).always(() => toolbox.stop());
+              EditingService.commit({toolbox}).finally(() => toolbox.stop());
             else toolbox.stop();
           } // in case of bool === false (not selected) need to stop editing on layer
         }); else this.editinglayers.forEach(({id}) => EditingService.getToolBoxById(id).setShow(true));
