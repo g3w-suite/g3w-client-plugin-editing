@@ -41,48 +41,55 @@ proto.run = function(inputs, context) {
       features: new ol.Collection(),
     });
 
-    this._drawInteraction.on('drawend', evt => {
-      const [x, y] = evt.feature.getGeometry().getCoordinates();
-      const deltaXY = coordinates ? this.getDeltaXY({
-        x, y, coordinates
-      }) : null;
-      const featuresLength = features.length;
-      const promisesDefaultEvaluation = [];
-      for (let i =0; i < featuresLength; i++) {
-        const feature = features[i].cloneNew();
-        if (deltaXY) feature.getGeometry().translate(deltaXY.x, deltaXY.y);
-        else {
-          const coordinates = feature.getGeometry().getCoordinates();
-          const deltaXY = this.getDeltaXY({
-            x, y, coordinates
-          });
-          feature.getGeometry().translate(deltaXY.x, deltaXY.y)
-        }
-        this.setNullMediaFields({
-          feature,
-          layer
+  this._drawInteraction.on('drawend', evt => {
+    const [x, y] = evt.feature.getGeometry().getCoordinates();
+    const deltaXY = coordinates ? this.getDeltaXY({
+      x, y, coordinates
+    }) : null;
+    const featuresLength = features.length;
+    const promisesDefaultEvaluation = [];
+    for (let i =0; i < featuresLength; i++) {
+      const feature = features[i].cloneNew();
+      if (deltaXY) feature.getGeometry().translate(deltaXY.x, deltaXY.y);
+      else {
+        const coordinates = feature.getGeometry().getCoordinates();
+        const deltaXY = this.getDeltaXY({
+          x, y, coordinates
         });
-        /**
-         * evaluated geometry expression
-         */
-        const promise = this.evaluateGeometryExpressionField({
-          inputs,
-          context,
-          feature
-        }).finally(feature => {
+        feature.getGeometry().translate(deltaXY.x, deltaXY.y)
+      }
+      this.setNullMediaFields({
+        feature,
+        layer
+      });
+      /**
+       * evaluated geometry expression
+       */
+      const promise = this.evaluateGeometryExpressionField({
+        inputs,
+        context,
+        feature
+      });
+      
+      promisesDefaultEvaluation.push(promise)
+    }
+
+    Promise.allSettled(promisesDefaultEvaluation)
+      .then(promises => {
+        promises.forEach(({status, value:feature}) => {
           source.addFeature(feature);
           session.pushAdd(layerId, feature);
           inputs.features.push(feature);
-          return Promise.resolve(feature)
-        });
-        promisesDefaultEvaluation.push(promise)
-      }
-
-      Promise.allSettled(promisesDefaultEvaluation).finally(() =>{
+        })
+      })
+      .finally(() => {
+        /**
+         * @type {boolean}
+         */
         this._steps.to.done = true;
         resolve(inputs);
       })
-    });
+  });
 
     this.addInteraction(this._drawInteraction);
     this.addInteraction(this._snapIteraction);
