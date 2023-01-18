@@ -124,7 +124,22 @@ proto._handleSplitFeature = async function({feature, inputs, session, splittedGe
         });
       } catch(err){}
 
-      newFeatures.push(session.pushAdd(layerId, feature));
+      /**
+       * @todo improve client core to handle this situation on sesssion.pushAdd not copy pk field not editable only
+       */
+      const noteditablefieldsvalues = this.getNotEditableFieldsNoPkValues({
+        layer,
+        feature
+      });
+
+      if (Object.entries(noteditablefieldsvalues).length) {
+        session.pushAdd(layerId, feature);
+        const _feature = feature.clone();
+        Object.entries(noteditablefieldsvalues).forEach(([field, value]) => _feature.set(field, value));
+        session.pushUpdate(layerId, _feature, feature);
+        newFeatures.push(_feature);
+      } else newFeatures.push(session.pushAdd(layerId, feature));
+
     }
     inputs.features.push(feature);
   }
