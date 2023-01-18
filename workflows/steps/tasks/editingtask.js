@@ -339,6 +339,24 @@ proto.evaluateGeometryExpressionField = async function({inputs, context,  featur
 };
 
 /**
+ * 
+ * @param layer,
+ * @param feature
+ * @returns {
+ *   <field_name1>: value,
+ *   <field_name1>: value
+ * }
+ */
+proto.getNotEditableFieldsNoPkValues = function({layer, feature}){
+  return layer.getEditingNotEditableFields()
+    .filter(field => !layer.isPkField(field))
+    .reduce((accumulator, field) => {
+      accumulator[field] = feature.get(field);
+      return accumulator;
+    }, {});
+};
+
+/**
  * set
  * @param get_default_value to context of task
  */
