@@ -69,20 +69,26 @@ proto.run = function(inputs, context) {
         inputs,
         context,
         feature
-      }).finally(feature => {
-        source.addFeature(feature);
-        session.pushAdd(layerId, feature);
-        inputs.features.push(feature);
-        return Promise.resolve(feature)
       });
+      
       promisesDefaultEvaluation.push(promise)
     }
 
-    Promise.allSettled(promisesDefaultEvaluation).finally(() =>{
-      this._steps.to.done = true;
-      d.resolve(inputs);
-    })
-
+    Promise.allSettled(promisesDefaultEvaluation)
+      .then(promises => {
+        promises.forEach(({status, value:feature}) => {
+          source.addFeature(feature);
+          session.pushAdd(layerId, feature);
+          inputs.features.push(feature);
+        })
+      })
+      .finally(() => {
+        /**
+         * @type {boolean}
+         */
+        this._steps.to.done = true;
+        d.resolve(inputs);
+      })
   });
 
   this.addInteraction(this._drawInteraction);
