@@ -250,43 +250,42 @@ proto.start = function(options={}) {
       filter
     });
 
-    const handlerAfterSessionGetFeatures = promise => {
+    const handlerAfterSessionGetFeatures = features => {
       this.emit(EventName);
-      this.setLayerUniqueFieldValues().then(()=>{
-        this.editingService.runEventHandler({
-          type: EventName,
-          id
-        });
-        promise
-          .then(features => {
-            this.stopLoading();
-            this.setEditing(true);
-            this.editingService.runEventHandler({
-              type: 'get-features-editing',
-              id,
-              options: {
-                features
-              }
-            });
+      this.setLayerUniqueFieldValues()
+        .then(()=>{
+          this.editingService.runEventHandler({
+            type: EventName,
+            id
+          });
 
-            resolve({
+          this.stopLoading();
+          this.setEditing(true);
+          this.editingService.runEventHandler({
+            type: 'get-features-editing',
+            id,
+            options: {
               features
-            })
-          })
-          .catch(error => {
-            GUI.notify.error(error.message);
-            this.editingService.runEventHandler({
-              type: 'error-editing',
-              id,
-              error
-            });
-            this.stop();
-            this.stopLoading();
-            reject(error);
+            }
+          });
+          resolve({
+            features
           })
       });
-
     };
+    const handlerCatchAfterSessionGetFeature = error => {
+      GUI.notify.error(error.message);
+      this.editingService.runEventHandler({
+        type: 'error-editing',
+        id,
+        error
+      });
+      this.setEditing(true);
+      this.stop();
+      this.stopLoading();
+      reject(error);
+    };
+
     if (this._session) {
       if (!this._session.isStarted()) {
         //added case of mobile
@@ -300,18 +299,23 @@ proto.start = function(options={}) {
                 filter
               });
               this._session.start(this._getFeaturesOption)
-                .then(handlerAfterSessionGetFeatures).catch(()=>this.setEditing(false));
+                .then(handlerAfterSessionGetFeatures)
+                .catch(handlerCatchAfterSessionGetFeature)
             }, 300);
           })
         } else {
           this._start = true;
           this.startLoading();
-          this._session.start(this._getFeaturesOption).then(handlerAfterSessionGetFeatures)
+          this._session.start(this._getFeaturesOption)
+            .then(handlerAfterSessionGetFeatures)
+            .catch(handlerCatchAfterSessionGetFeature)
         }
       } else {
         if (!this._start) {
           this.startLoading();
-          this._session.getFeatures(this._getFeaturesOption).then(handlerAfterSessionGetFeatures);
+          this._session.getFeatures(this._getFeaturesOption)
+            .then(handlerAfterSessionGetFeatures)
+            .catch(handlerCatchAfterSessionGetFeature);
           this._start = true;
         }
         this.setEditing(true);
