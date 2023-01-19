@@ -40,7 +40,7 @@ proto.run = function(inputs, context) {
       });
 
       this._steps && this.setUserMessageStepDone('select');
-      d.resolve(inputs);
+      resolve(inputs);
     });
   })
 };
