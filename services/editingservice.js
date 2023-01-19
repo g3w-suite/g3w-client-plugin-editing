@@ -1430,7 +1430,7 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
         autoclose: true,
         closable: false
       });
-      d.resolve(toolbox);
+      resolve(toolbox);
       return d.promise();
     }
     const promise = modal ? this.showCommitModalWindow({

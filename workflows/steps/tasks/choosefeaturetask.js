@@ -20,7 +20,7 @@ proto.run = function(inputs, context) {
     originalLayer.getEditingFields().forEach(({name, label}) => {
       attributes[name] = label
     });
-    if (features.length === 1) d.resolve(inputs);
+    if (features.length === 1) resolve(inputs);
     else {
       const feature = [];
       const vueInstance = ChooseFeatureToEditComponent({
