@@ -283,7 +283,7 @@ proto.editResultLayerFeature = function({layer, feature}={}){
        *
        * Need to get feature from Editing layer source because it has a style layer
        */
-      const feature = toolBox.getLayer().getEditingLayer().getSource().getFeatures().find(feature => feature.getId() == featureId);
+      const feature = toolBox.getLayer().getEditingLayer().getSource().readFeatures().find(feature => feature.getId() == featureId);
       if (feature){
         feature.getGeometry() && this._mapService.zoomToGeometry(feature.getGeometry());
         toolBox.setSelected(true);
@@ -451,7 +451,7 @@ proto.checkOfflineChanges = function({modal=true, unlock=false}={}) {
             modal
           }))
         }
-        $.when.apply(this, promises)
+        Promise.all(promises)
           .then(() =>resolve())
           .catch(error=>reject(error))
           .finally(() =>{
@@ -985,7 +985,7 @@ proto.stop = function() {
         commitpromises.push(this.commit(toolbox, true));
       }
     });
-    $.when.apply(this, commitpromises)
+   Promise.all(commitpromises)
       .finally(() => {
         this._toolboxes.forEach(toolbox => toolbox.stop());
         this.clearState();
