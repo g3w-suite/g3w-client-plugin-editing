@@ -21,10 +21,6 @@ proto.run = function(inputs, context) {
     this.changeKey = null; //
     let isGeometryChange = false; // changed if geometry is changed
 
-    this.setAndUnsetSelectedFeaturesStyle({
-      promise: this.promise,
-    });
-
     this._translateInteraction = new ol.interaction.Translate({
       features,
       hitTolerance: (isMobile && isMobile.any) ? 10 : 0
@@ -56,11 +52,15 @@ proto.run = function(inputs, context) {
       } else resolve(inputs);
     });
   });
+
+  this.setAndUnsetSelectedFeaturesStyle({
+    promise: this.promise,
+  });
+  
   return this.promise;
 };
 
 proto.stop = function() {
-  this.promise.resolve();
   this.removeInteraction(this._translateInteraction);
   this._translateInteraction = null;
   this.changeKey = null;

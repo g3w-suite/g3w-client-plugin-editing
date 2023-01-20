@@ -69,14 +69,14 @@ proto._getForm = async function(inputs, context) {
   return GUI.showContentFactory('form');
 };
 
-proto._cancelFnc = function(promise, inputs) {
+proto._cancelFnc = function(reject, inputs) {
   return function() {
     if (!this._isContentChild){
       GUI.setModal(false);
       // fire event cancel form to emit to subscrivers
       this.fireEvent('cancelform', inputs.features);
     }
-    promise.reject(inputs);
+    reject(inputs);
   }
 };
 
@@ -112,6 +112,7 @@ proto.saveAll = function(fields){
         this.fireEvent('savedfeature', newFeatures); // called after saved
         this.fireEvent(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
         session.save();
+
         resolve({
           promise: this.promise
         });
@@ -120,7 +121,7 @@ proto.saveAll = function(fields){
   })
 };
 
-proto._saveFeatures = function({fields, promise, session, inputs}){
+proto._saveFeatures = function({fields, resolve, session, inputs}){
   fields = this._multi ? fields.filter(field => field.value !== null) : fields;
   if (fields.length) {
     const newFeatures = [];
@@ -148,20 +149,20 @@ proto._saveFeatures = function({fields, promise, session, inputs}){
       this._isContentChild && WorkflowsStack.getParents().forEach(workflow => workflow.getContext().service.setUpdate(true, {
         force: true
       }));
-      promise.resolve(inputs);
+      resolve(inputs);
     })
   } else {
     GUI.setModal(false);
-    promise.resolve(inputs);
+    resolve(inputs);
   }
 };
 
-proto._saveFnc = function(promise, context, inputs) {
+proto._saveFnc = function(resolve, context, inputs) {
   return function(fields) {
     const session = context.session;
     this._saveFeatures({
       fields,
-      promise,
+      resolve,
       session,
       inputs
     });
@@ -176,6 +177,7 @@ proto._saveFnc = function(promise, context, inputs) {
 proto.startForm = async function(options = {}) {
   this.getEditingService().setCurrentLayout();
   const { inputs, context, promise } = options;
+  const {resolve, reject} = promise;
   const { session } = context;
   const formComponent = options.formComponent || EditingFormComponent;
   const Form = await this._getForm(inputs, context);
@@ -218,7 +220,7 @@ proto.startForm = async function(options = {}) {
       title: this._isContentChild ? "plugins.editing.form.buttons.save_and_back" : "plugins.editing.form.buttons.save",
       type: "save",
       class: "btn-success",
-      cbk: this._saveFnc(promise, context, inputs).bind(this)
+      cbk: this._saveFnc(resolve, context, inputs).bind(this)
     }, {
       id: 'cancel',
       title: "plugins.editing.form.buttons.cancel",
@@ -235,7 +237,7 @@ proto.startForm = async function(options = {}) {
           }
         }
       },
-      cbk: this._cancelFnc(promise, inputs).bind(this)
+      cbk: this._cancelFnc(reject, inputs).bind(this)
     }]
   });
   this.fireEvent('openform',
@@ -258,21 +260,25 @@ proto.run = function(inputs, context) {
     GUI.setLoadingContent(false);
     this.getEditingService().disableMapControlsConflict(true);
 
-    this.setAndUnsetSelectedFeaturesStyle({
-      promise: this.promise
-    });
-
     if (!this._multi && Array.isArray(features[features.length -1])) {
       resolve();
     } else {
       this.startForm({
         inputs,
         context,
-        promise: this.promise
+        promise: {
+          resolve,
+          reject
+        }
       });
       this.disableSidebar(true);
     }
   });
+
+  this.setAndUnsetSelectedFeaturesStyle({
+    promise: this.promise
+  });
+
   return this.promise;
 };
 

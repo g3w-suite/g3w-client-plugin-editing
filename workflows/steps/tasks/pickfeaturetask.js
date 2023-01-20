@@ -18,7 +18,7 @@ inherit(PickFeatureTask, EditingTask);
 const proto = PickFeatureTask.prototype;
 
 proto.run = function(inputs, context) {
-  return new Promise((resolve, reject) => {
+  const promise = new Promise((resolve, reject) => {
     const editingLayer = inputs.layer.getEditingLayer();
 
     this.pickFeatureInteraction = new PickFeaturesInteraction({
@@ -33,16 +33,15 @@ proto.run = function(inputs, context) {
         inputs.coordinate = coordinate;
       }
       this.setAndUnsetSelectedFeaturesStyle({
-        promise: {
-          resolve,
-          reject
-        }
+        promise
       });
 
       this._steps && this.setUserMessageStepDone('select');
       resolve(inputs);
     });
-  })
+  });
+
+  return promise;
 };
 
 proto.stop = function() {
