@@ -183,7 +183,7 @@ proto.run = function(inputs, context, queques) {
     const layer = inputs.layer;
     /** Need to create an object that has resolve, reject methods **/
     const promise = {
-      reolve,
+      resolve,
       reject
     };
     switch(this._type) {
@@ -192,7 +192,7 @@ proto.run = function(inputs, context, queques) {
         break;
       case 'multiple':
         const buttonnext = !!this._steps.select.buttonnext;
-        if (buttonnext) this._steps.select.buttonnext.done = () =>{promise.resolve(inputs)};
+        if (buttonnext) this._steps.select.buttonnext.done = () =>{resolve(inputs)};
         this.addSingleSelectInteraction({layer, inputs, promise, buttonnext});
         this.addMultipleSelectInteraction({layer, inputs, promise, buttonnext});
         break;
