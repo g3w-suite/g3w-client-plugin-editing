@@ -1210,11 +1210,9 @@ proto.getLayersDependencyFeatures = function(layerId, opts={}) {
         toolbox.startLoading();
         if (!session.isStarted())
           session.start(options)
-            .finally((promise) => {
-              promise.finally(()=>{
-                toolbox.stopLoading();
-                resolve(id);
-              })
+            .finally(()=>{
+              toolbox.stopLoading();
+              resolve(id);
             });
         else {
           this.getLayersDependencyFeaturesFromSource({
@@ -1227,12 +1225,11 @@ proto.getLayersDependencyFeatures = function(layerId, opts={}) {
               resolve(id);
               toolbox.stopLoading();
             } else {
-              session.getFeatures(options).finally(promise => {
-                promise.finally(()=>{
+              session.getFeatures(options)
+                .finally(()=>{
                   toolbox.stopLoading();
                   resolve(id);
                 });
-              });
             }
           })
         }
@@ -1414,7 +1411,7 @@ proto.showChangesToResult = async function(){
  * @returns {*}
  */
 proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
-  return new Promise((resolve, reject) => {
+  const commitPromise =  new Promise((resolve, reject) => {
     const { cb={}, messages={success:{}, error:{}} } = this.saveConfig;
     toolbox = toolbox || this.state.toolboxselected;
     let session = toolbox.getSession();
@@ -1437,16 +1434,13 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
       layer,
       commitItems,
       close,
-      commitPromise: new Promise((_resolve, _reject) => {
-        _resolve = resolve;
-        _reject = reject;
-      })
+      commitPromise
     }) : Promise.resolve(messages);
     promise
       .then(messages => {
         if (ApplicationState.online) {
           session.commit({items: items || commitItems})
-            .then((commitItems, response) => {
+            .then(({commitItems, response}) => {
               if (ApplicationState.online) {
                 if (response.result) {
                   const {autoclose=true, message="plugins.editing.messages.saved"} = messages.success;
@@ -1463,6 +1457,7 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
                     fids: [...response.response.new.map(({id}) => id), ...commitItems.update.map(update => update.id)]
                   });
                 } else {
+                  console.log(response)
                   const parser = new serverErrorParser({
                     error: response.errors
                   });
@@ -1524,8 +1519,9 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
       .catch(() => {
         reject(toolbox)
       });
-  })
+  });
 
+  return commitPromise;
 };
 
 /**

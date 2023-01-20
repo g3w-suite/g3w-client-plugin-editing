@@ -406,11 +406,10 @@ proto._registerGetFeaturesEvent = function(options={}) {
             const bbox = this._mapService.getMapBBOX();
             options.filter.bbox = bbox;
             this.state.loading = true;
-            this._session.getFeatures(options).then(promise=> {
-              promise.then(() => {
+            this._session.getFeatures(options)
+              .then(() => {
                 this.state.loading = false;
               });
-            })
           }
         };
         this._getFeaturesEvent.event = 'moveend';
