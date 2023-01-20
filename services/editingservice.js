@@ -283,7 +283,7 @@ proto.editResultLayerFeature = function({layer, feature}={}){
        *
        * Need to get feature from Editing layer source because it has a style layer
        */
-      const feature = toolBox.getLayer().getEditingLayer().getSource().getFeatures().find(feature => feature.getId() == featureId);
+      const feature = toolBox.getLayer().getEditingLayer().getSource().readFeatures().find(feature => feature.getId() == featureId);
       if (feature){
         feature.getGeometry() && this._mapService.zoomToGeometry(feature.getGeometry());
         toolBox.setSelected(true);
