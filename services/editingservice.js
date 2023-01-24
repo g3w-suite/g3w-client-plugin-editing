@@ -117,6 +117,9 @@ function EditingService() {
     let layers = this._getEditableLayersFromCatalog();
     const EditableLayersPromises = [];
     for (const layer of layers) {
+      layer.on('start-editing', () => {
+        this.startEditLayer(layer.getId())
+      });
       // getLayerForEditing return a promise with layer usefult for editing
       EditableLayersPromises.push(layer.getLayerForEditing({
         vectorurl: this._vectorUrl,
@@ -285,7 +288,7 @@ proto.editResultLayerFeature = function({layer, feature}={}){
        */
       const sourceFeatures = (toolBox.getLayer().getType() === Layer.LayerTypes.VECTOR) ?
         toolBox.getLayer().getEditingLayer().getSource().getFeatures() :
-        toolBox.getLayer().getEditingLayer().getSource().readFeatures()
+        toolBox.getLayer().getEditingLayer().getSource().readFeatures();
       const feature = sourceFeatures.find(feature => feature.getId() == featureId);
       if (feature){
         feature.getGeometry() && this._mapService.zoomToGeometry(feature.getGeometry());
@@ -313,6 +316,34 @@ proto.editResultLayerFeature = function({layer, feature}={}){
     })
     .fail(err => console.log(err))
 };
+
+/**
+ *@since v3.6 method to start editing layer. Used by start-editing event on layer
+ * trigger on Layer context menu
+ */
+proto.startEditLayer = function(layerId){
+  // get Feature id
+  this.getToolBoxes().forEach(toolbox => toolbox.setShow(toolbox.getId() === layerId));
+  this.getPlugin().showEditingPanel();
+  const toolBox = this.getToolBoxById(layerId);
+  //get scale constraint from setting layer
+  const {scale} = toolBox.getEditingConstraints();
+  (typeof scale !== "undefined") && this._mapService.getMap().once('moveend', () => {
+    const mapUnits = this._mapService.getMapUnits();
+    const map = this._mapService.getMap();
+    //check current scale after zoom to feature
+    const currentScale = parseInt(getScaleFromResolution(map.getView().getResolution(), mapUnits));
+    // if currentScale is more that scale constraint set by layer editing
+    // need to go to scale setting by layer editing constraint
+    if (currentScale > scale) {
+      const resolution = getResolutionFromScale(scale, mapUnits);
+      map.getView().setResolution(resolution);
+    }
+  });
+  // start toolbox
+  toolBox.start()
+};
+
 
 /**
  *
