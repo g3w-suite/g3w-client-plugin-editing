@@ -73,23 +73,21 @@ proto.run = function(inputs, context) {
       
       promisesDefaultEvaluation.push(promise)
     }
-
     Promise.allSettled(promisesDefaultEvaluation)
       .then(promises => {
         promises.forEach(({status, value:feature}) => {
           source.addFeature(feature);
           /**
-           * @todo improve client core to handle this situation on sesssion.pushAdd not copy pk field not editable only
+           * @todo improve client core to handle this situation on session.pushAdd not copy pk field not editable only
            */
           const noteditablefieldsvalues = this.getNotEditableFieldsNoPkValues({
             layer,
             feature
           });
           session.pushAdd(layerId, feature);
+          // after pushAdd need to set not editata
           if (Object.entries(noteditablefieldsvalues).length) {
-            const _feature = feature.clone();
-            Object.entries(noteditablefieldsvalues).forEach(([field, value]) => _feature.set(field, value));
-            session.pushUpdate(layerId, _feature, feature);
+            Object.entries(noteditablefieldsvalues).forEach(([field, value]) => feature.set(field, value));
           }
 
           inputs.features.push(feature);
