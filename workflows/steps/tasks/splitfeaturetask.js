@@ -135,9 +135,9 @@ proto._handleSplitFeature = async function({feature, inputs, context, splittedGe
       });
 
       if (Object.entries(noteditablefieldsvalues).length) {
-        session.pushAdd(layerId, feature);
-        Object.entries(noteditablefieldsvalues).forEach(([field, value]) => feature.set(field, value));
-        newFeatures.push(feature);
+        const newFeature = session.pushAdd(layerId, feature);
+        Object.entries(noteditablefieldsvalues).forEach(([field, value]) => newFeature.set(field, value));
+        newFeatures.push(newFeature);
       } else newFeatures.push(session.pushAdd(layerId, feature));
 
     }

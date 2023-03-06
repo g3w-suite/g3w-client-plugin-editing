@@ -84,13 +84,13 @@ proto.run = function(inputs, context) {
             layer,
             feature
           });
-          session.pushAdd(layerId, feature);
+          const newFeature = session.pushAdd(layerId, feature);
           // after pushAdd need to set not editata
           if (Object.entries(noteditablefieldsvalues).length) {
-            Object.entries(noteditablefieldsvalues).forEach(([field, value]) => feature.set(field, value));
+            Object.entries(noteditablefieldsvalues).forEach(([field, value]) => newFeature.set(field, value));
           }
 
-          inputs.features.push(feature);
+          inputs.features.push(newFeature);
         })
       })
       .finally(() => {
