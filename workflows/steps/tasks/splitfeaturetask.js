@@ -43,6 +43,7 @@ proto.run = function(inputs, context) {
         const feature = features.find(feature => feature.getUid() === uid);
         await this._handleSplitFeature({
           feature,
+          context,
           splittedGeometries: geometries,
           inputs,
           session
@@ -73,9 +74,10 @@ proto.run = function(inputs, context) {
   return d.promise();
 };
 
-proto._handleSplitFeature = async function({feature, inputs, session, splittedGeometries=[]}={}){
+proto._handleSplitFeature = async function({feature, inputs, context, splittedGeometries=[]}={}){
   const newFeatures = [];
   const {layer} = inputs;
+  const session = context.session;
   const source = layer.getEditingLayer().getSource();
   const layerId = layer.getId();
   const oriFeature = feature.clone();
@@ -134,10 +136,8 @@ proto._handleSplitFeature = async function({feature, inputs, session, splittedGe
 
       if (Object.entries(noteditablefieldsvalues).length) {
         session.pushAdd(layerId, feature);
-        const _feature = feature.clone();
-        Object.entries(noteditablefieldsvalues).forEach(([field, value]) => _feature.set(field, value));
-        session.pushUpdate(layerId, _feature, feature);
-        newFeatures.push(_feature);
+        Object.entries(noteditablefieldsvalues).forEach(([field, value]) => feature.set(field, value));
+        newFeatures.push(feature);
       } else newFeatures.push(session.pushAdd(layerId, feature));
 
     }
