@@ -85,7 +85,7 @@ proto.run = function(inputs, context) {
             feature
           });
           const newFeature = session.pushAdd(layerId, feature);
-          // after pushAdd need to set not editata
+          // after pushAdd need to set not edit
           if (Object.entries(noteditablefieldsvalues).length) {
             Object.entries(noteditablefieldsvalues).forEach(([field, value]) => newFeature.set(field, value));
           }
