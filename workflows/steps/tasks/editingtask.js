@@ -349,9 +349,9 @@ proto.evaluateGeometryExpressionField = async function({inputs, context,  featur
  */
 proto.getNotEditableFieldsNoPkValues = function({layer, feature}){
   return layer.getEditingNotEditableFields()
-    .filter(field => !layer.isPkField(field))
     .reduce((accumulator, field) => {
-      accumulator[field] = feature.get(field);
+      // in case of pk need to ne set null
+      accumulator[field] = layer.isPkField(field) ? null : feature.get(field);
       return accumulator;
     }, {});
 };
