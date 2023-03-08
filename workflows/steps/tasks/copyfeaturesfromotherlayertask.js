@@ -1,5 +1,10 @@
 const {G3W_FID} = g3wsdk.constant;
 const { base, inherit } =  g3wsdk.core.utils;
+const {
+  Geometry: {
+    removeZValueToOLFeatureGeometry
+  }
+} = g3wsdk.core.geoutils;
 const { GUI } = g3wsdk.gui;
 const t = g3wsdk.core.i18n.tPlugin;
 const { Feature } = g3wsdk.core.layer.features;
@@ -85,6 +90,10 @@ proto.run = function(inputs, context) {
                 if (originalLayer.isPkField(field)){
                   feature.set(field, null)
                 }
+              });
+              //remove eventually Z Values
+              removeZValueToOLFeatureGeometry({
+                feature
               });
               feature.setTemporaryId();
               source.addFeature(feature);
