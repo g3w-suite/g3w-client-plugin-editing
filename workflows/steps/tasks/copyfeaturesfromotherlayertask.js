@@ -81,6 +81,11 @@ proto.run = function(inputs, context) {
                 feature: selectedFeature,
                 properties: attributes.map(attribute => attribute.name)
               });
+              originalLayer.getEditingNotEditableFields().find(field => {
+                if (originalLayer.isPkField(field)){
+                  feature.set(field, null)
+                }
+              });
               feature.setTemporaryId();
               source.addFeature(feature);
               features.push(feature);
