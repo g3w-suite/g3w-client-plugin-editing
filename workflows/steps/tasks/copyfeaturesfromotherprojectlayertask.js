@@ -57,6 +57,7 @@ proto.run = function(inputs, context) {
           if (selectedFeatures.length) {
             const selectedFeature = selectedFeatures[0];
             const createFeatureWithPropertiesOfSelectedFeature = properties => {
+              console.log(properties)
               attributes.forEach(({name, validate: {required=false}}) => {
                 const value = properties[name] || null;
                 isThereEmptyFieldRequiredNotDefined = isThereEmptyFieldRequiredNotDefined || (value === null && required);
@@ -65,6 +66,12 @@ proto.run = function(inputs, context) {
               const feature = new Feature({
                 feature: selectedFeature,
                 properties: attributes.map(attribute => attribute.name)
+              });
+
+              originalLayer.getEditingNotEditableFields().find(field => {
+                if (originalLayer.isPkField(field)){
+                  feature.set(field, null)
+                }
               });
               feature.setTemporaryId();
               source.addFeature(feature);
