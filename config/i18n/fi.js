@@ -37,7 +37,7 @@ export default {
     move_feature: "Siirrä ominaisuutta",
     update_vertex: "Päivitä pisteen ominaisuutta",
     update_feature: "Päivitä ominaisuus",
-    copyfeaturefromexternallayer: "Create Feature from existing feature"
+    copyfeaturefromexternallayer: "Create Feature from added layer"
   },
   toolsoftool: {
     measure: "Show measure",

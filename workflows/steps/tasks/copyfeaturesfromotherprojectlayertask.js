@@ -1,6 +1,11 @@
 const {G3W_FID} = g3wsdk.constant;
 const { base, inherit } =  g3wsdk.core.utils;
 const { GUI } = g3wsdk.gui;
+const {
+  Geometry: {
+    removeZValueToOLFeatureGeometry
+  }
+} = g3wsdk.core.geoutils;
 const t = g3wsdk.core.i18n.tPlugin;
 const { Feature } = g3wsdk.core.layer.features;
 const EditingTask = require('./editingtask');
@@ -57,7 +62,6 @@ proto.run = function(inputs, context) {
           if (selectedFeatures.length) {
             const selectedFeature = selectedFeatures[0];
             const createFeatureWithPropertiesOfSelectedFeature = properties => {
-              console.log(properties)
               attributes.forEach(({name, validate: {required=false}}) => {
                 const value = properties[name] || null;
                 isThereEmptyFieldRequiredNotDefined = isThereEmptyFieldRequiredNotDefined || (value === null && required);
@@ -72,6 +76,10 @@ proto.run = function(inputs, context) {
                 if (originalLayer.isPkField(field)){
                   feature.set(field, null)
                 }
+              });
+              //remove eventually Z Values
+              removeZValueToOLFeatureGeometry({
+                feature
               });
               feature.setTemporaryId();
               source.addFeature(feature);

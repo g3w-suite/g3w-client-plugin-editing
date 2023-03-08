@@ -2,8 +2,12 @@ const { ApplicationState } = g3wsdk.core;
 const { base, inherit } = g3wsdk.core.utils;
 const {
   isSameBaseGeometryType,
-  convertSingleMultiGeometry
+  convertSingleMultiGeometry,
+  Geometry: {
+    removeZValueToOLFeatureGeometry
+  }
 } = g3wsdk.core.geoutils;
+
 const { Feature } = g3wsdk.core.layer.features;
 const { PickFeatureInteraction } = g3wsdk.ol.interactions;
 const EditingTask = require('./editingtask');
@@ -48,7 +52,7 @@ proto.addSingleSelectInteraction = function({layer, inputs, promise, buttonnext=
  * @param promise
  * @param buttonnext
  */
-proto.addExternalSelectInteraction = function({layer, inputs, promise, buttonnext=false}= {}){
+proto.addExternalSelectInteraction = function({layer, inputs, context, promise, buttonnext=false}= {}){
   const layerGeometryType = layer.getGeometryType();
   const layerId = layer.getId();
   const source = layer.getEditingLayer().getSource();
@@ -75,21 +79,31 @@ proto.addExternalSelectInteraction = function({layer, inputs, promise, buttonnex
       const attributes = layer.getEditingFields();
       const geometry = evt.feature.getGeometry();
       (geometry.getType() !== layerGeometryType) && evt.feature.setGeometry(convertSingleMultiGeometry(geometry, layerGeometryType));
-      const feature = new Feature({
-        feature: evt.feature,
-        properties: attributes.filter(attribute => {
-          //set media attribute to null
-          if (attribute.input.type === 'media') evt.feature.set(attribute.name, null);
-          return !attribute.pk
-        }).map(property => property.name)
+      attributes.forEach(attribute => {
+        evt.feature.set(attribute.name, null);
       });
+      const feature = new Feature({
+        feature: evt.feature
+      });
+      // evaluate Geometry Expression
+      this.evaluateGeometryExpressionField({
+        inputs,
+        context,
+        feature
+      }).finally(()=>{
 
-      feature.setTemporaryId();
-      source.addFeature(feature);
-      session.pushAdd(layerId, feature, false);
-      const features = [feature];
-      inputs.features = features;
-      promise.resolve(inputs);
+        //remove eventually Z Values
+        removeZValueToOLFeatureGeometry({
+          feature
+        });
+
+        feature.setTemporaryId();
+        source.addFeature(feature);
+        session.pushAdd(layerId, feature, false);
+        inputs.features.push(feature);
+        promise.resolve(inputs);
+      })
+
     } else promise.reject();
   });
   this._selectInteractions.push(singleInteraction);
@@ -195,7 +209,7 @@ proto.run = function(inputs, context, queques) {
       this.addMultipleSelectInteraction({layer, inputs, promise});
       break;
     case 'external':
-      this.addExternalSelectInteraction({layer, inputs, promise});
+      this.addExternalSelectInteraction({layer, inputs, context, promise});
       break;
   }
   queques.micro.addTask(()=>{

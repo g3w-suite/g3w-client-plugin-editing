@@ -37,7 +37,7 @@ export default {
     move_feature: "Flytta egenskap",
     update_vertex: "Uppdatera punktens egenskap",
     update_feature: "Uppdatera egenskap",
-    copyfeaturefromexternallayer: "Create Feature from existing feature"
+    copyfeaturefromexternallayer: "Create Feature from added layer"
   },
   toolsoftool: {
     measure: "Show measure",

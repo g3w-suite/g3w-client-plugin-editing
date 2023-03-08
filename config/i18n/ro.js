@@ -38,7 +38,7 @@ export default  {
     update_vertex: "Actualizează vertecșii entității",
     update_feature: "Actualizează atributul entității",
     update_multi_features: "Actualizează atributele entităților selectate",
-    copyfeaturefromexternallayer: "Create Feature from existing feature"
+    copyfeaturefromexternallayer: "Create Feature from added layer"
   },
   toolsoftool: {
     measure: "Arată măsurătorile",
