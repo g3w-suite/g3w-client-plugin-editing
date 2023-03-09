@@ -85,8 +85,8 @@ proto.addExternalSelectInteraction = function({layer, inputs, context, promise, 
           //set media attribute to null or attribute belong to layer but not present o feature copied
           if (
             attribute.input.type === 'media' ||
-            "undefined" === typeof evt.feature.get(attribute.name
-            )
+            "undefined" === typeof evt.feature.get(attribute.name) ||
+            attribute.pk
           ) {
             evt.feature.set(attribute.name, null);
           }
