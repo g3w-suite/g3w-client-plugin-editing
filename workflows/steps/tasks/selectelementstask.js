@@ -79,12 +79,21 @@ proto.addExternalSelectInteraction = function({layer, inputs, context, promise, 
       const attributes = layer.getEditingFields();
       const geometry = evt.feature.getGeometry();
       (geometry.getType() !== layerGeometryType) && evt.feature.setGeometry(convertSingleMultiGeometry(geometry, layerGeometryType));
-      attributes.forEach(attribute => {
-        evt.feature.set(attribute.name, null);
-      });
       const feature = new Feature({
-        feature: evt.feature
+        feature: evt.feature,
+        properties: attributes.map(attribute => {
+          //set media attribute to null or attribute belong to layer but not present o feature copied
+          if (
+            attribute.input.type === 'media' ||
+            "undefined" === typeof evt.feature.get(attribute.name
+            )
+          ) {
+            evt.feature.set(attribute.name, null);
+          }
+          return attribute.name
+        })
       });
+
       // evaluate Geometry Expression
       this.evaluateGeometryExpressionField({
         inputs,
