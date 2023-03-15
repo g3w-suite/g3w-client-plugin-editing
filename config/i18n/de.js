@@ -113,7 +113,8 @@ export default {
     },
     loading_table_data: "Datentabelle wird erstellt. Bitte warten ...",
     copy_and_paste_from_other_layer_mandatory_fields: "Vor dem Speichern müssen alle Pflichtfelder des eingegebenen features ausgefüllt werden",
-    no_feature_selected: "Keine feature ausgewählt"
+    no_feature_selected: "Keine feature ausgewählt",
+    select_min_2_features: 'Select at least 2 features'
   },
   relation: {
     table: {

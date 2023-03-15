@@ -112,7 +112,8 @@ export default {
     },
     loading_table_data: "Building Data Table. Please wait ...",
     copy_and_paste_from_other_layer_mandatory_fields: "It is necessary to fill in any mandatory fields on the features pasted before saving",
-    no_feature_selected: "No feature selected"
+    no_feature_selected: "No feature selected",
+    select_min_2_features: 'Select at least 2 features'
   },
   relation: {
     table: {
