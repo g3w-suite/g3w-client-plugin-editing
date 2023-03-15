@@ -51,14 +51,14 @@ proto.run = function(inputs, context) {
         cancel: {
           label: 'Cancel',
           className: 'btn-default',
-          callback: function(){
+          callback(){
             d.reject();
           }
         },
         ok: {
           label: 'Ok',
           className: 'btn-primary',
-          callback() {
+          callback: async () => {
             if (index !== undefined) {
               const feature = features[index];
               const originalFeature = feature.clone();
@@ -67,6 +67,13 @@ proto.run = function(inputs, context) {
                 index,
               });
               if (newFeature) {
+                try {
+                  await this.evaluateGeometryExpressionField({
+                    inputs,
+                    context,
+                    feature: newFeature
+                  });
+                } catch(err){}
                 session.pushUpdate(layerId, newFeature, originalFeature);
                 features.splice(index, 1);
                 features.forEach(deleteFeature => {
@@ -101,6 +108,5 @@ proto.run = function(inputs, context) {
 proto.stop = function(){
   this.removeInteraction(this._pickInteraction);
 };
-
 
 module.exports = MergeFeaturesTask;
