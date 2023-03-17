@@ -22,85 +22,47 @@ proto.run = function(inputs, context) {
   if (features.length < 2) {
     GUI.showUserMessage({
       type: 'warning',
-      message: 'Seleziona come minimo due features',
+      message: 'plugins.editing.messages.select_min_2_features',
       autoclose: true
     });
     d.reject();
   } else {
-    const mapService = this.getMapService();
-    let index;
-    const message = SelectFeaturesDom({
-      features,
-      events: {
-        click:(idx) => {
-          index = idx;
-          const feature = features[index];
-          mapService.highlightGeometry(feature.getGeometry(), {
-            zoom: false,
-            color: 'red'
-          })
-        },
+    this.chooseFeatureFromFeatures({
+      features
+    }).then(async (feature) => {
+      const index = features.findIndex(_feature => feature === _feature);
+      const originalFeature = feature.clone();
+      const newFeature = dissolve({
+        features,
+        index,
+      });
+      if (newFeature) {
+        try {
+          await this.evaluateGeometryExpressionField({
+            inputs,
+            context,
+            feature: newFeature
+          });
+        } catch (err) {}
+        session.pushUpdate(layerId, newFeature, originalFeature);
+        features
+          .filter(_feature => _feature !== feature)
+          .forEach(deleteFeature => {
+            session.pushDelete(layerId, deleteFeature);
+            source.removeFeature(deleteFeature);
+          });
+        inputs.features = [feature];
+        d.resolve(inputs);
+      } else {
+        GUI.showUserMessage({
+          type: 'warning',
+          message: 'plugins.editing.messages.no_feature_selected',
+          autoclose: true
+        });
+        d.reject();
       }
-    });
-    GUI.showModalDialog({
-      title: 'seleziona la feature',
-      className: 'modal-left',
-      closeButton: false,
-      message,
-      buttons: {
-        cancel: {
-          label: 'Cancel',
-          className: 'btn-default',
-          callback(){
-            d.reject();
-          }
-        },
-        ok: {
-          label: 'Ok',
-          className: 'btn-primary',
-          callback: async () => {
-            if (index !== undefined) {
-              const feature = features[index];
-              const originalFeature = feature.clone();
-              const newFeature = dissolve({
-                features,
-                index,
-              });
-              if (newFeature) {
-                try {
-                  await this.evaluateGeometryExpressionField({
-                    inputs,
-                    context,
-                    feature: newFeature
-                  });
-                } catch(err){}
-                session.pushUpdate(layerId, newFeature, originalFeature);
-                features.splice(index, 1);
-                features.forEach(deleteFeature => {
-                  session.pushDelete(layerId, deleteFeature);
-                  source.removeFeature(deleteFeature);
-                });
-                inputs.features = [feature];
-                d.resolve(inputs);
-              } else {
-                GUI.showUserMessage({
-                  type: 'warning',
-                  message: 'No feature disolved',
-                  autoclose: true
-                });
-                d.reject()
-              }
-            } else {
-              GUI.showUserMessage({
-                type: 'warning',
-                message: 'No feature selected',
-                autoclose: true
-              });
-              d.reject();
-            }
-          }
-        }
-      }
+    }).catch(() =>{
+      d.reject();
     })
   }
   return d.promise();

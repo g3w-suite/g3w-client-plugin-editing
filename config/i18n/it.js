@@ -112,7 +112,8 @@ export default {
     },
     loading_table_data: "Costruzione tabella dati in corso. Attendere ...",
     copy_and_paste_from_other_layer_mandatory_fields: "Necessario compilare eventuali campi obbligatori sulle features incollate prima del salvataggio",
-    no_feature_selected: "Nessuna feature selezionata"
+    no_feature_selected: "Nessuna feature selezionata",
+    select_min_2_features: 'Seleziona come minimo due features'
   },
   relation: {
     table: {
