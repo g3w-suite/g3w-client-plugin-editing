@@ -1,3 +1,5 @@
+import { PickFeaturesInteraction } from '../../../interactions/pickfeaturesinteraction';
+
 const { ApplicationState } = g3wsdk.core;
 const { base, inherit } = g3wsdk.core.utils;
 const {
@@ -9,7 +11,7 @@ const {
 } = g3wsdk.core.geoutils;
 
 const { Feature } = g3wsdk.core.layer.features;
-const { PickFeatureInteraction } = g3wsdk.ol.interactions;
+
 const EditingTask = require('./editingtask');
 
 function SelectElementsTask(options={}) {
@@ -26,11 +28,21 @@ inherit(SelectElementsTask, EditingTask);
 const proto = SelectElementsTask.prototype;
 
 proto.addSingleSelectInteraction = function({layer, inputs, promise, buttonnext=false}= {}){
-  const singleInteraction = new PickFeatureInteraction({
-    layers: [layer.getEditingLayer()]
+  const singleInteraction = new PickFeaturesInteraction({
+    layer: layer.getEditingLayer()
   });
-  singleInteraction.on('picked', e => {
-    const feature = e.feature;
+  singleInteraction.on('picked', async ({features}) => {
+    let feature;
+    if (features.length > 1) {
+      try {
+        feature = await this.chooseFeatureFromFeatures({
+          promise,
+          features
+        });
+      } catch(err) {}
+    } else {
+       feature = features[0];
+    }
     if (feature) {
       const features = [feature];
       inputs.features = features;
@@ -38,7 +50,9 @@ proto.addSingleSelectInteraction = function({layer, inputs, promise, buttonnext=
         this._originalStyle = this.setFeaturesSelectedStyle(features);
         this._steps && this.setUserMessageStepDone('select');
         promise.resolve(inputs);
-      } else this.addRemoveToMultipleSelectFeatures([feature], inputs);
+      } else {
+        this.addRemoveToMultipleSelectFeatures([feature], inputs);
+      }
     }
   });
   this._selectInteractions.push(singleInteraction);
@@ -71,13 +85,13 @@ proto.addExternalSelectInteraction = function({layer, inputs, context, promise, 
     }
     return sameBaseGeometry;
   });
-  const singleInteraction = new PickFeatureInteraction({
+  const singleInteraction = new PickFeaturesInteraction({
     layers
   });
   singleInteraction.on('picked', evt => {
-    if (evt.feature) {
+    if (evt.features.length) {
       const attributes = layer.getEditingFields();
-      const geometry = evt.feature.getGeometry();
+      const geometry = evt.features[0].getGeometry();
       (geometry.getType() !== layerGeometryType) && evt.feature.setGeometry(convertSingleMultiGeometry(geometry, layerGeometryType));
       const feature = new Feature({
         feature: evt.feature,

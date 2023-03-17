@@ -2,6 +2,7 @@ const { base, inherit } = g3wsdk.core.utils;
 const { ApplicationState } = g3wsdk.core;
 const EditingWorkflow = require('./editingworkflow');
 const SelectElementsStep = require('./steps/selectelementsstep');
+const ChooseFeatureStep = require('./steps/choosefeaturestep');
 const OpenFormStep = require('./steps/openformstep');
 
 function EditMultiFeatureAttributesWorkflow(options={}) {
@@ -15,7 +16,9 @@ function EditMultiFeatureAttributesWorkflow(options={}) {
       buttonnext: {
         disabled: true,
         condition:({features=[]}) => features.length < 2,
-        done: ()=>{}
+        done: ()=>{
+          console.log('qui')
+        }
       },
       directive: 't-plugin',
       dynamic: 0,

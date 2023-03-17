@@ -11,6 +11,8 @@ const { GUI } = g3wsdk.gui;
 const { Task } = g3wsdk.core.workflow;
 const { WorkflowsStack } = g3wsdk.core.workflow;
 const { inputService } = g3wsdk.core.input;
+const t = g3wsdk.core.i18n.tPlugin;
+const ChooseFeatureToEditComponent = require('../../../g3w-editing-components/choosefeaturetoedit');
 
 /**
  * List of placeholder in default_expression expression to call server for getting value of input
@@ -402,6 +404,50 @@ proto.convertFeaturesGeometryToGeometryTypeOfLayer = function({features=[], geom
     }
   });
   return convertFeatures;
+};
+
+/**
+ * @since 3.5.13
+ */
+proto.chooseFeatureFromFeatures = function({features}){
+  return new Promise((resolve, reject) =>{
+    const attributes = {};
+    const inputs = this.getInputs();
+    inputs.layer.getEditingFields().forEach(({name, label}) => {
+      attributes[name] = label
+    });
+    const feature = [];
+    const vueInstance = ChooseFeatureToEditComponent({
+      features,
+      feature,
+      attributes
+    });
+    const message = vueInstance.$mount().$el;
+    const dialog = GUI.showModalDialog({
+      title: t('editing.modal.tools.copyfeaturefromprojectlayer.title'),
+      className: 'modal-left',
+      closeButton: false,
+      message,
+      buttons: {
+        cancel: {
+          label: 'Cancel',
+          className: 'btn-danger',
+          callback(){
+            reject();
+          }
+        },
+        ok: {
+          label: 'Ok',
+          className: 'btn-success',
+          callback: () => {
+            resolve(feature[0])
+          }
+        }
+      }
+    });
+    dialog.find('button.btn-success').prop('disabled', true);
+    vueInstance.$watch('feature', feature => dialog.find('button.btn-success').prop('disabled', feature === null));
+  })
 };
 
 module.exports = EditingTask;
