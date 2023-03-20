@@ -179,6 +179,23 @@ export default {
         back_to_feature_report: "Torna alla feature",
         cancel: "Cancella"
       }
+    },
+    shape_types: {
+      draw: "Disegno libero",
+      square: "Quadrato",
+      box: "Rettangolo",
+      triangle: "Triangolo",
+      circle: "Cerchio",
+      ellipse: "Ellisse"
+    },
+    draw: {
+      circle: {
+        radius: 'Raggio [m]'
+      },
+      ellipse: {
+        semi_horizontal: 'Semiasse Orizzontale[m]',
+        semi_vertical: 'Semiasse Verticale[m]'
+      }
     }
   },
   en: {
@@ -373,6 +390,23 @@ export default {
         cancel: "Cancel"
       }
     },
+    shape_types: {
+      draw: "Draw",
+      square: "Square",
+      box: "Box",
+      triangle: "Triangle",
+      circle: "Circle",
+      ellipse: "Ellipse"
+    },
+    draw: {
+      circle: {
+        radius: 'Radius [m]'
+      },
+      ellipse: {
+        semi_horizontal: 'Semi-Major[m]',
+        semi_vertical: 'Semi-Minor[m]'
+      }
+    }
   },
   fi: {
     signaler: {
@@ -561,6 +595,23 @@ export default {
         cancel: "Peruuta"
       }
     },
+    shape_types: {
+      draw: "Draw",
+      square: "Square",
+      box: "Box",
+      triangle: "Triangle",
+      circle: "Circle",
+      ellipse: "Ellipse"
+    },
+    draw: {
+      circle: {
+        radius: 'Radius [m]'
+      },
+      ellipse: {
+        semi_horizontal: 'Semi-Major[m]',
+        semi_vertical: 'Semi-Minor[m]'
+      }
+    }
   },
   se: {
     signaler: {
@@ -747,6 +798,23 @@ export default {
         cancel: "Ångra"
       }
     },
+    shape_types: {
+      draw: "Draw",
+      square: "Square",
+      box: "Box",
+      triangle: "Triangle",
+      circle: "Circle",
+      ellipse: "Ellipse"
+    },
+    draw: {
+      circle: {
+        radius: 'Radius [m]'
+      },
+      ellipse: {
+        semi_horizontal: 'Semi-Major[m]',
+        semi_vertical: 'Semi-Minor[m]'
+      }
+    }
   },
   fr: {
     signaler: {
@@ -928,6 +996,23 @@ export default {
         back_to_feature_report: "Back To Feature",
         cancel: "Supprimer"
       }
+    }
+  },
+  shape_types: {
+    draw: "Draw",
+    square: "Square",
+    box: "Box",
+    triangle: "Triangle",
+    circle: "Circle",
+    ellipse: "Ellipse"
+  },
+  draw: {
+    circle: {
+      radius: 'Radius [m]'
+    },
+    ellipse: {
+      semi_horizontal: 'Semi-Major[m]',
+      semi_vertical: 'Semi-Minor[m]'
     }
   }
 }

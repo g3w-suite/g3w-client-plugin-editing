@@ -19,7 +19,7 @@ proto.run = function(inputs, context) {
   const editingLayer = originalLayer.getEditingLayer();
   const feature = inputs.features.length ? inputs.features[inputs.features.length -1] : originalLayer.createNewFeature();
   feature.setTemporaryId();
-  let removeEditableProperties = true;
+  let removeEditableProperties = false;
   if (layerId === signaler_layer_id)
     SIGNALER_IIM_CONFIG[signaler_parent_field] && feature.set(signaler_parent_field, SIGNALER_IIM_CONFIG[signaler_parent_field]);
   editingLayer.getEditingSource().addFeature(feature);

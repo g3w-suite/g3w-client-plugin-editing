@@ -30,10 +30,10 @@
                 <div style="display: grid; grid-template-columns: 1fr 5px 1fr 5px; margin-bottom: 3px; margin-right: 5px; row-gap: 3px; column-gap: 3px;">
                     <input class="form-control" style="padding: 1px;" type="number" @keyup.enter="loseFocusInput" @change="changePointFeatureCoordinatesDM(point, 0)" v-model.lazy="point.coordinatesDM[0]"/>°
                     <input class="form-control" style="padding: 1px;" type="number" step="0.001" @keyup.enter="loseFocusInput" @change="changePointFeatureCoordinatesDM(point, 1)" v-model.lazy="point.coordinatesDM[1]"/>'
-                                    </div>
+                </div>
                 <div style="display: grid; grid-template-columns: 1fr 5px 1fr 5px; row-gap: 3px; column-gap: 3px;">
-                    <input class="form-control" style="padding: 1px;" type="number" @keyup.enter="loseFocusInput" @change="changePointFeatureCoordinatesDMS(point, 2)" v-model.lazy="point.coordinatesDM[2]"/>°
-                    <input class="form-control" style="padding: 1px;" type="number" step="0.001" @keyup.enter="loseFocusInput" @change="changePointFeatureCoordinatesDMS(point, 3)" v-model.lazy="point.coordinatesDM[3]"/>'
+                    <input class="form-control" style="padding: 1px;" type="number" @keyup.enter="loseFocusInput" @change="changePointFeatureCoordinatesDM(point, 2)" v-model.lazy="point.coordinatesDM[2]"/>°
+                    <input class="form-control" style="padding: 1px;" type="number" step="0.001" @keyup.enter="loseFocusInput" @change="changePointFeatureCoordinatesDM(point, 3)" v-model.lazy="point.coordinatesDM[3]"/>'
                 </div>
             </div>
         </div>

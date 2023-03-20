@@ -3,13 +3,13 @@
       <report-info-component>
         <template v-slot:content>
           <div v-if="isEllipse" class="change_ellipse">
-            <label for="g3w_feature_report_ellipse_horizontal">Semiasse Orizzontale [m]</label>
+            <label for="g3w_feature_report_ellipse_horizontal" v-t-plugin="'signaler_iim.draw.ellipse.semi_horizontal'"></label>
             <input id="g3w_feature_report_ellipse_horizontal" class="form-control"  type="number" min="0" step="1" @keyup.enter="loseFocusInput" @change="changeEllipse" v-model.lazy="ellipse.horizontal">
-            <label for="g3w_feature_report_ellipse_vertical">Semiasse Verticale [m]</label>
+            <label for="g3w_feature_report_ellipse_vertical" v-t-plugin="'signaler_iim.draw.ellipse.semi_vertical'"></label>
             <input id="g3w_feature_report_ellipse_vertical" class="form-control"  type="number" min="0" step="1"  @keyup.enter="loseFocusInput" @change="changeEllipse" v-model.lazy="ellipse.vertical">
           </div>
-          <div v-else="isEllipse" class="change_radius">
-            <label for="g3w_feature_report_radius">Raggio [m]</label>
+          <div v-else class="change_radius">
+            <label for="g3w_feature_report_radius" v-t-plugin="'signaler_iim.draw.circle.radius'"></label>
             <input id="g3w_feature_report_radius" class="form-control"  type="number" min="0" step="1" @keyup.enter="loseFocusInput" v-model.lazy="radius">
           </div>
           <div class="bold" style="color: #000000; margin-top: 5px;" v-t="'Centro'"></div>

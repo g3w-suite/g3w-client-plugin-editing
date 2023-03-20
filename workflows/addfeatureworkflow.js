@@ -10,7 +10,32 @@ function AddFeatureWorkflow(options={}) {
   const drawTool = {
     type: 'draw',
     options: {
-      shape_types: ['Draw', 'Square', 'Box', 'Triangle',  'Circle', 'Ellipse'],
+      shape_types: [
+        {
+          type:'Draw',
+          label: 'draw'
+        },
+        {
+          type:'Square',
+          label: 'square'
+        },
+        {
+          type: 'Box',
+          label: 'box'
+        },
+        {
+          type:'Triangle',
+          label: 'triangle'
+        },
+        {
+          type: 'Circle',
+          label: 'circle'
+        },
+        {
+          type: 'Ellipse',
+          label: 'ellipse'
+        }
+      ],
       current_shape_type: 'Draw',
       edit_feature_geometry: 'vertex',
       radius: null,
