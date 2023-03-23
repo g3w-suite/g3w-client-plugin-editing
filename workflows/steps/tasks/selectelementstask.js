@@ -109,7 +109,7 @@ proto.addExternalSelectInteraction = function({layer, inputs, context, promise, 
       });
 
       // evaluate Geometry Expression
-      this.evaluateGeometryExpressionField({
+      this.evaluateExpressionFields({
         inputs,
         context,
         feature

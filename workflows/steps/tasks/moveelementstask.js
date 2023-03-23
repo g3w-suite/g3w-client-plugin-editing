@@ -65,7 +65,7 @@ proto.run = function(inputs, context) {
       /**
        * evaluated geometry expression
        */
-      const promise = this.evaluateGeometryExpressionField({
+      const promise = this.evaluateExpressionFields({
         inputs,
         context,
         feature
