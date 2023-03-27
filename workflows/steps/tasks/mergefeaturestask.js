@@ -38,7 +38,7 @@ proto.run = function(inputs, context) {
       });
       if (newFeature) {
         try {
-          await this.evaluateGeometryExpressionField({
+          await this.evaluateExpressionFields({
             inputs,
             context,
             feature: newFeature

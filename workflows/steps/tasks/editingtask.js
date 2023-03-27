@@ -14,19 +14,6 @@ const { inputService } = g3wsdk.core.input;
 const t = g3wsdk.core.i18n.tPlugin;
 const ChooseFeatureToEditComponent = require('../../../g3w-editing-components/choosefeaturetoedit');
 
-/**
- * List of placeholder in default_expression expression to call server for getting value of input
- * @type {string[]}
- */
-const GEOMETRY_DEFAULT_EXPRESSION_PLACEHOLDERS = [
-  "$area",
-  "$perimeter",
-  "$length",
-  "$x",
-  "$y",
-  "$geometry"
-];
-
 function EditingTask(options = {}) {
   base(this, options);
   this._editingServive;
@@ -296,9 +283,13 @@ proto.getFormFields = async function({inputs, context, feature, isChild=false}={
 };
 
 /**
- * Evaluated Expression checking inp
+ * @since 3.5.14
+ * @param inputs
+ * @param context
+ * @param feature
+ * @returns {Promise<void>}
  */
-proto.evaluateGeometryExpressionField = async function({inputs, context,  feature}={}){
+proto.evaluateExpressionFields = async function({inputs, context,  feature}={}){
   const expression_eval_promises = []; // promises from expression evaluation
   const { layer } = inputs;
   const {excludeFields:exclude, get_default_value=false} = context;
@@ -307,17 +298,16 @@ proto.evaluateGeometryExpressionField = async function({inputs, context,  featur
     get_default_value
   });
   fields.forEach(field => {
-    const {default_expression} = field.input.options;
+    const {default_expression, filter_expression} = field.input.options;
+    const qgs_layer_id = inputs.layer.getId();
+    const parentData = this.getParentFormData();
     if (default_expression){
-      let evaluate = false;
-      const {expression, apply_on_update = false} = default_expression;
+      const {apply_on_update = false} = default_expression;
       /*
       check if always update apply_on_update = true or only is is a new feature
        */
-      if (apply_on_update || feature.isNew()) evaluate = GEOMETRY_DEFAULT_EXPRESSION_PLACEHOLDERS.find(placeholder => expression.indexOf(placeholder) !== -1);
-      if (evaluate){
-        const qgs_layer_id = inputs.layer.getId();
-        const parentData = this.getParentFormData();
+      if (apply_on_update || feature.isNew()) {
+
         const expression_eval_promise = new Promise(async (resolve, reject) => {
           try {
             await inputService.handleDefaultExpressionFormInput({
@@ -335,10 +325,28 @@ proto.evaluateGeometryExpressionField = async function({inputs, context,  featur
         expression_eval_promises.push(expression_eval_promise);
       }
     }
+    if (filter_expression){
+      const expression_eval_promise = new Promise(async (resolve, reject) => {
+        try {
+          await inputService.handleFilterExpressionFormInput({
+            field,
+            feature,
+            qgs_layer_id,
+            parentData
+          });
+          feature.set(field.name, field.value);
+          resolve(feature)
+        } catch(err) {
+          reject(err)
+        }
+      });
+      expression_eval_promises.push(expression_eval_promise);
+    }
   });
   await Promise.allSettled(expression_eval_promises);
   return feature;
 };
+
 
 /**
  * 
