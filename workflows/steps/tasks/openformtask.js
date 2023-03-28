@@ -120,10 +120,28 @@ proto.saveAll = function(fields){
   })
 };
 
-proto._saveFeatures = function({fields, promise, session, inputs}){
+proto._saveFeatures = async function({fields, promise, session, inputs}){
   fields = this._multi ? fields.filter(field => field.value !== null) : fields;
   if (fields.length) {
     const newFeatures = [];
+
+    /**
+     * @since 3.5.15
+     */
+
+    GUI.setLoadingContent(true);
+    GUI.disableContent(true);
+
+
+    await WorkflowsStack.getCurrent().getContext().service.saveDefaultExpressionFieldsNotDependencies();
+
+    GUI.setLoadingContent(false);
+    GUI.disableContent(false);
+
+    /**
+     *
+     */
+
     this._features.forEach(feature =>{
       this._originalLayer.setFieldsWithValues(feature, fields);
       newFeatures.push(feature.clone());
