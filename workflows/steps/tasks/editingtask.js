@@ -419,16 +419,13 @@ proto.convertFeaturesGeometryToGeometryTypeOfLayer = function({features=[], geom
  */
 proto.chooseFeatureFromFeatures = function({features}){
   return new Promise((resolve, reject) =>{
-    const attributes = {};
     const inputs = this.getInputs();
-    inputs.layer.getEditingFields().forEach(({name, label}) => {
-      attributes[name] = label
-    });
+
     const feature = [];
     const vueInstance = ChooseFeatureToEditComponent({
       features,
       feature,
-      attributes
+      attributes: inputs.layer.getEditingFields().map(({name, label}) => ({name, label}))
     });
     const message = vueInstance.$mount().$el;
     const dialog = GUI.showModalDialog({

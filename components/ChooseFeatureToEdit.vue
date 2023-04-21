@@ -1,18 +1,45 @@
 <template>
     <div id="editing-layers-choose-feature">
-      <div class="editing-choose-feature-radio-input" v-for="(feature, index) in $options.features">
+      <div
+        v-for="(feature, index) in $options.features"
+        class="editing-choose-feature-radio-input">
+
         <section class="choose-and-zoom-to-feature">
           <div>
-            <input @click.stop="selectFeature(feature)" :id="`choose_feature_${index}`" name="radio" type="radio" class="magic-radio">
-            <label :for="`choose_feature_${index}`" style="color: transparent">{{ feature.getId() }}</label>
+            <input
+              :id="`choose_feature_${index}`"
+              @click.stop="selectFeature(feature)"
+              name="radio"
+              type="radio"
+              class="magic-radio">
+            <label
+              :for="`choose_feature_${index}`"
+              style="color: transparent">id
+            </label>
           </div>
-          <div @click.stop="zoomToFeature(feature)" :class="g3wtemplate.font['marker']" class="skin-color" style="padding-left: 3px; font-size: 1.3em; cursor: pointer; margin-top: 10px;"></div>
+          <div
+            @click.stop="zoomToFeature(feature)"
+            :class="g3wtemplate.font['marker']"
+            class="skin-color" style="padding-left: 3px; font-size: 1.3em; cursor: pointer; margin-top: 10px;">
+          </div>
         </section>
-        <section style="overflow-x: auto; display: flex">
-          <div v-for="({attribute, value}) in getAttributesFeature(feature)" style="display: flex; flex-direction: column; justify-content: space-between;  padding: 5px;">
-            <span style="font-weight: bold; margin-bottom: 10px;">{{$options.attributes[attribute]}}</span>
-            <span style="align-self: start; white-space: nowrap;">{{value}}</span>
+
+        <section
+          style="overflow-x: auto; display: flex">
+          <div
+            v-for="({attribute, value}) in getAttributesFeature(feature)"
+            style="display: flex; flex-direction: column; justify-content: space-between;  padding: 5px;">
+
+            <span style="font-weight: bold; margin-bottom: 10px;">
+              {{attribute}}
+            </span>
+
+            <span
+              style="align-self: start; white-space: nowrap;">{{value}}
+            </span>
+
           </div>
+
         </section>
       </div>
     </div>
@@ -25,7 +52,7 @@
 
   export default {
     name: 'choosefeature',
-    data(){
+    data() {
       return {
         feature: this.$options.feature
       }
@@ -36,13 +63,14 @@
         this.feature.push(feature);
       },
       getAttributesFeature(feature) {
-        return getAlphanumericPropertiesFromFeature(feature.getProperties()).map(attribute => ({
-          attribute,
-          value: feature.get(attribute)
-        })).filter(attributeObject => attributeObject.attribute !== G3W_FID)
+        const properties = feature.getProperties();
+        return this.$options.attributes.map(({label, name}) => ({
+          attribute: label,
+          value: properties[name]
+        }))
       },
       zoomToFeature(feature) {
-        const mapService =  GUI.getService('map');
+        const mapService = GUI.getService('map');
         mapService.seSelectionLayerVisible(false);
         mapService.zoomToFeatures([feature] , {
           highlight: true,
