@@ -134,14 +134,14 @@ const API = function({service, plugin} = {}) {
   */
   this.resetDefault = function({plugin=true, toolboxes=true}={}){
     toolboxes && service.getToolBoxes().forEach(toolbox => {
-      toolbox.resetDefault(options);
+      toolbox.resetDefault();
     });
     plugin && service.resetDefault();
   };
 
   /**
    * Method to setup permanenty contraints on editing as filter to get features, filter layers to edit etc...
-   * @param options
+   * @param constraints
    */
   this.setApplicationEditingConstraints = function(constraints={}){
     service.setApplicationEditingConstraints(constraints);
