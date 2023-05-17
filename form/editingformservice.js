@@ -35,7 +35,7 @@ const EditingFormService = function(options={}) {
             layerId,
             relation: relation.relation,
             relations: relation.relations,
-            resourcesurl: GUI.getResourcesUrl(),
+            resourcesurl: `${GUI.getStaticUrl()}editing/`,
             formeventbus: self._formEventBus
           }
         },
