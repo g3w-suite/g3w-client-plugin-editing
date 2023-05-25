@@ -20,6 +20,11 @@ const DeletePartFromMultigeometriesWorkflow = require('../workflows/deletepartfr
 const EditMultiFeatureAttributesWorkflow = require('../workflows/editmultifeatureattributesworkflow');
 const AddFeatureFromMapVectorLayersWorflow = require('../workflows/addfeaturefrommapvectorlayersworkflow');
 const CopyFeaturesFromOtherLayerWorkflow = require('../workflows/copyfeaturesfromotherlayerworkflow');
+/**
+ * @since 3.7.0
+ * @constructor
+ */
+const CreateHoleWorkflow = require('../workflows/createholeworkflow');
 
 function EditorToolsFactory() {
   /**
@@ -218,6 +223,17 @@ function EditorToolsFactory() {
               row: 1,
               op: DeleteFeatureWorkflow,
               type: ['delete_feature']
+            }
+          },
+          {
+            config: {
+              id: 'createhole',
+              name: "editing.tools.update_multi_features",
+              icon: "multiEditAttributes.png",
+              layer,
+              row: 2,
+              op: CreateHoleWorkflow,
+              type: ['change_feature']
             }
           },
           {
