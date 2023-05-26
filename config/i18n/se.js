@@ -37,6 +37,7 @@ export default {
     move_feature: "Flytta egenskap",
     update_vertex: "Uppdatera punktens egenskap",
     update_feature: "Uppdatera egenskap",
+    update_multi_features: "Ändra attributen för de valda funktionerna",
     copyfeaturefromexternallayer: "Create Feature from added layer"
   },
   toolsoftool: {
@@ -117,13 +118,7 @@ export default {
   },
   relation: {
     table: {
-      info: `
-                  <div>
-					Välj relation för länkning till egenskap som ska redigeras.
-                  </div>
-                  <div>
-               
-                `
+      info: `<div>Välj relation för länkning till egenskap som ska redigeras.</div>`
     }
   },
   form: {
@@ -137,7 +132,7 @@ export default {
       }
     },
     buttons: {
-      save: "Spara och avsluta",
+      save: "Infoga/Redigera",
       save_and_back: "Spara och gå tillbaka",
       cancel: "Ignorera ändringar"
     }

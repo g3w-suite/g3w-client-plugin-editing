@@ -118,13 +118,7 @@ export default {
   },
   relation: {
     table: {
-      info: `
-                  <div>
-                    Select relations to link it to current editing feature.
-                  </div>
-                  <div>
-               
-                `
+      info: `<div>Select relations to link it to current editing feature.</div>`
     }
   },
   form: {
@@ -138,7 +132,7 @@ export default {
       }
     },
     buttons: {
-      save: "Save and Exit",
+      save: "Insert/Edit",
       save_and_back: "Save and Back",
       cancel: "Ignore Changes"
     }

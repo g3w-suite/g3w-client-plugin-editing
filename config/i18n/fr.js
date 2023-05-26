@@ -20,6 +20,11 @@ export default {
   toolbox: {
     title: 'Modifier'
   },
+  table: {
+    edit: "Modifier fonctionnalités",
+    copy: "Créer une copie",
+    delete: "Supprimer la fonctionnalité"
+  },
   tools: {
     copy: "Copier les fonctionnalités",
     pastefeaturesfromotherlayers: "Paste features from other layer",
@@ -39,11 +44,6 @@ export default {
     measure: "Show measure",
     snap: "Snap layer",
     snapall: "Snap to all layers"
-  },
-  table: {
-    edit: "Modifier fonctionnalités",
-    copy: "Créer une copie",
-    delete: "Supprimer la fonctionnalité"
   },
   steps: {
     help: {
@@ -102,6 +102,7 @@ export default {
     constraints: {
       enable_editing: "Augmenter le niveau de zoom pour permettre l'édition \nEchelle de déclenchement 1 :"
     },
+    pdf: "Aperçu du document non disponible. Cliquez ici ",
     commit: {
       header: "La liste ci-dessous montre toutes les modifications qui seront enregistrées.",
       header_add: "<b>Ajouts</b> indique le nombre de fonctionnalités ajoutées",
@@ -131,7 +132,7 @@ export default {
       }
     },
     buttons: {
-      save: "Sauvegarder et quitter",
+      save: "Insérer/Modifier",
       save_and_back: "Sauvegarder et retourner au parent",
       cancel: "Ignorer modifications"
     }

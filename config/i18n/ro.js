@@ -118,12 +118,7 @@ export default  {
   },
   relation: {
     table: {
-      info: `
-                  <div>
-                    Selectează relațiile pentru a face legătura cu entitatea curentă.
-                  </div>
-                  <div>
-                `
+      info: `<div>Selectează relațiile pentru a face legătura cu entitatea curentă.</div>`
     }
   },
   form: {
@@ -137,7 +132,7 @@ export default  {
       }
     },
     buttons: {
-      save: "Salvează și ieși",
+      save: "Inserați/Editați",
       save_and_back: "Salvează și dă înapoi",
       cancel: "Ignorați modificările"
     }
