@@ -1,6 +1,12 @@
 const {GUI} = g3wsdk.gui;
 const {base, inherit} =  g3wsdk.core.utils;
-const {within, convertSingleMultiGeometry} = g3wsdk.core.geoutils;
+const {
+  within,
+  Geometry: {
+    isMultiGeometry
+  },
+  coordinatesToGeometry
+} = g3wsdk.core.geoutils;
 const {Geometry} = g3wsdk.core.geometry;
 const {AreaInteraction, LengthInteraction} = g3wsdk.ol.interactions.measure;
 const EditingTask = require('./editingtask');
@@ -45,7 +51,16 @@ proto.run = function(inputs, context) {
     document.addEventListener('keydown', this._delKeyRemoveLastPoint);
   });
   this.drawInteraction.on('drawend', e => {
-    const intersectFeature = source.getFeatures().find(feature => within(feature.getGeometry(), e.feature.getGeometry()));
+    let intersectFeature;
+    if (isMultiGeometry(this.geometryType)) {
+      intersectFeature = source.getFeatures().find(feature => {
+        const featurePolygonGeometry = coordinatesToGeometry('Polygon', feature.getGeometry().getCoordinates()[0] )
+        return within(featurePolygonGeometry, e.feature.getGeometry())
+      });
+
+    } else {
+
+    }
     if ("undefined" !== typeof intersectFeature) {
       const originalFeature = intersectFeature.clone();
       //Get hole coordinates for polygon
@@ -53,8 +68,12 @@ proto.run = function(inputs, context) {
       /**
        * @TODO check if MultiPolygon or Polygon
        */
-      //Add hole coordinates to polygon and reset the polygon geometry
-      coordinates[0].push(e.feature.getGeometry().getCoordinates()[0]);
+      if (isMultiGeometry) {
+        coordinates[0].push(e.feature.getGeometry().getCoordinates()[0]);
+      } else {
+        coordinates.push(e.feature.getGeometry().getCoordinates());
+      }
+
       intersectFeature.getGeometry().setCoordinates(coordinates);
       session.pushUpdate(layerId, intersectFeature, originalFeature);
 

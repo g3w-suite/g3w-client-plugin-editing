@@ -228,8 +228,8 @@ function EditorToolsFactory() {
           {
             config: {
               id: 'createhole',
-              name: "editing.tools.update_multi_features",
-              icon: "multiEditAttributes.png",
+              name: "Hole",
+              icon: "addRing.png",
               layer,
               row: 2,
               op: CreateHoleWorkflow,
