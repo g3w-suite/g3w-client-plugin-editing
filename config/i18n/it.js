@@ -131,7 +131,7 @@ export default {
       }
     },
     buttons: {
-      save: "Salva ed Esci",
+      save: "Inserisci/Modifica",
       save_and_back: "Salva e torna al padre",
       cancel: "Ignora Modifiche"
     }
