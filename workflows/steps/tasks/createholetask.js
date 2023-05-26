@@ -16,7 +16,6 @@ const EditingTask = require('./editingtask');
 function CreateHoleTask(options={}) {
   this.drawInteraction;
   this.snapInteraction;
-  this.drawingFeature;
   /**
    *
    * @param event
@@ -129,44 +128,10 @@ proto.run = function(inputs, context) {
   return d.promise();
 };
 
-/**
- * Method to add Measure
- * @param geometryType
- */
-proto.addMeasureInteraction = function(){
-  const mapProjection = this.getMapService().getProjection();
-  const measureOptions = {
-    projection: mapProjection,
-    drawColor: 'transparent',
-    feature: this.drawingFeature
-  };
-  if (Geometry.isLineGeometryType(this.geometryType))
-    this.measureInteraction = new LengthInteraction(measureOptions);
-  else if (Geometry.isPolygonGeometryType(this.geometryType))
-    this.measureInteraction = new AreaInteraction(measureOptions);
-  if (this.measureInteraction){
-    this.measureInteraction.setActive(true);
-    this.addInteraction(this.measureInteraction);
-  }
-};
-
-/**
- * Remove Measure Interaction
- */
-proto.removeMeasureInteraction = function(){
-  if (this.measureInteraction) {
-    this.measureInteraction.clear();
-    this.removeInteraction(this.measureInteraction);
-    this.measureInteraction = null;
-  }
-};
-
 proto.stop = function() {
   this.removeInteraction(this.drawInteraction);
   this.removeInteraction(this.snapInteraction);
-  this.removeMeasureInteraction();
   this.drawInteraction = null;
-  this.drawingFeature = null;
   document.removeEventListener('keydown', this._delKeyRemoveLastPoint);
   return true;
 };
