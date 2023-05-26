@@ -118,13 +118,7 @@ export default {
   },
   relation: {
     table: {
-      info: `
-                  <div>
-                    Wählen Sie Relationen aus, um sie mit dem aktuellen Feature zu verknüpfen.
-                  </div>
-                  <div>
-               
-                `
+      info: `<div>Wählen Sie Relationen aus, um sie mit dem aktuellen Feature zu verknüpfen.</div>`
     }
   },
   form: {
@@ -138,7 +132,7 @@ export default {
       }
     },
     buttons: {
-      save: "Speichern und schließen",
+      save: "Einfügung/Bearbeiten",
       save_and_back: "Speichern und zurück",
       cancel: "Änderungen ignorieren"
     }

@@ -20,6 +20,11 @@ export default {
   toolbox: {
     title: 'Edita'
   },
+  table: {
+    edit: "Edita feature",
+    copy: "Crea una copia",
+    delete: "Cancella feature"
+  },
   tools: {
     copy: "Copia features",
     pastefeaturesfromotherlayers: "Copia features da altro layer",
@@ -39,11 +44,6 @@ export default {
     measure: "Visualizza misura",
     snap: "Snap sul layer",
     snapall: "Snap su tutti i layer"
-  },
-  table: {
-    edit: "Edita feature",
-    copy: "Crea una copia",
-    delete: "Cancella feature"
   },
   steps: {
     help: {
@@ -102,6 +102,7 @@ export default {
     constraints: {
       enable_editing: "Aumentare il livello di zoom per abilitare l'editing \nScala di attivazione 1:"
     },
+    pdf: "Anteprima del documento non disponibile. Clicca qui ",
     commit: {
       header: "La lista sotto riporta tutte le modifiche che verranno salvate.",
       header_add: "<b>Aggiunte</b> riporta il numero delle features aggiunte",

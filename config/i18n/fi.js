@@ -37,6 +37,7 @@ export default {
     move_feature: "Siirrä ominaisuutta",
     update_vertex: "Päivitä pisteen ominaisuutta",
     update_feature: "Päivitä ominaisuus",
+    update_multi_features: "Muokkaa valittujen ominaisuuksien attribuutteja",
     copyfeaturefromexternallayer: "Create Feature from added layer"
   },
   toolsoftool: {
@@ -117,13 +118,7 @@ export default {
   },
   relation: {
     table: {
-      info: `
-                  <div>
-					Valitse relaatiota linkittääksesi ne muokattavaan ominaisuuteen.
-                  </div>
-                  <div>
-               
-                `
+      info: `<div>Valitse relaatiota linkittääksesi ne muokattavaan ominaisuuteen.</div>`
     }
   },
   form: {
@@ -137,7 +132,7 @@ export default {
       }
     },
     buttons: {
-      save: "Tallenna ja poistu",
+      save: "Lisää/muokkaa",
       save_and_back: "Tallenna ja palaa",
       cancel: "Peruuta"
     }
