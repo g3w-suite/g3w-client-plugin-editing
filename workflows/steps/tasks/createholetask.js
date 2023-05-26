@@ -3,7 +3,9 @@ const {base, inherit} =  g3wsdk.core.utils;
 const {
   within,
   Geometry: {
-    isMultiGeometry
+    isMultiGeometry,
+    is3DGeometry,
+    addZValueToOLFeatureGeometry
   },
   coordinatesToGeometry
 } = g3wsdk.core.geoutils;
@@ -50,36 +52,42 @@ proto.run = function(inputs, context) {
     this.drawingFeature = feature;
     document.addEventListener('keydown', this._delKeyRemoveLastPoint);
   });
-  this.drawInteraction.on('drawend', e => {
-    let intersectFeature;
+  this.drawInteraction.on('drawend', (evt) => {
+    let intersectFeature, originalFeature;
+    // In case of MultiPolygon
     if (isMultiGeometry(this.geometryType)) {
-      intersectFeature = source.getFeatures().find(feature => {
-        const featurePolygonGeometry = coordinatesToGeometry('Polygon', feature.getGeometry().getCoordinates()[0] )
-        return within(featurePolygonGeometry, e.feature.getGeometry())
+      // cycle on each Polygon of MutiPolygon
+      source.getFeatures().find((feature) => {
+        const findPolygonIndex = feature.getGeometry().getCoordinates().findIndex((singlePolygonCoordinates) => {
+          const featurePolygonGeometry = coordinatesToGeometry('Polygon', singlePolygonCoordinates)
+          return within(featurePolygonGeometry, evt.feature.getGeometry())
+        })
+        if (findPolygonIndex !== -1) {
+          intersectFeature = feature.getGeometry().getCoordinates()
+          return true;
+        }
+
       });
+      const coordinates = intersectFeature.getGeometry().getCoordinates();
+      coordinates[0].push(evt.feature.getGeometry().getCoordinates()[0]);
+      intersectFeature.getGeometry().setCoordinates(coordinates);
 
-    } else {
+    } else { // In case of Polygon
 
-    }
-    if ("undefined" !== typeof intersectFeature) {
-      const originalFeature = intersectFeature.clone();
+      intersectFeature = source.getFeatures().find(feature => {
+        return within(feature.getGeometry(), evt.feature.getGeometry())
+      });
+      originalFeature = intersectFeature.clone();
       //Get hole coordinates for polygon
       const coordinates = intersectFeature.getGeometry().getCoordinates();
-      /**
-       * @TODO check if MultiPolygon or Polygon
-       */
-      if (isMultiGeometry) {
-        coordinates[0].push(e.feature.getGeometry().getCoordinates()[0]);
-      } else {
-        coordinates.push(e.feature.getGeometry().getCoordinates());
-      }
-
+      coordinates.push(evt.feature.getGeometry().getCoordinates());
       intersectFeature.getGeometry().setCoordinates(coordinates);
-      session.pushUpdate(layerId, intersectFeature, originalFeature);
+    }
 
+    if ("undefined" !== typeof intersectFeature) {
+      session.pushUpdate(layerId, intersectFeature, originalFeature);
       inputs.features.push(intersectFeature);
       this.fireEvent('modify', intersectFeature); // emit event to get from subscribers
-
       d.resolve(inputs);
     } else {
       GUI.showUserMessage({
