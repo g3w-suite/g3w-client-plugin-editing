@@ -15,6 +15,7 @@ const EditingTask = require('./editingtask');
 
 function CreateHoleTask(options={}) {
   this.drawInteraction;
+  this.snapInteraction;
   this.drawingFeature;
   /**
    *
@@ -91,7 +92,6 @@ proto.run = function(inputs, context) {
     freehandCondition: ol.events.condition.never,
   });
   this.addInteraction(this.drawInteraction);
-
   this.drawInteraction.setActive(true);
   this.drawInteraction.on('drawstart', ({feature}) => {
     this.drawingFeature = feature;
@@ -120,6 +120,12 @@ proto.run = function(inputs, context) {
       d.reject();
     }
   })
+
+  this.snapInteraction = new ol.interaction.Snap({
+    source: originalLayer.getEditingLayer().getSource()
+  });
+
+  this.addInteraction(this.snapInteraction);
   return d.promise();
 };
 
@@ -157,6 +163,7 @@ proto.removeMeasureInteraction = function(){
 
 proto.stop = function() {
   this.removeInteraction(this.drawInteraction);
+  this.removeInteraction(this.snapInteraction);
   this.removeMeasureInteraction();
   this.drawInteraction = null;
   this.drawingFeature = null;
