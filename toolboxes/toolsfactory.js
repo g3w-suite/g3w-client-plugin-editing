@@ -3,6 +3,7 @@ const { Geometry } = g3wsdk.core.geometry;
 const { GUI } = g3wsdk.gui;
 const {
   isSameBaseGeometryType,
+  isPolygonGeometryType
 } = g3wsdk.core.geoutils;
 const Tool = require('./tool');
 const AddFeatureWorkflow = require('../workflows/addfeatureworkflow');
@@ -225,17 +226,20 @@ function EditorToolsFactory() {
               type: ['delete_feature']
             }
           },
-          {
-            config: {
-              id: 'createhole',
-              name: "Hole",
-              icon: "addRing.png",
-              layer,
-              row: 2,
-              op: CreateHoleWorkflow,
-              type: ['change_feature']
+          //Only in case of Polygon/MultiPolygon geometry
+          ...('Polygon' === type ? [
+            {
+              config: {
+                id: 'createhole',
+                name: "Hole",
+                icon: "addRing.png",
+                layer,
+                row: 2,
+                op: CreateHoleWorkflow,
+                type: ['change_feature']
+              }
             }
-          },
+          ] : []),
           {
             config: {
               id: 'editmultiattributes',

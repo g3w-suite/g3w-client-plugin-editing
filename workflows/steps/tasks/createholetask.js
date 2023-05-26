@@ -10,7 +10,6 @@ const {
   coordinatesToGeometry
 } = g3wsdk.core.geoutils;
 const {Geometry} = g3wsdk.core.geometry;
-const {AreaInteraction, LengthInteraction} = g3wsdk.ol.interactions.measure;
 const EditingTask = require('./editingtask');
 
 function CreateHoleTask(options={}) {
@@ -67,8 +66,8 @@ proto.createHole = function(holeFeature, editingLayerSource){
     if ("undefined" !== typeof newFeature) {
       originalFeature = newFeature.clone();
       //Get hole coordinates for polygon
-      const coordinates = intersectFeature.getGeometry().getCoordinates();
-      coordinates.push(evt.feature.getGeometry().getCoordinates());
+      const coordinates = newFeature.getGeometry().getCoordinates();
+      coordinates.push(holeFeature.getGeometry().getCoordinates()[0]);
       newFeature.getGeometry().setCoordinates(coordinates);
     }
   }
