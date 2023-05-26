@@ -437,7 +437,8 @@ function EditorToolsFactory() {
         ];
         break;
     }
-    return capabilities ? tools.filter(tool => tool.config.type.filter(type => capabilities.includes(type)).length > 0).map(tool => {
+    return capabilities ?
+      tools.filter(tool => tool.config.type.filter(type => capabilities.includes(type)).length > 0).map(tool => {
       // in case of capabilities all tools on line
       tool.config.row = 1;
       return new Tool(tool.config)

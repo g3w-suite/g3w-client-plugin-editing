@@ -31,15 +31,60 @@ inherit(CreateHoleTask, EditingTask);
 
 const proto = CreateHoleTask.prototype;
 
+/**
+ * @TODO
+ * @param holeFeature
+ * @returns {{newFeature, originalFeature}}
+ */
+proto.createHole = function(holeFeature, editingLayerSource){
+  // In case of MultiPolygon
+  let newFeature;
+  let originalFeature;
+
+  if (isMultiGeometry(this.geometryType)) {
+    // cycle on each MultiPolygon feature of layer Multipolygon
+    editingLayerSource.getFeatures().find((feature) => {
+      //feature is a multipolygon
+      //find single polygon of multipolygon that contain draw hole
+      const findPolygonIndex = feature.getGeometry().getCoordinates().findIndex((singlePolygonCoordinates) => {
+        const featurePolygonGeometry = coordinatesToGeometry('Polygon', singlePolygonCoordinates)
+        return within(featurePolygonGeometry, holeFeature.getGeometry())
+      })
+      if (findPolygonIndex !== -1) {
+        originalFeature = feature.clone();
+        newFeature = feature;
+        const coordinates = newFeature.getGeometry().getCoordinates();
+        coordinates[findPolygonIndex].push(holeFeature.getGeometry().getCoordinates()[0]);
+        newFeature.getGeometry().setCoordinates(coordinates);
+        return true;
+      }
+    });
+  } else { // In case of Polygon
+    newFeature = editingLayerSource.getFeatures().find(feature => {
+      return within(feature.getGeometry(), holeFeature.getGeometry())
+    });
+
+    if ("undefined" !== typeof newFeature) {
+      originalFeature = newFeature.clone();
+      //Get hole coordinates for polygon
+      const coordinates = intersectFeature.getGeometry().getCoordinates();
+      coordinates.push(evt.feature.getGeometry().getCoordinates());
+      newFeature.getGeometry().setCoordinates(coordinates);
+    }
+  }
+  return {
+    newFeature,
+    originalFeature
+  }
+}
+
 proto.run = function(inputs, context) {
   const d = $.Deferred();
   const originalLayer = inputs.layer;
-  const editingLayer = originalLayer.getEditingLayer();
   const session = context.session;
   const layerId = originalLayer.getId();
   const originalGeometryType = originalLayer.getEditingGeometryType();
   this.geometryType = Geometry.getOLGeometry(originalGeometryType);
-  const source = editingLayer.getSource();
   this.drawInteraction = new ol.interaction.Draw({
     type: 'Polygon',
     source: new ol.source.Vector(),
@@ -53,41 +98,19 @@ proto.run = function(inputs, context) {
     document.addEventListener('keydown', this._delKeyRemoveLastPoint);
   });
   this.drawInteraction.on('drawend', (evt) => {
-    let intersectFeature, originalFeature;
-    // In case of MultiPolygon
-    if (isMultiGeometry(this.geometryType)) {
-      // cycle on each Polygon of MutiPolygon
-      source.getFeatures().find((feature) => {
-        const findPolygonIndex = feature.getGeometry().getCoordinates().findIndex((singlePolygonCoordinates) => {
-          const featurePolygonGeometry = coordinatesToGeometry('Polygon', singlePolygonCoordinates)
-          return within(featurePolygonGeometry, evt.feature.getGeometry())
-        })
-        if (findPolygonIndex !== -1) {
-          intersectFeature = feature.getGeometry().getCoordinates()
-          return true;
-        }
-
-      });
-      const coordinates = intersectFeature.getGeometry().getCoordinates();
-      coordinates[0].push(evt.feature.getGeometry().getCoordinates()[0]);
-      intersectFeature.getGeometry().setCoordinates(coordinates);
-
-    } else { // In case of Polygon
-
-      intersectFeature = source.getFeatures().find(feature => {
-        return within(feature.getGeometry(), evt.feature.getGeometry())
-      });
-      originalFeature = intersectFeature.clone();
-      //Get hole coordinates for polygon
-      const coordinates = intersectFeature.getGeometry().getCoordinates();
-      coordinates.push(evt.feature.getGeometry().getCoordinates());
-      intersectFeature.getGeometry().setCoordinates(coordinates);
+    // IN CASE OF Z VALUE OF COORDINATE ADD Z VALUE TO COORDINATES OF DRAW POLYGON HOLE
+    if (is3DGeometry(this.geometryType)) {
+      evt.feature.setGeometry(addZValueToOLFeatureGeometry(evt.feature.getGeometry()))
     }
+    const {newFeature, originalFeature} = this.createHole(evt.feature, originalLayer.getEditingLayer().getSource());
 
-    if ("undefined" !== typeof intersectFeature) {
-      session.pushUpdate(layerId, intersectFeature, originalFeature);
-      inputs.features.push(intersectFeature);
-      this.fireEvent('modify', intersectFeature); // emit event to get from subscribers
+    if ("undefined" !== typeof newFeature) {
+      session.pushUpdate(layerId, newFeature, originalFeature);
+
+      inputs.features.push(newFeature);
+
+      this.fireEvent('modify', newFeature); // emit event to get from subscribers
+
       d.resolve(inputs);
     } else {
       GUI.showUserMessage({
