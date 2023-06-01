@@ -118,7 +118,7 @@
   },
   "relation": {
     "table": {
-      "info": "\n                  <div>\n                    Wählen Sie Relationen aus, um sie mit dem aktuellen Feature zu verknüpfen.\n                  </div>\n                  <div>\n               \n                "
+      "info": "<div>Wählen Sie Relationen aus, um sie mit dem aktuellen Feature zu verknüpfen.</div><div>"
     }
   },
   "form": {

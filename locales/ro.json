@@ -118,7 +118,7 @@
   },
   "relation": {
     "table": {
-      "info": "\n                  <div>\n                    Selectează relațiile pentru a face legătura cu entitatea curentă.\n                  </div>\n                  <div>\n                "
+      "info": "<div>Selectează relațiile pentru a face legătura cu entitatea curentă.</div><div>"
     }
   },
   "form": {

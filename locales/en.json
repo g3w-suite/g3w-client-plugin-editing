@@ -118,7 +118,7 @@
   },
   "relation": {
     "table": {
-      "info": "\n                  <div>\n                    Select relations to link it to current editing feature.\n                  </div>\n                  <div>\n               \n                "
+      "info": "<div>Select relations to link it to current editing feature.</div><div>"
     }
   },
   "form": {

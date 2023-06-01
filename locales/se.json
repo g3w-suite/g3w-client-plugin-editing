@@ -117,7 +117,7 @@
   },
   "relation": {
     "table": {
-      "info": "\n                  <div>\n\t\t\t\t\tVälj relation för länkning till egenskap som ska redigeras.\n                  </div>\n                  <div>\n               \n                "
+      "info": "<div>Välj relation för länkning till egenskap som ska redigeras.</div><div>"
     }
   },
   "form": {

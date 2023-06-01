@@ -117,7 +117,7 @@
   },
   "relation": {
     "table": {
-      "info": "\n                  <div>\n\t\t\t\t\tValitse relaatiota linkittääksesi ne muokattavaan ominaisuuteen.\n                  </div>\n                  <div>\n               \n                "
+      "info": "<div>Valitse relaatiota linkittääksesi ne muokattavaan ominaisuuteen.</div><div>"
     }
   },
   "form": {
