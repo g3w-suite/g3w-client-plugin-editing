@@ -119,7 +119,10 @@ export default {
   relation: {
     table: {
       info: `<div>Select relations to link it to current editing feature.</div>`
-    }
+    },
+    draw_new_feature:"Draw new feature",
+    draw_or_copy:"or",
+    copy_feature_from_other_layer:"Copy feature from other layer"
   },
   form: {
     relations: {

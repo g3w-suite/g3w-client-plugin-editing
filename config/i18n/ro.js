@@ -119,7 +119,10 @@ export default  {
   relation: {
     table: {
       info: `<div>Selectează relațiile pentru a face legătura cu entitatea curentă.</div>`
-    }
+    },
+    draw_new_feature:"Desenați o nouă feature",
+    draw_or_copy: "sau",
+    copy_feature_from_other_layer: "Copiați feature dintr-un alt layer"
   },
   form: {
     relations: {

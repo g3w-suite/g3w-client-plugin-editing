@@ -119,7 +119,10 @@ export default {
   relation: {
     table: {
       info: `<div>Sélectionner les relations pour les associer à l'élément en cours d'édition.</div>`
-    }
+    },
+    draw_new_feature:"Dessiner une nouvelle feature",
+    draw_or_copy:"ou",
+    copy_feature_from_other_layer:"Copier feature d'une autre layer"
   },
   form: {
     relations: {

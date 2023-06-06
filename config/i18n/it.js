@@ -119,7 +119,10 @@ export default {
   relation: {
     table: {
       info: `<div>Seleziona le relazioni per associarle alla feature in editing.</div>`
-    }
+    },
+    draw_new_feature: "Disegna nuova geometria",
+    draw_or_copy: "oppure",
+    copy_feature_from_other_layer: "Copia geometria da altro layer"
   },
   form: {
     relations: {

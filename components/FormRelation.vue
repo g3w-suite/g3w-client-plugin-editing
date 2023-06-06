@@ -5,43 +5,82 @@
 <template>
     <div style="margin-bottom: 5px;" v-if="active">
       <div ref="relation_header_title" class="box-header with-border skin-color" style="width:100%; display: flex; font-weight: bold; font-size: 1.3em; align-items: center; margin-button:3px; background-color: #ffffff; ">
-        <span v-t="'plugins.editing.edit_relation'"></span>
+        <span v-t-plugin="'editing.edit_relation'"></span>
         <span style="margin-left: 2px;">: {{relation.name.toUpperCase()}}</span>
       </div>
       <div ref="relation_header_tools" class="box-header with-border" style="width:100%; display: flex; margin-button:3px; background-color: #ffffff; ">
         <div id="search-box" style="margin-right: auto;">
-          <input v-if="relationsLength" type="text" class="form-control" id="filterRelation" :placeholder="placeholdersearch">
+
+          <input v-if="relationsLength"
+            type="text"
+            class="form-control"
+            id="filterRelation"
+            :placeholder="placeholdersearch">
+
         </div>
         <div style="display: flex; justify-content: flex-end">
-          <span class="g3w-icon add-link" align="center"
-            v-if="capabilities.relation.find(capability => capability === 'change_attr_feature') !== undefined"
-            v-t-tooltip:bottom.create="tooltips.link_relation" @click="enableAddLinkButtons ? linkRelation() : null"
+
+          <span v-if="capabilities.relation.find(capability => capability === 'change_attr_feature') !== undefined"
+            class="g3w-icon add-link" align="center"
+            v-t-tooltip:bottom.create="tooltips.link_relation"
+            @click.stop="enableAddLinkButtons ? linkRelation() : null"
             :class="[{'disabled': !enableAddLinkButtons}, g3wtemplate.font['link']]">
           </span>
+
           <span v-if="capabilities.relation.find(capability => capability === 'add_feature') !== undefined"
-            v-t-tooltip:bottom.create="tooltips.link_relation"
+            v-t-tooltip:bottom.create="tooltips.add_relation"
             @click="enableAddLinkButtons ? addRelationAndLink() : null"
             class="g3w-icon add-link pull-right"
             :class="[{'disabled' : !enableAddLinkButtons}, g3wtemplate.font['plus']]">
           </span>
+
         </div>
+
       </div>
+
       <section ref="relation_vector_tools" v-if="showAddVectorRelationTools" style="display: flex; flex-direction:column; border:2px solid #eeeeee; background-color: #ffffff; padding: 10px;">
-        <button class="btn skin-button" style="width: 100%" @click.stop="addVectorRelation">
-          <i :class="g3wtemplate.font['pencil']"></i>
-        </button>
-        <divider></divider>
-        <div id="g3w-select-editable-layers-content" style="flex-grow: 1; display:flex;" class="skin-color">
-          <select id="g3w-select-editable-layers-to-copy" v-select2="'copylayerid'">
-            <option v-for="copyFeatureLayer in copyFeatureLayers" :value="copyFeatureLayer.id" :key="copyFeatureLayer.id">{{copyFeatureLayer.name}}</option>
-          </select>
-          <button class="btn skin-button" style="margin-left: 2px;" @click.stop="copyFeatureFromOtherLayer">
-            <i :class="g3wtemplate.font['clipboard']"></i>
+        <div>
+          <div class="g3w-editing-new-relation-vector-type" v-t-plugin="'editing.relation.draw_new_feature'"></div>
+          <button
+            class="btn skin-button"
+            style="width: 100%"
+            @click.stop="addVectorRelation">
+              <i :class="g3wtemplate.font['pencil']"></i>
           </button>
-          </div>
+
+        </div>
+
+        <divider/>
+
+        <div style="align-self: center" v-t-plugin="'editing.relation.draw_or_copy'"></div>
+
+        <divider/>
+
+        <div id="g3w-select-editable-layers-content" style="flex-grow: 1; display:flex;flex-direction: column" >
+
+          <div class="g3w-editing-new-relation-vector-type" v-t-plugin="'editing.relation.copy_feature_from_other_layer'"></div>
+
+          <select id="g3w-select-editable-layers-to-copy" v-select2="'copylayerid'">
+
+            <option v-for="copyFeatureLayer in copyFeatureLayers" :key="copyFeatureLayer.id"
+              :value="copyFeatureLayer.id">{{copyFeatureLayer.name}}
+            </option>
+
+          </select>
+
+          <button class="btn skin-button" @click.stop="copyFeatureFromOtherLayer">
+
+            <i :class="g3wtemplate.font['clipboard']"></i>
+
+          </button>
+        </div>
+
       </section>
+
       <div ref="relation_body" class="box-body" style="padding:0;">
+
         <template v-if="relationsLength">
+
           <table class="table g3wform-relation-table table-striped" style="width:100%">
             <thead>
               <tr>
@@ -338,3 +377,9 @@
       }
     };
 </script>
+<style scoped>
+  .g3w-editing-new-relation-vector-type {
+    margin-bottom: 5px;
+    font-weight: bold
+  }
+</style>

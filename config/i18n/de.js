@@ -119,7 +119,10 @@ export default {
   relation: {
     table: {
       info: `<div>Wählen Sie Relationen aus, um sie mit dem aktuellen Feature zu verknüpfen.</div>`
-    }
+    },
+    draw_new_feature:"Zeichnen Sie eine neue feature",
+    draw_or_copy:"oder",
+    copy_feature_from_other_layer:"Kopieren Sie feature aus einer anderen layer"
   },
   form: {
     relations: {
