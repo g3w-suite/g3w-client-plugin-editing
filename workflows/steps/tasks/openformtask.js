@@ -86,11 +86,12 @@ proto._cancelFnc = function(promise, inputs) {
  * @returns {Promise<unknown>}
  */
 proto.saveAll = function(fields){
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     const {session} = this.getContext();
     const inputs = this.getInputs();
     fields = this._multi ? fields.filter(field => field.value !== null) : fields;
     if (fields.length) {
+      await WorkflowsStack.getCurrent().getContext().service.saveDefaultExpressionFieldsNotDependencies();
       const newFeatures = [];
       this._features.forEach(feature =>{
         this._originalLayer.setFieldsWithValues(feature, fields);
