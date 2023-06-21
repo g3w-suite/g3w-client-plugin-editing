@@ -44,7 +44,7 @@
             <transition name="fade">
               <toolsoftool v-if="showtoolsoftool" :tools="state.toolsoftool"></toolsoftool>
             </transition>
-            <div v-if="currenttoolname" class="toolbox_help_message" v-t-plugin="currenttoolname"></div>
+            <div v-if="currenttoolhelpmessage" class="toolbox_help_message" v-t-plugin="currenttoolhelpmessage"></div>
           </div>
         </div>
       </div>
@@ -63,7 +63,7 @@
       data() {
         return {
           active: false,
-          currenttoolname: null
+          currenttoolhelpmessage: null
         }
       },
       components: {
@@ -128,7 +128,7 @@
     watch: {
         async'state.activetool'(activetool){
           await this.$nextTick();
-          this.currenttoolname = activetool && activetool.getName();
+          this.currenttoolhelpmessage = activetool && activetool.getHelpMessage();
         }
        }
     };
