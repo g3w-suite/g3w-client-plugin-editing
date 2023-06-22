@@ -72,10 +72,19 @@ const API = function({service, plugin} = {}) {
    * @returns {Promise<unknown>}
    */
   this.startEditing = function(layerId, options={}, data=false){
-    const {tools, feature, selected=true, title, disablemapcontrols=false} = options;
+    const {
+      tools,
+      feature,
+      selected=true,
+      title,
+      disablemapcontrols=false,
+      showselectlayers=true
+    } = options;
     return new Promise((resolve, reject) =>{
       // get toolbox related to layer id
       const toolbox = service.getToolBoxById(layerId);
+      // set show select layers input visibility
+      service.setShowSelectLayers(showselectlayers);
       //setselected
       if (toolbox) {
         toolbox.setSelected(selected);

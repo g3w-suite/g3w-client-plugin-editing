@@ -207,6 +207,15 @@ proto.getMessage = function() {
   return operator.getHelpMessage() || operator.getRunningStep() ? this.state.messages : null;
 };
 
+/**
+ * Return help message to visualize on toolbox help
+ * @since 3.6.2
+ * @returns {*}
+ */
+proto.getHelpMessage = function() {
+  return this.state.messages.help || this.getName();
+};
+
 proto.setMessage = function(message) {
   this.state.message = message;
 };

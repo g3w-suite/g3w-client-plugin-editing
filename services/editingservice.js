@@ -76,6 +76,10 @@ function EditingService() {
     toolboxes: [],
     toolboxselected: null,
     toolboxidactivetool: null,
+    /**
+     * @since 3.6.2
+     */
+    showselectlayers: true, //used to show  or not selected layers on editing panel
     message: null,
     relations: [],
   };
@@ -208,6 +212,15 @@ proto.unsubscribe = function(event, fnc) {
 };
 
 // END API
+
+/**
+ * Set Boolean value for show select layers to edit
+ * Default is true
+ * @since 3.6.2
+ */
+proto.setShowSelectLayers = function(bool=true){
+  this.state.showselectlayers = bool;
+};
 
 proto.registerFeaturesLockByOtherUserSetterHandler = function(){
   this.getLayers().forEach(editingLayer =>{
