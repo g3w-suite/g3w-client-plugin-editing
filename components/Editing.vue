@@ -20,7 +20,7 @@
       </div>
     </div>
     <div v-else style="height: 10px;"></div>
-    <selectlayers v-if="state.toolboxes.length > 1"></selectlayers>
+    <selectlayers v-if="state.showselectlayers && state.toolboxes.length > 1"/>
     <div id="toolboxes">
       <toolbox :state="toolbox" :resourcesurl="resourcesurl"
         @setselectedtoolbox="setSelectedToolbox"
@@ -29,8 +29,7 @@
         @savetoolbox="saveToolBox"
         @setactivetool="startActiveTool"
         @stopactivetool="stopActiveTool"
-        v-for="toolbox in state.toolboxes" :key="toolbox.id">
-      </toolbox>
+        v-for="toolbox in state.toolboxes" :key="toolbox.id"/>
     </div>
   </div>
 </template>
