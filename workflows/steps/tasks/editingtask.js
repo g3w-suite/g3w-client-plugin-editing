@@ -95,31 +95,41 @@ proto.areCoordinatesEqual = function({feature, coordinates}){
   return false;
 };
 
+/**
+ * Set selected style to features and return original feature style
+ * @param features
+ * @returns ol.style.Style
+ */
 proto.setFeaturesSelectedStyle = function(features=[]) {
   if (features.length > 0) {
-    if (Array.isArray(features[0])) {
-      return;
-    }
-    const {originalStyle, selectedStyle} = this.getSelectedStyle(features[0]);
-    features.forEach(feature => feature.setStyle(selectedStyle));
+    //Use flat() method of array in case of nested array features
+    // Example: copy feature from other layers when select multiple features
+    const {originalStyle, selectedStyle} = this.getSelectedStyle(features.flat()[0]);
+    features.flat().forEach(feature => feature.setStyle(selectedStyle));
     return originalStyle;
   }
 };
 
+/**
+ * Method that set selected style to current editing features and reset
+ * original style when workflow (tool) is done
+ * @param promise
+ */
 proto.setAndUnsetSelectedFeaturesStyle = function({promise}={}){
   /*
   Temporary needed to fix issue on pending promise
    */
-  const {layer, features} = this.getInputs();
+  const {layer, features=[]} = this.getInputs();
   /*
   To improve: notice that if coming from relation ( WorkflowsStack.getLength() > 1 )
-  no need setTimeout because we already has selected style so original is the same selected.
+  no need setTimeout because we already it has selected style so original is the same selected.
   In case of current layer need to wait. TO DO
    */
   const selectOriginalStyleHandle = () => {
     const originalStyle = this.setFeaturesSelectedStyle(features);
     promise.always(() => {
-      features.forEach((feature => feature.setStyle(originalStyle)))
+      //use flat javascript Array method (see setFeaturesSelectedStyle)
+      features.flat().forEach((feature => feature.setStyle(originalStyle)))
     });
   };
   if (layer.getType() === Layer.LayerTypes.VECTOR){
@@ -129,6 +139,11 @@ proto.setAndUnsetSelectedFeaturesStyle = function({promise}={}){
   }
 };
 
+/**
+ * Extract origina feature style and return selected style based on geometry type
+ * @param feature
+ * @returns {{originalStyle: *, selectedStyle: *}}
+ */
 proto.getSelectedStyle = function(feature){
   const geometryType = feature.getGeometry().getType();
   const originalStyle = feature.getStyle();
@@ -141,6 +156,10 @@ proto.getSelectedStyle = function(feature){
   }
 };
 
+/**
+ * Method to disable sidebar
+ * @param bool
+ */
 proto.disableSidebar = function(bool=true) {
   !this._isContentChild && GUI.disableSideBar(bool);
 };
