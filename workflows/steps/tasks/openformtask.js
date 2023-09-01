@@ -304,14 +304,20 @@ proto.stop = function() {
   this.disableSidebar(false);
   if (!this._isContentChild) {
     this.getEditingService().disableMapControlsConflict(false);
-    // at the end if is the parent form set it to false update, and force update
-    WorkflowsStack.getCurrent().getContext().service.setUpdate(false, {
-      force: false
-    });
+    // in case of last feature of features is Array is resolved without setting form service
+    // Ex. copy multiple feature from other layer
+    if ( WorkflowsStack.getCurrent().getContextService()) {
+      // at the end if is the parent form set it to false update, and force update
+      WorkflowsStack.getCurrent().getContextService().setUpdate(false, {
+        force: false
+      });
+    }
   }
+
   GUI.closeForm({
     pop: this._isContentChild
   });
+
   this.getEditingService().resetCurrentLayout();
   this.fireEvent('closeform');
   this.fireEvent(`closeform_${this.layerId}`); // need to check layerId

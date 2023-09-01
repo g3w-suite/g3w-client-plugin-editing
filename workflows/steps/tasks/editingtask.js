@@ -96,7 +96,10 @@ proto.areCoordinatesEqual = function({feature, coordinates}){
 };
 
 proto.setFeaturesSelectedStyle = function(features=[]) {
-  if (features.length) {
+  if (features.length > 0) {
+    if (Array.isArray(features[0])) {
+      return;
+    }
     const {originalStyle, selectedStyle} = this.getSelectedStyle(features[0]);
     features.forEach(feature => feature.setStyle(selectedStyle));
     return originalStyle;
