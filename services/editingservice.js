@@ -144,6 +144,8 @@ function EditingService() {
   };
   this._ready = function() {
     this.registerFeaturesLockByOtherUserSetterHandler();
+    ///
+    this.setRelations1_1FieldsEditable();
     // set toolbox colors
     this.setLayersColor();
     // after add layers to layerstore
@@ -212,6 +214,18 @@ proto.unsubscribe = function(event, fnc) {
 };
 
 // END API
+
+/**
+ * Method to check if layer has relation 1:1 and check if fields
+ * belong to relation layer in editng
+ * @since v3.7.0
+ *
+ */
+proto.setRelations1_1FieldsEditable = function(){
+  this.getLayers().forEach(editingLayer => {
+    console.log(editingLayer)
+  })
+}
 
 /**
  * Set Boolean value for show select layers to edit
