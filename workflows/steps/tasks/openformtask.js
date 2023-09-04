@@ -302,19 +302,30 @@ proto._generateFormId = function(layerName) {
 
 proto.stop = function() {
   this.disableSidebar(false);
+
+  const service = this.getEditingService();
+  let context;
+
+  // when the last feature of features is Array
+  // and is resolved without setting form service
+  // Ex. copy multiple feature from other layer
   if (!this._isContentChild) {
-    this.getEditingService().disableMapControlsConflict(false);
-    // at the end if is the parent form set it to false update, and force update
-    WorkflowsStack.getCurrent().getContext().service.setUpdate(false, {
-      force: false
-    });
+    service.disableMapControlsConflict(false);
+    context = WorkflowsStack.getCurrent().getContextService();
   }
-  GUI.closeForm({
-    pop: this._isContentChild
-  });
-  this.getEditingService().resetCurrentLayout();
+
+  // force update parent form update
+  if (context && !this._isContentChild) {
+    context.setUpdate(false, { force: false });
+  }
+
+  GUI.closeForm({ pop: this._isContentChild });
+
+  service.resetCurrentLayout();
+
   this.fireEvent('closeform');
   this.fireEvent(`closeform_${this.layerId}`); // need to check layerId
+
   this.layerId = null;
   this.promise = null;
 };

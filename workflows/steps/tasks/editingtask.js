@@ -95,51 +95,80 @@ proto.areCoordinatesEqual = function({feature, coordinates}){
   return false;
 };
 
+/**
+ * Set selected style to features and return original feature style
+ * 
+ * @param { Array } features
+ * 
+ * @returns { ol.style.Style }
+ */
 proto.setFeaturesSelectedStyle = function(features=[]) {
-  if (features.length) {
-    const {originalStyle, selectedStyle} = this.getSelectedStyle(features[0]);
-    features.forEach(feature => feature.setStyle(selectedStyle));
-    return originalStyle;
+  if (features.length > 0) {                                       // copy feature from other layers when selecting multiple features
+    const arr = features.flat();                                   // flat nested features
+    const style = this.getSelectedStyle(arr[0]);
+    arr.forEach(feature => feature.setStyle(style.selectedStyle));
+    return style.originalStyle;
   }
 };
 
-proto.setAndUnsetSelectedFeaturesStyle = function({promise}={}){
-  /*
-  Temporary needed to fix issue on pending promise
-   */
-  const {layer, features} = this.getInputs();
-  /*
-  To improve: notice that if coming from relation ( WorkflowsStack.getLength() > 1 )
-  no need setTimeout because we already has selected style so original is the same selected.
-  In case of current layer need to wait. TO DO
+/**
+ * Method that set selected style to current editing features and
+ * reset original style when workflow (tool) is done.
+ * 
+ * @param promise jQuery promise
+ */
+proto.setAndUnsetSelectedFeaturesStyle = function({ promise }={}) {
+  
+  /** @FIXME temporary add in order to fix issue on pending promise (but wich issue ?) */
+  const {
+      layer,
+      features = [],
+  } = this.getInputs();
+
+  /**
+   * @TODO if coming from relation ( WorkflowsStack.getLength() > 1 )
+   *       no need setTimeout because we already it has selected style
+   *       so original is the same selected. In case of current layer
+   *       need to wait.
    */
   const selectOriginalStyleHandle = () => {
     const originalStyle = this.setFeaturesSelectedStyle(features);
-    promise.always(() => {
-      features.forEach((feature => feature.setStyle(originalStyle)))
-    });
+    promise.always(() => { features.flat().forEach((feature => feature.setStyle(originalStyle))) });
   };
-  if (layer.getType() === Layer.LayerTypes.VECTOR){
-    WorkflowsStack.getLength() === 1 ? setTimeout(() => {
-      selectOriginalStyleHandle();
-    }) : selectOriginalStyleHandle();
+
+  const is_vector = Layer.LayerTypes.VECTOR === layer.getType();
+  const is_single = WorkflowsStack.getLength();
+
+  if (is_vector && is_single) {
+    setTimeout(() => { selectOriginalStyleHandle(); });
+  } else if(is_vector) {
+    selectOriginalStyleHandle();
   }
 };
 
-proto.getSelectedStyle = function(feature){
-  const geometryType = feature.getGeometry().getType();
-  const originalStyle = feature.getStyle();
-  const selectedStyle = createSelectedStyle({
-    geometryType
-  });
+/**
+ * Get selected style from "extracted" original feature style  
+ * 
+ * @param feature
+ * 
+ * @returns {{ originalStyle: *, selectedStyle: * }} selected style based on geometry type
+ */
+proto.getSelectedStyle = function(feature) {
   return {
-    originalStyle,
-    selectedStyle
+    originalStyle: feature.getStyle(),
+    selectedStyle: createSelectedStyle({ geometryType: feature.getGeometry().getType() })
   }
 };
 
-proto.disableSidebar = function(bool=true) {
-  !this._isContentChild && GUI.disableSideBar(bool);
+/**
+ * Disable sidebar
+ * 
+ * @param {Boolean} bool
+ */
+proto.disableSidebar = function(bool = true) {
+  if (!this._isContentChild) {
+    GUI.disableSideBar(bool);
+  }
 };
 
 proto.getEditingService = function() {
