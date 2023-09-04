@@ -235,11 +235,12 @@ proto.setRelations1_1FieldsEditable = function(){
         //check if is layerId is a father of relation and if child layer is in editing
         if (layerId === relation.getFather()) {
           //check if child relation layer is editable (on editing)
-          const isChildLayerEditable = undefined !== this.getLayerById(relation.getChild());
+          const childLayerId = relation.getChild();
+          const isChildLayerEditable = undefined !== this.getLayerById(childLayerId);
           //Loop through editing father layer fields
           editingLayer.getEditingFields().forEach(field => {
             //set editable field only if field editable relation field belong to layer on editing
-            if (field.name.startsWith(this.getLayerById(relation.getChild()).getName())) {
+            if (field.name.startsWith(CatalogLayersStoresRegistry.getLayerById(childLayerId).getName())) {
               field.editable = (
                 field.editable && //current editable boolean value
                 isChildLayerEditable  //child editable layer
