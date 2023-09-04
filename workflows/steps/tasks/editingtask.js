@@ -489,8 +489,8 @@ proto.chooseFeatureFromFeatures = function({features}){
  * @since v3.7.0
  */
 
-proto.handleRelation1_1 = function({layerId, feature}={}){
-  const editingService = null
+proto.handleLayerRelation1_1 = function({layer, features=[]}={}){
+  console.log(layer, features)
 }
 
 module.exports = EditingTask;
