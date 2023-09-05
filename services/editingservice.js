@@ -225,32 +225,55 @@ proto.setRelations1_1FieldsEditable = function(){
   this.getLayers().forEach(editingLayer => {
     const layerId = editingLayer.getId(); //father layer
     //get eventually relations (it is Relations instance)
-    const relations = CatalogLayersStoresRegistry.getLayerById(layerId).getRelations();
-    relations
-      //get Array
-      .getArray()
-      //filter only type ONE (join 1:1)
-      .filter(relation => 'ONE' === relation.getType())
-      .forEach(relation => {
-        //check if is layerId is a father of relation and if child layer is in editing
-        if (layerId === relation.getFather()) {
-          //check if child relation layer is editable (on editing)
-          const childLayerId = relation.getChild();
-          const isChildLayerEditable = undefined !== this.getLayerById(childLayerId);
-          //Loop through editing father layer fields
-          editingLayer.getEditingFields().forEach(field => {
-            //set editable field only if field editable relation field belong to layer on editing
-            if (field.name.startsWith(CatalogLayersStoresRegistry.getLayerById(childLayerId).getName())) {
-              field.editable = (
-                field.editable && //current editable boolean value
-                isChildLayerEditable  //child editable layer
-              )
-            }
+    this.getRelation1_1ByLayerId(layerId).forEach(relation => {
+      //check if is layerId is a father of relation and if child layer is in editing
+      if (layerId === relation.getFather()) {
+        //check if child relation layer is editable (on editing)
+        const childLayerId = relation.getChild();
+        const isChildLayerEditable = undefined !== this.getLayerById(childLayerId);
+        //Loop through editing father layer fields
+        this.getRelation1_1EditingLayerFieldsReferredToChildRelation(layerId, childLayerId)
+          .forEach(field => {
+            field.editable = (
+              field.editable && //current editable boolean value
+              isChildLayerEditable  //child editable layer
+            )
           })
-        }
-      })
+      }
+    })
   })
 }
+
+/**
+ * Method to get Father layer fields bind to Child Layer in Relation
+ * @since 3.7.0
+ * @param layer
+ * @param childLayerId
+ * @returns fields Array bind to child layer
+ */
+proto.getRelation1_1EditingLayerFieldsReferredToChildRelation = function(layerId, childLayerId) {
+  //need to find out in case of no custom name prefix set
+  //@TODO get in some way custom name prefix to fields related to child layer field.
+  //In case of empty custome prefix, QGIS remove field related to child layer from father fields
+  const ChildFields = CatalogLayersStoresRegistry.getLayerById(childLayerId).getFields();
+  return this.getLayerById(layerId)
+    .getEditingFields()
+    .filter(field => field.name.startsWith(CatalogLayersStoresRegistry.getLayerById(childLayerId).getName()));
+}
+
+/**
+ * Method to get Realtion 1:1 from layerId
+ * @param layerId
+ * @returns {*}
+ */
+proto.getRelation1_1ByLayerId = function(layerId){
+  return CatalogLayersStoresRegistry.getLayerById(layerId)
+    .getRelations()
+    //get Array
+    .getArray()
+    //filter only type ONE (join 1:1)
+    .filter(relation => 'ONE' === relation.getType());
+};
 
 /**
  * Set Boolean value for show select layers to edit
@@ -1173,6 +1196,7 @@ proto._getRelationFieldsFromRelation = function({layerId, relation} = {}) {
 proto.createEditingDataOptions = function(filterType='all', options={}) {
   const {feature, relation, field, layerId, operator} = options;
   let filter;
+  console.log(filterType)
   switch (filterType) {
     //case all leave filter undefined
     case 'all':
@@ -1205,6 +1229,14 @@ proto.createEditingDataOptions = function(filterType='all', options={}) {
           }
         };
       break;
+    //relation 1:1
+    case '1:1':
+      filter = {
+        field: `${relation.getChildField()}|eq|${feature.get(relation.getFatherField())}`,
+        type: 'editing'
+      }
+      break;
+
   }
   return {
     registerEvents: true, // usefult to get register vent on toolbox example mapmoveend
@@ -1242,10 +1274,15 @@ proto._getRelationId = function({layerId, relation}={}) {
 proto.getLayersDependencyFeatures = function(layerId, opts={}) {
   const promises = [];
   const layer = this.getLayerById(layerId);
-  const relations = opts.relations ? opts.relations : layer.getChildren().length && layer.getRelations() ? this._filterRelationsInEditing({
-    relations: layer.getRelations().getArray().filter(relation => relation.getFather() === layerId),
-    layerId
-  }) : [];
+  const relations = opts.relations ?
+    opts.relations :
+    layer.getChildren().length && layer.getRelations() ?
+      this._filterRelationsInEditing({relations: layer.getRelations()
+          .getArray()
+          .filter(relation => relation.getFather() === layerId),
+        layerId
+      }) :
+      [];
   const online = ApplicationState.online;
   relations.forEach(relation => {
     if (relation.setLoading) relation.setLoading(true);
@@ -1255,38 +1292,41 @@ proto.getLayersDependencyFeatures = function(layerId, opts={}) {
       relation
     });
     const promise = new Promise(resolve => {
-      const filterType = opts.filterType || 'fid';
       opts.relation = relation;
       opts.layerId = layerId;
+      //In case of relation 1:1
+      opts.filterType = 'ONE' === relation.getType() ? '1:1' :  opts.filterType;
+      const filterType =  opts.filterType || 'fid';
       const options = this.createEditingDataOptions(filterType, opts);
       const session = this._sessions[id];
       const toolbox = this.getToolBoxById(id);
       if (online && session) {
         toolbox.startLoading();
-        if (!session.isStarted())
+        if (!session.isStarted()) {
           session.start(options)
-            .always((promise) => {
-              promise.always(()=>{
+            .always(promise => {
+              promise.always(() => {
                 toolbox.stopLoading();
                 resolve(id);
               })
             });
-        else {
+        } else {
           this.getLayersDependencyFeaturesFromSource({
             layerId: id,
             relation,
             feature: opts.feature,
             operator: opts.operator
-          }).then(find =>{
+          }).then(find => {
             if (find) {
               resolve(id);
               toolbox.stopLoading();
             } else {
-              session.getFeatures(options).always(promise => {
-                promise.always(()=>{
-                  toolbox.stopLoading();
-                  resolve(id);
-                });
+              session.getFeatures(options)
+                .always(promise => {
+                  promise.always(() => {
+                    toolbox.stopLoading();
+                    resolve(id);
+                  });
               });
             }
           })
@@ -1297,7 +1337,7 @@ proto.getLayersDependencyFeatures = function(layerId, opts={}) {
           relation,
           feature: opts.feature,
           operator: opts.operator
-        }).then(()=>resolve(id))
+        }).then(() => resolve(id))
       }
     });
     promises.push(promise);
