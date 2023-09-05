@@ -234,6 +234,9 @@ proto.setRelations1_1FieldsEditable = function(){
         //Loop through editing father layer fields
         this.getRelation1_1EditingLayerFieldsReferredToChildRelation(layerId, childLayerId)
           .forEach(field => {
+            //Only for DEVELOPMENT PURPOSE !!!!!!!1
+            //field.editable = true;
+            //////////////////////////////////7
             field.editable = (
               field.editable && //current editable boolean value
               isChildLayerEditable  //child editable layer
@@ -1196,7 +1199,6 @@ proto._getRelationFieldsFromRelation = function({layerId, relation} = {}) {
 proto.createEditingDataOptions = function(filterType='all', options={}) {
   const {feature, relation, field, layerId, operator} = options;
   let filter;
-  console.log(filterType)
   switch (filterType) {
     //case all leave filter undefined
     case 'all':
@@ -1675,16 +1677,18 @@ proto.setLayerUniqueFieldValues = async function(layerId) {
 };
 
 /**
- * save tamperary relation feature changes on father (root) layer feature
+ * save temporary relation feature changes on father (root) layer feature
  * @param layerId
  */
 proto.saveTemporaryRelationsUniqueFieldsValues = function(layerId) {
-  if (typeof this.layersUniqueFieldsValues[layerId].__uniqueFieldsValuesRelations !== "undefined") {
-    Object.keys(this.layersUniqueFieldsValues[layerId].__uniqueFieldsValuesRelations).forEach(relationLayerId =>{
-      Object.entries(this.layersUniqueFieldsValues[layerId].__uniqueFieldsValuesRelations[relationLayerId]).forEach(([fieldName, uniqueValues]) => {
-        this.layersUniqueFieldsValues[relationLayerId][fieldName] = uniqueValues;
-      })
-    });
+  if (undefined !== this.layersUniqueFieldsValues[layerId].__uniqueFieldsValuesRelations) {
+    Object.keys(this.layersUniqueFieldsValues[layerId].__uniqueFieldsValuesRelations)
+      .forEach(relationLayerId => {
+        Object.entries(this.layersUniqueFieldsValues[layerId].__uniqueFieldsValuesRelations[relationLayerId])
+          .forEach(([fieldName, uniqueValues]) => {
+            this.layersUniqueFieldsValues[relationLayerId][fieldName] = uniqueValues;
+          })
+      });
     this.clearTemporaryRelationsUniqueFieldsValues(layerId);
   }
 };
@@ -1693,62 +1697,79 @@ proto.clearTemporaryRelationsUniqueFieldsValues = function(layerId) {
   delete this.layersUniqueFieldsValues[layerId].__uniqueFieldsValuesRelations;
 };
 
-proto.getLayerUniqueFieldValues = function({layerId, field}){
+proto.getLayerUniqueFieldValues = function({layerId, field}) {
   return this.layersUniqueFieldsValues[layerId] && this.layersUniqueFieldsValues[layerId][field.name];
 };
 
 proto.getChildLayerUniqueFieldValues = function({layerId, relationLayerId, field}) {
-  if (typeof this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations !== "undefined") {
-    if (typeof this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId] !== "undefined")
-      if (typeof this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId][field.name] !== "undefined")
-        return this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId][field.name]
-  } 
-  return this.getLayerUniqueFieldValues({
-    layerId,
-    field
-  })
+
+  if (
+    undefined !== this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations &&
+    undefined !== this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId] &&
+    undefined !== this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId][field.name]
+  ) {
+    return this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId][field.name]
+  }
+
+  return this.getLayerUniqueFieldValues({layerId, field})
 };
 
-proto.changeLayerUniqueFieldValues = function({layerId, field, oldValue, newValue}){
+proto.changeLayerUniqueFieldValues = function({layerId, field, oldValue, newValue}) {
+
   this.layersUniqueFieldsValues[layerId][field.name].delete(oldValue);
+
   this.layersUniqueFieldsValues[layerId][field.name].add(newValue);
 };
 
 proto.changeRelationLayerUniqueFieldValues = function({layerId, relationLayerId, field, oldValue, newValue}){
-  if (typeof this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations === "undefined")
+  if (undefined === this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations) {
     this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations = {};
-  if (typeof this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId] === "undefined")
+  }
+
+  if (undefined === this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId]) {
     this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId] = {};
+  }
+
   this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId][field.name] = new Set(this.layersUniqueFieldsValues[layerId][field.name])
+
   this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId][field.name].delete(oldValue);
+
   this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId][field.name].add(newValue);
 };
 
 proto.addLayerUniqueFieldValue = function({layerId, field, value}) {
+
   this.layersUniqueFieldsValues[layerId][field.name].add(value);
 };
 
 proto.deleteLayerUniqueFieldValue = function({layerId, field, value}) {
+
   this.layersUniqueFieldsValues[layerId][field.name].delete(value);
 };
 
 proto.undoRedoLayerUniqueFieldValues = function({layerId, sessionItems=[], action}) {
-  if (typeof this.layersUniqueFieldsValues[layerId] !== "undefined") {
+
+  if (undefined !== this.layersUniqueFieldsValues[layerId]) {
+
     sessionItems.forEach(item => {
-      Object.keys(this.layersUniqueFieldsValues[layerId]).forEach(name =>{
+
+      Object.keys(this.layersUniqueFieldsValues[layerId]).forEach(name => {
+
         if (Array.isArray(item)) {
           /**
            * case of update feature that contain new and ol values of feature
            */
           const [{feature:oldfeature}, {feature:newfeature}] = item;
+
           if (newfeature.get(name) != oldfeature.get(name)) {
+
             const oldValue = action === 'undo' ? newfeature.get(name) :  oldfeature.get(name);
+
             const newValue = action === 'undo' ? oldfeature.get(name) :  newfeature.get(name);
+
             this.changeLayerUniqueFieldValues({
               layerId,
-              field: {
-                name
-              },
+              field: {name},
               oldValue,
               newValue
             })
@@ -1765,9 +1786,7 @@ proto.undoRedoLayerUniqueFieldValues = function({layerId, sessionItems=[], actio
            */
           this[`${featureState === 'add' ? 'delete' : 'add'}LayerUniqueFieldValue`]({
             layerId,
-            field: {
-              name
-            },
+            field: {name},
             value: feature.get(name)
           });
         }
@@ -1776,18 +1795,16 @@ proto.undoRedoLayerUniqueFieldValues = function({layerId, sessionItems=[], actio
   }
 };
 
-proto.undoRedoRelationUniqueFieldValues = function({relationSessionItems, action}){
-  Object.entries(relationSessionItems).forEach(([layerId, {own:sessionItems, dependencies:relationSessionItems}])=>{
-    this.undoRedoLayerUniqueFieldValues({
-      layerId,
-      sessionItems,
-      action
-    });
-    this.undoRedoRelationUniqueFieldValues({
-      relationSessionItems,
-      action
+proto.undoRedoRelationUniqueFieldValues = function({relationSessionItems, action}) {
+
+  Object.entries(relationSessionItems)
+    .forEach(([layerId, {own:sessionItems, dependencies:relationSessionItems}]) => {
+
+      this.undoRedoLayerUniqueFieldValues({layerId, sessionItems, action});
+
+      this.undoRedoRelationUniqueFieldValues({relationSessionItems, action})
+
     })
-  })
 };
 
 /*
@@ -1803,13 +1820,12 @@ proto.getProjectLayerFeatureById = async function({layerId, fid}) {
   try {
     const response = await XHR.get({
       url: layer.getUrl('data'),
-      params: {
-        fids: fid
-      }
+      params: {fids: fid}
     });
     const features = getFeaturesFromResponseVectorApi(response);
     if (features.length) feature = features[0];
   } catch(err) {}
+
   return feature;
 };
 
@@ -1817,11 +1833,17 @@ proto.getProjectLayersWithSameGeometryOfLayer = function(layer, options={exclude
  const {exclude=[]} = options;
  const geometryType = layer.getGeometryType();
  return CatalogLayersStoresRegistry.getLayers().filter(layer => {
-   return (layer.isGeoLayer()
-     && layer.getGeometryType && layer.getGeometryType()
-     && exclude.indexOf(layer.getId()) === -1
-   ) && (layer.getGeometryType() === geometryType
-     || (isSameBaseGeometryType(layer.getGeometryType(), geometryType) &&  Geometry.isMultiGeometry(geometryType))
+   return (
+     layer.isGeoLayer() &&
+     layer.getGeometryType &&
+     layer.getGeometryType() &&
+     exclude.indexOf(layer.getId()) === -1
+   ) && (
+     layer.getGeometryType() === geometryType ||
+     (
+       isSameBaseGeometryType(layer.getGeometryType(), geometryType) &&
+       Geometry.isMultiGeometry(geometryType)
+     )
    )
  });
 };
@@ -1838,10 +1860,14 @@ proto.getExternalLayersWithSameGeometryOfLayer = function(layer){
     const features = externalLayer.getSource().getFeatures();
     if (features && features.length) {
       return features[0].getGeometry() ?
-        (geometryType === features[0].getGeometry().getType())
-        ||
-        isSameBaseGeometryType(geometryType, features[0].getGeometry().getType()) : false;
-    } else return false;
+        (
+          geometryType === features[0].getGeometry().getType()
+        ) ||
+          isSameBaseGeometryType(geometryType, features[0].getGeometry().getType()) :
+        false;
+    } else {
+      return false;
+    }
   });
 };
 
