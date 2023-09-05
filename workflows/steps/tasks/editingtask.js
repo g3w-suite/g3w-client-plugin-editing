@@ -505,13 +505,16 @@ proto.handleLayerRelation1_1 = function({layerId, features=[]}={}){
           .find(feature => features[0].get(relation.getFatherField()) === feature.get(relation.getChildField()));
         //If a child feature relation 1:1 is binds to current feature
         if (childFeature) {
+          const newChildFeature = childFeature.clone();
           //Loop to editable only field of father layerId
           this.getEditingService()
             .getRelation1_1EditingLayerFieldsReferredToChildRelation(layerId, childLayerId)
             .filter(field => field.editable)
             .forEach(field => {
-
+              //@TODO need a way to get custom name prefix
+              newChildFeature.set(field.name.split(`${this.getEditingService().getProjectLayerById(childLayerId).getName()}_`)[1], features[0].get(field.name))
             })
+          this.getContext().session.pushUpdate(childLayerId, newChildFeature, childFeature)
         }
       }
     })

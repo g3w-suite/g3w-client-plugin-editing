@@ -262,7 +262,7 @@ proto.getRelation1_1EditingLayerFieldsReferredToChildRelation = function(layerId
 }
 
 /**
- * Method to get Realtion 1:1 from layerId
+ * Method to get Relation 1:1 from layerId
  * @param layerId
  * @returns {*}
  */
