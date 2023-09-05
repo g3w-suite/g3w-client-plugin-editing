@@ -19,7 +19,7 @@ function OpenFormTask(options={}) {
   this._session;
   this._editorFormStructure;
   this.promise;
-  this._multi = options.multi || false; // set if can handle multi edit features
+  this._multi = options.multi || false; // set if it can handle multi edit features
   base(this, options);
 }
 
@@ -83,15 +83,16 @@ proto._cancelFnc = function(promise, inputs) {
 /**
  *
  * @param fieldssetAndUnsetSelectedFeaturesStyle
+ * @param fields Array of fields
  * @returns {Promise<unknown>}
  */
-proto.saveAll = function(fields){
+proto.saveAll = function(fields) {
   return new Promise(async (resolve, reject) => {
     const {session} = this.getContext();
     const inputs = this.getInputs();
     fields = this._multi ? fields.filter(field => field.value !== null) : fields;
     if (fields.length) {
-      await WorkflowsStack.getCurrent().getContext().service.saveDefaultExpressionFieldsNotDependencies();
+      await WorkflowsStack.getCurrent().getContextService().saveDefaultExpressionFieldsNotDependencies();
       const newFeatures = [];
       this._features.forEach(feature =>{
         this._originalLayer.setFieldsWithValues(feature, fields);
@@ -110,8 +111,16 @@ proto.saveAll = function(fields){
         newFeatures.forEach((newFeature, index)=> {
           session.pushUpdate(this.layerId, newFeature, this._originalFeatures[index]);
         });
+
+        //check and handle if layer has relation 1:1
+        this.handleLayerRelation1_1({
+          layerId: this.layerId,
+          features: newFeatures
+        });
+
         this.fireEvent('savedfeature', newFeatures); // called after saved
         this.fireEvent(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
+
         session.save();
         resolve({
           promise: this.promise
@@ -134,7 +143,7 @@ proto._saveFeatures = async function({fields, promise, session, inputs}){
     GUI.disableContent(true);
 
 
-    await WorkflowsStack.getCurrent().getContext().service.saveDefaultExpressionFieldsNotDependencies();
+    await WorkflowsStack.getCurrent().getContextService().saveDefaultExpressionFieldsNotDependencies();
 
     GUI.setLoadingContent(false);
     GUI.disableContent(false);
@@ -143,7 +152,7 @@ proto._saveFeatures = async function({fields, promise, session, inputs}){
      *
      */
 
-    this._features.forEach(feature =>{
+    this._features.forEach(feature => {
       this._originalLayer.setFieldsWithValues(feature, fields);
       newFeatures.push(feature.clone());
     });
@@ -156,17 +165,24 @@ proto._saveFeatures = async function({fields, promise, session, inputs}){
     this.fireEvent('saveform', {
       newFeatures,
       originalFeatures: this._originalFeatures
-    }).then(()=> {
+    }).then(() => {
       newFeatures.forEach((newFeature, index)=>{
         session.pushUpdate(this.layerId, newFeature, this._originalFeatures[index]);
       });
+
+      //check and handle if layer has relation 1:1
+      this.handleLayerRelation1_1({
+        layerId: this.layerId,
+        features: newFeatures
+      });
+
       GUI.setModal(false);
       this.fireEvent('savedfeature', newFeatures); // called after saved
       this.fireEvent(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
-      // In case of save of child it mean that child is updated so also parent
-      this._isContentChild && WorkflowsStack.getParents().forEach(workflow => workflow.getContext().service.setUpdate(true, {
-        force: true
-      }));
+      // In case of save of child it means that child is updated so also parent
+      this._isContentChild &&
+      WorkflowsStack.getParents()
+        .forEach(workflow => workflow.getContextService().setUpdate(true, {force: true}));
       promise.resolve(inputs);
     })
   } else {
@@ -223,10 +239,7 @@ proto.startForm = async function(options = {}) {
     feature,
     parentData: this.getParentFormData(),
     fields: this._fields,
-    context_inputs: !this._multi && this._edit_relations && {
-      context,
-      inputs
-    },
+    context_inputs: !this._multi && this._edit_relations && {context, inputs},
     formStructure: this._editorFormStructure,
     modal: true,
     push: this._isContentChild,
@@ -304,19 +317,19 @@ proto.stop = function() {
   this.disableSidebar(false);
 
   const service = this.getEditingService();
-  let context;
+  let contextService;
 
   // when the last feature of features is Array
   // and is resolved without setting form service
   // Ex. copy multiple feature from other layer
   if (!this._isContentChild) {
     service.disableMapControlsConflict(false);
-    context = WorkflowsStack.getCurrent().getContextService();
+    contextService = WorkflowsStack.getCurrent().getContextService();
   }
 
   // force update parent form update
-  if (context && !this._isContentChild) {
-    context.setUpdate(false, { force: false });
+  if (contextService && !this._isContentChild) {
+    contextService.setUpdate(false, { force: false });
   }
 
   GUI.closeForm({ pop: this._isContentChild });

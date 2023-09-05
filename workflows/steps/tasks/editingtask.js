@@ -488,9 +488,33 @@ proto.chooseFeatureFromFeatures = function({features}){
 /**
  * @since v3.7.0
  */
+proto.handleLayerRelation1_1 = function({layerId, features=[]}={}){
+  if (features.length === 0) return; // in case of no features
+  //Get layer relation 1:1
+  this.getEditingService()
+    .getRelation1_1ByLayerId(layerId)
+    .forEach(relation => {
+      //check if layerId is a father layer of relation 1:1
+      if (layerId === relation.getFather()) {
+        //check if child relation layer is editable (on editing)
+        const childLayerId = relation.getChild();
+        //get child feature relation 1:1
+        const childFeature = this.getEditingService()
+          .getLayerById(childLayerId)
+          .readFeatures()
+          .find(feature => features[0].get(relation.getFatherField()) === feature.get(relation.getChildField()));
+        //If a child feature relation 1:1 is binds to current feature
+        if (childFeature) {
+          //Loop to editable only field of father layerId
+          this.getEditingService()
+            .getRelation1_1EditingLayerFieldsReferredToChildRelation(layerId, childLayerId)
+            .filter(field => field.editable)
+            .forEach(field => {
 
-proto.handleLayerRelation1_1 = function({layer, features=[]}={}){
-  console.log(layer, features)
+            })
+        }
+      }
+    })
 }
 
 module.exports = EditingTask;
