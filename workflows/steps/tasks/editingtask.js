@@ -258,9 +258,6 @@ proto.getFormFields = async function({inputs, context, feature, isChild=false}={
 
   unique_values_feature_field_Obj.forEach(({current_feature_value, field}) => {
     /**
-     * @TODO need to convert all exclude_values in the same type value of current_feature_value
-     */
-    /**
      * current editing feature add to
      */
     let layerUniqueFieldValues;
@@ -281,7 +278,8 @@ proto.getFormFields = async function({inputs, context, feature, isChild=false}={
     }
 
     layerUniqueFieldValues.forEach(value => {
-      field.validate.exclude_values.add(value)
+      //convert to string if value is not null or undefined
+      field.validate.exclude_values.add([null, undefined].indexOf(value) === -1 ? `${value}` : value )
     });
 
     /**
@@ -289,8 +287,9 @@ proto.getFormFields = async function({inputs, context, feature, isChild=false}={
      */
     features.forEach(feature => {
       const value = feature.get(field.name);
-      if ([null, undefined].indexOf(value) !== -1) {
-        field.validate.exclude_values.add(value);
+      //in case of not null or undefined concert to string
+      if ([null, undefined].indexOf(value) === -1) {
+        field.validate.exclude_values.add(`${value}`);
       }
     });
     //remove current value from exclude_values

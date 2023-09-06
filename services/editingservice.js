@@ -235,7 +235,7 @@ proto.setRelations1_1FieldsEditable = function(){
         this.getRelation1_1EditingLayerFieldsReferredToChildRelation(layerId, childLayerId)
           .forEach(field => {
             //Only for DEVELOPMENT PURPOSE !!!!!!!1
-            //field.editable = true;
+            field.editable = true;
             //////////////////////////////////7
             field.editable = (
               field.editable && //current editable boolean value
@@ -250,18 +250,22 @@ proto.setRelations1_1FieldsEditable = function(){
 /**
  * Method to get Father layer fields bind to Child Layer in Relation
  * @since 3.7.0
- * @param layer
- * @param childLayerId
+ * @param layerId //Father LayerId
+ * @param childLayerId //child layer id
  * @returns fields Array bind to child layer
  */
 proto.getRelation1_1EditingLayerFieldsReferredToChildRelation = function(layerId, childLayerId) {
   //need to find out in case of no custom name prefix set
   //@TODO get in some way custom name prefix to fields related to child layer field.
-  //In case of empty custome prefix, QGIS remove field related to child layer from father fields
+  //In case of empty custom prefix, QGIS remove field related to child layer from father fields
   const ChildFields = CatalogLayersStoresRegistry.getLayerById(childLayerId).getFields();
+
+
   return this.getLayerById(layerId)
     .getEditingFields()
-    .filter(field => field.name.startsWith(CatalogLayersStoresRegistry.getLayerById(childLayerId).getName()));
+    .filter(field => {
+      return field.name.startsWith(CatalogLayersStoresRegistry.getLayerById(childLayerId).getName())
+    });
 }
 
 /**
@@ -276,6 +280,16 @@ proto.getRelation1_1ByLayerId = function(layerId){
     .getArray()
     //filter only type ONE (join 1:1)
     .filter(relation => 'ONE' === relation.getType());
+};
+
+/**
+ * Method to check if field belong to relation 1:1 layer
+ * @param layerId
+ */
+proto.isFieldBelongToRelation1_1 = function(layerId, field) {
+  this.getRelation1_1ByLayerId(layerId).forEach(relation => {
+    //@TODO
+  })
 };
 
 /**
@@ -415,10 +429,8 @@ proto.getToolboxSelected = function(){
 };
 
 /**
- * 
+ * Method to create a new feature
  */
-
-// create a new feature
 proto.addNewFeature = function(layerId, options={}){
   const {geometry, properties} = options;
   const feature = new Feature();
