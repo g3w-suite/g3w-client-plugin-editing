@@ -1533,6 +1533,7 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
   const items = commitItems;
   commitItems = commitItems || session.getCommitItems();
   const {add=[], delete:cancel=[], update=[], relations={}} = commitItems;
+  //check if there are some changes to commit
   if ([...add, ...cancel, ...update, ...Object.keys(relations)].length === 0) {
     GUI.showUserMessage({
       type: 'info',
@@ -1540,93 +1541,126 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
       autoclose: true,
       closable: false
     });
+
     d.resolve(toolbox);
+
     return d.promise();
   }
+
   const promise = modal ? this.showCommitModalWindow({
     layer,
     commitItems,
     close,
     commitPromise // add a commit promise
   }) : Promise.resolve(messages);
+
   promise
     .then(messages => {
-    if (ApplicationState.online) {
-      session.commit({items: items || commitItems})
-        .then((commitItems, response) => {
-          if (ApplicationState.online) {
-            if (response.result) {
-              const {autoclose=true, message="plugins.editing.messages.saved"} = messages.success;
-              if (messages && messages.success) GUI.showUserMessage({
-                type: 'success',
-                message,
-                duration: 3000,
-                autoclose
-              });
-              layerType === Layer.LayerTypes.VECTOR && this._mapService.refreshMap({force: true});
-              cb.done && cb.done instanceof Function && cb.done(toolbox);
-              this.addLayersFeaturesToShowOnResult({
-                layerId: toolbox.getId(),
-                fids: [...response.response.new.map(({id}) => id), ...commitItems.update.map(update => update.id)]
-              });
-            } else {
-              const parser = new serverErrorParser({
-                error: response.errors
-              });
-              const errorMessage = parser.parse({
-                type: 'String'
-              });
-              const {autoclose=false, message} = messages.error;
-              GUI.showUserMessage({
-                type: 'alert',
-                message: message || errorMessage,
-                textMessage: !message,
-                autoclose
-              });
-              cb.error && cb.error instanceof Function && cb.error(toolbox, message || errorMessage);
+      //check if application is online
+      if (ApplicationState.online) {
+        session.commit({items: items || commitItems})
+          .then((commitItems, response) => {
+            //@TODO need to double check why ApplicationState.online is repeated
+            if (ApplicationState.online) {
+              //if result is true
+              if (response.result) {
+                const {autoclose=true, message="plugins.editing.messages.saved"} = messages.success;
+                if (messages && messages.success) {
+                  GUI.showUserMessage({
+                    type: 'success',
+                    message,
+                    duration: 3000,
+                    autoclose
+                  });
+                }
+
+                //In case of vector layer need to refresh map commit changes
+                if (layerType === Layer.LayerTypes.VECTOR) {
+                  this._mapService.refreshMap({force: true});
+                }
+
+                if (cb.done && cb.done instanceof Function) {
+                  cb.done(toolbox);
+                }
+
+                //add items when close editing to results to show changes
+                this.addLayersFeaturesToShowOnResult({
+                  layerId: toolbox.getId(),
+                  fids: [
+                    ...response.response.new.map(({id}) => id),
+                    ...commitItems.update.map(update => update.id)
+                  ]
+                });
+              } else { //result is false. An error occurs
+                const parser = new serverErrorParser({
+                  error: response.errors
+                });
+
+                const errorMessage = parser.parse({
+                  type: 'String'
+                });
+
+                const {autoclose=false, message} = messages.error;
+
+                GUI.showUserMessage({
+                  type: 'alert',
+                  message: message || errorMessage,
+                  textMessage: !message,
+                  autoclose
+                });
+
+                if (cb.error && cb.error instanceof Function) {
+                  cb.error(toolbox, message || errorMessage);
+                }
+              }
+
+              d.resolve(toolbox);
             }
-            d.resolve(toolbox);
-          }
-        })
-        .fail((error={}) => {
-          const parser = new serverErrorParser({
-            error: error.errors ? error.errors : error
-          });
-          const errorMessage = parser.parse({
-            type: 'String'
-          });
-          const {autoclose = false, message} = messages.error;
-          GUI.showUserMessage({
-            type: 'alert',
-            message: message || errorMessage,
-            textMessage: !message,
-            autoclose
-          });
-          d.reject(toolbox);
-          cb.error && cb.error instanceof Function && cb.error(toolbox, message || errorMessage);
-        });
-      //case offline
-    } else this.saveOfflineItem({
-            data: {
-              [session.getId()]: commitItems
-            },
-            id: OFFLINE_ITEMS.CHANGES
-          }).then(() =>{
-            GUI.showUserMessage({
-              type: 'success',
-              message: "plugins.editing.messages.saved_local",
-              autoclose: true
+          })
+          .fail((error={}) => {
+            const parser = new serverErrorParser({
+              error: error.errors ? error.errors : error
             });
-            session.clearHistory();
-            d.resolve(toolbox);
-          }).catch(error=>{
+            const errorMessage = parser.parse({
+              type: 'String'
+            });
+            const {autoclose = false, message} = messages.error;
             GUI.showUserMessage({
               type: 'alert',
-              message: error,
-              textMessage: true,
+              message: message || errorMessage,
+              textMessage: !message,
+              autoclose
             });
             d.reject(toolbox);
-          })
+            cb.error && cb.error instanceof Function && cb.error(toolbox, message || errorMessage);
+          });
+      //case offline
+    } else {
+      this.saveOfflineItem({
+        data: {
+          [session.getId()]: commitItems
+        },
+        id: OFFLINE_ITEMS.CHANGES
+      })
+        .then(() =>{
+          GUI.showUserMessage({
+            type: 'success',
+            message: "plugins.editing.messages.saved_local",
+            autoclose: true
+          });
+          session.clearHistory();
+          d.resolve(toolbox);
+        })
+        .catch(error => {
+          GUI.showUserMessage({
+            type: 'alert',
+            message: error,
+            textMessage: true,
+          });
+
+          d.reject(toolbox);
+        })
+      }
     })
     .catch(() => {
       d.reject(toolbox)
