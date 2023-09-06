@@ -51,7 +51,6 @@
   const {base, inherit} = g3wsdk.core.utils;
   const {resizeMixin} = g3wsdk.gui.vue.Mixins;
   const Media_Field = g3wsdk.gui.vue.Fields.media_field;
-  const TableService = require('../services/tableservice');
 
   export default {
     name: 'Table',
