@@ -368,23 +368,39 @@ proto.evaluateExpressionFields = async function({inputs, context,  feature}={}){
     get_default_value=false
   } = context;
 
-  layer.getFieldsWithValues(feature, {
-    exclude,
-    get_default_value
-  }).forEach(field => {
-    const {default_expression, filter_expression} = field.input.options;
-    const qgs_layer_id = inputs.layer.getId();
-    const parentData = this.getParentFormData();
-    if (default_expression){
-      const {apply_on_update = false} = default_expression;
-      /*
-      check if always update apply_on_update = true or only is is a new feature
-       */
-      if (apply_on_update || feature.isNew()) {
+  layer.getFieldsWithValues(feature, {exclude, get_default_value})
+    .forEach(field => {
+      const {default_expression, filter_expression} = field.input.options;
+      const qgs_layer_id = inputs.layer.getId();
+      const parentData = this.getParentFormData();
+      if (default_expression){
+        const {apply_on_update = false} = default_expression;
+        /*
+        check if always update apply_on_update = true or only is is a new feature
+         */
+        if (apply_on_update || feature.isNew()) {
 
+          const expression_eval_promise = new Promise(async (resolve, reject) => {
+            try {
+              await inputService.handleDefaultExpressionFormInput({
+                field,
+                feature,
+                qgs_layer_id,
+                parentData
+              });
+              feature.set(field.name, field.value);
+              resolve(feature)
+            } catch(err) {
+              reject(err)
+            }
+          });
+          expression_eval_promises.push(expression_eval_promise);
+        }
+      }
+      if (filter_expression){
         const expression_eval_promise = new Promise(async (resolve, reject) => {
           try {
-            await inputService.handleDefaultExpressionFormInput({
+            await inputService.handleFilterExpressionFormInput({
               field,
               feature,
               qgs_layer_id,
@@ -398,25 +414,7 @@ proto.evaluateExpressionFields = async function({inputs, context,  feature}={}){
         });
         expression_eval_promises.push(expression_eval_promise);
       }
-    }
-    if (filter_expression){
-      const expression_eval_promise = new Promise(async (resolve, reject) => {
-        try {
-          await inputService.handleFilterExpressionFormInput({
-            field,
-            feature,
-            qgs_layer_id,
-            parentData
-          });
-          feature.set(field.name, field.value);
-          resolve(feature)
-        } catch(err) {
-          reject(err)
-        }
-      });
-      expression_eval_promises.push(expression_eval_promise);
-    }
-  });
+    });
   await Promise.allSettled(expression_eval_promises);
   return feature;
 };
@@ -446,6 +444,10 @@ proto.setContextGetDefaultValue = function(get_default_value=false){
   context.get_default_value = get_default_value;
 };
 
+/**
+ *
+ * @returns {{qgs_layer_id: *, feature: *}}
+ */
 proto.getParentFormData = function(){
   if (WorkflowsStack.getLength() > 1) {
     const {features, layer, fields=[] } = WorkflowsStack.getParent().getInputs();
@@ -460,6 +462,7 @@ proto.getParentFormData = function(){
     }
   }
 };
+
 
 proto.getFeaturesFromSelectionFeatures = function({layerId, geometryType}){
   const selectionLayerSource = this._mapService.defaultsLayers.selectionLayer.getSource();
@@ -581,6 +584,11 @@ proto.handleLayerRelation1_1 = function({layerId, features=[]}={}){
               newChildFeature.set(field.name.split(`${this.getEditingService().getProjectLayerById(childLayerId).getName()}_`)[1], features[0].get(field.name))
             })
           if (isNew) {
+            //check if father field is a Pk (Primary key)
+            if (this.getEditingService().getLayerById(layerId).isPkField(relation.getFatherField())) {
+              //need to set temporary
+              childFeature.set(relation.getChildField(), features[0].getId());
+            }
             //add relation feature
             this.getContext().session.pushAdd(childLayerId, newChildFeature);
           } else {
