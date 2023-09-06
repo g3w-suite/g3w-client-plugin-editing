@@ -16,9 +16,7 @@ function EditMultiFeatureAttributesWorkflow(options={}) {
       buttonnext: {
         disabled: true,
         condition:({features=[]}) => features.length < 2,
-        done: ()=>{
-          console.log('qui')
-        }
+        done: () => {}
       },
       directive: 't-plugin',
       dynamic: 0,

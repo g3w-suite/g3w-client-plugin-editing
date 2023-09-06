@@ -20,7 +20,7 @@ const TableComponent = function(options={}) {
   });
   this.setInternalComponent(internalComponent);
   internalComponent.state = service.state;
-  service.once('ready', ()=> this.emit('ready'));
+  service.once('ready', () => this.emit('ready'));
   this.unmount = function() {
     service.cancel();
     return base(this, 'unmount');

@@ -252,38 +252,36 @@ proto.start = function(options={}) {
   
   const handlerAfterSessionGetFeatures = promise => {
     this.emit(EventName);
-    this.setLayerUniqueFieldValues().then(()=>{
-      this.editingService.runEventHandler({
-        type: EventName,
-        id
-      });
-      promise
-        .then(features => {
-          this.stopLoading();
-          this.setEditing(true);
-          this.editingService.runEventHandler({
-            type: 'get-features-editing',
-            id,
-            options: {
-              features
-            }
-          });
-
-          d.resolve({
-            features
+    this.setLayerUniqueFieldValues()
+      .then(() => {
+        this.editingService.runEventHandler({
+          type: EventName,
+          id
+        });
+        promise
+          .then(features => {
+            this.stopLoading();
+            this.setEditing(true);
+            this.editingService.runEventHandler({
+              type: 'get-features-editing',
+              id,
+              options: {
+                features
+              }
+            });
+            d.resolve({features})
           })
-        })
-        .fail(error => {
-          GUI.notify.error(error.message);
-          this.editingService.runEventHandler({
-            type: 'error-editing',
-            id,
-            error
-          });
-          this.stop();
-          this.stopLoading();
-          d.reject(error);
-        })
+          .fail(error => {
+            GUI.notify.error(error.message);
+            this.editingService.runEventHandler({
+              type: 'error-editing',
+              id,
+              error
+            });
+            this.stop();
+            this.stopLoading();
+            d.reject(error);
+          })
     });
 
   };
@@ -299,19 +297,25 @@ proto.start = function(options={}) {
             this.setFeaturesOptions({
               filter
             });
-            this._session.start(this._getFeaturesOption)
-              .then(handlerAfterSessionGetFeatures).fail(()=>this.setEditing(false));
+            this._session
+              .start(this._getFeaturesOption)
+              .then(handlerAfterSessionGetFeatures)
+              .fail(()=>this.setEditing(false));
           }, 300);
         })
       } else {
         this._start = true;
         this.startLoading();
-        this._session.start(this._getFeaturesOption).then(handlerAfterSessionGetFeatures)
+        this._session
+          .start(this._getFeaturesOption)
+          .then(handlerAfterSessionGetFeatures)
       }
     } else {
       if (!this._start) {
         this.startLoading();
-        this._session.getFeatures(this._getFeaturesOption).then(handlerAfterSessionGetFeatures);
+        this._session
+          .getFeatures(this._getFeaturesOption)
+          .then(handlerAfterSessionGetFeatures);
         this._start = true;
       }
       this.setEditing(true);
