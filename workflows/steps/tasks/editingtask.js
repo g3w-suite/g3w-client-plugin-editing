@@ -6,7 +6,10 @@ const {
   createSelectedStyle,
   areCoordinatesEqual
 } = g3wsdk.core.geoutils;
-const { Layer } = g3wsdk.core.layer;
+const {
+  Layer,
+  features: { Feature }
+} = g3wsdk.core.layer;
 const { GUI } = g3wsdk.gui;
 const { Task } = g3wsdk.core.workflow;
 const { WorkflowsStack } = g3wsdk.core.workflow;
@@ -217,36 +220,51 @@ proto.getRootWorkflowLayerId = function(){
 /**
  * get form fields
  */
-
 proto.getFormFields = async function({inputs, context, feature, isChild=false}={}){
   let hasUniqueValue = false;
+  // root layerId in case of edit relation
   const relationLayerId = this.getRootWorkflowLayerId();
   const {layer, features} = inputs;
+  //current form layerId
   const layerId = layer.getId();
+  //Initially Empty array where store unique values by feature field
   const unique_values_feature_field_Obj = [];
+
   const {excludeFields:exclude, get_default_value=false} = context;
+
+  //get editing fields with values (in case of update)
   const fields = layer.getFieldsWithValues(feature, {
     exclude,
     get_default_value
   });
+
   /**
    * check for unique validate
    */
   fields.forEach(field => {
+    //chech if field value need to be unique
     if (field.validate.unique) {
+      //set true
       hasUniqueValue = true;
+      //get current feature field value
       const current_feature_value = feature.get(field.name); // current editing feature field value
+      //add object with field and current value
       unique_values_feature_field_Obj.push({
         current_feature_value,
         field
       })
     }
   });
+
   unique_values_feature_field_Obj.forEach(({current_feature_value, field}) => {
+    /**
+     * @TODO need to convert all exclude_values in the same type value of current_feature_value
+     */
     /**
      * current editing feature add to
      */
     let layerUniqueFieldValues;
+    //check if i child form (belong to relation)
     if (isChild) {
       layerUniqueFieldValues = this.getEditingService().getChildLayerUniqueFieldValues({
         layerId,
@@ -254,60 +272,85 @@ proto.getFormFields = async function({inputs, context, feature, isChild=false}={
         field
       })
     } else {
+      //root layer
+      //@TODO CHECK IF FIELD IS RELATED TO RELATION 1:1
       layerUniqueFieldValues = this.getEditingService().getLayerUniqueFieldValues({
         layerId,
         field
       })
     }
-    layerUniqueFieldValues.forEach(value => field.validate.exclude_values.add(value));
+
+    layerUniqueFieldValues.forEach(value => {
+      field.validate.exclude_values.add(value)
+    });
 
     /**
      * add eventually current feature field unique value that are changed during editing
      */
     features.forEach(feature => {
       const value = feature.get(field.name);
-      if (value !== null || typeof value !== "undefined") field.validate.exclude_values.add(value);
+      if ([null, undefined].indexOf(value) !== -1) {
+        field.validate.exclude_values.add(value);
+      }
     });
     //remove current value from exclude_values
     field.validate.exclude_values.delete(current_feature_value);
   });
 
   if (hasUniqueValue) {
+    //Listen event method after close/save form
     const savedfeatureFnc = () => {
+
        unique_values_feature_field_Obj.forEach(({current_feature_value, field}) => {
+
         if (current_feature_value !== field.value) {
-          if (isChild)
-            this.getEditingService().changeRelationLayerUniqueFieldValues({
-              layerId,
-              relationLayerId,
-              field,
-              oldValue: current_feature_value,
-              newValueconvertSingleMultiGeometry: field.value
-            });
-          else
-            this.getEditingService().changeLayerUniqueFieldValues({
-              layerId,
-              field,
-              oldValue: current_feature_value,
-              newValue: field.value
-            });
+          //case is a relation form
+          if (isChild) {
+
+            this.getEditingService()
+              .changeRelationLayerUniqueFieldValues({
+                layerId,
+                relationLayerId,
+                field,
+                oldValue: current_feature_value,
+                newValueconvertSingleMultiGeometry: field.value
+              });
+
+          } else {
+            //case root form layer
+            this.getEditingService()
+              .changeLayerUniqueFieldValues({
+                layerId,
+                field,
+                oldValue: current_feature_value,
+                newValue: field.value
+              });
+          }
         }
+
       });
-       if (!isChild) this.getEditingService().saveTemporaryRelationsUniqueFieldsValues(layerId);
-       return {
-        once: true
+
+      if (false === isChild) {
+
+        this.getEditingService().saveTemporaryRelationsUniqueFieldsValues(layerId);
       }
+
+      return {once: true}
     };
 
     this.getEditingService().subscribe(`savedfeature_${layerId}`, savedfeatureFnc);
+
     this.getEditingService().subscribe(`closeform_${layerId}`, () => {
+
       this.getEditingService().unsubscribe(`savedfeature_${layerId}`, savedfeatureFnc);
+
       this.getEditingService().clearTemporaryRelationsUniqueFieldsValues(layerId);
-      return {
-        once: true
-      }
+
+      return {once: true}
+
     })
   }
+
   return fields;
 };
 
@@ -321,12 +364,15 @@ proto.getFormFields = async function({inputs, context, feature, isChild=false}={
 proto.evaluateExpressionFields = async function({inputs, context,  feature}={}){
   const expression_eval_promises = []; // promises from expression evaluation
   const { layer } = inputs;
-  const {excludeFields:exclude, get_default_value=false} = context;
-  const fields = layer.getFieldsWithValues(feature, {
+  const {
+    excludeFields:exclude,
+    get_default_value=false
+  } = context;
+
+  layer.getFieldsWithValues(feature, {
     exclude,
     get_default_value
-  });
-  fields.forEach(field => {
+  }).forEach(field => {
     const {default_expression, filter_expression} = field.input.options;
     const qgs_layer_id = inputs.layer.getId();
     const parentData = this.getParentFormData();
@@ -381,10 +427,7 @@ proto.evaluateExpressionFields = async function({inputs, context,  feature}={}){
  * 
  * @param layer,
  * @param feature
- * @returns {
- *   <field_name1>: value,
- *   <field_name1>: value
- * }
+ * @returns Array of field
  */
 proto.getNotEditableFieldsNoPkValues = function({layer, feature}){
   return layer.getEditingNotEditableFields()
@@ -456,7 +499,9 @@ proto.chooseFeatureFromFeatures = function({features}){
       feature,
       attributes: inputs.layer.getEditingFields().map(({name, label}) => ({name, label}))
     });
+
     const message = vueInstance.$mount().$el;
+
     const dialog = GUI.showModalDialog({
       title: t('editing.modal.tools.copyfeaturefromprojectlayer.title'),
       className: 'modal-left',
@@ -486,10 +531,14 @@ proto.chooseFeatureFromFeatures = function({features}){
 
 
 /**
+ * Method to handle layer relation 1:1 features related to feature
  * @since v3.7.0
+ * @param opts.layerId Root layerId
+ * @param opts.features Array of update/new features belong to Root layer
  */
 proto.handleLayerRelation1_1 = function({layerId, features=[]}={}){
   if (features.length === 0) return; // in case of no features
+  const isNew = features[0].isNew();
   //Get layer relation 1:1
   this.getEditingService()
     .getRelation1_1ByLayerId(layerId)
@@ -498,23 +547,47 @@ proto.handleLayerRelation1_1 = function({layerId, features=[]}={}){
       if (layerId === relation.getFather()) {
         //check if child relation layer is editable (on editing)
         const childLayerId = relation.getChild();
-        //get child feature relation 1:1
-        const childFeature = this.getEditingService()
-          .getLayerById(childLayerId)
-          .readFeatures()
-          .find(feature => features[0].get(relation.getFatherField()) === feature.get(relation.getChildField()));
+        let childFeature;
+        if (isNew) {
+          //create new feature
+          childFeature = new Feature();
+          childFeature.setTemporaryId();
+          //add feature to layer editing source
+          this.getEditingService()
+              .getLayerById(childLayerId)
+              .getEditingSource()
+              .addFeature(childFeature);
+          //set attribute to null
+          this.getEditingService()
+            .getProjectLayerById(childLayerId)
+            .getEditingFields()
+            .forEach(field => childFeature.set(field.name, null));
+        } else {
+          //get child feature relation 1:1
+          childFeature = this.getEditingService()
+            .getLayerById(childLayerId)
+            .readFeatures()
+            .find(feature => features[0].get(relation.getFatherField()) === feature.get(relation.getChildField()));
+        }
         //If a child feature relation 1:1 is binds to current feature
         if (childFeature) {
-          const newChildFeature = childFeature.clone();
+          //if childFeature
+          const newChildFeature = isNew ? childFeature : childFeature.clone();
           //Loop to editable only field of father layerId
           this.getEditingService()
             .getRelation1_1EditingLayerFieldsReferredToChildRelation(layerId, childLayerId)
-            .filter(field => field.editable)
+            .filter(field => field.editable) //@TODO MAYBE NOT USEFUL BECAUSE IF NOT EDITABLE CAN CHANGE IT VALUE
             .forEach(field => {
               //@TODO need a way to get custom name prefix
               newChildFeature.set(field.name.split(`${this.getEditingService().getProjectLayerById(childLayerId).getName()}_`)[1], features[0].get(field.name))
             })
-          this.getContext().session.pushUpdate(childLayerId, newChildFeature, childFeature)
+          if (isNew) {
+            //add relation feature
+            this.getContext().session.pushAdd(childLayerId, newChildFeature);
+          } else {
+            //update relation feature
+            this.getContext().session.pushUpdate(childLayerId, newChildFeature, childFeature);
+          }
         }
       }
     })
