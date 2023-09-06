@@ -1618,21 +1618,29 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
             }
           })
           .fail((error={}) => {
+            //parse error server
             const parser = new serverErrorParser({
               error: error.errors ? error.errors : error
             });
+            //set type string
             const errorMessage = parser.parse({
               type: 'String'
             });
+
             const {autoclose = false, message} = messages.error;
+
             GUI.showUserMessage({
               type: 'alert',
               message: message || errorMessage,
               textMessage: !message,
               autoclose
             });
+
             d.reject(toolbox);
-            cb.error && cb.error instanceof Function && cb.error(toolbox, message || errorMessage);
+
+            if (cb.error && cb.error instanceof Function) {
+              cb.error(toolbox, message || errorMessage);
+            }
           });
       //case offline
     } else {
@@ -1665,6 +1673,7 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
     .catch(() => {
       d.reject(toolbox)
   });
+
   return commitPromise;
 };
 
