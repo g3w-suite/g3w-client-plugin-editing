@@ -232,7 +232,7 @@ proto.setRelations1_1FieldsEditable = function(){
         const childLayerId = relation.getChild();
         const isChildLayerEditable = undefined !== this.getLayerById(childLayerId);
         //Loop through editing father layer fields
-        this.getRelation1_1EditingLayerFieldsReferredToChildRelation(layerId, childLayerId)
+        this.getRelation1_1EditingLayerFieldsReferredToChildRelation(relation)
           .forEach(field => {
             //Only for DEVELOPMENT PURPOSE !!!!!!!1
             field.editable = true;
@@ -250,21 +250,23 @@ proto.setRelations1_1FieldsEditable = function(){
 /**
  * Method to get Father layer fields bind to Child Layer in Relation
  * @since 3.7.0
- * @param layerId //Father LayerId
- * @param childLayerId //child layer id
+ * @param relation //relation
  * @returns fields Array bind to child layer
  */
-proto.getRelation1_1EditingLayerFieldsReferredToChildRelation = function(layerId, childLayerId) {
+proto.getRelation1_1EditingLayerFieldsReferredToChildRelation = function(relation) {
   //need to find out in case of no custom name prefix set
   //@TODO get in some way custom name prefix to fields related to child layer field.
   //In case of empty custom prefix, QGIS remove field related to child layer from father fields
-  const ChildFields = CatalogLayersStoresRegistry.getLayerById(childLayerId).getFields();
-
-
-  return this.getLayerById(layerId)
+  const ChildFields = CatalogLayersStoresRegistry.getLayerById(relation.getChild()).getFields();
+  const childLayerName = CatalogLayersStoresRegistry.getLayerById(relation.getChild()).getName();
+  return this
+    .getLayerById(relation.getFather())
     .getEditingFields()
     .filter(field => {
-      return field.name.startsWith(CatalogLayersStoresRegistry.getLayerById(childLayerId).getName())
+      return (
+        field.name.startsWith(childLayerName) ||
+        field.name === relation.getChildField()
+      )
     });
 }
 
@@ -1316,7 +1318,28 @@ proto.getLayersDependencyFeatures = function(layerId, opts={}) {
       const toolbox = this.getToolBoxById(id);
       if (online && session) {
         toolbox.startLoading();
-        if (!session.isStarted()) {
+        if (session.isStarted()) {
+          this.getLayersDependencyFeaturesFromSource({
+            layerId: id,
+            relation,
+            feature: opts.feature,
+            operator: opts.operator
+          })
+            .then(find => {
+              if (find) {
+                resolve(id);
+                toolbox.stopLoading();
+              } else {
+                session.getFeatures(options)
+                  .always(promise => {
+                    promise.always(() => {
+                      toolbox.stopLoading();
+                      resolve(id);
+                    });
+                  });
+              }
+            })
+        } else {
           session.start(options)
             .always(promise => {
               promise.always(() => {
@@ -1324,26 +1347,6 @@ proto.getLayersDependencyFeatures = function(layerId, opts={}) {
                 resolve(id);
               })
             });
-        } else {
-          this.getLayersDependencyFeaturesFromSource({
-            layerId: id,
-            relation,
-            feature: opts.feature,
-            operator: opts.operator
-          }).then(find => {
-            if (find) {
-              resolve(id);
-              toolbox.stopLoading();
-            } else {
-              session.getFeatures(options)
-                .always(promise => {
-                  promise.always(() => {
-                    toolbox.stopLoading();
-                    resolve(id);
-                  });
-              });
-            }
-          })
         }
       } else {
         this.getLayersDependencyFeaturesFromSource({
@@ -1534,7 +1537,14 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
   commitItems = commitItems || session.getCommitItems();
   const {add=[], delete:cancel=[], update=[], relations={}} = commitItems;
   //check if there are some changes to commit
-  if ([...add, ...cancel, ...update, ...Object.keys(relations)].length === 0) {
+  if (
+    [
+      ...add,
+      ...cancel,
+      ...update,
+      ...Object.keys(relations)
+    ].length === 0
+  ) {
     GUI.showUserMessage({
       type: 'info',
       message: 'Nothing to save',
