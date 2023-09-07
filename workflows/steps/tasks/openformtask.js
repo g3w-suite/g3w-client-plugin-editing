@@ -1,9 +1,12 @@
 import SaveAll from "../../../components/SaveAll.vue";
+
 const {base, inherit} = g3wsdk.core.utils;
 const {GUI} = g3wsdk.gui;
 const {WorkflowsStack} = g3wsdk.core.workflow;
 const EditingTask = require('./editingtask');
 const EditingFormComponent = require('../../../form/editingform');
+
+
 
 function OpenFormTask(options={}) {
   this._edit_relations = options.edit_relations === undefined ? true : options._edit_relations;
@@ -20,6 +23,10 @@ function OpenFormTask(options={}) {
   this._editorFormStructure;
   this.promise;
   this._multi = options.multi || false; // set if it can handle multi edit features
+  /**
+   * @since v3.7.0
+   */
+  this._unwatchs = [];
   base(this, options);
 }
 
@@ -280,6 +287,11 @@ proto.startForm = async function(options = {}) {
   const currentWorkflow = WorkflowsStack.getCurrent();
   // in case of called single task no workflow is set
   currentWorkflow && currentWorkflow.setContextService(formService);
+  //listen eventually field relation 1:1 changes value
+  this._unwatchs = this.listenRelation1_1FieldChange({
+    layerId: this.layerId,
+    fields: this._fields,
+  })
 };
 
 proto.run = function(inputs, context) {
@@ -341,4 +353,8 @@ proto.stop = function() {
 
   this.layerId = null;
   this.promise = null;
+  // class unwatch
+  this._unwatchs.forEach(unwatch => unwatch());
+  //reset to Empty Array
+  this._unwatchs = [];
 };

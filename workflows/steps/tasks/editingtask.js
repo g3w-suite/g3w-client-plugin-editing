@@ -1,10 +1,15 @@
-const { base, inherit } = g3wsdk.core.utils;
+const {
+  base,
+  inherit,
+  createFilterFormInputs,
+} = g3wsdk.core.utils;
+
 const { Geometry } = g3wsdk.core.geometry;
 const {
   convertSingleMultiGeometry,
   isSameBaseGeometryType,
   createSelectedStyle,
-  areCoordinatesEqual
+  areCoordinatesEqual,
 } = g3wsdk.core.geoutils;
 const {
   Layer,
@@ -15,6 +20,9 @@ const { Task } = g3wsdk.core.workflow;
 const { WorkflowsStack } = g3wsdk.core.workflow;
 const { inputService } = g3wsdk.core.input;
 const t = g3wsdk.core.i18n.tPlugin;
+const {DataRouterService} = g3wsdk.core.data;
+const {VM} = g3wsdk.constant.APP_EVENTBUS;
+
 const ChooseFeatureToEditComponent = require('../../../g3w-editing-components/choosefeaturetoedit');
 
 function EditingTask(options = {}) {
@@ -568,6 +576,7 @@ proto.handleLayerRelation1_1 = function({layerId, features=[]}={}){
           //get child feature relation 1:1
           childFeature = this.getEditingService()
             .getLayerById(childLayerId)
+            .getEditingSource()
             .readFeatures()
             .find(feature => features[0].get(relation.getFatherField()) === feature.get(relation.getChildField()));
         }
@@ -577,11 +586,15 @@ proto.handleLayerRelation1_1 = function({layerId, features=[]}={}){
           const newChildFeature = isNew ? childFeature : childFeature.clone();
           //Loop to editable only field of father layerId
           this.getEditingService()
-            .getRelation1_1EditingLayerFieldsReferredToChildRelation(layerId, childLayerId)
+            .getRelation1_1EditingLayerFieldsReferredToChildRelation(relation)
             .filter(field => field.editable) //@TODO MAYBE NOT USEFUL BECAUSE IF NOT EDITABLE CAN CHANGE IT VALUE
             .forEach(field => {
               //@TODO need a way to get custom name prefix
-              newChildFeature.set(field.name.split(`${this.getEditingService().getProjectLayerById(childLayerId).getName()}_`)[1], features[0].get(field.name))
+              if (field.name.split(`${this.getEditingService().getProjectLayerById(childLayerId).getName()}_`).length > 1) {
+                newChildFeature.set(field.name.split(`${this.getEditingService().getProjectLayerById(childLayerId).getName()}_`)[1], features[0].get(field.name))
+              } else {
+                newChildFeature.set(field.name, features[0].get(field.name));
+              }
             })
           if (isNew) {
             //check if father field is a Pk (Primary key)
@@ -598,6 +611,86 @@ proto.handleLayerRelation1_1 = function({layerId, features=[]}={}){
         }
       }
     })
+}
+
+/**
+ * @since v3.7.0
+ * @param layerId Current editing layer
+ * @param fields Array of fields
+ * @returns  Array of watch function event to remove listen
+ */
+proto.listenRelation1_1FieldChange = function({layerId, fields=[]}={}) {
+  //RELATION 1:1 IN CASE CHANGE RELATION FIELD NEED TO
+  //GET CHILD VALUES FROM CHILD LAYER
+  //initiliaze unwatch field value event change
+  const unwatchs = [];
+  //get all relation 1:1 of current layer
+  this.getEditingService()
+    .getRelation1_1ByLayerId(layerId)
+    .forEach(relation => {
+      //for each relation get child layer field
+      const relationField = fields.find(field => field.name === relation.getFatherField());
+      //if found field and relation layer is in editing
+      if (relationField && this.getEditingService().getLayerById(relation.getChild())) {
+        //get project layer
+        const layer = this.getEditingService().getProjectLayerById(relation.getChild());
+        //add watch function to unwatch
+        unwatchs.push(
+          VM.$watch(
+            //listen field value change
+            () => relationField.value,
+            async (value) => {
+              //in case of value /exclude empty string
+              if (value) {
+                //set editable false to avoid to edit
+                relationField.editable = false;
+                try {
+                  //get feature of relation layer based on value of relation field
+                  const {data} = await DataRouterService.getData('search:features', {
+                    inputs: {
+                      layer,
+                      formatter:0,
+                      filter: createFilterFormInputs({
+                        layer,
+                        search_endpoint: 'api',
+                        inputs: [{
+                          attribute: relationField.name,
+                          value,
+                        }]
+                      }),
+                      search_endpoint: 'api'
+                    },
+                    outputs: false
+                  });
+                  // if return result
+                  if (data && data[0] && data[0].features.length === 1) {
+                    //Get feature. It is one feature due relation1:1 type
+                    const feature = data[0].features[0];
+                    //get field of root layers related to current relation
+                    this.getEditingService()
+                      .getRelation1_1EditingLayerFieldsReferredToChildRelation(relation)
+                      .forEach(field => {
+                        //@TODO temporary check of field base on prexif child layer name
+                        if (field.name.split(`${this.getEditingService().getProjectLayerById(relation.getChild()).getName()}_`).length > 1) {
+                          //SET VALUE
+                          fields.find(f => f.name === field.name).value = feature.get(field.name.split(`${this.getEditingService().getProjectLayerById(relation.getChild()).getName()}_`)[1]);
+                        }
+                      })
+                  }
+                } catch(err){
+                  console.log(err)
+                }
+              }
+
+              relationField.editable = true;
+            }
+          )
+        )
+      }
+    });
+
+  return unwatchs;
+
 }
 
 module.exports = EditingTask;
