@@ -123,28 +123,34 @@ proto.getMap = function() {
 proto.areCoordinatesEqual = function({feature, coordinates}){
   const featureGeometry = feature.getGeometry();
   const geometryType = featureGeometry.getType();
-  switch (geometryType){
+  switch (geometryType) {
     case 'MultiLineString':
-      return !!_.flatMap(featureGeometry.getCoordinates()).find( f_coordinates=> areCoordinatesEqual(coordinates, f_coordinates));
-      break;
+
+      return undefined !== _.flatMap(featureGeometry.getCoordinates()).find( f_coordinates=> areCoordinatesEqual(coordinates, f_coordinates));
+
     case 'LineString':
-      return !!featureGeometry.getCoordinates().find(f_coordinates => areCoordinatesEqual(coordinates, f_coordinates));
-      break;
+
+      return undefined !== featureGeometry.getCoordinates().find(f_coordinates => areCoordinatesEqual(coordinates, f_coordinates));
+
     case 'Polygon':
-      return !!_.flatMap(featureGeometry.getCoordinates()).find(f_coordinates => areCoordinatesEqual(coordinates, f_coordinates));
-      break;
+
+      return undefined !== _.flatMap(featureGeometry.getCoordinates()).find(f_coordinates => areCoordinatesEqual(coordinates, f_coordinates));
+
     case 'MultiPolygon':
-      return !!featureGeometry.getPolygons().find(polygon =>{
-        return !!_.flatMap(polygon.getCoordinates()).find(f_coordinates => areCoordinatesEqual(coordinates, f_coordinates));
+
+      return undefined !== featureGeometry.getPolygons().find(polygon => {
+        return undefined !== _.flatMap(polygon.getCoordinates()).find(f_coordinates => areCoordinatesEqual(coordinates, f_coordinates));
       });
-      break;
+
     case 'Point':
+
       return areCoordinatesEqual(coordinates, featureGeometry.getCoordinates());
-      break;
+
     case 'MultiPoint':
-      return !!featureGeometry.getCoordinates().find(f_coordinates => areCoordinatesEqual(coordinates, f_coordinates));
-      break;
-    }
+
+      return undefined !== featureGeometry.getCoordinates().find(f_coordinates => areCoordinatesEqual(coordinates, f_coordinates));
+  }
+
   return false;
 };
 
@@ -698,20 +704,29 @@ proto.handleLayerRelation1_1 = function({layerId, features=[]}={}){
 proto.listenRelation1_1FieldChange = function({layerId, fields=[]}={}) {
   //RELATION 1:1 IN CASE CHANGE RELATION FIELD NEED TO
   //GET CHILD VALUES FROM CHILD LAYER
-  //initiliaze unwatch field value event change
-  const unwatchs = [];
+  //Initialize unwatches field value event change
+  const unwatches = [];
+  //store and cache values of child relation layer based on
+  // relation field
+  const cacheRelationChildFieldValues = {};
   //get all relation 1:1 of current layer
   this.getEditingService()
     .getRelation1_1ByLayerId(layerId)
     .forEach(relation => {
+      //get relation Id
+      const relationId = relation.getId();
+      //get relation child layer id
+      const childLayerId = relation.getChild();
       //for each relation get child layer field
       const relationField = fields.find(field => field.name === relation.getFatherField());
       //if found field and relation layer is in editing
-      if (relationField && this.getEditingService().getLayerById(relation.getChild())) {
+      if (relationField && this.getEditingService().getLayerById(childLayerId)) {
+        //initialize cache with relation id
+        cacheRelationChildFieldValues[relationId] = {};
         //get project layer
-        const layer = this.getEditingService().getProjectLayerById(relation.getChild());
+        const layer = this.getEditingService().getProjectLayerById(childLayerId);
         //add watch function to unwatch
-        unwatchs.push(
+        unwatches.push(
           VM.$watch(
             //listen field value change
             () => relationField.value,
@@ -720,44 +735,68 @@ proto.listenRelation1_1FieldChange = function({layerId, fields=[]}={}) {
               if (value) {
                 //set editable false to avoid to edit
                 relationField.editable = false;
-                try {
-                  //get feature of relation layer based on value of relation field
-                  const {data} = await DataRouterService.getData('search:features', {
-                    inputs: {
-                      layer,
-                      formatter:0,
-                      filter: createFilterFormInputs({
+                //show input bar loader
+                relationField.input.options.loading.state = 'loading';
+                //check if value is store
+                if (cacheRelationChildFieldValues[relationId][value]) {
+                  cacheRelationChildFieldValues[relationId][value]
+                    .forEach((item) => {
+                     Object.entries(item)
+                       .forEach(([name, value]) => fields.find(f => f.name === name).value = value)
+                    })
+                } else {
+                  try {
+                    //get feature of relation layer based on value of relation field
+                    const {data} = await DataRouterService.getData('search:features', {
+                      inputs: {
                         layer,
-                        search_endpoint: 'api',
-                        inputs: [{
-                          attribute: relationField.name,
-                          value,
-                        }]
-                      }),
-                      search_endpoint: 'api'
-                    },
-                    outputs: false
-                  });
-                  // if return result
-                  if (data && data[0] && data[0].features.length === 1) {
-                    //Get feature. It is one feature due relation1:1 type
-                    const feature = data[0].features[0];
-                    //get field of root layers related to current relation
-                    this.getEditingService()
-                      .getRelation1_1EditingLayerFieldsReferredToChildRelation(relation)
-                      .forEach(field => {
-                        //@TODO temporary check of field base on prexif child layer name
-                        if (field.name.split(`${this.getEditingService().getProjectLayerById(relation.getChild()).getName()}_`).length > 1) {
-                          //SET VALUE
-                          fields.find(f => f.name === field.name).value = feature.get(field.name.split(`${this.getEditingService().getProjectLayerById(relation.getChild()).getName()}_`)[1]);
-                        }
-                      })
+                        formatter:0,
+                        filter: createFilterFormInputs({
+                          layer,
+                          search_endpoint: 'api',
+                          inputs: [{
+                            attribute: relationField.name,
+                            value,
+                          }]
+                        }),
+                        search_endpoint: 'api'
+                      },
+                      outputs: false
+                    });
+                    // if return result
+                    if (data && data[0] && data[0].features.length === 1) {
+                      //set array
+                      cacheRelationChildFieldValues[relation.getId()][value] = [];
+                      //Get feature. It is one feature due relation1:1 type
+                      const feature = data[0].features[0];
+                      //get field of root layers related to current relation
+                      this.getEditingService()
+                        .getRelation1_1EditingLayerFieldsReferredToChildRelation(relation)
+                        .forEach(field => {
+                          //@TODO temporary check of field base on prefix child layer name
+                          const splitCustomFiledPrefix = field.name
+                            .split(`${this.getEditingService()
+                              .getProjectLayerById(childLayerId)
+                              .getName()}_`);
+
+                          if (splitCustomFiledPrefix.length > 1) {
+                            //SET field value
+                            const childValue = feature.get(splitCustomFiledPrefix[1]);
+                            fields.find(f => f.name === field.name).value = childValue;
+                            //store on cache
+                            cacheRelationChildFieldValues[relationId][value].push({
+                              [field.name]: childValue
+                            })
+                          }
+                        })
+                    }
+                  } catch(err){
+                    console.log(err)
                   }
-                } catch(err){
-                  console.log(err)
                 }
               }
-
+              //reset base state
+              relationField.input.options.loading.state = null;
               relationField.editable = true;
             }
           )
@@ -765,7 +804,7 @@ proto.listenRelation1_1FieldChange = function({layerId, fields=[]}={}) {
       }
     });
 
-  return unwatchs;
+  return unwatches;
 
 }
 
