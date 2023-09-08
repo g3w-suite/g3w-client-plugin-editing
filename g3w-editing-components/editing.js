@@ -3,7 +3,11 @@
 */
 
 import EditingVueComponent from '../components/Editing.vue';
-const {base, inherit, merge} = g3wsdk.core.utils;
+const {
+  base,
+  inherit,
+  merge
+} = g3wsdk.core.utils;
 const { GUI } = g3wsdk.gui;
 const { Component } = g3wsdk.gui.vue;
 const EditingService = require('../services/editingservice');

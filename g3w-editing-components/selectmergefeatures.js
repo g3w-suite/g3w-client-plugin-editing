@@ -50,6 +50,7 @@ function SelectFeaturesDom({features, events}={}){
       }, [table])
     }
   });
+
   return new Component().$mount().$el;
 }
 

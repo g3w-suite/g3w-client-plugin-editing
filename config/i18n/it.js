@@ -136,7 +136,9 @@ export default {
     },
     buttons: {
       save: "Inserisci/Modifica",
+      save_table: 'Modifica',
       save_and_back: "Salva e torna al padre",
+      save_and_back_table: "Salva e torna indietro",
       cancel: "Ignora Modifiche"
     }
   },

@@ -4,7 +4,7 @@
 
 import TableVueObject from '../components/Table.vue';
 const {base, inherit} = g3wsdk.core.utils;
-const Component = g3wsdk.gui.vue.Component;
+const {Component} = g3wsdk.gui.vue;
 const TableService = require('../services/tableservice');
 
 const InternalComponent = Vue.extend(TableVueObject);

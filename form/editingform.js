@@ -15,7 +15,7 @@ function EditingFormComponent(options={}) {
       feature,
       filterType: 'fid'
     });
-    promise.then(()=> {
+    promise.then(() => {
       relationsOptions.formEventBus = this.getService().getEventBus();
       const service = new EditingFormService(relationsOptions);
       const RelationComponents = service.buildRelationComponents();
