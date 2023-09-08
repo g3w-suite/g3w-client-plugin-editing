@@ -11,7 +11,7 @@
       ref="editing_table_header"
       class="editing_table_header"
     >
-      <div style="display: flex; justify-content: space-between; align-items: baseline">
+      <div class="editing_table_header_content">
         <h3
           class="editing_table_title">
             {{ state.title }}
@@ -24,7 +24,6 @@
       <div
         v-if="state.isrelation"
         class="editing_table_relation_messagge"
-        style="font-weight: bold"
         v-t-plugin="'editing.relation.table.info'">
       </div>
     </div>
@@ -35,11 +34,13 @@
         style="width:100%"
     >
       <thead>
+
         <tr>
           <th v-if="!state.isrelation" style="max-width: 60px"></th>
           <th v-if="state.isrelation"></th>
           <th v-for="header in state.headers">{{ header.label }}</th>
         </tr>
+
       </thead>
 
       <tbody>
@@ -51,7 +52,6 @@
           <td v-if="!state.isrelation">
             <div
               id="table-editing-tools"
-              style="display:flex; justify-content: space-between;"
             >
               <i
                 v-if="showTool('change_attr_feature')"
@@ -98,9 +98,11 @@
           <td
             v-if="showValue(key)"
             v-for="(value, key) in feature" :key="key">
+
               <g3w-media
                 v-if="getValue(value) && isMediaField(key)"
                 :state="value" />
+              
               <p v-else>{{ getValue(value) }}</p>
           </td>
       </tr>
@@ -113,7 +115,6 @@
       id="buttons"
       ref="table_editing_footer_buttons"
       class="table_editing_footer_buttons"
-      style="position: absolute; bottom: 10px; width: 100%; display:flex; justify-content: center;"
     >
       <button
         v-t-plugin="state.isrelation ? 'editing.form.buttons.save_and_back' : 'editing.form.buttons.save'"
@@ -132,7 +133,10 @@
 </template>
 
 <script>
-  const {base, inherit} = g3wsdk.core.utils;
+  const {
+    base,
+    inherit
+  } = g3wsdk.core.utils;
   const {resizeMixin} = g3wsdk.gui.vue.Mixins;
   const Media_Field = g3wsdk.gui.vue.Fields.media_field;
 
@@ -150,14 +154,14 @@
       }
     },
     methods: {
-      async changeSize(){
+      async changeSize() {
         await this.$nextTick();
         setTimeout(() => this.resize())
       },
-      showTool(type){
+      showTool(type) {
         return this.state.capabilities.find(capability => capability === type) !== undefined;
       },
-      async resize(){
+      async resize() {
         if (this.$el.style.display !== 'none'){
           await this.$nextTick();
           const tableHeight = $(".content").height();
@@ -220,15 +224,21 @@
         this.$options.service.editFeature(uid);
       },
       linkFeature(index, evt) {
-        if (evt.target.checked) this._linkFeatures.push(index);
-        else this._linkFeatures = this._linkFeatures.filter(addindex => addindex !== index);
+        if (evt.target.checked) {
+          this._linkFeatures.push(index);
+        } else {
+          this._linkFeatures = this._linkFeatures.filter(addindex => addindex !== index);
+        }
       },
       _setLayout() {
         return this.$options.service._setLayout();
       },
       getValue(value) {
-        if (value && typeof  value === 'object' && value.constructor === Object) value = value.value;
-        else if (typeof value == 'string' && value.indexOf('_new_') === 0) value = null;
+        if (value && typeof  value === 'object' && value.constructor === Object) {
+          value = value.value;
+        } else if (typeof value == 'string' && value.indexOf('_new_') === 0) {
+          value = null;
+        }
         return value;
       },
       setDataTable(){
@@ -253,21 +263,48 @@
     },
     async mounted() {
       await this.$nextTick();
-      if (this.state.isrelation) this._linkFeatures = [];
+      if (this.state.isrelation) {
+        this._linkFeatures = [];
+      }
       this.setDataTable();
       $('#table-editing-tools i').tooltip();
       this.$options.service.emit('ready');
       this.resize();
     },
     beforeDestroy() {
-      if (this._linkFeatures) this._linkFeatures = null;
+      if (this._linkFeatures) {
+        this._linkFeatures = null;
+      }
       this.dataTable.destroy();
     }
   };
 </script>
 
 <style scoped>
+
+  #table-editing-tools {
+    display:flex;
+    justify-content: space-between;
+  }
+
   #table-editing-tools i {
-    margin: 5px;
+      margin: 5px;
+  }
+
+  .table_editing_footer_buttons {
+    position: absolute;
+    bottom: 10px;
+    width: 100%;
+    display:flex;
+    justify-content: center;
+  }
+
+  .editing_table_header_content {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .editing_table_relation_messagge {
+    font-weight: bold
   }
 </style>
