@@ -205,21 +205,41 @@
        *
        * @param toolboxId
        */
-      setSelectedToolbox(toolboxId) {
+      async setSelectedToolbox(toolboxId) {
+        //get toolbox by id
         const toolbox = this._getToolBoxById(toolboxId);
+        //get all toolboxes
         const toolboxes = this.$options.service.getToolBoxes();
+        //check if exist already toolbox selected (first time)
         const toolboxSelected = toolboxes.find(toolbox => toolbox.isSelected());
-        if (toolboxSelected){
-          toolboxSelected.setSelected(false);
+        //check if exist selected toolbox
+        if (toolboxSelected) {
+          if (toolboxSelected.getDependencies().length > 0 && toolboxSelected.isDirty()){
+            try {
+              await this.$options.service.commitDirtyToolBoxes(toolboxSelected.getId());
+            }
+            catch(err) {}
+            finally {
+              //set already selected false
+              toolboxSelected.setSelected(false);
+              toolboxSelected.clearMessage();
+            }
+          } else {
+            //set already selected false
+            toolboxSelected.setSelected(false);
+            toolboxSelected.clearMessage();
+          }
         }
+
+        //set current selected toolbox to true
         toolbox.setSelected(true);
+
         this.state.toolboxselected = toolbox;
+
         if (toolbox.getDependencies().length > 0) {
-          this.state.message = "<div>\n" +
-            t("editing.messages.change_toolbox_relation") + "\n" +
-            "</div>"
+          toolbox.setMessage("editing.messages.change_toolbox_relation")
         } else {
-          this.state.message = null;
+          toolbox.clearMessage();
         }
       },
       /**
