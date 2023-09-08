@@ -137,6 +137,7 @@ export default {
     buttons: {
       save: "Infoga/Redigera",
       save_and_back: "Spara och gå tillbaka",
+      save_and_back_table: "Spara och gå tillbaka",
       cancel: "Ignorera ändringar"
     }
   },

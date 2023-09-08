@@ -137,6 +137,7 @@ export default {
     buttons: {
       save: "Insert/Edit",
       save_and_back: "Save and Back",
+      save_and_back_table: "Save and Back",
       cancel: "Ignore Changes"
     }
   },

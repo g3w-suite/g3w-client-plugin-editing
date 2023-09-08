@@ -137,6 +137,7 @@ export default  {
     buttons: {
       save: "Inserați/Editați",
       save_and_back: "Salvează și dă înapoi",
+      save_and_back_table: "Salvează și dă înapoi",
       cancel: "Ignorați modificările"
     }
   },

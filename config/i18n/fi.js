@@ -137,6 +137,7 @@ export default {
     buttons: {
       save: "Lisää/muokkaa",
       save_and_back: "Tallenna ja palaa",
+      save_and_back_table: "Tallenna ja palaa",
       cancel: "Peruuta"
     }
   },

@@ -137,6 +137,7 @@ export default {
     buttons: {
       save: "Insérer/Modifier",
       save_and_back: "Sauvegarder et retourner au parent",
+      save_and_back_table: "Sauvegarder et et revenir en arrière",
       cancel: "Ignorer modifications"
     }
   },

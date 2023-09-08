@@ -254,7 +254,12 @@ proto.startForm = async function(options = {}) {
     buttons: [
       {
         id: 'save',
-        title: this._isContentChild ? "plugins.editing.form.buttons.save_and_back" : "plugins.editing.form.buttons.save",
+        title: this._isContentChild ?
+          (
+            WorkflowsStack.getParent().getBackButtonLabel() ||
+            "plugins.editing.form.buttons.save_and_back"
+          ) :
+          "plugins.editing.form.buttons.save",
         type: "save",
         class: "btn-success",
         cbk: this._saveFnc(promise, context, inputs).bind(this)
