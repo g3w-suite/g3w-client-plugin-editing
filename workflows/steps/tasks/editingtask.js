@@ -25,6 +25,11 @@ const {VM} = g3wsdk.constant.APP_EVENTBUS;
 
 const ChooseFeatureToEditComponent = require('../../../g3w-editing-components/choosefeaturetoedit');
 
+/**
+ * Base editing task
+ * @param options
+ * @constructor
+ */
 function EditingTask(options = {}) {
   base(this, options);
   this._editingServive;
@@ -42,42 +47,79 @@ inherit(EditingTask, Task);
 
 const proto = EditingTask.prototype;
 
-//get editing type from editing config
-proto.getEditingType = function(){
+/**
+ * get editing type from editing config
+ * @TODO
+ * @returns {null}
+ */
+proto.getEditingType = function() {
   return null;
 };
 
+/**
+ *
+ */
 proto.registerPointerMoveCursor = function(){
   this._mapService.getMap().on("pointermove", this._pointerMoveCursor)
 };
 
+/**
+ *
+ */
 proto.unregisterPointerMoveCursor = function(){
   this._mapService.getMap().un("pointermove", this._pointerMoveCursor)
 };
 
+/**
+ *
+ * @param evt
+ * @private
+ */
 proto._pointerMoveCursor = function(evt) {
   const hit = this.forEachFeatureAtPixel(evt.pixel, () => true);
   if (hit) this.getTargetElement().style.cursor = 'pointer';
   else this.getTargetElement().style.cursor = '';
 };
 
+/**
+ *
+ * @param steps
+ */
 proto.setSteps = function(steps={}){
   this._steps = steps;
   this.setUserMessageSteps(steps);
 };
 
+/**
+ *
+ * @returns {{}}
+ */
 proto.getSteps = function(){
   return this._steps;
 };
 
+/**
+ *
+ * @returns {*}
+ */
 proto.getMapService = function(){
   return this._mapService;
 };
 
+/**
+ *
+ * @returns {*}
+ */
 proto.getMap = function() {
   return this._mapService.getMap();
 };
 
+/**
+ *
+ * @param feature
+ * @param coordinates
+ * @returns {*|boolean}
+ */
 proto.areCoordinatesEqual = function({feature, coordinates}){
   const featureGeometry = feature.getGeometry();
   const geometryType = featureGeometry.getType();
@@ -182,22 +224,45 @@ proto.disableSidebar = function(bool = true) {
   }
 };
 
+/**
+ *
+ * @returns {*|EditingService|{}}
+ */
 proto.getEditingService = function() {
   this._editingServive = this._editingServive || require('../../../services/editingservice');
   return this._editingServive;
 };
 
+/**
+ *
+ * @param event
+ * @param options
+ * @returns {*}
+ */
 proto.fireEvent = function(event, options={}) {
   return this.getEditingService().fireEvent(event, options);
 };
 
+/**
+ *
+ * @param layer
+ * @param feature
+ */
 proto.setNullMediaFields = function({layer, feature}={}) {
   const mediaFields = layer.getEditingMediaFields({});
   mediaFields.forEach(field => feature.set(field, null))
 };
 
+/**
+ *
+ * @param inputs
+ * @param context
+ */
 proto.run = function(inputs, context) {};
 
+/**
+ *
+ */
 proto.stop = function() {};
 
 /**
@@ -471,7 +536,12 @@ proto.getParentFormData = function(){
   }
 };
 
-
+/**
+ *
+ * @param layerId
+ * @param geometryType
+ * @returns {*[]}
+ */
 proto.getFeaturesFromSelectionFeatures = function({layerId, geometryType}){
   const selectionLayerSource = this._mapService.defaultsLayers.selectionLayer.getSource();
   return this.convertFeaturesGeometryToGeometryTypeOfLayer({
@@ -480,6 +550,12 @@ proto.getFeaturesFromSelectionFeatures = function({layerId, geometryType}){
   })
 };
 
+/**
+ *
+ * @param features
+ * @param geometryType
+ * @returns {*[]}
+ */
 proto.convertFeaturesGeometryToGeometryTypeOfLayer = function({features=[], geometryType}){
   const convertFeatures = [];
   features.forEach(feature => {
@@ -499,7 +575,7 @@ proto.convertFeaturesGeometryToGeometryTypeOfLayer = function({features=[], geom
 /**
  * @since 3.5.13
  */
-proto.chooseFeatureFromFeatures = function({features}){
+proto.chooseFeatureFromFeatures = function({features=[]}){
   return new Promise((resolve, reject) =>{
     const inputs = this.getInputs();
 
@@ -564,9 +640,9 @@ proto.handleLayerRelation1_1 = function({layerId, features=[]}={}){
           childFeature.setTemporaryId();
           //add feature to layer editing source
           this.getEditingService()
-              .getLayerById(childLayerId)
-              .getEditingSource()
-              .addFeature(childFeature);
+            .getLayerById(childLayerId)
+            .getEditingSource()
+            .addFeature(childFeature);
           //set attribute to null
           this.getEditingService()
             .getProjectLayerById(childLayerId)
