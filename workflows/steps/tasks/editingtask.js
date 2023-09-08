@@ -628,7 +628,7 @@ proto.chooseFeatureFromFeatures = function({features=[]}){
  * @param opts.layerId Root layerId
  * @param opts.features Array of update/new features belong to Root layer
  */
-proto.handleLayerRelation1_1 = function({layerId, features=[]}={}){
+proto.handleRelation1_1LayerFields = function({layerId, features=[]}={}){
   if (features.length === 0) return; // in case of no features
   const isNew = features[0].isNew();
   //Get layer relation 1:1
@@ -685,7 +685,7 @@ proto.handleLayerRelation1_1 = function({layerId, features=[]}={}){
               childFeature.set(relation.getChildField(), features[0].getId());
             }
             //add relation feature
-            this.getContext().session.pushAdd(childLayerId, newChildFeature);
+            this.getContext().session.pushAdd(childLayerId, newChildFeature, false);
           } else {
             //update relation feature
             this.getContext().session.pushUpdate(childLayerId, newChildFeature, childFeature);

@@ -120,7 +120,7 @@ proto.saveAll = function(fields) {
         });
 
         //check and handle if layer has relation 1:1
-        this.handleLayerRelation1_1({
+        this.handleRelation1_1LayerFields({
           layerId: this.layerId,
           features: newFeatures
         });
@@ -173,12 +173,11 @@ proto._saveFeatures = async function({fields, promise, session, inputs}){
       newFeatures,
       originalFeatures: this._originalFeatures
     }).then(() => {
-      newFeatures.forEach((newFeature, index)=>{
-        session.pushUpdate(this.layerId, newFeature, this._originalFeatures[index]);
-      });
+      newFeatures
+        .forEach((newFeature, index)=> session.pushUpdate(this.layerId, newFeature, this._originalFeatures[index]));
 
       //check and handle if layer has relation 1:1
-      this.handleLayerRelation1_1({
+      this.handleRelation1_1LayerFields({
         layerId: this.layerId,
         features: newFeatures
       });
@@ -187,13 +186,17 @@ proto._saveFeatures = async function({fields, promise, session, inputs}){
       this.fireEvent('savedfeature', newFeatures); // called after saved
       this.fireEvent(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
       // In case of save of child it means that child is updated so also parent
-      this._isContentChild &&
-      WorkflowsStack.getParents()
-        .forEach(workflow => workflow.getContextService().setUpdate(true, {force: true}));
+      if (this._isContentChild) {
+        WorkflowsStack
+          .getParents()
+          .forEach(workflow => workflow.getContextService().setUpdate(true, {force: true}));
+      }
       promise.resolve(inputs);
     })
   } else {
+
     GUI.setModal(false);
+
     promise.resolve(inputs);
   }
 };
@@ -226,18 +229,15 @@ proto.startForm = async function(options = {}) {
   /**
    * set fields. Useful getParentFormData
    */
-  WorkflowsStack.getCurrent().setInput({
-    key: 'fields',
-    value: this._fields
-  });
+  WorkflowsStack
+    .getCurrent()
+    .setInput({key: 'fields', value: this._fields});
 
   const formService = Form({
     formComponent,
     title: "plugins.editing.editing_attributes",
     name: this._layerName,
-    crumb: {
-      title: this._layerName
-    },
+    crumb: {title: this._layerName},
     id: this._generateFormId(this._layerName),
     dataid: this._layerName,
     layer: this._originalLayer,
@@ -279,6 +279,7 @@ proto.startForm = async function(options = {}) {
       }
     ]
   });
+  //fire openform event
   this.fireEvent('openform',
     {
       layerId:this.layerId,
