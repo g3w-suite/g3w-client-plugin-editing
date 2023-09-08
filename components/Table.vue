@@ -194,13 +194,16 @@
         this.$options.service.cancel();
       },
       async deleteFeature(uid) {
-        this.$options.service.deleteFeature(uid).then(async () => {
-          this.dataTable
-            .row($(`#editing_table table tr#${uid}`))
-            .remove()
-            .draw();
-          await this.$nextTick();
-        }).catch(()=>{});
+        const element = $(`#editing_table table tr#${uid}`);
+        this.$options.service.deleteFeature(uid)
+          .then(async () => {
+            this.dataTable
+              .row(element)
+              .remove()
+              .draw();
+            await this.$nextTick();
+          })
+          .catch(()=>{});
       },
       copyFeature(uid){
         this.$options.service.copyFeature(uid)
