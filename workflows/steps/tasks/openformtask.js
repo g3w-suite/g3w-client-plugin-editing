@@ -222,7 +222,6 @@ proto.startForm = async function(options = {}) {
   const formComponent = options.formComponent || EditingFormComponent;
   const Form = await this._getForm(inputs, context);
   const feature = this._originalFeatures[0];
-  const isnew = this._originalFeatures.length > 1 ? false : feature.isNew();
 
   /**
    * set fields. Useful getParentFormData
@@ -242,7 +241,7 @@ proto.startForm = async function(options = {}) {
     id: this._generateFormId(this._layerName),
     dataid: this._layerName,
     layer: this._originalLayer,
-    isnew, // specify if is a new feature
+    isnew: this._originalFeatures.length > 1 ? false : feature.isNew(), // specify if is a new feature
     feature,
     parentData: this.getParentFormData(),
     fields: this._fields,
@@ -252,30 +251,33 @@ proto.startForm = async function(options = {}) {
     push: this._isContentChild,
     showgoback: !this._isContentChild,
     headerComponent:SaveAll,
-    buttons:[{
-      id: 'save',
-      title: this._isContentChild ? "plugins.editing.form.buttons.save_and_back" : "plugins.editing.form.buttons.save",
-      type: "save",
-      class: "btn-success",
-      cbk: this._saveFnc(promise, context, inputs).bind(this)
-    }, {
-      id: 'cancel',
-      title: "plugins.editing.form.buttons.cancel",
-      type: "cancel",
-      class: "btn-danger",
-      /// buttons in case of change
-      eventButtons: {
-        update: {
-          false : {
-            id: 'close',
-            title: "close",
-            type: "cancel",
-            class: "btn-danger",
-          }
-        }
+    buttons: [
+      {
+        id: 'save',
+        title: this._isContentChild ? "plugins.editing.form.buttons.save_and_back" : "plugins.editing.form.buttons.save",
+        type: "save",
+        class: "btn-success",
+        cbk: this._saveFnc(promise, context, inputs).bind(this)
       },
-      cbk: this._cancelFnc(promise, inputs).bind(this)
-    }]
+      {
+        id: 'cancel',
+        title: "plugins.editing.form.buttons.cancel",
+        type: "cancel",
+        class: "btn-danger",
+        /// buttons in case of change
+        eventButtons: {
+          update: {
+            false : {
+              id: 'close',
+              title: "close",
+              type: "cancel",
+              class: "btn-danger",
+            }
+          }
+        },
+        cbk: this._cancelFnc(promise, inputs).bind(this)
+      }
+    ]
   });
   this.fireEvent('openform',
     {
@@ -283,10 +285,16 @@ proto.startForm = async function(options = {}) {
       session,
       feature: this._originalFeature,
       formService
-    });
+    }
+  );
+
   const currentWorkflow = WorkflowsStack.getCurrent();
   // in case of called single task no workflow is set
-  currentWorkflow && currentWorkflow.setContextService(formService);
+  if (currentWorkflow) {
+    //set context service to form Service
+    currentWorkflow.setContextService(formService);
+  }
+
   //listen eventually field relation 1:1 changes value
   this._unwatchs = this.listenRelation1_1FieldChange({
     layerId: this.layerId,
