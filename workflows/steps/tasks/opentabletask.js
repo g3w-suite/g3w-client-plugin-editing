@@ -1,4 +1,7 @@
-const {inherit, base} = g3wsdk.core.utils;
+const {
+  inherit,
+  base
+} = g3wsdk.core.utils;
 const {GUI} = g3wsdk.gui;
 const {WorkflowsStack} = g3wsdk.core.workflow;
 const TableComponent = require('../../../g3w-editing-components/table');
@@ -13,9 +16,16 @@ inherit(OpenTableTask, EditingTask);
 
 const proto = OpenTableTask.prototype;
 
+/**
+ *
+ * @param inputs
+ * @param context
+ * @returns {*}
+ */
 proto.run = function(inputs, context) {
-  this.getEditingService().setCurrentLayout();
   const d = $.Deferred();
+  //set current plugin layout (right content)
+  this.getEditingService().setCurrentLayout();
   const originalLayer = inputs.layer;
   const layerName = originalLayer.getName();
   const headers = originalLayer.getEditingFields();
@@ -27,10 +37,7 @@ proto.run = function(inputs, context) {
   let features = editingLayer.readEditingFeatures();
   if (exclude && features.length) {
     const {value} = exclude;
-    features = features.filter(feature => {
-      const featureValue = feature.get(foreignKey);
-      return featureValue != value;
-    })
+    features = features.filter(feature => feature.get(foreignKey) != value)
   }
   const content = new TableComponent({
     title: `${layerName}`,
@@ -44,7 +51,9 @@ proto.run = function(inputs, context) {
     fatherValue: context.fatherValue,
     foreignKey
   });
+
   GUI.disableSideBar(true);
+
   GUI.showUserMessage({
     type: 'loading',
     message: 'plugins.editing.messages.loading_table_data',
@@ -52,11 +61,11 @@ proto.run = function(inputs, context) {
     closable: false
   });
 
-  setTimeout(()=>{
-    content.once('ready', ()=> setTimeout(()=> {
-      GUI.disableSideBar(false);
+  setTimeout(() => {
+    content.once('ready', () => setTimeout(()=> {
       GUI.closeUserMessage();
     }));
+
     GUI.showContent({
       content,
       //perc: 100,
@@ -65,16 +74,27 @@ proto.run = function(inputs, context) {
       closable: false
     });
   }, 300);
+
   return d.promise();
 };
 
+/**
+ *
+ * @param layerName
+ * @returns {`form_${string}`}
+ * @private
+ */
 proto._generateFormId = function(layerName) {
   return `${this._formIdPrefix}${layerName}`;
 };
 
+/**
+ *
+ */
 proto.stop = function() {
   this.disableSidebar(false);
-  this._isContentChild ? GUI.popContent() : GUI.closeContent();
+  GUI[this._isContentChild ? 'popContent' : 'closeContent']();
+  //reset current plugin layout (right content) to application
   this.getEditingService().resetCurrentLayout();
 };
 
