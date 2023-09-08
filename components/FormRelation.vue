@@ -93,32 +93,54 @@
               <tr v-for="(relation, index) in relations" class="featurebox-header">
                 <td>
                   <div style="display: flex">
-                    <div class="skin-tooltip-right editbtn enabled" @click="startTool(relationtool, index)"
+                    <div
                       v-for="relationtool in getRelationTools()" :key="relationtool.state.name"
+                      class="skin-tooltip-right editbtn enabled"
+                      @click.stop="startTool(relationtool, index)"
                       data-toggle="tooltip"
-                      data-placement="right" v-t-tooltip:plugin="relationtool.state.name">
-                      <img height="20px" width="20px" :src="`${resourcesurl}images/${relationtool.state.icon}`"/>
+                      data-placement="right"
+                      v-t-tooltip:plugin="relationtool.state.name">
+                      <img
+                        height="20px"
+                        width="20px"
+                        :src="`${resourcesurl}images/${relationtool.state.icon}`"/>
                     </div>
                   </div>
                 </td>
                 <td class="action-cell">
-                  <div v-if="!fieldrequired && capabilities.relation.find(capability => capability === 'change_attr_feature') !== undefined"
-                    class="g3w-mini-relation-icon g3w-icon" :class="g3wtemplate.font['unlink']" @click="unlinkRelation(index)"
-                    v-t-tooltip:right.create="tooltips.unlink_relation" aria-hidden="true">
+                  <div
+                    v-if="!fieldrequired && capabilities.relation.find(capability => capability === 'change_attr_feature') !== undefined"
+                    class="g3w-mini-relation-icon g3w-icon"
+                    :class="g3wtemplate.font['unlink']"
+                    @click.stop="unlinkRelation(index)"
+                    v-t-tooltip:right.create="tooltips.unlink_relation"
+                    aria-hidden="true">
                   </div>
                 </td>
-                <td v-show="!showAllFieds(index)" v-for="attribute in relationAttributesSubset(relation)">
-                  <template v-if="isMedia(attribute.value) && getValue(attribute.value)">
+                <td
+                  v-show="!showAllFieds(index)"
+                  v-for="attribute in relationAttributesSubset(relation)">
+                  <template
+                    v-if="isMedia(attribute.value) && getValue(attribute.value)">
                     <div class="preview">
                       <a :href="getValue(attribute.value)" target="_blank">
-                        <div class="previewtype" :class="getMediaType(attribute.value.mime_type).type">
-                          <i class="fa-2x" :class="g3wtemplate.font[getMediaType(attribute.value.mime_type).type]"></i>
+                        <div
+                          class="previewtype"
+                          :class="getMediaType(attribute.value.mime_type).type">
+                          <i
+                            class="fa-2x"
+                            :class="g3wtemplate.font[getMediaType(attribute.value.mime_type).type]">
+                          </i>
                         </div>
                       </a>
                       <div class="filename">{{ getFileName(attribute.value) }}</div>
                     </div>
                   </template>
-                  <a v-else-if="isLink(attribute)" :href="getValue(attribute.value)" target="_blank">{{ getValue(attribute.value) }}</a>
+                  <a
+                    v-else-if="isLink(attribute)"
+                    :href="getValue(attribute.value)"
+                    target="_blank">{{ getValue(attribute.value) }}
+                  </a>
                   <span v-else>{{ getValue(attribute.value) }}</span>
                 </td>
               </tr>
@@ -130,11 +152,17 @@
 </template>
 
 <script>
+  import EditingService from "../services/editingservice";
+
   const t = g3wsdk.core.i18n.tPlugin;
   const {toRawType} = g3wsdk.core.utils;
   const RelationService = require('../services/relationservice');
   const {Layer} = g3wsdk.core.layer;
-  const {fieldsMixin, resizeMixin, mediaMixin} = g3wsdk.gui.vue.Mixins;
+  const {
+    fieldsMixin,
+    resizeMixin,
+    mediaMixin
+  } = g3wsdk.gui.vue.Mixins;
 
   let relationsTable;
 
@@ -180,20 +208,14 @@
         },
         copyFeatureFromOtherLayer(){
           const EditingService = require('../services/editingservice');
-          const copyLayer = this.copyFeatureLayers.find(layerObj => layerObj.id === this.copylayerid);
-          if (copyLayer.external) {
-            const layer = EditingService.getMapService().getLayerById(this.copylayerid);
-            this._service.addRelationFromOtherLayer({
-              layer,
-              external: true
-            });
-          } else {
-            const layer = EditingService.getProjectLayerById(this.copylayerid);
-            this._service.addRelationFromOtherLayer({
-              layer,
-              external: false
-            });
-          }
+          const copyLayer = this.copyFeatureLayers
+            .find(layerObj => layerObj.id === this.copylayerid);
+          this._service.addRelationFromOtherLayer({
+            layer: copyLayer.external ?
+              EditingService.getMapService().getLayerById(this.copylayerid) :
+              EditingService.getProjectLayerById(this.copylayerid),
+            external: copyLayer.external
+          });
         },
         addVectorRelation(){
           this._service.addRelation();
@@ -201,7 +223,7 @@
         },
         async addRelationAndLink() {
           if (this.isVectorRelation && this.copyFeatureLayers.length) {
-            this.showAddVectorRelationTools = ! this.showAddVectorRelationTools;
+            this.showAddVectorRelationTools = !this.showAddVectorRelationTools;
             await this.$nextTick();
             this.resize();
           } else this._service.addRelation();
@@ -252,8 +274,11 @@
           return ['photo', 'link'].indexOf(this.getFieldType(field)) !== -1;
         },
         getValue(value) {
-          if (value && toRawType(value) === 'Object') value = value.value;
-          else if (typeof value == 'string' && value.indexOf('_new_') === 0) value = null;
+          if (value && toRawType(value) === 'Object') {
+            value = value.value;
+          } else if (typeof value == 'string' && value.indexOf('_new_') === 0) {
+            value = null;
+          }
           this.value = value;
           return value;
         },
@@ -279,7 +304,7 @@
           $(".dataTables_filter, .dataTables_length").hide();
           this._setDataTableSearch();
         },
-        destroyTable(){
+        destroyTable() {
           if (relationsTable) {
             relationsTable = relationsTable.destroy();
             relationsTable = null;
@@ -313,32 +338,38 @@
         // In case of vector relation
         if (this.isVectorRelation) {
           // get all project layer that has same geometry
-          this.copyFeatureLayers = EditingService.getProjectLayersWithSameGeometryOfLayer(relationLayer, {exclude:[this.relation.father]}).map(layer => ({
-            id: layer.getId(),
-            name: layer.getName(),
-            external: false
-          }));
-          const externalLayerWithSameGeometryType = EditingService.getExternalLayersWithSameGeometryOfLayer(relationLayer);
-          externalLayerWithSameGeometryType.forEach(externalLayer => {
-            this.copyFeatureLayers.push({
-              id: externalLayer.get('id'),
-              name: externalLayer.get('name'),
-              external: true
-            })
-          });
+          this.copyFeatureLayers = EditingService
+            .getProjectLayersWithSameGeometryOfLayer(relationLayer, {exclude:[this.relation.father]})
+            .map(layer => ({
+              id: layer.getId(),
+              name: layer.getName(),
+              external: false
+            }));
+
+          EditingService.getExternalLayersWithSameGeometryOfLayer(relationLayer)
+            .forEach(externalLayer => {
+              this.copyFeatureLayers.push({
+                id: externalLayer.get('id'),
+                name: externalLayer.get('name'),
+                external: true
+              })
+            });
+          
           if (this.copyFeatureLayers.length) {
             // sort by name
-            this.copyFeatureLayers.sort(({name:name1}, {name:name2}) => {
-              name1 = name1.toLowerCase();
-              name2 = name2.toLowerCase();
-              if (name1 < name2) return -1;
-              if (name1 > name2) return 1;
-              return 0;
-            });
+            this.copyFeatureLayers
+              .sort(({name:name1}, {name:name2}) => {
+                name1 = name1.toLowerCase();
+                name2 = name2.toLowerCase();
+                if (name1 < name2) return -1;
+                if (name1 > name2) return 1;
+                return 0;
+              });
             // in case of fin at least one layer, set current layer id
             this.copylayerid = this.copyFeatureLayers[0].id;
-          } else this.copylayerid = null;
-
+          } else {
+            this.copylayerid = null;
+          }
         }
         this.loadEventuallyRelationValuesForInputs = false;
         this._service = new RelationService(this.layerId, {
@@ -364,7 +395,10 @@
           this.loadEventuallyRelationValuesForInputs = true;
         }
         await this.$nextTick();
-        !relationsTable && this.relationsLength && this._createDataTable();
+
+        if (!relationsTable && this.relationsLength) {
+          this._createDataTable();
+        }
         this.resize();
 
       },

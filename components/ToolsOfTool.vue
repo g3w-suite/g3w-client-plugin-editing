@@ -3,13 +3,18 @@
 <!-- vue/components/toolsoftool.js@v3.4 -->
 
 <template>
-  <div id="toolsoftoolcontainer" style="display: flex; flex-direction: column;
+  <div
+    id="toolsoftoolcontainer"
+    style="display: flex; flex-direction: column;
     margin: 5px;
     padding: 5px;
-    border-radius: 5px;">
+    border-radius: 5px;"
+  >
     <template v-for="tool in tools">
-      <component :is="tool.type" :options="tool.options"></component>
-      <divider></divider>
+      <component
+        :is="tool.type"
+        :options="tool.options"/>
+      <divider/>
     </template>
   </div>
 </template>
@@ -25,7 +30,7 @@
       snap: SnapComponent,
       measure: MeasureComponent
     },
-    data: function() {
+    data() {
       return {}
     }
   };

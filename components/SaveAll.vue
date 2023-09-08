@@ -1,9 +1,19 @@
 <template>
   <section class="editing-save-all-form">
-    <bar-loader :loading="loading"></bar-loader>
-    <div class="editing-button"  style="background-color: #ffffff; display: flex; justify-content: flex-end; width: 100%;">
-      <span v-disabled="disabled" @click.stop.prevent="save">
-        <i class="skin-color" :class="g3wtemplate.font['save']" style="font-size: 1.8em; padding: 5px; border-radius: 5px; cursor: pointer; box-shadow:  0 3px 5px rgba(0,0,0,0.5); margin: 5px;" ></i>
+    <bar-loader :loading="loading"/>
+    <div
+      class="editing-button"
+      style="background-color: #ffffff; display: flex; justify-content: flex-end; width: 100%;"
+    >
+      <span
+        v-disabled="disabled"
+        @click.stop.prevent="save"
+      >
+        <i
+          class="skin-color"
+          :class="g3wtemplate.font['save']"
+          style="font-size: 1.8em; padding: 5px; border-radius: 5px; cursor: pointer; box-shadow:  0 3px 5px rgba(0,0,0,0.5); margin: 5px;" >
+        </i>
       </span>
     </div>
   </section>

@@ -4,9 +4,19 @@
 
 <template>
   <div style="display: flex">
-    <input type="checkbox" class="magic-checkbox snap_tools_of_tools" id="g3w_editing_show_measure_tool" v-model="checked">
-    <label for="g3w_editing_show_measure_tool" v-t-tooltip:right.create="'plugins.editing.toolsoftool.measure'">
-      <span style="font-weight: bold" :class="g3wtemplate.font['measure']" ></span>
+    <input
+      id="g3w_editing_show_measure_tool"
+      type="checkbox"
+      class="magic-checkbox snap_tools_of_tools"
+      v-model="checked">
+    <label
+      for="g3w_editing_show_measure_tool"
+      v-t-tooltip:right.create="'plugins.editing.toolsoftool.measure'"
+    >
+      <span
+        style="font-weight: bold"
+        :class="g3wtemplate.font['measure']" >
+      </span>
     </label>
   </div>
 </template>
@@ -21,7 +31,7 @@
         }
       },
       watch: {
-        'checked'(bool){
+        'checked'(bool) {
           this.options.onChange(bool);
         }
       },

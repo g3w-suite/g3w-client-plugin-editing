@@ -4,15 +4,34 @@
 
 <template>
   <div style="display: flex;width: 100%; justify-content: space-between">
-    <input type="checkbox" class="magic-checkbox snap_tools_of_tools" :id="id" v-model="checked">
-    <label :for="id" v-t-tooltip:right.create="'plugins.editing.toolsoftool.snap'">
+    <input
+      type="checkbox"
+      class="magic-checkbox snap_tools_of_tools"
+      :id="id"
+      v-model="checked"
+    >
+    <label
+      :for="id"
+      v-t-tooltip:right.create="'plugins.editing.toolsoftool.snap'"
+    >
       <span :class="g3wtemplate.font['magnete']" ></span>
     </label>
     <template v-if="showSnapAll" >
-      <input type="checkbox" class="magic-checkbox snap_tools_of_tools" :id="idAll" v-model="checkedAll">
-      <label :for="idAll" v-t-tooltip:left.create="'plugins.editing.toolsoftool.snapall'">
-        <span :class="g3wtemplate.font['magnete']" ></span>
-        <span style="font-weight: bold" :class="g3wtemplate.font['layers']" ></span>
+      <input
+        :id="idAll"
+        v-model="checkedAll"
+        type="checkbox"
+        class="magic-checkbox snap_tools_of_tools"
+      >
+      <label
+        :for="idAll"
+        v-t-tooltip:left.create="'plugins.editing.toolsoftool.snapall'"
+      >
+        <span :class="g3wtemplate.font['magnete']"></span>
+        <span
+          style="font-weight: bold"
+          :class="g3wtemplate.font['layers']" >
+        </span>
       </label>
     </template>
   </div>
@@ -21,6 +40,7 @@
 <script>
   const { GUI } = g3wsdk.gui;
   const { Layer } = g3wsdk.core.layer;
+
   let snapInteraction;
   const mapService = GUI.getService('map');
   const editingService = require('../services/editingservice');
@@ -42,22 +62,26 @@
       }
     },
     methods: {
-      addFeatures(features){
+      addFeatures(features) {
         this.features.extend(features)
       },
-      addFeature(feature){
+      addFeature(feature) {
         this.addFeatures([feature]);
       },
-      removeFeatures(features){
+      removeFeatures(features) {
         features.forEach(feature => this.features.remove(feature));
       },
       setShowSnapAll(){
-        this.showSnapAll = this.vectorToolboxesEditingState.find(editing => editing.on) && true || false;
-        this.checkedAll = this.showSnapAll ? this.checkedAll : false;
+        this.showSnapAll = undefined !== this.vectorToolboxesEditingState.find(editing => editing.on);
+        this.checkedAll = this.showSnapAll ?
+          this.checkedAll :
+          false;
       },
       activeSnapInteraction() {
         const snap = this.add;
-        snapInteraction &&  mapService.removeInteraction(snapInteraction);
+        if (snapInteraction) {
+          mapService.removeInteraction(snapInteraction);
+        }
         snapInteraction = null;
         if (snap) {
           snapInteraction = new ol.interaction.Snap({
@@ -67,9 +91,12 @@
           mapService.addInteraction(snapInteraction);
         }
       },
-      enableSnapInteraction(bool){
-        if (bool)this.activeSnapInteraction();
-        else snapInteraction && mapService.removeInteraction(snapInteraction);
+      enableSnapInteraction(bool) {
+        if (bool) {
+          this.activeSnapInteraction();
+        } else if (snapInteraction) {
+          mapService.removeInteraction(snapInteraction);
+        }
       },
     },
     watch: {
@@ -92,43 +119,43 @@
       this.vectorToolboxesEditingState = [];
       // unwatched function
       this.unwatches = [];
-      editingService.getLayers().forEach(layer => {
-        const layerId = layer.getId();
-        if (layer.getType() === Layer.LayerTypes.VECTOR) {
-          const toolbox = editingService.getToolBoxById(layerId);
-          const source = toolbox.getLayer().getEditingSource();
-          this.features.extend(source.readFeatures());
-          const addFeaturesKey = source.onbefore('addFeatures', this.addFeatures);
-          const addFeatureKey = source.onbefore('addFeature', this.addFeatures);
-          const clearKey = source.onbefore('clear', () =>{
-            const features = source.readFeatures();
-            this.removeFeatures(features);
-          });
-          const olKey = source.getFeaturesCollection().on('add', evt => this.addFeature(evt.element));
-          this.sourcesAndEventsKeys.push({
-            source,
-            settersAndKeys: {
-              'addFeatures': addFeaturesKey,
-              'addFeature': addFeatureKey,
-              'clear': clearKey
-            },
-            olKey
-          });
-          // handle snap all
-          if (this.options.layerId !== layerId) {
-            const editing = toolbox.getState().editing;
-            const unwatch = this.$watch(()=> editing.on, this.setShowSnapAll);
-            this.unwatches.push(unwatch);
-            this.vectorToolboxesEditingState.push(editing);
+      editingService.getLayers()
+        .forEach(layer => {
+          const layerId = layer.getId();
+          if (layer.getType() === Layer.LayerTypes.VECTOR) {
+            const toolbox = editingService.getToolBoxById(layerId);
+            const source = toolbox.getLayer().getEditingSource();
+            this.features.extend(source.readFeatures());
+            const addFeaturesKey = source.onbefore('addFeatures', this.addFeatures);
+            const addFeatureKey = source.onbefore('addFeature', this.addFeatures);
+            const clearKey = source.onbefore('clear', () => {
+              this.removeFeatures(source.readFeatures());
+            });
+            const olKey = source.getFeaturesCollection().on('add', evt => this.addFeature(evt.element));
+            this.sourcesAndEventsKeys.push({
+              source,
+              settersAndKeys: {
+                'addFeatures': addFeaturesKey,
+                'addFeature': addFeatureKey,
+                'clear': clearKey
+              },
+              olKey
+            });
+            // handle snap all
+            if (this.options.layerId !== layerId) {
+              const editing = toolbox.getState().editing;
+              const unwatch = this.$watch(()=> editing.on, this.setShowSnapAll);
+              this.unwatches.push(unwatch);
+              this.vectorToolboxesEditingState.push(editing);
+            }
           }
-        }
-      });
+        });
       this.setShowSnapAll();
     },
     beforeDestroy() {
-      this.sourcesAndEventsKeys.forEach(sourceAndKey =>{
+      this.sourcesAndEventsKeys.forEach(sourceAndKey => {
         const {source, settersAndKeys, olKey} = sourceAndKey;
-        Object.keys(settersAndKeys).forEach(eventName =>{
+        Object.keys(settersAndKeys).forEach(eventName => {
           const key = settersAndKeys[eventName];
           source.un(eventName, key)
         });
