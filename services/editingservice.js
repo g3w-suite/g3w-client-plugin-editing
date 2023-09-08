@@ -1368,20 +1368,25 @@ proto.getLayersDependencyFeatures = function(layerId, opts={}) {
 };
 
 proto.commitDirtyToolBoxes = function(layerId) {
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     const toolbox = this.getToolBoxById(layerId);
-    const children = this.getLayerById(layerId).getChildren();
     if (toolbox.isDirty() && toolbox.hasDependencies()) {
       this.commit(toolbox)
+        .then(() => {
+          resolve(toolbox);
+        })
         .fail(() => {
           toolbox.revert()
             .then(() => {
-              toolbox.getDependencies().forEach((layerId) => {
-                children.indexOf(layerId) !== -1 && this.getToolBoxById(layerId).revert();
-              })
+              toolbox.getDependencies()
+                .forEach((layerId) => {
+                  if (this.getLayerById(layerId).getChildren().indexOf(layerId) !== -1) {
+                    this.getToolBoxById(layerId).revert();
+                  }
+                })
             })
+          reject(toolbox);
         })
-        .always(() => resolve(toolbox))
     } else
       resolve(toolbox);
   });
