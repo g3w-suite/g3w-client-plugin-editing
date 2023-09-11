@@ -17,7 +17,7 @@ const EditingFormService = function(options={}) {
    * get relation layers that set in editing on g3w-admin
    */
   relations = EditingService.getRelationsInEditing({layerId, relations , feature});
-  this.hasRelations = () => !!relations.length;
+  this.hasRelations = () => relations.length > 0;
   this.buildRelationComponents = function() {
     const self = this;
     const relationComponents = [];

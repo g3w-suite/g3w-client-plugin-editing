@@ -908,14 +908,29 @@ proto._getRelationLayerId = function({layerId, relation}={}){
   return relation.getChild() === layerId ? relation.getFather() : relation.getChild();
 };
 
+/**
+ *
+ * @param layerId
+ * @param relation
+ * @param feature
+ * @param layerType
+ */
 proto.getRelationsByFeature = function({layerId, relation, feature, layerType}={}) {
+  //ownField and relationField are Array @since v3.7.0
   const {ownField, relationField} = this._getRelationFieldsFromRelation({
     layerId,
     relation
   });
-  const featureValue = feature.get(relationField);
+  //get features of relation child layers
   const features = this._getFeaturesByLayerId(layerId);
-  return features.filter(feature => feature.get(ownField) == featureValue);
+  //Loop relation fields
+  const featuresValues = relationField.map(rField => feature.get(rField));
+  return features.filter(feature => {
+    ownField.reduce((bool, oField, index) => {
+      return bool && feature.get(oField) == featuresValues[index]
+    }, true)
+  });
+
 };
 
 proto.registerLeavePage = function(bool){
@@ -1118,6 +1133,13 @@ proto.fatherInEditing = function(layerId) {
   return inEditing;
 };
 
+/**
+ *
+ * @param layerId
+ * @param relation
+ * @returns {{ownField: *, relationField: *}}
+ * @private
+ */
 proto._getRelationFieldsFromRelation = function({layerId, relation} = {}) {
   const childId = relation.getChild ? relation.getChild() : relation.child;
   const isChild = childId !== layerId;
@@ -1125,9 +1147,10 @@ proto._getRelationFieldsFromRelation = function({layerId, relation} = {}) {
   const _childField = relation.getChildField ? relation.getChildField() : relation.childField;
   const ownField = isChild ? _fatherField : _childField;
   const relationField = isChild ? _childField : _fatherField;
+
   return {
-    ownField,
-    relationField
+    ownField: Array.isArray(ownField) ? ownField : [ownField],
+    relationField: Array.isArray(relationField)? relationField : [relationField]
   }
 };
 

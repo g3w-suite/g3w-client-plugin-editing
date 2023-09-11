@@ -11,20 +11,25 @@ function EditingFormComponent(options={}) {
   const layerId = layer.getId();
   if (relationsOptions) {
     const feature = relationsOptions.inputs.features[relationsOptions.inputs.features.length-1];
-    const promise =  feature.isNew() ? Promise.resolve() : EditingService.getLayersDependencyFeatures(layerId, {
-      feature,
-      filterType: 'fid'
-    });
-    promise.then(()=> {
+    const promise =  feature.isNew() ?
+      Promise.resolve() :
+      EditingService.getLayersDependencyFeatures(layerId, {feature, filterType: 'fid'});
+
+    promise.then(() => {
       relationsOptions.formEventBus = this.getService().getEventBus();
       const service = new EditingFormService(relationsOptions);
       const RelationComponents = service.buildRelationComponents();
       const customFormComponents = EditingService.getFormComponentsById(layerId);
       //check if add components to add
-      customFormComponents.length && this.addFormComponents(customFormComponents);
+      if (customFormComponents.length > 0) {
+        this.addFormComponents(customFormComponents);
+      }
       // add relation component
-      RelationComponents.length && this.addFormComponents(RelationComponents);
-      this.getService().handleRelation = async function({relation, layerId, feature}){
+      if (RelationComponents.length > 0)  {
+        this.addFormComponents(RelationComponents);
+      }
+      //Method that overwrite handle relation on click
+      this.getService().handleRelation = async function({relation, layerId, feature}) {
         GUI.setLoadingContent(true);
         const {name: relationId} = relation;
         await EditingService.setLayerUniqueFieldValues(layer.getRelationById(relationId).getChild());
