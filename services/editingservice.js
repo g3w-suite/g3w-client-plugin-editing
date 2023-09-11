@@ -926,7 +926,7 @@ proto.getRelationsByFeature = function({layerId, relation, feature, layerType}={
   //Loop relation fields
   const featuresValues = relationField.map(rField => feature.get(rField));
   return features.filter(feature => {
-    ownField.reduce((bool, oField, index) => {
+    return ownField.reduce((bool, oField, index) => {
       return bool && feature.get(oField) == featuresValues[index]
     }, true)
   });
