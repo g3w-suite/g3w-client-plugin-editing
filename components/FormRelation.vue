@@ -78,9 +78,7 @@
       </section>
 
       <div ref="relation_body" class="box-body" style="padding:0;">
-
-        <template v-if="relationsLength">
-
+        <template v-if="showTable">
           <table class="table g3wform-relation-table table-striped" style="width:100%">
             <thead>
               <tr>
@@ -153,7 +151,7 @@
 
 <script>
 
-  const t = g3wsdk.core.i18n.tPlugin;
+  const {tPlugin:t} = g3wsdk.core.i18n;
   const {toRawType} = g3wsdk.core.utils;
   const RelationService = require('../services/relationservice');
   const {Layer} = g3wsdk.core.layer;
@@ -166,7 +164,11 @@
   let relationsTable;
 
     export default {
-      mixins: [mediaMixin, fieldsMixin, resizeMixin],
+      mixins: [
+        mediaMixin,
+        fieldsMixin,
+        resizeMixin
+      ],
       name: 'g3w-relation',
       data() {
         return {
@@ -181,7 +183,8 @@
             unlink_relation: "plugins.editing.form.relations.tooltips.unlink_relation"
           },
           value: null,
-          placeholdersearch: `${t('editing.search')} ...`
+          placeholdersearch: `${t('editing.search')} ...`,
+          show: true
         }
       },
       methods: {
@@ -310,21 +313,48 @@
             $('#filterRelation').off();
           }
         },
+        /**
+         * @since v3.7.0
+         * @returns {Promise<void>}
+         */
+        async updateTable(){
+          //destroy old table
+          this.destroyTable();
+          //set show false to hide table
+          this.show = false;
+          //wait rerender
+          await this.$nextTick();
+          //show with new relations array
+          this.show = true;
+          await this.$nextTick();
+          //recreate table
+          this._createDataTable();
+        }
       },
       computed: {
-        relationsLength() {
-          return this.relations.length;
+        showTable() {
+          return this.relations.length > 0 && this.show;
         },
         fieldrequired() {
           return this._service.isRequired();
         },
         enableAddLinkButtons() {
-          return !this.relations.length || (this.relations.length && this.relation.type !== 'ONE');
+          return (
+            (this.relations.length === 0) ||
+            (this.relation.type !== 'ONE')
+          );
         }
       },
       watch:{
-        relations(updatedrelations){
-          updatedrelations.length === 0 && this.destroyTable();
+        relations(updatedrelations=[]) {
+          //in case of no relations
+          if (updatedrelations.length === 0) {
+            //destroy table
+            this.destroyTable();
+          } else {
+            //in case of update (delete row or add new relation)
+            this.updateTable();
+          }
         }
       },
       beforeCreate(){
@@ -345,7 +375,8 @@
               external: false
             }));
 
-          EditingService.getExternalLayersWithSameGeometryOfLayer(relationLayer)
+          EditingService
+            .getExternalLayersWithSameGeometryOfLayer(relationLayer)
             .forEach(externalLayer => {
               this.copyFeatureLayers.push({
                 id: externalLayer.get('id'),
@@ -354,7 +385,7 @@
               })
             });
 
-          if (this.copyFeatureLayers.length) {
+          if (this.copyFeatureLayers.length > 0) {
             // sort by name
             this.copyFeatureLayers
               .sort(({name:name1}, {name:name2}) => {
@@ -395,7 +426,7 @@
         }
         await this.$nextTick();
 
-        if (!relationsTable && this.relationsLength) {
+        if (!relationsTable && this.showTable) {
           this._createDataTable();
         }
         this.resize();
