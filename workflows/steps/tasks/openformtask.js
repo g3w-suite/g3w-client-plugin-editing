@@ -41,11 +41,13 @@ proto._getForm = async function(inputs, context) {
    * In case of create a child relation feature set a father relation field value
    */
   if (this._isContentChild) {
-    const {fatherValue, fatherField} = context;
-    if (typeof fatherField !== "undefined")  {
-      feature.set(fatherField, fatherValue);
-      this._originalFeatures[0].set(fatherField, fatherValue);
-    }
+    //Are array
+    const {fatherValue=[], fatherField=[]} = context;
+    fatherField.forEach((fField, index) => {
+      feature.set(fField, fatherValue[index]);
+      this._originalFeatures[0].set(fField, fatherValue[index]);
+    })
+
   }
   this._fields = await this.getFormFields({
     inputs,
@@ -85,13 +87,13 @@ proto._cancelFnc = function(promise, inputs) {
  * @param fieldssetAndUnsetSelectedFeaturesStyle
  * @returns {Promise<unknown>}
  */
-proto.saveAll = function(fields){
+proto.saveAll = function(fields) {
   return new Promise(async (resolve, reject) => {
     const {session} = this.getContext();
     const inputs = this.getInputs();
     fields = this._multi ? fields.filter(field => field.value !== null) : fields;
     if (fields.length) {
-      await WorkflowsStack.getCurrent().getContext().service.saveDefaultExpressionFieldsNotDependencies();
+      await WorkflowsStack.getCurrent().getContextService().saveDefaultExpressionFieldsNotDependencies();
       const newFeatures = [];
       this._features.forEach(feature =>{
         this._originalLayer.setFieldsWithValues(feature, fields);
@@ -134,7 +136,7 @@ proto._saveFeatures = async function({fields, promise, session, inputs}){
     GUI.disableContent(true);
 
 
-    await WorkflowsStack.getCurrent().getContext().service.saveDefaultExpressionFieldsNotDependencies();
+    await WorkflowsStack.getCurrent().getContextService().saveDefaultExpressionFieldsNotDependencies();
 
     GUI.setLoadingContent(false);
     GUI.disableContent(false);
@@ -142,7 +144,6 @@ proto._saveFeatures = async function({fields, promise, session, inputs}){
     /**
      *
      */
-
     this._features.forEach(feature =>{
       this._originalLayer.setFieldsWithValues(feature, fields);
       newFeatures.push(feature.clone());
@@ -157,20 +158,22 @@ proto._saveFeatures = async function({fields, promise, session, inputs}){
       newFeatures,
       originalFeatures: this._originalFeatures
     }).then(()=> {
-      newFeatures.forEach((newFeature, index)=>{
+      newFeatures.forEach((newFeature, index) => {
         session.pushUpdate(this.layerId, newFeature, this._originalFeatures[index]);
       });
       GUI.setModal(false);
       this.fireEvent('savedfeature', newFeatures); // called after saved
       this.fireEvent(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
-      // In case of save of child it mean that child is updated so also parent
+      // In case of save of child it means that child is updated so also parent
       this._isContentChild && WorkflowsStack.getParents().forEach(workflow => workflow.getContext().service.setUpdate(true, {
         force: true
       }));
       promise.resolve(inputs);
     })
   } else {
+
     GUI.setModal(false);
+
     promise.resolve(inputs);
   }
 };
