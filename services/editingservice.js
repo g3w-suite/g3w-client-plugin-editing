@@ -1208,11 +1208,18 @@ proto.getLayersDependencyFeaturesFromSource = function({layerId, relation, featu
       layerId,
       relation
     });
-    const featureValue = feature.get(relationField);
-    const find = operator === 'eq' ? features.find(featureSource => {
-      const featureSourceValue = featureSource.get(ownField) ;
-      return featureSourceValue == featureValue;
-    }): false;
+    //get features Values
+    const featureValues = relationField.map(rField => feature.get(rField));
+    const find = operator === 'eq' ?
+
+      ownField.reduce((bool, oField, index) => {
+        return features.find(featureSource => {
+          return bool && featureSource.get(oField) == featureValues[index];
+        })
+      }, true) :
+
+      false;
+
     resolve(find);
   })
 };
@@ -1780,12 +1787,16 @@ proto.getExternalLayersWithSameGeometryOfLayer = function(layer){
   const geometryType = layer.getGeometryType();
   return this._mapService.getExternalLayers().filter(externalLayer => {
     const features = externalLayer.getSource().getFeatures();
-    if (features && features.length) {
+    if (features && features.length > 0) {
       return features[0].getGeometry() ?
-        (geometryType === features[0].getGeometry().getType())
-        ||
-        isSameBaseGeometryType(geometryType, features[0].getGeometry().getType()) : false;
-    } else return false;
+        (
+          (geometryType === features[0].getGeometry().getType()) ||
+          isSameBaseGeometryType(geometryType, features[0].getGeometry().getType())
+        ) :
+        false;
+    } else {
+      return false;
+    }
   });
 };
 
