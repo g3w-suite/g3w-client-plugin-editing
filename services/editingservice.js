@@ -1145,12 +1145,10 @@ proto._getRelationFieldsFromRelation = function({layerId, relation} = {}) {
   const isChild = childId !== layerId;
   const _fatherField = relation.getFatherField ? relation.getFatherField() : relation.fatherField;
   const _childField = relation.getChildField ? relation.getChildField() : relation.childField;
-  const ownField = isChild ? _fatherField : _childField;
-  const relationField = isChild ? _childField : _fatherField;
 
   return {
-    ownField: Array.isArray(ownField) ? ownField : [ownField],
-    relationField: Array.isArray(relationField)? relationField : [relationField]
+    ownField: isChild ? _fatherField : _childField,
+    relationField: isChild ? _childField : _fatherField
   }
 };
 
