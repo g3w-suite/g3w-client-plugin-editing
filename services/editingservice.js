@@ -1143,8 +1143,12 @@ proto.fatherInEditing = function(layerId) {
 proto._getRelationFieldsFromRelation = function({layerId, relation} = {}) {
   const childId = relation.getChild ? relation.getChild() : relation.child;
   const isChild = childId !== layerId;
-  const _fatherField = relation.getFatherField ? relation.getFatherField() : relation.fatherField;
-  const _childField = relation.getChildField ? relation.getChildField() : relation.childField;
+  const _fatherField = relation.getFatherField ?
+      relation.getFatherField() :
+      relation.fatherField;
+  const _childField = relation.getChildField ?
+      relation.getChildField() :
+      relation.childField;
 
   return {
     ownField: isChild ? _fatherField : _childField,
