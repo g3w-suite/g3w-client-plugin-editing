@@ -4,6 +4,7 @@ const {GUI} = g3wsdk.gui;
 const {WorkflowsStack} = g3wsdk.core.workflow;
 const EditingTask = require('./editingtask');
 const EditingFormComponent = require('../../../form/editingform');
+const EditTableFeaturesWorkflow = require('../../edittableworkflow');
 
 function OpenFormTask(options={}) {
   this._edit_relations = options.edit_relations === undefined ? true : options._edit_relations;
@@ -312,7 +313,14 @@ proto.stop = function() {
   // when the last feature of features is Array
   // and is resolved without setting form service
   // Ex. copy multiple feature from other layer
-  if (!this._isContentChild) {
+  if (
+    false === this._isContentChild || // no child worklow
+    (
+      //case edit feature of a table (edit layer alphanumeric)
+      WorkflowsStack.getLength() === 2 && //open features table
+      WorkflowsStack.getParent() instanceof EditTableFeaturesWorkflow
+    )
+  ) {
     service.disableMapControlsConflict(false);
     context = WorkflowsStack.getCurrent().getContextService();
   }
