@@ -4,7 +4,7 @@ const OpenTableStep = require('./steps/opentablestep');
 
 function EditTableFeaturesWorkflow(options={}) {
   options.steps = [new OpenTableStep()];
-  options.backbuttonlabel =  "plugins.editing.form.buttons.save_and_back_table";
+  options.backbuttonlabel = "plugins.editing.form.buttons.save_and_back_table";
   base(this, options);
 }
 
