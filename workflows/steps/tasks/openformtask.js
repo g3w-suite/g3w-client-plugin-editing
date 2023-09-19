@@ -256,6 +256,7 @@ proto.startForm = async function(options = {}) {
         id: 'save',
         title: this._isContentChild ?
           (
+            //check if parent has custom back label set
             WorkflowsStack.getParent().getBackButtonLabel() ||
             "plugins.editing.form.buttons.save_and_back"
           ) :
@@ -302,6 +303,7 @@ proto.startForm = async function(options = {}) {
   }
 
   //listen eventually field relation 1:1 changes value
+  //@TODO check another way
   this._unwatchs = this.listenRelation1_1FieldChange({
     layerId: this.layerId,
     fields: this._fields,
