@@ -94,7 +94,7 @@ function EditingService() {
   //mapservice
   this._mapService = GUI.getService('map');
   //set mapcontrol toggle event
-  this.mapControlToggleEventHandler = evt =>{
+  this.mapControlToggleEventHandler = evt => {
     if (evt.target.isToggled() && evt.target.isClickMap()){
       let toolboxselected = this.state.toolboxselected;
       toolboxselected && toolboxselected.getActiveTool() && toolboxselected.stopActiveTool();
@@ -144,7 +144,7 @@ function EditingService() {
   };
   this._ready = function() {
     this.registerFeaturesLockByOtherUserSetterHandler();
-    ///
+    ///@since 3.7.0
     this.setRelations1_1FieldsEditable();
     // set toolbox colors
     this.setLayersColor();
@@ -192,23 +192,44 @@ proto.addFormComponents = function({layerId, components= []} = {}) {
   }
 };
 
+/**
+ * Get session
+ * @param layerId
+ * @returns {*}
+ */
 proto.getSession = function({layerId} = {}) {
   const toolbox = this.getToolBoxById(layerId);
   return toolbox.getSession();
 };
 
+/**
+ *
+ * @param layerId
+ * @returns Feature in editing
+ */
 proto.getFeature = function({layerId} = {}) {
   const toolbox = this.getToolBoxById(layerId);
   const tool = toolbox.getActiveTool();
   return tool.getFeature();
 };
 
+/**
+ * Subscribe handler function on event
+ * @param event
+ * @param fnc
+ * @returns {*}
+ */
 proto.subscribe = function(event, fnc) {
   if (!this._subscribers[event]) this._subscribers[event] = [];
   if (!this._subscribers[event].find(subscribe => subscribe === fnc)) this._subscribers[event].push(fnc);
   return fnc;
 };
 
+/**
+ * Unsubscribe handler function on event
+ * @param event
+ * @param fnc
+ */
 proto.unsubscribe = function(event, fnc) {
   this._subscribers[event] = this._subscribers[event].filter(subscribe => subscribe !== fnc);
 };
@@ -216,8 +237,8 @@ proto.unsubscribe = function(event, fnc) {
 // END API
 
 /**
- * Method to check if layer has relation 1:1 and check if fields
- * belong to relation layer in editng
+ * Method to check if layer has relation 1:1 (type ONE) and check if fields
+ * belong to relation where child layer is editable
  * @since v3.7.0
  *
  */
@@ -234,9 +255,6 @@ proto.setRelations1_1FieldsEditable = function(){
         //Loop through editing father layer fields
         this.getRelation1_1EditingLayerFieldsReferredToChildRelation(relation)
           .forEach(field => {
-            //Only for DEVELOPMENT PURPOSE !!!!!!!1
-            field.editable = true;
-            //////////////////////////////////7
             field.editable = (
               field.editable && //current editable boolean value
               isChildLayerEditable  //child editable layer
@@ -254,26 +272,19 @@ proto.setRelations1_1FieldsEditable = function(){
  * @returns fields Array bind to child layer
  */
 proto.getRelation1_1EditingLayerFieldsReferredToChildRelation = function(relation) {
-  //need to find out in case of no custom name prefix set
-  //@TODO get in some way custom name prefix to fields related to child layer field.
-  //In case of empty custom prefix, QGIS remove field related to child layer from father fields
-  const ChildFields = CatalogLayersStoresRegistry.getLayerById(relation.getChild()).getFields();
-  const childLayerName = CatalogLayersStoresRegistry.getLayerById(relation.getChild()).getName();
+  //Get fields related to child layer
+  //These fields have vectorjoin_id attribute with relation id value
   return this
     .getLayerById(relation.getFather())
     .getEditingFields()
-    .filter(field => {
-      return (
-        field.name.startsWith(childLayerName) ||
-        field.name === relation.getChildField()
-      )
-    });
+    .filter(field => field.vectorjoin_id && field.vectorjoin_id === relation.getId())
 }
 
 /**
  * Method to get Relation 1:1 from layerId
+ * @since v3.7.0
  * @param layerId
- * @returns {*}
+ * @returns Array of relations related to layerId that are Join 1:1 (Type ONE)
  */
 proto.getRelation1_1ByLayerId = function(layerId){
   return CatalogLayersStoresRegistry.getLayerById(layerId)
@@ -282,16 +293,6 @@ proto.getRelation1_1ByLayerId = function(layerId){
     .getArray()
     //filter only type ONE (join 1:1)
     .filter(relation => 'ONE' === relation.getType());
-};
-
-/**
- * Method to check if field belong to relation 1:1 layer
- * @param layerId
- */
-proto.isFieldBelongToRelation1_1 = function(layerId, field) {
-  this.getRelation1_1ByLayerId(layerId).forEach(relation => {
-    //@TODO
-  })
 };
 
 /**
