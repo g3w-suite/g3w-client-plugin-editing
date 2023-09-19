@@ -669,15 +669,15 @@ proto.handleRelation1_1LayerFields = function({layerId, features=[]}={}){
           //Loop to editable only field of father layerId
           this.getEditingService()
             .getRelation1_1EditingLayerFieldsReferredToChildRelation(relation)
-            .filter(field => field.editable) //@TODO MAYBE NOT USEFUL BECAUSE IF NOT EDITABLE CAN CHANGE IT VALUE
+            .filter(field => field.editable)
             .forEach(field => {
-              //@TODO need a way to get custom name prefix
-              if (field.name.split(`${this.getEditingService().getProjectLayerById(childLayerId).getName()}_`).length > 1) {
-                newChildFeature.set(field.name.split(`${this.getEditingService().getProjectLayerById(childLayerId).getName()}_`)[1], features[0].get(field.name))
-              } else {
-                newChildFeature.set(field.name, features[0].get(field.name));
-              }
+              newChildFeature.set(this.GetChildFieldNameFromRelation1_1({
+                relation,
+                field
+              }), features[0].get(field.name));
+
             })
+          //check if feature is new
           if (isNew) {
             //check if father field is a Pk (Primary key)
             if (this.getEditingService().getLayerById(layerId).isPkField(relation.getFatherField())) {
@@ -697,9 +697,9 @@ proto.handleRelation1_1LayerFields = function({layerId, features=[]}={}){
 
 /**
  * @since v3.7.0
- * @param layerId Current editing layer
- * @param fields Array of fields
- * @returns  Array of watch function event to remove listen
+ * @param layerId Current editing layer id
+ * @param fields Array of form fields of current editing layer
+ * @returns Array of watch function event to remove listen
  */
 proto.listenRelation1_1FieldChange = function({layerId, fields=[]}={}) {
   //RELATION 1:1 IN CASE CHANGE RELATION FIELD NEED TO
@@ -718,8 +718,14 @@ proto.listenRelation1_1FieldChange = function({layerId, fields=[]}={}) {
       //get relation child layer id
       const childLayerId = relation.getChild();
       //for each relation get child layer field
+      //when open form task need to check if editable
+      //Not set this condition because maybe i ca be used this method
+      //on move task or other when current relationField, related to 1:1 relation
+      //it can be changed by default expression or in other way not only with form
       const relationField = fields.find(field => field.name === relation.getFatherField());
-      //if found field and relation layer is in editing
+      //if found field and relation layer is in editing.
+      //it required the second condition because the field can be not editable,
+      // but it can be changed
       if (relationField && this.getEditingService().getLayerById(childLayerId)) {
         //initialize cache with relation id
         cacheRelationChildFieldValues[relationId] = {};
@@ -730,7 +736,8 @@ proto.listenRelation1_1FieldChange = function({layerId, fields=[]}={}) {
           VM.$watch(
             //listen field value change
             () => relationField.value,
-            async (value) => {
+            //async function called when change value
+            async value => {
               //in case of value /exclude empty string
               if (value) {
                 //set editable false to avoid to edit
@@ -741,8 +748,9 @@ proto.listenRelation1_1FieldChange = function({layerId, fields=[]}={}) {
                 if (cacheRelationChildFieldValues[relationId][value]) {
                   cacheRelationChildFieldValues[relationId][value]
                     .forEach((item) => {
-                     Object.entries(item)
-                       .forEach(([name, value]) => fields.find(f => f.name === name).value = value)
+                      Object
+                        .entries(item)
+                        .forEach(([name, value]) => fields.find(f => f.name === name).value = value)
                     })
                 } else {
                   try {
@@ -773,21 +781,17 @@ proto.listenRelation1_1FieldChange = function({layerId, fields=[]}={}) {
                       this.getEditingService()
                         .getRelation1_1EditingLayerFieldsReferredToChildRelation(relation)
                         .forEach(field => {
-                          //@TODO temporary check of field base on prefix child layer name
-                          const splitCustomFiledPrefix = field.name
-                            .split(`${this.getEditingService()
-                              .getProjectLayerById(childLayerId)
-                              .getName()}_`);
+                          //get value
+                          const childValue = feature.get(this.GetChildFieldNameFromRelation1_1({
+                            relation,
+                            field
+                          }));
 
-                          if (splitCustomFiledPrefix.length > 1) {
-                            //SET field value
-                            const childValue = feature.get(splitCustomFiledPrefix[1]);
-                            fields.find(f => f.name === field.name).value = childValue;
-                            //store on cache
-                            cacheRelationChildFieldValues[relationId][value].push({
-                              [field.name]: childValue
-                            })
-                          }
+                          fields.find(f => f.name === field.name).value = childValue;
+                          //store on cache
+                          cacheRelationChildFieldValues[relationId][value].push({
+                            [field.name]: childValue
+                          })
                         })
                     }
                   } catch(err){
@@ -799,13 +803,27 @@ proto.listenRelation1_1FieldChange = function({layerId, fields=[]}={}) {
               relationField.input.options.loading.state = null;
               relationField.editable = true;
             }
-          )
+            )
         )
       }
     });
 
   return unwatches;
 
+}
+
+/**
+ * @since v3.7.0
+ * @param opts.relation Relation Object
+ * @param opts.field father
+ * @return filed name of the father
+ */
+
+proto.GetChildFieldNameFromRelation1_1 = function({relation, field}={}) {
+  //check if relation has prefix used to found a way how fields of relation 1:1 are marked
+  return relation.getPrefix() ?
+    field.name.split(relation.getPrefix())[1] :
+    field.name;
 }
 
 module.exports = EditingTask;
