@@ -42,34 +42,45 @@
       }
     },
     methods: {
-      addFeatures(features){
+      addFeatures(features) {
         this.features.extend(features)
       },
-      addFeature(feature){
+      addFeature(feature) {
         this.addFeatures([feature]);
       },
-      removeFeatures(features){
+      removeFeatures(features) {
         features.forEach(feature => this.features.remove(feature));
       },
-      setShowSnapAll(){
+      setShowSnapAll() {
         this.showSnapAll = this.vectorToolboxesEditingState.find(editing => editing.on) && true || false;
         this.checkedAll = this.showSnapAll ? this.checkedAll : false;
       },
       activeSnapInteraction() {
         const snap = this.add;
-        snapInteraction &&  mapService.removeInteraction(snapInteraction);
+        if (snapInteraction) {
+          mapService.removeInteraction(snapInteraction);
+        }
         snapInteraction = null;
         if (snap) {
           snapInteraction = new ol.interaction.Snap({
+            //in case of snap to single layer get options source
+            // as props pass from toolbox
+
             source: this.checked && !this.checkedAll && this.options.source,
+            // In case of snapAll layers get features
             features: this.checkedAll && this.features
           });
           mapService.addInteraction(snapInteraction);
         }
       },
-      enableSnapInteraction(bool){
-        if (bool)this.activeSnapInteraction();
-        else snapInteraction && mapService.removeInteraction(snapInteraction);
+      enableSnapInteraction(bool) {
+        if (bool) {
+          this.activeSnapInteraction();
+        } else {
+          if (snapInteraction) {
+            mapService.removeInteraction(snapInteraction);
+          }
+        }
       },
     },
     watch: {
@@ -81,7 +92,7 @@
         this.options.checkedAll = bool;
         this.activeSnapInteraction()
       },
-      'options.active'(bool){
+      'options.active'(bool) {
         this.enableSnapInteraction(bool);
       }
     },
@@ -92,48 +103,53 @@
       this.vectorToolboxesEditingState = [];
       // unwatched function
       this.unwatches = [];
-      editingService.getLayers().forEach(layer => {
-        const layerId = layer.getId();
-        if (layer.getType() === Layer.LayerTypes.VECTOR) {
-          const toolbox = editingService.getToolBoxById(layerId);
-          const source = toolbox.getLayer().getEditingSource();
-          this.features.extend(source.readFeatures());
-          const addFeaturesKey = source.onbefore('addFeatures', this.addFeatures);
-          const addFeatureKey = source.onbefore('addFeature', this.addFeatures);
-          const clearKey = source.onbefore('clear', () =>{
-            const features = source.readFeatures();
-            this.removeFeatures(features);
-          });
-          const olKey = source.getFeaturesCollection().on('add', evt => this.addFeature(evt.element));
-          this.sourcesAndEventsKeys.push({
-            source,
-            settersAndKeys: {
-              'addFeatures': addFeaturesKey,
-              'addFeature': addFeatureKey,
-              'clear': clearKey
-            },
-            olKey
-          });
-          // handle snap all
-          if (this.options.layerId !== layerId) {
-            const editing = toolbox.getState().editing;
-            const unwatch = this.$watch(()=> editing.on, this.setShowSnapAll);
-            this.unwatches.push(unwatch);
-            this.vectorToolboxesEditingState.push(editing);
-          }
+      editingService
+        .getLayers()
+        .forEach(layer => {
+          const layerId = layer.getId();
+          //Check if is a Vector Layer
+          if (layer.getType() === Layer.LayerTypes.VECTOR) {
+            const toolbox = editingService.getToolBoxById(layerId);
+            const source = toolbox.getLayer().getEditingSource();
+            this.features.extend(source.readFeatures());
+            const addFeaturesKey = source.onbefore('addFeatures', this.addFeatures);
+            const addFeatureKey = source.onbefore('addFeature', this.addFeatures);
+            const clearKey = source.onbefore('clear', () =>{
+              const features = source.readFeatures();
+              this.removeFeatures(features);
+            });
+            const olKey = source.getFeaturesCollection()
+                .on('add', evt => this.addFeature(evt.element));
+            this.sourcesAndEventsKeys.push({
+              source,
+              settersAndKeys: {
+                'addFeatures': addFeaturesKey,
+                'addFeature': addFeatureKey,
+                'clear': clearKey
+              },
+              olKey
+            });
+            // handle snap all. Check if layerId is not equal to current editing layer
+            if (this.options.layerId !== layerId) {
+              const editing = toolbox.getState().editing;
+              const unwatch = this.$watch(() => editing.on, this.setShowSnapAll);
+              this.unwatches.push(unwatch);
+              this.vectorToolboxesEditingState.push(editing);
+            }
         }
       });
       this.setShowSnapAll();
     },
     beforeDestroy() {
-      this.sourcesAndEventsKeys.forEach(sourceAndKey =>{
-        const {source, settersAndKeys, olKey} = sourceAndKey;
-        Object.keys(settersAndKeys).forEach(eventName =>{
-          const key = settersAndKeys[eventName];
-          source.un(eventName, key)
-        });
-        ol.Observable.unByKey(olKey)
-      });
+      this.sourcesAndEventsKeys
+          .forEach(sourceAndKey => {
+            const {source, settersAndKeys, olKey} = sourceAndKey;
+            Object.keys(settersAndKeys).forEach(eventName =>{
+              const key = settersAndKeys[eventName];
+              source.un(eventName, key)
+            });
+            ol.Observable.unByKey(olKey)
+          });
       this.unwatches.forEach(unwatch => unwatch());
       snapInteraction = null;
       this.unwatches = null;
