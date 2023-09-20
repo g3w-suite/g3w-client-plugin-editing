@@ -24,14 +24,28 @@
   import MeasureComponent from './ToolsOfToolMeasure.vue';
 
   export default {
+
     name: 'Toolsoftool',
+
     props: ['tools'],
+
     components: {
-      snap: SnapComponent,
+      snap:    SnapComponent,
       measure: MeasureComponent
     },
     data() {
       return {}
-    }
+    },
+
   };
 </script>
+
+<style scoped>
+  #toolsoftoolcontainer {
+    display: flex;
+    flex-direction: column;
+    margin: 5px;
+    padding: 5px;
+    border-radius: 5px;
+  }
+</style>

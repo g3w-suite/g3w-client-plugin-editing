@@ -455,13 +455,13 @@ function EditorToolsFactory() {
           })
         }
         // in case of Polygon Geometry
-        else if (Geometry.isPolygonGeometryType(geometryType)){
-            tools = tools = this.createTools({
-              layer,
-              type: 'Polygon',
-              capabilities,
-              isMultiGeometry
-            })
+        else if (Geometry.isPolygonGeometryType(geometryType)) {
+          tools = tools = this.createTools({
+            layer,
+            type: 'Polygon',
+            capabilities,
+            isMultiGeometry
+          })
         }
         break;
       case Layer.LayerTypes.TABLE:
