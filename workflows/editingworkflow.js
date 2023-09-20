@@ -21,12 +21,12 @@ proto.addToolsOfTools = function({step, tools=[]}){
         checkedAll: false,
         checked: false,
         active: true,
-        run({layer}){
+        run({layer}) {
           this.active = true;
-          this.layerId = this.layerId || layer.getId();
-          this.source = this.source || layer.getEditingLayer().getSource();
+          this.layerId = layer.getId();
+          this.source = layer.getEditingLayer().getSource();
         },
-        stop(){
+        stop() {
           this.active = false;
         }
       }
@@ -35,19 +35,19 @@ proto.addToolsOfTools = function({step, tools=[]}){
       type: 'measure',
       options: {
         checked: false,
-        run(){
+        run() {
           setTimeout(()=>{
             this.onChange(this.checked);
           })
         },
-        stop(){
+        stop() {
           step.getTask().removeMeasureInteraction();
         },
-        onChange(bool){
+        onChange(bool) {
           this.checked = bool;
           step.getTask()[bool ? 'addMeasureInteraction':  'removeMeasureInteraction']();
         },
-        onBeforeDestroy(){
+        onBeforeDestroy() {
           this.onChange(false);
         }
       }
@@ -58,12 +58,15 @@ proto.addToolsOfTools = function({step, tools=[]}){
     if (this._toolsoftool.length == 0) {
       tools.forEach(tool =>{
         if (tool === 'measure') {
-          if (layer.getType() === Layer.LayerTypes.VECTOR && !isPointGeometryType(layer.getGeometryType()))
+          if (layer.getType() === Layer.LayerTypes.VECTOR && !isPointGeometryType(layer.getGeometryType())) {
             this._toolsoftool.push(toolsOfTools[tool]);
-        } else this._toolsoftool.push(toolsOfTools[tool]);
+          }
+        } else {
+          this._toolsoftool.push(toolsOfTools[tool]);
+        }
       });
     }
-    this._toolsoftool.forEach(tooloftool=> tooloftool.options.run({layer}));
+    this._toolsoftool.forEach(tooloftool => tooloftool.options.run({layer}));
     this.emit('settoolsoftool', this._toolsoftool);
   });
   step.on('stop', () => {
