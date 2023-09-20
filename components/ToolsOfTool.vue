@@ -16,15 +16,20 @@
   import MeasureComponent from './ToolsOfToolMeasure.vue';
 
   export default {
+
     name: 'Toolsoftool',
+
     props: ['tools'],
+
     components: {
-      snap: SnapComponent,
+      snap:    SnapComponent,
       measure: MeasureComponent
     },
+
     data: function() {
       return {}
-    }
+    },
+
   };
 </script>
 

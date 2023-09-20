@@ -1,11 +1,11 @@
-const {base, inherit} = g3wsdk.core.utils;
-const {Workflow} = g3wsdk.core.workflow;
-const {Layer} = g3wsdk.core.layer;
-const {isPointGeometryType} = g3wsdk.core.geometry.Geometry;
+const { base, inherit }       = g3wsdk.core.utils;
+const { Workflow }            = g3wsdk.core.workflow;
+const { Layer }               = g3wsdk.core.layer;
+const { isPointGeometryType } = g3wsdk.core.geometry.Geometry;
 
-function EditingWorkflow(options={}) {
+function EditingWorkflow(options = {}) {
   base(this, options);
-  this.helpMessage = options.helpMessage ? {help:options.helpMessage} : null;
+  this.helpMessage  = options.helpMessage ? { help: options.helpMessage } : null;
   this._toolsoftool = [];
 }
 
@@ -13,32 +13,33 @@ inherit(EditingWorkflow, Workflow);
 
 const proto = EditingWorkflow.prototype;
 
-proto.addToolsOfTools = function({step, tools=[]}){
+proto.addToolsOfTools = function({ step, tools = [] }) {
+
   const toolsOfTools = {
+
     snap: {
       type: 'snap',
       options: {
         checkedAll: false,
         checked: false,
         active: true,
-        run({layer}) {
-          this.active = true;
+        run({ layer }) {
+          this.active  = true;
           this.layerId = layer.getId();
-          this.source = layer.getEditingLayer().getSource();
+          this.source  = layer.getEditingLayer().getSource();
         },
         stop() {
           this.active = false;
         }
       }
     },
-    measure:  {
+
+    measure: {
       type: 'measure',
       options: {
         checked: false,
         run() {
-          setTimeout(()=>{
-            this.onChange(this.checked);
-          })
+          setTimeout(() => { this.onChange(this.checked); })
         },
         stop() {
           step.getTask().removeMeasureInteraction();
@@ -51,36 +52,36 @@ proto.addToolsOfTools = function({step, tools=[]}){
           this.onChange(false);
         }
       }
-    }
+    },
+
   };
-  step.on('run', ({inputs, context}) => {
+
+  step.on('run', ({ inputs, context }) => {
     const layer = inputs.layer;
-    if (this._toolsoftool.length == 0) {
-      tools.forEach(tool =>{
-        if (tool === 'measure') {
-          if (layer.getType() === Layer.LayerTypes.VECTOR && !isPointGeometryType(layer.getGeometryType())) {
-            this._toolsoftool.push(toolsOfTools[tool]);
-          }
-        } else {
+    if (0 == this._toolsoftool.length) {
+      tools.forEach(tool => {
+        if (
+          'measure' !== tool ||
+          ('measure' === tool && Layer.LayerTypes.VECTOR === layer.getType() && !isPointGeometryType(layer.getGeometryType()))
+        ) {
           this._toolsoftool.push(toolsOfTools[tool]);
         }
       });
     }
-    this._toolsoftool.forEach(tooloftool => tooloftool.options.run({layer}));
+    this._toolsoftool.forEach(t => t.options.run({ layer }));
     this.emit('settoolsoftool', this._toolsoftool);
   });
+
   step.on('stop', () => {
-    this._toolsoftool.forEach(tooloftool=> tooloftool.options.stop());
+    this._toolsoftool.forEach(t => t.options.stop());
   });
 };
 
 proto.setHelpMessage = function(message) {
-  this.helpMessage = {
-    help: message
-  };
+  this.helpMessage = { help: message };
 };
 
-proto.getHelpMessage = function(){
+proto.getHelpMessage = function() {
   return this.helpMessage;
 };
 
@@ -89,26 +90,26 @@ proto.getFeatures = function() {
 };
 
 proto.startFromLastStep = function(options) {
-  let steps = this.getSteps();
-  this.setSteps([steps.pop()]);
+  this.setSteps([ this.getSteps().pop() ]);
   return this.start(options);
 };
 
 proto.getCurrentFeature = function() {
-  const features = this.getFeatures();
-  const length = this.getFeatures().length;
-  return features[length -1];
+  const feats = this.getFeatures();
+  return feats[feats.length -1];
 };
 
 proto.getLayer = function() {
-  return this.getSession().getEditor().getLayer()
+  return this.getSession().getEditor().getLayer();
 };
 
 proto.getSession = function() {
   return this.getContext().session;
 };
 
-//bind interrupt event
+/**
+ * bind interrupt event
+ */
 proto.escKeyUpHandler = function(evt) {
   if (evt.keyCode === 27) {
     evt.data.workflow.reject();
@@ -121,16 +122,13 @@ proto.unbindEscKeyUp = function() {
 };
 
 proto.bindEscKeyUp = function(callback=()=>{}) {
-  $(document).on('keyup', {
-    workflow: this,
-    callback
-  }, this.escKeyUpHandler);
+  $(document).on('keyup', { workflow: this, callback }, this.escKeyUpHandler);
 };
 
 proto.registerEscKeyEvent = function(callback){
   this.on('start', () => this.bindEscKeyUp(callback));
   this.on('stop', () => this.unbindEscKeyUp());
 };
-/////
+
 
 module.exports = EditingWorkflow;
