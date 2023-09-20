@@ -176,7 +176,7 @@
           const layerId = layer.getId();
 
           // skip raster layers
-          if (Layer.LayerTypes.VECTOR === layer.getType()) {
+          if (Layer.LayerTypes.VECTOR !== layer.getType()) {
             return;
           }
 
