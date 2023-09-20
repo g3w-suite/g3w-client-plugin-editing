@@ -175,7 +175,7 @@
         .forEach(layer => {
           const layerId = layer.getId();
 
-          // skip raster layers
+          // skip not vertor layers (raster, alphanumerical..)
           if (Layer.LayerTypes.VECTOR !== layer.getType()) {
             return;
           }
