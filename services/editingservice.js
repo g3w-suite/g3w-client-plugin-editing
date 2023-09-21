@@ -1402,15 +1402,15 @@ proto.showChangesToResult = async function(){
         inputs.fids.push(fids);
       }
     });
-    const promise = inputs.layers.length ? DataRouterService.getData('search:layersfids', {
-      inputs,
-      outputs: {
-        title: 'plugins.editing.editing_changes',
-        show: {
-          loading: false
+    const promise = inputs.layers.length ?
+      DataRouterService.getData('search:layersfids', {
+        inputs,
+        outputs: {
+          title: 'plugins.editing.editing_changes',
+          show: {loading: false}
         }
-      }
-    }) : Promise.resolve();
+      }) :
+      Promise.resolve();
     try {
       await promise;
     } catch(err) {}
