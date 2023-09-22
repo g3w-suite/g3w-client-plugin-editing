@@ -10,15 +10,18 @@ function EditingFormComponent(options = {}) {
   const EditingService   = require('../services/editingservice');
   const relationsOptions = options.context_inputs || null;
   const layerId          = options.layer.getId();
+  const feature          = (
+    relationsOptions &&
+    relationsOptions.inputs &&
+    relationsOptions.inputs.features &&
+    relationsOptions.inputs.features[relationsOptions.inputs.features.length - 1]
+  );
 
-  if (relationsOptions) {
+  if (feature) {
     (
       feature.isNew()
         ? Promise.resolve()
-        : EditingService.getLayersDependencyFeatures(layerId, {
-          feature: relationsOptions.inputs.features[relationsOptions.inputs.features.length-1],
-          filterType: 'fid'
-        })
+        : EditingService.getLayersDependencyFeatures(layerId, { feature, filterType: 'fid' })
     ).then(() => {
 
       relationsOptions.formEventBus = this.getService().getEventBus();
@@ -38,7 +41,7 @@ function EditingFormComponent(options = {}) {
       }
 
       // overwrite click on relation handler   
-      this.getService().handleRelation = async function({ relation, layerId, feature }) {
+      this.getService().handleRelation = async function({ relation }) {
         GUI.setLoadingContent(true);
         await EditingService.setLayerUniqueFieldValues(options.layer.getRelationById(relation.name).getChild());
         this.setCurrentComponentById(relation.name);
