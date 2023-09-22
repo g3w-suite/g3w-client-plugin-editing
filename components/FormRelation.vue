@@ -242,10 +242,10 @@
 
   let relationsTable;
 
-    export default {
-      mixins: [mediaMixin, fieldsMixin, resizeMixin],
-      name: 'g3w-relation',
-      data() {
+  export default {
+    mixins: [mediaMixin, fieldsMixin, resizeMixin],
+    name: 'g3w-relation',
+    data() {
         return {
           showAddVectorRelationTools: false,
           copylayerid: null,//used for vector relation layer
@@ -261,8 +261,8 @@
           placeholdersearch: `${t('editing.search')} ...`
         }
       },
-      methods: {
-        resize(){
+    methods: {
+        resize() {
           if (this.active && this.$el.style.display !== 'none'){
             const formBodyHeight = $(".g3wform_body").height();
             const formFooterHeight = $('.g3wform_footer').height();
@@ -388,19 +388,27 @@
           }
         },
       },
-
-    },
-
     computed: {
-
+      /**
+       *
+       * @returns {false}
+       */
       showTable() {
         return this.relations.length > 0 && this.show;
       },
 
+      /**
+       *
+       * @returns {*}
+       */
       fieldrequired() {
         return this._service.isRequired();
       },
 
+      /**
+       *
+       * @returns {boolean}
+       */
       enableAddLinkButtons() {
         return (
           (this.relations.length === 0) ||
@@ -409,98 +417,101 @@
       },
 
     },
-
     watch: {
-
-      relations(updatedrelations=[]) {
+      relations(updatedrelations = []) {
         if (0 === updatedrelations.length) {
           this.destroyTable(); // destroy table when there are no relations
         } else {
           this.updateTable(); // update table when deleting / adding row relations
         }
       },
-      beforeCreate(){
-        this.delayType = 'debounce';
-      },
-      created() {
-        const EditingService = require('../services/editingservice');
-        const relationLayer = EditingService.getLayerById(this.relation.child);
-        this.isVectorRelation = relationLayer.getType() === Layer.LayerTypes.VECTOR;
-        // In case of vector relation
-        if (this.isVectorRelation) {
-          // get all project layer that has same geometry
-          this.copyFeatureLayers = EditingService
-            .getProjectLayersWithSameGeometryOfLayer(relationLayer, {exclude:[this.relation.father]})
-            .map(layer => ({
-              id: layer.getId(),
-              name: layer.getName(),
-              external: false
-            }));
+    },
 
-          EditingService.getExternalLayersWithSameGeometryOfLayer(relationLayer)
-            .forEach(externalLayer => {
-              this.copyFeatureLayers.push({
-                id: externalLayer.get('id'),
-                name: externalLayer.get('name'),
-                external: true
-              })
-            });
+    beforeCreate(){
+      this.delayType = 'debounce';
+    },
 
-          if (this.copyFeatureLayers.length) {
-            // sort by name
-            this.copyFeatureLayers
-              .sort(({name:name1}, {name:name2}) => {
-                name1 = name1.toLowerCase();
-                name2 = name2.toLowerCase();
-                if (name1 < name2) return -1;
-                if (name1 > name2) return 1;
-                return 0;
-              });
-            // in case of fin at least one layer, set current layer id
-            this.copylayerid = this.copyFeatureLayers[0].id;
-          } else {
-            this.copylayerid = null;
-          }
-        }
-        this.loadEventuallyRelationValuesForInputs = false;
-        this._service = new RelationService(this.layerId, {
-          relation: this.relation, // main relation between layerId (current in editing)
-          relations: this.relations // relation related to current feature of current layer in editing
-        });
-        this.capabilities = this._service.getEditingCapabilities();
-        this.formeventbus.$on('changeinput', this.updateExternalKeyValueRelations);
-      },
-      async activated() {
-        this.active = true;
-        this.showAddVectorRelationTools = false;
-        if (!this.loadEventuallyRelationValuesForInputs) {
-          const EditingService = require('../services/editingservice');
-          EditingService.runEventHandler({
-            type: 'show-relation-editing',
-            id: EditingService._getRelationId({
-              layerId: this.layerId,
-              relation: this.relation
-            }),
-            component: this
+    created() {
+      const EditingService = require('../services/editingservice');
+      const relationLayer = EditingService.getLayerById(this.relation.child);
+      this.isVectorRelation = relationLayer.getType() === Layer.LayerTypes.VECTOR;
+      // In case of vector relation
+      if (this.isVectorRelation) {
+        // get all project layer that has same geometry
+        this.copyFeatureLayers = EditingService
+          .getProjectLayersWithSameGeometryOfLayer(relationLayer, {exclude:[this.relation.father]})
+          .map(layer => ({
+            id: layer.getId(),
+            name: layer.getName(),
+            external: false
+          }));
+
+        EditingService.getExternalLayersWithSameGeometryOfLayer(relationLayer)
+          .forEach(externalLayer => {
+            this.copyFeatureLayers.push({
+              id: externalLayer.get('id'),
+              name: externalLayer.get('name'),
+              external: true
+            })
           });
-          this.loadEventuallyRelationValuesForInputs = true;
-        }
-        await this.$nextTick();
 
-        if (!relationsTable && this.relationsLength) {
-          this._createDataTable();
+        if (this.copyFeatureLayers.length) {
+          // sort by name
+          this.copyFeatureLayers
+            .sort(({name:name1}, {name:name2}) => {
+              name1 = name1.toLowerCase();
+              name2 = name2.toLowerCase();
+              if (name1 < name2) return -1;
+              if (name1 > name2) return 1;
+              return 0;
+            });
+          // in case of fin at least one layer, set current layer id
+          this.copylayerid = this.copyFeatureLayers[0].id;
+        } else {
+          this.copylayerid = null;
         }
-        this.resize();
+      }
+      this.loadEventuallyRelationValuesForInputs = false;
+      this._service = new RelationService(this.layerId, {
+        relation: this.relation, // main relation between layerId (current in editing)
+        relations: this.relations // relation related to current feature of current layer in editing
+      });
+      this.capabilities = this._service.getEditingCapabilities();
+      this.formeventbus.$on('changeinput', this.updateExternalKeyValueRelations);
+    },
 
-      },
-      deactivated() {
-        this.destroyTable();
-        this.active = false;
-      },
-      beforeDestroy() {
+    async activated() {
+      this.active = true;
+      this.showAddVectorRelationTools = false;
+      if (!this.loadEventuallyRelationValuesForInputs) {
+        const EditingService = require('../services/editingservice');
+        EditingService.runEventHandler({
+          type: 'show-relation-editing',
+          id: EditingService._getRelationId({
+            layerId: this.layerId,
+            relation: this.relation
+          }),
+          component: this
+        });
         this.loadEventuallyRelationValuesForInputs = true;
       }
-    };
+      await this.$nextTick();
+      if (!relationsTable && this.relationsLength) {
+        this._createDataTable();
+      }
+      this.resize();
+
+    },
+
+    deactivated() {
+      this.destroyTable();
+      this.active = false;
+    },
+
+    beforeDestroy() {
+      this.loadEventuallyRelationValuesForInputs = true;
+    }
+  };
 </script>
 
 <style scoped>
