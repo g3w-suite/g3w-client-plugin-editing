@@ -3,6 +3,11 @@ const {G3WObject} = g3wsdk.core;
 const {GUI} = g3wsdk.gui;
 const t = g3wsdk.core.i18n.tPlugin;
 
+/**
+ *
+ * @param options
+ * @constructor
+ */
 const TableService = function(options = {}) {
   this._features = options.features || []; // original features
   this._promise = options.promise;
@@ -36,9 +41,8 @@ const TableService = function(options = {}) {
       this.state.features = this._features.map(feature => {
         const properties = feature.getProperties();
         const orderedProperties = {};
-        headers.forEach(header => {
-          orderedProperties[header] = properties[header]
-        });
+        headers.forEach(header => orderedProperties[header] = properties[header]);
+        //set private attribute unique value
         orderedProperties.__gis3w_feature_uid = feature.getUid();
         return orderedProperties;
       });
@@ -52,6 +56,11 @@ inherit(TableService, G3WObject);
 
 const proto = TableService.prototype;
 
+/**
+ *
+ * @param name
+ * @returns {boolean}
+ */
 proto.isMediaField = function(name) {
   let isMedia = false;
   for (let i=0; i < this.state.headers.length; i++) {
@@ -64,23 +73,37 @@ proto.isMediaField = function(name) {
   return isMedia;
 };
 
+/**
+ *
+ */
 proto.save = function() {
   this._promise.resolve();
 };
 
+/**
+ *
+ */
 proto.cancel = function() {
   this._promise.reject();
 };
 
+/**
+ *
+ * @param uid
+ * @returns {Promise<unknown>}
+ */
 proto.deleteFeature = function(uid) {
   const EditingService = require('./editingservice');
   const layer = this._inputs.layer;
   const layerId = layer.getId();
   const childRelations = layer.getChildren();
-  const relationinediting = childRelations.length &&  EditingService._filterRelationsInEditing({
-    layerId,
-    relations: layer.getRelations().getArray()
-  }).length > 0;
+  //get relation in editing
+  const relationinediting = childRelations.length &&
+    EditingService._filterRelationsInEditing({
+      layerId,
+      relations: layer.getRelations().getArray()
+    }).length > 0;
+
   return new Promise((resolve, reject) =>{
     GUI.dialog.confirm(`<h4>${t('editing.messages.delete_feature')}</h4>
                         <div style="font-size:1.2em;">${ relationinediting ?t('editing.messages.delete_feature_relations') : ''}</div>`, (result) => {
@@ -98,11 +121,18 @@ proto.deleteFeature = function(uid) {
         session.pushDelete(layerId, feature);
         this.state.features.splice(index, 1);
         resolve()
-      } else reject()
+      } else {
+        reject()
+      }
     });
   })
 };
 
+/**
+ *
+ * @param uid
+ * @returns {Promise<unknown>}
+ */
 proto.copyFeature = function(uid){
   return new Promise((resolve, reject) =>{
     const feature = this._features.find(feature => feature.getUid() === uid).cloneNew();
@@ -129,45 +159,59 @@ proto.copyFeature = function(uid){
   })
 };
 
+/**
+ *
+ * @param uid
+ */
 proto.editFeature = function(uid) {
   let index;
+
   const feature = this._features.find((feature, featureIndex) => {
     if (feature.getUid() === uid) {
       index = featureIndex;
       return true;
     }
   });
+
   const EditTableFeatureWorkflow = require('../workflows/edittablefeatureworkflow');
+
   this._workflow = new EditTableFeatureWorkflow();
+
   const inputs = this._inputs;
+
   inputs.features.push(feature);
-  const options = {
-    context: this._context,
-    inputs
-  };
-  this._workflow.start(options)
+
+  this._workflow
+    .start({
+      context: this._context,
+      inputs
+    })
     .then(outputs => {
       const feature = outputs.features[outputs.features.length -1];
       Object.entries(this.state.features[index]).forEach(([key, value]) => {
         this.state.features[index][key] = feature.get(key);
       });
     })
-    .fail(err => {})
+    .fail(err => console.log(err))
     .always(() =>  this._workflow.stop())
 };
 
+/**
+ *
+ * @param featuresIndex
+ */
 proto.linkFeatures = function(featuresIndex=[]){
-  const features = featuresIndex.map(index => this._features[index]);
   this._promise.resolve({
-    features
+    features: featuresIndex.map(index => this._features[index])
   })
 };
 
+/**
+ *
+ * @param index
+ */
 proto.linkFeature = function(index) {
-  const feature = this._features[index];
-  this._promise.resolve({
-      features: [feature]
-    });
+  this._promise.resolve({features: [this._features[index]]});
 };
 
 module.exports = TableService;
