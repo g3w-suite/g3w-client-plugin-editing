@@ -31,13 +31,18 @@ proto.run = function(inputs, context) {
   const headers = originalLayer.getEditingFields();
   this._isContentChild = WorkflowsStack.getLength() > 1;
   const foreignKey = this._isContentChild && context.excludeFields ? context.excludeFields[0] :  null;
-  const exclude = this._isContentChild && context.exclude;
+  const excludeFeatures = this._isContentChild && context.excludeFeatures;
   const capabilities = originalLayer.getEditingCapabilities();
   const editingLayer = originalLayer.getEditingLayer();
   let features = editingLayer.readEditingFeatures();
-  if (exclude && features.length) {
-    const {value} = exclude;
-    features = features.filter(feature => feature.get(foreignKey) != value)
+  if (excludeFeatures && features.length > 0) {
+
+    features = features
+      .filter(feature => {
+        return Object
+          .entries(excludeFeatures)
+          .reduce((bool, [field, value]) => bool && feature.get(field) != value, true)
+      })
   }
   const content = new TableComponent({
     title: `${layerName}`,

@@ -3,51 +3,105 @@
 <!-- form/components/relation/vue/relation.js@v3.4 -->
 
 <template>
-    <div style="margin-bottom: 5px;" v-if="active">
-      <div ref="relation_header_title" class="box-header with-border skin-color" style="width:100%; display: flex; font-weight: bold; font-size: 1.3em; align-items: center; margin-button:3px; background-color: #ffffff; ">
+    <div
+      v-if  = "active"
+      style = "margin-bottom: 5px;"
+    >
+
+      <!-- RELATION TITLE -->
+      <div
+        ref   = "relation_header_title"
+        class = "box-header with-border skin-color"
+        style = "
+          width: 100%;
+          display: flex;
+          font-weight: bold;
+          font-size: 1.3em;
+          align-items: center;
+          /*margin-button: 3px;*/
+          background-color: #fff;
+        "
+      >
         <span v-t-plugin="'editing.edit_relation'"></span>
         <span style="margin-left: 2px;">: {{relation.name.toUpperCase()}}</span>
       </div>
-      <div ref="relation_header_tools" class="box-header with-border" style="width:100%; display: flex; margin-button:3px; background-color: #ffffff; ">
+
+      <!-- RELATION TOOLS -->
+      <div
+        ref   = "relation_header_tools"
+        class = "box-header with-border"
+        style = "
+          width: 100%;
+          display: flex;
+          /*margin-button:3px;*/
+          background-color: #fff;
+        "
+      >
+        <!-- SEARCH BOX -->
         <div id="search-box" style="margin-right: auto;">
-
-          <input v-if="relationsLength"
-            type="text"
-            class="form-control"
-            id="filterRelation"
-            :placeholder="placeholdersearch">
-
+          <input
+            v-if         = "relationsLength"
+            type         = "text"
+            class        = "form-control"
+            id           = "filterRelation"
+            :placeholder = "placeholdersearch"
+          >
         </div>
+
         <div style="display: flex; justify-content: flex-end">
 
-          <span v-if="capabilities.relation.find(capability => capability === 'change_attr_feature') !== undefined"
-            class="g3w-icon add-link" align="center"
-            v-t-tooltip:bottom.create="tooltips.link_relation"
-            @click.stop="enableAddLinkButtons ? linkRelation() : null"
-            :class="[{'disabled': !enableAddLinkButtons}, g3wtemplate.font['link']]">
-          </span>
+          <!-- CHANGE ATTRIBUTE -->
+          <span
+            v-if                      = "undefined !== capabilities.relation.find(capability => 'change_attr_feature' === capability)"
+            class                     = "g3w-icon add-link"
+            align                     = "center"
+            v-t-tooltip:bottom.create = "tooltips.link_relation"
+            @click.stop               = "enableAddLinkButtons ? linkRelation() : null"
+            :class                    = "[
+              { 'disabled': !enableAddLinkButtons },
+              g3wtemplate.font['link']
+            ]"
+          ></span>
 
-          <span v-if="capabilities.relation.find(capability => capability === 'add_feature') !== undefined"
-            v-t-tooltip:bottom.create="tooltips.add_relation"
-            @click="enableAddLinkButtons ? addRelationAndLink() : null"
-            class="g3w-icon add-link pull-right"
-            :class="[{'disabled' : !enableAddLinkButtons}, g3wtemplate.font['plus']]">
-          </span>
+          <!-- ADD FEATURE -->
+          <span
+            v-if                      = "undefined !== capabilities.relation.find(capability => 'add_feature' === capability)"
+            v-t-tooltip:bottom.create = "tooltips.add_relation"
+            @click                    = "enableAddLinkButtons ? addRelationAndLink() : null"
+            class                     = "g3w-icon add-link pull-right"
+            :class                    = "[
+              { 'disabled' : !enableAddLinkButtons },
+              g3wtemplate.font['plus']
+            ]"
+          ></span>
 
         </div>
 
       </div>
 
-      <section ref="relation_vector_tools" v-if="showAddVectorRelationTools" style="display: flex; flex-direction:column; border:2px solid #eeeeee; background-color: #ffffff; padding: 10px;">
+      <!-- VECTOR RELATION TOOLS -->
+      <section
+        v-if  = "showAddVectorRelationTools"
+        ref   = "relation_vector_tools"
+        style = "
+          display: flex;
+          flex-direction: column;
+          border: 2px solid #eee;
+          background-color: #fff;
+          padding: 10px;
+        "
+      >
+
+        <!-- ADD VECTOR RELATION -->
         <div>
           <div class="g3w-editing-new-relation-vector-type" v-t-plugin="'editing.relation.draw_new_feature'"></div>
           <button
-            class="btn skin-button"
-            style="width: 100%"
-            @click.stop="addVectorRelation">
-              <i :class="g3wtemplate.font['pencil']"></i>
+            class       = "btn skin-button"
+            style       = "width: 100%"
+            @click.stop = "addVectorRelation"
+          >
+            <i :class="g3wtemplate.font['pencil']"></i>
           </button>
-
         </div>
 
         <divider/>
@@ -56,97 +110,119 @@
 
         <divider/>
 
-        <div id="g3w-select-editable-layers-content" style="flex-grow: 1; display:flex;flex-direction: column" >
+        <div
+          id    = "g3w-select-editable-layers-content"
+          style = "
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column
+          "
+        >
 
           <div class="g3w-editing-new-relation-vector-type" v-t-plugin="'editing.relation.copy_feature_from_other_layer'"></div>
 
-          <select id="g3w-select-editable-layers-to-copy" v-select2="'copylayerid'">
-
-            <option v-for="copyFeatureLayer in copyFeatureLayers" :key="copyFeatureLayer.id"
-              :value="copyFeatureLayer.id">{{copyFeatureLayer.name}}
-            </option>
-
+          <select
+            id        = "g3w-select-editable-layers-to-copy"
+            v-select2 = "'copylayerid'"
+          >
+            <option
+              v-for  = "copyFeatureLayer in copyFeatureLayers"
+              :key   = "copyFeatureLayer.id"
+              :value = "copyFeatureLayer.id"
+            >{{copyFeatureLayer.name}}</option>
           </select>
 
-          <button class="btn skin-button" @click.stop="copyFeatureFromOtherLayer">
-
+          <!-- COPY FEATURE FROM OTHER LAYER -->
+          <button
+            class       = "btn skin-button"
+            @click.stop = "copyFeatureFromOtherLayer"
+          >
             <i :class="g3wtemplate.font['clipboard']"></i>
-
           </button>
         </div>
 
       </section>
 
-      <div ref="relation_body" class="box-body" style="padding:0;">
-
-        <template v-if="relationsLength">
-
-          <table class="table g3wform-relation-table table-striped" style="width:100%">
-            <thead>
-              <tr>
-                <th v-t="'tools'"></th>
-                <th></th>
-                <th v-for="attribute in relationAttributesSubset(relations[0])">{{attribute.label}}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(relation, index) in relations" class="featurebox-header">
-                <td>
-                  <div style="display: flex">
-                    <div
-                      v-for="relationtool in getRelationTools()" :key="relationtool.state.name"
-                      class="skin-tooltip-right editbtn enabled"
-                      @click.stop="startTool(relationtool, index)"
-                      data-toggle="tooltip"
-                      data-placement="right"
-                      v-t-tooltip:plugin="relationtool.state.name">
-                      <img
-                        height="20px"
-                        width="20px"
-                        :src="`${resourcesurl}images/${relationtool.state.icon}`"/>
-                    </div>
-                  </div>
-                </td>
-                <td class="action-cell">
+      <!-- RELATION CONTENT -->
+      <div
+        ref   = "relation_body"
+        class = "box-body"
+        style = "padding:0;"
+      >
+        <table
+          v-if  = "showTable"
+          class = "table g3wform-relation-table table-striped"
+          style = "width:100%"
+        >
+          <thead>
+            <tr>
+              <th v-t="'tools'"></th>
+              <th></th>
+              <th v-for="attribute in relationAttributesSubset(relations[0])">{{attribute.label}}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for = "(relation, index) in relations"
+              class = "featurebox-header"
+            >
+              <td>
+                <div style="display: flex">
                   <div
-                    v-if="!fieldrequired && capabilities.relation.find(capability => capability === 'change_attr_feature') !== undefined"
-                    class="g3w-mini-relation-icon g3w-icon"
-                    :class="g3wtemplate.font['unlink']"
-                    @click.stop="unlinkRelation(index)"
-                    v-t-tooltip:right.create="tooltips.unlink_relation"
-                    aria-hidden="true">
+                    v-for              = "relationtool in getRelationTools()"
+                    :key               = "relationtool.state.name"
+                    class              = "skin-tooltip-right editbtn enabled"
+                    @click.stop        = "startTool(relationtool, index)"
+                    data-toggle        = "tooltip"
+                    data-placement     = "right"
+                    v-t-tooltip:plugin = "relationtool.state.name"
+                  >
+                    <img
+                      height = "20px"
+                      width  = "20px"
+                      :src   = "`${resourcesurl}images/${relationtool.state.icon}`"
+                    />
                   </div>
-                </td>
-                <td
-                  v-show="!showAllFieds(index)"
-                  v-for="attribute in relationAttributesSubset(relation)">
-                  <template
-                    v-if="isMedia(attribute.value) && getValue(attribute.value)">
-                    <div class="preview">
-                      <a :href="getValue(attribute.value)" target="_blank">
-                        <div
-                          class="previewtype"
-                          :class="getMediaType(attribute.value.mime_type).type">
-                          <i
-                            class="fa-2x"
-                            :class="g3wtemplate.font[getMediaType(attribute.value.mime_type).type]">
-                          </i>
-                        </div>
-                      </a>
-                      <div class="filename">{{ getFileName(attribute.value) }}</div>
+                </div>
+              </td>
+              <td class="action-cell">
+                <div
+                  v-if                     = "!fieldrequired && undefined !== capabilities.relation.find(capability => 'change_attr_feature' === capability)"
+                  class                    = "g3w-mini-relation-icon g3w-icon"
+                  :class                   = "g3wtemplate.font['unlink']"
+                  @click.stop              = "unlinkRelation(index)"
+                  v-t-tooltip:right.create = "tooltips.unlink_relation"
+                  aria-hidden              = "true"
+                ></div>
+              </td>
+              <td
+                v-for  = "attribute in relationAttributesSubset(relation)"
+                v-show = "!showAllFieds(index)"
+              >
+                <!-- MEDIA ATTRIBUTE-->
+                <div
+                  v-if = "isMedia(attribute.value) && getValue(attribute.value)"
+                  class = "preview"
+                >
+                  <a :href="getValue(attribute.value)" target="_blank">
+                    <div class="previewtype" :class="getMediaType(attribute.value.mime_type).type">
+                      <i class="fa-2x" :class="g3wtemplate.font[getMediaType(attribute.value.mime_type).type]"></i>
                     </div>
-                  </template>
-                  <a
-                    v-else-if="isLink(attribute)"
-                    :href="getValue(attribute.value)"
-                    target="_blank">{{ getValue(attribute.value) }}
                   </a>
-                  <span v-else>{{ getValue(attribute.value) }}</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </template>
+                  <div class="filename">{{ getFileName(attribute.value) }}</div>
+                </div>
+                <!-- LINK ATTRIBUTE -->
+                <a
+                  v-else-if = "isLink(attribute)"
+                  :href     = "getValue(attribute.value)"
+                  target    = "_blank">{{ getValue(attribute.value) }}
+                </a>
+                <!-- TEXTUAL ATTRIBUTE -->
+                <span v-else>{{ getValue(attribute.value) }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 </template>
@@ -249,8 +325,8 @@
             if (Array.isArray(field.value)) return;
             const {label, value} = field;
             attributes.push({
-              label,
-              value
+              label: field.label,
+              value: field.value
             })
           });
           return attributes;
@@ -312,20 +388,35 @@
           }
         },
       },
-      computed: {
-        relationsLength() {
-          return this.relations.length;
-        },
-        fieldrequired() {
-          return this._service.isRequired();
-        },
-        enableAddLinkButtons() {
-          return !this.relations.length || (this.relations.length && this.relation.type !== 'ONE');
-        }
+
+    },
+
+    computed: {
+
+      showTable() {
+        return this.relations.length > 0 && this.show;
       },
-      watch:{
-        relations(updatedrelations){
-          updatedrelations.length === 0 && this.destroyTable();
+
+      fieldrequired() {
+        return this._service.isRequired();
+      },
+
+      enableAddLinkButtons() {
+        return (
+          (this.relations.length === 0) ||
+          (this.relation.type !== 'ONE')
+        );
+      },
+
+    },
+
+    watch: {
+
+      relations(updatedrelations=[]) {
+        if (0 === updatedrelations.length) {
+          this.destroyTable(); // destroy table when there are no relations
+        } else {
+          this.updateTable(); // update table when deleting / adding row relations
         }
       },
       beforeCreate(){
@@ -354,7 +445,7 @@
                 external: true
               })
             });
-          
+
           if (this.copyFeatureLayers.length) {
             // sort by name
             this.copyFeatureLayers
@@ -411,9 +502,10 @@
       }
     };
 </script>
+
 <style scoped>
   .g3w-editing-new-relation-vector-type {
     margin-bottom: 5px;
-    font-weight: bold
+    font-weight: bold;
   }
 </style>
