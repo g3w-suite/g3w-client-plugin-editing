@@ -24,13 +24,14 @@ proto.run = function(inputs, context) {
   const exclude = this._isContentChild && context.exclude;
   const capabilities = originalLayer.getEditingCapabilities();
   const editingLayer = originalLayer.getEditingLayer();
-  let features = editingLayer.readEditingFeatures();
+
+  let features = editingLayer.getEditingSyncSource() ?
+    editingLayer.readEditingSyncFeatures()
+    :editingLayer.readEditingFeatures();
+
   if (exclude && features.length) {
     const {value} = exclude;
-    features = features.filter(feature => {
-      const featureValue = feature.get(foreignKey);
-      return featureValue != value;
-    })
+    features = features.filter(feature => feature.get(foreignKey) != value);
   }
   const content = new TableComponent({
     title: `${layerName}`,
