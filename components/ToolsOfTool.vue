@@ -4,16 +4,22 @@
 
 <template>
   <div
-    id="toolsoftoolcontainer"
-    style="display: flex; flex-direction: column;
-    margin: 5px;
-    padding: 5px;
-    border-radius: 5px;"
+    id    = "toolsoftoolcontainer"
+    style = "
+      display: flex;
+      flex-direction: column;
+      margin: 5px;
+      padding: 5px;
+      border-radius: 5px;
+    "
   >
-    <template v-for="tool in tools">
+    <template
+      v-for = "tool in tools"
+    >
       <component
-        :is="tool.type"
-        :options="tool.options"/>
+        :is      = "tool.type"
+        :options = "tool.options"
+      />
       <divider/>
     </template>
   </div>

@@ -4,16 +4,20 @@
 
 <template>
   <div
-    v-if="state.visible"
-    @click.prevent.stop ="state.enabled && toggletool()"
-    class="editbtn"
-    :class="{'enabled' : state.enabled, 'toggled' : state.active}"
+    v-if                = "state.visible"
+    @click.prevent.stop = "state.enabled && toggletool()"
+    class               = "editbtn"
+    :class              = "{
+      'enabled' : state.enabled,
+      'toggled' : state.active,
+    }"
   >
     <img
-      height="25px"
-      width="25px"
-      :src="resourcesurl + 'images/'+ state.icon"
-      v-t-title:plugin="`${state.name}`"/>
+      height           = "25"
+      width            = "25"
+      :src             = "resourcesurl + 'images/'+ state.icon"
+      v-t-title:plugin = "`${state.name}`"
+    />
   </div>
 </template>
 

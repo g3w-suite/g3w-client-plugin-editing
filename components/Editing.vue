@@ -7,76 +7,94 @@
 
     <bar-loader :loading="saving"/>
 
+    <!-- OFFLINE MESSAGE -->
     <div
-      v-if="!appState.online"
-      id="onlineofflinemessage"
-      style="margin-bottom: 5px; padding: 5px; border-radius: 3px; background-color: orange; color:white; font-weight: bold"
+      v-if  = "!appState.online"
+      id    = "onlineofflinemessage"
+      style = "
+        margin-bottom: 5px;
+        padding: 5px;
+        border-radius: 3px;
+        background-color: orange;
+        color:white;
+        font-weight: bold
+      "
     >
       <div v-t-plugin="'editing.messages.offline'"></div>
-
     </div>
 
+    <!-- COMMIT BAR -->
     <div
-      v-if="showcommitbar"
-      v-disabled="saving"
-      style="display: flex; justify-content: flex-end; margin-bottom: 5px"
+      v-if       = "showcommitbar"
+      v-disabled = "saving"
+      style      = "
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 5px;
+      "
     >
+
+      <!-- SAVE BUTTON -->
       <div
-        style="margin-right: auto;"
-        class="editing-button"
-        @click.stop="canCommit ? commit(): null"
-        :class="{'enabled' : canCommit }"
+        style       = "margin-right: auto;"
+        class       = "editing-button"
+        @click.stop = "canCommit ? commit() : null"
+        :class      = "{ 'enabled': canCommit }"
       >
         <span
-          class="editing-icon"
-          :class="g3wtemplate.font['save']">
+          class  = "editing-icon"
+          :class = "g3wtemplate.font['save']">
         </span>
-
       </div>
 
+      <!-- UNDO BUTTON -->
       <div
-        class="editing-button"
-        @click.stop="canUndo ? undo(): null"
-        :class="{'enabled' : canUndo }"
+        class       = "editing-button"
+        @click.stop = "canUndo ? undo(): null"
+        :class      = "{ 'enabled': canUndo }"
       >
         <span
-          class="editing-icon"
-          :class="g3wtemplate.font['arrow-left']">
+          class     = "editing-icon"
+          :class    = "g3wtemplate.font['arrow-left']">
         </span>
-
       </div>
 
+      <!-- REDO BUTTON -->
       <div
-        class="editing-button"
-        @click.stop="canRedo ? redo(): null"
-        :class="{'enabled' : canRedo }"
+        class       = "editing-button"
+        @click.stop = "canRedo ? redo() : null"
+        :class      = "{ 'enabled': canRedo }"
       >
         <span
-          class="editing-icon"
-          :class="g3wtemplate.font['arrow-right']">
+          class  = "editing-icon"
+          :class = "g3wtemplate.font['arrow-right']">
         </span>
-
       </div>
 
     </div>
 
     <div
       v-else
-      style="height: 10px;">
-    </div>
+      style = "height: 10px;"
+    ></div>
 
-    <selectlayers v-if="state.showselectlayers && state.toolboxes.length > 1"/>
+    <!-- LAYERS SELECT -->
+    <selectlayers v-if="state.showselectlayers && state.toolboxes.length > 1" />
+
+    <!-- TOOLBOXES -->
     <div id="toolboxes">
-
-      <toolbox :state="toolbox" :resourcesurl="resourcesurl"
-        @setselectedtoolbox="setSelectedToolbox"
-        @starttoolbox="startToolBox"
-        @stoptoolbox="stopToolBox"
-        @savetoolbox="saveToolBox"
-        @setactivetool="startActiveTool"
-        @stopactivetool="stopActiveTool"
-        v-for="toolbox in state.toolboxes" :key="toolbox.id"/>
-
+      <toolbox
+        v-for               = "toolbox in state.toolboxes"
+        :key                = "toolbox.id"
+        :state              = "toolbox"
+        :resourcesurl       = "resourcesurl"
+        @setselectedtoolbox = "setSelectedToolbox"
+        @starttoolbox       = "startToolBox"
+        @stoptoolbox        = "stopToolBox"
+        @savetoolbox        = "saveToolBox"
+        @setactivetool      = "startActiveTool"
+        @stopactivetool     = "stopActiveTool"
+      />
     </div>
 
   </div>

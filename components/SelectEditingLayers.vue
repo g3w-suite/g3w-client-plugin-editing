@@ -1,23 +1,23 @@
 <template>
   <div
-    id="g3w-select-editable-layers-content"
-    class="skin-color"
+    id    = "g3w-select-editable-layers-content"
+    class = "skin-color"
   >
     <label
-      for="g3w-select-editable-layers-to-show"
-      v-t="'Layers'">
-    </label>
+      for = "g3w-select-editable-layers-to-show"
+      v-t = "'Layers'"
+    ></label>
     <select
-      id="g3w-select-editable-layers-to-show"
-      multiple="multiple"
-      clear="true"
-      v-select2="'selectedlayers'"
+      id        = "g3w-select-editable-layers-to-show"
+      multiple  = "multiple"
+      clear     = "true"
+      v-select2 = "'selectedlayers'"
     >
       <option
-        v-for="editinglayer in editinglayers"
-        :value="editinglayer.id"
-        :key="editinglayer.id">{{editinglayer.name}}
-      </option>
+        v-for  = "editinglayer in editinglayers"
+        :value = "editinglayer.id"
+        :key   = "editinglayer.id"
+      >{{editinglayer.name}}</option>
     </select>
   </div>
 </template>
