@@ -722,7 +722,7 @@ proto.listenRelation1_1FieldChange = function({layerId, fields=[]}={}) {
       //Not set this condition because maybe i ca be used this method
       //on move task or other when current relationField, related to 1:1 relation
       //it can be changed by default expression or in other way not only with form
-      const relationField = fields.find(field => field.name === relation.getFatherField());
+      const relationField = fields.find(field => relation.getFatherField().includes(field.name));
       //if found field and relation layer is in editing.
       //it required the second condition because the field can be not editable,
       // but it can be changed
