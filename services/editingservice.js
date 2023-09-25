@@ -1,30 +1,37 @@
 import API from '../api'
-const {G3W_FID} = g3wsdk.constant;
-const {ApplicationState, ApplicationService} = g3wsdk.core;
-const {DataRouterService} = g3wsdk.core.data;
-const {base, inherit, XHR} = g3wsdk.core.utils;
-const { Geometry } = g3wsdk.core.geometry;
+
+const { G3W_FID }                     = g3wsdk.constant;
+const {
+  ApplicationState,
+  ApplicationService
+}                                     = g3wsdk.core;
+const { DataRouterService }           = g3wsdk.core.data;
+const { base, inherit, XHR }          = g3wsdk.core.utils;
+const { Geometry }                    = g3wsdk.core.geometry;
 const {
   getFeaturesFromResponseVectorApi,
   isSameBaseGeometryType,
-} = g3wsdk.core.geoutils;
-const {WorkflowsStack} = g3wsdk.core.workflow;
-const {PluginService} = g3wsdk.core.plugin;
-const {SessionsRegistry} = g3wsdk.core.editing;
-const {CatalogLayersStoresRegistry} = g3wsdk.core.catalog;
-const {MapLayersStoreRegistry} = g3wsdk.core.map;
-const {Layer, LayersStore} = g3wsdk.core.layer;
-const {Feature} = g3wsdk.core.layer.features;
-const {GUI} = g3wsdk.gui;
-const {Server:serverErrorParser}= g3wsdk.core.errors.parsers;
-const t = g3wsdk.core.i18n.tPlugin;
-const {getScaleFromResolution, getResolutionFromScale} = g3wsdk.ol.utils;
-const ToolBoxesFactory = require('../toolboxes/toolboxesfactory');
-const CommitFeaturesWorkflow = require('../workflows/commitfeaturesworkflow');
-const MAPCONTROL_TOGGLED_EVENT_NAME = 'mapcontrol:toggled';
-const OFFLINE_ITEMS = {
-  CHANGES: 'EDITING_CHANGES'
-};
+}                                     = g3wsdk.core.geoutils;
+const { WorkflowsStack }              = g3wsdk.core.workflow;
+const { PluginService }               = g3wsdk.core.plugin;
+const { SessionsRegistry }            = g3wsdk.core.editing;
+const { CatalogLayersStoresRegistry } = g3wsdk.core.catalog;
+const { MapLayersStoreRegistry }      = g3wsdk.core.map;
+const { Layer, LayersStore }          = g3wsdk.core.layer;
+const { Feature }                     = g3wsdk.core.layer.features;
+const { GUI }                         = g3wsdk.gui;
+const { Server: serverErrorParser }   = g3wsdk.core.errors.parsers;
+const t                               = g3wsdk.core.i18n.tPlugin;
+const {
+  getScaleFromResolution,
+  getResolutionFromScale,
+}                                     = g3wsdk.ol.utils;
+
+const ToolBoxesFactory                = require('../toolboxes/toolboxesfactory');
+const CommitFeaturesWorkflow          = require('../workflows/commitfeaturesworkflow');
+
+const MAPCONTROL_TOGGLED_EVENT_NAME   = 'mapcontrol:toggled';
+const OFFLINE_ITEMS                   = { CHANGES: 'EDITING_CHANGES' };
 
 function EditingService() {
   base(this);
