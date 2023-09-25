@@ -175,9 +175,14 @@ proto.startTool = function(relationtool, index) {
  */
 proto.forceParentsFromServiceWorkflowToUpdated = function() {
   const workflowParents = WorkflowsStack.getParents() || [this.getCurrentWorkflow()];
-  workflowParents.forEach(workflow => workflow.getContext().service.setUpdate(true, {
-    force: true
-  }));
+  workflowParents.forEach(workflow => {
+    //check if workflow has service (form service)
+    if (workflow.getContextService()) {
+      workflow
+          .getContextService()
+          .setUpdate(true, {force: true})
+    }
+  });
 };
 
 proto.startTableTool = function(relationtool, index) {
