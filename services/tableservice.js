@@ -10,6 +10,7 @@ const t = g3wsdk.core.i18n.tPlugin;
  */
 const TableService = function(options = {}) {
   this._features = options.features || []; // original features
+  this._syncfeatures = options.syncfeatures;
   this._promise = options.promise;
   this._context = options.context;
   this._inputs = options.inputs;
@@ -18,7 +19,14 @@ const TableService = function(options = {}) {
   this._workflow = null;
   this._deleteFeaturesIndexes = [];
   this._isrelation = options.isrelation || false;
-  const { capabilities, headers=[], title='Link relation', push:isrelation } = options;
+
+  const {
+    capabilities,
+    headers=[],
+    title='Link relation',
+    push:isrelation
+  } = options;
+
   this.state = {
     headers,
     features: [],
@@ -29,16 +37,19 @@ const TableService = function(options = {}) {
 
   this.init = function() {
     //filter the original feature based on if is a relation
-    this._features = !this._isrelation ? this._features : this._features.filter(feature =>
-      feature.get(this._foreignKey) !== this._fatherValue
-    );
+    if (this._isrelation) {
+      this._features.filter(feature => feature.get(this._foreignKey) !== this._fatherValue);
+      this._syncfeatures && this._syncfeatures.filter(feature => feature.get(this._foreignKey) !== this._fatherValue);
+    }
+
     // set values
-    if (this._features.length) {
+    if (this._features.length > 0) {
       const baseFeature = this._features[0];
       const properties = Object.keys(baseFeature.getProperties());
       this.state.headers = this.state.headers.filter(header => properties.indexOf(header.name) !== -1);
       const headers = this.state.headers.map(header => header.name);
-      this.state.features = this._features.map(feature => {
+      const features = this._syncfeatures || this._features;
+      this.state.features = features.map(feature => {
         const properties = feature.getProperties();
         const orderedProperties = {};
         headers.forEach(header => orderedProperties[header] = properties[header]);
@@ -48,7 +59,9 @@ const TableService = function(options = {}) {
       });
     }
   };
+
   this.init();
+
   base(this);
 };
 
@@ -188,8 +201,18 @@ proto.editFeature = function(uid) {
     })
     .then(outputs => {
       const feature = outputs.features[outputs.features.length -1];
-      Object.entries(this.state.features[index]).forEach(([key, value]) => {
-        this.state.features[index][key] = feature.get(key);
+      Object
+        .entries(this.state.features[index])
+        .forEach(([key, value]) => {
+          if (this._syncfeatures) {
+            //TODO set value here
+            console.log(this._inputs.layer.getFieldsWithValues(this._features[index]))
+            this._features[index].get(key);
+            this.state.features[index][key] = value;
+          } else {
+            this.state.features[index][key] = feature.get(key);
+          }
+
       });
     })
     .fail(err => console.log(err))

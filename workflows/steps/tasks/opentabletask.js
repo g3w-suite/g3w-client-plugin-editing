@@ -25,17 +25,24 @@ proto.run = function(inputs, context) {
   const capabilities = originalLayer.getEditingCapabilities();
   const editingLayer = originalLayer.getEditingLayer();
 
-  let features = editingLayer.getEditingSyncSource() ?
-    editingLayer.readEditingSyncFeatures()
-    :editingLayer.readEditingFeatures();
+  //get editing features
+  let features = editingLayer.readEditingFeatures();
 
-  if (exclude && features.length) {
+  //get eventually sync features
+  let syncfeatures = editingLayer.getEditingSyncSource() && editingLayer.readEditingSyncFeatures()
+
+  if (exclude && features.length > 0) {
     const {value} = exclude;
     features = features.filter(feature => feature.get(foreignKey) != value);
+    //need to syncfeature in the same
+    if (syncfeatures) {
+      syncfeatures = syncfeatures.filter(feature => feature.get(foreignKey) != value)
+    }
   }
   const content = new TableComponent({
     title: `${layerName}`,
     features,
+    syncfeatures,
     promise: d,
     push: this._isContentChild,
     headers,

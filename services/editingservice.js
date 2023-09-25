@@ -1610,7 +1610,7 @@ proto.setLayerUniqueFieldValues = async function(layerId) {
 };
 
 /**
- * save tamperary relation feature changes on father (root) layer feature
+ * save temporary relation feature changes on father (root) layer feature
  * @param layerId
  */
 proto.saveTemporaryRelationsUniqueFieldsValues = function(layerId) {
@@ -1639,6 +1639,7 @@ proto.getLayerUniqueFieldValues = function({layerId, field}){
 
 proto.getChildLayerUniqueFieldValues = function({layerId, relationLayerId, field}) {
   if (
+    undefined !== this.layersUniqueFieldsValues[relationLayerId] &&
     undefined !== this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations &&
     undefined !== this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId] &&
     undefined !== this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId][field.name]
