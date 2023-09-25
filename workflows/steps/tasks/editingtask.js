@@ -1,29 +1,28 @@
+import ChooseFeatureToEditVueComponent from '../../../components/ChooseFeatureToEdit.vue';
+
 const {
   base,
   inherit,
   createFilterFormInputs,
-} = g3wsdk.core.utils;
+}                              = g3wsdk.core.utils;
 
-const { Geometry } = g3wsdk.core.geometry;
+const { Geometry }             = g3wsdk.core.geometry;
 const {
   convertSingleMultiGeometry,
   isSameBaseGeometryType,
   createSelectedStyle,
   areCoordinatesEqual,
-} = g3wsdk.core.geoutils;
+}                              = g3wsdk.core.geoutils;
 const {
   Layer,
   features: { Feature }
-} = g3wsdk.core.layer;
-const { GUI } = g3wsdk.gui;
-const { Task } = g3wsdk.core.workflow;
-const { WorkflowsStack } = g3wsdk.core.workflow;
-const { inputService } = g3wsdk.core.input;
-const t = g3wsdk.core.i18n.tPlugin;
-const {DataRouterService} = g3wsdk.core.data;
-const {VM} = g3wsdk.constant.APP_EVENTBUS;
-
-const ChooseFeatureToEditComponent = require('../../../g3w-editing-components/choosefeaturetoedit');
+}                              = g3wsdk.core.layer;
+const { GUI }                  = g3wsdk.gui;
+const { WorkflowsStack, Task } = g3wsdk.core.workflow;
+const { inputService }         = g3wsdk.core.input;
+const t                        = g3wsdk.core.i18n.tPlugin;
+const { DataRouterService }    = g3wsdk.core.data;
+const { VM }                   = g3wsdk.constant.APP_EVENTBUS;
 
 /**
  * Base editing task
@@ -586,11 +585,16 @@ proto.chooseFeatureFromFeatures = function({features=[]}){
     const inputs = this.getInputs();
 
     const feature = [];
-    const vueInstance = ChooseFeatureToEditComponent({
-      features,
-      feature,
-      attributes: inputs.layer.getEditingFields().map(({name, label}) => ({name, label}))
-    });
+
+    /**
+     * ORIGINAL SOURCE: g3w-client-plugin-editing/g3w-editing-components/choosefeaturetoedit.js@3.6
+     */
+    const Component    = Vue.extend(ChooseFeatureToEditVueComponent);
+    const vueInstance  = new Component(Object.assign(default_opts, {
+      features:   undefined !== features   ? features : [],
+      feature:    undefined !== feature    ? feature : null,
+      attributes: inputs.layer.getEditingFields().map(({ name, label }) => ({ name, label })),
+    }));
 
     const message = vueInstance.$mount().$el;
 

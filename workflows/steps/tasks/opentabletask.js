@@ -1,11 +1,34 @@
+import TableVueObject    from '../../../components/Table.vue';
+
 const {
   inherit,
   base
-} = g3wsdk.core.utils;
-const {GUI} = g3wsdk.gui;
-const {WorkflowsStack} = g3wsdk.core.workflow;
-const TableComponent = require('../../../g3w-editing-components/table');
-const EditingTask = require('./editingtask');
+}                        = g3wsdk.core.utils;
+const { WorkflowsStack } = g3wsdk.core.workflow;
+const { GUI }            = g3wsdk.gui;
+const { Component }      = g3wsdk.gui.vue;
+
+const TableService       = require('../../../services/tableservice');
+const EditingTask        = require('./editingtask');
+
+/**
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/g3w-editing-components/table.js.js@3.6
+ */
+const InternalComponent = Vue.extend(TableVueObject);
+const TableComponent = function(options={}) {
+  base(this);
+  const service = options.service || new TableService({ ...options });
+  this.setService(service);
+  const internalComponent = new InternalComponent({ service });
+  this.setInternalComponent(internalComponent);
+  internalComponent.state = service.state;
+  service.once('ready', () => this.emit('ready'));
+  this.unmount = function() {
+    service.cancel();
+    return base(this, 'unmount');
+  };
+};
+inherit(TableComponent, Component);
 
 function OpenTableTask(options={}) {
   this._formIdPrefix = 'form_';
