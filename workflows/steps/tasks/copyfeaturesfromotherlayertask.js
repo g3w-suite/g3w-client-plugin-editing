@@ -42,7 +42,7 @@ proto.run = function(inputs, context) {
    */
   const layers = {};
   (features || []).forEach(f => {
-    if (undefined === layers[layerId]) {
+    if (undefined === layers[f.__layerId]) {
       const external = !CatalogLayersStoresRegistry.getLayerById(f.__layerId);
       layers[f.__layerId] = {
         external,
@@ -50,8 +50,9 @@ proto.run = function(inputs, context) {
         features:[]
       };
     }
-    layers[layerId].features.push(f);
+    layers[f.__layerId].features.push(f);
   });
+
   const Component = Vue.extend(CopyFeatureFromOtherLayersComponent);
   const vueInstance = new Component({ layers, selectedFeatures });
 
