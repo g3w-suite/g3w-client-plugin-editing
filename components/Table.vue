@@ -16,7 +16,7 @@
 
       <div class="editing_table_header_content">
         <h3 class="editing_table_title">{{ state.title }}</h3>
-        <h-resize @h_size_change="changeSize"/>
+        <h-resize @h_size_change="changeSize" />
       </div>
 
       <div

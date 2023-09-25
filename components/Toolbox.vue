@@ -3,125 +3,169 @@
 <!-- vue/components/toolbox.js@v3.4 -->
 
 <template>
-  <div class="toolbox" v-show="state.show">
+  <div
+    v-show = "state.show"
+    class  = "toolbox"
+  >
     <div
-      :class="{'disableddiv' : !isLayerReady || !canEdit }"
-      :id="'id_toolbox_'+ state.id"
+      :id    = "'id_toolbox_' + state.id"
+      :class = "{ 'disableddiv' : (!isLayerReady || !canEdit) }"
     >
+
       <div
-        @click.stop="select"
-        class="panel"
-        style="margin-bottom: 8px;"
-        :class="{'mobile': isMobile(), 'toolboxselected': state.selected }"
+        @click.stop = "select"
+        class       = "panel"
+        style       = "margin-bottom: 8px;"
+        :class      = "{
+          'mobile': isMobile(),
+          'toolboxselected': state.selected
+        }"
       >
+
         <div
-          v-show="!isLayerReady"
-          class="bar-loader">
-        </div>
+          v-show = "!isLayerReady"
+          class  = "bar-loader"
+        ></div>
+
         <div
-          v-if="state.toolboxheader"
-          class="panel-heading container"
-          style="width:100%;"
-          :style="{ background: state.color}"
+          v-if   = "state.toolboxheader"
+          class  = "panel-heading container"
+          style  = "width:100%;"
+          :style = "{ background: state.color}"
         >
+
+          <!-- CHILD DEPENDENCIES -->
           <div
-            v-if="father"
-            style="margin-right:5px; cursor:pointer;"
-            class="pull-left enabled dropdown"
+            v-if  = "father"
+            style = "margin-right:5px; cursor:pointer;"
+            class = "pull-left enabled dropdown"
           >
             <span :class="g3wtemplate.font['relation']"></span>
             <div
-              class="dropdown-content skin-background-color"
-              style="padding: 5px; border-radius: 3px;"
+              class = "dropdown-content skin-background-color"
+              style = "padding: 5px; border-radius: 3px;"
             >
               <div
-                v-for="dependency in state.editing.dependencies"
-                style="font-weight: bold"
-              >{{ dependency }}
-              </div>
+                v-for = "dependency in state.editing.dependencies"
+                style = "font-weight: bold"
+              >{{ dependency }}</div>
             </div>
           </div>
+
+          <!-- PANEL TITLE -->
           <div
-            class="panel-title"
-            :class="[father ? 'col-md-6' : 'col-md-8']"
-            v-t-plugin:pre="'editing.toolbox.title'"
-          >{{ state.title }}
-          </div>
+            class          = "panel-title"
+            :class         = "[father ? 'col-md-6' : 'col-md-8']"
+            v-t-plugin:pre = "'editing.toolbox.title'"
+          >{{ state.title }}</div>
+
+          <!-- TOGGLE BUTTON -->
           <div
-            v-disabled="!state.startstopediting"
-            data-placement="left"
-            data-toggle="tooltip"
-            ref="editingbutton"
-            @click.stop="toggleEditing"
-            class="start-editing editbtn skin-tooltip-left"
-            :class="{'pull-right': !isMobile(), 'enabled' : isLayerReady,  'g3w-icon-toggled' : state.editing.on}"
-            v-t-title:plugin="edit_layer_tooltip"
+            v-disabled       = "!state.startstopediting"
+            data-placement   = "left"
+            data-toggle      = "tooltip"
+            ref              = "editingbutton"
+            @click.stop      = "toggleEditing"
+            class            = "start-editing editbtn skin-tooltip-left"
+            :class           = "{
+              'pull-right': !isMobile(),
+              'enabled': isLayerReady,
+              'g3w-icon-toggled': state.editing.on,
+            }"
+            v-t-title:plugin = "edit_layer_tooltip"
           >
             <span
-              style="font-size: 1.1em; padding: 5px; !important;"
-              :class="g3wtemplate.font['pencil']">
+              style  = "font-size: 1.1em; padding: 5px; !important;"
+              :class = "g3wtemplate.font['pencil']">
             </span>
           </div>
+
         </div>
-        <bar-loader :loading="loading"/>
+
+        <bar-loader :loading="loading" />
+
         <div
-          v-show="!state.changingtools"
-          class="panel-body"
+          v-show = "!state.changingtools"
+          class  = "panel-body"
         >
-          <div v-if="state.message" style="color: #000000">
+
+          <!-- MESSAGE -->
+          <div
+            v-if = "state.message"
+            style = "color: #000"
+          >
             <div align="justify" v-t-plugin="state.message"></div>
             <divider/>
           </div>
+
+          <!-- TOOLS CONTENT (1) -->
           <div
-            class="tools-content row1"
-            style="display: flex; flex-wrap: wrap;"
+            class = "tools-content row1"
+            style = "display: flex; flex-wrap: wrap;"
           >
             <tool
-              v-for="toolstate in toolsrow1" :key="toolstate.id"
-              :state="toolstate"
-              :resourcesurl="resourcesurl"
-              @stopactivetool="stopActiveTool"
-              @setactivetool="setActiveTool"/>
+              v-for           = "toolstate in toolsrow1"
+              :key            = "toolstate.id"
+              :state          = "toolstate"
+              :resourcesurl   = "resourcesurl"
+              @stopactivetool = "stopActiveTool"
+              @setactivetool  = "setActiveTool"
+            />
           </div>
+
+          <!-- TOOLS CONTENT (2) -->
           <div
-            class="tools-content row2"
-            style="display: flex; flex-wrap: wrap;"
+            class = "tools-content row2"
+            style = "display: flex; flex-wrap: wrap;"
           >
             <tool
-              v-for="toolstate in toolsrow2" :key="toolstate.id"
-              :state="toolstate"
-              :resourcesurl="resourcesurl"
-              @stopactivetool="stopActiveTool"
-              @setactivetool="setActiveTool"/>
+              v-for           = "toolstate in toolsrow2"
+              :key            = "toolstate.id"
+              :state          = "toolstate"
+              :resourcesurl   = "resourcesurl"
+              @stopactivetool = "stopActiveTool"
+              @setactivetool  = "setActiveTool"
+            />
           </div>
+
+          <!-- TOOLS CONTENT (3) -->
           <div
-            class="tools-content row3"
-            style="display: flex; flex-wrap: wrap;"
+            class = "tools-content row3"
+            style = "display: flex; flex-wrap: wrap;"
           >
             <tool
-              v-for="toolstate in toolsrow3" :key="toolstate.id"
-              :state="toolstate"
-              :resourcesurl="resourcesurl"
-              @stopactivetool="stopActiveTool"
-              @setactivetool="setActiveTool"/>
+              v-for           = "toolstate in toolsrow3"
+              :key            = "toolstate.id"
+              :state          = "toolstate"
+              :resourcesurl   = "resourcesurl"
+              @stopactivetool = "stopActiveTool"
+              @setactivetool  = "setActiveTool"
+            />
           </div>
+
+          <!-- MESSAGES -->
           <div
-            class="message"
-            style="margin-top: 5px;"
-            :id="`id_toolbox_messages_${state.id}`">
+            :id   = "`id_toolbox_messages_${state.id}`"
+            class = "message"
+            style = "margin-top: 5px;"
+          >
             <transition name="fade">
               <toolsoftool
-                v-if="showtoolsoftool"
-                :tools="state.toolsoftool"/>
+                v-if   = "showtoolsoftool"
+                :tools = "state.toolsoftool"
+              />
             </transition>
             <div
-              v-if="currenttoolhelpmessage"
-              class="toolbox_help_message"
-              v-t-plugin="currenttoolhelpmessage">
-            </div>
+              v-if       = "currenttoolhelpmessage"
+              class      = "toolbox_help_message"
+              v-t-plugin = "currenttoolhelpmessage"
+            ></div>
           </div>
+
         </div>
+
       </div>
+
     </div>
   </div>
 </template>
