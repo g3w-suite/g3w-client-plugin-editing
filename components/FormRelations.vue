@@ -17,9 +17,12 @@
   import FormRelationComponent from './FormRelation.vue';
 
   export default {
+
     name: 'Relations',
+
     components: {
-      'relation': FormRelationComponent
-    }
+      'relation': FormRelationComponent,
+    },
+
   };
 </script>

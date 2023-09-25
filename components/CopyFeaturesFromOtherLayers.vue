@@ -75,46 +75,59 @@
 </template>
 
 <script>
-  const {G3W_FID} = g3wsdk.constant;
-  const { GUI } = g3wsdk.gui;
-  const {getAlphanumericPropertiesFromFeature} = g3wsdk.core.geoutils;
-  const {MapLayersStoreRegistry} = g3wsdk.core.map;
+  const { G3W_FID }                              = g3wsdk.constant;
+  const { GUI }                                  = g3wsdk.gui;
+  const { getAlphanumericPropertiesFromFeature } = g3wsdk.core.geoutils;
+  const { MapLayersStoreRegistry }               = g3wsdk.core.map;
 
   export default {
+
     name: 'Copyfeaturesfromotherlayers',
-    data(){
+
+    data() {
       return {
-        selectedFeatures: this.$options.selectedFeatures
-      }
+        selectedFeatures: this.$options.selectedFeatures,
+      };
     },
+
     methods: {
-      getAttributesFeature(feature, layerId){
-        const {external, fields} = this.$options.layers[layerId];
-        return getAlphanumericPropertiesFromFeature(feature.getProperties()).filter(property => property !== G3W_FID).map(attribute => ({
-          attribute: !external ? fields.find(field => field.name === attribute).label : attribute,
-          value: feature.get(attribute)
-        }))
+
+      getAttributesFeature(feature, layerId) {
+        const { external, fields } = this.$options.layers[layerId];
+        const props                = getAlphanumericPropertiesFromFeature(feature.getProperties());
+        return props
+          .filter(prop => prop !== G3W_FID)
+          .map(attr => ({
+            attribute: (external ? attr : fields.find(f => f.name === attr).label),
+            value: feature.get(attr),
+          }));
       },
-      selectFeature(feature){
-        const find = this.selectedFeatures.find(selectedFeature => selectedFeature === feature);
-        if (find) this.selectedFeatures = this.selectedFeatures.filter(selectedFeature => selectedFeature !== feature);
-        else this.selectedFeatures.push(feature);
+
+      selectFeature(feature) {
+        const selected = this.selectedFeatures.find(f => f === feature);
+        if (selected) {
+          this.selectedFeatures = this.selectedFeatures.filter(f => f !== feature);
+        } else {
+          this.selectedFeatures.push(feature);
+        }
       },
-      getLayerTitle(layerId){
-        if (MapLayersStoreRegistry.getLayerById(layerId)) return MapLayersStoreRegistry.getLayerById(layerId).getTitle();
-        else return GUI.getService('map').getLayerById(layerId).get('name');
+
+      getLayerTitle(layerId) {
+        const layer = MapLayersStoreRegistry.getLayerById(layerId);
+        return layer ? layer.getTitle() : GUI.getService('map').getLayerById(layerId).get('name');
       },
+
       zoomToFeature(feature) {
-        const mapService =  GUI.getService('map');
-        mapService.seSelectionLayerVisible(false);
-        mapService.zoomToFeatures([feature] , {
-          highlight: true,
-          duration: 1000
-        }).then(() => mapService.seSelectionLayerVisible(true))
-      }
+        const map =  GUI.getService('map');
+        map.seSelectionLayerVisible(false);
+        map.zoomToFeatures([feature] , { highlight: true, duration: 1000 }).then(() => map.seSelectionLayerVisible(true));
+      },
+
     },
-    mounted(){
+
+    mounted() {
       GUI.closeContent();
-    }
+    },
+
   };
 </script>

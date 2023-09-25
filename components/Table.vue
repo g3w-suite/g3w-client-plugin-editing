@@ -186,25 +186,20 @@
 
         await this.$nextTick();
 
-        const tableHeight           = $(".content").height();
-        const closePanelBlockHeight = $('.close-panel-block').outerHeight();
-        const tableHeaderHeight     = $('#editing_table  div.dataTables_scrollHeadInner').outerHeight();
-        const OtherElementHeight    =  $('.editing_table_title').outerHeight()
-          + $('.editing_table_header').outerHeight()
-          + $('.editing_table_relation_messagge').outerHeight()
-          + $('.dataTables_length').outerHeight()
-          + $('.dataTables_paginate.paging_simple_numbers').outerHeight()
-          + $('.dataTables_info').outerHeight()
-          + $('.dataTables_filter').outerHeight()
-          + $('.table_editing_footer_buttons').outerHeight()
-          + $('#editing_table .dataTables_paginate.paging_simple_numbers').outerHeight();
-
         $('#editing_table  div.dataTables_scrollBody').height(
-          tableHeight
-          - closePanelBlockHeight
-          - tableHeaderHeight
-          - OtherElementHeight
-          );
+          $(".content").height()
+          - $('.close-panel-block').outerHeight()
+          - $('#editing_table  div.dataTables_scrollHeadInner').outerHeight()
+          - $('.editing_table_title').outerHeight()
+          - $('.editing_table_header').outerHeight()
+          - $('.editing_table_relation_messagge').outerHeight()
+          - $('.dataTables_length').outerHeight()
+          - $('.dataTables_paginate.paging_simple_numbers').outerHeight()
+          - $('.dataTables_info').outerHeight()
+          - $('.dataTables_filter').outerHeight()
+          - $('.table_editing_footer_buttons').outerHeight()
+          - $('#editing_table .dataTables_paginate.paging_simple_numbers').outerHeight()
+        );
 
         if (this.dataTable) {
           this.dataTable.columns.adjust();

@@ -171,91 +171,117 @@
 </template>
 
 <script>
-  import ToolComponent from './Tool.vue';
+  import ToolComponent        from './Tool.vue';
   import ToolsOfToolComponent from './ToolsOfTool.vue';
-  const ApplicationState = g3wsdk.core.ApplicationState;
 
   export default {
+
     name: 'Toolbox',
-    props: ['state', 'resourcesurl'],
+
+    props: [
+      'state',
+      'resourcesurl'
+    ],
+
     data() {
       return {
         active: false,
-        currenttoolhelpmessage: null
-      }
+        currenttoolhelpmessage: null,
+      };
     },
+
     components: {
-      'tool': ToolComponent,
+      'tool':        ToolComponent,
       'toolsoftool': ToolsOfToolComponent
     },
+
     computed: {
-        loading(){
-          return this.state.loading || this.state.changingtools;
-        },
-        toolsrow1(){
-          return this.state.tools.filter(tool => tool.row === 1);
-        },
-        toolsrow2(){
-          return this.state.tools.filter(tool => tool.row === 2);
-        },
-        toolsrow3(){
-          return this.state.tools.filter(tool => tool.row === 3);
-        },
-        canEdit() {
-          return this.state.editing.canEdit;
-        },
-        father() {
-          return this.state.editing.father && !!this.state.editing.dependencies.length;
-        },
-        showtoolsoftool() {
-          return !!this.state.toolsoftool.length;
-        },
-        isLayerReady() {
-          return this.state.layerstate.editing.ready;
-        }
+
+      loading() {
+        return this.state.loading || this.state.changingtools;
       },
+
+      toolsrow1() {
+        return this.state.tools.filter(t => t.row === 1);
+      },
+
+      toolsrow2() {
+        return this.state.tools.filter(t => t.row === 2);
+      },
+
+      toolsrow3() {
+        return this.state.tools.filter(t => t.row === 3);
+      },
+
+      canEdit() {
+        return this.state.editing.canEdit;
+      },
+
+      father() {
+        return this.state.editing.father && !!this.state.editing.dependencies.length;
+      },
+
+      showtoolsoftool() {
+        return !!this.state.toolsoftool.length;
+      },
+
+      isLayerReady() {
+        return this.state.layerstate.editing.ready;
+      },
+
+    },
+
     methods: {
+
       select() {
-        if (!this.isLayerReady) return;
-        if (!this.state.selected) {
+        if (this.isLayerReady && !this.state.selected) {
           this.$emit('setselectedtoolbox', this.state.id);
         }
       },
+
       toggleEditing() {
         this.select();
-        if (!this.state.layerstate.editing.ready || this.state.loading) return;
-        this.state.editing.on ?
-          this.$emit('stoptoolbox', this.state.id):
-          this.$emit('starttoolbox', this.state.id);
+        if (this.state.layerstate.editing.ready && !this.state.loading) {
+          this.$emit(this.state.editing.on ? 'stoptoolbox' : 'starttoolbox', this.state.id);
+        }
       },
+
       saveEdits() {
         this.$emit('savetoolbox', this.state.id);
       },
+
       stopActiveTool() {
         this.$emit('stopactivetool', this.state.id);
       },
+
       setActiveTool(toolId) {
         this.$emit('setactivetool', toolId, this.state.id);
-      }
+      },
+
     },
+
     watch: {
-      async'state.activetool'(activetool){
+
+      async'state.activetool'(activetool) {
         await this.$nextTick();
         this.currenttoolhelpmessage = activetool && activetool.getHelpMessage();
-      }
+      },
+
     },
+
     created() {
       this.edit_layer_tooltip = 'editing.tooltip.edit_layer';
-      this.$emit('canEdit', {
-        id: this.state.id
-      });
+      this.$emit('canEdit', { id: this.state.id });
     },
+
     async mounted() {
+      // wait a little bit so others plugin can change things in toolbox
+      // (eg. tools visibility which differs from default behaviour)
       await this.$nextTick();
-      $(this.$refs.editingbutton).tooltip();
-      // is usefult to wait a little bit is some plugin or editing has to chenge some thing to the toolbox
-      // ex. tools visibility etcc. different from default behaviour
-    }
+
+      $(this.$refs.editingbutton).tooltip(); 
+    },
+
   };
 </script>
 

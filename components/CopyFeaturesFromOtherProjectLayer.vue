@@ -69,45 +69,55 @@
 </template>
 
 <script>
-  const {G3W_FID} = g3wsdk.constant;
-  const { GUI } = g3wsdk.gui;
-  const {getAlphanumericPropertiesFromFeature} = g3wsdk.core.geoutils;
-  const {MapLayersStoreRegistry} = g3wsdk.core.map;
+  const { G3W_FID }                              = g3wsdk.constant;
+  const { GUI }                                  = g3wsdk.gui;
+  const { getAlphanumericPropertiesFromFeature } = g3wsdk.core.geoutils;
+  const { MapLayersStoreRegistry }               = g3wsdk.core.map;
 
   export default {
+
     name: 'Copyfeaturesfromotherlayers',
-    data(){
+
+    data() {
       return {
         features: this.$options.features,
         selectfeature: null,
-        selectedFeatures: this.$options.selectedFeatures
-      }
+        selectedFeatures: this.$options.selectedFeatures,
+      };
     },
+
     methods: {
-      getAttributesFeature(feature){
-        const {fields} = this.$options;
-        return getAlphanumericPropertiesFromFeature(feature.getProperties())
-          .filter(property => property !== G3W_FID).map(attribute => ({
-            attribute: fields ? fields.find(field => field.name === attribute).label : attribute,
-            value: feature.get(attribute)
+
+      getAttributesFeature(feature) {
+        const { fields } = this.$options;
+        const props      = getAlphanumericPropertiesFromFeature(feature.getProperties());
+        return props
+          .filter(prop => prop !== G3W_FID)
+          .map(attr => ({
+            attribute: fields ? fields.find(f => f.name === attr).label : attr,
+            value:     feature.get(attr),
           }));
       },
-      getLayerTitle(layerId){
-        return MapLayersStoreRegistry.getLayerById(layerId).getTitle()
+
+      getLayerTitle(layerId) {
+        return MapLayersStoreRegistry.getLayerById(layerId).getTitle();
       },
+
       zoomToFeature(feature) {
-        const mapService =  GUI.getService('map');
-        mapService.seSelectionLayerVisible(false);
-        mapService.zoomToFeatures([feature] , {
-          highlight: true,
-          duration: 1000
-        }).then(() => mapService.seSelectionLayerVisible(true))
-      }
+        const map =  GUI.getService('map');
+        map.seSelectionLayerVisible(false);
+        map.zoomToFeatures([feature] , { highlight: true, duration: 1000 }).then(() => map.seSelectionLayerVisible(true))
+      },
+
     },
+
     watch: {
-      selectfeature(feature){
+
+      selectfeature(feature) {
         this.selectedFeatures.splice(0,1,feature);
-      }
-    }
+      },
+
+    },
+
   };
 </script>

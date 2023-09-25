@@ -26,7 +26,7 @@
 </template>
 
 <script>
-  import SnapComponent from './ToolsOfToolSnap.vue';
+  import SnapComponent    from './ToolsOfToolSnap.vue';
   import MeasureComponent from './ToolsOfToolMeasure.vue';
 
   export default {
@@ -39,8 +39,9 @@
       snap:    SnapComponent,
       measure: MeasureComponent
     },
+
     data() {
-      return {}
+      return {};
     },
 
   };

@@ -102,40 +102,42 @@
 </template>
 
 <script>
-  import ToolboxComponent from './Toolbox.vue';
-  import SelectEditingLayersComponent from "./SelectEditingLayers.vue";
+  import ToolboxComponent             from './Toolbox.vue';
+  import SelectEditingLayersComponent from './SelectEditingLayers.vue';
 
-  const { GUI } = g3wsdk.gui;
-  const { tPlugin:t } = g3wsdk.core.i18n;
+  const { GUI }              = g3wsdk.gui;
   const { ApplicationState } = g3wsdk.core;
 
   export default {
+
     name: 'Editing',
+
     data() {
       return {
-        saving: false // attribute useful to show loading bar when commit after click on save disk icon
-      }
+        saving: false, // whether to show loading bar while committing to server (click on save disk icon)  
+      };
     },
+
     components: {
-      toolbox: ToolboxComponent,
-      selectlayers: SelectEditingLayersComponent
+      toolbox:      ToolboxComponent,
+      selectlayers: SelectEditingLayersComponent,
     },
-    transitions: {'addremovetransition': 'showhide'},
+
+    transitions: {
+      'addremovetransition': 'showhide'
+    },
+
     methods: {
-      /**
-       *
-       */
+
       undo() {
-        this.$options.service.undo()
+        this.$options.service.undo();
       },
-      /**
-       *
-       */
+
       redo() {
         this.$options.service.redo();
       },
+
       /**
-       *
        * @param toolboxId
        */
       commit(toolboxId) {
@@ -143,24 +145,24 @@
         this.$options.service
           .commit({
             toolbox: this.$options.service.getToolBoxById(toolboxId),
-            modal: false
+            modal: false,
           })
           .always(() => this.saving = false);
       },
-      /**
-       *
-       */
+
       saveAll() {},
+
       /**
-       *
        * @param toolboxId
        */
       startToolBox(toolboxId) {
         const toolbox = this._getToolBoxById(toolboxId);
-        ApplicationState.online && toolbox.canEdit() && toolbox.start();
+        if (ApplicationState.online && toolbox.canEdit()) {
+          toolbox.start();
+        }
       },
+
       /**
-       *
        * @param toolboxId
        */
       stopToolBox(toolboxId) {
@@ -169,87 +171,79 @@
           this.$options.service
             .commit()
             .always(() => toolbox.stop());
-        }
-        else {
+        } else {
           toolbox.stop();
         }
       },
+
       /**
-       *
        * @param toolboxId
        */
       saveToolBox(toolboxId) {
         this._getToolBoxById(toolboxId).save();
       },
+
       /**
-       *
        * @param toolId
        * @param toolboxId
+       * 
        * @private
        */
       _setActiveToolOfToolbooxSelected(toolId, toolboxId) {
-        const toolbox = this._getToolBoxById(toolboxId);
+        const toolbox                  = this._getToolBoxById(toolboxId);
         this.state.toolboxidactivetool = toolboxId;
         toolbox.setActiveTool(toolbox.getToolById(toolId));
       },
+
       /**
-       * Method to start tool of toolbox
+       * Start tool of toolbox
+       * 
        * @param toolId
        * @param toolboxId
        */
       startActiveTool(toolId, toolboxId) {
         if (this.state.toolboxidactivetool && toolboxId !== this.state.toolboxidactivetool) {
-          const dirtyToolBox = this.state.toolboxidactivetool;
-          this._checkDirtyToolBoxes(dirtyToolBox)
+          this
+            ._checkDirtyToolBoxes(this.state.toolboxidactivetool)
             .then(toolbox => {
               if (toolbox) {
                 toolbox.stopActiveTool();
               }
               this._setActiveToolOfToolbooxSelected(toolId, toolboxId);
-            })
+            });
         } else {
           this._setActiveToolOfToolbooxSelected(toolId, toolboxId);
         }
       },
+
       /**
-       *
        * @param toolboxId
        */
       stopActiveTool(toolboxId) {
-        const toolbox = this._getToolBoxById(toolboxId);
-        toolbox.stopActiveTool();
+        this._getToolBoxById(toolboxId).stopActiveTool();
       },
+
       /**
-       *
        * @param toolboxId
        */
       async setSelectedToolbox(toolboxId) {
-        //get toolbox by id
-        const toolbox = this._getToolBoxById(toolboxId);
-        //get all toolboxes
-        const toolboxes = this.$options.service.getToolBoxes();
-        //check if exist already toolbox selected (first time)
-        const toolboxSelected = toolboxes.find(toolbox => toolbox.isSelected());
-        //check if exist selected toolbox
-        if (toolboxSelected) {
-          if (toolboxSelected.getDependencies().length > 0 && toolboxSelected.isDirty()){
-            try {
-              await this.$options.service.commitDirtyToolBoxes(toolboxSelected.getId());
-            }
-            catch(err) {}
-            finally {
-              //set already selected false
-              toolboxSelected.setSelected(false);
-              toolboxSelected.clearMessage();
-            }
-          } else {
-            //set already selected false
-            toolboxSelected.setSelected(false);
-            toolboxSelected.clearMessage();
-          }
+        const toolbox   = this._getToolBoxById(toolboxId);      // get toolbox by id
+        const toolboxes = this.$options.service.getToolBoxes(); // get all toolboxes
+        const selected  = toolboxes.find(t => t.isSelected());  // check if exist already toolbox selected (first time)
+
+        // check if exist selected toolbox
+        if (selected && selected.getDependencies().length > 0 && selected.isDirty()){
+          try      { await this.$options.service.commitDirtyToolBoxes(selected.getId()); }
+          catch(e) { console.warn(e); }
         }
 
-        //set current selected toolbox to true
+        // set already selected false
+        if (selected) {
+          selected.setSelected(false);
+          selected.clearMessage();
+        }
+
+        // set current selected toolbox to true
         toolbox.setSelected(true);
 
         this.state.toolboxselected = toolbox;
@@ -260,83 +254,117 @@
           toolbox.clearMessage();
         }
       },
+
       /**
-       *
        * @param toolboxId
+       * 
        * @returns {*}
+       * 
        * @private
        */
       _checkDirtyToolBoxes(toolboxId) {
         return this.$options.service.commitDirtyToolBoxes(toolboxId);
       },
+
       /**
-       *
        * @param toolboxId
+       * 
        * @returns {*}
+       * 
        * @private
        */
       _getToolBoxById(toolboxId) {
         return this.$options.service.getToolBoxById(toolboxId);
       },
+
       /**
-       *
        * @param bool
+       * 
        * @private
        */
       _enableEditingButtons(bool) {
         this.editingButtonsEnabled = !bool;
-      }
+      },
+
     },
+
     computed: {
+
       message() {
         return "";
       },
-      canCommit: function() {
-        return this.$options.service.getSaveConfig().mode === 'default' &&
+
+      canCommit() {
+        return (
+          'default' === this.$options.service.getSaveConfig().mode &&
           this.state.toolboxselected &&
           this.state.toolboxselected.state.editing.history.commit &&
-          this.editingButtonsEnabled;
+          this.editingButtonsEnabled
+        );
       },
+
       canUndo() {
-        const toolbox = this.state.toolboxselected;
-        const canUndo = toolbox &&
-          toolbox.state.editing.history.undo &&
-          this.editingButtonsEnabled;
+        const canUndo = (
+          this.state.toolboxselected &&
+          this.state.toolboxselected.state.editing.history.undo &&
+          this.editingButtonsEnabled
+        );
+
         this.$options.service.fireEvent('canUndo', canUndo);
+
         return canUndo;
       },
+
       canRedo() {
-        const toolbox = this.state.toolboxselected;
-        const canRedo = toolbox &&
-          toolbox.state.editing.history.redo &&
-          this.editingButtonsEnabled;
+        const canRedo = (
+          this.state.toolboxselected &&
+          this.state.toolboxselected.state.editing.history.redo &&
+          this.editingButtonsEnabled
+        );
+
         this.$options.service.fireEvent('canRedo', canRedo);
+
         return canRedo
-      }
+      },
+
     },
+
     watch:{
+
       canCommit(bool) {
         this.$options.service.registerLeavePage(bool);
-      }
+      },
+
     },
+
     created() {
       this.appState = ApplicationState;
+
       this.$options.service.registerOnLineOffLineEvent();
+
       GUI.closeContent();
+
       this.$options.service.setOpenEditingPanel(true);
-      GUI.on('opencontent', this._enableEditingButtons);
-      GUI.on('closeform', this._enableEditingButtons);
+
+      GUI.on('opencontent',  this._enableEditingButtons);
+      GUI.on('closeform',    this._enableEditingButtons);
       GUI.on('closecontent', this._enableEditingButtons);
     },
+
     beforeDestroy() {
       this.$options.service.setOpenEditingPanel(false);
-      GUI.off('opencontent', this._enableEditingButtons);
-      GUI.off('closeform', this._enableEditingButtons);
+
+      GUI.off('opencontent',  this._enableEditingButtons);
+      GUI.off('closeform',    this._enableEditingButtons);
       GUI.off('closecontent', this._enableEditingButtons);
+
       this.$options.service.unregisterOnLineOffLineEvent();
+
       this.$options.service.fireEvent('closeeditingpanel');
+
       this.$options.service.onCloseEditingPanel();
       this.$options.service.clearAllLayersUniqueFieldsValues();
-    }
+    },
+
   };
 </script>

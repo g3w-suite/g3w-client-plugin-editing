@@ -22,23 +22,31 @@
 </template>
 
 <script>
-    export default {
-      name: "measure",
-      props: ['options'],
-      data(){
-        return {
-          checked: this.options.checked,
-        }
+  export default {
+
+    name: "measure",
+
+    props: ['options'],
+
+    data() {
+      return {
+        checked: this.options.checked,
+      };
+    },
+
+    watch: {
+
+      'checked'(bool) {
+        this.options.onChange(bool);
       },
-      watch: {
-        'checked'(bool) {
-          this.options.onChange(bool);
-        }
-      },
-      beforeDestroy() {
-        this.options.onBeforeDestroy();
-      }
-    }
+
+    },
+
+    beforeDestroy() {
+      this.options.onBeforeDestroy();
+    },
+
+  };
 </script>
 
 <style scoped>

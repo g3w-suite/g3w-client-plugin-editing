@@ -23,19 +23,29 @@
 
 <script>
   export default {
+
     name: 'Tool',
-    props: ['state' ,'resourcesurl'],
+
+    props: [
+      'state',
+      'resourcesurl'
+    ],
+
     data() {
-      return {}
+      return {};
     },
+
     methods: {
+
       toggletool() {
         if (this.state.active) {
           this.$emit('stopactivetool');
         } else {
           this.$emit('setactivetool', this.state.id);
         }
-      }
-    }
+      },
+
+    },
+
   };
 </script>
