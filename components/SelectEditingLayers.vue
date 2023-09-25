@@ -17,7 +17,7 @@
         v-for  = "editinglayer in editinglayers"
         :value = "editinglayer.id"
         :key   = "editinglayer.id"
-      >{{editinglayer.name}}</option>
+      >{{ editinglayer.name }}</option>
     </select>
   </div>
 </template>

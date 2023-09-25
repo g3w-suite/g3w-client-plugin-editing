@@ -40,7 +40,7 @@
       <!-- FEATURE ATTRIBUTES -->
       <section style="overflow-x: auto; display: flex">
         <div
-          v-for = "({attribute, value}) in getAttributesFeature(feature)"
+          v-for = "({ attribute, value }) in getAttributesFeature(feature)"
           style = "
             display: flex;
             flex-direction: column;

@@ -23,7 +23,7 @@
         "
       >
         <span v-t-plugin="'editing.edit_relation'"></span>
-        <span style="margin-left: 2px;">: {{relation.name.toUpperCase()}}</span>
+        <span style="margin-left: 2px;">: {{ relation.name.toUpperCase() }}</span>
       </div>
 
       <!-- RELATION TOOLS -->
@@ -129,7 +129,7 @@
               v-for  = "copyFeatureLayer in copyFeatureLayers"
               :key   = "copyFeatureLayer.id"
               :value = "copyFeatureLayer.id"
-            >{{copyFeatureLayer.name}}</option>
+            >{{ copyFeatureLayer.name }}</option>
           </select>
 
           <!-- COPY FEATURE FROM OTHER LAYER -->
@@ -158,7 +158,7 @@
             <tr>
               <th v-t="'tools'"></th>
               <th></th>
-              <th v-for="attribute in relationAttributesSubset(relations[0])">{{attribute.label}}</th>
+              <th v-for="attribute in relationAttributesSubset(relations[0])">{{ attribute.label }}</th>
             </tr>
           </thead>
           <tbody>

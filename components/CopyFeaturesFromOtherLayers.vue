@@ -56,15 +56,15 @@
           </div>
 
           <div
-            v-for = "({attribute, value}) in getAttributesFeature(feature, layerId)"
+            v-for = "({ attribute, value }) in getAttributesFeature(feature, layerId)"
             style = "
               display: flex;
               flex-direction: column;
               padding: 10px;
             "
           >
-            <span style="font-weight: bold; margin-bottom: 10px;">{{attribute}}</span>
-            <span style="align-self: start">{{value}}</span>
+            <span style="font-weight: bold; margin-bottom: 10px;">{{ attribute }}</span>
+            <span style="align-self: start">{{ value }}</span>
           </div>
 
         </div>
