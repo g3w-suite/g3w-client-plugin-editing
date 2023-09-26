@@ -26,20 +26,27 @@ const { VM }                   = g3wsdk.constant.APP_EVENTBUS;
 
 /**
  * Base editing task
+ * 
  * @param options
+ * 
  * @constructor
  */
 function EditingTask(options = {}) {
+
   base(this, options);
+
   this._editingServive;
+
   this._mapService = GUI.getService('map');
+
   this.addInteraction = function(interaction) {
     this._mapService.addInteraction(interaction);
   };
+
   this.removeInteraction = function(interaction) {
-    //needed to avoid a issue on Openlayers
-    setTimeout(() => this._mapService.removeInteraction(interaction))
+    setTimeout(() => this._mapService.removeInteraction(interaction)) // timeout needed to workaround an Openlayers issue 
   };
+
 }
 
 inherit(EditingTask, Task);
@@ -47,66 +54,62 @@ inherit(EditingTask, Task);
 const proto = EditingTask.prototype;
 
 /**
- * get editing type from editing config
- * @TODO
- * @returns {null}
+ * @TODO code implementation
+ * 
+ * Get editing type from editing config
+ * 
+ * @returns { null }
  */
 proto.getEditingType = function() {
   return null;
 };
 
 /**
- *
+ * @FIXME add description
  */
-proto.registerPointerMoveCursor = function(){
+proto.registerPointerMoveCursor = function() {
   this._mapService.getMap().on("pointermove", this._pointerMoveCursor)
 };
 
 /**
- *
+ * @FIXME add description
  */
-proto.unregisterPointerMoveCursor = function(){
+proto.unregisterPointerMoveCursor = function() {
   this._mapService.getMap().un("pointermove", this._pointerMoveCursor)
 };
 
 /**
- *
  * @param evt
+ * 
  * @private
  */
 proto._pointerMoveCursor = function(evt) {
-  const hit = this.forEachFeatureAtPixel(evt.pixel, () => true);
-  if (hit) this.getTargetElement().style.cursor = 'pointer';
-  else this.getTargetElement().style.cursor = '';
+  this.getTargetElement().style.cursor = (this.forEachFeatureAtPixel(evt.pixel, () => true) ? 'pointer' : '');
 };
 
 /**
- *
  * @param steps
  */
-proto.setSteps = function(steps={}){
+proto.setSteps = function(steps = {}) {
   this._steps = steps;
   this.setUserMessageSteps(steps);
 };
 
 /**
- *
  * @returns {{}}
  */
-proto.getSteps = function(){
+proto.getSteps = function() {
   return this._steps;
 };
 
 /**
- *
  * @returns {*}
  */
-proto.getMapService = function(){
+proto.getMapService = function() {
   return this._mapService;
 };
 
 /**
- *
  * @returns {*}
  */
 proto.getMap = function() {
@@ -114,43 +117,37 @@ proto.getMap = function() {
 };
 
 /**
- *
  * @param feature
  * @param coordinates
- * @returns {*|boolean}
+ * 
+* @returns { boolean }
  */
-proto.areCoordinatesEqual = function({feature, coordinates}){
-  const featureGeometry = feature.getGeometry();
-  const geometryType = featureGeometry.getType();
-  switch (geometryType) {
-    case 'MultiLineString':
+proto.areCoordinatesEqual = function({
+  feature,
+  coordinates,
+}) {
+  const geometry = feature.getGeometry();
+  const type     = geometry.getType();
+  const coords   = c => areCoordinatesEqual(coordinates, c); // whether element have same coordinates
 
-      return undefined !== _.flatMap(featureGeometry.getCoordinates()).find( f_coordinates=> areCoordinatesEqual(coordinates, f_coordinates));
+  switch (type) {
+    case 'Polygon':
+    case 'MultiLineString':
+      return _.flatMap(geometry.getCoordinates()).some(coords);
 
     case 'LineString':
-
-      return undefined !== featureGeometry.getCoordinates().find(f_coordinates => areCoordinatesEqual(coordinates, f_coordinates));
-
-    case 'Polygon':
-
-      return undefined !== _.flatMap(featureGeometry.getCoordinates()).find(f_coordinates => areCoordinatesEqual(coordinates, f_coordinates));
+    case 'MultiPoint':
+        return geometry.getCoordinates().some(coords);
 
     case 'MultiPolygon':
-
-      return undefined !== featureGeometry.getPolygons().find(polygon => {
-        return undefined !== _.flatMap(polygon.getCoordinates()).find(f_coordinates => areCoordinatesEqual(coordinates, f_coordinates));
-      });
+        return geometry.getPolygons().some(poly => _.flatMap(poly.getCoordinates()).some(coords));
 
     case 'Point':
+      return areCoordinatesEqual(coordinates, geometry.getCoordinates());
 
-      return areCoordinatesEqual(coordinates, featureGeometry.getCoordinates());
-
-    case 'MultiPoint':
-
-      return undefined !== featureGeometry.getCoordinates().find(f_coordinates => areCoordinatesEqual(coordinates, f_coordinates));
+    default:
+      return false;
   }
-
-  return false;
 };
 
 /**
@@ -175,9 +172,9 @@ proto.setFeaturesSelectedStyle = function(features=[]) {
  * 
  * @param promise jQuery promise
  */
-proto.setAndUnsetSelectedFeaturesStyle = function({ promise }={}) {
+proto.setAndUnsetSelectedFeaturesStyle = function({ promise } = {}) {
   
-  /** @FIXME temporary add in order to fix issue on pending promise (but wich issue ?) */
+  /** @FIXME temporary add in order to fix issue on pending promise (but which issue ?) */
   const {
       layer,
       features = [],
@@ -230,7 +227,6 @@ proto.disableSidebar = function(bool = true) {
 };
 
 /**
- *
  * @returns {*|EditingService|{}}
  */
 proto.getEditingService = function() {
@@ -239,9 +235,9 @@ proto.getEditingService = function() {
 };
 
 /**
- *
  * @param event
  * @param options
+ * 
  * @returns {*}
  */
 proto.fireEvent = function(event, options={}) {
@@ -249,341 +245,343 @@ proto.fireEvent = function(event, options={}) {
 };
 
 /**
- *
  * @param layer
  * @param feature
  */
-proto.setNullMediaFields = function({layer, feature}={}) {
-  const mediaFields = layer.getEditingMediaFields({});
-  mediaFields.forEach(field => feature.set(field, null))
+proto.setNullMediaFields = function({
+  layer,
+  feature,
+} = {}) {
+  layer
+    .getEditingMediaFields({})
+    .forEach(field => feature.set(field, null))
 };
 
 /**
- *
  * @param inputs
  * @param context
  */
 proto.run = function(inputs, context) {};
 
 /**
- *
+ * @FIXME add description
  */
 proto.stop = function() {};
 
 /**
- * Function that handle single task 
+ * Handle single task 
  */
-proto.saveSingle = function(input, context){
-  context.session.save()
-    .then(() => this.getEditingService().saveChange());
+proto.saveSingle = function(input, context) {
+  context.session.save().then(() => this.getEditingService().saveChange());
 };
 
 /**
- * Function cancel single
+ * Cancel single task
+ * 
  * @param input
  * @param context
  */
-proto.cancelSingle = function(input, context){
+proto.cancelSingle = function(input, context) {
   context.session.rollback();
 };
 
 /**
- * method that return in case of relation child  workflow the layerId root
+ * Return in case of relation child workflow the layerId root
  * @returns {*}
  */
-proto.getRootWorkflowLayerId = function(){
+proto.getRootWorkflowLayerId = function() {
   return WorkflowsStack.getFirst().getInputs().layer.getId()
 };
 
 /**
- * get form fields
+ * Get form fields
+ * 
+ * @param form.inputs.layer
+ * @param form.inputs.features
+ * @param form.context.excludeFields
+ * @param form.context.get_default_value
+ * @param form.isChild                   - whether is child form (ie. belongs to relation)
  */
-proto.getFormFields = async function({inputs, context, feature, isChild=false}={}){
-  let hasUniqueValue = false;
-  // root layerId in case of edit relation
-  const relationLayerId = this.getRootWorkflowLayerId();
-  const {layer, features} = inputs;
-  //current form layerId
-  const layerId = layer.getId();
-  //Initially Empty array where store unique values by feature field
-  const unique_values_feature_field_Obj = [];
+proto.getFormFields = async function({
+  inputs,
+  context,
+  feature,
+  isChild = false,
+} = {}) {
 
-  const {excludeFields:exclude, get_default_value=false} = context;
+  let has_unique        = false;                            // check for unique validation
 
-  //get editing fields with values (in case of update)
-  const fields = layer.getFieldsWithValues(feature, {
-    exclude,
-    get_default_value
-  });
+  const service         = this.getEditingService();
+  const relationLayerId = this.getRootWorkflowLayerId();    // root layerId (in case of edit relation)
+  const layerId         = inputs.layer.getId();             // current form layerId
+  const unique_values   = [];                               // unique values by feature field
 
-  /**
-   * check for unique validate
-   */
+  const fields          = inputs.layer.getFieldsWithValues( // editing fields with values (in case of update)
+    feature,
+    {
+      exclude:           context.excludeFields,
+      get_default_value: undefined !== context.get_default_value ? context.get_default_value : false,
+    }
+  );
+
   fields.forEach(field => {
-    //chech if field value need to be unique
     if (field.validate.unique) {
-      //set true
-      hasUniqueValue = true;
-      //get current feature field value
-      const current_feature_value = feature.get(field.name); // current editing feature field value
-      //add object with field and current value
-      unique_values_feature_field_Obj.push({
-        current_feature_value,
-        field
+      has_unique = true;                 // field value need to be unique
+      unique_values.push({
+        field,                           // feature field
+        _value: feature.get(field.name), // feature field value (current in editing)
       })
     }
   });
 
-  unique_values_feature_field_Obj.forEach(({current_feature_value, field}) => {
-    /**
-     * current editing feature add to
-     */
-    let layerUniqueFieldValues;
-    //check if i child form (belong to relation)
-    if (isChild) {
-      layerUniqueFieldValues = this.getEditingService().getChildLayerUniqueFieldValues({
-        layerId,
-        relationLayerId,
-        field
-      })
-    } else {
-      //root layer
-      //@TODO CHECK IF FIELD IS RELATED TO RELATION 1:1
-      layerUniqueFieldValues = this.getEditingService().getLayerUniqueFieldValues({
-        layerId,
-        field
-      })
-    }
+  unique_values.forEach(({ _value, field }) => {
+    const current_values = isChild                                                  // current editing feature add to
+      ? service.getChildLayerUniqueFieldValues({ layerId, relationLayerId, field }) // child form --> belongs to relation
+      : service.getLayerUniqueFieldValues({ layerId, field });                      // root layer --> TODO: CHECK IF FIELD IS RELATED TO 1:1 RELATION 
 
-    layerUniqueFieldValues.forEach(value => {
-      //convert to string if value is not null or undefined
-      field.validate.exclude_values.add([null, undefined].indexOf(value) === -1 ? `${value}` : value )
-    });
+    // convert "current" values to string (when not null or undefined)
+    current_values.forEach(value => { field.validate.exclude_values.add([null, undefined].indexOf(value) === -1 ? `${value}` : value ); });
 
-    /**
-     * add eventually current feature field unique value that are changed during editing
-     */
-    features.forEach(feature => {
+    // convert "inputs" values to string (when not null or undefined)
+    inputs.features.forEach(feature => {
       const value = feature.get(field.name);
-      //in case of not null or undefined concert to string
       if ([null, undefined].indexOf(value) === -1) {
         field.validate.exclude_values.add(`${value}`);
       }
     });
-    //remove current value from exclude_values
-    field.validate.exclude_values.delete(current_feature_value);
+
+    // remove current value from exclude_values
+    field.validate.exclude_values.delete(_value);
   });
 
-  if (hasUniqueValue) {
-    //Listen event method after close/save form
-    const savedfeatureFnc = () => {
+  // skip when ..
+  if (!has_unique) {
+    return fields;
+  }
 
-       unique_values_feature_field_Obj.forEach(({current_feature_value, field}) => {
-
-        if (current_feature_value !== field.value) {
-          //case is a relation form
-          if (isChild) {
-
-            this.getEditingService()
-              .changeRelationLayerUniqueFieldValues({
-                layerId,
-                relationLayerId,
-                field,
-                oldValue: current_feature_value,
-                newValueconvertSingleMultiGeometry: field.value
-              });
-
-          } else {
-            //case root form layer
-            this.getEditingService()
-              .changeLayerUniqueFieldValues({
-                layerId,
-                field,
-                oldValue: current_feature_value,
-                newValue: field.value
-              });
-          }
-        }
-
-      });
-
-      if (false === isChild) {
-
-        this.getEditingService().saveTemporaryRelationsUniqueFieldsValues(layerId);
+  // Listen event method after close/save form
+  const savedfeatureFnc = () => {
+    unique_values.forEach(({ _value, field }) => {
+      // skip when ...
+      if (_value === field.value) {
+        return;
+      }
+      if (isChild) {
+        // relation form
+        service.changeRelationLayerUniqueFieldValues({
+          layerId,
+          relationLayerId,
+          field,
+          oldValue: _value,
+          newValueconvertSingleMultiGeometry: field.value
+        });
+      } else {
+        // root form layer
+        service
+          .changeLayerUniqueFieldValues({
+            layerId,
+            field,
+            oldValue: _value,
+            newValue: field.value
+          });
       }
 
-      return {once: true}
-    };
+    });
 
-    this.getEditingService().subscribe(`savedfeature_${layerId}`, savedfeatureFnc);
+    if (false === isChild) {
+      service.saveTemporaryRelationsUniqueFieldsValues(layerId);
+    }
 
-    this.getEditingService().subscribe(`closeform_${layerId}`, () => {
+    return { once: true };
+  };
 
-      this.getEditingService().unsubscribe(`savedfeature_${layerId}`, savedfeatureFnc);
-
-      this.getEditingService().clearTemporaryRelationsUniqueFieldsValues(layerId);
-
-      return {once: true}
-
-    })
-  }
+  service.subscribe(`savedfeature_${layerId}`, savedfeatureFnc);
+  service.subscribe(`closeform_${layerId}`, () => {
+    service.unsubscribe(`savedfeature_${layerId}`, savedfeatureFnc);
+    service.clearTemporaryRelationsUniqueFieldsValues(layerId);
+    return { once: true };
+  });
 
   return fields;
 };
 
 /**
- * @param inputs
- * @param context
- * @param feature
+ * @param expression.inputs.layer
+ * @param expression.context.excludeFields
+ * @param expression.context.get_default_value
+ * @param expression.feature
  * 
  * @returns {Promise<void>}
  * 
  * @since g3w-client-plugin-editing@v3.5.14
  */
-proto.evaluateExpressionFields = async function({inputs, context,  feature}={}){
-  const expression_eval_promises = []; // promises from expression evaluation
-  const { layer } = inputs;
-  const {
-    excludeFields:exclude,
-    get_default_value=false
-  } = context;
+proto.evaluateExpressionFields = async function({
+  inputs,
+  context,
+  feature,
+} = {}) {
+  const promises  = []; // promises from expression evaluation
 
-  layer.getFieldsWithValues(feature, {exclude, get_default_value})
+  inputs.layer
+    .getFieldsWithValues(
+      feature,
+      {
+        exclude: context.excludeFields,
+        get_default_value: undefined !== context.get_default_value ? context.get_default_value : false,
+      }
+    )
     .forEach(field => {
-      const {default_expression, filter_expression} = field.input.options;
-      const qgs_layer_id = inputs.layer.getId();
-      const parentData = this.getParentFormData();
-      if (default_expression){
-        const {apply_on_update = false} = default_expression;
-        /*
-        check if always update apply_on_update = true or only is is a new feature
-         */
-        if (apply_on_update || feature.isNew()) {
 
-          const expression_eval_promise = new Promise(async (resolve, reject) => {
+      // default expression
+      if (field.input.options.default_expression && (field.input.options.default_expression.apply_on_update || feature.isNew())) {
+        promises.push(
+          new Promise(async (resolve, reject) => {
             try {
               await inputService.handleDefaultExpressionFormInput({
                 field,
                 feature,
-                qgs_layer_id,
-                parentData
+                qgs_layer_id: inputs.layer.getId(),
+                parentData:   this.getParentFormData(),
               });
               feature.set(field.name, field.value);
               resolve(feature)
-            } catch(err) {
-              reject(err)
+            } catch(e) {
+              reject(e);
             }
-          });
-          expression_eval_promises.push(expression_eval_promise);
-        }
+          })
+        );
       }
-      if (filter_expression){
-        const expression_eval_promise = new Promise(async (resolve, reject) => {
-          try {
-            await inputService.handleFilterExpressionFormInput({
-              field,
-              feature,
-              qgs_layer_id,
-              parentData
-            });
-            feature.set(field.name, field.value);
-            resolve(feature)
-          } catch(err) {
-            reject(err)
-          }
-        });
-        expression_eval_promises.push(expression_eval_promise);
+
+      // filter expression
+      if (field.input.options.filter_expression) {
+        promises.push(
+          new Promise(async (resolve, reject) => {
+            try {
+              await inputService.handleFilterExpressionFormInput({
+                field,
+                feature,
+                qgs_layer_id: inputs.layer.getId(),
+                parentData:   this.getParentFormData(),
+              });
+              feature.set(field.name, field.value);
+              resolve(feature)
+            } catch(e) {
+              reject(e);
+            }
+          })
+        );
       }
+
     });
-  await Promise.allSettled(expression_eval_promises);
+
+  await Promise.allSettled(promises);
+
   return feature;
 };
 
 
 /**
- * 
  * @param layer,
  * @param feature
- * @returns Array of field
+ * 
+ * @returns Array of fields
  */
-proto.getNotEditableFieldsNoPkValues = function({layer, feature}){
-  return layer.getEditingNotEditableFields()
-    .reduce((accumulator, field) => {
-      // in case of pk need to ne set null
-      accumulator[field] = layer.isPkField(field) ? null : feature.get(field);
-      return accumulator;
+proto.getNotEditableFieldsNoPkValues = function({
+  layer,
+  feature,
+}) {
+  return layer
+    .getEditingNotEditableFields()
+    .reduce((fields, field) => {
+      fields[field] = layer.isPkField(field) ? null : feature.get(field); // NB: Primary Key fields need to be `null`
+      return fields;
     }, {});
 };
 
 /**
- * set
  * @param get_default_value to context of task
  */
-proto.setContextGetDefaultValue = function(get_default_value=false){
-  const context = this.getContext();
-  context.get_default_value = get_default_value;
+proto.setContextGetDefaultValue = function(get_default_value = false) {
+  this.getContext().get_default_value = get_default_value;
 };
 
 /**
- *
- * @returns {{qgs_layer_id: *, feature: *}}
+ * @returns { undefined | { feature: * , qgs_layer_id: * } }
  */
-proto.getParentFormData = function(){
-  if (WorkflowsStack.getLength() > 1) {
-    const {features, layer, fields=[] } = WorkflowsStack.getParent().getInputs();
-    // in case of fields (temporary set by form) set temporary value to feature (cloned) parent
-    const feature = features[features.length -1].clone();
-    fields.forEach(({name, value}) => {
-      feature.set(name, value)
-    });
-    return {
-      feature,
-      qgs_layer_id: layer.getId()
-    }
+proto.getParentFormData = function() {
+  // skip when ..
+  if (!(WorkflowsStack.getLength() > 1)) {
+    return;
   }
+
+  const {
+    features,
+    layer,
+    fields = [],
+  } = WorkflowsStack.getParent().getInputs();
+
+  // in case of temporary fields (setted by form) set temporary value to feature (cloned) parent
+  const feature = features[features.length -1].clone();
+
+  fields.forEach(({ name, value }) => { feature.set(name, value) });
+
+  return {
+    feature,
+    qgs_layer_id: layer.getId(),
+  };
 };
 
 /**
- *
  * @param layerId
  * @param geometryType
- * @returns {*[]}
+ * 
+ * @returns { Array }
  */
-proto.getFeaturesFromSelectionFeatures = function({layerId, geometryType}){
-  const selectionLayerSource = this._mapService.defaultsLayers.selectionLayer.getSource();
+proto.getFeaturesFromSelectionFeatures = function({
+  layerId,
+  geometryType,
+}) {
   return this.convertFeaturesGeometryToGeometryTypeOfLayer({
-    features: selectionLayerSource.getFeatures().filter(feature => feature.__layerId !== layerId),
+    features: this._mapService.defaultsLayers.selectionLayer.getSource().getFeatures().filter(feature => feature.__layerId !== layerId),
     geometryType
   })
 };
 
 /**
- *
  * @param features
  * @param geometryType
- * @returns {*[]}
+ * 
+ * @returns { Array } converted features
  */
-proto.convertFeaturesGeometryToGeometryTypeOfLayer = function({features=[], geometryType}){
-  const convertFeatures = [];
-  features.forEach(feature => {
-    const featureGeometryType = feature.getGeometry() && feature.getGeometry().getType();
-    if (geometryType === featureGeometryType) convertFeatures.push(feature);
-    else if (isSameBaseGeometryType(featureGeometryType, geometryType) &&
-      (Geometry.isMultiGeometry(geometryType) || !Geometry.isMultiGeometry(featureGeometryType))) {
-      const cloneFeature = feature.clone();
-      cloneFeature.__layerId = feature.__layerId;
-      cloneFeature.setGeometry(convertSingleMultiGeometry(feature.getGeometry(), geometryType));
-      convertFeatures.push(cloneFeature);
+proto.convertFeaturesGeometryToGeometryTypeOfLayer = function({
+  features = [],
+  geometryType,
+}) {
+  const converted = [];
+  features.forEach(f => {
+    const type = f.getGeometry() && f.getGeometry().getType();
+    if (geometryType === type) {
+      converted.push(f);
+    } else if (
+      isSameBaseGeometryType(type, geometryType) &&
+      (Geometry.isMultiGeometry(geometryType) || !Geometry.isMultiGeometry(type))
+    ) {
+      const cloned = f.clone();
+      cloned.__layerId = f.__layerId;
+      cloned.setGeometry(convertSingleMultiGeometry(f.getGeometry(), geometryType));
+      converted.push(cloned);
     }
   });
-  return convertFeatures;
+  return converted;
 };
 
 /**
  * @since g3w-client-plugin-editing@v3.5.13
  */
-proto.chooseFeatureFromFeatures = function({features=[]}){
-  return new Promise((resolve, reject) =>{
+proto.chooseFeatureFromFeatures = function({
+  features = [],
+}) {
+  return new Promise((resolve, reject) => {
     const inputs = this.getInputs();
 
     const feature = [];
@@ -609,7 +607,7 @@ proto.chooseFeatureFromFeatures = function({features=[]}){
         cancel: {
           label: 'Cancel',
           className: 'btn-danger',
-          callback(){
+          callback() {
             reject();
           }
         },
@@ -636,74 +634,81 @@ proto.chooseFeatureFromFeatures = function({features=[]}){
  * 
  * @since g3w-client-plugin-editing@v3.7.0
  */
-proto.handleRelation1_1LayerFields = function({layerId, features=[]}={}){
-  if (features.length === 0) return; // in case of no features
-  const isNew = features[0].isNew();
-  //Get layer relation 1:1
-  this.getEditingService()
+proto.handleRelation1_1LayerFields = function({
+  layerId,
+  features = [],
+} = {}) {
+
+  // skip when no features
+  if (features.length === 0) {
+    return;
+  }
+
+  const isNew   = features[0].isNew();
+  const service = this.getEditingService();
+
+  // Get layer relation 1:1
+  service
     .getRelation1_1ByLayerId(layerId)
     .forEach(relation => {
-      //check if layerId is a father layer of relation 1:1
-      if (layerId === relation.getFather()) {
-        //check if child relation layer is editable (on editing)
-        const childLayerId = relation.getChild();
-        let childFeature;
-        if (isNew) {
-          //create new feature
-          childFeature = new Feature();
-          childFeature.setTemporaryId();
-          //add feature to layer editing source
-          this.getEditingService()
-            .getLayerById(childLayerId)
-            .getEditingSource()
-            .addFeature(childFeature);
-          //set attribute to null
-          this.getEditingService()
-            .getProjectLayerById(childLayerId)
-            .getEditingFields()
-            .forEach(field => childFeature.set(field.name, null));
-        } else {
-          //get child feature relation 1:1
-          childFeature = this.getEditingService()
-            .getLayerById(childLayerId)
-            .getEditingSource()
-            .readFeatures()
-            .find(feature => features[0].get(relation.getFatherField()) === feature.get(relation.getChildField()));
-        }
-        //If a child feature relation 1:1 is binds to current feature
-        if (childFeature) {
-          //if childFeature
-          const newChildFeature = isNew ? childFeature : childFeature.clone();
-          //Loop to editable only field of father layerId
-          this.getEditingService()
-            .getRelation1_1EditingLayerFieldsReferredToChildRelation(relation)
-            .filter(field => field.editable)
-            .forEach(field => {
-              newChildFeature.set(this.GetChildFieldNameFromRelation1_1({
-                relation,
-                field
-              }), features[0].get(field.name));
 
-            })
-          //check if feature is new
-          if (isNew) {
-            //check if father field is a Pk (Primary key)
-            if (this.getEditingService().getLayerById(layerId).isPkField(relation.getFatherField())) {
-              //need to set temporary
-              childFeature.set(relation.getChildField(), features[0].getId());
-            }
-            //add relation feature
-            this.getContext().session.pushAdd(childLayerId, newChildFeature, false);
-          } else {
-            //update relation feature
-            this.getContext().session.pushUpdate(childLayerId, newChildFeature, childFeature);
-          }
-        }
+      // skip when layer is not a father layer (1:1 relation)
+      if (layerId !== relation.getFather()) {
+        return;
       }
-    })
+
+      // check if child relation layer is editable (in editing)
+      const childLayerId = relation.getChild();
+      const source       = service.getLayerById(childLayerId).getEditingSource();
+      let childFeature;
+      let newChild;
+
+      // get or create child feature
+      if (isNew) {
+        childFeature = new Feature();
+        childFeature.setTemporaryId();
+        source.addFeature(childFeature);
+        newChild = childFeature && childFeature;
+        // set name attribute to `null`
+        service
+          .getProjectLayerById(childLayerId)
+          .getEditingFields()
+          .forEach(field => childFeature.set(field.name, null)); 
+      } else {
+        childFeature = source.readFeatures().find(f => features[0].get(relation.getFatherField()) === f.get(relation.getChildField()));
+        newChild = childFeature && childFeature.clone();
+      }
+
+      // Loop editable only field of father layerId when
+      // a child relation (1:1) is binded to current feature
+      if (childFeature) {
+        service
+          .getRelation1_1EditingLayerFieldsReferredToChildRelation(relation)
+          .filter(field => field.editable)
+          .forEach(field => { newChild.set(this.GetChildFieldNameFromRelation1_1({ relation, field }), features[0].get(field.name)); });
+      }
+
+      // check if father field is a Pk (Primary key) if feature is new
+      if (childFeature && isNew && service.getLayerById(layerId).isPkField(relation.getFatherField())) {
+        childFeature.set(relation.getChildField(), features[0].getId()); // setted temporary
+      }
+
+      // add relation
+      if (childFeature && isNew) {
+        this.getContext().session.pushAdd(childLayerId, newChild, false);
+      }
+
+      // update relation
+      if (childFeature && !isNew) {
+        this.getContext().session.pushUpdate(childLayerId, newChild, childFeature);
+      }
+
+    });
 }
 
 /**
+ * Listen changes on 1:1 relation fields (get child values from child layer)
+ * 
  * @param layerId Current editing layer id
  * @param fields Array of form fields of current editing layer
  * 
@@ -711,131 +716,140 @@ proto.handleRelation1_1LayerFields = function({layerId, features=[]}={}){
  * 
  * @since g3w-client-plugin-editing@v3.7.0
  */
-proto.listenRelation1_1FieldChange = function({layerId, fields=[]}={}) {
-  //RELATION 1:1 IN CASE CHANGE RELATION FIELD NEED TO
-  //GET CHILD VALUES FROM CHILD LAYER
-  //Initialize unwatches field value event change
-  const unwatches = [];
-  //store and cache values of child relation layer based on
-  // relation field
-  const cacheRelationChildFieldValues = {};
-  //get all relation 1:1 of current layer
-  this.getEditingService()
+proto.listenRelation1_1FieldChange = function({
+  layerId,
+  fields = [],
+} = {}) {
+  const unwatches = []; // unwatches field value (event change)
+  const cache     = {}; // cache values of child relation layer based on relation field
+  const service   = this.getEditingService();
+
+  // get all relation 1:1 of current layer
+  this
+    .getEditingService()
     .getRelation1_1ByLayerId(layerId)
     .forEach(relation => {
-      //get relation Id
-      const relationId = relation.getId();
-      //get relation child layer id
-      const childLayerId = relation.getChild();
-      //for each relation get child layer field
-      //when open form task need to check if editable
-      //Not set this condition because maybe i ca be used this method
-      //on move task or other when current relationField, related to 1:1 relation
-      //it can be changed by default expression or in other way not only with form
-      const relationField = fields.find(field => relation.getFatherField().includes(field.name));
-      //if found field and relation layer is in editing.
-      //it required the second condition because the field can be not editable,
-      // but it can be changed
-      if (relationField && this.getEditingService().getLayerById(childLayerId)) {
-        //initialize cache with relation id
-        cacheRelationChildFieldValues[relationId] = {};
-        //get project layer
-        const layer = this.getEditingService().getProjectLayerById(childLayerId);
-        //add watch function to unwatch
-        unwatches.push(
-          VM.$watch(
-            //listen field value change
-            () => relationField.value,
-            //async function called when change value
-            async value => {
-              //in case of value /exclude empty string
-              if (value) {
-                //set editable false to avoid to edit
-                relationField.editable = false;
-                //show input bar loader
-                relationField.input.options.loading.state = 'loading';
-                //check if value is store
-                if (cacheRelationChildFieldValues[relationId][value]) {
-                  cacheRelationChildFieldValues[relationId][value]
-                    .forEach((item) => {
-                      Object
-                        .entries(item)
-                        .forEach(([name, value]) => fields.find(f => f.name === name).value = value)
-                    })
-                } else {
-                  try {
-                    //get feature of relation layer based on value of relation field
-                    const {data} = await DataRouterService.getData('search:features', {
-                      inputs: {
-                        layer,
-                        formatter:0,
-                        filter: createFilterFormInputs({
-                          layer,
-                          search_endpoint: 'api',
-                          inputs: [{
-                            attribute: relationField.name,
-                            value,
-                          }]
-                        }),
-                        search_endpoint: 'api'
-                      },
-                      outputs: false
-                    });
-                    // if return result
-                    if (data && data[0] && data[0].features.length === 1) {
-                      //set array
-                      cacheRelationChildFieldValues[relation.getId()][value] = [];
-                      //Get feature. It is one feature due relation1:1 type
-                      const feature = data[0].features[0];
-                      //get field of root layers related to current relation
-                      this.getEditingService()
-                        .getRelation1_1EditingLayerFieldsReferredToChildRelation(relation)
-                        .forEach(field => {
-                          //get value
-                          const childValue = feature.get(this.GetChildFieldNameFromRelation1_1({
-                            relation,
-                            field
-                          }));
+      const relationId   = relation.getId();                                // get relation Id
+      const childLayerId = relation.getChild();                             // get relation child layer id
+      const fatherField  = relation.getFatherField();
 
-                          fields.find(f => f.name === field.name).value = childValue;
-                          //store on cache
-                          cacheRelationChildFieldValues[relationId][value].push({
-                            [field.name]: childValue
-                          })
-                        })
-                    }
-                  } catch(err){
-                    console.log(err)
-                  }
-                }
-              }
-              //reset base state
-              relationField.input.options.loading.state = null;
-              relationField.editable = true;
-            }
-            )
-        )
+      // NB:
+      // need to check if editable when opening form task 
+      // Not set this condition because maybe i ca be used this method
+      // on move task or other when current relationField, related to 1:1 relation
+      // it can be changed by default expression or in other way not only with form
+      const relationField = fields.find(f => fatherField.includes(f.name)); // get child layer field (for each relation)
+
+      // skip when ..
+      if (!(relationField && service.getLayerById(childLayerId))) {
+        return;
       }
+
+      // field found and relation layer is in editing.
+      // it required the second condition because the field can be not editable,
+      // but it can be changed
+
+      // initialize cache with relation id
+      cache[relationId] = {};
+
+      // get project layer
+      const layer = service.getProjectLayerById(childLayerId);
+
+      // listen for relation field changes (vue watcher)
+      unwatches.push(
+        VM.$watch(
+          () => relationField.value,
+          async value => {
+            const is_cached = cache[relationId][value];            // check if value is cached
+
+            // skip empty values
+            if (!value) {
+              relationField.input.options.loading.state = null; 
+              relationField.editable                    = true;
+              return;
+            }
+
+            relationField.editable                    = false;     // disable edit 
+            relationField.input.options.loading.state = 'loading'; // show input bar loader
+
+            // skip server request (retrieve data from cache)
+            if (is_cached) {
+              cache[relationId][value]
+                .forEach((item) => {
+                  Object
+                    .entries(item)
+                    .forEach(([name, value]) => fields.find(f => f.name === name).value = value)
+                });
+              // reset edit state
+              relationField.input.options.loading.state = null; 
+              relationField.editable                    = true;
+              return;
+            }
+
+            // request server data and then update cache
+            try {
+              const { data } = await DataRouterService.getData('search:features', {  // get feature of relation layer based on value of relation field 
+                inputs: {
+                  layer,
+                  formatter: 0,
+                  filter: createFilterFormInputs({
+                    layer,
+                    search_endpoint: 'api',
+                    inputs: [{
+                      attribute: relationField.name,
+                      value,
+                    }]
+                  }),
+                  search_endpoint: 'api',
+                },
+                outputs: false,
+              });
+              if (data && data[0] && 1 === data[0].features.length) {                // NB: length == 1, due to 1:1 relation type
+                cache[relation.getId()][value] = [];
+                // 
+                service
+                  .getRelation1_1EditingLayerFieldsReferredToChildRelation(relation) // field of root layers related to current relation
+                  .forEach(field => {
+                    const childValue = data[0].features[0].get(this.GetChildFieldNameFromRelation1_1({ relation, field }));
+                    fields.find(f => f.name === field.name).value = childValue;
+                    cache[relationId][value].push({ [field.name]: childValue });
+                  })
+              }
+            } catch(e) {
+              console.warn(e);
+            }
+
+            // reset edit state
+            relationField.input.options.loading.state = null; 
+            relationField.editable                    = true;
+          }
+        )
+      );
+
     });
 
   return unwatches;
-
-}
+};
 
 /**
- * @param opts.relation Relation Object
- * @param opts.field father
+ * Check if relation has prefix.
  * 
- * @return filed name of the father
+ * that's how 1:1 relation fields are marked
+ * 
+ * @param opts.relation Relation Object
+ * @param opts.field    father field
+ * 
+ * @return name of father field
  * 
  * @since g3w-client-plugin-editing@v3.7.0
  */
-
-proto.GetChildFieldNameFromRelation1_1 = function({relation, field}={}) {
-  //check if relation has prefix used to found a way how fields of relation 1:1 are marked
+proto.GetChildFieldNameFromRelation1_1 = function({
+  relation,
+  field,
+} = {}) {
   return relation.getPrefix() ?
     field.name.split(relation.getPrefix())[1] :
     field.name;
-}
+};
 
 module.exports = EditingTask;
