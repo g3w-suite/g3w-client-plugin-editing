@@ -10,24 +10,82 @@ const EditTableFeaturesWorkflow = require('../../edittableworkflow');
 
 
 function OpenFormTask(options={}) {
-  this._edit_relations = options.edit_relations === undefined ? true : options._edit_relations;
-  this._formIdPrefix = 'form_';
-  this.layerId;
-  this._isContentChild = false;
-  this._features;
-  this._originalLayer;
-  this._editingLayer;
-  this._layerName;
-  this._originalFeatures;
-  this._fields;
-  this._session;
-  this._editorFormStructure;
-  this.promise;
-  this._multi = options.multi || false; // set if it can handle multi edit features
+
   /**
-   * @since v3.7.0
+   * @FIXME add description
+   */
+  this._edit_relations = options.edit_relations === undefined ? true : options._edit_relations;
+
+  /**
+   * @FIXME add description
+   */
+  this._formIdPrefix = 'form_';
+
+  /**
+   * @FIXME set a default value + add description
+   */
+  this.layerId;
+
+  /**
+   * @FIXME add description
+   */
+  this._isContentChild = false;
+
+  /**
+   * @FIXME set a default value + add description
+   */
+  this._features;
+
+  /**
+   * @FIXME set a default value + add description
+   */
+  this._originalLayer;
+
+  /**
+   * @FIXME set a default value + add description
+   */
+  this._editingLayer;
+
+  /**
+   * @FIXME set a default value + add description
+   */
+  this._layerName;
+
+  /**
+   * @FIXME set a default value + add description
+   */
+  this._originalFeatures;
+
+  /**
+   * @FIXME set a default value + add description
+   */
+  this._fields;
+
+  /**
+   * @FIXME set a default value + add description
+   */
+  this._session;
+
+  /**
+   * @FIXME set a default value + add description
+   */
+  this._editorFormStructure;
+
+  /**
+   * @FIXME set a default value + add description
+   */
+  this.promise;
+
+  /**
+   * Whether it can handle multi edit features
+   */
+  this._multi = options.multi || false;
+
+  /**
+   * @since g3w-client-plugin-editing@v3.7.0
    */
   this._unwatchs = [];
+
   base(this, options);
 }
 
@@ -145,10 +203,7 @@ proto._saveFeatures = async function({fields, promise, session, inputs}){
   if (fields.length) {
     const newFeatures = [];
 
-    /**
-     * @since 3.5.15
-     */
-
+    // @since 3.5.15
     GUI.setLoadingContent(true);
     GUI.disableContent(true);
 

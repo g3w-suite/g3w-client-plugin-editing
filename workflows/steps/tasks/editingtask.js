@@ -432,11 +432,13 @@ proto.getFormFields = async function({inputs, context, feature, isChild=false}={
 };
 
 /**
- * @since 3.5.14
  * @param inputs
  * @param context
  * @param feature
+ * 
  * @returns {Promise<void>}
+ * 
+ * @since g3w-client-plugin-editing@v3.5.14
  */
 proto.evaluateExpressionFields = async function({inputs, context,  feature}={}){
   const expression_eval_promises = []; // promises from expression evaluation
@@ -578,7 +580,7 @@ proto.convertFeaturesGeometryToGeometryTypeOfLayer = function({features=[], geom
 };
 
 /**
- * @since 3.5.13
+ * @since g3w-client-plugin-editing@v3.5.13
  */
 proto.chooseFeatureFromFeatures = function({features=[]}){
   return new Promise((resolve, reject) =>{
@@ -627,10 +629,12 @@ proto.chooseFeatureFromFeatures = function({features=[]}){
 
 
 /**
- * Method to handle layer relation 1:1 features related to feature
- * @since v3.7.0
+ * Hhandle layer relation 1:1 features related to feature
+ *
  * @param opts.layerId Root layerId
  * @param opts.features Array of update/new features belong to Root layer
+ * 
+ * @since g3w-client-plugin-editing@v3.7.0
  */
 proto.handleRelation1_1LayerFields = function({layerId, features=[]}={}){
   if (features.length === 0) return; // in case of no features
@@ -700,10 +704,12 @@ proto.handleRelation1_1LayerFields = function({layerId, features=[]}={}){
 }
 
 /**
- * @since v3.7.0
  * @param layerId Current editing layer id
  * @param fields Array of form fields of current editing layer
+ * 
  * @returns Array of watch function event to remove listen
+ * 
+ * @since g3w-client-plugin-editing@v3.7.0
  */
 proto.listenRelation1_1FieldChange = function({layerId, fields=[]}={}) {
   //RELATION 1:1 IN CASE CHANGE RELATION FIELD NEED TO
@@ -817,10 +823,12 @@ proto.listenRelation1_1FieldChange = function({layerId, fields=[]}={}) {
 }
 
 /**
- * @since v3.7.0
  * @param opts.relation Relation Object
  * @param opts.field father
+ * 
  * @return filed name of the father
+ * 
+ * @since g3w-client-plugin-editing@v3.7.0
  */
 
 proto.GetChildFieldNameFromRelation1_1 = function({relation, field}={}) {
