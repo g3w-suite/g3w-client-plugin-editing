@@ -21,23 +21,20 @@ proto.run = function(inputs, context) {
   const headers = originalLayer.getEditingFields();
   this._isContentChild = WorkflowsStack.getLength() > 1;
   const foreignKey = this._isContentChild && context.excludeFields ? context.excludeFields[0] :  null;
-  const exclude = this._isContentChild && context.exclude;
+  const excludeFeatures = this._isContentChild && context.excludeFeatures;
   const capabilities = originalLayer.getEditingCapabilities();
   const editingLayer = originalLayer.getEditingLayer();
 
   //get editing features
   let features = editingLayer.readEditingFeatures();
+  if (excludeFeatures && features.length > 0) {
 
-  //get eventually sync features
-  let syncfeatures = editingLayer.getEditingSyncSource() && editingLayer.readEditingSyncFeatures()
-
-  if (exclude && features.length > 0) {
-    const {value} = exclude;
-    features = features.filter(feature => feature.get(foreignKey) != value);
-    //need to syncfeature in the same
-    if (syncfeatures) {
-      syncfeatures = syncfeatures.filter(feature => feature.get(foreignKey) != value)
-    }
+    features = features
+      .filter(feature => {
+        return Object
+          .entries(excludeFeatures)
+          .reduce((bool, [field, value]) => bool && feature.get(field) != value, true)
+      })
   }
   const content = new TableComponent({
     title: `${layerName}`,

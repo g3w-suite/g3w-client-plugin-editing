@@ -35,6 +35,10 @@ const TableService = function(options = {}) {
     capabilities
   };
 
+  /**
+   * Init function service
+   *
+   */
   this.init = function() {
     //filter the original feature based on if is a relation
     if (this._isrelation) {
@@ -45,8 +49,15 @@ const TableService = function(options = {}) {
     // set values
     if (this._features.length > 0) {
       const baseFeature = this._features[0];
+
+      //get properties of the feature
       const properties = Object.keys(baseFeature.getProperties());
-      this.state.headers = this.state.headers.filter(header => properties.indexOf(header.name) !== -1);
+
+      //set headers of table
+      this.state.headers = this.state.headers
+        .filter(header => properties.indexOf(header.name) !== -1);
+
+      //extract get headers name
       const headers = this.state.headers.map(header => header.name);
       const features = this._syncfeatures || this._features;
       this.state.features = features.map(feature => {
@@ -93,16 +104,16 @@ proto.save = function() {
   this._promise.resolve();
 };
 
+
 /**
  *
  */
 proto.cancel = function() {
   this._promise.reject();
 };
-
 /**
  *
- * @param uid
+ * @param uid feature uid
  * @returns {Promise<unknown>}
  */
 proto.deleteFeature = function(uid) {
@@ -110,12 +121,10 @@ proto.deleteFeature = function(uid) {
   const layer = this._inputs.layer;
   const layerId = layer.getId();
   const childRelations = layer.getChildren();
-  //get relation in editing
-  const relationinediting = childRelations.length &&
-    EditingService._filterRelationsInEditing({
-      layerId,
-      relations: layer.getRelations().getArray()
-    }).length > 0;
+  const relationinediting = childRelations.length && EditingService._filterRelationsInEditing({
+    layerId,
+    relations: layer.getRelations().getArray()
+  }).length > 0;
 
   return new Promise((resolve, reject) =>{
     GUI.dialog.confirm(`<h4>${t('editing.messages.delete_feature')}</h4>
