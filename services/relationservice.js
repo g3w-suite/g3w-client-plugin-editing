@@ -238,8 +238,8 @@ proto.forceParentsFromServiceWorkflowToUpdated = function() {
     //check if workflow has service (form service)
     if (workflow.getContextService()) {
       workflow
-          .getContextService()
-          .setUpdate(true, {force: true})
+        .getContextService()
+        .setUpdate(true, {force: true})
     }
   });
 };

@@ -109,12 +109,12 @@
         }
 
         snapInteraction = null;
-  
+
         // snap = true
         if (this.add) {
           snapInteraction = new ol.interaction.Snap({
             source:   !this.checkedAll && this.checked && this.options.source, // SNAP TO LAYER: get options source as props pass from toolbox
-            features: this.checkedAll  && this.features                        // SNAP TO ALL:   get features 
+            features: this.checkedAll  && this.features                        // SNAP TO ALL:   get features
           });
           mapService.addInteraction(snapInteraction);
         }
@@ -195,7 +195,7 @@
             },
           });
 
-          // SNAP TO ALL: check if current editing layer is not equal to `layerId`  
+          // SNAP TO ALL: check if current editing layer is not equal to `layerId`
           if (this.options.layerId !== layerId) {
             const editing = toolbox.getState().editing;
             this.unwatches.push(this.$watch(() => editing.on, this.setShowSnapAll));
