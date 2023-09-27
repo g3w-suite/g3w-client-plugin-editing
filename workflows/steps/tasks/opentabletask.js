@@ -29,14 +29,14 @@ proto.run = function(inputs, context) {
   let features = editingLayer.readEditingFeatures();
 
   //get eventually sync features
-  let syncfeatures = editingLayer.getEditingSyncSource() && editingLayer.readEditingSyncFeatures()
+  let syncfeatures =  editingLayer.readEditingSyncFeatures();
 
   if (exclude && features.length > 0) {
     const {value} = exclude;
     features = features.filter(feature => feature.get(foreignKey) != value);
-    //need to syncfeature in the same
+    //need to sync features in the same
     if (syncfeatures) {
-      syncfeatures = syncfeatures.filter(feature => feature.get(foreignKey) != value)
+      syncfeatures = syncfeatures.filter(feature => feature.get(foreignKey) != value);
     }
   }
 
