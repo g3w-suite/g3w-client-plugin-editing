@@ -49,7 +49,7 @@ proto.run = function(inputs, context) {
     const featuresLength = features.length;
     const promisesDefaultEvaluation = [];
     for (let i =0; i < featuresLength; i++) {
-      const feature = features[i].cloneNew();
+      const feature = features[i].cloneNew(layer.getPkField());
       if (deltaXY) feature.getGeometry().translate(deltaXY.x, deltaXY.y);
       else {
         const coordinates = feature.getGeometry().getCoordinates();

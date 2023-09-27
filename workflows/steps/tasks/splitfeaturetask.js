@@ -101,7 +101,7 @@ proto._handleSplitFeature = async function({feature, inputs, context, splittedGe
       session.pushUpdate(layerId, feature, oriFeature);
 
     } else {
-      const newFeature = oriFeature.cloneNew();
+      const newFeature = oriFeature.cloneNew(layer.getPkField());
       newFeature.setGeometry(splittedGeometry);
 
       this.setNullMediaFields({
