@@ -1,4 +1,5 @@
 import ChooseFeatureToEditVueComponent from '../../../components/ChooseFeatureToEdit.vue';
+import { VM }                          from '../../../eventbus';
 
 const {
   base,
@@ -22,7 +23,6 @@ const { WorkflowsStack, Task } = g3wsdk.core.workflow;
 const { inputService }         = g3wsdk.core.input;
 const t                        = g3wsdk.core.i18n.tPlugin;
 const { DataRouterService }    = g3wsdk.core.data;
-const { VM }                   = g3wsdk.constant.APP_EVENTBUS;
 
 /**
  * Base editing task
