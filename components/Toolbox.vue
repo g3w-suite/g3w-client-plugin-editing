@@ -94,7 +94,7 @@
             v-if = "state.message"
             style = "color: #000"
           >
-            <div align="justify" v-t-plugin="state.message"></div>
+            <div class="text-justify" v-t-plugin="state.message"></div>
             <divider/>
           </div>
 
