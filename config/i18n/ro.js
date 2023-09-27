@@ -94,7 +94,7 @@ export default  {
     delete_feature_relations: "Dacă entitatea are relații care trimit la ea, acele relații devin orfane. Sugerăm să vă ocupați de acele elemente înainte să eliminați această entitate.",
     unlink_relation: "Dorești să eliminați legătura cu relația?",
     commit_feature: "Salvăm?",
-    change_toolbox_relation: "Stratul este relaționat. Înainte de a trece la alte modificări trebuiesc salvate modificările.",
+    change_toolbox_relation: "&#x2139;&#xFE0F; acest strat face parte dintr-o relație",
     saved: "Datele sunt salvate",
     saved_local:"Datele s-au salvat local",
     loading_data: "Datele se încarcă.",

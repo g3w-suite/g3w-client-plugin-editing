@@ -94,7 +94,7 @@ export default {
     delete_feature_relations: "Wenn ein Feature Verknüpfungen beinhaltet, werden diese Relationen verwaist. Wir schlagen vor, diese Relationen zu behandeln, bevor das Feature gelöscht wird",
     unlink_relation: "Soll die Verknüpfung aufgehoben werden?",
     commit_feature: "Änderungen speichern?",
-    change_toolbox_relation: "Layer hat Relation(en). Bevor man zur Bearbeitung wechselt, muss man die Änderungen speichern.",
+    change_toolbox_relation: "&#x2139;&#xFE0F; Diese Ebene ist Teil einer Beziehung",
     saved: "Daten erfolgreich gespeichert",
     saved_local:"Daten erfolgreich lokal gespeichert",
     loading_data: "Daten laden",
