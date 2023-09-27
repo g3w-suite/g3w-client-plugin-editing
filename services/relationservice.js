@@ -215,7 +215,9 @@ proto._highlightRelationSelect = function(relation) {
  * @returns {Promise<unknown>}
  */
 proto.startTool = function(relationtool, index) {
-  if (relationtool.state.id === 'movefeature') GUI.hideContent(true);
+  if (relationtool.state.id === 'movefeature') {
+    GUI.hideContent(true);
+  }
   return new Promise((resolve, reject) => {
     const toolPromise = (this._layerType === Layer.LayerTypes.VECTOR) && this.startVectorTool(relationtool, index) ||
       (this._layerType === Layer.LayerTypes.TABLE) && this.startTableTool(relationtool, index);
@@ -275,20 +277,28 @@ proto.startTableTool = function(relationtool, index) {
       } else d.reject(result);
     });
   }
+  //edit attributes feature
   if (relationtool.state.id === 'editattributes') {
     const EditTableFeatureWorkflow = require('../workflows/edittablefeatureworkflow');
     const workflow = new EditTableFeatureWorkflow();
     workflow.start(options)
       .then(() => {
+        const syncEditingSourceFeature = options.inputs.layer.getEditingSyncSource()
+            && options.inputs.layer.getEditingSyncSource().getFeatureById(options.inputs.features[0].getId());
         //get relation layer fields
-        const fields = this._getRelationFieldsValue(relationfeature);
-        fields.forEach(_field => {
-          relation.fields.forEach(field => {
-            if (field.name === _field.name) {
-              field.value = _field.value;
-            }
-          })
-        });
+        this._getRelationFieldsValue(relationfeature)
+          .fields.forEach(_field => {
+            relation.fields.forEach(field => {
+              if (field.name === _field.name) {
+                //in case of sync feature get data value of sync feature
+                if (syncEditingSourceFeature) {
+                  field.value = syncEditingSourceFeature.get(field.name);
+                } else {
+                  field.value = _field.value;
+                }
+              }
+            })
+          });
         d.resolve(true);
       })
       .fail(err => d.reject(false))
