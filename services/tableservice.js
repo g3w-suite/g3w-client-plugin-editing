@@ -127,57 +127,72 @@ proto.deleteFeature = function(uid) {
   }).length > 0;
 
   return new Promise((resolve, reject) =>{
-    GUI.dialog.confirm(`<h4>${t('editing.messages.delete_feature')}</h4>
-                        <div style="font-size:1.2em;">${ relationinediting ?t('editing.messages.delete_feature_relations') : ''}</div>`, (result) => {
-      if (result) {
-        let index;
-        const feature = this._features.find((feature, featureIdx) => {
-          if (feature.getUid() === uid) {
-            index = featureIdx;
-            return true;
-          }
-        });
-        const session = this._context.session;
-        const layerId = this._inputs.layer.getId();
-        this._inputs.layer.getEditingSource().removeFeature(feature);
-        session.pushDelete(layerId, feature);
-        this.state.features.splice(index, 1);
-        resolve()
-      } else {
-        reject()
-      }
+    GUI.dialog.confirm(
+      `<h4>${t('editing.messages.delete_feature')}</h4>
+      <div style="font-size:1.2em;">${ relationinediting ?t('editing.messages.delete_feature_relations') : ''}</div>`,
+      (result) => {
+        if (result) {
+          let index;
+          const feature = this._features.find((feature, featureIdx) => {
+            if (feature.getUid() === uid) {
+              index = featureIdx;
+              return true;
+            }
+          });
+          const session = this._context.session;
+          const layerId = this._inputs.layer.getId();
+          this._inputs.layer.getEditingSource().removeFeature(feature);
+          session.pushDelete(layerId, feature);
+          this.state.features.splice(index, 1);
+          resolve()
+        } else {
+          reject()
+        }
     });
   })
 };
 
 /**
- *
+ *Copy feature tool from another table feature
  * @param uid
  * @returns {Promise<unknown>}
  */
-proto.copyFeature = function(uid){
-  return new Promise((resolve, reject) =>{
-    const feature = this._features.find(feature => feature.getUid() === uid).cloneNew();
+proto.copyFeature = function(uid) {
+  return new Promise((resolve, reject) => {
+    const feature = this._features
+      .find(feature => feature.getUid() === uid)
+      .cloneNew(this._inputs.layer.getEditingLayer().getPkField());
     const addTableFeatureWorflow = require('../workflows/addtablefeatureworkflow');
     this._workflow = new addTableFeatureWorflow();
     const inputs = this._inputs;
     inputs.features.push(feature);
-    const options = {
+    this._workflow.start({
       context: this._context,
       inputs
-    };
-    this._workflow.start(options)
+    })
       .then(outputs => {
         const feature = outputs.features[outputs.features.length -1];
         const newFeature = {};
         Object.entries(this.state.features[0]).forEach(([key, value]) => {
-          newFeature[key] = feature.get(key);
+          if (this._syncfeatures) {
+            //need to get last feature add to
+            newFeature[key] = this._syncfeatures[this._syncfeatures.length -1].get(key);
+          } else {
+            newFeature[key] = feature.get(key);
+          }
         });
         newFeature.__gis3w_feature_uid = feature.getUid();
         this.state.features.push(newFeature);
         resolve(newFeature)
       })
-      .fail(err => reject(err));
+      .fail(err => {
+        reject(err)
+      })
+      .always(() => {
+        //@TODO check input.features that grow in number
+        console.log('here we are')
+      })
+
   })
 };
 
@@ -186,14 +201,10 @@ proto.copyFeature = function(uid){
  * @param uid
  */
 proto.editFeature = function(uid) {
-  let index;
 
-  const feature = this._features.find((feature, featureIndex) => {
-    if (feature.getUid() === uid) {
-      index = featureIndex;
-      return true;
-    }
-  });
+  const index = this._features.findIndex(feature => feature.getUid() === uid);
+
+  const feature = this._features[index];
 
   const EditTableFeatureWorkflow = require('../workflows/edittablefeatureworkflow');
 
@@ -214,10 +225,7 @@ proto.editFeature = function(uid) {
         .entries(this.state.features[index])
         .forEach(([key, value]) => {
           if (this._syncfeatures) {
-            //TODO set value here
-            console.log(this._inputs.layer.getFieldsWithValues(this._features[index]))
-            this._features[index].get(key);
-            this.state.features[index][key] = value;
+            this.state.features[index][key] = this._syncfeatures[index].get(key);
           } else {
             this.state.features[index][key] = feature.get(key);
           }
