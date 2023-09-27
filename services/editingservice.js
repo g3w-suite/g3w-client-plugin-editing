@@ -922,7 +922,10 @@ proto.getRelationsByFeature = function({layerId, relation, feature, layerType}={
     relation
   });
   //get features of relation child layers
-  const features = this._getFeaturesByLayerId(layerId);
+  //need to check is sync source
+  const features = this.getLayerById(layerId).getEditingSyncSource()
+    ? this.getLayerById(layerId).readEditingSyncFeatures()
+    : this.getLayerById(layerId).readEditingFeatures();
   //Loop relation fields
   const featuresValues = relationField.map(rField => feature.get(rField));
   return features.filter(feature => {
