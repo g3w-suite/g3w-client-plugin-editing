@@ -12,68 +12,82 @@ const EditingService       = require('./services/editingservice');
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/g3w-editing-components/editing.js.js@3.6
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/g3w-editing-components/panel.js.js@3.6
  */
-function EditingComponent(options = {}) {
+function EditingPanelComponent(options = {}) {
+
+  // editortoolsbars
+  options.id            = "editing-panel";
+  options.title         = options.title || "plugins.editing.editing_data";
+  options.name          = "Editing Layer";
+  options.toolboxes     = options.toolboxes || null;
+  options.showcommitbar = undefined !== options.showcommitbar ? options.showcommitbar : true;
 
   base(this, options);
 
+  /**
+   * @FIXME add description
+   */
   this.vueComponent = EditingVueComponent;
 
-  const { name = 'Editing data'} = options;
-
-  this.name = name;
+  /**
+   * @FIXME add description
+   */
+  this.name = undefined !== options.name ? options.name : 'Editing data';
 
   merge(this, options);
 
+  /**
+   * @FIXME add description
+   */
   this._resourcesUrl = options.resourcesUrl || GUI.getResourcesUrl();
+
+  /**
+   * @FIXME add description
+   */
   this._service = options.service || EditingService;
 
   const InternalComponent = Vue.extend(this.vueComponent);
 
+  /**
+   * @FIXME add description
+   */
   this.internalComponent = new InternalComponent({
     service: this._service,
     data: () => {
       return {
-        state: this._service.state,
-        resourcesurl: this._resourcesUrl,
-        showcommitbar: options.showcommitbar,
-        editingButtonsEnabled: true
+        state:                 this._service.state,
+        resourcesurl:          this._resourcesUrl,
+        showcommitbar:         options.showcommitbar,
+        editingButtonsEnabled: true,
       }
     }
   });
 
+  /**
+   * @FIXME add description
+   */
   this.mount = function(parent) {
     return base(this, 'mount', parent, true)
   };
 
+  /**
+   * @FIXME add description
+   */
   this.unmount = function() {
     const d = $.Deferred();
-    this._service.stop()
+    this._service
+      .stop()
       .finally(() => {
-        this.unmount = function() {
-          base(this, 'unmount')
-            .then(() => d.resolve());
-        };
+        this.unmount = function() { base(this, 'unmount').then(() => d.resolve()); };
         this.unmount();
       });
     return d.promise();
   };
+
 }
 
-inherit(EditingComponent, Component);
-
-
-function EditingPanelComponent(options={}) {
-  // editortoolsbars
-  options.id = "editing-panel";
-  options.title = options.title || "plugins.editing.editing_data";
-  options.name = "Editing Layer";
-  options.toolboxes = options.toolboxes || null;
-  options.showcommitbar = options.showcommitbar === undefined ? true : options.showcommitbar;
-  base(this, options)
-}
-
-inherit(EditingPanelComponent, EditingComponent);
+inherit(EditingPanelComponent, Component);
 
 module.exports = EditingPanelComponent;
 
