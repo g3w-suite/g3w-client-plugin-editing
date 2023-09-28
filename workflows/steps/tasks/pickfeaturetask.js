@@ -36,7 +36,10 @@ proto.run = function(inputs, context) {
       promise: d
     });
 
-    this._steps && this.setUserMessageStepDone('select');
+    if (this._steps) {
+      this.setUserMessageStepDone('select');
+    }
+
     d.resolve(inputs);
   });
 
