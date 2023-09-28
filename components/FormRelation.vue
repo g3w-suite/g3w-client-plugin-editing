@@ -18,7 +18,6 @@
           font-weight: bold;
           font-size: 1.3em;
           align-items: center;
-          /*margin-button: 3px;*/
           background-color: #fff;
         "
       >
@@ -33,7 +32,6 @@
         style = "
           width: 100%;
           display: flex;
-          /*margin-button:3px;*/
           background-color: #fff;
         "
       >
