@@ -88,7 +88,11 @@
           v-show = "!state.changingtools"
           class  = "panel-body"
         >
-
+          <!--HAS RELATION -->
+          <div v-if="hasRelations" style="color: #000000">
+            <span v-t-plugin="'editing.messages.toolbox_has_relation'"></span>
+            <divider/>
+          </div>
           <!-- MESSAGE -->
           <div
             v-if = "state.message"
@@ -196,6 +200,12 @@
     },
 
     computed: {
+      /**
+       * @since v3.7.0
+       */
+      hasRelations() {
+        return this.state.editing.dependencies.length > 0;
+      },
 
       loading() {
         return this.state.loading || this.state.changingtools;

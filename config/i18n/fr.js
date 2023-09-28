@@ -94,7 +94,7 @@ export default {
     delete_feature_relations: "La suppression d'une fonctionnalité avec des relations associées laissera ces relations orphelines. Il est recommandé de gérer ces relations avant de supprimer la fonctionnalité",
     unlink_relation: "Voulez-vous détacher la relation ?",
     commit_feature: "Voulez-vous enregistrer définitivement les changements ?",
-    change_toolbox_relation: "&#x2139;&#xFE0F; cette couche fait partie d'une relation",
+    toolbox_has_relation: "&#x2139;&#xFE0F; cette couche fait partie d'une relation",
     saved: "Les données ont été enregistrées correctement",
     saved_local: "Les données ont été correctement sauvegardées localement",
     loading_data: "Chargement des données",

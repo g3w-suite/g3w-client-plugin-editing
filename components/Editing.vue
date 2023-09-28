@@ -247,12 +247,6 @@
         toolbox.setSelected(true);
 
         this.state.toolboxselected = toolbox;
-
-        if (toolbox.getDependencies().length > 0) {
-          toolbox.setMessage("editing.messages.change_toolbox_relation")
-        } else {
-          toolbox.clearMessage();
-        }
       },
 
       /**
@@ -338,6 +332,7 @@
     },
 
     created() {
+
       this.appState = ApplicationState;
 
       this.$options.service.registerOnLineOffLineEvent();
