@@ -65,7 +65,7 @@ const TableService = function(options = {}) {
         const orderedProperties = {};
         headers.forEach(header => orderedProperties[header] = properties[header]);
         //set private attribute unique value
-        orderedProperties.__gis3w_feature_uid = feature.getUid();
+        this.setUniquePropertyToStateFeature(orderedProperties, feature);
         return orderedProperties;
       });
     }
@@ -79,6 +79,17 @@ const TableService = function(options = {}) {
 inherit(TableService, G3WObject);
 
 const proto = TableService.prototype;
+
+/**
+ * Method to set private unique property with value to elements
+ * of table
+ * @since v3.7.0
+ * @param stateObj
+ * @param feature
+ */
+proto.setUniquePropertyToStateFeature = function(stateObj, feature) {
+  stateObj.__gis3w_feature_uid = feature.getUid();
+}
 
 /**
  *
@@ -226,6 +237,7 @@ proto.editFeature = function(uid) {
         .forEach(([key, value]) => {
           if (this._syncfeatures) {
             this.state.features[index][key] = this._syncfeatures[index].get(key);
+            this.setUniquePropertyToStateFeature(this.state.features[index], this._syncfeatures[index]);
           } else {
             this.state.features[index][key] = feature.get(key);
           }
