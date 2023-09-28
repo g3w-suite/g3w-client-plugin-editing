@@ -590,11 +590,11 @@ proto.chooseFeatureFromFeatures = function({
      * ORIGINAL SOURCE: g3w-client-plugin-editing/g3w-editing-components/choosefeaturetoedit.js@3.6
      */
     const Component    = Vue.extend(ChooseFeatureToEditVueComponent);
-    const vueInstance  = new Component(Object.assign(default_opts, {
-      features:   undefined !== features   ? features : [],
-      feature:    undefined !== feature    ? feature : null,
+    const vueInstance  = new Component({
+      features:   Array.isArray(features)   ? features : [],
+      feature,
       attributes: inputs.layer.getEditingFields().map(({ name, label }) => ({ name, label })),
-    }));
+    });
 
     const message = vueInstance.$mount().$el;
 
