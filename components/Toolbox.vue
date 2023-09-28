@@ -88,8 +88,8 @@
           v-show = "!state.changingtools"
           class  = "panel-body"
         >
-          <!--HAS RELATION -->
-          <div v-if="hasRelations" style="color: #000000">
+          <!-- HAS RELATION -->
+          <div v-if="hasRelations" class="has-relations" style="color: #000000">
             <span v-t-plugin="'editing.messages.toolbox_has_relation'"></span>
             <divider/>
           </div>
@@ -200,8 +200,11 @@
     },
 
     computed: {
+
       /**
-       * @since v3.7.0
+       * @returns { boolean } whether current has related layer(s) (aka. layer relations / joins)
+       * 
+       * @since 3.7.0
        */
       hasRelations() {
         return this.state.editing.dependencies.length > 0;
@@ -298,5 +301,8 @@
 <style scoped>
   .toolbox {
     padding-bottom: 5px;
+  }
+  .panel:not(.toolboxselected) .has-relations {
+    opacity: .4;
   }
 </style>
