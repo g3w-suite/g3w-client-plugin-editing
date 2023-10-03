@@ -761,6 +761,11 @@ proto.resetDefault = function(){
   this.disableMapControlsConflict(false);
 };
 
+/**
+ *
+ * @param layer
+ * @private
+ */
 proto._attachLayerWidgetsEvent = function(layer) {
   const fields = layer.getEditingFields();
   for (let i=0; i < fields.length; i++) {
@@ -894,6 +899,7 @@ proto.getCurrentWorkflowData = function() {
 proto.getRelationsAttributesByFeature = function({layerId, relation, feature}={}) {
   const layer = this.getToolBoxById(layerId).getLayer();
   const relations = this.getRelationsByFeature({layerId, relation, feature});
+  console.log(relations)
   return relations.map(relation => {
     return {
       fields: layer.getFieldsWithValues(relation, {
@@ -923,16 +929,23 @@ proto.getRelationsByFeature = function({layerId, relation, feature, layerType}={
   });
   //get features of relation child layers
   //need to check is sync source
-  const features = this.getLayerById(layerId).getEditingSyncSource()
-    ? this.getLayerById(layerId).readEditingSyncFeatures()
-    : this.getLayerById(layerId).readEditingFeatures();
+  const features = this.getLayerById(layerId).readEditingFeatures();
+  const syncfeatures = this.getLayerById(layerId).getEditingSyncSource() && this.getLayerById(layerId).readEditingSyncFeatures()
   //Loop relation fields
   const featuresValues = relationField.map(rField => feature.get(rField));
-  return features.filter(feature => {
+  const filterFeatures = features.filter(feature => {
     return ownField.reduce((bool, oField, index) => {
       return bool && feature.get(oField) == featuresValues[index]
     }, true)
   });
+
+  if (undefined === syncfeatures) {
+    return filterFeatures;
+  } else {
+    return syncfeatures.filter(feature => {
+      return filterFeatures.find(f => f.getId() === feature.getId())
+    });
+  }
 
 };
 
