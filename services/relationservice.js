@@ -287,7 +287,7 @@ proto.startTableTool = function(relationtool, index) {
             && options.inputs.layer.getEditingSyncSource().getFeatureById(options.inputs.features[0].getId());
         //get relation layer fields
         this._getRelationFieldsValue(relationfeature)
-          .fields.forEach(_field => {
+          .forEach(_field => {
             relation.fields.forEach(field => {
               if (field.name === _field.name) {
                 //in case of sync feature get data value of sync feature
