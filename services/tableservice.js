@@ -10,10 +10,10 @@ const t = g3wsdk.core.i18n.tPlugin;
  */
 const TableService = function(options = {}) {
   this._features = options.features || []; // original features
-  this._syncfeatures = options.syncfeatures;
   this._promise = options.promise;
   this._context = options.context;
   this._inputs = options.inputs;
+  this._layerId = options.inputs.layer.getId();
   this._fatherValue = options.fatherValue;
   this._foreignKey = options.foreignKey;
   this._workflow = null;
@@ -40,10 +40,10 @@ const TableService = function(options = {}) {
    *
    */
   this.init = function() {
+    const EditingService = require('./editingservice');
     //filter the original feature based on if is a relation
     if (this._isrelation) {
       this._features.filter(feature => feature.get(this._foreignKey) !== this._fatherValue);
-      this._syncfeatures && this._syncfeatures.filter(feature => feature.get(this._foreignKey) !== this._fatherValue);
     }
 
     // set values
@@ -59,11 +59,17 @@ const TableService = function(options = {}) {
 
       //extract get headers name
       const headers = this.state.headers.map(header => header.name);
-      const features = this._syncfeatures || this._features;
+      const features = this._features;
+      //check
       this.state.features = features.map(feature => {
-        const properties = feature.getProperties();
         const orderedProperties = {};
-        headers.forEach(header => orderedProperties[header] = properties[header]);
+        headers.forEach(header => {
+          orderedProperties[header] = EditingService.getFeatureTableFieldValue({
+            layerId: this._layerId,
+            feature,
+            property: header
+          })
+        });
         //set private attribute unique value
         this.setUniquePropertyToStateFeature(orderedProperties, feature);
         return orderedProperties;
@@ -169,6 +175,7 @@ proto.deleteFeature = function(uid) {
  * @returns {Promise<unknown>}
  */
 proto.copyFeature = function(uid) {
+  const EditingService = require('./editingservice');
   return new Promise((resolve, reject) => {
     const feature = this._features
       .find(feature => feature.getUid() === uid)
@@ -185,12 +192,11 @@ proto.copyFeature = function(uid) {
         const feature = outputs.features[outputs.features.length -1];
         const newFeature = {};
         Object.entries(this.state.features[0]).forEach(([key, value]) => {
-          if (this._syncfeatures) {
-            //need to get last feature add to
-            newFeature[key] = this._syncfeatures[this._syncfeatures.length -1].get(key);
-          } else {
-            newFeature[key] = feature.get(key);
-          }
+          newFeature[key] = EditingService.getFeatureTableFieldValue({
+            layerId: this._layerId,
+            feature,
+            property: key
+          });
         });
         newFeature.__gis3w_feature_uid = feature.getUid();
         this.state.features.push(newFeature);
@@ -212,6 +218,8 @@ proto.copyFeature = function(uid) {
  * @param uid
  */
 proto.editFeature = function(uid) {
+
+  const EditingService = require('./editingservice');
 
   const index = this._features.findIndex(feature => feature.getUid() === uid);
 
@@ -235,13 +243,11 @@ proto.editFeature = function(uid) {
       Object
         .entries(this.state.features[index])
         .forEach(([key, value]) => {
-          if (this._syncfeatures) {
-            this.state.features[index][key] = this._syncfeatures[index].get(key);
-            this.setUniquePropertyToStateFeature(this.state.features[index], this._syncfeatures[index]);
-          } else {
-            this.state.features[index][key] = feature.get(key);
-          }
-
+          this.state.features[index][key] = EditingService.getFeatureTableFieldValue({
+            layerId: this._layerId,
+            feature,
+            property: key
+          });
       });
     })
     .fail(err => console.log(err))

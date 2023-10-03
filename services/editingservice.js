@@ -1,4 +1,5 @@
 import API from '../api'
+import fi from "editing/config/i18n/fi";
 const {G3W_FID} = g3wsdk.constant;
 const {ApplicationState, ApplicationService} = g3wsdk.core;
 const {DataRouterService} = g3wsdk.core.data;
@@ -761,6 +762,11 @@ proto.resetDefault = function(){
   this.disableMapControlsConflict(false);
 };
 
+/**
+ *
+ * @param layer
+ * @private
+ */
 proto._attachLayerWidgetsEvent = function(layer) {
   const fields = layer.getEditingFields();
   for (let i=0; i < fields.length; i++) {
@@ -891,14 +897,32 @@ proto.getCurrentWorkflowData = function() {
   };
 };
 
+/**
+ *
+ * @param layerId
+ * @param relation
+ * @param feature
+ * @returns {BigUint64Array}
+ */
 proto.getRelationsAttributesByFeature = function({layerId, relation, feature}={}) {
   const layer = this.getToolBoxById(layerId).getLayer();
   const relations = this.getRelationsByFeature({layerId, relation, feature});
   return relations.map(relation => {
+    const fields = layer.getFieldsWithValues(relation, {
+      relation: true
+    }).forEach(field => ({
+      ...field,
+      value: this.getFeatureTableFieldValue({
+        layerId,
+        feature: relation,
+        property: field.name
+        })
+      })
+    );
+
+    console.log(layerId, fields)
     return {
-      fields: layer.getFieldsWithValues(relation, {
-        relation: true
-      }),
+      fields,
       id: relation.getId()
     };
   });
@@ -922,12 +946,15 @@ proto.getRelationsByFeature = function({layerId, relation, feature, layerType}={
     relation
   });
   //get features of relation child layers
-  //need to check is sync source
-  const features = this.getLayerById(layerId).getEditingSyncSource()
-    ? this.getLayerById(layerId).readEditingSyncFeatures()
-    : this.getLayerById(layerId).readEditingFeatures();
+  const features = this.getLayerById(layerId).readEditingFeatures();
   //Loop relation fields
-  const featuresValues = relationField.map(rField => feature.get(rField));
+  const featuresValues = relationField.map(rField => {
+    return this.getFeatureTableFieldValue({
+      layerId,
+      feature,
+      property: rField
+    })
+  })
   return features.filter(feature => {
     return ownField.reduce((bool, oField, index) => {
       return bool && feature.get(oField) == featuresValues[index]
@@ -1833,6 +1860,34 @@ proto.getExternalLayersWithSameGeometryOfLayer = function(layer){
     }
   });
 };
+
+/**
+ * @since 3.7.0
+ * @param opts.layerId
+ * @param opts.feature ol feature
+ * @param opts.property <String>
+ * @returns value
+ */
+proto.getFeatureTableFieldValue = function({
+  layerId,
+  feature,
+  property
+}={}) {
+  const keyValuesFields = this.getLayerById(layerId).getEditingKeyValuesFields();
+  let value = feature.get(property);
+  if (null !== value && keyValuesFields.length > 0) {
+    const keyValues = keyValuesFields
+      .reduce((accumulator, field) => {
+        accumulator[field.name] = field.input.options.values;
+        return accumulator;
+      }, {});
+    if (keyValues[property]) {
+      //need to get last feature add to
+      return keyValues[property].find(keyValue => value == keyValue.value).key;
+    }
+  }
+  return value;
+}
 
 EditingService.EDITING_FIELDS_TYPE = ['unique'];
 

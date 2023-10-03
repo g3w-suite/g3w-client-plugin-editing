@@ -365,7 +365,7 @@
       },
 
       relationsAttributesSubsetLength(relation) {
-        return this.relationAttributesSubset(relation).length;
+        return this.relationAttributesSubset(relation).length > 0;
       },
 
       relationsFields(relation) {
