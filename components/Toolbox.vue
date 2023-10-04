@@ -15,7 +15,7 @@
             </div>
           </div>
           <div class="panel-title" :class="[father ? 'col-md-6' : 'col-md-8']" v-t-plugin:pre="'editing.toolbox.title'">{{ state.title }}</div>
-          <div v-disabled="!state.startstopediting" data-placement="left" data-toggle="tooltip" ref="editingbutton"
+          <div v-disabled="editDisabled" data-placement="left" data-toggle="tooltip" ref="editingbutton"
                @click.stop="toggleEditing"
                class="start-editing editbtn skin-tooltip-left"
                :class="{'pull-right': !isMobile(), 'enabled' : isLayerReady,  'g3w-icon-toggled' : state.editing.on}" v-t-title:plugin="edit_layer_tooltip">
@@ -63,7 +63,7 @@
       data() {
         return {
           active: false,
-          currenttoolhelpmessage: null
+          currenttoolhelpmessage: null,
         }
       },
       components: {
@@ -91,6 +91,12 @@
         }
       },
       computed: {
+        /**
+         * @since v3.7.0
+         */
+        editDisabled(){
+          return !this.state.startstopediting && this.state.loading;
+        },
         toolsrow1(){
           return this.state.tools.filter(tool => tool.row === 1);
         },
