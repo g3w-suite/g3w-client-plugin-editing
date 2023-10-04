@@ -1,5 +1,4 @@
 import API from '../api'
-import fi from "editing/config/i18n/fi";
 const {G3W_FID} = g3wsdk.constant;
 const {ApplicationState, ApplicationService} = g3wsdk.core;
 const {DataRouterService} = g3wsdk.core.data;
@@ -720,8 +719,8 @@ proto.addEvents = function({types=[], id, fnc}={}) {
   }));
 };
 
-proto.runEventHandler = function({type, id} = {}) {
-  this._events[type] && this._events[type][id] && this._events[type][id].forEach(fnc => fnc());
+proto.runEventHandler = async function({type, id} = {}) {
+  await (this._events[type] && this._events[type][id] && Promise.allSettled(this._events[type][id].map(fnc => fnc())));
 };
 
 /**
@@ -781,42 +780,48 @@ proto._attachLayerWidgetsEvent = function(layer) {
             types: ['start-editing', 'show-relation-editing'],
             id: layer.getId(),
             fnc() {
-              // remove all values
-              loading.state = 'loading';
-              field.input.options.values = [];
-              const relationLayer = CatalogLayersStoresRegistry.getLayerById(layer_id);
-              if (relationLayer) {
+              return new Promise((resolve, reject) => {
+                // remove all values
+                loading.state = 'loading';
+                field.input.options.values = [];
+                const relationLayer = CatalogLayersStoresRegistry.getLayerById(layer_id);
                 if (relationLayer) {
-                  relationLayer.getDataTable({
-                    ordering: key
-                  }).then(response => {
-                    if (response && response.features) {
-                      const features = response.features;
-                      self.fireEvent('autocomplete', {
-                        field,
-                        features
-                      });
-                      for (let i = 0; i < features.length; i++) {
-                        field.input.options.values.push({
-                          key: features[i].properties[key],
-                          value: features[i].properties[value]
-                        })
+                  if (relationLayer) {
+                    relationLayer.getDataTable({
+                      ordering: key
+                    }).then(response => {
+                      if (response && response.features) {
+                        const features = response.features;
+                        self.fireEvent('autocomplete', {
+                          field,
+                          features
+                        });
+                        for (let i = 0; i < features.length; i++) {
+                          field.input.options.values.push({
+                            key: features[i].properties[key],
+                            value: features[i].properties[value]
+                          })
+                        }
+                        loading.state = 'ready';
+                        resolve(field.input.options.values);
                       }
-                      loading.state = 'ready';
-                    }
-                  }).fail(error => {
-                    loading.state = 'error'
-                  });
+                    }).fail(error => {
+                      loading.state = 'error';
+                      reject(error);
+                    });
+                  } else {
+                    loading.state = 'error';
+                    reject();
+                  }
                 } else {
-                  loading.state = 'error'
+                  self.fireEvent('autocomplete', {
+                    field,
+                    features: []
+                  });
+                  loading.state = 'ready';
+                  resolve([]);
                 }
-              } else {
-                self.fireEvent('autocomplete', {
-                  field,
-                  features: []
-                });
-                loading.state = 'ready';
-              }
+              })
             }
           })
         }
@@ -908,21 +913,10 @@ proto.getRelationsAttributesByFeature = function({layerId, relation, feature}={}
   const layer = this.getToolBoxById(layerId).getLayer();
   const relations = this.getRelationsByFeature({layerId, relation, feature});
   return relations.map(relation => {
-    const fields = layer.getFieldsWithValues(relation, {
-      relation: true
-    }).forEach(field => ({
-      ...field,
-      value: this.getFeatureTableFieldValue({
-        layerId,
-        feature: relation,
-        property: field.name
-        })
-      })
-    );
-
-    console.log(layerId, fields)
     return {
-      fields,
+      fields: layer.getFieldsWithValues(relation, {
+        relation: true
+      }),
       id: relation.getId()
     };
   });
@@ -946,15 +940,9 @@ proto.getRelationsByFeature = function({layerId, relation, feature, layerType}={
     relation
   });
   //get features of relation child layers
-  const features = this.getLayerById(layerId).readEditingFeatures();
+  const features = this._getFeaturesByLayerId(layerId);
   //Loop relation fields
-  const featuresValues = relationField.map(rField => {
-    return this.getFeatureTableFieldValue({
-      layerId,
-      feature,
-      property: rField
-    })
-  })
+  const featuresValues = relationField.map(rField => feature.get(rField));
   return features.filter(feature => {
     return ownField.reduce((bool, oField, index) => {
       return bool && feature.get(oField) == featuresValues[index]
@@ -1881,6 +1869,7 @@ proto.getFeatureTableFieldValue = function({
         accumulator[field.name] = field.input.options.values;
         return accumulator;
       }, {});
+
     if (keyValues[property]) {
       //need to get last feature add to
       return keyValues[property].find(keyValue => value == keyValue.value).key;
