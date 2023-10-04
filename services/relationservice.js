@@ -283,19 +283,13 @@ proto.startTableTool = function(relationtool, index) {
     const workflow = new EditTableFeatureWorkflow();
     workflow.start(options)
       .then(() => {
-        const syncEditingSourceFeature = options.inputs.layer.getEditingSyncSource()
-            && options.inputs.layer.getEditingSyncSource().getFeatureById(options.inputs.features[0].getId());
         //get relation layer fields
         this._getRelationFieldsValue(relationfeature)
-          .fields.forEach(_field => {
+          .forEach(_field => {
             relation.fields.forEach(field => {
               if (field.name === _field.name) {
                 //in case of sync feature get data value of sync feature
-                if (syncEditingSourceFeature) {
-                  field.value = syncEditingSourceFeature.get(field.name);
-                } else {
-                  field.value = _field.value;
-                }
+                field.value = _field.value;
               }
             })
           });
@@ -792,6 +786,18 @@ proto._getRelationFeature = function(featureId) {
 };
 
 /**
+ * Get value from feature if layer has key value
+ * @since v3.7.0
+ */
+proto.getRelationFeatureValue = function(featureId, property) {
+  return this.getEditingService().getFeatureTableFieldValue({
+    layerId: this._relationLayerId,
+    feature: this._getRelationFeature(featureId),
+    property
+  })
+};
+
+/**
  * Method to unlink relation
  * @param index
  * @param dialog
@@ -950,7 +956,8 @@ proto.getUnlinkedStyle = function() {
  * @returns {*[]}
  */
 proto.relationFields = function(relation) {
-  return relation.fields.map(({label, value}) => ({
+  return relation.fields.map(({label, name, value}) => ({
+    name,
     label,
     value
   }))
