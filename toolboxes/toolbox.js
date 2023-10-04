@@ -252,8 +252,8 @@ proto.start = function(options={}) {
   
   const handlerAfterSessionGetFeatures = promise => {
     this.emit(EventName);
-    this.setLayerUniqueFieldValues().then(()=>{
-      this.editingService.runEventHandler({
+    this.setLayerUniqueFieldValues().then(async () =>{
+      await this.editingService.runEventHandler({
         type: EventName,
         id
       });
