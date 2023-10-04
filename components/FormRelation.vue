@@ -230,7 +230,6 @@
 </template>
 
 <script>
-  import EditingService from "editing/services/editingservice";
 
   const { tPlugin: t } = g3wsdk.core.i18n;
   const { toRawType }   = g3wsdk.core.utils;
