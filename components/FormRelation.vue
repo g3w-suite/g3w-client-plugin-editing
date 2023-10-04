@@ -195,7 +195,7 @@
               </td>
               <td
                 v-for  = "attribute in relationAttributesSubset(relation)"
-                v-show = "!showAllFieds(index)"
+                v-show = "!showAllFields(index)"
               >
                 <!-- MEDIA ATTRIBUTE-->
                 <div
@@ -216,7 +216,7 @@
                   target    = "_blank">{{ getValue(attribute.value) }}
                 </a>
                 <!-- TEXTUAL ATTRIBUTE -->
-                <span v-else>{{ getValue(attribute.value) }}</span>
+                <span v-else>{{ getValueFromKeyValueWidget(relation, attribute.name) }}</span>
               </td>
             </tr>
           </tbody>
@@ -356,6 +356,7 @@
         fields.forEach(field => {
           if (!Array.isArray(field.value)) {
             attributes.push({
+              name: field.name,
               label: field.label,
               value: field.value
             })
@@ -376,7 +377,7 @@
         this.showallfieldsindex = this.showallfieldsindex == index ? null : index;
       },
 
-      showAllFieds(index) {
+      showAllFields(index) {
         return this.showallfieldsindex == index;
       },
 
@@ -386,6 +387,16 @@
 
       isLink(field) {
         return ['photo', 'link'].indexOf(this.getFieldType(field)) !== -1;
+      },
+      /**
+       * Return value from key value widget
+       * @since v3.7.0
+       * @param relation
+       * @param attribute
+       * @returns String
+       */
+      getValueFromKeyValueWidget(relation, attribute) {
+        return this.getValue(this._service.getRelationFeatureValue(relation.id, attribute));
       },
 
       getValue(value) {
@@ -553,9 +564,12 @@
 
       if (!this.loadEventuallyRelationValuesForInputs) {
         const EditingService = require('../services/editingservice');
-        EditingService.runEventHandler({
+        await EditingService.runEventHandler({
           type: 'show-relation-editing',
-          id:   EditingService._getRelationId({ layerId: this.layerId, relation: this.relation }),
+          id:   EditingService._getRelationId({
+            layerId: this.layerId,
+            relation: this.relation
+          }),
           component: this,
         });
         this.loadEventuallyRelationValuesForInputs = true;
