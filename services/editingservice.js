@@ -777,6 +777,9 @@ proto._attachLayerWidgetsEvent = function(layer) {
         const self = this;
         if (!usecompleter) {
           this.addEvents({
+            /**
+             * @TODO need to avoid to call the same fnc to same event many times to avoid waste server request time
+             */
             types: ['start-editing', 'show-relation-editing'],
             id: layer.getId(),
             fnc() {
