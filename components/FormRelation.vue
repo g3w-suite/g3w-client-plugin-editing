@@ -148,7 +148,7 @@
         style = "padding:0;"
       >
         <table
-          v-if  = "showTable"
+          v-if  = "relationsLength"
           class = "table g3wform-relation-table table-striped"
           style = "width:100%"
         >
@@ -272,8 +272,8 @@
     methods: {
 
       resize() {
-        // skip when hidden
-        if (this.active && 'none' !== this.$el.style.display) {
+        // skip when ..
+        if (!(this.active && 'none' !== this.$el.style.display)) {
           return;
         }
 
@@ -428,8 +428,8 @@
       /**
        * @returns { boolean }
        */
-      showTable() {
-        return this.relations.length > 0 && this.show;
+      relationsLength() {
+        return this.relations.length > 0;
       },
 
       /**
