@@ -91,12 +91,14 @@
         }
       },
       computed: {
+
         /**
-         * @since v3.7.0
+         * @since g3w-client-plugin-editing@v3.7.0
          */
         editDisabled(){
-          return !this.state.startstopediting && this.state.loading;
+          return this.state.loading && !this.state.startstopediting;
         },
+
         toolsrow1(){
           return this.state.tools.filter(tool => tool.row === 1);
         },

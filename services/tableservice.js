@@ -89,11 +89,12 @@ inherit(TableService, G3WObject);
 const proto = TableService.prototype;
 
 /**
- * Method to set private unique property with value to elements
- * of table
- * @since v3.7.0
+ * Set private unique property with value to elements of table
+ * 
  * @param stateObj
  * @param feature
+ * 
+ * @since g3w-client-plugin-editing@v3.7.0
  */
 proto.setUniquePropertyToStateFeature = function(stateObj, feature) {
   stateObj.__gis3w_feature_uid = feature.getUid();

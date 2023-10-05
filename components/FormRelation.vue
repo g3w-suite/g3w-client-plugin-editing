@@ -394,12 +394,14 @@
       isLink(field) {
         return ['photo', 'link'].indexOf(this.getFieldType(field)) !== -1;
       },
+
       /**
-       * Return value from key value widget
-       * @since v3.7.0
        * @param relation
        * @param attribute
-       * @returns String
+       * 
+       * @returns { string } value from key-value widget
+       * 
+       * @since g3w-client-plugin-editing@v3.7.0
        */
       getValueFromKeyValueWidget(relation, attribute) {
         return this.getValue(this._service.getRelationFeatureValue(relation.id, attribute));
@@ -452,7 +454,7 @@
       /**
        * @returns {Promise<void>}
        * 
-       * @since 3.7.0
+       * @since g3w-client-plugin-editing@v3.7.0
        */
       async updateTable() {
         this.destroyTable();     // destroy old table

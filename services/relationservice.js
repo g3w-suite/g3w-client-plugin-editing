@@ -787,14 +787,17 @@ proto._getRelationFeature = function(featureId) {
 
 /**
  * Get value from feature if layer has key value
- * @since v3.7.0
+ * 
+ * @since g3w-client-plugin-editing@v3.7.0
  */
 proto.getRelationFeatureValue = function(featureId, property) {
-  return this.getEditingService().getFeatureTableFieldValue({
-    layerId: this._relationLayerId,
-    feature: this._getRelationFeature(featureId),
-    property
-  })
+  return this
+    .getEditingService()
+    .getFeatureTableFieldValue({
+      layerId: this._relationLayerId,
+      feature: this._getRelationFeature(featureId),
+      property,
+    });
 };
 
 /**
