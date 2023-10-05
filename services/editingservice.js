@@ -1248,7 +1248,7 @@ proto.stop = function() {
       // check if temp changes are waiting to save on server
       if (toolbox.getSession().getHistory().state.commit) {
         // ask to commit before exit
-        commitpromises.push(this.commit(toolbox, true));
+        commitpromises.push(this.commit({toolbox, modal:true}));
       }
     });
     $.when.apply(this, commitpromises)
@@ -1592,7 +1592,7 @@ proto.commitDirtyToolBoxes = function(layerId) {
   return new Promise((resolve, reject) => {
     const toolbox = this.getToolBoxById(layerId);
     if (toolbox.isDirty() && toolbox.hasDependencies()) {
-      this.commit(toolbox)
+      this.commit({toolbox})
         .then(() => {
           resolve(toolbox);
         })
