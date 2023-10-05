@@ -90,6 +90,7 @@
         >
           <!-- HAS RELATION -->
           <div v-if="hasRelations" class="has-relations" style="color: #000000">
+            <span :class="g3wtemplate.font['info']" style="color: #007bff; padding-right: 2px"></span>
             <span v-t-plugin="'editing.messages.toolbox_has_relation'"></span>
             <divider/>
           </div>

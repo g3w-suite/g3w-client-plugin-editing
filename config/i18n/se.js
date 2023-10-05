@@ -94,7 +94,7 @@ export default {
     delete_feature_relations: "Om egenskapen saknar bindande relationer blir dessa relationer föräldralösa. Vi rekommenderar att du behandlar dessa relationer innan du lämnar programmet",
     unlink_relation: "Vill du ta bort relationen?",
     commit_feature: "Ska ändringarna sparas?",
-    toolbox_has_relation: "&#x2139;&#xFE0F; detta lager är en del av en relation",
+    toolbox_has_relation: "detta lager är en del av en relation",
     saved: "Uppgifterna sparades",
     saved_local:"Uppgifterna sparades lokalt.",
     loading_data: "Uppgifterna laddas",

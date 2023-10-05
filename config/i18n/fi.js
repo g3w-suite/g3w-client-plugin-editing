@@ -94,7 +94,7 @@ export default {
     delete_feature_relations: "Mikäli ominaisuudella on sitovia relaatioita, näistä relaatiosta tulee orpoja. Suosittelemme käsittelemään nämä relaatiot ennen poistamista",
     unlink_relation: "Haluatko poistaa relaation?",
     commit_feature: "Tallennetaanko muutokset?",
-    change_toolbox_relation: "&#x2139;&#xFE0F; tämä kerros on osa relaatiota",
+    toolbox_has_relation: "tämä kerros on osa relaatiota",
     saved: "Tiedot tallennettu onnistuneesti",
     saved_local:"Tiedot on tallennettu onnistuneesti paikallisesti.",
     loading_data: "Ladataan tietoja",
