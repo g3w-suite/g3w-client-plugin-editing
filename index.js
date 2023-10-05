@@ -1,3 +1,4 @@
+import './g3wsdk';
 import pluginConfig from './config';
 const {base, inherit} = g3wsdk.core.utils;
 const {Plugin:BasePlugin} = g3wsdk.core.plugin;
