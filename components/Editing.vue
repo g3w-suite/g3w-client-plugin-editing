@@ -155,9 +155,19 @@
       /**
        * @param toolboxId
        */
-      startToolBox(toolboxId) {
+      async startToolBox(toolboxId) {
         const toolbox = this._getToolBoxById(toolboxId);
         if (ApplicationState.online && toolbox.canEdit()) {
+          //check if a dependency layer (in relation) has some changes not commietd
+          const dirtyId = toolbox.getDependencies()
+            .find(id => this._getToolBoxById(id).isDirty());
+          if (dirtyId) {
+            //if there is a layer with not saved/committed changes ask before get start toolbox
+            //otherwise changes made on relation layers are not sync with current database state
+            //example Join 1:1 fields
+            try      { await this.$options.service.commitDirtyToolBoxes(dirtyId); }
+            catch(e) { console.warn(e); }
+          }
           toolbox.start();
         }
       },
@@ -230,12 +240,6 @@
         const toolbox   = this._getToolBoxById(toolboxId);      // get toolbox by id
         const toolboxes = this.$options.service.getToolBoxes(); // get all toolboxes
         const selected  = toolboxes.find(t => t.isSelected());  // check if exist already toolbox selected (first time)
-
-        // check if exist selected toolbox
-        if (selected && selected.getDependencies().length > 0 && selected.isDirty()){
-          try      { await this.$options.service.commitDirtyToolBoxes(selected.getId()); }
-          catch(e) { console.warn(e); }
-        }
 
         // set already selected false
         if (selected) {
