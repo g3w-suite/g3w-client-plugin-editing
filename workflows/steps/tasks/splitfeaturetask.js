@@ -1,3 +1,5 @@
+import { cloneFeature } from '../../../utils/cloneFeature'
+
 const { base, inherit }  = g3wsdk.core.utils;
 const { splitFeatures } = g3wsdk.core.geoutils;
 const { Feature } = g3wsdk.core.layer.features;
@@ -101,7 +103,7 @@ proto._handleSplitFeature = async function({feature, inputs, context, splittedGe
       session.pushUpdate(layerId, feature, oriFeature);
 
     } else {
-      const newFeature = oriFeature.cloneNew(layer.getPkField());
+      const newFeature = cloneFeature(oriFeature, layer);
       newFeature.setGeometry(splittedGeometry);
 
       this.setNullMediaFields({

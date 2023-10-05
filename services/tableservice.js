@@ -1,3 +1,5 @@
+import { cloneFeature } from '../utils/cloneFeature';
+
 const {base, inherit} = g3wsdk.core.utils;
 const {G3WObject} = g3wsdk.core;
 const {GUI} = g3wsdk.gui;
@@ -177,9 +179,10 @@ proto.deleteFeature = function(uid) {
 proto.copyFeature = function(uid) {
   const EditingService = require('./editingservice');
   return new Promise((resolve, reject) => {
-    const feature = this._features
-      .find(feature => feature.getUid() === uid)
-      .cloneNew(this._inputs.layer.getEditingLayer().getPkField());
+    const feature = cloneFeature(
+      this._features.find(f => f.getUid() === uid),
+      this._inputs.layer.getEditingLayer()
+    );
     const addTableFeatureWorflow = require('../workflows/addtablefeatureworkflow');
     this._workflow = new addTableFeatureWorflow();
     const inputs = this._inputs;

@@ -1864,7 +1864,12 @@ proto.getFeatureTableFieldValue = function({
   feature,
   property
 }={}) {
-  const keyValuesFields = this.getLayerById(layerId).getEditingKeyValuesFields();
+  const keyValuesFields = this
+    .getLayerById(layerId)
+    .config
+    .editing
+    .fields
+    .filter(field => ['select_autocomplete', 'select'].includes(field.input.type))
   let value = feature.get(property);
   if (null !== value && keyValuesFields.length > 0) {
     const keyValues = keyValuesFields
