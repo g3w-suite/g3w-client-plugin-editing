@@ -73,7 +73,7 @@ const TableService = function(options = {}) {
           })
         });
         //set private attribute unique value
-        this.setUniquePropertyToStateFeature(orderedProperties, feature);
+        orderedProperties.__gis3w_feature_uid = feature.getUid();
         return orderedProperties;
       });
     }
@@ -87,18 +87,6 @@ const TableService = function(options = {}) {
 inherit(TableService, G3WObject);
 
 const proto = TableService.prototype;
-
-/**
- * Set private unique property with value to elements of table
- * 
- * @param stateObj
- * @param feature
- * 
- * @since g3w-client-plugin-editing@v3.7.0
- */
-proto.setUniquePropertyToStateFeature = function(stateObj, feature) {
-  stateObj.__gis3w_feature_uid = feature.getUid();
-}
 
 /**
  *
@@ -152,13 +140,7 @@ proto.deleteFeature = function(uid) {
       <div style="font-size:1.2em;">${ relationinediting ?t('editing.messages.delete_feature_relations') : ''}</div>`,
       (result) => {
         if (result) {
-          let index;
-          const feature = this._features.find((feature, featureIdx) => {
-            if (feature.getUid() === uid) {
-              index = featureIdx;
-              return true;
-            }
-          });
+          const index   = this._features.findIndex(f => f.getUid() === uid);
           const session = this._context.session;
           const layerId = this._inputs.layer.getId();
           this._inputs.layer.getEditingSource().removeFeature(feature);
@@ -206,11 +188,9 @@ proto.copyFeature = function(uid) {
         this.state.features.push(newFeature);
         resolve(newFeature)
       })
-      .fail(err => {
-        reject(err)
-      })
+      .fail(reject)
       .always(() => {
-        //@TODO check input.features that grow in number
+        /** @TODO check input.features that grow in number */
         console.log('here we are')
       })
 
@@ -225,7 +205,7 @@ proto.editFeature = function(uid) {
 
   const EditingService = require('./editingservice');
 
-  const index = this._features.findIndex(feature => feature.getUid() === uid);
+  const index = this._features.findIndex(f => f.getUid() === uid);
 
   const feature = this._features[index];
 
@@ -254,26 +234,22 @@ proto.editFeature = function(uid) {
           });
       });
     })
-    .fail(err => console.log(err))
+    .fail(console.warn)
     .always(() =>  this._workflow.stop())
 };
 
 /**
- *
- * @param featuresIndex
+ * @param ids features indexes
  */
-proto.linkFeatures = function(featuresIndex=[]){
-  this._promise.resolve({
-    features: featuresIndex.map(index => this._features[index])
-  })
+proto.linkFeatures = function(ids = []) {
+  this._promise.resolve({ features: ids.map(index => this._features[index]) })
 };
 
 /**
- *
  * @param index
  */
 proto.linkFeature = function(index) {
-  this._promise.resolve({features: [this._features[index]]});
+  this._promise.resolve({ features: [this._features[index]] });
 };
 
 module.exports = TableService;
