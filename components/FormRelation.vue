@@ -219,7 +219,7 @@
                                 target    = "_blank">{{ getValue(attribute.value) }}
                         </a>
                         <!-- TEXTUAL ATTRIBUTE -->
-                        <span v-else>{{ getValueFromKeyValueWidget(relation, attribute.name) }}</span>
+                        <span v-else>{{ getValue(_service.getRelationFeatureValue(relation.id, attribute.name)) }}</span>
                     </td>
                 </tr>
                 </tbody>
@@ -395,18 +395,6 @@
         return ['photo', 'link'].indexOf(this.getFieldType(field)) !== -1;
       },
 
-      /**
-       * @param relation
-       * @param attribute
-       * 
-       * @returns { string } value from key-value widget
-       * 
-       * @since g3w-client-plugin-editing@v3.7.0
-       */
-      getValueFromKeyValueWidget(relation, attribute) {
-        return this.getValue(this._service.getRelationFeatureValue(relation.id, attribute));
-      },
-
       getValue(value) {
         if (value && 'Object' === toRawType(value)) {
           value = value.value;
@@ -575,11 +563,8 @@
         this.loading = true;
         try {
           await EditingService.runEventHandler({
-            type: 'show-relation-editing',
-            id:   EditingService._getRelationId({
-              layerId: this.layerId,
-              relation: this.relation
-            }),
+            type:      'show-relation-editing',
+            id:        EditingService._getRelationId({ layerId: this.layerId, relation: this.relation }),
             component: this,
           });
         } catch(err) {
