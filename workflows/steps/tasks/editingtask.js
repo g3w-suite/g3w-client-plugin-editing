@@ -732,6 +732,7 @@ proto.listenRelation1_1FieldChange = function({
       const relationId   = relation.getId();                                // get relation Id
       const childLayerId = relation.getChild();                             // get relation child layer id
       const fatherField  = relation.getFatherField();
+      const childField  = relation.getChildField()[0];                      //get Child Field
 
       // NB:
       // need to check if editable when opening form task 
@@ -788,7 +789,7 @@ proto.listenRelation1_1FieldChange = function({
 
             // request server data and then update cache
             try {
-              const { data } = await DataRouterService.getData('search:features', {  // get feature of relation layer based on value of relation field 
+              const { data } = await DataRouterService.getData('search:features', {  // get feature of relation layer based on value of relation field
                 inputs: {
                   layer,
                   formatter: 0,
@@ -796,7 +797,7 @@ proto.listenRelation1_1FieldChange = function({
                     layer,
                     search_endpoint: 'api',
                     inputs: [{
-                      attribute: relationField.name,
+                      attribute: childField,
                       value,
                     }]
                   }),
