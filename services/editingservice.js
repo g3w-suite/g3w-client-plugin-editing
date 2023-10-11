@@ -208,8 +208,6 @@ function EditingService() {
    */
   this._ready = function() {
 
-    this.registerFeaturesLockByOtherUserSetterHandler();
-
     // @since 3.7.0
     this.setRelations1_1FieldsEditable();
 
@@ -390,25 +388,6 @@ proto.getRelation1_1ByLayerId = function(layerId) {
  */
 proto.setShowSelectLayers = function(bool=true) {
   this.state.showselectlayers = bool;
-};
-
-/**
- * @FIXME add description
- */
-proto.registerFeaturesLockByOtherUserSetterHandler = function() {
-  this
-    .getLayers()
-    .forEach(editingLayer => {
-      editingLayer
-        .getFeaturesStore()
-        .onafter('featuresLockedByOtherUser', () => {
-          GUI.showUserMessage({
-            type: 'warning',
-            subtitle: editingLayer.getName().toUpperCase(),
-            message: 'plugins.editing.messages.featureslockbyotheruser'
-          })
-        });
-    });
 };
 
 /**
@@ -1363,18 +1342,25 @@ proto.stopSessionChildren = function(layerId) {
     })
 };
 
-proto.fatherInEditing = function(layerId) {
-  let inEditing = false;
-  let toolbox;
-  let relationLayerFathers = this.getLayerById(layerId).getFathers();
-  relationLayerFathers.forEach(id => {
-    toolbox = this.getToolBoxById(id);
-    if (toolbox && toolbox.inEditing()) {
-      inEditing = true;
-      return false;
-    }
-  });
-  return inEditing;
+/**
+ * Check if father relation is editing and has commit feature
+ * @param layerId
+ * @returns father in editing
+ */
+proto.fathersInEditing = function(layerId) {
+  return this.getLayerById(layerId)
+    .getFathers()
+    .filter(id => {
+      const toolbox = this.getToolBoxById(id);
+      if (toolbox && toolbox.inEditing() && toolbox.isDirty()) {
+        //get temporary relations object
+        const {relations={}} = toolbox.getSession().getCommitItems();
+        //check if layerId has some changes
+        return Object.keys(relations).find(relationLayerId => {
+          return layerId === relationLayerId
+        });
+      }
+    });
 };
 
 /**
@@ -1453,7 +1439,7 @@ proto.createEditingDataOptions = function(filterType = 'all', options = {}) {
     // relation 1:1
     case '1:1':
       filter = {
-        field: options.relation.getChildField() + '|eq|' + options.feature.get(options.relation.getFatherField()),
+        field: options.relation.getChildField()[0] + '|eq|' + options.feature.get(options.relation.getFatherField()[0]),
         type: 'editing',
       }
       break;
@@ -1508,13 +1494,20 @@ proto._getRelationId = function({
   return fatherId === layerId ? childId: fatherId;
 };
 
+/**
+ *
+ * @param layerId
+ * @param opts
+ * @returns {Promise<Awaited<unknown>[]>}
+ */
 proto.getLayersDependencyFeatures = function(layerId, opts = {}) {
   const promises = [];
   const layer = this.getLayerById(layerId);
   const relations = opts.relations ?
     opts.relations :
     layer.getChildren().length && layer.getRelations() ?
-      this._filterRelationsInEditing({relations: layer.getRelations()
+      this._filterRelationsInEditing({
+        relations: layer.getRelations()
           .getArray()
           .filter(relation => relation.getFather() === layerId),
         layerId
@@ -1522,12 +1515,16 @@ proto.getLayersDependencyFeatures = function(layerId, opts = {}) {
       [];
   const online = ApplicationState.online;
   relations.forEach(relation => {
-    if (relation.setLoading) relation.setLoading(true);
-    else relation.loading = true;
+    if (relation.setLoading) {
+      relation.setLoading(true);
+    } else {
+      relation.loading = true;
+    }
     const id = this._getRelationId({
       layerId,
       relation
     });
+    //Promise
     const promise = new Promise(resolve => {
       opts.relation = relation;
       opts.layerId = layerId;
@@ -1537,9 +1534,14 @@ proto.getLayersDependencyFeatures = function(layerId, opts = {}) {
       const options = this.createEditingDataOptions(filterType, opts);
       const session = this._sessions[id];
       const toolbox = this.getToolBoxById(id);
+      //check if si online and it has session
       if (online && session) {
+        //show bar loading
         toolbox.startLoading();
+        //check is session is already start
         if (session.isStarted()) {
+          //try to get feature from source
+          //without server reques
           this.getLayersDependencyFeaturesFromSource({
             layerId: id,
             relation,
@@ -1547,10 +1549,12 @@ proto.getLayersDependencyFeatures = function(layerId, opts = {}) {
             operator: opts.operator
           })
             .then(find => {
+              //if found
               if (find) {
                 resolve(id);
                 toolbox.stopLoading();
               } else {
+                //request features from server
                 session.getFeatures(options)
                   .always(promise => {
                     promise.always(() => {
@@ -1561,6 +1565,7 @@ proto.getLayersDependencyFeatures = function(layerId, opts = {}) {
               }
             })
         } else {
+          //start session and get features
           session.start(options)
             .always(promise => {
               promise.always(() => {
@@ -1570,6 +1575,7 @@ proto.getLayersDependencyFeatures = function(layerId, opts = {}) {
             });
         }
       } else {
+        //try to get feature from source
         this.getLayersDependencyFeaturesFromSource({
           layerId: id,
           relation,
@@ -1581,10 +1587,14 @@ proto.getLayersDependencyFeatures = function(layerId, opts = {}) {
     promises.push(promise);
   });
   // at the end se loading false
-  Promise.all(promises).finally(()=> relations.forEach(relation => {
-    if (relation.setLoading) relation.setLoading(false);
-    else relation.loading = false;
-  }));
+  Promise.all(promises)
+    .finally(()=> relations.forEach(relation => {
+      if (relation.setLoading) {
+        relation.setLoading(false);
+      } else {
+        relation.loading = false;
+      }
+    }));
   return Promise.all(promises);
 };
 
