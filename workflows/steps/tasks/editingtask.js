@@ -1,5 +1,6 @@
 import ChooseFeatureToEditVueComponent from '../../../components/ChooseFeatureToEdit.vue';
 import { VM }                          from '../../../eventbus';
+import fi from "editing/config/i18n/fi";
 
 const {
   base,
@@ -631,12 +632,14 @@ proto.chooseFeatureFromFeatures = function({
  *
  * @param opts.layerId Root layerId
  * @param opts.features Array of update/new features belong to Root layer
+ * @param opts.fields Array of form fields father
  * 
  * @since g3w-client-plugin-editing@v3.7.0
  */
-proto.handleRelation1_1LayerFields = function({
+proto.handleRelation1_1LayerFields = async function({
   layerId,
   features = [],
+  fields = []
 } = {}) {
 
   // skip when no features
@@ -644,190 +647,321 @@ proto.handleRelation1_1LayerFields = function({
     return;
   }
 
-  const isNew   = features[0].isNew();
   const service = this.getEditingService();
 
   // Get layer relation 1:1
-  service
+  const promises = service
     .getRelation1_1ByLayerId(layerId)
-    .forEach(relation => {
+    .map(relation => {
+      return new Promise(async (resolve) => {
+        // skip when layer is not a father layer (1:1 relation)
+        if (layerId !== relation.getFather()) {
+          return;
+        }
+        const fatherField = relation.getFatherField()[0];
+        const value = features[0].get(fatherField);
 
-      // skip when layer is not a father layer (1:1 relation)
-      if (layerId !== relation.getFather()) {
-        return;
-      }
+        //no set father field value. No set
+        if (null === value) {
+          return
+        }
 
-      // check if child relation layer is editable (in editing)
-      const childLayerId = relation.getChild();
-      const source       = service.getLayerById(childLayerId).getEditingSource();
-      let childFeature;
-      let newChild;
+        // check if child relation layer is editable (in editing)
+        const childLayerId = relation.getChild();
+        const childField  = relation.getChildField()[0];
+        const source       = service.getLayerById(childLayerId).getEditingSource();
+        let childFeature; // original child feature
+        let newChild; //eventually child feature cloned with changes
 
-      // get or create child feature
-      if (isNew) {
-        childFeature = new Feature();
-        childFeature.setTemporaryId();
-        source.addFeature(childFeature);
-        newChild = childFeature && childFeature;
-        // set name attribute to `null`
-        service
-          .getProjectLayerById(childLayerId)
-          .getEditingFields()
-          .forEach(field => childFeature.set(field.name, null)); 
-      } else {
-        childFeature = source.readFeatures().find(f => features[0].get(relation.getFatherField()) === f.get(relation.getChildField()));
-        newChild = childFeature && childFeature.clone();
-      }
+        //check if child feature is already add to
+        childFeature = source.readFeatures()
+          .find(f => f.get(childField) === value)
 
-      // Loop editable only field of father layerId when
-      // a child relation (1:1) is binded to current feature
-      if (childFeature) {
-        service
+        const fieldsUpdated = undefined !== service
           .getRelation1_1EditingLayerFieldsReferredToChildRelation(relation)
-          .filter(field => field.editable)
-          .forEach(field => { newChild.set(this.GetChildFieldNameFromRelation1_1({ relation, field }), features[0].get(field.name)); });
-      }
+          .find(({name}) => fields.find(f => f.name == name).update)
 
-      // check if father field is a Pk (Primary key) if feature is new
-      if (childFeature && isNew && service.getLayerById(layerId).isPkField(relation.getFatherField())) {
-        childFeature.set(relation.getChildField(), features[0].getId()); // setted temporary
-      }
+        const isNewChildFeature = undefined === childFeature;
 
-      // add relation
-      if (childFeature && isNew) {
-        this.getContext().session.pushAdd(childLayerId, newChild, false);
-      }
+        //check if fields related to child are changed
+        if (fieldsUpdated) {
+          //Check if we need to create new child feature
+          if (isNewChildFeature) {
+            //create feature for child layer
+            childFeature = new Feature();
+            childFeature.setTemporaryId();
+            // set name attribute to `null`
+            service
+              .getProjectLayerById(childLayerId)
+              .getEditingFields()
+              .forEach(field => childFeature.set(field.name, null));
+            //set father field value
+            childFeature.set(childField, fields.find(f => fatherField === f.name).value);
+            //add feature to child source
+            source.addFeature(childFeature);
+            //new feature and child feature are the same
+            newChild = childFeature;
+          } else {
+            //is update
+            if (childFeature) {
+              //clone child Feature so all changes apply by father are set to clone new feature
+              newChild = childFeature.clone();
+            }
+          }
 
-      // update relation
-      if (childFeature && !isNew) {
-        this.getContext().session.pushUpdate(childLayerId, newChild, childFeature);
-      }
+          //check if there is a childFeature to save
+          if (childFeature) {
+            // Loop editable only field of father layerId when
+            // a child relation (1:1) is bind to current feature
+            const editiableRelatedFieldChild = service
+              .getRelation1_1EditingLayerFieldsReferredToChildRelation(relation)
+              .filter(field => field.editable);
 
+            editiableRelatedFieldChild
+              .forEach(field => newChild.set(this.getChildFieldNameFromRelation1_1({ relation, field }), features[0].get(field.name)));
+
+            // add relation new relation
+            if (isNewChildFeature) {
+
+              // check if father field is a Pk (Primary key) if feature is new
+              if (service.getLayerById(layerId).isPkField(fatherField)) {
+                childFeature.set(childField, features[0].getId()); // set temporary
+              }
+
+              //if new need to add to session
+              this.getContext()
+                .session
+                .pushAdd(childLayerId, newChild, false);
+
+            } else {
+              //need to update source child feature
+              source.updateFeature(newChild);
+              //need to update
+              this.getContext()
+                .session
+                .pushUpdate(childLayerId, newChild, childFeature);
+
+            }
+          }
+        }
+
+        resolve();
+
+      })
     });
+
+  await Promise.allSettled(promises);
+}
+
+/**
+ * @since v3.7.0
+ * @param relation
+ * @param fatherFormRelationField
+ * @returns {Promise<{feature: *, locked: boolean}>}
+ * @private
+ */
+proto._getRelation1_1ChildFeature = async function({
+  relation,
+  fatherFormRelationField
+}) {
+  const service   = this.getEditingService(); //get editing service
+  const fatherLayerId = relation.getFather();
+  const childLayerId = relation.getChild();                             // get relation child layer id
+  const childField  = relation.getChildField()[0];
+  //lock feature false
+  let locked = false;
+  let feature = service.getLayerById(childLayerId)
+    .getEditingSource()
+    .readFeatures()
+    .find(f => f.get(childField) === fatherFormRelationField.value)
+  //get feature from server and lock
+  if (undefined === feature) {
+
+    const childFeatureStore = service.getLayerById(childLayerId).getFeaturesStore();
+
+    const unByKey = childFeatureStore.oncebefore(
+      'featuresLockedByOtherUser',
+      (features) => {
+        feature = features[0]
+      })
+
+    await service.getLayersDependencyFeatures(fatherLayerId, {
+      feature: new ol.Feature({
+        [fatherFormRelationField.name]: fatherFormRelationField.value
+      }),
+      relations: [relation]
+    });
+
+    //remove listener
+    childFeatureStore.un('featuresLockedByOtherUser', unByKey);
+
+    //in case of no locked check feature on source
+    if (undefined === feature) {
+
+      feature = service.getLayerById(childLayerId)
+        .getEditingSource()
+        .readFeatures()
+        .find(f => f.get(childField) === fatherFormRelationField.value)
+    }
+
+  }
+
+  //not find on source need to check if exist
+  if (undefined === feature) {
+
+    try {
+      const layer = service.getProjectLayerById(childLayerId);
+
+      const { data } = await DataRouterService.getData('search:features', {  // get feature of relation layer based on value of relation field
+        inputs: {
+          layer,
+          formatter: 0,
+          filter: createFilterFormInputs({
+            layer,
+            search_endpoint: 'api',
+            inputs: [{
+              attribute: childField,
+              value: fatherFormRelationField.value,
+            }]
+          }),
+          search_endpoint: 'api',
+        },
+        outputs: false,
+      });
+
+      if (data && data[0] && 1 === data[0].features.length) {                // NB: length == 1, due to 1:1 relation type
+        //locked
+        locked = true;
+        feature = data[0].features[0];
+      }
+    } catch(e) {
+      console.warn(e);
+    }
+  }
+
+  //return
+  return {
+    feature, //feature search
+    locked //locked status
+  }
 }
 
 /**
  * Listen changes on 1:1 relation fields (get child values from child layer)
  * 
- * @param layerId Current editing layer id
- * @param fields Array of form fields of current editing layer
- * 
+ * @param opts.layerId Current editing layer id
+ * @param opts.fields Array of form fields of current editing layer
+ *
  * @returns Array of watch function event to remove listen
  * 
  * @since g3w-client-plugin-editing@v3.7.0
  */
-proto.listenRelation1_1FieldChange = function({
+proto.listenRelation1_1FieldChange = async function({
   layerId,
   fields = [],
 } = {}) {
   const unwatches = []; // unwatches field value (event change)
-  const cache     = {}; // cache values of child relation layer based on relation field
-  const service   = this.getEditingService();
+  const service   = this.getEditingService(); //get editing service
 
   // get all relation 1:1 of current layer
-  this
-    .getEditingService()
-    .getRelation1_1ByLayerId(layerId)
-    .forEach(relation => {
-      const relationId   = relation.getId();                                // get relation Id
-      const childLayerId = relation.getChild();                             // get relation child layer id
-      const fatherField  = relation.getFatherField();
-      const childField  = relation.getChildField()[0];                      //get Child Field
+  for (const relation of this.getEditingService().getRelation1_1ByLayerId(layerId)) {
 
-      // NB:
-      // need to check if editable when opening form task 
-      // Not set this condition because maybe i ca be used this method
-      // on move task or other when current relationField, related to 1:1 relation
-      // it can be changed by default expression or in other way not only with form
-      const relationField = fields.find(f => fatherField.includes(f.name)); // get child layer field (for each relation)
+    const childLayerId = relation.getChild();                             // get relation child layer id
+    const fatherField  = relation.getFatherField();
+    const relationLockFeatures = {} //store value
 
-      // skip when ..
-      if (!(relationField && service.getLayerById(childLayerId))) {
-        return;
-      }
+    // NB:
+    // need to check if editable when opening form task
+    // Not set this condition because maybe i ca be used this method
+    // on move task or other when current fatherFormRelationField, related to 1:1 relation
+    // it can be changed by default expression or in other way not only with form
+    const fatherFormRelationField = fields.find(f => fatherField.includes(f.name)); // get father layer field (for each relation)
+    // skip when not relation field and not layer child is in editing
+    if (!(fatherFormRelationField && service.getLayerById(childLayerId))) {
+      return;
+    }
 
-      // field found and relation layer is in editing.
-      // it required the second condition because the field can be not editable,
-      // but it can be changed
+    //store original editable property of fields relation to child layer relation
+    const editableRelatedFatherChild = service
+      .getRelation1_1EditingLayerFieldsReferredToChildRelation(relation)
+      .reduce((accumulator, field) => {
+        const formField = fields.find(f => f.name === field.name)
+        accumulator[formField.name] = formField.editable;
+        return accumulator;
+      }, {});
 
-      // initialize cache with relation id
-      cache[relationId] = {};
+    fatherFormRelationField.input.options.loading.state = 'loading'; // show input bar loader
 
-      // get project layer
-      const layer = service.getProjectLayerById(childLayerId);
+    //get feature from child layer source
+    relationLockFeatures[fatherFormRelationField.value] = await this._getRelation1_1ChildFeature({
+      relation,
+      fatherFormRelationField,
+    })
 
-      // listen for relation field changes (vue watcher)
-      unwatches.push(
-        VM.$watch(
-          () => relationField.value,
-          async value => {
-            const is_cached = cache[relationId][value];            // check if value is cached
+    fatherFormRelationField.input.options.loading.state = null; // show input bar loader
 
-            // skip empty values
-            if (!value) {
-              relationField.input.options.loading.state = null; 
-              relationField.editable                    = true;
-              return;
-            }
+    //if locked need to set editable to false
+    //can update child
+    if (relationLockFeatures[fatherFormRelationField.value].locked) {
+      Object.keys(editableRelatedFatherChild)
+        .forEach(fn => fields.find(f => f.name === fn).editable = false);
+    }
 
-            relationField.editable                    = false;     // disable edit 
-            relationField.input.options.loading.state = 'loading'; // show input bar loader
+    //if not feature is on source child layer it mean it locked or not exist on server
+    //need to check
 
-            // skip server request (retrieve data from cache)
-            if (is_cached) {
-              cache[relationId][value]
-                .forEach((item) => {
-                  Object
-                    .entries(item)
-                    .forEach(([name, value]) => fields.find(f => f.name === name).value = value)
-                });
-              // reset edit state
-              relationField.input.options.loading.state = null; 
-              relationField.editable                    = true;
-              return;
-            }
+    // listen for relation field changes (vue watcher)
+    unwatches.push(
+      VM.$watch(
+        () => fatherFormRelationField.value,
+        async value => {
 
-            // request server data and then update cache
-            try {
-              const { data } = await DataRouterService.getData('search:features', {  // get feature of relation layer based on value of relation field
-                inputs: {
-                  layer,
-                  formatter: 0,
-                  filter: createFilterFormInputs({
-                    layer,
-                    search_endpoint: 'api',
-                    inputs: [{
-                      attribute: childField,
-                      value,
-                    }]
-                  }),
-                  search_endpoint: 'api',
-                },
-                outputs: false,
-              });
-              if (data && data[0] && 1 === data[0].features.length) {                // NB: length == 1, due to 1:1 relation type
-                cache[relation.getId()][value] = [];
-                // 
-                service
-                  .getRelation1_1EditingLayerFieldsReferredToChildRelation(relation) // field of root layers related to current relation
-                  .forEach(field => {
-                    const childValue = data[0].features[0].get(this.GetChildFieldNameFromRelation1_1({ relation, field }));
-                    fields.find(f => f.name === field.name).value = childValue;
-                    cache[relationId][value].push({ [field.name]: childValue });
-                  })
-              }
-            } catch(e) {
-              console.warn(e);
-            }
-
-            // reset edit state
-            relationField.input.options.loading.state = null; 
-            relationField.editable                    = true;
+          // skip empty values
+          if (!value) {
+            fatherFormRelationField.input.options.loading.state = null;
+            fatherFormRelationField.editable                    = true;
+            return;
           }
-        )
-      );
 
-    });
+          fatherFormRelationField.editable                    = false;     // disable edit
+          fatherFormRelationField.input.options.loading.state = 'loading'; // show input bar loader
+
+          if (undefined === relationLockFeatures[fatherFormRelationField.value]) {
+            //get feature from child layer source
+            try {
+
+              relationLockFeatures[fatherFormRelationField.value] = await this._getRelation1_1ChildFeature({
+                relation,
+                fatherFormRelationField
+              })
+
+            } catch (err) {
+              console.warn(err);
+            }
+          }
+
+          const {feature, locked} = relationLockFeatures[fatherFormRelationField.value];
+
+          Object.keys(editableRelatedFatherChild)
+            .forEach(fn => {
+              const field = fields.find(f => f.name === fn);
+              //set editable property
+              field.editable = locked
+                ? false
+                : editableRelatedFatherChild[fn];
+              //need to check if feature is new and not locked ot not present on source
+              field.value = feature
+                ? feature.get(this.getChildFieldNameFromRelation1_1({ relation, field }))
+                : null
+            });
+
+          // reset edit state
+          fatherFormRelationField.input.options.loading.state = null;
+          fatherFormRelationField.editable                    = true;
+        }
+      )
+    );
+  }
 
   return unwatches;
 };
@@ -844,7 +978,7 @@ proto.listenRelation1_1FieldChange = function({
  * 
  * @since g3w-client-plugin-editing@v3.7.0
  */
-proto.GetChildFieldNameFromRelation1_1 = function({
+proto.getChildFieldNameFromRelation1_1 = function({
   relation,
   field,
 } = {}) {
