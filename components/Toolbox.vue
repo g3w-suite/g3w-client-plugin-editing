@@ -266,10 +266,12 @@
 
       stopActiveTool() {
         this.$emit('stopactivetool', this.state.id);
+        this.select();
       },
 
       setActiveTool(toolId) {
         this.$emit('setactivetool', toolId, this.state.id);
+        this.select();
       },
 
     },
