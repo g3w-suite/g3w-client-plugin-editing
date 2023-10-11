@@ -178,20 +178,20 @@ proto.saveAll = function(fields) {
         newFeatures.forEach((newFeature, index)=> {
           session.pushUpdate(this.layerId, newFeature, this._originalFeatures[index]);
         });
-
         //check and handle if layer has relation 1:1
         this.handleRelation1_1LayerFields({
           layerId: this.layerId,
-          features: newFeatures
-        });
+          features: newFeatures,
+          fields
+        }).then(() => {
+          this.fireEvent('savedfeature', newFeatures); // called after saved
+          this.fireEvent(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
 
-        this.fireEvent('savedfeature', newFeatures); // called after saved
-        this.fireEvent(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
-
-        session.save();
-        resolve({
-          promise: this.promise
-        });
+          session.save();
+          resolve({
+            promise: this.promise
+          });
+        })
       })
     }
   })
@@ -234,21 +234,23 @@ proto._saveFeatures = async function({fields, promise, session, inputs}){
         .forEach((newFeature, index)=> session.pushUpdate(this.layerId, newFeature, this._originalFeatures[index]));
 
       //check and handle if layer has relation 1:1
+      //async
       this.handleRelation1_1LayerFields({
         layerId: this.layerId,
-        features: newFeatures
-      });
-
-      GUI.setModal(false);
-      this.fireEvent('savedfeature', newFeatures); // called after saved
-      this.fireEvent(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
-      // In case of save of child it means that child is updated so also parent
-      if (this._isContentChild) {
-        WorkflowsStack
-          .getParents()
-          .forEach(workflow => workflow.getContextService().setUpdate(true, {force: true}));
-      }
-      promise.resolve(inputs);
+        features: newFeatures,
+        fields
+      }).then(()=> {
+        GUI.setModal(false);
+        this.fireEvent('savedfeature', newFeatures); // called after saved
+        this.fireEvent(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
+        // In case of save of child it means that child is updated so also parent
+        if (this._isContentChild) {
+          WorkflowsStack
+            .getParents()
+            .forEach(workflow => workflow.getContextService().setUpdate(true, {force: true}));
+        }
+        promise.resolve(inputs);
+      })
     })
   } else {
 
@@ -360,8 +362,7 @@ proto.startForm = async function(options = {}) {
   }
 
   //listen eventually field relation 1:1 changes value
-  //@TODO check another way
-  this._unwatchs = this.listenRelation1_1FieldChange({
+  this._unwatchs = await this.listenRelation1_1FieldChange({
     layerId: this.layerId,
     fields: this._fields,
   })
