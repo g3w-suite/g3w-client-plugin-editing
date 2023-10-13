@@ -226,7 +226,8 @@ proto.editFeature = function(uid) {
       const feature = outputs.features[outputs.features.length -1];
       Object
         .entries(this.state.features[index])
-        .forEach(([key, value]) => {
+        .forEach(([key, _]) => {
+          console.log(key)
           this.state.features[index][key] = EditingService.getFeatureTableFieldValue({
             layerId: this._layerId,
             feature,

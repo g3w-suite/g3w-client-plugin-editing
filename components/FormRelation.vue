@@ -195,7 +195,7 @@
               </td>
               <td
                 v-for  = "attribute in relationAttributesSubset(relation)"
-                v-show = "!showAllFieds(index)"
+                v-show = "!showAllFields(index)"
               >
                 <!-- MEDIA ATTRIBUTE-->
                 <div
@@ -216,7 +216,7 @@
                   target    = "_blank">{{ getValue(attribute.value) }}
                 </a>
                 <!-- TEXTUAL ATTRIBUTE -->
-                <span v-else>{{ getValue(attribute.value) }}</span>
+                  <span v-else>{{ getValue(_service.getRelationFeatureValue(relation.id, attribute.name)) }}</span>
               </td>
             </tr>
           </tbody>
@@ -530,7 +530,7 @@
     },
 
     async activated() {
-      this.active                     = true;
+
       this.showAddVectorRelationTools = false;
 
       if (!this.loadEventuallyRelationValuesForInputs) {
@@ -552,6 +552,7 @@
       }
 
 
+      this.active                     = true;
 
       await this.$nextTick();
 

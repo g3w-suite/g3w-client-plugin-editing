@@ -1,6 +1,9 @@
 import API from '../api'
 
-const { G3W_FID }                     = g3wsdk.constant;
+const {
+  G3W_FID,
+  EDITING_FORMATTER_INPUT_FIELD_TYPES
+}                                     = g3wsdk.constant;
 const {
   ApplicationState,
   ApplicationService
@@ -2290,8 +2293,10 @@ proto.getFeatureTableFieldValue = function({
     .config
     .editing
     .fields
-    .filter(field => ['select_autocomplete', 'select'].includes(field.input.type))
+    .filter(field => EDITING_FORMATTER_INPUT_FIELD_TYPES.includes(field.input.type))
+
   let value = feature.get(property);
+
   if (null !== value && keyValuesFields.length > 0) {
     const keyValues = keyValuesFields
       .reduce((accumulator, field) => {
@@ -2301,7 +2306,12 @@ proto.getFeatureTableFieldValue = function({
 
     if (keyValues[property]) {
       //need to get last feature add to
-      return keyValues[property].find(keyValue => value == keyValue.value).key;
+      const findKeyValue = keyValues[property].find(keyValue => value == keyValue.value);
+      //need to be sure that key values used are get from server
+      //without error
+      if (findKeyValue) {
+        return findKeyValue.key;
+      }
     }
   }
   return value;

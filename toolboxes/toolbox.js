@@ -277,29 +277,29 @@ proto.start = function(options={}) {
 
   const handlerAfterSessionGetFeatures = promise => {
     this.emit(EventName);
-    this.setLayerUniqueFieldValues().then(async () =>{
-      await this.editingService.runEventHandler({
-        type: EventName,
-        id
-      });
-      promise
-        .then(features => {
-          this.stopLoading();
-          this.setEditing(true);
-          this.editingService.runEventHandler({
-            type: 'get-features-editing',
-            id,
-            options: {
-              features
-            }
-          });
+    this.setLayerUniqueFieldValues()
+      .then(async () => {
+        await this.editingService.runEventHandler({
+          type: EventName,
+          id
+        });
+        promise
+          .then(async features => {
+            this.stopLoading();
+            this.setEditing(true);
+            await this.editingService.runEventHandler({
+              type: 'get-features-editing',
+              id,
+              options: {
+                features
+              }
+            });
 
-          d.resolve({
-            features
+            d.resolve({features})
           })
-          .fail(error => {
+          .fail(async error => {
             GUI.notify.error(error.message);
-            this.editingService.runEventHandler({
+            await this.editingService.runEventHandler({
               type: 'error-editing',
               id,
               error
@@ -308,8 +308,9 @@ proto.start = function(options={}) {
             this.stopLoading();
             d.reject(error);
           })
-    });
-  };
+      });
+  }
+
   if (this._session) {
     if (!this._session.isStarted()) {
       //added case of mobile
