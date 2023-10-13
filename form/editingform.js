@@ -16,14 +16,18 @@ function EditingFormComponent(options = {}) {
     relationsOptions.inputs.features &&
     relationsOptions.inputs.features[relationsOptions.inputs.features.length - 1]
   );
-
   if (feature) {
     (
       feature.isNew()
         ? Promise.resolve()
-        : EditingService.getLayersDependencyFeatures(layerId, { feature, filterType: 'fid' })
+        : EditingService.getLayersDependencyFeatures(layerId, {
+          //@since v3.7.0 filter ONE (Join 1:1) relations
+          relations: options.layer
+            .getRelations()
+            .getArray().filter(r => 'ONE' !== r.getType()),
+          feature, filterType: 'fid'
+        })
     ).then(() => {
-
       relationsOptions.formEventBus = this.getService().getEventBus();
 
       const service                 = new EditingFormService(relationsOptions);
@@ -40,7 +44,7 @@ function EditingFormComponent(options = {}) {
         this.addFormComponents(RelationComponents);
       }
 
-      // overwrite click on relation handler   
+      // overwrite click on relation handler
       this.getService().handleRelation = async function({ relation }) {
         GUI.setLoadingContent(true);
         await EditingService.setLayerUniqueFieldValues(options.layer.getRelationById(relation.name).getChild());

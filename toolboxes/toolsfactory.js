@@ -414,6 +414,7 @@ function EditorToolsFactory() {
               name: "editing.tools.update_feature",
               icon: "editAttributes.png",
               layer,
+              once: true,
               op: EditTableFeaturesWorkflow,
               type: ['delete_feature', 'change_attr_feature'],
             }
