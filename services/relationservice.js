@@ -28,6 +28,7 @@ const RelationService = function(layerId, options = {}) {
   this.relations = relations;
   //editing service (main service of plugin)
   this._editingService;
+  this._isExternalFieldRequired = false;
   // this._relationLayerId is layer id of relation layer
   this._relationLayerId = this.relation.child === this._parentLayerId ?
     this.relation.father :

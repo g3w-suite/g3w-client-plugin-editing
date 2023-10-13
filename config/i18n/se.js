@@ -94,7 +94,7 @@ export default {
     delete_feature_relations: "Om egenskapen saknar bindande relationer blir dessa relationer föräldralösa. Vi rekommenderar att du behandlar dessa relationer innan du lämnar programmet",
     unlink_relation: "Vill du ta bort relationen?",
     commit_feature: "Ska ändringarna sparas?",
-    change_toolbox_relation: "Nivån har en relation/relationer. Spara ändringarna innan du börjar redigera.",
+    toolbox_has_relation: "detta lager är en del av en relation",
     saved: "Uppgifterna sparades",
     saved_local:"Uppgifterna sparades lokalt.",
     loading_data: "Uppgifterna laddas",
@@ -137,6 +137,7 @@ export default {
     buttons: {
       save: "Infoga/Redigera",
       save_and_back: "Spara och gå tillbaka",
+      save_and_back_table: "Spara och gå tillbaka",
       cancel: "Ignorera ändringar"
     }
   },

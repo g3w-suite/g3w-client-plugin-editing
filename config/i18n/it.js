@@ -94,7 +94,7 @@ export default {
     delete_feature_relations: "Cancellando una feature con relazioni associate, tale relazioni rimarranno orfane. Si consiglia di gestire tali relazioni prima di cancellare la feature",
     unlink_relation: "Vuoi staccare la relazione?",
     commit_feature: "Vuoi salvare definitivamente le modifiche",
-    change_toolbox_relation: "Layer in relazione. Prima di passare ad altri editing è obbligatorio salvare le modifiche correnti.",
+    toolbox_has_relation: "questo livello fa parte di una relazione",
     saved: "I dati sono stati salvati correttamente",
     saved_local: "I dati sono stati salvati correttamente in locale",
     loading_data: "Caricamento dati",
@@ -136,7 +136,9 @@ export default {
     },
     buttons: {
       save: "Inserisci/Modifica",
+      save_table: 'Modifica',
       save_and_back: "Salva e torna al padre",
+      save_and_back_table: "Salva e torna indietro",
       cancel: "Ignora Modifiche"
     }
   },

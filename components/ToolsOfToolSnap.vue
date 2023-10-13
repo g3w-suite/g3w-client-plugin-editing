@@ -72,7 +72,7 @@
         idAll:       `snap_${Date.now()}_all`,
         checked:     false,
         checkedAll:  false,
-        showSnapAll: false
+        showSnapAll: false,
       };
     },
 
@@ -95,7 +95,7 @@
       },
 
       removeFeatures(features) {
-        features.forEach(feature => this.features.remove(feature));
+        features.forEach(f => this.features.remove(f));
       },
 
       setShowSnapAll() {
@@ -120,8 +120,11 @@
         }
       },
 
-      enableSnapInteraction(bool) {
-        if (bool) {
+      /**
+       * @param { boolean } active 
+       */
+      enableSnapInteraction(active) {
+        if (active) {
           this.activeSnapInteraction();
         } else if (snapInteraction) {
           mapService.removeInteraction(snapInteraction);
@@ -132,18 +135,27 @@
 
     watch: {
 
-      checked(bool) {
-        this.options.checked = bool;
+      /**
+       * @param { boolean } checked
+       */
+      checked(checked) {
+        this.options.checked = checked;
         this.activeSnapInteraction()
       },
 
-      checkedAll(bool) {
-        this.options.checkedAll = bool;
+      /**
+       * @param { boolean } checkedAll 
+       */
+      checkedAll(checkedAll) {
+        this.options.checkedAll = checkedAll;
         this.activeSnapInteraction()
       },
 
-      'options.active'(bool) {
-        this.enableSnapInteraction(bool);
+      /**
+       * @param { boolean } active 
+       */
+      'options.active'(active) {
+        this.enableSnapInteraction(active);
       },
 
     },

@@ -1,6 +1,5 @@
 const { base, inherit } =  g3wsdk.core.utils;
-const EditingTask = require('./editingtask');
-const ChooseFeatureToEditComponent = require('../../../g3w-editing-components/choosefeaturetoedit');
+const EditingTask       = require('./editingtask');
 
 function CopyFeaturesFromOtherLayerTask(options={}) {
   base(this, options);
