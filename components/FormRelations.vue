@@ -5,10 +5,11 @@
 <template>
   <div id="feature_relations_form">
     <relation
-      :relation="relation.relation"
-      :relations="relation.relations"
-      :resourcesurl="resourcesurl"
-      :formeventbus="formeventbus"/>
+      :relation     = "relation.relation"
+      :relations    = "relation.relations"
+      :resourcesurl = "resourcesurl"
+      :formeventbus = "formeventbus"
+    />
   </div>
 </template>
 
@@ -16,9 +17,12 @@
   import FormRelationComponent from './FormRelation.vue';
 
   export default {
+
     name: 'Relations',
+
     components: {
-      'relation': FormRelationComponent
-    }
+      'relation': FormRelationComponent,
+    },
+
   };
 </script>

@@ -1,44 +1,75 @@
 import API from '../api'
-const {G3W_FID} = g3wsdk.constant;
-const {ApplicationState, ApplicationService} = g3wsdk.core;
-const {DataRouterService} = g3wsdk.core.data;
-const {base, inherit, XHR} = g3wsdk.core.utils;
-const { Geometry } = g3wsdk.core.geometry;
+
+const { G3W_FID }                     = g3wsdk.constant;
+const {
+  ApplicationState,
+  ApplicationService
+}                                     = g3wsdk.core;
+const { DataRouterService }           = g3wsdk.core.data;
+const { base, inherit, XHR }          = g3wsdk.core.utils;
+const { Geometry }                    = g3wsdk.core.geometry;
 const {
   getFeaturesFromResponseVectorApi,
   isSameBaseGeometryType,
-} = g3wsdk.core.geoutils;
-const {WorkflowsStack} = g3wsdk.core.workflow;
-const {PluginService} = g3wsdk.core.plugin;
-const {SessionsRegistry} = g3wsdk.core.editing;
-const {CatalogLayersStoresRegistry} = g3wsdk.core.catalog;
-const {MapLayersStoreRegistry} = g3wsdk.core.map;
-const {Layer, LayersStore} = g3wsdk.core.layer;
-const {Feature} = g3wsdk.core.layer.features;
-const {GUI} = g3wsdk.gui;
-const {Server:serverErrorParser}= g3wsdk.core.errors.parsers;
-const t = g3wsdk.core.i18n.tPlugin;
-const {getScaleFromResolution, getResolutionFromScale} = g3wsdk.ol.utils;
-const ToolBoxesFactory = require('../toolboxes/toolboxesfactory');
-const CommitFeaturesWorkflow = require('../workflows/commitfeaturesworkflow');
-const MAPCONTROL_TOGGLED_EVENT_NAME = 'mapcontrol:toggled';
-const OFFLINE_ITEMS = {
-  CHANGES: 'EDITING_CHANGES'
-};
+}                                     = g3wsdk.core.geoutils;
+const { WorkflowsStack }              = g3wsdk.core.workflow;
+const { PluginService }               = g3wsdk.core.plugin;
+const { SessionsRegistry }            = g3wsdk.core.editing;
+const { CatalogLayersStoresRegistry } = g3wsdk.core.catalog;
+const { MapLayersStoreRegistry }      = g3wsdk.core.map;
+const { Layer, LayersStore }          = g3wsdk.core.layer;
+const { Feature }                     = g3wsdk.core.layer.features;
+const { GUI }                         = g3wsdk.gui;
+const { Server: serverErrorParser }   = g3wsdk.core.errors.parsers;
+const t                               = g3wsdk.core.i18n.tPlugin;
+const {
+  getScaleFromResolution,
+  getResolutionFromScale,
+}                                     = g3wsdk.ol.utils;
+
+const ToolBoxesFactory                = require('../toolboxes/toolboxesfactory');
+const CommitFeaturesWorkflow          = require('../workflows/commitfeaturesworkflow');
+
+const MAPCONTROL_TOGGLED_EVENT_NAME   = 'mapcontrol:toggled';
+const OFFLINE_ITEMS                   = { CHANGES: 'EDITING_CHANGES' };
 
 function EditingService() {
+
   base(this);
-  // contains alla sessions
+
+  /**
+   * Store all sessions
+   */
   this._sessions = {};
-  // constraints
+
+  /**
+   * Constraints
+   */
   this.constraints = {};
+
+  /**
+   * @FIXME add description
+   */
   this._vectorUrl;
+
+  /**
+   * @FIXME add description
+   */
   this._projectType;
-  // contain array of object setter(as key), key to unby (as value)
+
+  /**
+   * Array of object setter(as key), key to unby (as value)
+   */
   this._unByKeys = [];
-  // store setter keys event listerner
+
+  /**
+   * Store setter keys event listerner
+   */
   this.setterKeys = [];
-  // events
+
+  /**
+   * Events
+   */
   this._events = {
     layer: {
       start_editing: {
@@ -47,184 +78,322 @@ function EditingService() {
       }
     }
   };
+
   /**
    * Store unique fields value for each layer
-   * @type {{mode: string, messages: undefined, modal: boolean, cb: {error: undefined, done: undefined}}}
+   * 
+   * @type {{ mode: string, messages: undefined, modal: boolean, cb: { error: undefined, done: undefined } }}
    */
   this.layersUniqueFieldsValues = {};
 
+  /**
+   * @FIXME add description
+   */
   this.saveConfig = {
-    mode: "default", // default, autosave
+    mode: "default",     // default, autosave
     modal: false,
     messages: undefined, // object to set custom message
     cb: {
-      done: undefined, // function after commit change done
-      error: undefined // function after commit chenges error
+      done: undefined,   // function executed  after commit change done
+      error: undefined   // function executed after commit chenges error
     }
   };
 
-  //application editing contraints
-  //Usefult if some plgin or case we need to setup a editing contrains such as layer, filter to get features
+  /**
+   * Application editing contraints (layer, filter, ..) to get features
+   */
   this.applicationEditingConstraints = {
     toolboxes: {},
     showToolboxesExcluded: true
   };
 
-  // state of editing
+  /**
+   * State of editing
+   */
   this.state = {
-    open: false, // check if panel is open or not
+    open: false,              // check if panel is open or not
     toolboxes: [],
     toolboxselected: null,
     toolboxidactivetool: null,
+    /** @since g3w-client-plugin-editing@v3.6.2 */
+    showselectlayers: true,   // whether to show or not selected layers on editing panel
     message: null,
     relations: [],
   };
 
   /**
+   * KEY LAYERID, VALUES ARRAY OF FEATURE FID CHANGES OR ADDED
    */
-  this.loadLayersFeaturesToResultWhenCloseEditing = {
-    // KEY LAYERID, VALUES ARRAY OF FEATURE FID CHANGES OR ADDED
-  };
+  this.loadLayersFeaturesToResultWhenCloseEditing = {};
 
+  /**
+   * @FIXME add description
+   */
   this._layers_in_error = false;
-  //mapservice
+
+  /**
+   * Map Service
+   */
   this._mapService = GUI.getService('map');
-  //set mapcontrol toggle event
-  this.mapControlToggleEventHandler = evt =>{
-    if (evt.target.isToggled() && evt.target.isClickMap()){
-      let toolboxselected = this.state.toolboxselected;
-      toolboxselected && toolboxselected.getActiveTool() && toolboxselected.stopActiveTool();
+
+  // set mapcontrol toggle event
+  this.mapControlToggleEventHandler = evt => {
+    if (
+      evt.target.isToggled() &&
+      evt.target.isClickMap() &&
+      this.state.toolboxselected &&
+      this.state.toolboxselected.getActiveTool()
+    ) {
+      this.state.toolboxselected.stopActiveTool();
     }
   };
 
   this._mapService.on(MAPCONTROL_TOGGLED_EVENT_NAME, this.mapControlToggleEventHandler);
-  //plugin components
+
+  /**
+   * Plugin components 
+   */
   this._formComponents = {};
+
+  /**
+   * @FIXME add description
+   */
   this._subscribers = {};
-  this.init = function(config={}) {
-    this._vectorUrl = config.vectorurl;
+
+  /**
+   * @FIXME add description
+   */
+  this.init = function(config = {}) {
+    this._vectorUrl   = config.vectorurl;
     this._projectType = config.project_type;
-    this._layersstore = new LayersStore({
-      id: 'editing',
-      queryable: false
-    });
+    this._layersstore = new LayersStore({ id: 'editing', queryable: false });
+
     //add editing layer store to mapstoreregistry
     MapLayersStoreRegistry.addLayersStore(this._layersstore);
-    this.config = config;
+
+    this.config          = config;
     this._editableLayers = {};
-    this._toolboxes = [];
+    this._toolboxes      = [];
     this.state.toolboxes = [];
+
     let layers = this._getEditableLayersFromCatalog();
-    const EditableLayersPromises = [];
+
+    const EditableLayersPromises = []; // NB: getLayerForEditing returns a promise with layer useful for editing
     for (const layer of layers) {
-      // getLayerForEditing return a promise with layer usefult for editing
-      EditableLayersPromises.push(layer.getLayerForEditing({
-        vectorurl: this._vectorUrl,
-        project_type: this._projectType
-      }))
+      EditableLayersPromises.push(layer.getLayerForEditing({ vectorurl: this._vectorUrl, project_type: this._projectType }));
     }
-    Promise.allSettled(EditableLayersPromises)
+
+    Promise
+      .allSettled(EditableLayersPromises)
       .then(editableLayers  => {
         editableLayers.forEach(promise => {
-          const {status, value} = promise;
-          if (status === "fulfilled") {
-            const editableLayer = value;
-            const layerId = editableLayer.getId();
-            this._editableLayers[layerId] = editableLayer;
-            this._attachLayerWidgetsEvent(editableLayer);
+          if ('fulfilled' === promise.status) {
+            const layerId = promise.value.getId();
+            this._editableLayers[layerId] = promise.value;
+            this._attachLayerWidgetsEvent(promise.value);
             this._sessions[layerId] = null;
-          } else this._layers_in_error = true;
+          } else {
+            this._layers_in_error = true;
+          }
         });
       this._ready();
-    })
+    });
+
   };
+
+  /**
+   * @FIXME add description
+   * 
+   * @fires ready
+   */
   this._ready = function() {
-    this.registerFeaturesLockByOtherUserSetterHandler();
+
+    // @since 3.7.0
+    this.setRelations1_1FieldsEditable();
+
     // set toolbox colors
     this.setLayersColor();
+
     // after add layers to layerstore
     this._layersstore.addLayers(this.getLayers());
+
     // create toolboxes
     this._buildToolBoxes();
+
     // create a dependencies tree
     this._createToolBoxDependencies();
-    //setApi
-    this.setApi({
-      api: new API({
-        service:this
-      })
-    });
+
+    // set Api service
+    this.setApi({ api: new API({ service: this }) });
+
     this.registerResultEditingAction();
+
     this.emit('ready');
-  }
+  };
+
 }
 
 inherit(EditingService, PluginService);
 
 const proto = EditingService.prototype;
 
-//api methods
-
-proto.getAppState = function(){
+/**
+ * [API Method]
+ */
+proto.getAppState = function() {
   return ApplicationState;
 };
 
+/**
+ * [API Method]
+ */
 proto.getFormComponentsById = function(layerId) {
   return this._formComponents[layerId] || [];
 };
 
+/**
+ * [API Method]
+ */
 proto.getFormComponents = function() {
   return this._formComponents;
 };
 
-proto.addFormComponents = function({layerId, components= []} = {}) {
-  if (!this._formComponents[layerId])
+/**
+ * [API Method]
+ */
+proto.addFormComponents = function({
+  layerId,
+  components = [],
+} = {}) {
+  if (!this._formComponents[layerId]) {
     this._formComponents[layerId] = [];
+  }
   for (let i=0; i < components.length; i++) {
-    const component = components[i];
-    this._formComponents[layerId].push(component)
+    this._formComponents[layerId].push(components[i])
   }
 };
 
-proto.getSession = function({layerId} = {}) {
-  const toolbox = this.getToolBoxById(layerId);
-  return toolbox.getSession();
+/**
+ * [API Method] Get session
+ * 
+ * @param layerId
+ * 
+ * @returns {*}
+ */
+proto.getSession = function({ layerId } = {}) {
+  return this.getToolBoxById(layerId).getSession();
 };
 
-proto.getFeature = function({layerId} = {}) {
-  const toolbox = this.getToolBoxById(layerId);
-  const tool = toolbox.getActiveTool();
-  return tool.getFeature();
+/**
+ * [API Method]
+ * 
+ * @param layerId
+ * 
+ * @returns Feature in editing
+ */
+proto.getFeature = function({ layerId } = {}) {
+  return this.getToolBoxById(layerId).getActiveTool().getFeature();
 };
 
+/**
+ * [API Method] Subscribe handler function on event
+ * 
+ * @param event
+ * @param { Function } fnc
+ * 
+ * @returns { Function } function
+ */
 proto.subscribe = function(event, fnc) {
   if (!this._subscribers[event]) this._subscribers[event] = [];
   if (!this._subscribers[event].find(subscribe => subscribe === fnc)) this._subscribers[event].push(fnc);
   return fnc;
 };
 
+/**
+ * [API Method] Unsubscribe handler function on event
+ * 
+ * @param event
+ * @param fnc
+ */
 proto.unsubscribe = function(event, fnc) {
   this._subscribers[event] = this._subscribers[event].filter(subscribe => subscribe !== fnc);
 };
 
-// END API
+/**
+ * Check if layer has relation 1:1 (type ONE) and if fields
+ * 
+ * belong to relation where child layer is editable
+ * 
+ * @since g3w-client-plugin-editing@v3.7.0
+ */
+proto.setRelations1_1FieldsEditable = function() {
+  this
+    .getLayers()
+    .forEach(editingLayer => {
+      const fatherId = editingLayer.getId();                                                // father layer
+      this
+        .getRelation1_1ByLayerId(fatherId)
+        .forEach(relation => {                                                              // loop `Relations` instances
+          if (fatherId === relation.getFather()) {                                          // check if father layerId is a father of relation
+            const isChildEditable = undefined !== this.getLayerById(relation.getChild());   // check if child layerId is editable (in editing)
+            this
+              .getRelation1_1EditingLayerFieldsReferredToChildRelation(relation)            // loop father layer fields (in editing)
+              .forEach(field => { field.editable = (field.editable && isChildEditable); }); // current editable boolean value + child editable layer
+          }
+        })
+    });
+};
 
-proto.registerFeaturesLockByOtherUserSetterHandler = function(){
-  this.getLayers().forEach(editingLayer =>{
-    editingLayer.getFeaturesStore().onafter('featuresLockedByOtherUser', () => {
-      GUI.showUserMessage({
-        type: 'warning',
-        subtitle: editingLayer.getName().toUpperCase(),
-        message: 'plugins.editing.messages.featureslockbyotheruser'
-      })
-    })
-  })
+/**
+ * Get Father layer fields related (in Relation) to Child Layer,
+ * 
+ * ie. father fields having same `vectorjoin_id` attribute to `relation.id` value
+ * 
+ * @param { Relation } relation
+ * 
+ * @returns { Array } fields Array bind to child layer
+ * 
+ * @since g3w-client-plugin-editing@v3.7.0
+ */
+proto.getRelation1_1EditingLayerFieldsReferredToChildRelation = function(relation) {
+  return this
+    .getLayerById(relation.getFather())
+    .getEditingFields()
+    .filter(field => field.vectorjoin_id && field.vectorjoin_id === relation.getId());
+}
+
+/**
+ * Get Relation 1:1 from layerId
+ *
+ * @param layerId
+ * 
+ * @returns Array of relations related to layerId that are Join 1:1 (Type ONE)
+ * 
+ * @since g3w-client-plugin-editing@v3.7.0
+ */
+proto.getRelation1_1ByLayerId = function(layerId) {
+  return CatalogLayersStoresRegistry
+    .getLayerById(layerId)
+    .getRelations()
+    .getArray()
+    .filter(relation => 'ONE' === relation.getType()); // 'ONE' == join 1:1
+};
+
+/**
+ * Set Boolean value for show select layers to edit
+ * 
+ * @param bool Default is true
+ * 
+ * @since g3w-client-plugin-editing@v3.6.2
+ */
+proto.setShowSelectLayers = function(bool=true) {
+  this.state.showselectlayers = bool;
 };
 
 /**
  * Register result editing action
  */
-proto.registerResultEditingAction = function(){
+proto.registerResultEditingAction = function() {
   const queryResultsService = GUI.getService('queryresults');
   this.setterKeys.push({
     setter: 'editFeature',
@@ -237,7 +406,7 @@ proto.registerResultEditingAction = function(){
   });
 };
 
-proto.unregisterResultEditingAction = function(){
+proto.unregisterResultEditingAction = function() {
   const queryResultsService = GUI.getService('queryresults');
   this.setterKeys.forEach(({setter, key}) => queryResultsService.un(setter, key));
 };
@@ -246,7 +415,10 @@ proto.unregisterResultEditingAction = function(){
  * function to start to edit feature selected from results;
  *
  */
-proto.editResultLayerFeature = function({layer, feature}={}){
+proto.editResultLayerFeature = function({
+  layer,
+  feature,
+} = {}) {
   // get Layer Id
   const layerId = layer.id;
   // get Feature id
@@ -287,7 +459,7 @@ proto.editResultLayerFeature = function({layer, feature}={}){
         toolBox.getLayer().getEditingLayer().getSource().getFeatures() :
         toolBox.getLayer().getEditingLayer().getSource().readFeatures()
       const feature = sourceFeatures.find(feature => feature.getId() == featureId);
-      if (feature){
+      if (feature) {
         feature.getGeometry() && this._mapService.zoomToGeometry(feature.getGeometry());
         toolBox.setSelected(true);
         const session = toolBox.getSession();
@@ -325,33 +497,43 @@ proto.disableMapControlsConflict = function(bool=true) {
  * Used on commit if no toolbox is passed as parameter
  * @param toolbox
  */
-proto.setSelectedToolbox = function(toolbox){
+proto.setSelectedToolbox = function(toolbox) {
   this.state.toolboxselected = toolbox;
 };
 
 /**
  * 
  */
-proto.getToolboxSelected = function(){
+proto.getToolboxSelected = function() {
   return this.state.toolboxselected;
 };
 
 /**
+ * Create a new feature
  * 
+ * @param layerId
+ * @param options.geometry.type
+ * @param options.geometry.coordinates
+ * 
+ * @returns { Feature } 
  */
-
-// create a new feature
-proto.addNewFeature = function(layerId, options={}){
-  const {geometry, properties} = options;
+proto.addNewFeature = function(layerId, options = {}) {
   const feature = new Feature();
-  geometry && feature.setGeometry(new ol.geom[geometry.type](geometry.coordinates));
-  feature.setProperties(properties);
+
+  if (options.geometry) {
+    feature.setGeometry(new ol.geom[options.geometry.type](options.geometry.coordinates));
+  }
+
+  feature.setProperties(options.properties);
   feature.setTemporaryId();
-  const toolbox = this.getToolBoxById(layerId);
+
+  const toolbox      = this.getToolBoxById(layerId);
   const editingLayer = toolbox.getLayer().getEditingLayer();
-  const session = toolbox.getSession();
+  const session      = toolbox.getSession();
+
   editingLayer.getSource().addFeature(feature);
   session.pushAdd(layerId, feature, false);
+
   return feature;
 };
 
@@ -417,25 +599,34 @@ proto._handleOfflineChangesBeforeSave = function(data) {
   return data;
 };
 
-proto.saveOfflineItem = function({id, data}={}) {
+proto.saveOfflineItem = function({
+  id,
+  data,
+} = {}) {
   if (id === OFFLINE_ITEMS.CHANGES) data = this._handleOfflineChangesBeforeSave(data);
   return ApplicationService.setOfflineItem(id, data);
 };
 
-proto.setOfflineItem = function(id, data){
+proto.setOfflineItem = function(id, data) {
   ApplicationService.setOfflineItem(id, data);
 };
 
-proto.getOfflineItem = function(id){
+proto.getOfflineItem = function(id) {
   return ApplicationService.getOfflineItem(id);
 };
 
 /**
  * Check if alread have off lines changes
- * @param modal
+ * 
+ * @param opts.modal
+ * @param opts.unlock
+ * 
  * @returns {Promise<unknown>}
  */
-proto.checkOfflineChanges = function({modal=true, unlock=false}={}) {
+proto.checkOfflineChanges = function({
+  modal = true,
+  unlock = false,
+} = {}) {
   return new Promise((resolve, reject) => {
     const changes = ApplicationService.getOfflineItem(OFFLINE_ITEMS.CHANGES);
     // if find changes offline previously
@@ -585,7 +776,7 @@ proto._layerChildrenRelationInEditing = function(layer) {
 /**
  * Undo method
  */
-proto.undo = function(){
+proto.undo = function() {
   const session = this.state.toolboxselected.getSession();
   const layerId = session.getId();
   const sessionItems = session.getLastHistoryState().items;
@@ -625,7 +816,7 @@ proto.rollbackRelations = function(rollbackItems) {
 /**
  *  method
  */
-proto.redo = function(){
+proto.redo = function() {
   const session = this.state.toolboxselected.getSession();
   const layerId = session.getId();
   const sessionItems = session.getLastHistoryState().items;
@@ -677,28 +868,40 @@ proto.addToolBox = function(toolbox) {
 };
 
 //** Method to set state in editing 
-proto.setOpenEditingPanel = function(bool){
+proto.setOpenEditingPanel = function(bool) {
   this.state.open = bool;
   this._getEditableLayersFromCatalog().forEach(layer => layer.setInEditing(bool));
 };
 
-/*
-* Add event
-* @param {String} type - Event Type
-* @param
-* */
-proto.addEvent = function({type, id, fnc}={}) {
+/**
+ * Add event
+ * 
+ * @param {String} event.type
+ * @param event.id
+ * @param event.fnc
+ **/
+proto.addEvent = function({
+  type,
+  id,
+  fnc,
+} = {}) {
   if (!this._events[type]) this._events[type] = {};
   if (!this._events[type][id]) this._events[type][id] = [];
   this._events[type][id].push(fnc);
 };
 
-/*
-* Add event
-* @param {String} type - Event Type
-* @param
-* */
-proto.addEvents = function({types=[], id, fnc}={}) {
+/**
+ * Add events
+ * 
+ * @param {String} event.types
+ * @param event.id
+ * @param event.fnc
+ */
+proto.addEvents = function({
+  types = [],
+  id,
+  fnc,
+} = {}) {
   types.forEach(type => this.addEvent({
     type,
     id, 
@@ -706,18 +909,26 @@ proto.addEvents = function({types=[], id, fnc}={}) {
   }));
 };
 
-proto.runEventHandler = function({type, id} = {}) {
+proto.runEventHandler = function({
+  type,
+  id,
+} = {}) {
   this._events[type] && this._events[type][id] && this._events[type][id].forEach(fnc => fnc());
 };
 
 /**
  *
- * @param mode -  default or autosave
- * @param cb object contain done/error two functions
- * @param modal - Boolean true or false to show to ask
- * @param messages - object success or error
+ * @param save.mode     - default or autosave
+ * @param save.cb       - object contain done/error two functions
+ * @param save.modal    - Boolean true or false to show to ask
+ * @param save.messages - object success or error
  */
-proto.setSaveConfig = function({mode = 'default', cb={}, modal=false, messages}={}){
+proto.setSaveConfig = function({
+  mode = 'default',
+  cb={},
+  modal=false,
+  messages,
+} = {}) {
   this.saveConfig.mode = mode;
   this.saveConfig.modal = modal;
   this.saveConfig.messages = messages;
@@ -727,15 +938,17 @@ proto.setSaveConfig = function({mode = 'default', cb={}, modal=false, messages}=
   }
 };
 
-//return save mode
-proto.getSaveConfig = function(){
+/**
+ * @returns save mode 
+ */
+proto.getSaveConfig = function() {
   return this.saveConfig;
 };
 
 /**
  * Reset default values
  */
-proto.resetDefault = function(){
+proto.resetDefault = function() {
   this.saveConfig = {
     mode: "default", // default, autosave
     modal: false,
@@ -823,8 +1036,10 @@ proto._createToolBoxDependencies = function() {
 
 /**
  * Check if field of layer is required
+ * 
  * @param layerId
  * @param fieldName
+ * 
  * @returns {*}
  */
 proto.isFieldRequired = function(layerId, fieldName) {
@@ -878,7 +1093,11 @@ proto.getCurrentWorkflowData = function() {
   };
 };
 
-proto.getRelationsAttributesByFeature = function({layerId, relation, feature}={}) {
+proto.getRelationsAttributesByFeature = function({
+  layerId,
+  relation,
+  feature,
+} = {}) {
   const layer = this.getToolBoxById(layerId).getLayer();
   const relations = this.getRelationsByFeature({layerId, relation, feature});
   return relations.map(relation => {
@@ -891,21 +1110,43 @@ proto.getRelationsAttributesByFeature = function({layerId, relation, feature}={}
   });
 };
 
-proto._getRelationLayerId = function({layerId, relation}={}){
+proto._getRelationLayerId = function({
+  layerId,
+  relation,
+} = {}) {
   return relation.getChild() === layerId ? relation.getFather() : relation.getChild();
 };
 
-proto.getRelationsByFeature = function({layerId, relation, feature, layerType}={}) {
+/**
+ * @param opts.layerId
+ * @param opts.relation
+ * @param opts.feature
+ * @param opts.layerType
+ */
+proto.getRelationsByFeature = function({
+  layerId,
+  relation,
+  feature,
+  layerType,
+} = {}) {
+  //ownField and relationField are Array @since v3.7.0
   const {ownField, relationField} = this._getRelationFieldsFromRelation({
     layerId,
     relation
   });
-  const featureValue = feature.get(relationField);
+  //get features of relation child layers
   const features = this._getFeaturesByLayerId(layerId);
-  return features.filter(feature => feature.get(ownField) == featureValue);
+  //Loop relation fields
+  const featuresValues = relationField.map(rField => feature.get(rField));
+  return features.filter(feature => {
+    return ownField.reduce((bool, oField, index) => {
+      return bool && feature.get(oField) == featuresValues[index]
+    }, true)
+  });
+
 };
 
-proto.registerLeavePage = function(bool){
+proto.registerLeavePage = function(bool) {
   ApplicationService.registerLeavePage({
     bool
   });
@@ -919,11 +1160,11 @@ proto.getLayerById = function(layerId) {
   return this._editableLayers[layerId];
 };
 
-proto.beforeEditingStart = function({layer} = {}) {
+proto.beforeEditingStart = function({ layer } = {}) {
   this._checkLayerWidgets(layer);
 };
 
-proto.afterEditingStart = function({layer}= {}) {
+proto.afterEditingStart = function({ layer }= {}) {
   //TODO
 };
 
@@ -932,10 +1173,11 @@ proto.getToolBoxById = function(toolboxId) {
 };
 
 /**
- * Method to apply filter editing contsraint to toolbox editing 
+ * Method to apply filter editing contsraint to toolbox editing
+ * 
  * @param constinst
  */
-proto.setApplicationEditingConstraints = function(constraints={showToolboxesExcluded: true, toolboxes:{}}){
+proto.setApplicationEditingConstraints = function(constraints={showToolboxesExcluded: true, toolboxes:{}}) {
   this.applicationEditingConstraints = {
     ...this.applicationEditingConstraints,
     ...constraints
@@ -954,7 +1196,7 @@ proto.setApplicationEditingConstraints = function(constraints={showToolboxesExcl
  * Get application editing contraints if applied
  */
 
-proto.getApplicationEditingConstraints = function(){
+proto.getApplicationEditingConstraints = function() {
   return this.applicationEditingConstraints;
 };
 
@@ -962,7 +1204,7 @@ proto.getApplicationEditingConstraints = function(){
  *
  */
 
-proto.getApplicationEditingConstraintById = function(toolboxId){
+proto.getApplicationEditingConstraintById = function(toolboxId) {
   return this.applicationEditingConstraints.toolboxes[toolboxId];
 };
 
@@ -974,7 +1216,7 @@ proto.getEditableLayers = function() {
   return this._editableLayers;
 };
 
-proto._cancelOrSave = function(){
+proto._cancelOrSave = function() {
   return resolve();
 };
 
@@ -985,7 +1227,7 @@ proto.stop = function() {
       // check if temp changes are waiting to save on server
       if (toolbox.getSession().getHistory().state.commit) {
         // ask to commit before exit
-        commitpromises.push(this.commit(toolbox, true));
+        commitpromises.push(this.commit({toolbox, modal:true}));
       }
     });
     $.when.apply(this, commitpromises)
@@ -1016,12 +1258,18 @@ proto.clearState = function() {
 
 /**
  * Get Relation in editing
- * @param layerId
- * @param relations
- * @param feature
+ * 
+ * @param opts.layerId
+ * @param opts.relations
+ * @param opts.feature
+ * 
  * @returns {[]}
  */
-proto.getRelationsInEditing = function({layerId, relations=[], feature}={}) {
+proto.getRelationsInEditing = function({
+  layerId,
+  relations = [],
+  feature,
+} = {}) {
   let relationsinediting = [];
   let relationinediting;
   relations.forEach(relation => {
@@ -1044,7 +1292,10 @@ proto.getRelationsInEditing = function({layerId, relations=[], feature}={}) {
   return relationsinediting;
 };
 
-proto._filterRelationsInEditing = function({layerId, relations=[]}) {
+proto._filterRelationsInEditing = function({
+  layerId,
+  relations = [],
+}) {
   return relations.filter(relation => {
     const relationId = this._getRelationId({
       layerId,
@@ -1054,7 +1305,7 @@ proto._filterRelationsInEditing = function({layerId, relations=[]}) {
   })
 };
 
-proto.stopToolboxesChildren = function(layerId){
+proto.stopToolboxesChildren = function(layerId) {
   const layer = this.getLayerById(layerId);
   const relations = this._filterRelationsInEditing({
     relations: layer.getRelations() ? layer.getRelations().getArray() : [],
@@ -1091,69 +1342,110 @@ proto.stopSessionChildren = function(layerId) {
     })
 };
 
-proto.fatherInEditing = function(layerId) {
-  let inEditing = false;
-  let toolbox;
-  let relationLayerFathers = this.getLayerById(layerId).getFathers();
-  relationLayerFathers.forEach(id => {
-    toolbox = this.getToolBoxById(id);
-    if (toolbox && toolbox.inEditing()) {
-      inEditing = true;
-      return false;
-    }
-  });
-  return inEditing;
+/**
+ * Check if father relation is editing and has commit feature
+ * @param layerId
+ * @returns father in editing
+ */
+proto.fathersInEditing = function(layerId) {
+  return this.getLayerById(layerId)
+    .getFathers()
+    .filter(id => {
+      const toolbox = this.getToolBoxById(id);
+      if (toolbox && toolbox.inEditing() && toolbox.isDirty()) {
+        //get temporary relations object
+        const {relations={}} = toolbox.getSession().getCommitItems();
+        //check if layerId has some changes
+        return Object.keys(relations).find(relationLayerId => {
+          return layerId === relationLayerId
+        });
+      }
+    });
 };
 
-proto._getRelationFieldsFromRelation = function({layerId, relation} = {}) {
+/**
+ * @param opts.layerId
+ * @param opts.relation
+ * 
+ * @returns {{ownField: *, relationField: *}}
+ * 
+ * @private
+ */
+proto._getRelationFieldsFromRelation = function({
+  layerId,
+  relation,
+} = {}) {
   const childId = relation.getChild ? relation.getChild() : relation.child;
   const isChild = childId !== layerId;
-  const _fatherField = relation.getFatherField ? relation.getFatherField() : relation.fatherField;
-  const _childField = relation.getChildField ? relation.getChildField() : relation.childField;
-  const ownField = isChild ? _fatherField : _childField;
-  const relationField = isChild ? _childField : _fatherField;
+  const _fatherField = relation.getFatherField ?
+      relation.getFatherField() :
+      relation.fatherField;
+  const _childField = relation.getChildField ?
+      relation.getChildField() :
+      relation.childField;
+
   return {
-    ownField,
-    relationField
+    ownField: isChild ? _fatherField : _childField,
+    relationField: isChild ? _childField : _fatherField
   }
 };
 
-proto.createEditingDataOptions = function(filterType='all', options={}) {
-  const {feature, relation, field, layerId, operator} = options;
+/**
+ * @param { 'all' | 'bbox' | 'field' | 'fid' | '1:1' } filterType 
+ * @param options.feature
+ * @param options.relation
+ * @param options.field
+ * @param options.layerId
+ * @param options.operator
+ */
+proto.createEditingDataOptions = function(filterType = 'all', options = {}) {
   let filter;
+
   switch (filterType) {
-    //case all leave filter undefined
+
     case 'all':
-    break;
+      filter = undefined;
+      break;
+
     case 'bbox':
       filter = {
-        bbox: this._mapService.getMapBBOX()
+        bbox: this._mapService.getMapBBOX(),
       };
       break;
-    case 'field': // case of field
+
+    case 'field':
       filter = {
         field: {
-          field,
+          field: options.field,
           type: 'editing'
         }
       };
       break;
+
     case 'fid':
-      // case to get relations of current feature
-      if (operator !== 'not')
+      if ('not' !== options.operator) {        // get relations of current feature
         filter = {
           fid: {
-            fid: feature.getId(),
-            layer: {
-              id: layerId
-            },
-            type: 'editing',
-            relation: relation.state,
-            formatter: 0 //add formatter 0 to get stored value
+            fid:       options.feature.getId(),
+            layer:     { id: options.layerId },
+            type:      'editing',
+            relation:  options.relation.state,
+            formatter: 0,                      // 0 = retrieve stored value
           }
         };
+      }
       break;
+
+    // relation 1:1
+    case '1:1':
+      filter = {
+        field: options.relation.getChildField()[0] + '|eq|' + options.feature.get(options.relation.getFatherField()[0]),
+        type: 'editing',
+      }
+      break;
+
   }
+
   return {
     registerEvents: true, // usefult to get register vent on toolbox example mapmoveend
     editing: true,
@@ -1165,114 +1457,167 @@ proto._getFeaturesByLayerId = function(layerId) {
   return this.getLayerById(layerId).readEditingFeatures();
 };
 
-proto.getLayersDependencyFeaturesFromSource = function({layerId, relation, feature, operator='eq'}={}){
+proto.getLayersDependencyFeaturesFromSource = function({
+  layerId,
+  relation,
+  feature,
+  operator = 'eq',
+} = {}) {
   return new Promise(resolve => {
     const features = this._getFeaturesByLayerId(layerId);
     const {ownField, relationField} = this._getRelationFieldsFromRelation({
       layerId,
       relation
     });
-    const featureValue = feature.get(relationField);
-    const find = operator === 'eq' ? features.find(featureSource => {
-      const featureSourceValue = featureSource.get(ownField) ;
-      return featureSourceValue == featureValue;
-    }): false;
+    //get features Values
+    const featureValues = relationField.map(rField => feature.get(rField));
+    const find = operator === 'eq' ?
+
+      ownField.reduce((bool, oField, index) => {
+        return features.find(featureSource => {
+          return bool && featureSource.get(oField) == featureValues[index];
+        })
+      }, true) :
+
+      false;
+
     resolve(find);
   })
 };
 
-proto._getRelationId = function({layerId, relation}={}) {
+proto._getRelationId = function({
+  layerId,
+  relation,
+} = {}) {
   const fatherId = relation.getFather ? relation.getFather() : relation.father;
   const childId = relation.getChild ? relation.getChild() : relation.child;
   return fatherId === layerId ? childId: fatherId;
 };
 
-proto.getLayersDependencyFeatures = function(layerId, opts={}) {
+/**
+ *
+ * @param layerId
+ * @param opts
+ * @returns {Promise<Awaited<unknown>[]>}
+ */
+proto.getLayersDependencyFeatures = function(layerId, opts = {}) {
   const promises = [];
   const layer = this.getLayerById(layerId);
-  const relations = opts.relations ? opts.relations : layer.getChildren().length && layer.getRelations() ? this._filterRelationsInEditing({
-    relations: layer.getRelations().getArray().filter(relation => relation.getFather() === layerId),
-    layerId
-  }) : [];
+  const relations = opts.relations ?
+    opts.relations :
+    layer.getChildren().length && layer.getRelations() ?
+      this._filterRelationsInEditing({
+        relations: layer.getRelations()
+          .getArray()
+          .filter(relation => relation.getFather() === layerId),
+        layerId
+      }) :
+      [];
   const online = ApplicationState.online;
   relations.forEach(relation => {
-    if (relation.setLoading) relation.setLoading(true);
-    else relation.loading = true;
+    if (relation.setLoading) {
+      relation.setLoading(true);
+    } else {
+      relation.loading = true;
+    }
     const id = this._getRelationId({
       layerId,
       relation
     });
+    //Promise
     const promise = new Promise(resolve => {
-      const filterType = opts.filterType || 'fid';
       opts.relation = relation;
       opts.layerId = layerId;
+      //In case of relation 1:1
+      opts.filterType = 'ONE' === relation.getType() ? '1:1' :  opts.filterType;
+      const filterType =  opts.filterType || 'fid';
       const options = this.createEditingDataOptions(filterType, opts);
       const session = this._sessions[id];
       const toolbox = this.getToolBoxById(id);
+      //check if si online and it has session
       if (online && session) {
+        //show bar loading
         toolbox.startLoading();
-        if (!session.isStarted())
-          session.start(options)
-            .always((promise) => {
-              promise.always(()=>{
-                toolbox.stopLoading();
-                resolve(id);
-              })
-            });
-        else {
+        //check is session is already start
+        if (session.isStarted()) {
+          //try to get feature from source
+          //without server reques
           this.getLayersDependencyFeaturesFromSource({
             layerId: id,
             relation,
             feature: opts.feature,
             operator: opts.operator
-          }).then(find =>{
-            if (find) {
-              resolve(id);
-              toolbox.stopLoading();
-            } else {
-              session.getFeatures(options).always(promise => {
-                promise.always(()=>{
-                  toolbox.stopLoading();
-                  resolve(id);
-                });
-              });
-            }
           })
+            .then(find => {
+              //if found
+              if (find) {
+                resolve(id);
+                toolbox.stopLoading();
+              } else {
+                //request features from server
+                session.getFeatures(options)
+                  .always(promise => {
+                    promise.always(() => {
+                      toolbox.stopLoading();
+                      resolve(id);
+                    });
+                  });
+              }
+            })
+        } else {
+          //start session and get features
+          session.start(options)
+            .always(promise => {
+              promise.always(() => {
+                toolbox.stopLoading();
+                resolve(id);
+              })
+            });
         }
       } else {
+        //try to get feature from source
         this.getLayersDependencyFeaturesFromSource({
           layerId: id,
           relation,
           feature: opts.feature,
           operator: opts.operator
-        }).then(()=>resolve(id))
+        }).then(() => resolve(id))
       }
     });
     promises.push(promise);
   });
   // at the end se loading false
-  Promise.all(promises).finally(()=> relations.forEach(relation => {
-    if (relation.setLoading) relation.setLoading(false);
-    else relation.loading = false;
-  }));
+  Promise.all(promises)
+    .finally(()=> relations.forEach(relation => {
+      if (relation.setLoading) {
+        relation.setLoading(false);
+      } else {
+        relation.loading = false;
+      }
+    }));
   return Promise.all(promises);
 };
 
 proto.commitDirtyToolBoxes = function(layerId) {
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     const toolbox = this.getToolBoxById(layerId);
-    const children = this.getLayerById(layerId).getChildren();
     if (toolbox.isDirty() && toolbox.hasDependencies()) {
-      this.commit(toolbox)
+      this.commit({toolbox})
+        .then(() => {
+          resolve(toolbox);
+        })
         .fail(() => {
           toolbox.revert()
             .then(() => {
-              toolbox.getDependencies().forEach((layerId) => {
-                children.indexOf(layerId) !== -1 && this.getToolBoxById(layerId).revert();
-              })
+              toolbox.getDependencies()
+                .forEach((layerId) => {
+                  if (this.getLayerById(layerId).getChildren().indexOf(layerId) !== -1) {
+                    this.getToolBoxById(layerId).revert();
+                  }
+                })
             })
+          reject(toolbox);
         })
-        .always(() => resolve(toolbox))
     } else
       resolve(toolbox);
   });
@@ -1308,7 +1653,12 @@ proto._createCommitMessage = function(commitItems) {
   return message;
 };
 
-proto.showCommitModalWindow = function({layer, commitItems, close, commitPromise}) {
+proto.showCommitModalWindow = function({
+  layer,
+  commitItems,
+  close,
+  commitPromise,
+}) {
   // messages set to commit
   const messages = {
     success: {
@@ -1354,16 +1704,20 @@ proto.saveChange = async function() {
   }
 };
 
-proto.addLayersFeaturesToShowOnResult = function({layerId, fids=[]}){
-  if (this.loadLayersFeaturesToResultWhenCloseEditing[layerId] === undefined)
+proto.addLayersFeaturesToShowOnResult = function({
+  layerId,
+  fids = [],
+}) {
+  if (undefined === this.loadLayersFeaturesToResultWhenCloseEditing[layerId]) {
     this.loadLayersFeaturesToResultWhenCloseEditing[layerId] = new Set();
+  }
   fids.forEach(fid => this.loadLayersFeaturesToResultWhenCloseEditing[layerId].add(fid))
 };
 
 /**
  * Called on close editingpanel panel
  */
-proto.onCloseEditingPanel = async function(){
+proto.onCloseEditingPanel = async function() {
   await this.showChangesToResult();
   this.getToolBoxes().forEach(toolbox => toolbox.resetDefault());
 };
@@ -1373,7 +1727,7 @@ proto.onCloseEditingPanel = async function(){
  * Method to show feature that are updated or created with editing on result content
  * @returns {Promise<void>}
  */
-proto.showChangesToResult = async function(){
+proto.showChangesToResult = async function() {
   const layerIdChanges = Object.keys(this.loadLayersFeaturesToResultWhenCloseEditing);
   if (layerIdChanges.length) {
     const inputs = {
@@ -1406,17 +1760,23 @@ proto.showChangesToResult = async function(){
 };
 
 /**
- * Metyhod to commit and save changes on server persistently
+ * Commit and save changes on server persistently
  *
- * @param toolbox
- * @param commitItems
- * @param messages
- * @param done
- * @param modal
- * @param close
+ * @param commit.toolbox
+ * @param commit.commitItems
+ * @param commit.messages
+ * @param commit.done
+ * @param commit.modal
+ * @param commit.close
+ * 
  * @returns {*}
  */
-proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
+proto.commit = function({
+  toolbox,
+  commitItems,
+  modal = true,
+  close = false,
+} = {}) {
   const d = $.Deferred();
   const commitPromise = d.promise();
   const { cb={}, messages={success:{}, error:{}} } = this.saveConfig;
@@ -1427,311 +1787,441 @@ proto.commit = function({toolbox, commitItems, modal=true, close=false}={}) {
   const items = commitItems;
   commitItems = commitItems || session.getCommitItems();
   const {add=[], delete:cancel=[], update=[], relations={}} = commitItems;
-  if ([...add, ...cancel, ...update, ...Object.keys(relations)].length === 0) {
+  //check if there are some changes to commit
+  if (
+    [
+      ...add,
+      ...cancel,
+      ...update,
+      ...Object.keys(relations)
+    ].length === 0
+  ) {
     GUI.showUserMessage({
       type: 'info',
       message: 'Nothing to save',
       autoclose: true,
       closable: false
     });
+
     d.resolve(toolbox);
+
     return d.promise();
   }
+
   const promise = modal ? this.showCommitModalWindow({
     layer,
     commitItems,
     close,
     commitPromise // add a commit promise
   }) : Promise.resolve(messages);
+
   promise
     .then(messages => {
-    if (ApplicationState.online) {
-      session.commit({items: items || commitItems})
-        .then((commitItems, response) => {
-          if (ApplicationState.online) {
-            if (response.result) {
-              const {autoclose=true, message="plugins.editing.messages.saved"} = messages.success;
-              if (messages && messages.success) GUI.showUserMessage({
-                type: 'success',
-                message,
-                duration: 3000,
-                autoclose
-              });
-              layerType === Layer.LayerTypes.VECTOR && this._mapService.refreshMap({force: true});
-              cb.done && cb.done instanceof Function && cb.done(toolbox);
-              this.addLayersFeaturesToShowOnResult({
-                layerId: toolbox.getId(),
-                fids: [...response.response.new.map(({id}) => id), ...commitItems.update.map(update => update.id)]
-              });
-            } else {
-              const parser = new serverErrorParser({
-                error: response.errors
-              });
-              const errorMessage = parser.parse({
-                type: 'String'
-              });
-              const {autoclose=false, message} = messages.error;
-              GUI.showUserMessage({
-                type: 'alert',
-                message: message || errorMessage,
-                textMessage: !message,
-                autoclose
-              });
-              cb.error && cb.error instanceof Function && cb.error(toolbox, message || errorMessage);
+      //check if application is online
+      if (ApplicationState.online) {
+        session.commit({items: items || commitItems})
+          .then((commitItems, response) => {
+            //@TODO need to double check why ApplicationState.online is repeated
+            if (ApplicationState.online) {
+              //if result is true
+              if (response.result) {
+                const {autoclose=true, message="plugins.editing.messages.saved"} = messages.success;
+                if (messages && messages.success) {
+                  GUI.showUserMessage({
+                    type: 'success',
+                    message,
+                    duration: 3000,
+                    autoclose
+                  });
+                }
+
+                //In case of vector layer need to refresh map commit changes
+                if (layerType === Layer.LayerTypes.VECTOR) {
+                  this._mapService.refreshMap({force: true});
+                }
+
+                if (cb.done && cb.done instanceof Function) {
+                  cb.done(toolbox);
+                }
+
+                //add items when close editing to results to show changes
+                this.addLayersFeaturesToShowOnResult({
+                  layerId: toolbox.getId(),
+                  fids: [
+                    ...response.response.new.map(({id}) => id),
+                    ...commitItems.update.map(update => update.id)
+                  ]
+                });
+              } else { //result is false. An error occurs
+                const parser = new serverErrorParser({
+                  error: response.errors
+                });
+
+                const errorMessage = parser.parse({
+                  type: 'String'
+                });
+
+                const {autoclose=false, message} = messages.error;
+
+                GUI.showUserMessage({
+                  type: 'alert',
+                  message: message || errorMessage,
+                  textMessage: !message,
+                  autoclose
+                });
+
+                if (cb.error && cb.error instanceof Function) {
+                  cb.error(toolbox, message || errorMessage);
+                }
+              }
+
+              d.resolve(toolbox);
             }
-            d.resolve(toolbox);
-          }
-        })
-        .fail((error={}) => {
-          const parser = new serverErrorParser({
-            error: error.errors ? error.errors : error
-          });
-          const errorMessage = parser.parse({
-            type: 'String'
-          });
-          const {autoclose = false, message} = messages.error;
-          GUI.showUserMessage({
-            type: 'alert',
-            message: message || errorMessage,
-            textMessage: !message,
-            autoclose
-          });
-          d.reject(toolbox);
-          cb.error && cb.error instanceof Function && cb.error(toolbox, message || errorMessage);
-        });
-      //case offline
-    } else this.saveOfflineItem({
-            data: {
-              [session.getId()]: commitItems
-            },
-            id: OFFLINE_ITEMS.CHANGES
-          }).then(() =>{
-            GUI.showUserMessage({
-              type: 'success',
-              message: "plugins.editing.messages.saved_local",
-              autoclose: true
+          })
+          .fail((error={}) => {
+            //parse error server
+            const parser = new serverErrorParser({
+              error: error.errors ? error.errors : error
             });
-            session.clearHistory();
-            d.resolve(toolbox);
-          }).catch(error=>{
+            //set type string
+            const errorMessage = parser.parse({
+              type: 'String'
+            });
+
+            const {autoclose = false, message} = messages.error;
+
             GUI.showUserMessage({
               type: 'alert',
-              message: error,
-              textMessage: true,
+              message: message || errorMessage,
+              textMessage: !message,
+              autoclose
             });
+
             d.reject(toolbox);
-          })
+
+            if (cb.error && cb.error instanceof Function) {
+              cb.error(toolbox, message || errorMessage);
+            }
+          });
+      //case offline
+    } else {
+      this.saveOfflineItem({
+        data: {
+          [session.getId()]: commitItems
+        },
+        id: OFFLINE_ITEMS.CHANGES
+      })
+        .then(() =>{
+          GUI.showUserMessage({
+            type: 'success',
+            message: "plugins.editing.messages.saved_local",
+            autoclose: true
+          });
+          session.clearHistory();
+          d.resolve(toolbox);
+        })
+        .catch(error => {
+          GUI.showUserMessage({
+            type: 'alert',
+            message: error,
+            textMessage: true,
+          });
+
+          d.reject(toolbox);
+        })
+      }
     })
     .catch(() => {
       d.reject(toolbox)
   });
+
   return commitPromise;
 };
 
 /**
  * Unique field layer values handler
  */
-
-proto.clearAllLayersUniqueFieldsValues = function(){
+proto.clearAllLayersUniqueFieldsValues = function() {
   this.layersUniqueFieldsValues = {};
 };
 
-proto.clearLayerUniqueFieldsValues = function(layerId){
+proto.clearLayerUniqueFieldsValues = function(layerId) {
   this.layersUniqueFieldsValues[layerId] = {};
 };
 
-proto.removeLayerUniqueFieldValuesFromFeature = function({layerId, feature}) {
-  if (this.layersUniqueFieldsValues[layerId]) {
-    Object.keys(feature.getProperties()).forEach(property =>{
-      if (typeof this.layersUniqueFieldsValues[layerId][property] !== "undefined")
-        this.layersUniqueFieldsValues[layerId][property].delete(feature.get(property));
-    })
+proto.removeLayerUniqueFieldValuesFromFeature = function({
+  layerId,
+  feature,
+}) {
+  // skip when ..
+  if (!this.layersUniqueFieldsValues[layerId]) {
+    return;
   }
+  Object
+    .keys(feature.getProperties())
+      .forEach(property =>{
+        if (undefined !== this.layersUniqueFieldsValues[layerId][property]) {
+          this.layersUniqueFieldsValues[layerId][property].delete(feature.get(property));
+        }
+    });
 };
 
-proto.removeRelationLayerUniqueFieldValuesFromFeature = function({layerId, relationLayerId, feature}) {
-  if (typeof this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations === "undefined")
-    this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations = {};
-  Object.keys(feature.getProperties()).forEach(property =>{
-    if (typeof this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId] === "undefined")
-      this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId] = {};
-    if (typeof this.layersUniqueFieldsValues[layerId][property] !== "undefined") {
-      this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId][property] = new Set(this.layersUniqueFieldsValues[layerId][property]);
-      this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId][property].delete(feature.get(property));
-    }
-  });
+proto.removeRelationLayerUniqueFieldValuesFromFeature = function({
+  layerId,
+  relationLayerId,
+  feature,
+}) {
+  const layer = this.layersUniqueFieldsValues[relationLayerId];
+
+  if (undefined === layer.__uniqueFieldsValuesRelations) {
+    layer.__uniqueFieldsValuesRelations = {};
+  }
+
+  Object
+    .keys(feature.getProperties())
+    .forEach(property =>{
+      if (undefined === layer.__uniqueFieldsValuesRelations[layerId]) {
+        layer.__uniqueFieldsValuesRelations[layerId] = {};
+      }
+      // skip when ..
+      if (undefined === this.layersUniqueFieldsValues[layerId][property]) {
+        return;
+      }
+      const values = new Set(this.layersUniqueFieldsValues[layerId][property]);
+      values.delete(feature.get(property));
+      layer.__uniqueFieldsValuesRelations[layerId][property] = values;
+    });
 };
 
 proto.setLayerUniqueFieldValues = async function(layerId) {
-  const uniqueFieldValuesPromises = [];
+  const promises = [];
   const layer = CatalogLayersStoresRegistry.getLayerById(layerId);
-  layer.getEditingFields().forEach(field => {
-    if (field.validate.unique) {
-      if (typeof this.getLayerUniqueFieldValues({layerId, field}) === "undefined") {
-        const promise = layer.getFilterData({unique: field.name});
-        promise.then((values=[]) => {
-          if (typeof this.layersUniqueFieldsValues[layerId] === "undefined")
-            this.layersUniqueFieldsValues[layerId] = {};
-          this.layersUniqueFieldsValues[layerId][field.name] = new Set(values);
-        });
-        uniqueFieldValuesPromises.push(promise);
+  layer
+    .getEditingFields()
+    .forEach(field => {
+      // skip when ..
+      if (!(field.validate.unique && undefined === this.getLayerUniqueFieldValues({ layerId, field }))) {
+        return;
       }
-    }
-  });
-  await Promise.allSettled(uniqueFieldValuesPromises);
+      promises.push(
+        layer
+          .getFilterData({ unique: field.name })
+          .then((values = []) => {
+            if (undefined === this.layersUniqueFieldsValues[layerId]) {
+              this.layersUniqueFieldsValues[layerId] = {};
+            }
+            this.layersUniqueFieldsValues[layerId][field.name] = new Set(values);
+          })
+      );
+    });
+  await Promise.allSettled(promises);
   return this.layersUniqueFieldsValues[layerId];
 };
 
 /**
- * save tamperary relation feature changes on father (root) layer feature
+ * Save temporary relation feature changes on father (root) layer feature
+ * 
  * @param layerId
  */
 proto.saveTemporaryRelationsUniqueFieldsValues = function(layerId) {
-  if (typeof this.layersUniqueFieldsValues[layerId].__uniqueFieldsValuesRelations !== "undefined") {
-    Object.keys(this.layersUniqueFieldsValues[layerId].__uniqueFieldsValuesRelations).forEach(relationLayerId =>{
-      Object.entries(this.layersUniqueFieldsValues[layerId].__uniqueFieldsValuesRelations[relationLayerId]).forEach(([fieldName, uniqueValues]) => {
-        this.layersUniqueFieldsValues[relationLayerId][fieldName] = uniqueValues;
-      })
-    });
-    this.clearTemporaryRelationsUniqueFieldsValues(layerId);
+  const relations = (
+    this.layersUniqueFieldsValues[layerId] &&
+    this.layersUniqueFieldsValues[layerId].__uniqueFieldsValuesRelations
+  );
+
+  // skip when ..
+  if (undefined === relations) {
+    return;
   }
+
+  Object
+    .keys(relations)
+    .forEach(relationLayerId => {
+      Object
+        .entries(relations[relationLayerId])
+        .forEach(([fieldName, uniqueValues]) => {
+          this.layersUniqueFieldsValues[relationLayerId][fieldName] = uniqueValues;
+        })
+    });
+
+  this.clearTemporaryRelationsUniqueFieldsValues(layerId);
 };
 
 proto.clearTemporaryRelationsUniqueFieldsValues = function(layerId) {
   delete this.layersUniqueFieldsValues[layerId].__uniqueFieldsValuesRelations;
 };
 
-proto.getLayerUniqueFieldValues = function({layerId, field}){
+proto.getLayerUniqueFieldValues = function({
+  layerId,
+  field,
+}) {
   return this.layersUniqueFieldsValues[layerId] && this.layersUniqueFieldsValues[layerId][field.name];
 };
 
-proto.getChildLayerUniqueFieldValues = function({layerId, relationLayerId, field}) {
-  if (typeof this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations !== "undefined") {
-    if (typeof this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId] !== "undefined")
-      if (typeof this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId][field.name] !== "undefined")
-        return this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId][field.name]
-  } 
-  return this.getLayerUniqueFieldValues({
-    layerId,
-    field
-  })
+proto.getChildLayerUniqueFieldValues = function({
+  layerId,
+  relationLayerId,
+  field,
+}) {
+  const relations  = (
+    this.layersUniqueFieldsValues[relationLayerId] &&
+    this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations
+  );
+  const has_values = (
+    undefined !== relations &&
+    undefined !== relations[layerId] &&
+    undefined !== relations[layerId][field.name]
+  );
+  return has_values ? relations[layerId][field.name] : this.getLayerUniqueFieldValues({ layerId, field });
 };
 
-proto.changeLayerUniqueFieldValues = function({layerId, field, oldValue, newValue}){
-  this.layersUniqueFieldsValues[layerId][field.name].delete(oldValue);
-  this.layersUniqueFieldsValues[layerId][field.name].add(newValue);
+proto.changeLayerUniqueFieldValues = function({
+  layerId,
+  field,
+  oldValue,
+  newValue,
+}) {
+  const values = this.layersUniqueFieldsValues[layerId][field.name];
+  values.delete(oldValue);
+  values.add(newValue);
 };
 
-proto.changeRelationLayerUniqueFieldValues = function({layerId, relationLayerId, field, oldValue, newValue}){
-  if (typeof this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations === "undefined")
-    this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations = {};
-  if (typeof this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId] === "undefined")
-    this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId] = {};
-  this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId][field.name] = new Set(this.layersUniqueFieldsValues[layerId][field.name])
-  this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId][field.name].delete(oldValue);
-  this.layersUniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations[layerId][field.name].add(newValue);
+proto.changeRelationLayerUniqueFieldValues = function({
+  layerId,
+  relationLayerId,
+  field,
+  oldValue,
+  newValue,
+}) {
+  const layer = this.layersUniqueFieldsValues[relationLayerId];
+
+  if (undefined === layer.__uniqueFieldsValuesRelations) {
+    layer.__uniqueFieldsValuesRelations = {};
+  }
+
+  if (undefined === layer.__uniqueFieldsValuesRelations[layerId]) {
+    layer.__uniqueFieldsValuesRelations[layerId] = {};
+  }
+
+  const values = new Set(this.layersUniqueFieldsValues[layerId][field.name]);
+
+  values.delete(oldValue);
+  values.add(newValue);
+
+  layer.__uniqueFieldsValuesRelations[layerId][field.name] = values;
 };
 
-proto.addLayerUniqueFieldValue = function({layerId, field, value}) {
+proto.addLayerUniqueFieldValue = function({
+  layerId,
+  field,
+  value,
+}) {
   this.layersUniqueFieldsValues[layerId][field.name].add(value);
 };
 
-proto.deleteLayerUniqueFieldValue = function({layerId, field, value}) {
+proto.deleteLayerUniqueFieldValue = function({
+  layerId,
+  field,
+  value,
+}) {
   this.layersUniqueFieldsValues[layerId][field.name].delete(value);
 };
 
-proto.undoRedoLayerUniqueFieldValues = function({layerId, sessionItems=[], action}) {
-  if (typeof this.layersUniqueFieldsValues[layerId] !== "undefined") {
-    sessionItems.forEach(item => {
-      Object.keys(this.layersUniqueFieldsValues[layerId]).forEach(name =>{
-        if (Array.isArray(item)) {
-          /**
-           * case of update feature that contain new and ol values of feature
-           */
-          const [{feature:oldfeature}, {feature:newfeature}] = item;
-          if (newfeature.get(name) != oldfeature.get(name)) {
-            const oldValue = action === 'undo' ? newfeature.get(name) :  oldfeature.get(name);
-            const newValue = action === 'undo' ? oldfeature.get(name) :  newfeature.get(name);
-            this.changeLayerUniqueFieldValues({
-              layerId,
-              field: {
-                name
-              },
-              oldValue,
-              newValue
-            })
-          }
+proto.undoRedoLayerUniqueFieldValues = function({
+  layerId,
+  sessionItems = [],
+  action,
+}) {
+
+  // skip when ..
+  if (undefined === this.layersUniqueFieldsValues[layerId]) {
+    return;
+  }
+
+  sessionItems.forEach(item => {
+
+    Object
+      .keys(this.layersUniqueFieldsValues[layerId])
+      .forEach(name => {
+        const is_array = Array.isArray(item);
+        let oldVal, newVal;
+        if (is_array) { // 0 = old feature, 1 = new feature
+          const has_change = item[1].feature.get(name) != item[0].feature.get(name);
+          // update feature that contains "new" and "old" values of feature
+          oldVal = has_change ? (action === 'undo' ? item[1].feature.get(name) :  item[0].feature.get(name)) : undefined;
+          newVal = has_change ? (action === 'undo' ? item[0].feature.get(name) :  item[1].feature.get(name)) : undefined;
         } else {
-          const {feature} = item;
-          /**
-           * two possible state 'add' or 'delete'
-           *
-           */
-          const featureState = feature.getState();
-          /**
-           * in case of state add or delete
-           */
-          this[`${featureState === 'add' ? 'delete' : 'add'}LayerUniqueFieldValue`]({
-            layerId,
-            field: {
-              name
-            },
-            value: feature.get(name)
-          });
+          oldVal = 'add' === item.feature.getState()    ? item.feature.get(name) : undefined;
+          newVal = 'delete' === item.feature.getState() ? item.feature.get(name) : undefined;
+        }
+        if (undefined !== oldVal) {
+          this.deleteLayerUniqueFieldValue({ layerId, field: { name }, value: oldVal });
+        }
+        if (undefined !== newVal) {
+          this.addLayerUniqueFieldValue({ layerId, field: { name }, value: newVal });
         }
       });
-    })
-  }
+  });
 };
 
-proto.undoRedoRelationUniqueFieldValues = function({relationSessionItems, action}){
-  Object.entries(relationSessionItems).forEach(([layerId, {own:sessionItems, dependencies:relationSessionItems}])=>{
-    this.undoRedoLayerUniqueFieldValues({
-      layerId,
-      sessionItems,
-      action
-    });
-    this.undoRedoRelationUniqueFieldValues({
-      relationSessionItems,
-      action
+proto.undoRedoRelationUniqueFieldValues = function({
+  relationSessionItems,
+  action,
+}) {
+  Object
+    .entries(relationSessionItems)
+    .forEach(([layerId, { own: sessionItems, dependencies: relationSessionItems }]) => {
+      this.undoRedoLayerUniqueFieldValues({ layerId, sessionItems, action });
+      this.undoRedoRelationUniqueFieldValues({ relationSessionItems, action })
     })
-  })
 };
 
 /*
 * end unique fields
 * */
-proto.getProjectLayerById = function(layerId){
+proto.getProjectLayerById = function(layerId) {
   return CatalogLayersStoresRegistry.getLayerById(layerId);
 };
 
-proto.getProjectLayerFeatureById = async function({layerId, fid}) {
+proto.getProjectLayerFeatureById = async function({
+  layerId,
+  fid,
+}) {
   let feature;
-  const layer = this.getProjectLayerById(layerId);
+
   try {
     const response = await XHR.get({
-      url: layer.getUrl('data'),
-      params: {
-        fids: fid
-      }
+      url: this.getProjectLayerById(layerId).getUrl('data'),
+      params: {fids: fid},
     });
     const features = getFeaturesFromResponseVectorApi(response);
     if (features.length) feature = features[0];
-  } catch(err) {}
+  } catch(e) {
+    console.warn(e);
+  }
+
   return feature;
 };
 
-proto.getProjectLayersWithSameGeometryOfLayer = function(layer, options={exclude:[]}){
- const {exclude=[]} = options;
+proto.getProjectLayersWithSameGeometryOfLayer = function(layer, options = { exclude: [] }) {
+ const { exclude = [] } = options;
  const geometryType = layer.getGeometryType();
- return CatalogLayersStoresRegistry.getLayers().filter(layer => {
-   return (layer.isGeoLayer()
-     && layer.getGeometryType && layer.getGeometryType()
-     && exclude.indexOf(layer.getId()) === -1
-   ) && (layer.getGeometryType() === geometryType
-     || (isSameBaseGeometryType(layer.getGeometryType(), geometryType) &&  Geometry.isMultiGeometry(geometryType))
-   )
- });
+ return CatalogLayersStoresRegistry
+  .getLayers()
+  .filter(layer => {
+    return (
+      layer.isGeoLayer() &&
+      layer.getGeometryType &&
+      layer.getGeometryType() &&
+      -1 === exclude.indexOf(layer.getId())
+    ) && (
+      layer.getGeometryType() === geometryType ||
+      (
+        isSameBaseGeometryType(layer.getGeometryType(), geometryType) &&
+        Geometry.isMultiGeometry(geometryType)
+      )
+    )
+  });
 };
 
 /**
@@ -1739,18 +2229,19 @@ proto.getProjectLayersWithSameGeometryOfLayer = function(layer, options={exclude
  *  || Geometry.isMultiGeometry(geometryType)
  *  || !Geometry.isMultiGeometry(featureGeometryType);
  */
-
-proto.getExternalLayersWithSameGeometryOfLayer = function(layer){
+proto.getExternalLayersWithSameGeometryOfLayer = function(layer) {
   const geometryType = layer.getGeometryType();
-  return this._mapService.getExternalLayers().filter(externalLayer => {
-    const features = externalLayer.getSource().getFeatures();
-    if (features && features.length) {
-      return features[0].getGeometry() ?
-        (geometryType === features[0].getGeometry().getType())
-        ||
-        isSameBaseGeometryType(geometryType, features[0].getGeometry().getType()) : false;
-    } else return false;
-  });
+  return this._mapService
+    .getExternalLayers()
+    .filter(externalLayer => {
+      const features = externalLayer.getSource().getFeatures();
+      // skip when ..
+      if (!(features && features.length > 0) || (features && features[0] && !features[0].getGeometry())) {
+        return false;
+      }
+      const type = features[0].getGeometry().getType();
+      return geometryType === type || isSameBaseGeometryType(geometryType, type);
+    });
 };
 
 EditingService.EDITING_FIELDS_TYPE = ['unique'];
