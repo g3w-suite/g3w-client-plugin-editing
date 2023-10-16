@@ -328,10 +328,9 @@ proto.getFormFields = async function({
   fields.forEach(field => {
     if (field.validate.unique && field.editable) {
       has_unique = true;
-      const current_feature_value = feature.get(field.name); // current editing feature field value
       unique_values.push({
-        current_feature_value,
-        field
+        field,                           // feature field
+        _value: feature.get(field.name), // feature field value (current in editing)
       })
     }
   });
