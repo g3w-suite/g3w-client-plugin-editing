@@ -38,7 +38,9 @@ export default {
     update_vertex: "Päivitä pisteen ominaisuutta",
     update_feature: "Päivitä ominaisuus",
     update_multi_features: "Muokkaa valittujen ominaisuuksien attribuutteja",
-    copyfeaturefromexternallayer: "Create Feature from added layer"
+    copyfeaturefromexternallayer: "Create Feature from added layer",
+    addhole: "Add hole",
+    deletehole: "Remove hole"
   },
   toolsoftool: {
     measure: "Show measure",

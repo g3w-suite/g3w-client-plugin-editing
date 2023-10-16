@@ -12,7 +12,7 @@ const {
 const {Geometry} = g3wsdk.core.geometry;
 const EditingTask = require('./editingtask');
 
-function CreateHoleTask(options={}) {
+function DeleteHoleTask(options={}) {
   this.drawInteraction;
   this.snapInteraction;
   /**
@@ -26,9 +26,9 @@ function CreateHoleTask(options={}) {
   base(this, options);
 }
 
-inherit(CreateHoleTask, EditingTask);
+inherit(DeleteHoleTask, EditingTask);
 
-const proto = CreateHoleTask.prototype;
+const proto = DeleteHoleTask.prototype;
 
 /**
  * @TODO
@@ -146,4 +146,4 @@ proto.removeLastPoint = function() {
   }
 };
 
-module.exports = CreateHoleTask;
+module.exports = DeleteHoleTask;

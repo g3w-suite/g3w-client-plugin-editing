@@ -3,7 +3,6 @@ const { Geometry } = g3wsdk.core.geometry;
 const { GUI } = g3wsdk.gui;
 const {
   isSameBaseGeometryType,
-  isPolygonGeometryType
 } = g3wsdk.core.geoutils;
 const Tool = require('./tool');
 const AddFeatureWorkflow = require('../workflows/addfeatureworkflow');
@@ -25,7 +24,9 @@ const CopyFeaturesFromOtherLayerWorkflow = require('../workflows/copyfeaturesfro
  * @since 3.7.0
  * @constructor
  */
-const CreateHoleWorkflow = require('../workflows/createholeworkflow');
+const AddHoleWorflow = require('../workflows/addholeworkflow');
+const DeleteHoleWorflow = require('../workflows/deleteholeworkflow');
+
 
 function EditorToolsFactory() {
   /**
@@ -230,15 +231,26 @@ function EditorToolsFactory() {
           ...('Polygon' === type ? [
             {
               config: {
-                id: 'createhole',
-                name: "Hole",
+                id: 'addhole',
+                name: "editing.tools.addhole",
                 icon: "addRing.png",
                 layer,
                 row: 2,
-                op: CreateHoleWorkflow,
+                op: AddHoleWorflow,
+                type: ['change_feature']
+              }
+            }, {
+              config: {
+                id: 'deletehole',
+                name: "editing.tools.deletehole",
+                icon: "deleteRing.png",
+                layer,
+                row: 2,
+                op: DeleteHoleWorflow,
                 type: ['change_feature']
               }
             }
+
           ] : []),
           {
             config: {
