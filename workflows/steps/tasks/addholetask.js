@@ -31,7 +31,7 @@ inherit(Addholetask, EditingTask);
 const proto = Addholetask.prototype;
 
 /**
- * @TODO
+ * Method to create hole on polygon
  * @param holeFeature
  * @returns {{newFeature, originalFeature}}
  */
@@ -42,22 +42,25 @@ proto.createHole = function(holeFeature, editingLayerSource){
 
   if (isMultiGeometry(this.geometryType)) {
     // cycle on each MultiPolygon feature of layer Multipolygon
-    editingLayerSource.getFeatures().find((feature) => {
-      //feature is a multipolygon
-      //find single polygon of multipolygon that contain draw hole
-      const findPolygonIndex = feature.getGeometry().getCoordinates().findIndex((singlePolygonCoordinates) => {
-        const featurePolygonGeometry = coordinatesToGeometry('Polygon', singlePolygonCoordinates)
-        return within(featurePolygonGeometry, holeFeature.getGeometry())
-      })
-      if (findPolygonIndex !== -1) {
-        originalFeature = feature.clone();
-        newFeature = feature;
-        const coordinates = newFeature.getGeometry().getCoordinates();
-        coordinates[findPolygonIndex].push(holeFeature.getGeometry().getCoordinates()[0]);
-        newFeature.getGeometry().setCoordinates(coordinates);
-        return true;
-      }
-    });
+    editingLayerSource
+      .getFeatures()
+      .find((feature) => {
+        //feature is a multipolygon
+        //find single polygon of multipolygon that contain draw hole
+        const findPolygonIndex = feature
+          .getGeometry()
+          .getCoordinates()
+          .findIndex((singlePolygonCoordinates) => within(coordinatesToGeometry('Polygon', singlePolygonCoordinates), holeFeature.getGeometry()))
+        //if find
+        if (findPolygonIndex !== -1) {
+          originalFeature = feature.clone();
+          newFeature = feature;
+          const coordinates = newFeature.getGeometry().getCoordinates();
+          coordinates[findPolygonIndex].push(holeFeature.getGeometry().getCoordinates()[0]);
+          newFeature.getGeometry().setCoordinates(coordinates);
+          return true;
+        }
+      });
   } else { // In case of Polygon
     newFeature = editingLayerSource.getFeatures().find(feature => {
       return within(feature.getGeometry(), holeFeature.getGeometry())
@@ -113,7 +116,7 @@ proto.run = function(inputs, context) {
     } else {
       GUI.showUserMessage({
         type: 'warning',
-        message: 'Ciao'
+        message: 'No hole is created' //@TODO translation
       })
       d.reject();
     }
