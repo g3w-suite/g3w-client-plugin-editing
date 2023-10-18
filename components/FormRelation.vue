@@ -273,7 +273,7 @@
     methods: {
 
       resize() {
-        // skip when ..
+        // skip when relation form is disabled (or hidden) 
         if (!(this.active && 'none' !== this.$el.style.display)) {
           return;
         }
@@ -552,7 +552,7 @@
       }
 
 
-      this.active                     = true;
+      this.active = true;
 
       await this.$nextTick();
 
