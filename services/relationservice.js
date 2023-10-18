@@ -216,7 +216,9 @@ proto._highlightRelationSelect = function(relation) {
  * @returns {Promise<unknown>}
  */
 proto.startTool = function(relationtool, index) {
-  if (relationtool.state.id === 'movefeature') GUI.hideContent(true);
+  if (relationtool.state.id === 'movefeature') {
+    GUI.hideContent(true);
+  }
   return new Promise((resolve, reject) => {
     const toolPromise = (this._layerType === Layer.LayerTypes.VECTOR) && this.startVectorTool(relationtool, index) ||
       (this._layerType === Layer.LayerTypes.TABLE) && this.startTableTool(relationtool, index);
@@ -276,20 +278,22 @@ proto.startTableTool = function(relationtool, index) {
       } else d.reject(result);
     });
   }
+  //edit attributes feature
   if (relationtool.state.id === 'editattributes') {
     const EditTableFeatureWorkflow = require('../workflows/edittablefeatureworkflow');
     const workflow = new EditTableFeatureWorkflow();
     workflow.start(options)
       .then(() => {
         //get relation layer fields
-        const fields = this._getRelationFieldsValue(relationfeature);
-        fields.forEach(_field => {
-          relation.fields.forEach(field => {
-            if (field.name === _field.name) {
-              field.value = _field.value;
-            }
-          })
-        });
+        this._getRelationFieldsValue(relationfeature)
+          .forEach(_field => {
+            relation.fields.forEach(field => {
+              if (field.name === _field.name) {
+                //in case of sync feature get data value of sync feature
+                field.value = _field.value;
+              }
+            })
+          });
         d.resolve(true);
       })
       .fail(err => d.reject(false))
@@ -783,6 +787,21 @@ proto._getRelationFeature = function(featureId) {
 };
 
 /**
+ * Get value from feature if layer has key value
+ * 
+ * @since g3w-client-plugin-editing@v3.7.0
+ */
+proto.getRelationFeatureValue = function(featureId, property) {
+  return this
+    .getEditingService()
+    .getFeatureTableFieldValue({
+      layerId: this._relationLayerId,
+      feature: this._getRelationFeature(featureId),
+      property,
+    });
+};
+
+/**
  * Method to unlink relation
  * @param index
  * @param dialog
@@ -941,7 +960,8 @@ proto.getUnlinkedStyle = function() {
  * @returns {*[]}
  */
 proto.relationFields = function(relation) {
-  return relation.fields.map(({label, value}) => ({
+  return relation.fields.map(({label, name, value}) => ({
+    name,
     label,
     value
   }))
