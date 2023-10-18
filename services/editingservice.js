@@ -1,9 +1,6 @@
 import API from '../api'
 
-const {
-  G3W_FID,
-  EDITING_FORMATTER_INPUT_FIELD_TYPES
-}                                     = g3wsdk.constant;
+const { G3W_FID }                     = g3wsdk.constant;
 const {
   ApplicationState,
   ApplicationService
@@ -2277,44 +2274,36 @@ proto.getExternalLayersWithSameGeometryOfLayer = function(layer) {
 };
 
 /**
+ * Finalize "formatter" value for any kind of field
+ * 
+ * @param { string }   opts.layerId
+ * @param {ol.Feature} opts.feature
+ * @param { string }   opts.property
+ * 
+ * @returns (field.key) or (field.value)
+ * 
  * @since 3.7.0
- * @param opts.layerId
- * @param opts.feature ol feature
- * @param opts.property <String>
- * @returns value
  */
 proto.getFeatureTableFieldValue = function({
   layerId,
   feature,
   property
-}={}) {
-  const keyValuesFields = this
-    .getLayerById(layerId)
-    .config
-    .editing
-    .fields
-    .filter(field => EDITING_FORMATTER_INPUT_FIELD_TYPES.includes(field.input.type))
+} = {}) {
 
-  let value = feature.get(property);
+  // get editable fields
+  const { fields } = this.getLayerById(layerId).config.editing;
 
-  if (null !== value && keyValuesFields.length > 0) {
-    const keyValues = keyValuesFields
-      .reduce((accumulator, field) => {
-        accumulator[field.name] = field.input.options.values;
-        return accumulator;
-      }, {});
+  // get field value (raw)
+  let value        = feature.get(property);
 
-    if (keyValues[property]) {
-      //need to get last feature add to
-      const findKeyValue = keyValues[property].find(keyValue => value == keyValue.value);
-      //need to be sure that key values used are get from server
-      //without error
-      if (findKeyValue) {
-        return findKeyValue.key;
-      }
-    }
-  }
-  return value;
+  // get key-value fields implicated into: https://github.com/g3w-suite/g3w-client-plugin-editing/pull/64
+  const values = (null !== value) && (fields.filter(field => ['select_autocomplete', 'select'].includes(field.input.type)) || [] ).reduce((kv, field) => { kv[field.name] = field.input.options.values; return kv; }, {});
+
+  // get last key-value feature add to
+  const kv_field = values && values[property] && values[property].find(kv => value == kv.value);
+
+  // return key for key-values fields (raw field value otherwise)
+  return kv_field ? kv_field.key : value;
 }
 
 EditingService.EDITING_FIELDS_TYPE = ['unique'];
