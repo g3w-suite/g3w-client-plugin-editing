@@ -1,11 +1,10 @@
-const {GUI} = g3wsdk.gui;
+const { GUI }         = g3wsdk.gui;
 const {base, inherit} =  g3wsdk.core.utils;
 
-const EditingTask = require('./editingtask');
+const EditingTask     = require('./editingtask');
 
 function DeleteHoleTask(options={}) {
   /**
-   *
    * @param event
    * @returns {boolean|void}
    * @private
@@ -17,6 +16,9 @@ inherit(DeleteHoleTask, EditingTask);
 
 const proto = DeleteHoleTask.prototype;
 
+/**
+ * @TODO
+ */
 proto.run = function(inputs, context) {
   const d = $.Deferred();
   const originalLayer = inputs.layer;
@@ -24,9 +26,8 @@ proto.run = function(inputs, context) {
   const layerId = originalLayer.getId();
   const originalGeometryType = originalLayer.getEditingGeometryType();
   console.log(inputs.features)
-  d.promise.resolve()
 
-  return d.promise();
+  return d.resolve();
 };
 
 proto.stop = function() {
