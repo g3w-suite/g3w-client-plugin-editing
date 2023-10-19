@@ -24,7 +24,7 @@ proto.run = function(inputs, context) {
   const layerId = originalLayer.getId();
   const originalGeometryType = originalLayer.getEditingGeometryType();
   console.log(inputs.features)
-  promise.resolve()
+  d.promise.resolve()
 
   return d.promise();
 };
