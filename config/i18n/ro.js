@@ -38,9 +38,9 @@ export default  {
     update_vertex: "Actualizează vertecșii entității",
     update_feature: "Actualizează atributul entității",
     update_multi_features: "Actualizează atributele entităților selectate",
-    copyfeaturefromexternallayer: "Create Feature from added layer",
-    addhole: "Add hole",
-    deletehole: "Remove hole"
+    copyfeaturefromexternallayer: "Creați caracteristică din stratul adăugat",
+    addhole: "Adăugați gaura",
+    deletehole: "Scoateți gaura"
   },
   toolsoftool: {
     measure: "Arată măsurătorile",
