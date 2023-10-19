@@ -1,31 +1,28 @@
-const { Layer } = g3wsdk.core.layer;
-const { Geometry } = g3wsdk.core.geometry;
-const { GUI } = g3wsdk.gui;
-const {
-  isSameBaseGeometryType,
-} = g3wsdk.core.geoutils;
-const Tool = require('./tool');
-const AddFeatureWorkflow = require('../workflows/addfeatureworkflow');
-const ModifyGeometryVertexWorkflow = require('../workflows/modifygeometryvertexworkflow');
-const MoveFeatureWorkflow = require('../workflows/movefeatureworkflow');
-const DeleteFeatureWorkflow = require('../workflows/deletefeatureworkflow');
-const EditFeatureAttributesWorkflow = require('../workflows/editfeatureattributesworkflow');
-const EditTableFeaturesWorkflow = require('../workflows/edittableworkflow');
-const AddTableFeatureWorflow = require('../workflows/addtablefeatureworkflow');
-const CopyFeaturesWorflow = require('../workflows/copyfeaturesworkflow');
-const SplitFeatureWorkflow = require('../workflows/splitfeatureworkflow');
-const MergeFeaturesWorkflow = require('../workflows/mergefeaturesworkflow');
-const AddPartToMultigeometriesWorkflow = require('../workflows/addparttomultigeometriesworkflow');
+const { Layer }                             = g3wsdk.core.layer;
+const { Geometry }                          = g3wsdk.core.geometry;
+const { GUI }                               = g3wsdk.gui;
+const { isSameBaseGeometryType }            = g3wsdk.core.geoutils;
+
+const Tool                                  = require('./tool');
+const AddFeatureWorkflow                    = require('../workflows/addfeatureworkflow');
+const ModifyGeometryVertexWorkflow          = require('../workflows/modifygeometryvertexworkflow');
+const MoveFeatureWorkflow                   = require('../workflows/movefeatureworkflow');
+const DeleteFeatureWorkflow                 = require('../workflows/deletefeatureworkflow');
+const EditFeatureAttributesWorkflow         = require('../workflows/editfeatureattributesworkflow');
+const EditTableFeaturesWorkflow             = require('../workflows/edittableworkflow');
+const AddTableFeatureWorflow                = require('../workflows/addtablefeatureworkflow');
+const CopyFeaturesWorflow                   = require('../workflows/copyfeaturesworkflow');
+const SplitFeatureWorkflow                  = require('../workflows/splitfeatureworkflow');
+const MergeFeaturesWorkflow                 = require('../workflows/mergefeaturesworkflow');
+const AddPartToMultigeometriesWorkflow      = require('../workflows/addparttomultigeometriesworkflow');
 const DeletePartFromMultigeometriesWorkflow = require('../workflows/deletepartfrommultigeometriesworkflow');
-const EditMultiFeatureAttributesWorkflow = require('../workflows/editmultifeatureattributesworkflow');
-const AddFeatureFromMapVectorLayersWorflow = require('../workflows/addfeaturefrommapvectorlayersworkflow');
-const CopyFeaturesFromOtherLayerWorkflow = require('../workflows/copyfeaturesfromotherlayerworkflow');
-/**
- * @since 3.7.0
- * @constructor
- */
-const AddHoleWorflow = require('../workflows/addholeworkflow');
-const DeleteHoleWorflow = require('../workflows/deleteholeworkflow');
+const EditMultiFeatureAttributesWorkflow    = require('../workflows/editmultifeatureattributesworkflow');
+const AddFeatureFromMapVectorLayersWorflow  = require('../workflows/addfeaturefrommapvectorlayersworkflow');
+const CopyFeaturesFromOtherLayerWorkflow    = require('../workflows/copyfeaturesfromotherlayerworkflow');
+/** @since g3w-client-plugin-editing@v3.7.0 */
+const AddHoleWorflow                        = require('../workflows/addholeworkflow');
+/** @since g3w-client-plugin-editing@v3.7.0 */
+const DeleteHoleWorflow                     = require('../workflows/deleteholeworkflow');
 
 
 function EditorToolsFactory() {
