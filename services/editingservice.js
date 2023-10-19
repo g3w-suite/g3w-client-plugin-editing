@@ -81,7 +81,7 @@ function EditingService() {
 
   /**
    * Store unique fields value for each layer
-   * 
+   *
    * @type {{ mode: string, messages: undefined, modal: boolean, cb: { error: undefined, done: undefined } }}
    */
   this.layersUniqueFieldsValues = {};
@@ -151,7 +151,7 @@ function EditingService() {
   this._mapService.on(MAPCONTROL_TOGGLED_EVENT_NAME, this.mapControlToggleEventHandler);
 
   /**
-   * Plugin components 
+   * Plugin components
    */
   this._formComponents = {};
 
@@ -203,7 +203,7 @@ function EditingService() {
 
   /**
    * @FIXME add description
-   * 
+   *
    * @fires ready
    */
   this._ready = function() {
@@ -275,9 +275,9 @@ proto.addFormComponents = function({
 
 /**
  * [API Method] Get session
- * 
+ *
  * @param layerId
- * 
+ *
  * @returns {*}
  */
 proto.getSession = function({ layerId } = {}) {
@@ -286,9 +286,9 @@ proto.getSession = function({ layerId } = {}) {
 
 /**
  * [API Method]
- * 
+ *
  * @param layerId
- * 
+ *
  * @returns Feature in editing
  */
 proto.getFeature = function({ layerId } = {}) {
@@ -297,10 +297,10 @@ proto.getFeature = function({ layerId } = {}) {
 
 /**
  * [API Method] Subscribe handler function on event
- * 
+ *
  * @param event
  * @param { Function } fnc
- * 
+ *
  * @returns { Function } function
  */
 proto.subscribe = function(event, fnc) {
@@ -311,7 +311,7 @@ proto.subscribe = function(event, fnc) {
 
 /**
  * [API Method] Unsubscribe handler function on event
- * 
+ *
  * @param event
  * @param fnc
  */
@@ -321,9 +321,9 @@ proto.unsubscribe = function(event, fnc) {
 
 /**
  * Check if layer has relation 1:1 (type ONE) and if fields
- * 
+ *
  * belong to relation where child layer is editable
- * 
+ *
  * @since g3w-client-plugin-editing@v3.7.0
  */
 proto.setRelations1_1FieldsEditable = function() {
@@ -346,13 +346,13 @@ proto.setRelations1_1FieldsEditable = function() {
 
 /**
  * Get Father layer fields related (in Relation) to Child Layer,
- * 
+ *
  * ie. father fields having same `vectorjoin_id` attribute to `relation.id` value
- * 
+ *
  * @param { Relation } relation
- * 
+ *
  * @returns { Array } fields Array bind to child layer
- * 
+ *
  * @since g3w-client-plugin-editing@v3.7.0
  */
 proto.getRelation1_1EditingLayerFieldsReferredToChildRelation = function(relation) {
@@ -366,9 +366,9 @@ proto.getRelation1_1EditingLayerFieldsReferredToChildRelation = function(relatio
  * Get Relation 1:1 from layerId
  *
  * @param layerId
- * 
+ *
  * @returns Array of relations related to layerId that are Join 1:1 (Type ONE)
- * 
+ *
  * @since g3w-client-plugin-editing@v3.7.0
  */
 proto.getRelation1_1ByLayerId = function(layerId) {
@@ -381,9 +381,9 @@ proto.getRelation1_1ByLayerId = function(layerId) {
 
 /**
  * Set Boolean value for show select layers to edit
- * 
+ *
  * @param bool Default is true
- * 
+ *
  * @since g3w-client-plugin-editing@v3.6.2
  */
 proto.setShowSelectLayers = function(bool=true) {
@@ -429,8 +429,8 @@ proto.editResultLayerFeature = function({
   //get scale constraint from setting layer
   const {scale} = toolBox.getEditingConstraints();
   // if feature has geometry
-  if (feature.geometry) {
-    (typeof scale !== "undefined") && this._mapService.getMap().once('moveend', () => {
+  if (feature.geometry && undefined !== scale) {
+    this._mapService.getMap().once('moveend', () => {
       const mapUnits = this._mapService.getMapUnits();
       const map = this._mapService.getMap();
       //check current scale after zoom to feature
@@ -510,12 +510,12 @@ proto.getToolboxSelected = function() {
 
 /**
  * Create a new feature
- * 
+ *
  * @param layerId
  * @param options.geometry.type
  * @param options.geometry.coordinates
- * 
- * @returns { Feature } 
+ *
+ * @returns { Feature }
  */
 proto.addNewFeature = function(layerId, options = {}) {
   const feature = new Feature();
@@ -617,10 +617,10 @@ proto.getOfflineItem = function(id) {
 
 /**
  * Check if alread have off lines changes
- * 
+ *
  * @param opts.modal
  * @param opts.unlock
- * 
+ *
  * @returns {Promise<unknown>}
  */
 proto.checkOfflineChanges = function({
@@ -875,7 +875,7 @@ proto.setOpenEditingPanel = function(bool) {
 
 /**
  * Add event
- * 
+ *
  * @param {String} event.type
  * @param event.id
  * @param event.fnc
@@ -892,7 +892,7 @@ proto.addEvent = function({
 
 /**
  * Add events
- * 
+ *
  * @param {String} event.types
  * @param event.id
  * @param event.fnc
@@ -909,11 +909,11 @@ proto.addEvents = function({
   }));
 };
 
-proto.runEventHandler = function({
+proto.runEventHandler = async function({
   type,
   id,
 } = {}) {
-  this._events[type] && this._events[type][id] && this._events[type][id].forEach(fnc => fnc());
+  await (this._events[type] && this._events[type][id] && Promise.allSettled(this._events[type][id].map(fnc => fnc())));
 };
 
 /**
@@ -939,7 +939,7 @@ proto.setSaveConfig = function({
 };
 
 /**
- * @returns save mode 
+ * @returns save mode
  */
 proto.getSaveConfig = function() {
   return this.saveConfig;
@@ -961,6 +961,11 @@ proto.resetDefault = function() {
   this.disableMapControlsConflict(false);
 };
 
+/**
+ *
+ * @param layer
+ * @private
+ */
 proto._attachLayerWidgetsEvent = function(layer) {
   const fields = layer.getEditingFields();
   for (let i=0; i < fields.length; i++) {
@@ -972,45 +977,54 @@ proto._attachLayerWidgetsEvent = function(layer) {
         const self = this;
         if (!usecompleter) {
           this.addEvents({
+            /**
+             * @TODO need to avoid to call the same fnc to same event many times to avoid waste server request time
+             */
             types: ['start-editing', 'show-relation-editing'],
             id: layer.getId(),
             fnc() {
-              // remove all values
-              loading.state = 'loading';
-              field.input.options.values = [];
-              const relationLayer = CatalogLayersStoresRegistry.getLayerById(layer_id);
-              if (relationLayer) {
+              return new Promise((resolve, reject) => {
+                // remove all values
+                loading.state = 'loading';
+                field.input.options.values = [];
+                const relationLayer = CatalogLayersStoresRegistry.getLayerById(layer_id);
                 if (relationLayer) {
-                  relationLayer.getDataTable({
-                    ordering: key
-                  }).then(response => {
-                    if (response && response.features) {
-                      const features = response.features;
-                      self.fireEvent('autocomplete', {
-                        field,
-                        features
-                      });
-                      for (let i = 0; i < features.length; i++) {
-                        field.input.options.values.push({
-                          key: features[i].properties[key],
-                          value: features[i].properties[value]
-                        })
+                  if (relationLayer) {
+                    relationLayer.getDataTable({
+                      ordering: key
+                    }).then(response => {
+                      if (response && response.features) {
+                        const features = response.features;
+                        self.fireEvent('autocomplete', {
+                          field,
+                          features
+                        });
+                        for (let i = 0; i < features.length; i++) {
+                          field.input.options.values.push({
+                            key: features[i].properties[key],
+                            value: features[i].properties[value]
+                          })
+                        }
+                        loading.state = 'ready';
+                        resolve(field.input.options.values);
                       }
-                      loading.state = 'ready';
-                    }
-                  }).fail(error => {
-                    loading.state = 'error'
-                  });
+                    }).fail(error => {
+                      loading.state = 'error';
+                      reject(error);
+                    });
+                  } else {
+                    loading.state = 'error';
+                    reject();
+                  }
                 } else {
-                  loading.state = 'error'
+                  self.fireEvent('autocomplete', {
+                    field,
+                    features: []
+                  });
+                  loading.state = 'ready';
+                  resolve([]);
                 }
-              } else {
-                self.fireEvent('autocomplete', {
-                  field,
-                  features: []
-                });
-                loading.state = 'ready';
-              }
+              })
             }
           })
         }
@@ -1036,10 +1050,10 @@ proto._createToolBoxDependencies = function() {
 
 /**
  * Check if field of layer is required
- * 
+ *
  * @param layerId
  * @param fieldName
- * 
+ *
  * @returns {*}
  */
 proto.isFieldRequired = function(layerId, fieldName) {
@@ -1093,11 +1107,19 @@ proto.getCurrentWorkflowData = function() {
   };
 };
 
+/**
+ *
+ * @param layerId
+ * @param relation
+ * @param feature
+ * @returns {BigUint64Array}
+ */
 proto.getRelationsAttributesByFeature = function({
   layerId,
   relation,
   feature,
 } = {}) {
+
   const layer = this.getToolBoxById(layerId).getLayer();
   const relations = this.getRelationsByFeature({layerId, relation, feature});
   return relations.map(relation => {
@@ -1174,7 +1196,7 @@ proto.getToolBoxById = function(toolboxId) {
 
 /**
  * Method to apply filter editing contsraint to toolbox editing
- * 
+ *
  * @param constinst
  */
 proto.setApplicationEditingConstraints = function(constraints={showToolboxesExcluded: true, toolboxes:{}}) {
@@ -1258,11 +1280,11 @@ proto.clearState = function() {
 
 /**
  * Get Relation in editing
- * 
+ *
  * @param opts.layerId
  * @param opts.relations
  * @param opts.feature
- * 
+ *
  * @returns {[]}
  */
 proto.getRelationsInEditing = function({
@@ -1366,9 +1388,9 @@ proto.fathersInEditing = function(layerId) {
 /**
  * @param opts.layerId
  * @param opts.relation
- * 
+ *
  * @returns {{ownField: *, relationField: *}}
- * 
+ *
  * @private
  */
 proto._getRelationFieldsFromRelation = function({
@@ -1391,7 +1413,7 @@ proto._getRelationFieldsFromRelation = function({
 };
 
 /**
- * @param { 'all' | 'bbox' | 'field' | 'fid' | '1:1' } filterType 
+ * @param { 'all' | 'bbox' | 'field' | 'fid' | '1:1' } filterType
  * @param options.feature
  * @param options.relation
  * @param options.field
@@ -1743,15 +1765,15 @@ proto.showChangesToResult = async function() {
         inputs.fids.push(fids);
       }
     });
-    const promise = inputs.layers.length ? DataRouterService.getData('search:layersfids', {
-      inputs,
-      outputs: {
-        title: 'plugins.editing.editing_changes',
-        show: {
-          loading: false
+    const promise = inputs.layers.length ?
+      DataRouterService.getData('search:layersfids', {
+        inputs,
+        outputs: {
+          title: 'plugins.editing.editing_changes',
+          show: {loading: false}
         }
-      }
-    }) : Promise.resolve();
+      }) :
+      Promise.resolve();
     try {
       await promise;
     } catch(err) {}
@@ -1768,7 +1790,7 @@ proto.showChangesToResult = async function() {
  * @param commit.done
  * @param commit.modal
  * @param commit.close
- * 
+ *
  * @returns {*}
  */
 proto.commit = function({
@@ -2020,7 +2042,7 @@ proto.setLayerUniqueFieldValues = async function(layerId) {
 
 /**
  * Save temporary relation feature changes on father (root) layer feature
- * 
+ *
  * @param layerId
  */
 proto.saveTemporaryRelationsUniqueFieldsValues = function(layerId) {
@@ -2165,14 +2187,21 @@ proto.undoRedoLayerUniqueFieldValues = function({
 };
 
 proto.undoRedoRelationUniqueFieldValues = function({
-  relationSessionItems,
-  action,
+ relationSessionItems,
+ action,
 }) {
   Object
     .entries(relationSessionItems)
-    .forEach(([layerId, { own: sessionItems, dependencies: relationSessionItems }]) => {
-      this.undoRedoLayerUniqueFieldValues({ layerId, sessionItems, action });
-      this.undoRedoRelationUniqueFieldValues({ relationSessionItems, action })
+    .forEach(([layerId, {own:sessionItems, dependencies:relationSessionItems}]) => {
+      this.undoRedoLayerUniqueFieldValues({
+        layerId,
+        sessionItems,
+        action
+      });
+      this.undoRedoRelationUniqueFieldValues({
+        relationSessionItems,
+        action
+      })
     })
 };
 
@@ -2243,6 +2272,39 @@ proto.getExternalLayersWithSameGeometryOfLayer = function(layer) {
       return geometryType === type || isSameBaseGeometryType(geometryType, type);
     });
 };
+
+/**
+ * Finalize "formatter" value for any kind of field
+ * 
+ * @param { string }   opts.layerId
+ * @param {ol.Feature} opts.feature
+ * @param { string }   opts.property
+ * 
+ * @returns (field.key) or (field.value)
+ * 
+ * @since 3.7.0
+ */
+proto.getFeatureTableFieldValue = function({
+  layerId,
+  feature,
+  property
+} = {}) {
+
+  // get editable fields
+  const { fields } = this.getLayerById(layerId).config.editing;
+
+  // get field value (raw)
+  let value        = feature.get(property);
+
+  // get key-value fields implicated into: https://github.com/g3w-suite/g3w-client-plugin-editing/pull/64
+  const values = (null !== value) && (fields.filter(field => ['select_autocomplete', 'select'].includes(field.input.type)) || [] ).reduce((kv, field) => { kv[field.name] = field.input.options.values; return kv; }, {});
+
+  // get last key-value feature add to
+  const kv_field = values && values[property] && values[property].find(kv => value == kv.value);
+
+  // return key for key-values fields (raw field value otherwise)
+  return kv_field ? kv_field.key : value;
+}
 
 EditingService.EDITING_FIELDS_TYPE = ['unique'];
 

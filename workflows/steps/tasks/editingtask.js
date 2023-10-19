@@ -27,9 +27,9 @@ const { DataRouterService }    = g3wsdk.core.data;
 
 /**
  * Base editing task
- * 
+ *
  * @param options
- * 
+ *
  * @constructor
  */
 function EditingTask(options = {}) {
@@ -45,7 +45,7 @@ function EditingTask(options = {}) {
   };
 
   this.removeInteraction = function(interaction) {
-    setTimeout(() => this._mapService.removeInteraction(interaction)) // timeout needed to workaround an Openlayers issue 
+    setTimeout(() => this._mapService.removeInteraction(interaction)) // timeout needed to workaround an Openlayers issue
   };
 
 }
@@ -56,9 +56,9 @@ const proto = EditingTask.prototype;
 
 /**
  * @TODO code implementation
- * 
+ *
  * Get editing type from editing config
- * 
+ *
  * @returns { null }
  */
 proto.getEditingType = function() {
@@ -81,7 +81,7 @@ proto.unregisterPointerMoveCursor = function() {
 
 /**
  * @param evt
- * 
+ *
  * @private
  */
 proto._pointerMoveCursor = function(evt) {
@@ -120,7 +120,7 @@ proto.getMap = function() {
 /**
  * @param feature
  * @param coordinates
- * 
+ *
 * @returns { boolean }
  */
 proto.areCoordinatesEqual = function({
@@ -238,7 +238,7 @@ proto.getEditingService = function() {
 /**
  * @param event
  * @param options
- * 
+ *
  * @returns {*}
  */
 proto.fireEvent = function(event, options={}) {
@@ -270,7 +270,7 @@ proto.run = function(inputs, context) {};
 proto.stop = function() {};
 
 /**
- * Handle single task 
+ * Handle single task
  */
 proto.saveSingle = function(input, context) {
   context.session.save().then(() => this.getEditingService().saveChange());
@@ -278,7 +278,7 @@ proto.saveSingle = function(input, context) {
 
 /**
  * Cancel single task
- * 
+ *
  * @param input
  * @param context
  */
@@ -296,7 +296,7 @@ proto.getRootWorkflowLayerId = function() {
 
 /**
  * Get form fields
- * 
+ *
  * @param form.inputs.layer
  * @param form.inputs.features
  * @param form.context.excludeFields
@@ -326,8 +326,8 @@ proto.getFormFields = async function({
   );
 
   fields.forEach(field => {
-    if (field.validate.unique) {
-      has_unique = true;                 // field value need to be unique
+    if (field.validate.unique && field.editable) {
+      has_unique = true;
       unique_values.push({
         field,                           // feature field
         _value: feature.get(field.name), // feature field value (current in editing)
@@ -338,7 +338,7 @@ proto.getFormFields = async function({
   unique_values.forEach(({ _value, field }) => {
     const current_values = isChild                                                  // current editing feature add to
       ? service.getChildLayerUniqueFieldValues({ layerId, relationLayerId, field }) // child form --> belongs to relation
-      : service.getLayerUniqueFieldValues({ layerId, field });                      // root layer --> TODO: CHECK IF FIELD IS RELATED TO 1:1 RELATION 
+      : service.getLayerUniqueFieldValues({ layerId, field });                      // root layer --> TODO: CHECK IF FIELD IS RELATED TO 1:1 RELATION
 
     // convert "current" values to string (when not null or undefined)
     current_values.forEach(value => { field.validate.exclude_values.add([null, undefined].indexOf(value) === -1 ? `${value}` : value ); });
@@ -411,9 +411,9 @@ proto.getFormFields = async function({
  * @param expression.context.excludeFields
  * @param expression.context.get_default_value
  * @param expression.feature
- * 
+ *
  * @returns {Promise<void>}
- * 
+ *
  * @since g3w-client-plugin-editing@v3.5.14
  */
 proto.evaluateExpressionFields = async function({
@@ -484,7 +484,7 @@ proto.evaluateExpressionFields = async function({
 /**
  * @param layer,
  * @param feature
- * 
+ *
  * @returns Array of fields
  */
 proto.getNotEditableFieldsNoPkValues = function({
@@ -535,7 +535,7 @@ proto.getParentFormData = function() {
 /**
  * @param layerId
  * @param geometryType
- * 
+ *
  * @returns { Array }
  */
 proto.getFeaturesFromSelectionFeatures = function({
@@ -551,7 +551,7 @@ proto.getFeaturesFromSelectionFeatures = function({
 /**
  * @param features
  * @param geometryType
- * 
+ *
  * @returns { Array } converted features
  */
 proto.convertFeaturesGeometryToGeometryTypeOfLayer = function({
@@ -633,7 +633,7 @@ proto.chooseFeatureFromFeatures = function({
  * @param opts.layerId Root layerId
  * @param opts.features Array of update/new features belong to Root layer
  * @param opts.fields Array of form fields father
- * 
+ *
  * @since g3w-client-plugin-editing@v3.7.0
  */
 proto.handleRelation1_1LayerFields = async function({
@@ -848,12 +848,12 @@ proto._getRelation1_1ChildFeature = async function({
 
 /**
  * Listen changes on 1:1 relation fields (get child values from child layer)
- * 
+ *
  * @param opts.layerId Current editing layer id
  * @param opts.fields Array of form fields of current editing layer
  *
  * @returns Array of watch function event to remove listen
- * 
+ *
  * @since g3w-client-plugin-editing@v3.7.0
  */
 proto.listenRelation1_1FieldChange = async function({
@@ -968,14 +968,14 @@ proto.listenRelation1_1FieldChange = async function({
 
 /**
  * Check if relation has prefix.
- * 
+ *
  * that's how 1:1 relation fields are marked
- * 
+ *
  * @param opts.relation Relation Object
  * @param opts.field    father field
- * 
+ *
  * @return name of father field
- * 
+ *
  * @since g3w-client-plugin-editing@v3.7.0
  */
 proto.getChildFieldNameFromRelation1_1 = function({
