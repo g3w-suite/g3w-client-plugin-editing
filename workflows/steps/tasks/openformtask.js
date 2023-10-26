@@ -431,7 +431,7 @@ proto.stop = function() {
     contextService.setUpdate(false, { force: false });
   }
 
-  GUI.closeForm({ pop: this._isContentChild });
+  GUI.closeForm({ pop: this.push || this._isContentChild });
 
   service.resetCurrentLayout();
 

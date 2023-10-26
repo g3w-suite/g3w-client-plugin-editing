@@ -253,7 +253,11 @@ const API = function({service, plugin} = {}) {
                 session.stop();
                 resolve();
               })
-              .fail(reject);
+              .fail(()=> {
+                workflow.stop();
+                session.stop();
+                reject();
+              });
           })
           .fail(reject);
       } catch(err) {
@@ -277,7 +281,6 @@ const API = function({service, plugin} = {}) {
   this.deleteLayerFeature = function({layerId, featureId} ={}) {
     //@TODO
   }
-
 
 };
 
