@@ -253,7 +253,7 @@ const API = function({service, plugin} = {}) {
                 session.stop();
                 resolve();
               })
-              .fail(()=> {
+              .fail(() => {
                 workflow.stop();
                 session.stop();
                 reject();
