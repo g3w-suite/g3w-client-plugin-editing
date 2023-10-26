@@ -1195,9 +1195,19 @@ proto.getToolBoxById = function(toolboxId) {
 };
 
 /**
+ * Ger layer session by id (layer id is the same of session)
+ * @since v3.7
+ * @param id
+ * @returns {*}
+ */
+proto.getSessionById = function(id) {
+  return this._sessions[id];
+}
+
+/**
  * Method to apply filter editing contsraint to toolbox editing
  *
- * @param constinst
+ * @param constraints
  */
 proto.setApplicationEditingConstraints = function(constraints={showToolboxesExcluded: true, toolboxes:{}}) {
   this.applicationEditingConstraints = {
@@ -1715,7 +1725,7 @@ proto.showCommitModalWindow = function({
 };
 
 /**
- * Functioncalled very single change saved temporary
+ * Function called very single change saved temporary
  */
 proto.saveChange = async function() {
   switch (this.saveConfig.mode) {
