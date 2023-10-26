@@ -11,6 +11,12 @@ const EditTableFeaturesWorkflow = require('../../edittableworkflow');
 function OpenFormTask(options={}) {
 
   /**
+   * @since v3.7
+   * to force to push content on top without clear previus content
+   */
+  this.push = options.push || false;
+
+  /**
    * @FIXME add description
    */
   this._edit_relations = options.edit_relations === undefined ? true : options._edit_relations;
@@ -307,7 +313,7 @@ proto.startForm = async function(options = {}) {
     context_inputs: !this._multi && this._edit_relations && {context, inputs},
     formStructure: this._editorFormStructure,
     modal: true,
-    push: this._isContentChild,
+    push: this.push || this._isContentChild, //@since v3.7 need to take in account this.push value
     showgoback: !this._isContentChild,
     headerComponent:SaveAll,
     buttons: [
