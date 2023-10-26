@@ -210,8 +210,10 @@ proto.isVectorLayer = function(){
  */
 proto.setFeaturesOptions = function({filter}={}){
   if (filter) {
-    // in case of no features filter request check if no features_filed is present otherwise i get first field
-    if (filter.nofeatures) filter.nofeatures_field = filter.nofeatures_field || this._layer.getEditingFields()[0].name;
+    // in case of no features filter request check if no features_filed is present otherwise it get first field
+    if (filter.nofeatures) {
+      filter.nofeatures_field = filter.nofeatures_field || this._layer.getEditingFields()[0].name;
+    }
     this._getFeaturesOption = {
       filter,
       editing: true,
@@ -219,8 +221,7 @@ proto.setFeaturesOptions = function({filter}={}){
     };
     // in case of constarint attribute set the filter as constraint
     filter.constraint && this.setConstraintFeaturesFilter(filter);
-  }
-  else {
+  } else {
     const filterType = this._layerType === Layer.LayerTypes.TABLE ? 'all': 'bbox';
     this._getFeaturesOption = this.editingService.createEditingDataOptions(filterType, {
       layerId: this.getId()
