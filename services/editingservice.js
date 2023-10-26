@@ -2087,7 +2087,10 @@ proto.getLayerUniqueFieldValues = function({
   layerId,
   field,
 }) {
-  return this.layersUniqueFieldsValues[layerId] && this.layersUniqueFieldsValues[layerId][field.name];
+
+  return this.layersUniqueFieldsValues[layerId] ?
+    this.layersUniqueFieldsValues[layerId][field.name] :
+    [];
 };
 
 proto.getChildLayerUniqueFieldValues = function({
