@@ -10,11 +10,28 @@ const EditTableFeaturesWorkflow = require('../../edittableworkflow');
 
 function OpenFormTask(options={}) {
 
+  const {
+    push=false,
+    saveAll=true,
+    multi=false
+  } = options;
+
   /**
    * @since v3.7
    * to force to push content on top without clear previus content
    */
-  this.push = options.push || false;
+  this.push = push;
+
+  /**
+   * Show saveAll butto
+   * @since v3.7
+   */
+  this.saveAll = saveAll;
+
+  /**
+   * Whether it can handle multi edit features
+   */
+  this._multi = multi;
 
   /**
    * @FIXME add description
@@ -81,10 +98,6 @@ function OpenFormTask(options={}) {
    */
   this.promise;
 
-  /**
-   * Whether it can handle multi edit features
-   */
-  this._multi = options.multi || false;
 
   /**
    * @since g3w-client-plugin-editing@v3.7.0
@@ -315,7 +328,7 @@ proto.startForm = async function(options = {}) {
     modal: true,
     push: this.push || this._isContentChild, //@since v3.7 need to take in account this.push value
     showgoback: !this._isContentChild,
-    headerComponent:SaveAll,
+    headerComponent: this.saveAll && SaveAll,
     buttons: [
       {
         id: 'save',
