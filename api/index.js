@@ -1,5 +1,6 @@
 const EasyAddFeatureWorflow = require('../workflows/easyaddfeatureworkflow');
 const { Feature } = g3wsdk.core.layer.features;
+const { GUI } = g3wsdk.gui;
 
 const API = function({service, plugin} = {}) {
   this.addFormComponents = function({layerId, components=[]}= {}) {
@@ -182,6 +183,7 @@ const API = function({service, plugin} = {}) {
    */
   this.addLayerFeature = function({layerId, feature} ={}) {
     return new Promise((resolve, reject) => {
+      let backButton = true;
       //Mandatory params
       if (undefined === feature || undefined === layerId) {
         reject();
@@ -205,6 +207,11 @@ const API = function({service, plugin} = {}) {
       const workflow = new EasyAddFeatureWorflow({
         push: true,
       });
+
+      const stop = () => {
+        workflow.stop();
+        session.stop();
+      };
 
       try {
         /**
@@ -241,25 +248,31 @@ const API = function({service, plugin} = {}) {
             session,
           }
         })
-          .then(() => {
-            session.save();
-            service
-              .commit({
-                toolbox: service.getToolBoxById(layerId),
-                modal: false,
-              })
-              .then(() => {
-                workflow.stop();
-                session.stop();
-                resolve();
-              })
-              .fail(() => {
-                workflow.stop();
-                session.stop();
-                reject();
-              });
-          })
-          .fail(reject);
+        .then(() => {
+          session.save();
+          service
+            .commit({
+              toolbox: service.getToolBoxById(layerId),
+              modal: false,
+            })
+            .then(() => {
+              stop();
+              resolve();
+            })
+            .fail(() => {
+              stop();
+              reject();
+            })
+        })
+        .fail(() => {
+          reject();
+          stop();
+        });
+        //@TODO find a better way to handle not show back button
+        setTimeout(() => {
+          document.getElementsByClassName('backto')[0].style.visibility = "hidden";
+        })
+
       } catch(err) {
         console.warn(err);
         reject();
