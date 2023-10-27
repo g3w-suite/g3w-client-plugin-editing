@@ -206,6 +206,7 @@ const API = function({service, plugin} = {}) {
       //create workflow
       const workflow = new EasyAddFeatureWorflow({
         push: true,
+        showgoback: false,
       });
 
       const stop = () => {
@@ -213,10 +214,8 @@ const API = function({service, plugin} = {}) {
         session.stop();
       };
 
+
       try {
-        /**
-         * @TODO check geometry of feature is equal to layer in editing
-         */
 
         //check if feature has property of layer
         attributes.forEach(a => {
@@ -238,6 +237,7 @@ const API = function({service, plugin} = {}) {
         layer.getEditingLayer()
           .getSource()
           .addFeature(feature);
+
         //start workflow
         workflow.start({
           inputs: {
@@ -268,10 +268,6 @@ const API = function({service, plugin} = {}) {
           reject();
           stop();
         });
-        //@TODO find a better way to handle not show back button
-        setTimeout(() => {
-          document.getElementsByClassName('backto')[0].style.visibility = "hidden";
-        })
 
       } catch(err) {
         console.warn(err);

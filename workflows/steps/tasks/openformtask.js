@@ -13,9 +13,16 @@ function OpenFormTask(options={}) {
   const {
     push=false,
     saveAll=true,
-    multi=false
+    multi=false,
+    showgoback,
   } = options;
 
+  /**
+   * Used to force show back button
+   * @since v3.7
+   * @type {boolean}
+   */
+  this.showgoback = showgoback;
   /**
    * @since v3.7
    * to force to push content on top without clear previus content
@@ -327,7 +334,7 @@ proto.startForm = async function(options = {}) {
     formStructure: this._editorFormStructure,
     modal: true,
     push: this.push || this._isContentChild, //@since v3.7 need to take in account this.push value
-    showgoback: !this._isContentChild,
+    showgoback: undefined !== this.showgoback ? this.showgoback : !this._isContentChild,
     headerComponent: this.saveAll && SaveAll,
     buttons: [
       {
