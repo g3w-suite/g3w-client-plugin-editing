@@ -972,6 +972,7 @@ proto._attachLayerWidgetsEvent = function(layer) {
     const field = fields[i];
     if (field.input) {
       if (field.input.type === 'select_autocomplete' && !field.input.options.filter_expression) {
+        //@TODO get relation_reference options
         const options = field.input.options;
         let {key, values, value, usecompleter, layer_id, loading} = options;
         const self = this;
