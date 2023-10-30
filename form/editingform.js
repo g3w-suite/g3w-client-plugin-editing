@@ -22,9 +22,15 @@ function EditingFormComponent(options = {}) {
         ? Promise.resolve()
         : EditingService.getLayersDependencyFeatures(layerId, {
           //@since v3.7.0 filter ONE (Join 1:1) relations
+          // and with layer in editing
           relations: options.layer
             .getRelations()
-            .getArray().filter(r => 'ONE' !== r.getType()),
+            .getArray().filter(r =>
+              (
+                EditingService.getLayerById(r.getChild()) && //Child layer need to be in editing
+                'ONE' !== r.getType() //nad relation has no a ONE (Join Relation)
+              )
+            ),
           feature, filterType: 'fid'
         })
     ).then(() => {
