@@ -962,7 +962,8 @@ proto.resetDefault = function() {
 };
 
 /**
- *
+ * Get data from api when a field of a layer
+ * is related to a wgis form widget (ex. relation reference, value map, etc..)
  * @param layer
  * @private
  */
@@ -972,9 +973,17 @@ proto._attachLayerWidgetsEvent = function(layer) {
     const field = fields[i];
     if (field.input) {
       if (field.input.type === 'select_autocomplete' && !field.input.options.filter_expression) {
-        //@TODO get relation_reference options
         const options = field.input.options;
-        let {key, values, value, usecompleter, layer_id, loading} = options;
+        let {
+          key,
+          values,
+          value,
+          usecompleter,
+          layer_id,
+          loading,
+          relation_id, //@since v3.7
+          relation_reference, //@since v3.7
+        } = options;
         const self = this;
         if (!usecompleter) {
           this.addEvents({
@@ -988,18 +997,46 @@ proto._attachLayerWidgetsEvent = function(layer) {
                 // remove all values
                 loading.state = 'loading';
                 field.input.options.values = [];
-                const relationLayer = CatalogLayersStoresRegistry.getLayerById(layer_id);
-                if (relationLayer) {
+                //check if field has a relation reference widget
+                if (relation_reference) {
+                  //get data with fformatter
+                  layer.getFilterData({
+                    fformatter: field.name
+                  })
+                  .then(response => {
+                    //check if response
+                    if (response && response.data) {
+                      //reasponse data is an array ok key value objects
+                      response.data.forEach(([value, key]) => {
+                        field.input.options.values.push({
+                          key,
+                          value
+                        })
+                      })
+                      loading.state = 'ready';
+                      self.fireEvent('autocomplete', {
+                        field,
+                        data: [response.data]
+                      });
+                      //resolve
+                      resolve(field.input.options.values);
+                    }
+                  })
+                  .catch((error) => {
+                    loading.state = 'error';
+                    reject(error);
+                  })
+                }
+                //check if layer id (field has widget value map)
+                else if (layer_id) {
+                  const relationLayer = CatalogLayersStoresRegistry.getLayerById(layer_id);
                   if (relationLayer) {
                     relationLayer.getDataTable({
                       ordering: key
-                    }).then(response => {
+                    })
+                    .then(response => {
                       if (response && response.features) {
                         const features = response.features;
-                        self.fireEvent('autocomplete', {
-                          field,
-                          features
-                        });
                         for (let i = 0; i < features.length; i++) {
                           field.input.options.values.push({
                             key: features[i].properties[key],
@@ -1007,23 +1044,30 @@ proto._attachLayerWidgetsEvent = function(layer) {
                           })
                         }
                         loading.state = 'ready';
+                        // Plugin need to know about it
+                        self.fireEvent('autocomplete', {
+                          field,
+                          features
+                        })
                         resolve(field.input.options.values);
                       }
-                    }).fail(error => {
+                    })
+                    .fail(error => {
                       loading.state = 'error';
                       reject(error);
                     });
-                  } else {
-                    loading.state = 'error';
-                    reject();
                   }
-                } else {
+                }
+                else {
+                  // @TODO Check if is used otherwise need to deprecate it
+                  const features = [];
+                  loading.state = 'ready';
+                  // Plugin need to know about it
                   self.fireEvent('autocomplete', {
                     field,
-                    features: []
+                    features
                   });
-                  loading.state = 'ready';
-                  resolve([]);
+                  resolve(features);
                 }
               })
             }
