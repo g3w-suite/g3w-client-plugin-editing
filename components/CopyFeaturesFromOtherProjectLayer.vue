@@ -105,8 +105,7 @@
 
       zoomToFeature(feature) {
         const map =  GUI.getService('map');
-        map.seSelectionLayerVisible(false);
-        map.zoomToFeatures([feature] , { highlight: true, duration: 1000 }).then(() => map.seSelectionLayerVisible(true))
+        map.zoomToFeatures([feature] , { highlight: true, duration: 1000 });
       },
 
     },
