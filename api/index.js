@@ -207,6 +207,7 @@ const API = function({service, plugin} = {}) {
       const workflow = new EasyAddFeatureWorflow({
         push: true,
         showgoback: false,
+        saveAll: false,
       });
 
       const stop = () => {
