@@ -3,6 +3,7 @@
 <!-- form/components/relation/vue/relation.js@v3.4 -->
 
 <template>
+
     <div
       v-if  = "active"
       style = "margin-bottom: 5px;"
@@ -86,7 +87,11 @@
 
           <!-- ADD VECTOR RELATION -->
           <div>
-            <div class="g3w-editing-new-relation-vector-type" v-t-plugin="'editing.relation.draw_new_feature'"></div>
+            <div
+              class      = "g3w-editing-new-relation-vector-type"
+              v-t-plugin = "'editing.relation.draw_new_feature'">
+            </div>
+
             <button
               class       = "btn skin-button"
               style       = "width: 100%"
@@ -98,7 +103,10 @@
 
           <divider/>
 
-          <div style="align-self: center" v-t-plugin="'editing.relation.draw_or_copy'"></div>
+          <div
+            style      ="align-self: center"
+            v-t-plugin ="'editing.relation.draw_or_copy'">
+          </div>
 
           <divider/>
 
@@ -112,8 +120,8 @@
           >
 
             <div
-              class="g3w-editing-new-relation-vector-type"
-              v-t-plugin="'editing.relation.copy_feature_from_other_layer'">
+              class      = "g3w-editing-new-relation-vector-type"
+              v-t-plugin = "'editing.relation.copy_feature_from_other_layer'">
             </div>
 
             <select
@@ -151,7 +159,7 @@
         >
           <thead>
             <tr>
-              <th v-t="'tools'"></th>
+              <th v-t= "'tools'"></th>
               <th></th>
               <th v-for="attribute in relationAttributesSubset(relations[0])">{{ attribute.label }}</th>
             </tr>
@@ -200,8 +208,14 @@
                   class = "preview"
                 >
                   <a :href="getValue(attribute.value)" target="_blank">
-                    <div class="previewtype" :class="getMediaType(attribute.value.mime_type).type">
-                      <i class="fa-2x" :class="g3wtemplate.font[getMediaType(attribute.value.mime_type).type]"></i>
+                    <div
+                      class="previewtype"
+                      :class="getMediaType(attribute.value.mime_type).type">
+                      <i
+                        class="fa-2x"
+                        :class="g3wtemplate.font[getMediaType(attribute.value.mime_type).type]">
+                      </i>
+
                     </div>
                   </a>
                   <div class="filename">{{ getFileName(attribute.value) }}</div>
@@ -213,7 +227,9 @@
                   target    = "_blank">{{ getValue(attribute.value) }}
                 </a>
                 <!-- TEXTUAL ATTRIBUTE -->
-                  <span v-else>{{ getValue(_service.getRelationFeatureValue(relation.id, attribute.name)) }}</span>
+                  <span v-else>
+                    {{ getValue(_service.getRelationFeatureValue(relation.id, attribute.name)) }}
+                  </span>
               </td>
             </tr>
           </tbody>
@@ -227,7 +243,7 @@
   /** @FIXME circular dependency ? */
   // import EditingService from "../services/editingservice";
 
-  const { tPlugin: t } = g3wsdk.core.i18n;
+  const { tPlugin: t }  = g3wsdk.core.i18n;
   const { toRawType }   = g3wsdk.core.utils;
   const RelationService = require('../services/relationservice');
   const { Layer }       = g3wsdk.core.layer;
@@ -236,6 +252,64 @@
     resizeMixin,
     mediaMixin,
   }                     = g3wsdk.gui.vue.Mixins;
+
+  const relationStyles = {
+    'Point': new ol.style.Style({
+      image: new ol.style.Circle({
+        radius: 5,
+        stroke: new ol.style.Stroke({
+          color: 'red',
+          width: 2,
+          lineDash:[1,2],
+        })
+      })
+    }),
+    'LineString': new ol.style.Style({
+      stroke: new ol.style.Stroke({
+        color: 'red',
+        width: 2,
+        lineDash:[1,2],
+      })
+    }),
+    'Polygon': new ol.style.Style({
+      fill: new ol.style.Fill({
+        color: 'rgba(255,255,255,0.5)'
+      }),
+      stroke: new ol.style.Stroke({
+        color: 'red',
+        width: 2,
+        lineDash:[1,2],
+      })
+    }),
+    'MultiPoint': new ol.style.Style({
+      image: new ol.style.Circle({
+        radius: 5,
+        stroke: new ol.style.Stroke({
+          color: 'red',
+          width: 2,
+          lineDash:[1,2],
+        })
+      })
+    }),
+    'MultiLineString': new ol.style.Style({
+      stroke: new ol.style.Stroke({
+        color: 'red',
+        width: 2,
+        lineDash:[1,2],
+      })
+    }),
+    'MultiPolygon': new ol.style.Style({
+      fill: new ol.style.Fill({
+        color: 'rgba(255,255,255,0.5)'
+      }),
+      stroke: new ol.style.Stroke({
+        color: 'red',
+        width: 2,
+        lineDash:[1,1],
+      })
+    })
+  };
+
 
   let relationsTable;
 
@@ -484,14 +558,22 @@
 
     created() {
       const EditingService = require('../services/editingservice');
-      const relationLayer  = EditingService.getLayerById(this.relation.child);
 
-      this.isVectorRelation = relationLayer.getType() === Layer.LayerTypes.VECTOR;
+      //Styles
+      this.originalStyle;
+
+      this.relationLayer  = EditingService.getLayerById(EditingService._getRelationLayerId({
+        layerId: this.layerId,
+        relation: this.relation
+      }))
+
+
+      this.isVectorRelation = this.relationLayer.getType() === Layer.LayerTypes.VECTOR;
 
       // vector relation --> get all layers with same geometry
       if (this.isVectorRelation) {
-        const project_layers  = EditingService.getProjectLayersWithSameGeometryOfLayer(relationLayer, { exclude: [this.relation.father] });
-        const external_layers = EditingService.getExternalLayersWithSameGeometryOfLayer(relationLayer);
+        const project_layers  = EditingService.getProjectLayersWithSameGeometryOfLayer(this.relationLayer, { exclude: [this.relation.father] });
+        const external_layers = EditingService.getExternalLayersWithSameGeometryOfLayer(this.relationLayer);
         const layers          = [];
 
         for (const layer of project_layers) {
@@ -512,6 +594,17 @@
 
         this.copyFeatureLayers = layers.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase())); // sorted by name
         this.copylayerid       = this.copyFeatureLayers.length ? this.copyFeatureLayers[0].id : null;             // current layer = first layer found
+
+        /**
+         * @since v3.7
+         *
+         */
+        if (this.relationsLength) {
+          this.originalStyle = this.relationLayer
+            .getEditingSource()
+            .getFeatureById(this.relations[0].id)
+            .getStyle();
+        }
       }
 
       this.loadEventuallyRelationValuesForInputs = false;
@@ -524,10 +617,10 @@
       this.capabilities = this._service.getEditingCapabilities();
 
       this.formeventbus.$on('changeinput', this.updateExternalKeyValueRelations);
+
     },
 
     async activated() {
-
       this.showAddVectorRelationTools = false;
 
       if (!this.loadEventuallyRelationValuesForInputs) {
@@ -548,7 +641,6 @@
         this.loadEventuallyRelationValuesForInputs = true;
       }
 
-
       this.active = true;
 
       await this.$nextTick();
@@ -557,16 +649,39 @@
         this._createDataTable();
       }
 
+      if (this.isVectorRelation) {
+        this.relations.forEach(r => {
+
+          const feature = this.relationLayer
+            .getEditingSource()
+            .getFeatureById(r.id)
+
+          feature.setStyle(relationStyles[feature.getGeometry().getType()])
+        })
+      }
+
+
       this.resize();
     },
 
     deactivated() {
+      if (undefined !== this.originalStyle) {
+        this.relations.forEach(r => {
+          this.relationLayer
+            .getEditingSource()
+            .getFeatureById(r.id)
+            .setStyle(this.originalStyle)
+        })
+      }
       this.destroyTable();
       this.active = false;
     },
 
     beforeDestroy() {
       this.loadEventuallyRelationValuesForInputs = true;
+
+
+      this.originalStyle = null;
     },
 
   };
