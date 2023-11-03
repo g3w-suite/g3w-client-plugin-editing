@@ -192,9 +192,10 @@ const API = function({service, plugin} = {}) {
       const layer = service.getLayerById(layerId);
       // get session
       const session = service.getSessionById(layerId);
+      //exclude an aventually attribut pk (primary key) not editable (mean autoincrement)
       const attributes = layer
         .getEditingFields()
-        .filter(attribute => !attribute.pk);
+        .filter(attribute => !(attribute.pk && !attribute.editable));
       //start session (get no features but set layer in editing)
       session.start({
         filter: {
