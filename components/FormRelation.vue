@@ -46,98 +46,95 @@
           >
         </div>
 
-            <div style="display: flex; justify-content: flex-end">
+          <div style="display: flex; justify-content: flex-end">
 
-                <!-- CHANGE ATTRIBUTE -->
-                <span
-                        v-if                      = "undefined !== capabilities.relation.find(capability => 'change_attr_feature' === capability)"
-                        class                     = "g3w-icon add-link"
-                        align                     = "center"
-                        v-t-tooltip:bottom.create = "tooltips.link_relation"
-                        @click.stop               = "enableAddLinkButtons ? linkRelation() : null"
-                        :class                    = "[
-            { 'disabled': !enableAddLinkButtons },
-            g3wtemplate.font['link']
-          ]"
-                ></span>
+            <!-- CHANGE ATTRIBUTE -->
+            <span
+              v-if                      = "undefined !== capabilities.relation.find(capability => 'change_attr_feature' === capability)"
+              class                     = "g3w-icon add-link"
+              align                     = "center"
+              v-t-tooltip:bottom.create = "tooltips.link_relation"
+              @click.stop               = "enableAddLinkButtons ? linkRelation() : null"
+              :class                    = "[{ 'disabled': !enableAddLinkButtons }, g3wtemplate.font['link']]"
+            ></span>
 
-                <!-- ADD FEATURE -->
-                <span
-                        v-if                      = "undefined !== capabilities.relation.find(capability => 'add_feature' === capability)"
-                        v-t-tooltip:bottom.create = "tooltips.add_relation"
-                        @click                    = "enableAddLinkButtons ? addRelationAndLink() : null"
-                        class                     = "g3w-icon add-link pull-right"
-                        :class                    = "[
-            { 'disabled' : !enableAddLinkButtons },
-            g3wtemplate.font['plus']
-          ]"
-                ></span>
+            <!-- ADD FEATURE -->
+            <span
+              v-if                      = "undefined !== capabilities.relation.find(capability => 'add_feature' === capability)"
+              v-t-tooltip:bottom.create = "tooltips.add_relation"
+              @click                    = "enableAddLinkButtons ? addRelationAndLink() : null"
+              class                     = "g3w-icon add-link pull-right"
+              :class                    = "[{ 'disabled' : !enableAddLinkButtons }, g3wtemplate.font['plus']]"
+            ></span>
 
-            </div>
+          </div>
 
         </div>
 
         <!-- VECTOR RELATION TOOLS -->
         <section
-                v-if  = "showAddVectorRelationTools"
-                ref   = "relation_vector_tools"
-                style = "
-        display: flex;
-        flex-direction: column;
-        border: 2px solid #eee;
-        background-color: #fff;
-        padding: 10px;
-      "
+          v-if  = "showAddVectorRelationTools"
+          ref   = "relation_vector_tools"
+          style = "
+  display: flex;
+  flex-direction: column;
+  border: 2px solid #eee;
+  background-color: #fff;
+  padding: 10px;
+  "
         >
 
-            <!-- ADD VECTOR RELATION -->
-            <div>
-                <div class="g3w-editing-new-relation-vector-type" v-t-plugin="'editing.relation.draw_new_feature'"></div>
-                <button
-                        class       = "btn skin-button"
-                        style       = "width: 100%"
-                        @click.stop = "addVectorRelation"
-                >
-                    <i :class="g3wtemplate.font['pencil']"></i>
-                </button>
-            </div>
+          <!-- ADD VECTOR RELATION -->
+          <div>
+            <div class="g3w-editing-new-relation-vector-type" v-t-plugin="'editing.relation.draw_new_feature'"></div>
+            <button
+              class       = "btn skin-button"
+              style       = "width: 100%"
+              @click.stop = "addVectorRelation"
+            >
+              <i :class="g3wtemplate.font['pencil']"></i>
+            </button>
+          </div>
 
-            <divider/>
+          <divider/>
 
-            <div style="align-self: center" v-t-plugin="'editing.relation.draw_or_copy'"></div>
+          <div style="align-self: center" v-t-plugin="'editing.relation.draw_or_copy'"></div>
 
-            <divider/>
+          <divider/>
+
+          <div
+            id    = "g3w-select-editable-layers-content"
+            style = "
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column
+  "
+          >
 
             <div
-                    id    = "g3w-select-editable-layers-content"
-                    style = "
-          flex-grow: 1;
-          display: flex;
-          flex-direction: column
-        "
-            >
-
-                <div class="g3w-editing-new-relation-vector-type" v-t-plugin="'editing.relation.copy_feature_from_other_layer'"></div>
-
-          <select
-            id        = "g3w-select-editable-layers-to-copy"
-            v-select2 = "'copylayerid'"
-          >
-            <option
-              v-for  = "copyFeatureLayer in copyFeatureLayers"
-              :key   = "copyFeatureLayer.id"
-              :value = "copyFeatureLayer.id"
-            >{{ copyFeatureLayer.name }}</option>
-          </select>
-
-                <!-- COPY FEATURE FROM OTHER LAYER -->
-                <button
-                        class       = "btn skin-button"
-                        @click.stop = "copyFeatureFromOtherLayer"
-                >
-                    <i :class="g3wtemplate.font['clipboard']"></i>
-                </button>
+              class="g3w-editing-new-relation-vector-type"
+              v-t-plugin="'editing.relation.copy_feature_from_other_layer'">
             </div>
+
+            <select
+              id        = "g3w-select-editable-layers-to-copy"
+              v-select2 = "'copylayerid'"
+            >
+              <option
+                v-for  = "copyFeatureLayer in copyFeatureLayers"
+                :key   = "copyFeatureLayer.id"
+                :value = "copyFeatureLayer.id"
+              >{{ copyFeatureLayer.name }}</option>
+            </select>
+
+              <!-- COPY FEATURE FROM OTHER LAYER -->
+              <button
+                class       = "btn skin-button"
+                @click.stop = "copyFeatureFromOtherLayer"
+              >
+                <i :class="g3wtemplate.font['clipboard']"></i>
+              </button>
+          </div>
 
         </section>
 
