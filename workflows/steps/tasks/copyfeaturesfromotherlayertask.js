@@ -120,8 +120,9 @@ proto.run = function(inputs, context) {
               session.pushAdd(layerId, feature, false);
             }
           });
-          if (features.length && features.length === 1) inputs.features.push(features[0]);
-          else {
+          if (features.length && features.length === 1) {
+            inputs.features.push(features[0]);
+          } else {
             isThereEmptyFieldRequiredNotDefined && GUI.showUserMessage({
               type: 'warning',
               message: 'plugins.editing.messages.copy_and_paste_from_other_layer_mandatory_fields',
