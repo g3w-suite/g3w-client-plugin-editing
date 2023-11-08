@@ -15,6 +15,7 @@ const { CatalogLayersStoresRegistry }      = g3wsdk.core.catalog;
 const EditingTask                          = require('./editingtask');
 
 function CopyFeaturesFromOtherLayerTask(options={}) {
+  this.openFormTask = options.openFormTask;
   base(this, options);
 }
 
@@ -53,8 +54,16 @@ proto.run = function(inputs, context) {
     layers[f.__layerId].features.push(f);
   });
 
+  //set reactive
+  const editAttributes = Vue.observable({
+    state: false
+  })
   const Component = Vue.extend(CopyFeatureFromOtherLayersComponent);
-  const vueInstance = new Component({ layers, selectedFeatures });
+  const vueInstance = new Component({
+    layers,
+    selectedFeatures,
+    editAttributes
+  });
 
   const message = vueInstance.$mount().$el;
   const dialog = GUI.showModalDialog({
@@ -120,25 +129,32 @@ proto.run = function(inputs, context) {
               session.pushAdd(layerId, feature, false);
             }
           });
-          if (features.length && features.length === 1) {
-            inputs.features.push(features[0]);
-          } else {
-            isThereEmptyFieldRequiredNotDefined && GUI.showUserMessage({
-              type: 'warning',
-              message: 'plugins.editing.messages.copy_and_paste_from_other_layer_mandatory_fields',
-              autoclose: true,
-              duration: 2000
-            });
-            inputs.features.push(features);
+          if (features.length > 1) {
+            if (editAttributes.state && this.openFormTask) {
+              this.openFormTask.updateMulti(true);
+            } else {
+              if (isThereEmptyFieldRequiredNotDefined) {
+                GUI.showUserMessage({
+                  type: 'warning',
+                  message: 'plugins.editing.messages.copy_and_paste_from_other_layer_mandatory_fields',
+                  autoclose: true,
+                  duration: 2000
+                });
+              }
+            }
           }
-          features.forEach(feature => this.fireEvent('addfeature', feature));
+          features.forEach(feature => {
+            inputs.features.push(feature)
+            this.fireEvent('addfeature', feature)
+          });
           d.resolve(inputs)
         }
       }
     }
   });
   dialog.find('button.btn-success').prop('disabled', true);
-  vueInstance.$watch('selectedFeatures', features => dialog.find('button.btn-success').prop('disabled', features.length === 0));
+  vueInstance
+    .$watch('selectedFeatures', features => dialog.find('button.btn-success').prop('disabled', features.length === 0));
   return d.promise();
 };
 

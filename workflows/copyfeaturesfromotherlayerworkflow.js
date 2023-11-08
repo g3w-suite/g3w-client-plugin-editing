@@ -5,12 +5,16 @@ const OpenFormStep = require('./steps/openformstep');
 
 function CopyFeaturesFromOtherLayerWorflow(options={}) {
   options.help = 'editing.steps.help.copy';
+  const openFormStep = new OpenFormStep(options);
   options.steps = [
-    new CopyFeaturesFromOtherLayerStep(options),
-    //@ŢODO put here if we want to change attributes of selected features
-    new OpenFormStep(options)
+    new CopyFeaturesFromOtherLayerStep({
+      ...options,
+      openFormTask: openFormStep.getTask()
+    }),
+    openFormStep
   ];
   this.registerEscKeyEvent();
+
   base(this, options);
 }
 
