@@ -102,33 +102,39 @@ proto.run = function(inputs, context) {
             }
           });
           const featurePromises = await Promise.allSettled(promisesFeatures);
-          featurePromises.forEach(({status, value:layerFeature}, index) => {
-            if (status === "fulfilled") {
-              const selectedFeature = selectedFeatures[index];
-              attributes.forEach(({name, validate: {required=false}}) => {
-                const value = layerFeature.properties[name] || null;
-                isThereEmptyFieldRequiredNotDefined = isThereEmptyFieldRequiredNotDefined || (value === null && required);
-                selectedFeature.set(name, value );
-              });
-              const feature = new Feature({
-                feature: selectedFeature,
-                properties: attributes.map(attribute => attribute.name)
-              });
-              originalLayer.getEditingNotEditableFields().find(field => {
-                if (originalLayer.isPkField(field)){
-                  feature.set(field, null)
-                }
-              });
-              //remove eventually Z Values
-              removeZValueToOLFeatureGeometry({
-                feature
-              });
-              feature.setTemporaryId();
-              source.addFeature(feature);
-              features.push(feature);
-              session.pushAdd(layerId, feature, false);
-            }
-          });
+
+          featurePromises
+            .forEach(({status, value:layerFeature}, index) => {
+              if (status === "fulfilled") {
+                const selectedFeature = selectedFeatures[index];
+
+                attributes
+                  .forEach(({name, validate: {required=false}}) => {
+                    const value = layerFeature.properties[name] || null;
+                    isThereEmptyFieldRequiredNotDefined = isThereEmptyFieldRequiredNotDefined || (value === null && required);
+                  });
+
+                const feature = new Feature({
+                  feature: selectedFeature,
+                  properties: attributes.map(attribute => attribute.name)
+                });
+                originalLayer.getEditingNotEditableFields()
+                  .find(field => {
+                    if (originalLayer.isPkField(field)) {
+                      feature.set(field, null)
+                    }
+                });
+                //remove eventually Z Values
+                removeZValueToOLFeatureGeometry({
+                  feature
+                });
+                feature.setTemporaryId();
+                source.addFeature(feature);
+                features.push(feature);
+                session.pushAdd(layerId, feature, false);
+              }
+            });
+          //check if features selected are more than one
           if (features.length > 1) {
             if (editAttributes.state && this.openFormTask) {
               this.openFormTask.updateMulti(true);
@@ -147,6 +153,7 @@ proto.run = function(inputs, context) {
             inputs.features.push(feature)
             this.fireEvent('addfeature', feature)
           });
+          vueInstance.$destroy();
           d.resolve(inputs)
         }
       }
