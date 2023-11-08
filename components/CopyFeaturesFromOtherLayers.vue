@@ -1,6 +1,21 @@
 <template>
   <div class="editing-layers-features">
     <div
+      v-disabled  = "disabled"
+      style       ="display: flex; justify-content: flex-end">
+      <input
+        id          = "g3w_edit_attributes_of_select_feature_from_layer"
+        type        = "checkbox"
+        class       = "magic-checkbox"
+        v-model     = "$options.editAttributes.state"
+      >
+      <!-- TODO NEED TRANSLATION -->
+      <label
+        for  = "g3w_edit_attributes_of_select_feature_from_layer"
+        style = "color: #000000"> Edit attributes
+      </label>
+    </div>
+    <div
       v-for = "(layerId) in Object.keys($options.layers)"
     >
 
@@ -87,11 +102,11 @@
     data() {
       return {
         selectedFeatures: this.$options.selectedFeatures,
+        disabled        : true, //@since v3.7 check if we want to edit multi selected feature attributes
       };
     },
 
     methods: {
-
       getAttributesFeature(feature, layerId) {
         const { external, fields } = this.$options.layers[layerId];
         const props                = getAlphanumericPropertiesFromFeature(feature.getProperties());
@@ -110,6 +125,8 @@
         } else {
           this.selectedFeatures.push(feature);
         }
+        this.disabled = this.selectedFeatures.length < 2;
+        this.$options.editAttributes.state = !this.disabled && this.$options.editAttributes.state;
       },
 
       getLayerTitle(layerId) {
@@ -118,8 +135,7 @@
       },
 
       zoomToFeature(feature) {
-        const map =  GUI.getService('map');
-        map.zoomToFeatures([feature] , { highlight: true, duration: 1000 });
+        GUI.getService('map').zoomToFeatures([feature] , { highlight: true, duration: 1000 });
       },
 
     },
