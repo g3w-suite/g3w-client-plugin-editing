@@ -7,6 +7,7 @@ function CopyFeaturesFromOtherLayerWorflow(options={}) {
   options.help = 'editing.steps.help.copy';
   options.steps = [
     new CopyFeaturesFromOtherLayerStep(options),
+    //@ŢODO put here if we want to change attributes of selected features
     new OpenFormStep(options)
   ];
   this.registerEscKeyEvent();
