@@ -415,83 +415,79 @@ proto.unregisterResultEditingAction = function() {
 };
 
 /**
- * function to start to edit feature selected from results;
- *
+ * Start to edit selected feature from results
  */
 proto.editResultLayerFeature = function({
   layer,
   feature,
 } = {}) {
-  // get Layer Id
-  const layerId = layer.id;
-  // get Feature id
-  const featureId = feature.attributes[G3W_FID];
-  this.getToolBoxes().forEach(toolbox => toolbox.setShow(toolbox.getId() === layerId));
-  this.getPlugin().showEditingPanel();
-  const toolBox = this.getToolBoxById(layerId);
-  //get scale constraint from setting layer
-  const {scale} = toolBox.getEditingConstraints();
-  // if feature has geometry
-  if (feature.geometry && undefined !== scale) {
-    this._mapService.getMap()
-      .once('moveend', () => {
-        const mapUnits = this._mapService.getMapUnits();
-        const map = this._mapService.getMap();
-        //check current scale after zoom to feature
-        const currentScale = parseInt(getScaleFromResolution(map.getView().getResolution(), mapUnits));
-        // if currentScale is more that scale constraint set by layer editing
-        // need to go to scale setting by layer editing constraint
-        if (currentScale > scale) {
-          const resolution = getResolutionFromScale(scale, mapUnits);
-          map.getView().setResolution(resolution);
-        }
-      });
-  }
-  // start toolbox
-  toolBox.start({
-    filter: {
-      fids: featureId // filter by fid (feature id)
-    }
-  })
-    .then(({features=[]}) => {
-      //const feature = features.find(feature => feature.getId() == featureId);
-      /**
-       *
-       * Need to get feature from Editing layer source because it has a style layer
-       */
-      const sourceFeatures = (toolBox.getLayer().getType() === Layer.LayerTypes.VECTOR) ?
-        toolBox.getLayer().getEditingLayer().getSource().getFeatures() :
-        toolBox.getLayer().getEditingLayer().getSource().readFeatures()
-      const feature = sourceFeatures.find(feature => feature.getId() == featureId);
 
-      if (feature) {
-        if (feature.getGeometry()) {
-          this._mapService.zoomToGeometry(feature.getGeometry());
-        }
-        toolBox.setSelected(true);
-        const session = toolBox.getSession();
-        this.setSelectedToolbox(toolBox);
-        const workflow = require('../workflows/editnopickmapfeatureattributesworkflow');
-        const options = {
-          inputs: {
-            layer: toolBox.getLayer(),
-            features: [feature]
-          },
-          context: {
-            session
-          }
-        };
-        const editFeatureWorkFlow = new workflow({
-          runOnce: true
-        });
-        editFeatureWorkFlow
-          .start(options)
-          .then(() => session.save()
-            .then(() => this.saveChange()))
-          .fail(()=> session.rollback())
+  const fid = feature.attributes[G3W_FID];
+
+  this.getToolBoxes().forEach(tb => tb.setShow(tb.getId() === layer.id));
+  this.getPlugin().showEditingPanel();
+
+  const toolBox   = this.getToolBoxById(layer.id);
+  const { scale } = toolBox.getEditingConstraints(); // get scale constraint from setting layer
+  const has_geom  = feature.geometry && undefined !== scale;
+
+  // check map scale after zoom to feature
+  // if currentScale is more that scale constraint set by layer editing
+  // need to go to scale setting by layer editing constraint
+  if (has_geom) {
+    this._mapService.getMap().once('moveend', () => {
+      const units        = this._mapService.getMapUnits();
+      const map          = this._mapService.getMap();
+      const currentScale = parseInt(getScaleFromResolution(map.getView().getResolution(), units));
+      if (currentScale > scale) {
+        map.getView().setResolution(getResolutionFromScale(scale, units));
       }
+    });
+  }
+
+  // start toolbox (filtered by feature id)
+  toolBox
+    .start({ filter: { fids: fid } })
+    .then(({ features = [] }) => {
+      const _layer = toolBox.getLayer();
+      const source = _layer.getEditingLayer().getSource();
+
+      // get feature from Editing layer source (with styles)
+      const feature = (
+        (_layer.getType() === Layer.LayerTypes.VECTOR)
+          ? source.getFeatures()
+          : source.readFeatures()
+        ).find(f => f.getId() == fid);
+
+      // skip when ..
+      if (!feature) {
+        return;
+      }
+
+      /** @FIXME add description */
+      if (feature.getGeometry()) {
+        this._mapService.zoomToGeometry(feature.getGeometry());
+      }
+
+      toolBox.setSelected(true);
+
+      const session = toolBox.getSession();
+
+      this.setSelectedToolbox(toolBox);
+
+      // edit feature workFlow
+      const workflow = require('../workflows/editnopickmapfeatureattributesworkflow');
+      const work = (new workflow({ runOnce: true }));
+      work
+        .start({
+          inputs: { layer: _layer, features: [feature] },
+          context: { session }
+        })
+        .then(() => session.save().then(() => this.saveChange()))
+        .fail(() => session.rollback());
+
     })
-    .fail(err => console.log(err))
+    .fail(err => console.warn(err));
 };
 
 /**
