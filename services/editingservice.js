@@ -411,8 +411,7 @@ proto.registerResultEditingAction = function() {
  */
 proto.unregisterResultEditingAction = function() {
   const queryResultsService = GUI.getService('queryresults');
-  this.setterKeys
-    .forEach(({setter, key}) => queryResultsService.un(setter, key));
+  this.setterKeys.forEach(({ setter, key }) => queryResultsService.un(setter, key));
 };
 
 /**
