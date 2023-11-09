@@ -1084,8 +1084,8 @@ proto._attachLayerWidgetsEvent = function(layer) {
           usecompleter,
           layer_id,
           loading,
-          relation_id, //@since v3.7
-          relation_reference, //@since v3.7
+          relation_id,        // @since g3w-client-plugin-editing@v3.7.0
+          relation_reference, // @since g3w-client-plugin-editing@v3.7.0
         } = options;
         const self = this;
         if (!usecompleter) {
@@ -1344,11 +1344,7 @@ proto.getRelationsByFeature = function({
   feature,
   layerType,
 } = {}) {
-  //ownField and relationField are Array @since v3.7.0
-  const {ownField, relationField} = this._getRelationFieldsFromRelation({
-    layerId,
-    relation
-  });
+  const { ownField, relationField } = this._getRelationFieldsFromRelation({ layerId, relation });
   //get features of relation child layers
   const features = this._getFeaturesByLayerId(layerId);
   //Loop relation fields
@@ -1649,7 +1645,7 @@ proto.fathersInEditing = function(layerId) {
  * @param opts.layerId
  * @param opts.relation
  *
- * @returns {{ownField: *, relationField: *}}
+ * @returns {{ ownField: [], relationField: [] }} `ownField` and `relationField` are Arrays since g3w-client-plugin-editing@v3.7.0
  *
  * @private
  */
