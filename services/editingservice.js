@@ -1563,13 +1563,7 @@ proto._filterRelationsInEditing = function({
   layerId,
   relations = [],
 }) {
-  return relations.filter(relation => {
-    const relationId = this._getRelationId({
-      layerId,
-      relation
-    });
-    return this.getToolBoxById(relationId)
-  })
+  return relations.filter(relation => this.getToolBoxById(this._getRelationId({ layerId, relation })));
 };
 
 /**
@@ -1584,10 +1578,7 @@ proto.stopToolboxesChildren = function(layerId) {
   relations
     .filter(relation => relation.getFather() === layerId)
     .forEach(relation => {
-      const relationId = this._getRelationId({
-        layerId,
-        relation
-      });
+      const relationId = this._getRelationId({ layerId, relation });
       if (this.getToolBoxById(relationId).inEditing()) {
         this.getToolBoxById(relationId).stop();
       }
@@ -1606,10 +1597,7 @@ proto.stopSessionChildren = function(layerId) {
   relations
     .filter(relation => relation.getFather() === layerId)
     .forEach(relation => {
-      const relationId = this._getRelationId({
-        layerId,
-        relation
-      });
+      const relationId = this._getRelationId({ layerId, relation });
       // In case of no editing is started (click on pencil of relation layer) need to stop (unlock) features
       if (!this.getToolBoxById(relationId).inEditing()) {
         this._sessions[relationId].stop();
@@ -1797,13 +1785,8 @@ proto._getRelationId = function({
   layerId,
   relation,
 } = {}) {
-  const fatherId = relation.getFather ?
-    relation.getFather() :
-    relation.father;
-
-  const childId = relation.getChild ?
-    relation.getChild() :
-    relation.child;
+  const fatherId = relation.getFather ? relation.getFather() : relation.father;
+  const childId  = relation.getChild  ? relation.getChild()  : relation.child;
 
   return fatherId === layerId ? childId: fatherId;
 };
@@ -1834,10 +1817,7 @@ proto.getLayersDependencyFeatures = function(layerId, opts = {}) {
     } else {
       relation.loading = true;
     }
-    const id = this._getRelationId({
-      layerId,
-      relation
-    });
+    const id = this._getRelationId({ layerId, relation });
     //Promise
     const promise = new Promise(resolve => {
       opts.relation = relation;
@@ -2082,7 +2062,7 @@ proto.showChangesToResult = async function() {
         if (fids.length) {
           const layer = CatalogLayersStoresRegistry.getLayerById(layerId);
           inputs.layers.push(layer);
-         inputs.fids.push(fids);
+          inputs.fids.push(fids);
         }
       });
 
