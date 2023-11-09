@@ -107,11 +107,10 @@ proto.run = function(inputs, context) {
             .forEach(({status, value:layerFeature}, index) => {
               if (status === "fulfilled") {
                 const selectedFeature = selectedFeatures[index];
-
-                attributes
-                  .forEach(({name, validate: {required=false}}) => {
-                    const value = layerFeature.properties[name] || null;
-                    isThereEmptyFieldRequiredNotDefined = isThereEmptyFieldRequiredNotDefined || (value === null && required);
+                // Check if there is an empty filed required not defined
+                isThereEmptyFieldRequiredNotDefined = undefined !== attributes
+                  .find(({name, validate: {required=false}}) => {
+                    return (undefined === layerFeature.properties[name] && required);
                   });
 
                 const feature = new Feature({
