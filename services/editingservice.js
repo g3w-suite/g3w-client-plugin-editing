@@ -491,7 +491,7 @@ proto.editResultLayerFeature = function({
 };
 
 /**
- *
+ * @FIXME add description
  */
 proto.disableMapControlsConflict = function(bool=true) {
   this._mapService.disableClickMapControls(bool);
@@ -499,6 +499,7 @@ proto.disableMapControlsConflict = function(bool=true) {
 
 /**
  * Used on commit if no toolbox is passed as parameter
+ * 
  * @param toolbox
  */
 proto.setSelectedToolbox = function(toolbox) {
@@ -506,7 +507,7 @@ proto.setSelectedToolbox = function(toolbox) {
 };
 
 /**
- * 
+ * @FIXME add description
  */
 proto.getToolboxSelected = function() {
   return this.state.toolboxselected;
@@ -542,15 +543,13 @@ proto.addNewFeature = function(layerId, options = {}) {
 };
 
 /**
- *
- * @returns {boolean}
+ * @returns { boolean }
  */
 proto.getLayersInError = function() {
   return this._layers_in_error;
 };
 
 /**
- *
  * @returns {*}
  */
 proto.getMapService = function() {
@@ -558,7 +557,6 @@ proto.getMapService = function() {
 };
 
 /**
- *
  * @private
  */
 proto._initOffLineItems = function() {
@@ -568,9 +566,10 @@ proto._initOffLineItems = function() {
 };
 
 /**
- *
  * @param data
+ * 
  * @returns {*}
+ * 
  * @private
  */
 proto._handleOfflineChangesBeforeSave = function(data) {
@@ -629,9 +628,10 @@ proto._handleOfflineChangesBeforeSave = function(data) {
 };
 
 /**
- *
- * @param id
- * @param data
+ * @param { Object } opts
+ * @param opts.id
+ * @param opts.data
+ * 
  * @returns {*}
  */
 proto.saveOfflineItem = function({
@@ -643,7 +643,6 @@ proto.saveOfflineItem = function({
 };
 
 /**
- *
  * @param id
  * @param data
  */
@@ -652,7 +651,6 @@ proto.setOfflineItem = function(id, data) {
 };
 
 /**
- *
  * @param id
  * @returns {*}
  */
@@ -663,10 +661,11 @@ proto.getOfflineItem = function(id) {
 /**
  * Check if alread have off lines changes
  *
- * @param opts.modal
- * @param opts.unlock
+ * @param { Object }  opts
+ * @param { boolean } [opts.modal=true]
+ * @param { boolean } [opts.unlock=false]
  *
- * @returns {Promise<unknown>}
+ * @returns { Promise<unknown> }
  */
 proto.checkOfflineChanges = function({
   modal = true,
@@ -743,15 +742,14 @@ proto.registerOnLineOffLineEvent = function() {
 };
 
 /**
- *
+ * @FIXME add description
  */
 proto.unregisterOnLineOffLineEvent = function() {
   this.unregisterSettersEvents(['online', 'offline'])
 };
 
 /**
- *
- * @param setters
+ * @param { Array } setters
  */
 proto.unregisterSettersEvents = function(setters=[]) {
   this._unByKeys.forEach(registered => {
@@ -761,10 +759,10 @@ proto.unregisterSettersEvents = function(setters=[]) {
 };
 
 /**
- *
  * @param event
  * @param options
- * @returns {Promise<unknown>}
+ * 
+ * @returns { Promise<unknown> }
  */
 proto.fireEvent = function(event, options={}) {
   return new Promise(resolve => {
@@ -782,7 +780,7 @@ proto.fireEvent = function(event, options={}) {
 };
 
 /**
- *
+ * @FIXME add description
  */
 proto.activeQueryInfo = function() {
   this._mapService.activeMapControl('query');
@@ -842,9 +840,10 @@ proto.setLayersColor = function() {
 };
 
 /**
- *
  * @param layer
+ * 
  * @returns {*}
+ * 
  * @private
  */
 proto._layerChildrenRelationInEditing = function(layer) {
@@ -875,7 +874,9 @@ proto.undo = function() {
   this.undoRelations(undoItems);
 };
 
-// undo relations
+/**
+ * undo relations
+ */
 proto.undoRelations = function(undoItems) {
   Object.entries(undoItems).forEach(([toolboxId, items]) => {
     const toolbox = this.getToolBoxById(toolboxId);
@@ -884,7 +885,9 @@ proto.undoRelations = function(undoItems) {
   })
 };
 
-// undo relations
+/**
+ * rollback relations
+ */
 proto.rollbackRelations = function(rollbackItems) {
   Object.entries(rollbackItems).forEach(([toolboxId, items]) => {
     const toolbox = this.getToolBoxById(toolboxId);
@@ -894,7 +897,7 @@ proto.rollbackRelations = function(rollbackItems) {
 };
 
 /**
- *  method
+ * @FIXME add description
  */
 proto.redo = function() {
   const session = this.state.toolboxselected.getSession();
@@ -915,7 +918,9 @@ proto.redo = function() {
   this.redoRelations(redoItems);
 };
 
-// redo relations
+/**
+ * redo relations
+ */
 proto.redoRelations = function(redoItems) {
   Object.entries(redoItems).forEach(([toolboxId, items]) => {
     const toolbox = this.getToolBoxById(toolboxId);
@@ -925,17 +930,16 @@ proto.redoRelations = function(redoItems) {
 };
 
 /**
- *
  * @param id
+ * 
  * @returns {*}
  */
 proto.getEditingLayer = function(id) {
   return this._editableLayers[id].getEditingLayer();
 };
 
-/**
- * options contain eventually editing type (create/update/delete)
- * @param options
+/** 
+ * @param options contain eventually editing type (create/update/delete)
  * @private
  */
 proto._buildToolBoxes = function(options={}) {
@@ -946,7 +950,6 @@ proto._buildToolBoxes = function(options={}) {
 };
 
 /**
- *
  * @param toolbox
  */
 proto.addToolBox = function(toolbox) {
@@ -965,7 +968,8 @@ proto.setOpenEditingPanel = function(bool) {
 /**
  * Add event
  *
- * @param {String} event.type
+ * @param { Object } event
+ * @param { string } event.type
  * @param event.id
  * @param event.fnc
  **/
@@ -982,7 +986,8 @@ proto.addEvent = function({
 /**
  * Add events
  *
- * @param {String} event.types
+ * @param { Object } event
+ * @param { string[] } event.types
  * @param event.id
  * @param event.fnc
  */
@@ -999,10 +1004,11 @@ proto.addEvents = function({
 };
 
 /**
- *
- * @param type
- * @param id
- * @returns {Promise<void>}
+ * @param { Object } handler
+ * @param handler.type
+ * @param handler.id
+ * 
+ * @returns { Promise<void> }
  */
 proto.runEventHandler = async function({
   type,
@@ -1012,7 +1018,7 @@ proto.runEventHandler = async function({
 };
 
 /**
- *
+ * @param { Object } save
  * @param save.mode     - default or autosave
  * @param save.cb       - object contain done/error two functions
  * @param save.modal    - Boolean true or false to show to ask
@@ -1059,7 +1065,9 @@ proto.resetDefault = function() {
 /**
  * Get data from api when a field of a layer
  * is related to a wgis form widget (ex. relation reference, value map, etc..)
+ * 
  * @param layer
+ * 
  * @private
  */
 proto._attachLayerWidgetsEvent = function(layer) {
@@ -1174,7 +1182,6 @@ proto._attachLayerWidgetsEvent = function(layer) {
 };
 
 /**
- *
  * @private
  */
 proto._createToolBoxDependencies = function() {
@@ -1205,9 +1212,10 @@ proto.isFieldRequired = function(layerId, fieldName) {
 };
 
 /**
- *
  * @param layer
- * @returns {*[]}
+ * 
+ * @returns { Array }
+ * 
  * @private
  */
 proto._getToolBoxEditingDependencies = function(layer) {
@@ -1216,9 +1224,10 @@ proto._getToolBoxEditingDependencies = function(layer) {
 };
 
 /**
- *
  * @param layer
- * @returns {boolean}
+ * 
+ * @returns { boolean }
+ * 
  * @private
  */
 proto._hasEditingDependencies = function(layer) {
@@ -1227,7 +1236,6 @@ proto._hasEditingDependencies = function(layer) {
 };
 
 /**
- *
  * @param toolbox
  */
 proto.handleToolboxDependencies = function(toolbox) {
@@ -1243,8 +1251,8 @@ proto.handleToolboxDependencies = function(toolbox) {
 };
 
 /**
- *
  * @returns {*}
+ * 
  * @private
  */
 proto._getEditableLayersFromCatalog = function() {
@@ -1254,15 +1262,13 @@ proto._getEditableLayersFromCatalog = function() {
 };
 
 /**
- *
- * @returns {unknown[]}
+ * @returns { Array }
  */
 proto.getLayers = function() {
   return Object.values(this._editableLayers);
 };
 
 /**
- *
  * @returns {*}
  */
 proto.getCurrentWorkflow = function() {
@@ -1270,7 +1276,6 @@ proto.getCurrentWorkflow = function() {
 };
 
 /**
- *
  * @returns {{feature: *, session: *, inputs: *, context: *, layer: *}}
  */
 proto.getCurrentWorkflowData = function() {
@@ -1285,11 +1290,12 @@ proto.getCurrentWorkflowData = function() {
 };
 
 /**
- *
- * @param layerId
- * @param relation
- * @param feature
- * @returns {BigUint64Array}
+ * @param { Object } opts
+ * @param opts.layerId
+ * @param opts.relation
+ * @param opts.feature
+ * 
+ * @returns { BigUint64Array }
  */
 proto.getRelationsAttributesByFeature = function({
   layerId,
@@ -1310,10 +1316,12 @@ proto.getRelationsAttributesByFeature = function({
 }
 
 /**
- *
- * @param layerId
- * @param relation
+ * @param { Object } opts
+ * @param opts.layerId
+ * @param opts.relation
+ * 
  * @returns {*}
+ * 
  * @private
  */
 proto._getRelationLayerId = function({
@@ -1324,6 +1332,7 @@ proto._getRelationLayerId = function({
 };
 
 /**
+ * @param { Object } opts
  * @param opts.layerId
  * @param opts.relation
  * @param opts.feature
@@ -1353,8 +1362,7 @@ proto.getRelationsByFeature = function({
 };
 
 /**
- *
- * @param bool
+ * @param { boolean } bool
  */
 proto.registerLeavePage = function(bool) {
   ApplicationService.registerLeavePage({
@@ -1363,16 +1371,15 @@ proto.registerLeavePage = function(bool) {
 };
 
 /**
- *
- * @returns {boolean}
+ * @returns { boolean }
  */
 proto.loadPlugin = function() {
   return this._load = !!this._getEditableLayersFromCatalog().length;
 };
 
 /**
- *
- * @param layerId
+ * @param { string } layerId
+ * 
  * @returns {*}
  */
 proto.getLayerById = function(layerId) {
@@ -1380,7 +1387,6 @@ proto.getLayerById = function(layerId) {
 };
 
 /**
- *
  * @param layer
  */
 proto.beforeEditingStart = function({ layer } = {}) {
@@ -1388,7 +1394,6 @@ proto.beforeEditingStart = function({ layer } = {}) {
 };
 
 /**
- *
  * @param layer
  */
 proto.afterEditingStart = function({ layer }= {}) {
@@ -1396,18 +1401,18 @@ proto.afterEditingStart = function({ layer }= {}) {
 };
 
 /**
- *
- * @param toolboxId
+ * @param { string } toolboxId
+ * 
  * @returns {*}
  */
 proto.getToolBoxById = function(toolboxId) {
-  return this._toolboxes.find(toolbox => toolbox.getId() === toolboxId);
+  return this._toolboxes.find(tb => tb.getId() === toolboxId);
 };
 
 /**
- * Method to apply filter editing contsraint to toolbox editing
+ * Apply filter editing contsraint to toolbox editing
  *
- * @param constinst
+ * @param constraints
  */
 proto.setApplicationEditingConstraints = function(constraints={showToolboxesExcluded: true, toolboxes:{}}) {
   this.applicationEditingConstraints = {
@@ -1433,8 +1438,8 @@ proto.getApplicationEditingConstraints = function() {
 };
 
 /**
- *
- * @param toolboxId
+ * @param { string } toolboxId
+ * 
  * @returns {*}
  */
 proto.getApplicationEditingConstraintById = function(toolboxId) {
@@ -1442,15 +1447,13 @@ proto.getApplicationEditingConstraintById = function(toolboxId) {
 };
 
 /**
- *
- * @returns {[]}
+ * @returns { Array }
  */
 proto.getToolBoxes = function() {
   return this._toolboxes;
 };
 
 /**
- *
  * @returns {*|{}}
  */
 proto.getEditableLayers = function() {
@@ -1458,8 +1461,8 @@ proto.getEditableLayers = function() {
 };
 
 /**
- *
  * @returns {*}
+ * 
  * @private
  */
 proto._cancelOrSave = function() {
@@ -1468,7 +1471,8 @@ proto._cancelOrSave = function() {
 
 /**
  * Stop editing
- * @returns {Promise<unknown>}
+ * 
+ * @returns { Promise<unknown> }
  */
 proto.stop = function() {
   return new Promise((resolve, reject) => {
@@ -1493,7 +1497,9 @@ proto.stop = function() {
   });
 };
 
-// remove Editing LayersStore
+/**
+ * remove Editing LayersStore
+ */
 proto.clear = function() {
   MapLayersStoreRegistry.removeLayersStore(this._layersstore);
   SessionsRegistry.clear();
@@ -1503,7 +1509,7 @@ proto.clear = function() {
 };
 
 /**
- *
+ * @FIXME add description
  */
 proto.clearState = function() {
   this.state.toolboxselected = null;
@@ -1514,11 +1520,12 @@ proto.clearState = function() {
 /**
  * Get Relation in editing
  *
+ * @param { Object } opts
  * @param opts.layerId
  * @param opts.relations
  * @param opts.feature
  *
- * @returns {[]}
+ * @returns { Array }
  */
 proto.getRelationsInEditing = function({
   layerId,
@@ -1548,10 +1555,12 @@ proto.getRelationsInEditing = function({
 };
 
 /**
- *
- * @param layerId
- * @param relations
- * @returns {*[]}
+ * @param { Object } opts
+ * @param opts.layerId
+ * @param opts.relations
+ * 
+ * @returns { Array }
+ * 
  * @private
  */
 proto._filterRelationsInEditing = function({
@@ -1568,8 +1577,7 @@ proto._filterRelationsInEditing = function({
 };
 
 /**
- *
- * @param layerId
+ * @param { string } layerId
  */
 proto.stopToolboxesChildren = function(layerId) {
   const layer = this.getLayerById(layerId);
@@ -1591,8 +1599,7 @@ proto.stopToolboxesChildren = function(layerId) {
 };
 
 /**
- *
- * @param layerId
+ * @param { string } layerId
  */
 proto.stopSessionChildren = function(layerId) {
   const layer = this.getLayerById(layerId);
@@ -1616,7 +1623,9 @@ proto.stopSessionChildren = function(layerId) {
 
 /**
  * Check if father relation is editing and has commit feature
- * @param layerId
+ * 
+ * @param { string } layerId
+ * 
  * @returns father in editing
  */
 proto.fathersInEditing = function(layerId) {
@@ -1636,6 +1645,7 @@ proto.fathersInEditing = function(layerId) {
 };
 
 /**
+ * @param { Object } opts
  * @param opts.layerId
  * @param opts.relation
  *
@@ -1666,6 +1676,7 @@ proto._getRelationFieldsFromRelation = function({
 
 /**
  * @param { 'all' | 'bbox' | 'field' | 'fid' | '1:1' } filterType
+ * @param { Object } options
  * @param options.feature
  * @param options.relation
  * @param options.field
@@ -1724,13 +1735,15 @@ proto.createEditingDataOptions = function(filterType = 'all', options = {}) {
     registerEvents: true, // usefult to get register vent on toolbox example mapmoveend
     editing: true,
     filter
-  }
+  };
+
 };
 
 /**
- *
- * @param layerId
+ * @param { string } layerId
+ * 
  * @returns {*}
+ * 
  * @private
  */
 proto._getFeaturesByLayerId = function(layerId) {
@@ -1738,12 +1751,13 @@ proto._getFeaturesByLayerId = function(layerId) {
 };
 
 /**
- *
- * @param layerId
- * @param relation
- * @param feature
- * @param operator
- * @returns {Promise<unknown>}
+ * @param { Object } opts
+ * @param { string } opts.layerId
+ * @param opts.relation
+ * @param opts.feature
+ * @param { string } [opts.operator='eq']
+ * 
+ * @returns { Promise<unknown> }
  */
 proto.getLayersDependencyFeaturesFromSource = function({
   layerId,
@@ -1775,10 +1789,12 @@ proto.getLayersDependencyFeaturesFromSource = function({
 };
 
 /**
- *
- * @param layerId
- * @param relation
+ * @param { Object } opts
+ * @param opts.layerId
+ * @param opts.relation
+ * 
  * @returns {*|{configurable: boolean}|{configurable}|boolean|(function(): *)}
+ * 
  * @private
  */
 proto._getRelationId = function({
@@ -1797,10 +1813,10 @@ proto._getRelationId = function({
 };
 
 /**
- *
- * @param layerId
+ * @param { string } layerId
  * @param opts
- * @returns {Promise<Awaited<unknown>[]>}
+ * 
+ * @returns { Promise<Awaited<unknown>[]> }
  */
 proto.getLayersDependencyFeatures = function(layerId, opts = {}) {
   const promises = [];
@@ -1902,9 +1918,9 @@ proto.getLayersDependencyFeatures = function(layerId, opts = {}) {
 };
 
 /**
- *
- * @param layerId
- * @returns {Promise<unknown>}
+ * @param { string } layerId
+ * 
+ * @returns { Promise<unknown> }
  */
 proto.commitDirtyToolBoxes = function(layerId) {
   return new Promise((resolve, reject) => {
@@ -1932,9 +1948,10 @@ proto.commitDirtyToolBoxes = function(layerId) {
 };
 
 /**
- *
  * @param commitItems
- * @returns {string}
+ * 
+ * @returns { string }
+ * 
  * @private
  */
 proto._createCommitMessage = function(commitItems) {
@@ -1968,12 +1985,13 @@ proto._createCommitMessage = function(commitItems) {
 };
 
 /**
- *
- * @param layer
- * @param commitItems
- * @param close
- * @param commitPromise
- * @returns {Promise<unknown>}
+ * @param { Object } opts 
+ * @param opts.layer
+ * @param opts.commitItems
+ * @param opts.close
+ * @param opts.commitPromise
+ * 
+ * @returns { Promise<unknown> }
  */
 proto.showCommitModalWindow = function({
   layer,
@@ -2027,9 +2045,9 @@ proto.saveChange = async function() {
 };
 
 /**
- *
- * @param layerId
- * @param fids
+ * @param { Object } opts
+ * @param { string } opts.layerId
+ * @param { Array }  opts.fids
  */
 proto.addLayersFeaturesToShowOnResult = function({
   layerId,
@@ -2050,9 +2068,9 @@ proto.onCloseEditingPanel = async function() {
 };
 
 /**
- *
- * Method to show feature that are updated or created with editing on result content
- * @returns {Promise<void>}
+ * Show feature that are updated or created with editing on result content
+ * 
+ * @returns { Promise<void> }
  */
 proto.showChangesToResult = async function() {
   const layerIdChanges = Object.keys(this.loadLayersFeaturesToResultWhenCloseEditing);
@@ -2091,12 +2109,13 @@ proto.showChangesToResult = async function() {
 /**
  * Commit and save changes on server persistently
  *
+ * @param { Object } commit
  * @param commit.toolbox
  * @param commit.commitItems
  * @param commit.messages
  * @param commit.done
- * @param commit.modal
- * @param commit.close
+ * @param { boolean } commit.modal
+ * @param { boolean } commit.close
  *
  * @returns {*}
  */
@@ -2274,10 +2293,18 @@ proto.clearAllLayersUniqueFieldsValues = function() {
   this.layersUniqueFieldsValues = {};
 };
 
+/**
+ * @param { string } layerId 
+ */
 proto.clearLayerUniqueFieldsValues = function(layerId) {
   this.layersUniqueFieldsValues[layerId] = {};
 };
 
+/**
+ * @param { Object } opts
+ * @param { string } opts.layerId
+ * @param opts.feature
+ */
 proto.removeLayerUniqueFieldValuesFromFeature = function({
   layerId,
   feature,
@@ -2296,10 +2323,10 @@ proto.removeLayerUniqueFieldValuesFromFeature = function({
 };
 
 /**
- *
- * @param layerId
- * @param relationLayerId
- * @param feature
+ * @param { Object } opts
+ * @param { string } opts.layerId
+ * @param { string } opts.relationLayerId
+ * @param opts.feature
  */
 proto.removeRelationLayerUniqueFieldValuesFromFeature = function({
   layerId,
@@ -2329,9 +2356,9 @@ proto.removeRelationLayerUniqueFieldValuesFromFeature = function({
 };
 
 /**
- *
- * @param layerId
- * @returns {Promise<*>}
+ * @param { string } layerId
+ * 
+ * @returns { Promise<*> }
  */
 proto.setLayerUniqueFieldValues = async function(layerId) {
   const promises = [];
@@ -2362,7 +2389,7 @@ proto.setLayerUniqueFieldValues = async function(layerId) {
 /**
  * Save temporary relation feature changes on father (root) layer feature
  *
- * @param layerId
+ * @param { string } layerId
  */
 proto.saveTemporaryRelationsUniqueFieldsValues = function(layerId) {
   const relations = (
@@ -2389,17 +2416,17 @@ proto.saveTemporaryRelationsUniqueFieldsValues = function(layerId) {
 };
 
 /**
- *
- * @param layerId
+ * @param { string } layerId
  */
 proto.clearTemporaryRelationsUniqueFieldsValues = function(layerId) {
   delete this.layersUniqueFieldsValues[layerId].__uniqueFieldsValuesRelations;
 };
 
 /**
- *
- * @param layerId
- * @param field
+ * @param { Object } opts
+ * @param { string } opts.layerId
+ * @param opts.field
+ * 
  * @returns {*}
  */
 proto.getLayerUniqueFieldValues = function({
@@ -2410,10 +2437,11 @@ proto.getLayerUniqueFieldValues = function({
 };
 
 /**
- *
- * @param layerId
- * @param relationLayerId
- * @param field
+ * @param { Object } opts
+ * @param { string } opts.layerId
+ * @param { string } opts.relationLayerId
+ * @param opts.field
+ * 
  * @returns {*}
  */
 proto.getChildLayerUniqueFieldValues = function({
@@ -2434,11 +2462,11 @@ proto.getChildLayerUniqueFieldValues = function({
 };
 
 /**
- *
- * @param layerId
- * @param field
- * @param oldValue
- * @param newValue
+ * @param { Object } opts
+ * @param { string } opts.layerId
+ * @param opts.field
+ * @param opts.oldValue
+ * @param opts.newValue
  */
 proto.changeLayerUniqueFieldValues = function({
   layerId,
@@ -2452,12 +2480,12 @@ proto.changeLayerUniqueFieldValues = function({
 };
 
 /**
- *
- * @param layerId
- * @param relationLayerId
- * @param field
- * @param oldValue
- * @param newValue
+ * @param { Object } opts
+ * @param { string } opts.layerId
+ * @param { string } opts.relationLayerId
+ * @param opts.field
+ * @param opts.oldValue
+ * @param opts.newValue
  */
 proto.changeRelationLayerUniqueFieldValues = function({
   layerId,
@@ -2485,10 +2513,10 @@ proto.changeRelationLayerUniqueFieldValues = function({
 };
 
 /**
- *
- * @param layerId
- * @param field
- * @param value
+ * @param { Object } opts
+ * @param { string } opts.layerId
+ * @param opts.field
+ * @param opts.value
  */
 proto.addLayerUniqueFieldValue = function({
   layerId,
@@ -2499,10 +2527,10 @@ proto.addLayerUniqueFieldValue = function({
 };
 
 /**
- *
- * @param layerId
- * @param field
- * @param value
+ * @param { Object } opts
+ * @param { string } opts.layerId
+ * @param opts.field
+ * @param opts.value
  */
 proto.deleteLayerUniqueFieldValue = function({
   layerId,
@@ -2513,10 +2541,10 @@ proto.deleteLayerUniqueFieldValue = function({
 };
 
 /**
- *
- * @param layerId
- * @param sessionItems
- * @param action
+ * @param { Object } opts
+ * @param { string } opts.layerId
+ * @param { Array }  opts.sessionItems
+ * @param opts.action
  */
 proto.undoRedoLayerUniqueFieldValues = function({
   layerId,
@@ -2556,9 +2584,9 @@ proto.undoRedoLayerUniqueFieldValues = function({
 };
 
 /**
- *
- * @param relationSessionItems
- * @param action
+ * @param { Object } opts
+ * @param opts.relationSessionItems
+ * @param opts.action
  */
 proto.undoRedoRelationUniqueFieldValues = function({
  relationSessionItems,
@@ -2579,17 +2607,18 @@ proto.undoRedoRelationUniqueFieldValues = function({
     })
 };
 
-/*
-* end unique fields
-* */
+/**
+ * end unique fields
+ */
 proto.getProjectLayerById = function(layerId) {
   return CatalogLayersStoresRegistry.getLayerById(layerId);
 };
 
 /**
- *
- * @param layerId
- * @param fid
+ * @param { Object } opts
+ * @param { string } opts.layerId
+ * @param opts.fid
+ * 
  * @returns {Promise<*>}
  */
 proto.getProjectLayerFeatureById = async function({
@@ -2615,9 +2644,10 @@ proto.getProjectLayerFeatureById = async function({
 };
 
 /**
- *
  * @param layer
- * @param options
+ * @param { Object } options
+ * @param { Array }  options.exclude
+ * 
  * @returns {*}
  */
 proto.getProjectLayersWithSameGeometryOfLayer = function(layer, options = { exclude: [] }) {
