@@ -77,12 +77,12 @@
           v-if  = "showAddVectorRelationTools"
           ref   = "relation_vector_tools"
           style = "
-  display: flex;
-  flex-direction: column;
-  border: 2px solid #eee;
-  background-color: #fff;
-  padding: 10px;
-  "
+            display: flex;
+            flex-direction: column;
+            border: 2px solid #eee;
+            background-color: #fff;
+            padding: 10px;
+          "
         >
 
           <!-- ADD VECTOR RELATION -->
