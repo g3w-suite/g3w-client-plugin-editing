@@ -21,10 +21,15 @@ function EditingFormComponent(options = {}) {
       feature.isNew()
         ? Promise.resolve()
         : EditingService.getLayersDependencyFeatures(layerId, {
-          //@since v3.7.0 filter ONE (Join 1:1) relations
+          // @since g3w-client-plugin-editin@v3.7.0
           relations: options.layer
             .getRelations()
-            .getArray().filter(r => 'ONE' !== r.getType()),
+            .getArray().filter(r =>
+              (
+                EditingService.getLayerById(r.getChild()) && // child layer is in editing
+                'ONE' !== r.getType()                        // is not a ONE relation (Join 1:1)
+              )
+            ),
           feature, filterType: 'fid'
         })
     ).then(() => {
