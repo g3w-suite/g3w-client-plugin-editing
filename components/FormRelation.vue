@@ -113,10 +113,10 @@
           <div
             id    = "g3w-select-editable-layers-content"
             style = "
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column
-  "
+              flex-grow: 1;
+              display: flex;
+              flex-direction: column
+            "
           >
 
             <div
