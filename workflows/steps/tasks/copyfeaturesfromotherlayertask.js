@@ -96,19 +96,22 @@ proto.run = function(inputs, context) {
           featurePromises.forEach(({status, value:layerFeature}, index) => {
             if (status === "fulfilled") {
               const selectedFeature = selectedFeatures[index];
-              isThereEmptyFieldRequiredNotDefined = undefined !== attributes.find(({name, validate: {required=false}}) => {
-                const value = layerFeature.properties[name] || null;
-                return (value === null && required);
-              });
+              // Check if there is an empty filed required not defined
+              isThereEmptyFieldRequiredNotDefined = undefined !== attributes
+                .find(({name, validate: {required=false}}) => {
+                  return (undefined === layerFeature.properties[name] && required);
+                });
+
               const feature = new Feature({
                 feature: selectedFeature,
                 properties: attributes.map(attribute => attribute.name)
               });
-              originalLayer.getEditingNotEditableFields().find(field => {
-                if (originalLayer.isPkField(field)){
-                  feature.set(field, null)
-                }
-              });
+              originalLayer.getEditingNotEditableFields()
+                .find(field => {
+                  if (originalLayer.isPkField(field)) {
+                    feature.set(field, null)
+                  }
+                });
               //remove eventually Z Values
               removeZValueToOLFeatureGeometry({
                 feature
