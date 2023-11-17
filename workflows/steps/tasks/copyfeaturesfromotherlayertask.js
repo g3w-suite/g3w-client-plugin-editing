@@ -96,10 +96,9 @@ proto.run = function(inputs, context) {
           featurePromises.forEach(({status, value:layerFeature}, index) => {
             if (status === "fulfilled") {
               const selectedFeature = selectedFeatures[index];
-              attributes.forEach(({name, validate: {required=false}}) => {
+              isThereEmptyFieldRequiredNotDefined = undefined !== attributes.find(({name, validate: {required=false}}) => {
                 const value = layerFeature.properties[name] || null;
-                isThereEmptyFieldRequiredNotDefined = isThereEmptyFieldRequiredNotDefined || (value === null && required);
-                selectedFeature.set(name, value );
+                return (value === null && required);
               });
               const feature = new Feature({
                 feature: selectedFeature,
@@ -120,8 +119,9 @@ proto.run = function(inputs, context) {
               session.pushAdd(layerId, feature, false);
             }
           });
-          if (features.length && features.length === 1) inputs.features.push(features[0]);
-          else {
+          if (features.length && features.length === 1) {
+            inputs.features.push(features[0]);
+          } else {
             isThereEmptyFieldRequiredNotDefined && GUI.showUserMessage({
               type: 'warning',
               message: 'plugins.editing.messages.copy_and_paste_from_other_layer_mandatory_fields',
