@@ -1328,7 +1328,16 @@ proto._getRelationLayerId = function({
   layerId,
   relation,
 } = {}) {
-  return relation.getChild() === layerId ? relation.getFather() : relation.getChild();
+
+  const child = relation.getChild ?
+    relation.getChild() :
+    relation.child;
+
+  const father = relation.getFatherField ?
+    relation.getFatherField() :
+    relation.fatherField;
+
+  return (child === layerId) ? father: child;
 };
 
 /**
