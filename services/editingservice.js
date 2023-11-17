@@ -2418,7 +2418,9 @@ proto.saveTemporaryRelationsUniqueFieldsValues = function(layerId) {
  * @param { string } layerId
  */
 proto.clearTemporaryRelationsUniqueFieldsValues = function(layerId) {
-  delete this.layersUniqueFieldsValues[layerId].__uniqueFieldsValuesRelations;
+  if (this.layersUniqueFieldsValues[layerId]) {
+    delete this.layersUniqueFieldsValues[layerId].__uniqueFieldsValuesRelations;
+  }
 };
 
 /**
