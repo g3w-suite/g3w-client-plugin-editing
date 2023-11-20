@@ -39,49 +39,49 @@
   "
               >
 
+                <div
+                  style = "
+          display: flex;
+          flex-direction: column;
+          border-right: 1px solid #eee;
+        "
+                >
                   <div
-                    style = "
-            display: flex;
-            flex-direction: column;
-            border-right: 1px solid #eee;
-          "
-                  >
-                      <div
-                        @click.stop = "zoomToFeature(feature)"
-                        :class      = "g3wtemplate.font['marker']"
-                        class       = "skin-color"
-                        style       = "
-        padding: 0 5px 15px 5px;
-        font-size: 1.1em;
-        cursor: pointer;
-        margin-right: 5px;
-      "
-                      ></div>
-                      <div v-t-tooltip:right.create="'plugins.editing.steps.help.select_elements'">
-                          <input
-                            @click.stop = "selectFeature(feature)"
-                            :id         = "`${layerId}_${index}_select_feature_from_layer`"
-                            type        = "checkbox"
-                            class       = "magic-checkbox"
-                          >
-                          <label
-                            :for  = "`${layerId}_${index}_select_feature_from_layer`"
-                            style = "color: #FFF"> {{ feature.getId() || 0 }}
-                          </label>
-                      </div>
+                    @click.stop = "zoomToFeature(feature)"
+                    :class      = "g3wtemplate.font['marker']"
+                    class       = "skin-color"
+                    style       = "
+    padding: 0 5px 15px 5px;
+    font-size: 1.1em;
+    cursor: pointer;
+    margin-right: 5px;
+  "
+                  ></div>
+                  <div v-t-tooltip:right.create="'plugins.editing.steps.help.select_elements'">
+                    <input
+                      @click.stop = "selectFeature(feature)"
+                      :id         = "`${layerId}_${index}_select_feature_from_layer`"
+                      type        = "checkbox"
+                      class       = "magic-checkbox"
+                    >
+                    <label
+                      :for  = "`${layerId}_${index}_select_feature_from_layer`"
+                      style = "color: #FFF"> {{ feature.getId() || 0 }}
+                    </label>
                   </div>
+                </div>
 
-                  <div
-                    v-for = "({ attribute, value }) in getAttributesFeature(feature, layerId)"
-                    style = "
-      display: flex;
-      flex-direction: column;
-      padding: 10px;
-    "
-                  >
-                    <span style="font-weight: bold; margin-bottom: 10px;">{{ attribute }}</span>
-                    <span style="align-self: start">{{ value }}</span>
-                  </div>
+                <div
+                  v-for = "({ attribute, value }) in getAttributesFeature(feature, layerId)"
+                  style = "
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+  "
+                >
+                  <span style="font-weight: bold; margin-bottom: 10px;">{{ attribute }}</span>
+                  <span style="align-self: start">{{ value }}</span>
+                </div>
 
               </div>
           </div>
