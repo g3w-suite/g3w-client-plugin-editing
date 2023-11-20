@@ -27,7 +27,10 @@ proto.run = function(inputs, context) {
   const originalLayer = inputs.layer;
   const geometryType = originalLayer.getGeometryType();
   const layerId = originalLayer.getId();
-  const attributes = originalLayer.getEditingFields().filter(attribute => !attribute.pk);
+  //get attributes/properties from current layer in editing
+  const attributes = originalLayer
+    .getEditingFields()
+    .filter(attribute => !attribute.pk);
   const session = context.session;
   const editingLayer = originalLayer.getEditingLayer();
   const source = editingLayer.getSource();
@@ -106,6 +109,16 @@ proto.run = function(inputs, context) {
                 feature: selectedFeature,
                 properties: attributes.map(attribute => attribute.name)
               });
+
+              //@TODO check better way
+              //Set undefined property to null otherwise on commit
+              // property are lost
+              attributes.forEach(({name}) => {
+                if (undefined === feature.get(name)) {
+                  feature.set(name, null);
+                }
+              })
+
               originalLayer.getEditingNotEditableFields()
                 .find(field => {
                   if (originalLayer.isPkField(field)) {
@@ -122,7 +135,8 @@ proto.run = function(inputs, context) {
               session.pushAdd(layerId, feature, false);
             }
           });
-          if (features.length && features.length === 1) {
+
+          if (features.length === 1) {
             inputs.features.push(features[0]);
           } else {
             isThereEmptyFieldRequiredNotDefined && GUI.showUserMessage({
@@ -133,7 +147,9 @@ proto.run = function(inputs, context) {
             });
             inputs.features.push(features);
           }
+
           features.forEach(feature => this.fireEvent('addfeature', feature));
+
           d.resolve(inputs)
         }
       }
