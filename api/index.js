@@ -1,6 +1,5 @@
 const EasyAddFeatureWorflow = require('../workflows/easyaddfeatureworkflow');
 const { Feature } = g3wsdk.core.layer.features;
-const { GUI } = g3wsdk.gui;
 
 const API = function({service, plugin} = {}) {
   this.addFormComponents = function({layerId, components=[]}= {}) {
