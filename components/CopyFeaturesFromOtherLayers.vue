@@ -1,6 +1,6 @@
 <template>
   <div class="editing-layers-features" >
-
+    <!-- EDIT MULTI FEATURE ATTRIBUTES  -->
     <div
       v-if="showEditAttributes"
       v-disabled  = "disabled"
