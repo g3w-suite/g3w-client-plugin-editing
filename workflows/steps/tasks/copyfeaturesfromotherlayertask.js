@@ -15,6 +15,7 @@ const { CatalogLayersStoresRegistry }      = g3wsdk.core.catalog;
 const EditingTask                          = require('./editingtask');
 
 function CopyFeaturesFromOtherLayerTask(options={}) {
+  this.openFormTask = options.openFormTask;
   base(this, options);
 }
 
@@ -56,8 +57,16 @@ proto.run = function(inputs, context) {
     layers[f.__layerId].features.push(f);
   });
 
+  //set reactive
+  const editAttributes = Vue.observable({
+    state: false
+  })
   const Component = Vue.extend(CopyFeatureFromOtherLayersComponent);
-  const vueInstance = new Component({ layers, selectedFeatures });
+  const vueInstance = new Component({
+    layers,
+    selectedFeatures,
+    editAttributes
+  });
 
   const message = vueInstance.$mount().$el;
   const dialog = GUI.showModalDialog({
@@ -125,31 +134,36 @@ proto.run = function(inputs, context) {
                     feature.set(field, null)
                   }
                 });
-              //remove eventually Z Values
-              removeZValueToOLFeatureGeometry({
-                feature
-              });
-              feature.setTemporaryId();
-              source.addFeature(feature);
-              features.push(feature);
-              session.pushAdd(layerId, feature, false);
-            }
-          });
-
-          if (features.length === 1) {
-            inputs.features.push(features[0]);
-          } else {
-            isThereEmptyFieldRequiredNotDefined && GUI.showUserMessage({
-              type: 'warning',
-              message: 'plugins.editing.messages.copy_and_paste_from_other_layer_mandatory_fields',
-              autoclose: true,
-              duration: 2000
+                //remove eventually Z Values
+                removeZValueToOLFeatureGeometry({
+                  feature
+                });
+                feature.setTemporaryId();
+                source.addFeature(feature);
+                features.push(feature);
+                session.pushAdd(layerId, feature, false);
+              }
             });
-            inputs.features.push(features);
+          //check if features selected are more than one
+          if (features.length > 1) {
+            if (editAttributes.state && this.openFormTask) {
+              this.openFormTask.updateMulti(true);
+            } else {
+              if (isThereEmptyFieldRequiredNotDefined) {
+                GUI.showUserMessage({
+                  type: 'warning',
+                  message: 'plugins.editing.messages.copy_and_paste_from_other_layer_mandatory_fields',
+                  autoclose: true,
+                  duration: 2000
+                });
+              }
+            }
           }
-
-          features.forEach(feature => this.fireEvent('addfeature', feature));
-
+          features.forEach(feature => {
+            inputs.features.push(feature)
+            this.fireEvent('addfeature', feature)
+          });
+          vueInstance.$destroy();
           d.resolve(inputs)
         }
       }
