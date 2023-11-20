@@ -94,6 +94,14 @@ module.exports = OpenFormTask;
 
 const proto = OpenFormTask.prototype;
 
+/**
+ * @since v3.7
+ * @param bool
+ */
+proto.updateMulti = function(bool=false) {
+  this._multi = bool;
+};
+
 proto._getForm = async function(inputs, context) {
   this._session = context.session;
   this._originalLayer = inputs.layer;
