@@ -9,7 +9,6 @@
         class       = "magic-checkbox"
         v-model     = "$options.editAttributes.state"
       >
-      <!-- TODO NEED TRANSLATION -->
       <label
         for  = "g3w_edit_attributes_of_select_feature_from_layer"
         style = "color: #000000" v-t-plugin="'editing.modal.tools.copyfeaturefromotherlayer.edit_attributes'">
