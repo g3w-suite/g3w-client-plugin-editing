@@ -403,7 +403,7 @@ proto.stop = function() {
             })
           })
           .fail(err => d.reject(err))
-          .always(()=> this.setSelected(false))
+          .always(() => this.setSelected(false))
       }
     }
   } else {
