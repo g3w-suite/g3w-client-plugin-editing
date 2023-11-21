@@ -430,21 +430,6 @@ proto.editResultLayerFeature = function({
   const toolBox   = this.getToolBoxById(layer.id);
   const { scale } = toolBox.getEditingConstraints(); // get scale constraint from setting layer
   const has_geom  = feature.geometry && undefined !== scale;
-
-  // check map scale after zoom to feature
-  // if currentScale is more that scale constraint set by layer editing
-  // need to go to scale setting by layer editing constraint
-  if (has_geom) {
-    this._mapService.getMap().once('moveend', () => {
-      const units        = this._mapService.getMapUnits();
-      const map          = this._mapService.getMap();
-      const currentScale = parseInt(getScaleFromResolution(map.getView().getResolution(), units));
-      if (currentScale > scale) {
-        map.getView().setResolution(getResolutionFromScale(scale, units));
-      }
-    });
-  }
-
   // start toolbox (filtered by feature id)
   toolBox
     .start({ filter: { fids: fid } })
@@ -459,17 +444,35 @@ proto.editResultLayerFeature = function({
           : source.readFeatures()
         ).find(f => f.getId() == fid);
 
-      // skip when ..
+      // skip when not feature is get from server
       if (!feature) {
         return;
       }
 
-      /** @FIXME add description */
+      /**If feature has geometry, zoom to geometry */
       if (feature.getGeometry()) {
         this._mapService.zoomToGeometry(feature.getGeometry());
+        // check map scale after zoom to feature
+        // if currentScale is more that scale constraint set by layer editing
+        // need to go to scale setting by layer editing constraint
+        if (has_geom) {
+          this._mapService.getMap().once('moveend', () => {
+            const units        = this._mapService.getMapUnits();
+            const map          = this._mapService.getMap();
+            const currentScale = parseInt(getScaleFromResolution(map.getView().getResolution(), units));
+            if (currentScale > scale) {
+              map.getView().setResolution(getResolutionFromScale(scale, units));
+            }
+            //set select only here otherwise is show editing constraint
+            toolBox.setSelected(true);
+          });
+        } else {
+          toolBox.setSelected(true);
+        }
+      } else {
+        //set select toolbox
+        toolBox.setSelected(true);
       }
-
-      toolBox.setSelected(true);
 
       const session = toolBox.getSession();
 
@@ -483,7 +486,9 @@ proto.editResultLayerFeature = function({
           inputs: { layer: _layer, features: [feature] },
           context: { session }
         })
-        .then(() => session.save().then(() => this.saveChange()))
+        .then(() => session
+          .save()
+          .then(() => this.saveChange()))
         .fail(() => session.rollback());
 
     })
