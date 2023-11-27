@@ -46,78 +46,78 @@
           >
         </div>
 
-        <div style="display: flex; justify-content: flex-end">
+            <div style="display: flex; justify-content: flex-end">
 
-          <!-- CHANGE ATTRIBUTE -->
-          <span
-            v-if                      = "undefined !== capabilities.relation.find(capability => 'change_attr_feature' === capability)"
-            class                     = "g3w-icon add-link"
-            align                     = "center"
-            v-t-tooltip:bottom.create = "tooltips.link_relation"
-            @click.stop               = "enableAddLinkButtons ? linkRelation() : null"
-            :class                    = "[
-              { 'disabled': !enableAddLinkButtons },
-              g3wtemplate.font['link']
-            ]"
-          ></span>
+                <!-- CHANGE ATTRIBUTE -->
+                <span
+                        v-if                      = "undefined !== capabilities.relation.find(capability => 'change_attr_feature' === capability)"
+                        class                     = "g3w-icon add-link"
+                        align                     = "center"
+                        v-t-tooltip:bottom.create = "tooltips.link_relation"
+                        @click.stop               = "enableAddLinkButtons ? linkRelation() : null"
+                        :class                    = "[
+            { 'disabled': !enableAddLinkButtons },
+            g3wtemplate.font['link']
+          ]"
+                ></span>
 
-          <!-- ADD FEATURE -->
-          <span
-            v-if                      = "undefined !== capabilities.relation.find(capability => 'add_feature' === capability)"
-            v-t-tooltip:bottom.create = "tooltips.add_relation"
-            @click                    = "enableAddLinkButtons ? addRelationAndLink() : null"
-            class                     = "g3w-icon add-link pull-right"
-            :class                    = "[
-              { 'disabled' : !enableAddLinkButtons },
-              g3wtemplate.font['plus']
-            ]"
-          ></span>
+                <!-- ADD FEATURE -->
+                <span
+                        v-if                      = "undefined !== capabilities.relation.find(capability => 'add_feature' === capability)"
+                        v-t-tooltip:bottom.create = "tooltips.add_relation"
+                        @click                    = "enableAddLinkButtons ? addRelationAndLink() : null"
+                        class                     = "g3w-icon add-link pull-right"
+                        :class                    = "[
+            { 'disabled' : !enableAddLinkButtons },
+            g3wtemplate.font['plus']
+          ]"
+                ></span>
+
+            </div>
 
         </div>
 
-      </div>
-
-      <!-- VECTOR RELATION TOOLS -->
-      <section
-        v-if  = "showAddVectorRelationTools"
-        ref   = "relation_vector_tools"
-        style = "
-          display: flex;
-          flex-direction: column;
-          border: 2px solid #eee;
-          background-color: #fff;
-          padding: 10px;
-        "
-      >
-
-        <!-- ADD VECTOR RELATION -->
-        <div>
-          <div class="g3w-editing-new-relation-vector-type" v-t-plugin="'editing.relation.draw_new_feature'"></div>
-          <button
-            class       = "btn skin-button"
-            style       = "width: 100%"
-            @click.stop = "addVectorRelation"
-          >
-            <i :class="g3wtemplate.font['pencil']"></i>
-          </button>
-        </div>
-
-        <divider/>
-
-        <div style="align-self: center" v-t-plugin="'editing.relation.draw_or_copy'"></div>
-
-        <divider/>
-
-        <div
-          id    = "g3w-select-editable-layers-content"
-          style = "
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column
-          "
+        <!-- VECTOR RELATION TOOLS -->
+        <section
+                v-if  = "showAddVectorRelationTools"
+                ref   = "relation_vector_tools"
+                style = "
+        display: flex;
+        flex-direction: column;
+        border: 2px solid #eee;
+        background-color: #fff;
+        padding: 10px;
+      "
         >
 
-          <div class="g3w-editing-new-relation-vector-type" v-t-plugin="'editing.relation.copy_feature_from_other_layer'"></div>
+            <!-- ADD VECTOR RELATION -->
+            <div>
+                <div class="g3w-editing-new-relation-vector-type" v-t-plugin="'editing.relation.draw_new_feature'"></div>
+                <button
+                        class       = "btn skin-button"
+                        style       = "width: 100%"
+                        @click.stop = "addVectorRelation"
+                >
+                    <i :class="g3wtemplate.font['pencil']"></i>
+                </button>
+            </div>
+
+            <divider/>
+
+            <div style="align-self: center" v-t-plugin="'editing.relation.draw_or_copy'"></div>
+
+            <divider/>
+
+            <div
+                    id    = "g3w-select-editable-layers-content"
+                    style = "
+          flex-grow: 1;
+          display: flex;
+          flex-direction: column
+        "
+            >
+
+                <div class="g3w-editing-new-relation-vector-type" v-t-plugin="'editing.relation.copy_feature_from_other_layer'"></div>
 
           <select
             id        = "g3w-select-editable-layers-to-copy"
@@ -130,16 +130,16 @@
             >{{ copyFeatureLayer.name }}</option>
           </select>
 
-          <!-- COPY FEATURE FROM OTHER LAYER -->
-          <button
-            class       = "btn skin-button"
-            @click.stop = "copyFeatureFromOtherLayer"
-          >
-            <i :class="g3wtemplate.font['clipboard']"></i>
-          </button>
-        </div>
+                <!-- COPY FEATURE FROM OTHER LAYER -->
+                <button
+                        class       = "btn skin-button"
+                        @click.stop = "copyFeatureFromOtherLayer"
+                >
+                    <i :class="g3wtemplate.font['clipboard']"></i>
+                </button>
+            </div>
 
-      </section>
+        </section>
 
       <!-- RELATION CONTENT -->
       <div
@@ -195,7 +195,7 @@
               </td>
               <td
                 v-for  = "attribute in relationAttributesSubset(relation)"
-                v-show = "!showAllFieds(index)"
+                v-show = "!showAllFields(index)"
               >
                 <!-- MEDIA ATTRIBUTE-->
                 <div
@@ -216,7 +216,7 @@
                   target    = "_blank">{{ getValue(attribute.value) }}
                 </a>
                 <!-- TEXTUAL ATTRIBUTE -->
-                <span v-else>{{ getValue(attribute.value) }}</span>
+                  <span v-else>{{ getValue(_service.getRelationFeatureValue(relation.id, attribute.name)) }}</span>
               </td>
             </tr>
           </tbody>
@@ -230,7 +230,7 @@
   /** @FIXME circular dependency ? */
   // import EditingService from "../services/editingservice";
 
-  const t               = g3wsdk.core.i18n.tPlugin;
+  const { tPlugin: t } = g3wsdk.core.i18n;
   const { toRawType }   = g3wsdk.core.utils;
   const RelationService = require('../services/relationservice');
   const { Layer }       = g3wsdk.core.layer;
@@ -254,6 +254,7 @@
 
     data() {
       return {
+        loading : false,
         showAddVectorRelationTools: false,
         copylayerid:                null, // used for vector relation layer
         active:                     false,
@@ -268,11 +269,11 @@
         placeholdersearch:         `${t('editing.search')} ...`,
       };
     },
-  
+
     methods: {
 
       resize() {
-        // skip when ..
+        // skip when relation form is disabled (or hidden) 
         if (!(this.active && 'none' !== this.$el.style.display)) {
           return;
         }
@@ -346,18 +347,21 @@
 
       relationAttributesSubset(relation) {
         let attributes = [];
-        this
-          .relationsFields(relation)
-          .forEach(field => {
-            if (!Array.isArray(field.value)) {
-              attributes.push({ label: field.label, value: field.value });
-            }
-          });
+        const fields   = this.relationsFields(relation);
+        fields.forEach(field => {
+          if (!Array.isArray(field.value)) {
+            attributes.push({
+              name: field.name,
+              label: field.label,
+              value: field.value
+            })
+          }
+        });
         return attributes;
       },
 
       relationsAttributesSubsetLength(relation) {
-        return this.relationAttributesSubset(relation).length;
+        return this.relationAttributesSubset(relation).length > 0;
       },
 
       relationsFields(relation) {
@@ -368,7 +372,7 @@
         this.showallfieldsindex = this.showallfieldsindex == index ? null : index;
       },
 
-      showAllFieds(index) {
+      showAllFields(index) {
         return this.showallfieldsindex == index;
       },
 
@@ -419,6 +423,20 @@
           relationsTable = null;
           $('#filterRelation').off();
         }
+      },
+
+      /**
+       * @returns {Promise<void>}
+       * 
+       * @since g3w-client-plugin-editing@v3.7.0
+       */
+      async updateTable() {
+        this.destroyTable();     // destroy old table
+        this.show = false;       // set show false to hide table
+        await this.$nextTick();  // wait rerender
+        this.show = true;        // show with new relations array
+        await this.$nextTick();
+        this._createDataTable(); // recreate table
       },
 
     },
@@ -473,7 +491,7 @@
 
       this.isVectorRelation = relationLayer.getType() === Layer.LayerTypes.VECTOR;
 
-      // vector relation --> get all layers with same geometry 
+      // vector relation --> get all layers with same geometry
       if (this.isVectorRelation) {
         const project_layers  = EditingService.getProjectLayersWithSameGeometryOfLayer(relationLayer, { exclude: [this.relation.father] });
         const external_layers = EditingService.getExternalLayersWithSameGeometryOfLayer(relationLayer);
@@ -496,7 +514,7 @@
         }
 
         this.copyFeatureLayers = layers.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase())); // sorted by name
-        this.copylayerid       = this.copyFeatureLayers.length ? this.copyFeatureLayers[0].id : null;             // current layer = first layer found 
+        this.copylayerid       = this.copyFeatureLayers.length ? this.copyFeatureLayers[0].id : null;             // current layer = first layer found
       }
 
       this.loadEventuallyRelationValuesForInputs = false;
@@ -512,18 +530,29 @@
     },
 
     async activated() {
-      this.active                     = true;
+
       this.showAddVectorRelationTools = false;
 
       if (!this.loadEventuallyRelationValuesForInputs) {
         const EditingService = require('../services/editingservice');
-        EditingService.runEventHandler({
-          type:      'show-relation-editing',
-          id:        EditingService._getRelationId({ layerId: this.layerId, relation: this.relation }),
-          component: this,
-        });
+        this.loading = true;
+        try {
+          await EditingService.runEventHandler({
+            type:      'show-relation-editing',
+            id:        EditingService._getRelationId({ layerId: this.layerId, relation: this.relation }),
+            component: this,
+          });
+        } catch(err) {
+          console.warn(err)
+        }
+
+        this.loading = false;
+
         this.loadEventuallyRelationValuesForInputs = true;
       }
+
+
+      this.active = true;
 
       await this.$nextTick();
 

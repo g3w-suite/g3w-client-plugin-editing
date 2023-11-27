@@ -61,7 +61,7 @@
 
           <!-- TOGGLE BUTTON -->
           <div
-            v-disabled       = "!state.startstopediting"
+            v-disabled       = "editDisabled"
             data-placement   = "left"
             data-toggle      = "tooltip"
             ref              = "editingbutton"
@@ -203,8 +203,14 @@
     computed: {
 
       /**
+       * @since g3w-client-plugin-editing@v3.7.0
+       */
+      editDisabled(){
+        return this.state.loading && !this.state.startstopediting;
+      },
+      /**
        * @returns { boolean } whether current has related layer(s) (aka. layer relations / joins)
-       * 
+       *
        * @since 3.7.0
        */
       hasRelations() {
@@ -295,7 +301,7 @@
       // (eg. tools visibility which differs from default behaviour)
       await this.$nextTick();
 
-      $(this.$refs.editingbutton).tooltip(); 
+      $(this.$refs.editingbutton).tooltip();
     },
 
   };
