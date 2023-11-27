@@ -754,15 +754,14 @@ proto.handleRelation1_1LayerFields = async function({
 }
 
 /**
- * @param { Object } opts
- * @param opts.relation
- * @param opts.fatherFormRelationField
- * 
+ * @param relation
+ * @param fatherFormRelationField
+ *
  * @returns {Promise<{feature: *, locked: boolean}>}
- * 
- * @since g3w-client-plugin-editing@v3.7.0
- * 
+ *
  * @private
+ *
+ * @since g3w-client-plugin-editing@v3.7.0
  */
 proto._getRelation1_1ChildFeature = async function({
   relation,

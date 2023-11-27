@@ -2676,7 +2676,7 @@ proto.getExternalLayersWithSameGeometryOfLayer = function(layer) {
  * 
  * @returns (field.key) or (field.value)
  * 
- * @since 3.7.0
+ * @since g3w-client-plugin-editing@v3.7.0
  */
 proto.getFeatureTableFieldValue = function({
   layerId,
