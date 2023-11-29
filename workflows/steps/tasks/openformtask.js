@@ -10,6 +10,36 @@ const EditTableFeaturesWorkflow = require('../../edittableworkflow');
 
 function OpenFormTask(options={}) {
 
+  const {
+    push=false,
+    saveAll=true,
+    multi=false,
+    showgoback,
+  } = options;
+
+  /**
+   * Used to force show back button
+   * @since v3.7
+   * @type {boolean}
+   */
+  this.showgoback = showgoback;
+  /**
+   * @since v3.7
+   * to force to push content on top without clear previus content
+   */
+  this.push = push;
+
+  /**
+   * Show saveAll butto
+   * @since v3.7
+   */
+  this.saveAll = saveAll;
+
+  /**
+   * Whether it can handle multi edit features
+   */
+  this._multi = multi;
+
   /**
    * @FIXME add description
    */
@@ -75,10 +105,6 @@ function OpenFormTask(options={}) {
    */
   this.promise;
 
-  /**
-   * Whether it can handle multi edit features
-   */
-  this._multi = options.multi || false;
 
   /**
    * @since g3w-client-plugin-editing@v3.7.0
@@ -315,9 +341,9 @@ proto.startForm = async function(options = {}) {
     context_inputs: !this._multi && this._edit_relations && {context, inputs},
     formStructure: this._editorFormStructure,
     modal: true,
-    push: this._isContentChild,
-    showgoback: !this._isContentChild,
-    headerComponent:SaveAll,
+    push: this.push || this._isContentChild, //@since v3.7 need to take in account this.push value
+    showgoback: undefined !== this.showgoback ? this.showgoback : !this._isContentChild,
+    headerComponent: this.saveAll && SaveAll,
     buttons: [
       {
         id: 'save',
@@ -433,7 +459,7 @@ proto.stop = function() {
     contextService.setUpdate(false, { force: false });
   }
 
-  GUI.closeForm({ pop: this._isContentChild });
+  GUI.closeForm({ pop: this.push || this._isContentChild });
 
   service.resetCurrentLayout();
 
