@@ -1,5 +1,8 @@
 import { PickHolesInteraction } from '../../../interactions/pickholesinteraction';
-const { base, inherit }  = g3wsdk.core.utils;
+const {
+  base,
+  inherit
+}                 = g3wsdk.core.utils;
 const EditingTask = require('./editingtask');
 
 function PickHoleTask(options={}) {
@@ -15,8 +18,8 @@ proto.run = function(inputs) {
 
   const d = $.Deferred();
 
+  //get OL editing layer
   const editingLayer = inputs.layer.getEditingLayer();
-
 
   this.pickFeatureInteraction = new PickHolesInteraction({
     layer: editingLayer,

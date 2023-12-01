@@ -3,7 +3,6 @@
  */
 import { extractHoleFromPolygonGeometry } from '../utils/extractHoleFromPolygonGeometry';
 
-const { dissolve } = g3wsdk.core.geoutils;
 const { Geometry } = g3wsdk.core.geometry;
 
 const PickHolesEventType = {
@@ -38,7 +37,7 @@ export const PickHolesInteraction = function(options={}) {
   this._holeLayer = new ol.layer.Vector({
     style: new ol.style.Style({
       fill: new ol.style.Fill({
-        color: 'rgba(255,255,255,0)'
+        color: 'rgba(255,255,255,0)' //set trasparent hole feature
       })
     }),
     source: new ol.source.Vector()
