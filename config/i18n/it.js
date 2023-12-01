@@ -27,7 +27,7 @@ export default {
   },
   tools: {
     copy: "Copia features",
-    pastefeaturesfromotherlayers: "Copia features da altro layer",
+    pastefeaturesfromotherlayers: "Incolla features da altro layer",
     addpart: "Aggiungi parte alla geometria",
     deletepart: "Cancella parte dalla geometria",
     merge: "Dissolvi features",

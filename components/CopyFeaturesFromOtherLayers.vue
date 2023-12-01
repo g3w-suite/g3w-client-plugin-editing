@@ -1,6 +1,8 @@
 <template>
-  <div class="editing-layers-features">
+  <div class="editing-layers-features" >
+    <!-- EDIT MULTI FEATURE ATTRIBUTES  -->
     <div
+      v-if="showEditAttributes"
       v-disabled  = "disabled"
       style       ="display: flex; justify-content: flex-end">
       <input
@@ -9,7 +11,6 @@
         class       = "magic-checkbox"
         v-model     = "$options.editAttributes.state"
       >
-      <!-- TODO NEED TRANSLATION -->
       <label
         for  = "g3w_edit_attributes_of_select_feature_from_layer"
         style = "color: #000000" v-t-plugin="'editing.modal.tools.copyfeaturefromotherlayer.edit_attributes'">
@@ -111,6 +112,20 @@
         disabled        : true, //@since v3.7 check if we want to edit multi selected feature attributes
         _height          : 0,
       };
+    },
+
+    computed: {
+      /**
+       * Show edit attributes only if there are at least 2 feature to select
+       * @since v3.7
+       */
+      showEditAttributes() {
+        return Object.values(this.$options.layers).reduce((sum, {features}) => {
+          console.log(features)
+          sum = sum + features.length;
+          return sum;
+        }, 0) > 1;
+      }
     },
 
     methods: {
