@@ -51,7 +51,7 @@ proto.createHole = function(holeFeature, editingLayerSource){
           .getGeometry()
           .getCoordinates()
           .findIndex((singlePolygonCoordinates) => within(coordinatesToGeometry('Polygon', singlePolygonCoordinates), holeFeature.getGeometry()))
-        //if find
+        //if it finds
         if (findPolygonIndex !== -1) {
           originalFeature = feature.clone();
           newFeature = feature;
