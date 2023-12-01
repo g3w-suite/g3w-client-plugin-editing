@@ -1,7 +1,7 @@
 /**
  * @since g3w-client-plugin-editing@v3.7.0
  */
-import { extractHoleFromPolygonGeometry } from '../utils/extractHoleFromPolygonGeometry';
+import { extractHolesFromPolygonGeometry } from '../utils/extractHolesFromPolygonGeometry';
 
 const { Geometry } = g3wsdk.core.geometry;
 
@@ -51,7 +51,7 @@ export const PickHolesInteraction = function(options={}) {
   //listen add feature due move map and get new feature from server
   this.unByKey = this.layer
     .getSource()
-    .on('addfeature', feature => this.addHoleFeature(feature));
+    .on('addfeature', ({feature}) => this.addHoleFeature(feature));
 
   this.pickedHoles = []; //store information about get hole
 };
@@ -97,12 +97,12 @@ PickHolesInteraction.handleUpEvent_ = function(event) {
 PickHolesInteraction.prototype.addHoleFeature = function(feature) {
   const featureGeometry = feature.getGeometry();
   const id = feature.getId();
-  //check if is multigeometry (MultiPolygon)
+  //check if is multi geometry (MultiPolygon)
   if (Geometry.isMultiGeometry(this.geometryType)) {
     featureGeometry
       .getPolygons()
       .forEach((geometry, index) => {
-        extractHoleFromPolygonGeometry({
+        extractHolesFromPolygonGeometry({
           geometry,
           id,
           index
@@ -111,7 +111,7 @@ PickHolesInteraction.prototype.addHoleFeature = function(feature) {
       })
   } else {
     //Polygon geometry
-    extractHoleFromPolygonGeometry({
+    extractHolesFromPolygonGeometry({
       geometry:featureGeometry,
       id,
       index: 0 //just one polygon
@@ -148,7 +148,7 @@ PickHolesInteraction.prototype.shouldStopEvent = function() {
 };
 
 /**
- * Handle when interaction it is add or remove from map
+ * Handle when interaction it adds or remove from map
  * @param map
  */
 PickHolesInteraction.prototype.setMap = function(map) {
