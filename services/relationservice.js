@@ -1,7 +1,7 @@
-const {GUI} = g3wsdk.gui;
-const t = g3wsdk.core.i18n.tPlugin;
-const {Layer} = g3wsdk.core.layer;
-const {WorkflowsStack} = g3wsdk.core.workflow;
+const { GUI }            = g3wsdk.gui;
+const { tPlugin:t }      = g3wsdk.core.i18n;
+const { Layer }          = g3wsdk.core.layer;
+const { WorkflowsStack } = g3wsdk.core.workflow;
 
 // what we can do with each type of relation element
 const RELATIONTOOLS = {
@@ -37,7 +37,9 @@ const RelationService = function(layerId, options = {}) {
   const relationLayer = this.getLayer();
   this._layerType = relationLayer.getType();
   //get type of relation
-  const relationLayerType = this._layerType === Layer.LayerTypes.VECTOR ? relationLayer.getGeometryType() : Layer.LayerTypes.TABLE;
+  const relationLayerType = this._layerType === Layer.LayerTypes.VECTOR ?
+    relationLayer.getGeometryType() :
+    Layer.LayerTypes.TABLE;
   //
   const { ownField: fatherRelationField} = this.getEditingService()._getRelationFieldsFromRelation({
     layerId: this._parentLayerId,
