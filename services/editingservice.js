@@ -2339,6 +2339,10 @@ proto.removeRelationLayerUniqueFieldValuesFromFeature = function({
 }) {
   const layer = this.layersUniqueFieldsValues[relationLayerId];
 
+  if (undefined === layer) {
+    return;
+  }
+
   if (undefined === layer.__uniqueFieldsValuesRelations) {
     layer.__uniqueFieldsValuesRelations = {};
   }
@@ -2505,6 +2509,10 @@ proto.changeRelationLayerUniqueFieldValues = function({
 }) {
   const layer = this.layersUniqueFieldsValues[relationLayerId];
 
+  if (undefined === layer) {
+    return;
+  }
+
   if (undefined === layer.__uniqueFieldsValuesRelations) {
     layer.__uniqueFieldsValuesRelations = {};
   }
@@ -2561,7 +2569,7 @@ proto.undoRedoLayerUniqueFieldValues = function({
   action,
 }) {
 
-  // skip when ..
+  // if not set
   if (undefined === this.layersUniqueFieldsValues[layerId]) {
     return;
   }
