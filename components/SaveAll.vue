@@ -37,7 +37,7 @@
 
 <script>
   const { WorkflowsStack } = g3wsdk.core.workflow;
-  const { FormService }   = g3wsdk.gui.vue.services;
+  const { FormService }    = g3wsdk.gui.vue.services;
 
   export default {
 
