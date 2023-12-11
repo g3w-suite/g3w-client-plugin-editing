@@ -30,10 +30,10 @@ function OpenFormTask(options={}) {
   this.push = push;
 
   /**
-   * Show saveAll butto
+   * Show saveAll button
    * @since v3.7
    */
-  this.saveAll = saveAll;
+  this._saveAll = saveAll;
 
   /**
    * Whether it can handle multi edit features
@@ -343,7 +343,7 @@ proto.startForm = async function(options = {}) {
     modal: true,
     push: this.push || this._isContentChild, //@since v3.7 need to take in account this.push value
     showgoback: undefined !== this.showgoback ? this.showgoback : !this._isContentChild,
-    headerComponent: this.saveAll && SaveAll,
+    headerComponent: this._saveAll && SaveAll,
     buttons: [
       {
         id: 'save',
