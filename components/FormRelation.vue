@@ -149,6 +149,7 @@
       >
         <table
           v-if  = "relationsLength"
+          ref   = "relationTable"
           class = "table g3wform-relation-table table-striped"
           style = "width:100%"
         >
@@ -156,7 +157,9 @@
             <tr>
               <th v-t="'tools'"></th>
               <th></th>
-              <th v-for="attribute in relationAttributesSubset(relations[0])">{{ attribute.label }}</th>
+              <th v-for="attribute in relationAttributesSubset(relations[0])">
+                {{ attribute.label }}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -240,8 +243,6 @@
     mediaMixin,
   }                     = g3wsdk.gui.vue.Mixins;
 
-  let relationsTable;
-
   export default {
 
     mixins: [
@@ -291,8 +292,8 @@
             - (this.isVectorRelation && this.showAddVectorRelationTools ? $(this.$refs.relation_vector_tools).outerHeight() : 0)
           );
 
-        if (relationsTable) {
-          relationsTable.columns.adjust();
+        if (this.relationsTable) {
+          this.relationsTable.columns.adjust();
         }
       },
 
@@ -399,11 +400,12 @@
       },
 
       _setDataTableSearch() {
+        const relationsTable = this.relationsTable;
         $('#filterRelation').on('keyup', function() { relationsTable.search($(this).val()).draw(); });
       },
 
       _createDataTable() {
-        relationsTable = $('.g3wform-relation-table').DataTable({
+        this.relationsTable = $(this.$refs.relationTable).DataTable({
           "scrollX": true,
           "order": [ 2, 'asc' ],
           "destroy": true,
@@ -418,9 +420,9 @@
       },
 
       destroyTable() {
-        if (relationsTable) {
-          relationsTable = relationsTable.destroy();
-          relationsTable = null;
+        if (this.relationsTable) {
+          this.relationsTable = this.relationsTable.destroy();
+          this.relationsTable = null;
           $('#filterRelation').off();
         }
       },
@@ -530,7 +532,6 @@
     },
 
     async activated() {
-
       this.showAddVectorRelationTools = false;
 
       if (!this.loadEventuallyRelationValuesForInputs) {
@@ -556,7 +557,7 @@
 
       await this.$nextTick();
 
-      if (!relationsTable && this.relationsLength) {
+      if (!this.relationsTable && this.relationsLength) {
         this._createDataTable();
       }
 
