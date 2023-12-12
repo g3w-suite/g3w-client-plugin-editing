@@ -8,6 +8,7 @@ function EditingFormComponent(options = {}) {
   base(this, options);
 
   const EditingService   = require('../services/editingservice');
+
   const relationsOptions = options.context_inputs || null;
   const layerId          = options.layer.getId();
   const feature          = (
