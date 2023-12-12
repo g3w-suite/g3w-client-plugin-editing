@@ -1354,24 +1354,23 @@ proto._getRelationLayerId = function({
  * @param opts.layerId
  * @param opts.relation
  * @param opts.feature
- * @param opts.layerType
  */
 proto.getRelationsByFeature = function({
   layerId,
   relation,
   feature,
-  layerType,
 } = {}) {
   const { ownField, relationField } = this._getRelationFieldsFromRelation({ layerId, relation });
   //get features of relation child layers
   const features = this._getFeaturesByLayerId(layerId);
   //Loop relation fields
   const featuresValues = relationField.map(rField => feature.get(rField));
-  return features.filter(feature => {
-    return ownField.reduce((bool, oField, index) => {
-      return bool && feature.get(oField) == featuresValues[index]
-    }, true)
-  });
+  return features
+    .filter(feature => {
+      return ownField.reduce((bool, oField, index) => {
+        return bool && feature.get(oField) == featuresValues[index]
+      }, true)
+    });
 
 };
 
