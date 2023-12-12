@@ -883,22 +883,26 @@ proto.undo = function() {
  * undo relations
  */
 proto.undoRelations = function(undoItems) {
-  Object.entries(undoItems).forEach(([toolboxId, items]) => {
-    const toolbox = this.getToolBoxById(toolboxId);
-    const session = toolbox.getSession();
-    session.undo(items);
-  })
+  Object
+    .entries(undoItems)
+    .forEach(([toolboxId, items]) => {
+      const toolbox = this.getToolBoxById(toolboxId);
+      const session = toolbox.getSession();
+      session.undo(items);
+    })
 };
 
 /**
  * rollback relations
  */
 proto.rollbackRelations = function(rollbackItems) {
-  Object.entries(rollbackItems).forEach(([toolboxId, items]) => {
-    const toolbox = this.getToolBoxById(toolboxId);
-    const session = toolbox.getSession();
-    session.rollback(items);
-  })
+  Object
+    .entries(rollbackItems)
+    .forEach(([toolboxId, items]) => {
+      const toolbox = this.getToolBoxById(toolboxId);
+      const session = toolbox.getSession();
+      session.rollback(items);
+    })
 };
 
 /**
