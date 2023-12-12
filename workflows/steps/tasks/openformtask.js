@@ -128,6 +128,13 @@ proto.updateMulti = function(bool=false) {
   this._multi = bool;
 };
 
+/**
+ *
+ * @param inputs
+ * @param context
+ * @returns {Promise<*>}
+ * @private
+ */
 proto._getForm = async function(inputs, context) {
   this._session = context.session;
   this._originalLayer = inputs.layer;
@@ -170,6 +177,13 @@ proto._getForm = async function(inputs, context) {
   return GUI.showContentFactory('form');
 };
 
+/**
+ *
+ * @param promise
+ * @param inputs
+ * @returns {(function(): void)|*}
+ * @private
+ */
 proto._cancelFnc = function(promise, inputs) {
   return function() {
     if (!this._isContentChild){
@@ -221,7 +235,6 @@ proto.saveAll = function(fields) {
         }).then(() => {
           this.fireEvent('savedfeature', newFeatures); // called after saved
           this.fireEvent(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
-          //save temporary changes
           session.save();
           resolve({
             promise: this.promise
@@ -232,6 +245,15 @@ proto.saveAll = function(fields) {
   })
 };
 
+/**
+ *
+ * @param fields
+ * @param promise
+ * @param session
+ * @param inputs
+ * @returns {Promise<void>}
+ * @private
+ */
 proto._saveFeatures = async function({fields, promise, session, inputs}){
   fields = this._multi ? fields.filter(field => field.value !== null) : fields;
   if (fields.length) {
@@ -295,6 +317,14 @@ proto._saveFeatures = async function({fields, promise, session, inputs}){
   }
 };
 
+/**
+ *
+ * @param promise
+ * @param context
+ * @param inputs
+ * @returns {(function(*): void)|*}
+ * @private
+ */
 proto._saveFnc = function(promise, context, inputs) {
   return function(fields) {
     const session = context.session;
@@ -403,6 +433,12 @@ proto.startForm = async function(options = {}) {
   })
 };
 
+/**
+ *
+ * @param inputs
+ * @param context
+ * @returns {*}
+ */
 proto.run = function(inputs, context) {
   const d = $.Deferred();
   this.promise = d;
@@ -430,10 +466,19 @@ proto.run = function(inputs, context) {
   return d.promise();
 };
 
+/**
+ *
+ * @param layerName
+ * @returns {string}
+ * @private
+ */
 proto._generateFormId = function(layerName) {
   return this._formIdPrefix + layerName;
 };
 
+/**
+ *
+ */
 proto.stop = function() {
   this.disableSidebar(false);
 
