@@ -208,10 +208,11 @@ proto.saveAll = function(fields) {
       this.fireEvent('saveform', {
         newFeatures,
         originalFeatures: this._originalFeatures
-      }).then(()=> {
-        newFeatures.forEach((newFeature, index)=> {
-          session.pushUpdate(this.layerId, newFeature, this._originalFeatures[index]);
-        });
+      }).then(() => {
+        newFeatures
+          .forEach((newFeature, index) => {
+            session.pushUpdate(this.layerId, newFeature, this._originalFeatures[index]);
+          });
         //check and handle if layer has relation 1:1
         this.handleRelation1_1LayerFields({
           layerId: this.layerId,
@@ -220,7 +221,7 @@ proto.saveAll = function(fields) {
         }).then(() => {
           this.fireEvent('savedfeature', newFeatures); // called after saved
           this.fireEvent(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
-
+          //save temporary changes
           session.save();
           resolve({
             promise: this.promise
