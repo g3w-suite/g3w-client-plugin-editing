@@ -19,7 +19,10 @@ const EditingFormService = function(options = {}) {
   const layerId = layer.getId();
 
   // get only relation with type not ONE and layer is the father
-  let relations = layer.getRelations().getArray().filter(relation => relation.getType() !== 'ONE' && relation.getFather() === layerId);
+  let relations = layer
+    .getRelations()
+    .getArray()
+    .filter(relation => relation.getType() !== 'ONE' && relation.getFather() === layerId);
 
   // get relation layers that set in editing on g3w-admin
   relations = EditingService.getRelationsInEditing({
@@ -36,25 +39,27 @@ const EditingFormService = function(options = {}) {
 
     const relationComponents = [];
 
-    relations.forEach(({ relation, relations }) => {
-      const relationComponent = Vue.extend({
-        mixins: [ RelationComponent ],
-        name: `relation_${Date.now()}`,
-        methods: {
-          getService() {
-            return self._relationsService;
-          }
-        },
-        data() {
-          return {
-            layerId,
-            relation,
-            relations,
-            resourcesurl: GUI.getResourcesUrl(),
-            formeventbus: self._formEventBus
-          };
-        },
-      });
+    relations
+      .forEach(({ relation, relations }) => {
+        const relationComponent = Vue.extend({
+          mixins: [ RelationComponent ],
+          name: `relation_${Date.now()}`,
+          methods: {
+            getService() {
+              return self._relationsService;
+            }
+          },
+          data() {
+            return {
+              layerId,
+              relation,
+              relations,
+              resourcesurl: GUI.getResourcesUrl(),
+              formeventbus: self._formEventBus
+            };
+          },
+        });
+
       relationComponents.push({
         title:     "plugins.editing.edit_relation",
         name:      relation.name,
