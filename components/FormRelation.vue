@@ -282,19 +282,20 @@
         $(this.$refs.relation_body)
           .find('div.dataTables_scrollBody')
           .height(
-            $(".g3wform_body").height()
-            - $('.g3wform_footer').height()
+              $(".g3wform_body:visible").height()
+            - $('.g3wform_footer:visible').height()
             - $(this.$refs.relation_header_title).outerHeight()
             - $(this.$refs.relation_header_tools).outerHeight()
             - $(this.$el).find('.dataTables_scrollHead').outerHeight()
             - $(this.$el).find('.dataTables_paginate.paging_simple_numbers').outerHeight()
-            - $('.editing-save-all-form').outerHeight()
+            - $('.editing-save-all-form:visible').outerHeight()
             - (this.isVectorRelation && this.showAddVectorRelationTools ? $(this.$refs.relation_vector_tools).outerHeight() : 0)
           );
 
         if (this.relationsTable) {
           this.relationsTable.columns.adjust();
         }
+
       },
 
       unlinkRelation(index) {
@@ -329,7 +330,8 @@
       },
 
       startTool(relationtool, index) {
-        this._service.startTool(relationtool, index)
+        this._service
+          .startTool(relationtool, index)
           .then(() => {})
           .catch(console.warn)
       },
@@ -349,15 +351,16 @@
       relationAttributesSubset(relation) {
         let attributes = [];
         const fields   = this.relationsFields(relation);
-        fields.forEach(field => {
-          if (!Array.isArray(field.value)) {
-            attributes.push({
-              name: field.name,
-              label: field.label,
-              value: field.value
-            })
-          }
-        });
+        fields
+          .forEach(({value, name, label}) => {
+            if (!Array.isArray(value)) {
+              attributes.push({
+                name,
+                label,
+                value
+              })
+            }
+          });
         return attributes;
       },
 
