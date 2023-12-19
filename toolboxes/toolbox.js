@@ -117,8 +117,13 @@ function ToolBox(options={}) {
       };
       this._getFeaturesOption = options;
       this._registerGetFeaturesEvent(this._getFeaturesOption);
-      if (options.type === Layer.LayerTypes.VECTOR && GUI.getContentLength())
-        GUI.once('closecontent', ()=> setTimeout(()=> this._mapService.getMap().dispatchEvent(this._getFeaturesEvent.event)));
+      if (options.type === Layer.LayerTypes.VECTOR && GUI.getContentLength()) {
+        GUI.once('closecontent', () => {
+          setTimeout(() => {
+            this._mapService.getMap().dispatchEvent(this._getFeaturesEvent.event)
+          })
+        });
+      }
     }
   });
 }
