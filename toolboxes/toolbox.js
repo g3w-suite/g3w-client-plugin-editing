@@ -1,9 +1,17 @@
-const { ApplicationState, G3WObject } = g3wsdk.core;
-const {base, inherit, debounce, toRawType} = g3wsdk.core.utils;
-const { GUI } = g3wsdk.gui;
-const { tPlugin:t } = g3wsdk.core.i18n;
-const { Layer } = g3wsdk.core.layer;
-const { Session } = g3wsdk.core.editing;
+const {
+  ApplicationState,
+  G3WObject
+}                                = g3wsdk.core;
+const {
+  base,
+  inherit,
+  debounce,
+  toRawType
+}                                = g3wsdk.core.utils;
+const { GUI }                    = g3wsdk.gui;
+const { tPlugin:t }              = g3wsdk.core.i18n;
+const { Layer }                  = g3wsdk.core.layer;
+const { Session }                = g3wsdk.core.editing;
 const { getScaleFromResolution } = g3wsdk.ol.utils;
 
 function ToolBox(options={}) {
@@ -34,9 +42,11 @@ function ToolBox(options={}) {
   });
 
   // get informed when save on server
-  this.uniqueFields && this._session.onafter('saveChangesOnServer', ()=>{
-    this._resetUniqueValues();
-  });
+  if (this.uniqueFields) {
+    this._session.onafter('saveChangesOnServer', () => {
+      this._resetUniqueValues();
+    });
+  }
 
   this._getFeaturesOption = {};
   const historystate = this._session.getHistory().state;
