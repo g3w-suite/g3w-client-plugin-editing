@@ -1,6 +1,7 @@
-const { Layer } = g3wsdk.core.layer;
-const EditToolsFactory = require('./toolsfactory');
-const ToolBox = require('./toolbox');
+const { Layer }         = g3wsdk.core.layer;
+
+const EditToolsFactory  = require('./toolsfactory');
+const ToolBox           = require('./toolbox');
 
 function EditorToolBoxesFactory() {
   this.build = function(layer, options={}) {
@@ -8,16 +9,15 @@ function EditorToolBoxesFactory() {
     const constraints = layer.getEditingConstrains();
     // get editing capabilities (create, update_attributes, update_geometry, delete)
     const capabilities = layer.getEditingCapabilities();
-    const type = layer.getType();
-    const id = layer.getId();
-    const color = layer.getColor();
-    let tools = [];
+    const type         = layer.getType();
+    const id           = layer.getId();
+    const color        = layer.getColor();
+    let tools          = [];
     switch (type) {
       case Layer.LayerTypes.VECTOR:
-        const geometryType = layer.getGeometryType();
         tools = EditToolsFactory.build({
           layer,
-          geometryType: geometryType,
+          geometryType: layer.getGeometryType(),
           type,
           capabilities
         });
