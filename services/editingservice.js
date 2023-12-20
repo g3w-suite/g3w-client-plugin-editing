@@ -80,14 +80,14 @@ function EditingService() {
   };
 
   /**
-   * Store unique fields value for each layer
+   * Store unique fields values for each layer
    *
    * @type {{ mode: string, messages: undefined, modal: boolean, cb: { error: undefined, done: undefined } }}
    */
   this.layersUniqueFieldsValues = {};
 
   /**
-   * @FIXME add description
+   * Store configuration of how save/commit changes to server
    */
   this.saveConfig = {
     mode: "default",     // default, autosave
@@ -95,7 +95,7 @@ function EditingService() {
     messages: undefined, // object to set custom message
     cb: {
       done: undefined,   // function executed  after commit change done
-      error: undefined   // function executed after commit chenges error
+      error: undefined   // function executed after commit changes error
     }
   };
 
@@ -136,7 +136,7 @@ function EditingService() {
    */
   this._mapService = GUI.getService('map');
 
-  // set mapcontrol toggle event
+  // set map control toggle event
   this.mapControlToggleEventHandler = evt => {
     if (
       evt.target.isToggled() &&
@@ -883,22 +883,26 @@ proto.undo = function() {
  * undo relations
  */
 proto.undoRelations = function(undoItems) {
-  Object.entries(undoItems).forEach(([toolboxId, items]) => {
-    const toolbox = this.getToolBoxById(toolboxId);
-    const session = toolbox.getSession();
-    session.undo(items);
-  })
+  Object
+    .entries(undoItems)
+    .forEach(([toolboxId, items]) => {
+      const toolbox = this.getToolBoxById(toolboxId);
+      const session = toolbox.getSession();
+      session.undo(items);
+    })
 };
 
 /**
  * rollback relations
  */
 proto.rollbackRelations = function(rollbackItems) {
-  Object.entries(rollbackItems).forEach(([toolboxId, items]) => {
-    const toolbox = this.getToolBoxById(toolboxId);
-    const session = toolbox.getSession();
-    session.rollback(items);
-  })
+  Object
+    .entries(rollbackItems)
+    .forEach(([toolboxId, items]) => {
+      const toolbox = this.getToolBoxById(toolboxId);
+      const session = toolbox.getSession();
+      session.rollback(items);
+    })
 };
 
 /**
@@ -1350,24 +1354,23 @@ proto._getRelationLayerId = function({
  * @param opts.layerId
  * @param opts.relation
  * @param opts.feature
- * @param opts.layerType
  */
 proto.getRelationsByFeature = function({
   layerId,
   relation,
   feature,
-  layerType,
 } = {}) {
   const { ownField, relationField } = this._getRelationFieldsFromRelation({ layerId, relation });
   //get features of relation child layers
   const features = this._getFeaturesByLayerId(layerId);
   //Loop relation fields
   const featuresValues = relationField.map(rField => feature.get(rField));
-  return features.filter(feature => {
-    return ownField.reduce((bool, oField, index) => {
-      return bool && feature.get(oField) == featuresValues[index]
-    }, true)
-  });
+  return features
+    .filter(feature => {
+      return ownField.reduce((bool, oField, index) => {
+        return bool && feature.get(oField) == featuresValues[index]
+      }, true)
+    });
 
 };
 
@@ -2291,20 +2294,29 @@ proto.commit = function({
 };
 
 /**
- * Unique field layer values handler
+ * Start Unique field layer values handlers
+ */
+
+/**
+ * Clear all unique values fields related to layer
+ * Example: is called when leave editing closing editing panel
  */
 proto.clearAllLayersUniqueFieldsValues = function() {
   this.layersUniqueFieldsValues = {};
 };
 
 /**
- * @param { string } layerId 
+ * Clear single layer unique field values
+ * @param { string } layerId
+ * Example: is called when toolbox editing of a layer is stopped
  */
 proto.clearLayerUniqueFieldsValues = function(layerId) {
   this.layersUniqueFieldsValues[layerId] = {};
 };
 
 /**
+ * Remove unique values from unique fields of a layer
+ * when a feature is delete
  * @param { Object } opts
  * @param { string } opts.layerId
  * @param opts.feature
@@ -2313,16 +2325,18 @@ proto.removeLayerUniqueFieldValuesFromFeature = function({
   layerId,
   feature,
 }) {
-  // skip when ..
+  // Layer has no unique fields values stored
   if (!this.layersUniqueFieldsValues[layerId]) {
     return;
   }
+
   Object
     .keys(feature.getProperties())
-      .forEach(property =>{
-        if (undefined !== this.layersUniqueFieldsValues[layerId][property]) {
-          this.layersUniqueFieldsValues[layerId][property].delete(feature.get(property));
-        }
+    .forEach(field => {
+      //Check if a field is stored as unique values
+      if (undefined !== this.layersUniqueFieldsValues[layerId][field]) {
+        this.layersUniqueFieldsValues[layerId][field].delete(feature.get(field));
+      }
     });
 };
 
@@ -2337,7 +2351,12 @@ proto.removeRelationLayerUniqueFieldValuesFromFeature = function({
   relationLayerId,
   feature,
 }) {
+
   const layer = this.layersUniqueFieldsValues[relationLayerId];
+
+  if (undefined === layer) {
+    return;
+  }
 
   if (undefined === layer.__uniqueFieldsValuesRelations) {
     layer.__uniqueFieldsValuesRelations = {};
@@ -2401,7 +2420,7 @@ proto.saveTemporaryRelationsUniqueFieldsValues = function(layerId) {
     this.layersUniqueFieldsValues[layerId].__uniqueFieldsValuesRelations
   );
 
-  // skip when ..
+  // No relation value unique fileds are stored
   if (undefined === relations) {
     return;
   }
@@ -2429,9 +2448,10 @@ proto.clearTemporaryRelationsUniqueFieldsValues = function(layerId) {
 };
 
 /**
+ * Get layer unique field value
  * @param { Object } opts
- * @param { string } opts.layerId
- * @param opts.field
+ * @param { string } opts.layerId layer id
+ * @param opts.field filed name
  * 
  * @returns {*}
  */
@@ -2483,6 +2503,12 @@ proto.changeLayerUniqueFieldValues = function({
   oldValue,
   newValue,
 }) {
+  if (
+    undefined === this.layersUniqueFieldsValues[layerId] ||
+    undefined === this.layersUniqueFieldsValues[layerId][field.name]
+  ) {
+    return;
+  }
   const values = this.layersUniqueFieldsValues[layerId][field.name];
   values.delete(oldValue);
   values.add(newValue);
@@ -2504,6 +2530,10 @@ proto.changeRelationLayerUniqueFieldValues = function({
   newValue,
 }) {
   const layer = this.layersUniqueFieldsValues[relationLayerId];
+
+  if (undefined === layer) {
+    return;
+  }
 
   if (undefined === layer.__uniqueFieldsValuesRelations) {
     layer.__uniqueFieldsValuesRelations = {};
@@ -2561,7 +2591,7 @@ proto.undoRedoLayerUniqueFieldValues = function({
   action,
 }) {
 
-  // skip when ..
+  // if not set
   if (undefined === this.layersUniqueFieldsValues[layerId]) {
     return;
   }
