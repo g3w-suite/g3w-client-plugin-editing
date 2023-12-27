@@ -885,11 +885,7 @@ proto.undo = function() {
 proto.undoRelations = function(undoItems) {
   Object
     .entries(undoItems)
-    .forEach(([toolboxId, items]) => {
-      const toolbox = this.getToolBoxById(toolboxId);
-      const session = toolbox.getSession();
-      session.undo(items);
-    })
+    .forEach(([toolboxId, items]) => { this.getToolBoxById(toolboxId).getSession().undo(items); });
 };
 
 /**
@@ -898,11 +894,7 @@ proto.undoRelations = function(undoItems) {
 proto.rollbackRelations = function(rollbackItems) {
   Object
     .entries(rollbackItems)
-    .forEach(([toolboxId, items]) => {
-      const toolbox = this.getToolBoxById(toolboxId);
-      const session = toolbox.getSession();
-      session.rollback(items);
-    })
+    .forEach(([toolboxId, items]) => { this.getToolBoxById(toolboxId).getSession().rollback(items); });
 };
 
 /**
@@ -931,11 +923,9 @@ proto.redo = function() {
  * redo relations
  */
 proto.redoRelations = function(redoItems) {
-  Object.entries(redoItems).forEach(([toolboxId, items]) => {
-    const toolbox = this.getToolBoxById(toolboxId);
-    const session = toolbox.getSession();
-    session.redo(items);
-  })
+  Object
+    .entries(redoItems)
+    .forEach(([toolboxId, items]) => { this.getToolBoxById(toolboxId).getSession().redo(items); });
 };
 
 /**
