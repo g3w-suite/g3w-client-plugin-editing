@@ -48,15 +48,13 @@ const Plugin = function() {
     this.service.once('ready', () => {
       //plugin registry
       if (this.registerPlugin(this.config.gid)) {
-        if (!GUI.isready) {
-          GUI.on('ready', this.setupGui.bind(this));
-        } else {
+        if (GUI.isready) {
           this.setupGui();
+        } else {
+          GUI.on('ready', this.setupGui.bind(this));
         }
       }
-      this.setHookLoading({
-        loading: false
-      });
+      this.setHookLoading({ loading: false });
       this.setApi(this.service.getApi());
       this.setReady(true);
     });
