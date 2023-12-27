@@ -27,7 +27,7 @@ function EditingFormComponent(options = {}) {
             .getRelations()
             .getArray().filter(r =>
               (
-                (layerId === r.getFather())               && // @since v3.7.0 current layer in editing need to get only child relation features
+                layerId === r.getFather()                 && // get only child relation features of current editing layer
                 EditingService.getLayerById(r.getChild()) && // child layer is in editing
                 'ONE' !== r.getType()                        // is not a ONE relation (Join 1:1)
               )
