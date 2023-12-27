@@ -758,16 +758,13 @@ proto.linkRelation = function() {
  */
 proto._checkIfExternalFieldRequired = function() {
   // own Field is relation Field of Relation Layer
-  const {ownField} = this.getEditingService()._getRelationFieldsFromRelation({
-    layerId: this._relationLayerId,
-    relation: this.relation
+  const { ownField } = this.getEditingService()._getRelationFieldsFromRelation({
+    layerId:  this._relationLayerId,
+    relation: this.relation,
   });
 
   //ownField is an array
-  return ownField.reduce((bool, oField) => {
-    return bool || this.getEditingService()
-      .isFieldRequired(this._relationLayerId, oField);
-  }, false);
+  return ownField.some(field => this.getEditingService().isFieldRequired(this._relationLayerId, field));
 };
 
 /**

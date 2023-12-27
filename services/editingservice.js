@@ -1351,17 +1351,12 @@ proto.getRelationsByFeature = function({
   feature,
 } = {}) {
   const { ownField, relationField } = this._getRelationFieldsFromRelation({ layerId, relation });
-  //get features of relation child layers
-  const features = this._getFeaturesByLayerId(layerId);
-  //Loop relation fields
-  const featuresValues = relationField.map(rField => feature.get(rField));
-  return features
-    .filter(feature => {
-      return ownField.reduce((bool, oField, index) => {
-        return bool && feature.get(oField) == featuresValues[index]
-      }, true)
-    });
-
+  // get features of relation child layers
+  // Loop relation fields
+  const features = relationField.map(field => feature.get(field));
+  return this
+    ._getFeaturesByLayerId(layerId)
+    .filter(feature => ownField.every((field, i) => feature.get(field) == features[i]));
 };
 
 /**
@@ -1771,25 +1766,16 @@ proto.getLayersDependencyFeaturesFromSource = function({
   operator = 'eq',
 } = {}) {
   return new Promise(resolve => {
-    const features = this._getFeaturesByLayerId(layerId);
-    const {ownField, relationField} = this._getRelationFieldsFromRelation({
-      layerId,
-      relation
-    });
-    //get features Values
-    const featureValues = relationField.map(rField => feature.get(rField));
+    // skip when ..
+    if ('eq' !== operator) {
+      return resolve(false);
+    }
 
-    const find = operator === 'eq' ?
+    const { ownField, relationField } = this._getRelationFieldsFromRelation({ layerId, relation });
+    const features                    = this._getFeaturesByLayerId(layerId);
+    const featureValues               = relationField.map(field => feature.get(field));
 
-      ownField.reduce((bool, oField, index) => {
-        return features.find(featureSource => {
-          return bool && featureSource.get(oField) == featureValues[index];
-        })
-      }, true) :
-
-      false;
-
-    resolve(find);
+    resolve(ownField.every((field, i) => features.find(source => source.get(field) == featureValues[i])))
   })
 };
 
