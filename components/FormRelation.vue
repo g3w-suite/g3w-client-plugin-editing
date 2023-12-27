@@ -348,20 +348,13 @@
         return this._service.isRequired();
       },
 
+      /**
+       * @returns { Array } attributes 
+       */
       relationAttributesSubset(relation) {
-        let attributes = [];
-        const fields   = this.relationsFields(relation);
-        fields
-          .forEach(({value, name, label}) => {
-            if (!Array.isArray(value)) {
-              attributes.push({
-                name,
-                label,
-                value
-              })
-            }
-          });
-        return attributes;
+        return this
+          .relationsFields(relation)
+          .flatMap(({ name, label, value }) => Array.isArray(value) ? [{ name, label, value }] : []);
       },
 
       relationsAttributesSubsetLength(relation) {
