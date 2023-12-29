@@ -1785,7 +1785,7 @@ proto.getLayersDependencyFeaturesFromSource = function({
     const features                    = this._getFeaturesByLayerId(layerId);
     const featureValues               = relationField.map(field => feature.get(field));
 
-    resolve(ownField.every((field, i) => features.find(source => source.get(field) == featureValues[i])))
+    resolve(ownField.every((field, i) => features.find(f => f.get(field) == featureValues[i])))
   })
 };
 
