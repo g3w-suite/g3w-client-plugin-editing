@@ -1780,6 +1780,8 @@ proto.getLayersDependencyFeaturesFromSource = function({
 };
 
 /**
+ * Based on layer id and relation, return the layer id
+ * of the other layer that is in relation with layerId
  * @param { Object } opts
  * @param opts.layerId
  * @param opts.relation
