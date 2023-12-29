@@ -1353,10 +1353,10 @@ proto.getRelationsByFeature = function({
   const { ownField, relationField } = this._getRelationFieldsFromRelation({ layerId, relation });
   // get features of relation child layers
   // Loop relation fields
-  const features = relationField.map(field => feature.get(field));
+  const values = relationField.map(field => feature.get(field));
   return this
     ._getFeaturesByLayerId(layerId)
-    .filter(feature => ownField.every((field, i) => feature.get(field) == features[i]));
+    .filter(feature => ownField.every((field, i) => feature.get(field) == values[i]));
 };
 
 /**
