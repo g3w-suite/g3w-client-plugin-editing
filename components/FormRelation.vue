@@ -45,101 +45,102 @@
             :placeholder = "placeholdersearch"
           >
         </div>
+        <div style="display: flex; justify-content: flex-end">
 
-            <div style="display: flex; justify-content: flex-end">
+          <!-- CHANGE ATTRIBUTE -->
+          <span
+            v-if                      = "undefined !== capabilities.relation.find(capability => 'change_attr_feature' === capability)"
+            class                     = "g3w-icon add-link"
+            align                     = "center"
+            v-t-tooltip:bottom.create = "tooltips.link_relation"
+            @click.stop               = "enableAddLinkButtons ? linkRelation() : null"
+            :class                    = "[{ 'disabled': !enableAddLinkButtons }, g3wtemplate.font['link']]"
+          ></span>
 
-                <!-- CHANGE ATTRIBUTE -->
-                <span
-                        v-if                      = "undefined !== capabilities.relation.find(capability => 'change_attr_feature' === capability)"
-                        class                     = "g3w-icon add-link"
-                        align                     = "center"
-                        v-t-tooltip:bottom.create = "tooltips.link_relation"
-                        @click.stop               = "enableAddLinkButtons ? linkRelation() : null"
-                        :class                    = "[
-            { 'disabled': !enableAddLinkButtons },
-            g3wtemplate.font['link']
-          ]"
-                ></span>
-
-                <!-- ADD FEATURE -->
-                <span
-                        v-if                      = "undefined !== capabilities.relation.find(capability => 'add_feature' === capability)"
-                        v-t-tooltip:bottom.create = "tooltips.add_relation"
-                        @click                    = "enableAddLinkButtons ? addRelationAndLink() : null"
-                        class                     = "g3w-icon add-link pull-right"
-                        :class                    = "[
-            { 'disabled' : !enableAddLinkButtons },
-            g3wtemplate.font['plus']
-          ]"
-                ></span>
-
-            </div>
+          <!-- ADD FEATURE -->
+          <span
+            v-if                      = "undefined !== capabilities.relation.find(capability => 'add_feature' === capability)"
+            v-t-tooltip:bottom.create = "tooltips.add_relation"
+            @click                    = "enableAddLinkButtons ? addRelationAndLink() : null"
+            class                     = "g3w-icon add-link pull-right"
+            :class                    = "[{ 'disabled' : !enableAddLinkButtons }, g3wtemplate.font['plus']]"
+          ></span>
 
         </div>
 
-        <!-- VECTOR RELATION TOOLS -->
-        <section
-                v-if  = "showAddVectorRelationTools"
-                ref   = "relation_vector_tools"
-                style = "
-        display: flex;
-        flex-direction: column;
-        border: 2px solid #eee;
-        background-color: #fff;
-        padding: 10px;
-      "
+      </div>
+
+      <!-- VECTOR RELATION TOOLS -->
+      <section
+        v-if  = "showAddVectorRelationTools"
+        ref   = "relation_vector_tools"
+        style = "
+display: flex;
+flex-direction: column;
+border: 2px solid #eee;
+background-color: #fff;
+padding: 10px;
+"
+      >
+        <!-- ADD VECTOR RELATION -->
+        <div>
+          <div
+            class="g3w-editing-new-relation-vector-type"
+            v-t-plugin="'editing.relation.draw_new_feature'">
+          </div>
+          <button
+            class       = "btn skin-button"
+            style       = "width: 100%"
+            @click.stop = "addVectorRelation"
+          >
+            <i :class="g3wtemplate.font['pencil']"></i>
+          </button>
+        </div>
+
+        <divider/>
+
+        <div
+          style="align-self: center"
+          v-t-plugin="'editing.relation.draw_or_copy'">
+        </div>
+
+        <divider/>
+
+        <div
+          id    = "g3w-select-editable-layers-content"
+          style = "
+flex-grow: 1;
+display: flex;
+flex-direction: column
+"
         >
 
-            <!-- ADD VECTOR RELATION -->
-            <div>
-                <div class="g3w-editing-new-relation-vector-type" v-t-plugin="'editing.relation.draw_new_feature'"></div>
-                <button
-                        class       = "btn skin-button"
-                        style       = "width: 100%"
-                        @click.stop = "addVectorRelation"
-                >
-                    <i :class="g3wtemplate.font['pencil']"></i>
-                </button>
-            </div>
+          <div
+            class="g3w-editing-new-relation-vector-type"
+            v-t-plugin="'editing.relation.copy_feature_from_other_layer'">
+          </div>
 
-            <divider/>
+        <select
+          id        = "g3w-select-editable-layers-to-copy"
+          v-select2 = "'copylayerid'"
+        >
+          <option
+            v-for  = "copyFeatureLayer in copyFeatureLayers"
+            :key   = "copyFeatureLayer.id"
+            :value = "copyFeatureLayer.id"
+          >{{ copyFeatureLayer.name }}</option>
+        </select>
 
-            <div style="align-self: center" v-t-plugin="'editing.relation.draw_or_copy'"></div>
-
-            <divider/>
-
-            <div
-                    id    = "g3w-select-editable-layers-content"
-                    style = "
-          flex-grow: 1;
-          display: flex;
-          flex-direction: column
-        "
-            >
-
-                <div class="g3w-editing-new-relation-vector-type" v-t-plugin="'editing.relation.copy_feature_from_other_layer'"></div>
-
-          <select
-            id        = "g3w-select-editable-layers-to-copy"
-            v-select2 = "'copylayerid'"
+          <!-- COPY FEATURE FROM OTHER LAYER -->
+          <button
+            class       = "btn skin-button"
+            @click.stop = "copyFeatureFromOtherLayer"
           >
-            <option
-              v-for  = "copyFeatureLayer in copyFeatureLayers"
-              :key   = "copyFeatureLayer.id"
-              :value = "copyFeatureLayer.id"
-            >{{ copyFeatureLayer.name }}</option>
-          </select>
+            <i :class="g3wtemplate.font['clipboard']"></i>
+          </button>
+        </div>
 
-                <!-- COPY FEATURE FROM OTHER LAYER -->
-                <button
-                        class       = "btn skin-button"
-                        @click.stop = "copyFeatureFromOtherLayer"
-                >
-                    <i :class="g3wtemplate.font['clipboard']"></i>
-                </button>
-            </div>
-
-        </section>
+      </section>
 
       <!-- RELATION CONTENT -->
       <div
@@ -233,7 +234,7 @@
   /** @FIXME circular dependency ? */
   // import EditingService from "../services/editingservice";
 
-  const { tPlugin: t } = g3wsdk.core.i18n;
+  const { tPlugin: t }  = g3wsdk.core.i18n;
   const { toRawType }   = g3wsdk.core.utils;
   const RelationService = require('../services/relationservice');
   const { Layer }       = g3wsdk.core.layer;
@@ -304,6 +305,7 @@
 
       copyFeatureFromOtherLayer() {
         const EditingService = require('../services/editingservice');
+
         const copyLayer      = this.copyFeatureLayers.find(layerObj => layerObj.id === this.copylayerid);
 
         this._service.addRelationFromOtherLayer({
@@ -484,8 +486,9 @@
     },
 
     created() {
-      const EditingService = require('../services/editingservice');
-      const relationLayer  = EditingService.getLayerById(this.relation.child);
+      const EditingService  = require('../services/editingservice');
+
+      const relationLayer   = EditingService.getLayerById(this.relation.child);
 
       this.isVectorRelation = relationLayer.getType() === Layer.LayerTypes.VECTOR;
 
