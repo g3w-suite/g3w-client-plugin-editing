@@ -752,18 +752,18 @@ proto.linkRelation = function() {
 };
 
 /**
- *
- * @returns {*}
+ * Check if relation layer fields has at least one field required
+ * @returns {Boolean}
  * @private
  */
 proto._checkIfExternalFieldRequired = function() {
-  // own Field is relation Field of Relation Layer
+  // own Fields is relation Fields array of Relation Layer
   const { ownField } = this.getEditingService()._getRelationFieldsFromRelation({
     layerId:  this._relationLayerId,
     relation: this.relation,
   });
 
-  //ownField is an array
+  //check if at least one filed is required
   return ownField.some(field => this.getEditingService().isFieldRequired(this._relationLayerId, field));
 };
 
