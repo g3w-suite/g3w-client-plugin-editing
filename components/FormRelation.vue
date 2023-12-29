@@ -356,7 +356,7 @@ flex-direction: column
       relationAttributesSubset(relation) {
         return this
           .relationsFields(relation)
-          .flatMap(({ name, label, value }) => Array.isArray(value) ? [{ name, label, value }] : []);
+          .flatMap(({ name, label, value }) => Array.isArray(value) ? [] : [{ name, label, value }]);
       },
 
       relationsAttributesSubsetLength(relation) {
