@@ -74,16 +74,12 @@ proto.run = function(inputs, context) {
           feature,
           geometryType: originalGeometryType
         });
-        this.evaluateGeometryExpressionField({
-          inputs,
-          context,
-          feature
-        }).finally(()=>{
-          inputs.features.push(feature);
-          this.setContextGetDefaultValue(true);
-          this.fireEvent('addfeature', feature); // emit event to get from subscribers
-          d.resolve(inputs);
-        })
+
+        inputs.features.push(feature);
+        this.setContextGetDefaultValue(true);
+        this.fireEvent('addfeature', feature); // emit event to get from subscribers
+        d.resolve(inputs);
+        
       });
       break;
   }

@@ -20,6 +20,11 @@ export default {
   toolbox: {
     title: 'Modifier'
   },
+  table: {
+    edit: "Modifier fonctionnalités",
+    copy: "Créer une copie",
+    delete: "Supprimer la fonctionnalité"
+  },
   tools: {
     copy: "Copier les fonctionnalités",
     pastefeaturesfromotherlayers: "Paste features from other layer",
@@ -39,11 +44,6 @@ export default {
     measure: "Show measure",
     snap: "Snap layer",
     snapall: "Snap to all layers"
-  },
-  table: {
-    edit: "Modifier fonctionnalités",
-    copy: "Créer une copie",
-    delete: "Supprimer la fonctionnalité"
   },
   steps: {
     help: {
@@ -94,7 +94,7 @@ export default {
     delete_feature_relations: "La suppression d'une fonctionnalité avec des relations associées laissera ces relations orphelines. Il est recommandé de gérer ces relations avant de supprimer la fonctionnalité",
     unlink_relation: "Voulez-vous détacher la relation ?",
     commit_feature: "Voulez-vous enregistrer définitivement les changements ?",
-    change_toolbox_relation: "Layer en relation. Il est obligatoire d'enregistrer les modifications en cours avant de passer à d'autres modifications.",
+    toolbox_has_relation: "cette couche fait partie d'une relation",
     saved: "Les données ont été enregistrées correctement",
     saved_local: "Les données ont été correctement sauvegardées localement",
     loading_data: "Chargement des données",
@@ -102,6 +102,7 @@ export default {
     constraints: {
       enable_editing: "Augmenter le niveau de zoom pour permettre l'édition \nEchelle de déclenchement 1 :"
     },
+    pdf: "Aperçu du document non disponible. Cliquez ici ",
     commit: {
       header: "La liste ci-dessous montre toutes les modifications qui seront enregistrées.",
       header_add: "<b>Ajouts</b> indique le nombre de fonctionnalités ajoutées",
@@ -118,7 +119,10 @@ export default {
   relation: {
     table: {
       info: `<div>Sélectionner les relations pour les associer à l'élément en cours d'édition.</div>`
-    }
+    },
+    draw_new_feature:"Dessiner une nouvelle feature",
+    draw_or_copy:"ou",
+    copy_feature_from_other_layer:"Copier feature d'une autre layer"
   },
   form: {
     relations: {
@@ -131,15 +135,17 @@ export default {
       }
     },
     buttons: {
-      save: "Sauvegarder et quitter",
+      save: "Insérer/Modifier",
       save_and_back: "Sauvegarder et retourner au parent",
+      save_and_back_table: "Sauvegarder et et revenir en arrière",
       cancel: "Ignorer modifications"
     }
   },
   modal: {
     tools: {
       copyfeaturefromotherlayer: {
-        title: "Select feature/s"
+        title: "Select feature/s",
+        edit_attributes: "Edit attributes of pasted features in multiple mode"
       },
       copyfeaturefromprojectlayer: {
         title: "Select a feature"

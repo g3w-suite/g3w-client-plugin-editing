@@ -1,3 +1,6 @@
+const EasyAddFeatureWorflow = require('../workflows/easyaddfeatureworkflow');
+const { Feature } = g3wsdk.core.layer.features;
+
 const API = function({service, plugin} = {}) {
   this.addFormComponents = function({layerId, components=[]}= {}) {
     service.addFormComponents({
@@ -72,10 +75,19 @@ const API = function({service, plugin} = {}) {
    * @returns {Promise<unknown>}
    */
   this.startEditing = function(layerId, options={}, data=false){
-    const {tools, feature, selected=true, title, disablemapcontrols=false} = options;
+    const {
+      tools,
+      feature,
+      selected=true,
+      title,
+      disablemapcontrols=false,
+      showselectlayers=true
+    } = options;
     return new Promise((resolve, reject) =>{
       // get toolbox related to layer id
       const toolbox = service.getToolBoxById(layerId);
+      // set show select layers input visibility
+      service.setShowSelectLayers(showselectlayers);
       //setselected
       if (toolbox) {
         toolbox.setSelected(selected);
@@ -100,7 +112,7 @@ const API = function({service, plugin} = {}) {
   
   /*
   * Save mode editing : 
-  * default: each change is save temporary. Press floppy or stoop editing toolbox to save data permanently on database
+  * default: each change it save temporary. Press floppy or stoop editing toolbox to save data permanently on database
   * autosave: each change we ahe to commit
   * */
   this.setSaveConfig = function(options={}){
@@ -134,14 +146,14 @@ const API = function({service, plugin} = {}) {
   */
   this.resetDefault = function({plugin=true, toolboxes=true}={}){
     toolboxes && service.getToolBoxes().forEach(toolbox => {
-      toolbox.resetDefault(options);
+      toolbox.resetDefault();
     });
     plugin && service.resetDefault();
   };
 
   /**
-   * Method to setup permanenty contraints on editing as filter to get features, filter layers to edit etc...
-   * @param options
+   * Method to set up permanenty contraints on editing as filter to get features, filter layers to edit etc...
+   * @param constraints
    */
   this.setApplicationEditingConstraints = function(constraints={}){
     service.setApplicationEditingConstraints(constraints);
@@ -153,6 +165,133 @@ const API = function({service, plugin} = {}) {
   this.getMapService = function(){
     return service.getMapService()
   }
+
+  /**
+   * @since v3.7 --> g3w-client v3.9
+   */
+  /**
+   * Easy editing feature layer Methods
+   * Add, edit, delete no require to ask if save.
+   *
+   */
+
+  /**
+   * Add Feature
+   * @param layerId
+   * @param feature //
+   */
+  this.addLayerFeature = function({layerId, feature} ={}) {
+    return new Promise((resolve, reject) => {
+      let backButton = true;
+      //Mandatory params
+      if (undefined === feature || undefined === layerId) {
+        reject();
+        return;
+      }
+      const layer = service.getLayerById(layerId);
+      // get session
+      const session = service.getSessionById(layerId);
+      //exclude an aventually attribut pk (primary key) not editable (mean autoincrement)
+      const attributes = layer
+        .getEditingFields()
+        .filter(attribute => !(attribute.pk && !attribute.editable));
+      //start session (get no features but set layer in editing)
+      session.start({
+        filter: {
+          nofeatures: true, //no feature
+          nofeatures_field: attributes[0].name //get first field in editing form
+        },
+        editing: true,
+      })
+      //create workflow
+      const workflow = new EasyAddFeatureWorflow({
+        push: true,
+        showgoback: false,
+        saveAll: false,
+      });
+
+      const stop = () => {
+        workflow.stop();
+        session.stop();
+      };
+
+
+      try {
+
+        //check if feature has property of layer
+        attributes.forEach(a => {
+          if (undefined === feature.get(a.name)) {
+            feature.set(a.name, null);
+          }
+        })
+
+        //set feature as g3w feature
+        feature = new Feature({
+          feature,
+          properties: attributes.map(a => a.name)
+        });
+        //set new
+        feature.setTemporaryId();
+        //add to session as new feature
+        session.pushAdd(layerId, feature, false);
+        //need to be added to source
+        layer.getEditingLayer()
+          .getSource()
+          .addFeature(feature);
+
+        //start workflow
+        workflow.start({
+          inputs: {
+            layer,
+            features: [feature],
+          },
+          context: {
+            session,
+          }
+        })
+        .then(() => {
+          session.save();
+          service
+            .commit({
+              toolbox: service.getToolBoxById(layerId),
+              modal: false,
+            })
+            .then(() => {
+              stop();
+              resolve();
+            })
+            .fail(() => {
+              stop();
+              reject();
+            })
+        })
+        .fail(() => {
+          reject();
+          stop();
+        });
+
+      } catch(err) {
+        console.warn(err);
+        reject();
+      }
+    })
+  }
+
+  /**
+   * Update Feature
+   * @param layerId
+   * @param featureId
+   * @param type type of update: Ex attribute, move, etc ...
+   */
+  this.updateLayerFeature = function({layerId, featureId, type='attribute'} ={}) {
+    //@TODO
+  }
+
+  //Delete Feature
+  this.deleteLayerFeature = function({layerId, featureId} ={}) {
+    //@TODO
+  }
+
 };
 
 export default API;

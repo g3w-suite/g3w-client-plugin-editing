@@ -1,6 +1,6 @@
 {
   "name": "editing",
-  "version": "3.5.13",
+  "version": "3.7.1",
   "description": "",
   "main": "index.js",
   "directories": {
@@ -21,7 +21,7 @@
     "plugin"
   ],
   "author": "",
-  "license": "ISC",
+  "license": "MPL-2.0",
   "bugs": {
     "url": "https://github.com/g3w-suite/g3w-client-plugin-editing/issues"
   },

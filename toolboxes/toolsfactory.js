@@ -414,6 +414,7 @@ function EditorToolsFactory() {
               name: "editing.tools.update_feature",
               icon: "editAttributes.png",
               layer,
+              once: true,
               op: EditTableFeaturesWorkflow,
               type: ['delete_feature', 'change_attr_feature'],
             }
@@ -454,13 +455,13 @@ function EditorToolsFactory() {
           })
         }
         // in case of Polygon Geometry
-        else if (Geometry.isPolygonGeometryType(geometryType)){
-            tools = tools = this.createTools({
-              layer,
-              type: 'Polygon',
-              capabilities,
-              isMultiGeometry
-            })
+        else if (Geometry.isPolygonGeometryType(geometryType)) {
+          tools = tools = this.createTools({
+            layer,
+            type: 'Polygon',
+            capabilities,
+            isMultiGeometry
+          })
         }
         break;
       case Layer.LayerTypes.TABLE:

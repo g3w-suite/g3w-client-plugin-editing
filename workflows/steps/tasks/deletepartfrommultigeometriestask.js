@@ -31,10 +31,13 @@ proto.run = function(inputs, context) {
     source,
     style: editingLayer.getStyle()
   });
+
   map.addLayer(tempLayer);
-  map.once('postrender', function(){
+  map.once('postrender', () => {
     let found = false;
-    this.forEachFeatureAtPixel(pixel, _feature => {
+    //need to call map.forEachFeatureAtPixel and not this.forEachFeatureAtPixel
+    //beacuse we use arrow function and it referred this to outside context
+    map.forEachFeatureAtPixel(pixel, _feature => {
       if (!found) {
         source.removeFeature(_feature);
         if (source.getFeatures().length) {
@@ -43,7 +46,7 @@ proto.run = function(inputs, context) {
           /**
            * evaluated geometry expression
            */
-          this.evaluateGeometryExpressionField({
+          this.evaluateExpressionFields({
             inputs,
             context,
             feature
@@ -69,7 +72,9 @@ proto.run = function(inputs, context) {
         hitTolerance: 1
       }
     );
-    this.removeLayer(tempLayer);
+    //need to call map.forEachFeatureAtPixel and not this.forEachFeatureAtPixel
+    //beacuse we use arrow function and it referred this to outside context
+    map.removeLayer(tempLayer);
     tempLayer = null;
   });
   return d.promise()

@@ -1,3 +1,5 @@
+import { cloneFeature } from '../../../utils/cloneFeature'
+
 const { base, inherit }  = g3wsdk.core.utils;
 const { splitFeatures } = g3wsdk.core.geoutils;
 const { Feature } = g3wsdk.core.layer.features;
@@ -91,7 +93,7 @@ proto._handleSplitFeature = async function({feature, inputs, context, splittedGe
        */
       feature.setGeometry(splittedGeometry);
       try {
-        await this.evaluateGeometryExpressionField({
+        await this.evaluateExpressionFields({
           inputs,
           context,
           feature
@@ -101,7 +103,7 @@ proto._handleSplitFeature = async function({feature, inputs, context, splittedGe
       session.pushUpdate(layerId, feature, oriFeature);
 
     } else {
-      const newFeature = oriFeature.cloneNew();
+      const newFeature = cloneFeature(oriFeature, layer);
       newFeature.setGeometry(splittedGeometry);
 
       this.setNullMediaFields({
@@ -114,12 +116,12 @@ proto._handleSplitFeature = async function({feature, inputs, context, splittedGe
       });
 
       feature.setTemporaryId();
-      source.addFeature(feature);
+
       /**
        * * evaluate geometry expression
       */
       try {
-        await this.evaluateGeometryExpressionField({
+        await this.evaluateExpressionFields({
           inputs,
           context,
           feature
@@ -138,7 +140,13 @@ proto._handleSplitFeature = async function({feature, inputs, context, splittedGe
         const newFeature = session.pushAdd(layerId, feature);
         Object.entries(noteditablefieldsvalues).forEach(([field, value]) => newFeature.set(field, value));
         newFeatures.push(newFeature);
-      } else newFeatures.push(session.pushAdd(layerId, feature));
+        //need to add features with no editable fields on layers source
+        source.addFeature(newFeature);
+      } else {
+        newFeatures.push(session.pushAdd(layerId, feature));
+        //add feature to source
+        source.addFeature(feature);
+      }
 
     }
     inputs.features.push(feature);

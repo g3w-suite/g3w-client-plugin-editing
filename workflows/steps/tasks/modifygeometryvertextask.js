@@ -64,7 +64,7 @@ proto.run = function(inputs, context) {
       /*
       * evaluate expression geometry check
        */
-      this.evaluateGeometryExpressionField({
+      this.evaluateExpressionFields({
         inputs,
         context,
         feature

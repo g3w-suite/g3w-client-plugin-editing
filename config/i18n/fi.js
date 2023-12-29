@@ -37,6 +37,7 @@ export default {
     move_feature: "Siirrä ominaisuutta",
     update_vertex: "Päivitä pisteen ominaisuutta",
     update_feature: "Päivitä ominaisuus",
+    update_multi_features: "Muokkaa valittujen ominaisuuksien attribuutteja",
     copyfeaturefromexternallayer: "Create Feature from added layer"
   },
   toolsoftool: {
@@ -93,7 +94,7 @@ export default {
     delete_feature_relations: "Mikäli ominaisuudella on sitovia relaatioita, näistä relaatiosta tulee orpoja. Suosittelemme käsittelemään nämä relaatiot ennen poistamista",
     unlink_relation: "Haluatko poistaa relaation?",
     commit_feature: "Tallennetaanko muutokset?",
-    change_toolbox_relation: "Tasolla on relaatio/relaatiota. Ennen muokkauksen aloittamista tulee muutokset tallenttaa.",
+    toolbox_has_relation: "tämä kerros on osa relaatiota",
     saved: "Tiedot tallennettu onnistuneesti",
     saved_local:"Tiedot on tallennettu onnistuneesti paikallisesti.",
     loading_data: "Ladataan tietoja",
@@ -117,14 +118,11 @@ export default {
   },
   relation: {
     table: {
-      info: `
-                  <div>
-					Valitse relaatiota linkittääksesi ne muokattavaan ominaisuuteen.
-                  </div>
-                  <div>
-               
-                `
-    }
+      info: `<div>Valitse relaatiota linkittääksesi ne muokattavaan ominaisuuteen.</div>`
+    },
+    draw_new_feature:"Draw new feature",
+    draw_or_copy:"or",
+    copy_feature_from_other_layer:"Copy feature from other layer"
   },
   form: {
     relations: {
@@ -137,15 +135,17 @@ export default {
       }
     },
     buttons: {
-      save: "Tallenna ja poistu",
+      save: "Lisää/muokkaa",
       save_and_back: "Tallenna ja palaa",
+      save_and_back_table: "Tallenna ja palaa",
       cancel: "Peruuta"
     }
   },
   modal: {
     tools: {
       copyfeaturefromotherlayer: {
-        title: "Select feature/s"
+        title: "Select feature/s",
+        edit_attributes: "Edit attributes of pasted features in multiple mode"
       },
       copyfeaturefromprojectlayer: {
         title: "Select a feature"

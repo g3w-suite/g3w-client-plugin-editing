@@ -1,8 +1,7 @@
 const { base, inherit } = g3wsdk.core.utils;
-const { dissolve } = g3wsdk.core.geoutils;
-const EditingTask = require('./editingtask');
-const { GUI } = g3wsdk.gui;
-const SelectFeaturesDom = require('../../../g3w-editing-components/selectmergefeatures');
+const { dissolve }      = g3wsdk.core.geoutils;
+const EditingTask       = require('./editingtask');
+const { GUI }           = g3wsdk.gui;
 
 function MergeFeaturesTask(options={}){
   base(this, options);
@@ -38,7 +37,7 @@ proto.run = function(inputs, context) {
       });
       if (newFeature) {
         try {
-          await this.evaluateGeometryExpressionField({
+          await this.evaluateExpressionFields({
             inputs,
             context,
             feature: newFeature

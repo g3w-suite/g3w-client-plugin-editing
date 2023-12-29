@@ -49,7 +49,7 @@ proto.run = function(inputs, context) {
     const featuresLength = features.length;
     const promisesDefaultEvaluation = [];
     for (let i =0; i < featuresLength; i++) {
-      const feature = features[i].cloneNew();
+      const feature = cloneFeature(features[i], layer);
       if (deltaXY) feature.getGeometry().translate(deltaXY.x, deltaXY.y);
       else {
         const coordinates = feature.getGeometry().getCoordinates();
@@ -65,7 +65,7 @@ proto.run = function(inputs, context) {
       /**
        * evaluated geometry expression
        */
-      const promise = this.evaluateGeometryExpressionField({
+      const promise = this.evaluateExpressionFields({
         inputs,
         context,
         feature
@@ -76,7 +76,7 @@ proto.run = function(inputs, context) {
     Promise.allSettled(promisesDefaultEvaluation)
       .then(promises => {
         promises.forEach(({status, value:feature}) => {
-          source.addFeature(feature);
+
           /**
            * @todo improve client core to handle this situation on session.pushAdd not copy pk field not editable only
            */
@@ -89,6 +89,9 @@ proto.run = function(inputs, context) {
           if (Object.entries(noteditablefieldsvalues).length) {
             Object.entries(noteditablefieldsvalues).forEach(([field, value]) => newFeature.set(field, value));
           }
+
+          //need to add to editing layer source newFeature
+          source.addFeature(newFeature);
 
           inputs.features.push(newFeature);
         })

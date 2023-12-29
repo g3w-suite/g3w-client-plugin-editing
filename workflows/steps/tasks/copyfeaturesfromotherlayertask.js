@@ -1,17 +1,21 @@
-const {G3W_FID} = g3wsdk.constant;
-const { base, inherit } =  g3wsdk.core.utils;
+import CopyFeatureFromOtherLayersComponent from '../../../components/CopyFeaturesFromOtherLayers.vue';
+
+const { G3W_FID }                          = g3wsdk.constant;
+const { base, inherit }                    = g3wsdk.core.utils;
 const {
   Geometry: {
     removeZValueToOLFeatureGeometry
   }
-} = g3wsdk.core.geoutils;
-const { GUI } = g3wsdk.gui;
-const t = g3wsdk.core.i18n.tPlugin;
-const { Feature } = g3wsdk.core.layer.features;
-const EditingTask = require('./editingtask');
-const SelectCopyFeaturesFormOtherLayersComponent = require('../../../g3w-editing-components/selectcopyotherlayersfeatures');
+}                                          = g3wsdk.core.geoutils;
+const { GUI }                              = g3wsdk.gui;
+const t                                    = g3wsdk.core.i18n.tPlugin;
+const { Feature }                          = g3wsdk.core.layer.features;
+const { CatalogLayersStoresRegistry }      = g3wsdk.core.catalog;
+
+const EditingTask                          = require('./editingtask');
 
 function CopyFeaturesFromOtherLayerTask(options={}) {
+  this.openFormTask = options.openFormTask;
   base(this, options);
 }
 
@@ -24,7 +28,10 @@ proto.run = function(inputs, context) {
   const originalLayer = inputs.layer;
   const geometryType = originalLayer.getGeometryType();
   const layerId = originalLayer.getId();
-  const attributes = originalLayer.getEditingFields().filter(attribute => !attribute.pk);
+  //get attributes/properties from current layer in editing
+  const attributes = originalLayer
+    .getEditingFields()
+    .filter(attribute => !attribute.pk);
   const session = context.session;
   const editingLayer = originalLayer.getEditingLayer();
   const source = editingLayer.getSource();
@@ -33,10 +40,34 @@ proto.run = function(inputs, context) {
     geometryType
   });
   const selectedFeatures = [];
-  const vueInstance = SelectCopyFeaturesFormOtherLayersComponent({
-    features,
-    selectedFeatures
+
+  /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/g3w-editing-components/selectcopyotherlayersfeatures.js.js@3.6
+   */
+  const layers = {};
+  (features || []).forEach(f => {
+    if (undefined === layers[f.__layerId]) {
+      const external = !CatalogLayersStoresRegistry.getLayerById(f.__layerId);
+      layers[f.__layerId] = {
+        external,
+        fields: !external && CatalogLayersStoresRegistry.getLayerById(f.__layerId).getFields(),
+        features:[]
+      };
+    }
+    layers[f.__layerId].features.push(f);
   });
+
+  //set reactive
+  const editAttributes = Vue.observable({
+    state: false
+  })
+  const Component = Vue.extend(CopyFeatureFromOtherLayersComponent);
+  const vueInstance = new Component({
+    layers,
+    selectedFeatures,
+    editAttributes
+  });
+
   const message = vueInstance.$mount().$el;
   const dialog = GUI.showModalDialog({
     title: t('editing.modal.tools.copyfeaturefromotherlayer.title'),
@@ -77,41 +108,62 @@ proto.run = function(inputs, context) {
           featurePromises.forEach(({status, value:layerFeature}, index) => {
             if (status === "fulfilled") {
               const selectedFeature = selectedFeatures[index];
-              attributes.forEach(({name, validate: {required=false}}) => {
-                const value = layerFeature.properties[name] || null;
-                isThereEmptyFieldRequiredNotDefined = isThereEmptyFieldRequiredNotDefined || (value === null && required);
-                selectedFeature.set(name, value );
-              });
+              // Check if there is an empty filed required not defined
+              isThereEmptyFieldRequiredNotDefined = undefined !== attributes
+                .find(({name, validate: {required=false}}) => {
+                  return (undefined === layerFeature.properties[name] && required);
+                });
+
               const feature = new Feature({
                 feature: selectedFeature,
                 properties: attributes.map(attribute => attribute.name)
               });
-              originalLayer.getEditingNotEditableFields().find(field => {
-                if (originalLayer.isPkField(field)){
-                  feature.set(field, null)
+
+              //@TODO check better way
+              //Set undefined property to null otherwise on commit
+              // property are lost
+              attributes.forEach(({name}) => {
+                if (undefined === feature.get(name)) {
+                  feature.set(name, null);
                 }
-              });
-              //remove eventually Z Values
-              removeZValueToOLFeatureGeometry({
-                feature
-              });
-              feature.setTemporaryId();
-              source.addFeature(feature);
-              features.push(feature);
-              session.pushAdd(layerId, feature, false);
-            }
-          });
-          if (features.length && features.length === 1) inputs.features.push(features[0]);
-          else {
-            isThereEmptyFieldRequiredNotDefined && GUI.showUserMessage({
-              type: 'warning',
-              message: 'plugins.editing.messages.copy_and_paste_from_other_layer_mandatory_fields',
-              autoclose: true,
-              duration: 2000
+              })
+
+              originalLayer.getEditingNotEditableFields()
+                .find(field => {
+                  if (originalLayer.isPkField(field)) {
+                    feature.set(field, null)
+                  }
+                });
+                //remove eventually Z Values
+                removeZValueToOLFeatureGeometry({
+                  feature
+                });
+                feature.setTemporaryId();
+                source.addFeature(feature);
+                features.push(feature);
+                session.pushAdd(layerId, feature, false);
+              }
             });
-            inputs.features.push(features);
+          //check if features selected are more than one
+          if (features.length > 1) {
+            if (editAttributes.state && this.openFormTask) {
+              this.openFormTask.updateMulti(true);
+            } else {
+              if (isThereEmptyFieldRequiredNotDefined) {
+                GUI.showUserMessage({
+                  type: 'warning',
+                  message: 'plugins.editing.messages.copy_and_paste_from_other_layer_mandatory_fields',
+                  autoclose: true,
+                  duration: 2000
+                });
+              }
+            }
           }
-          features.forEach(feature => this.fireEvent('addfeature', feature));
+          features.forEach(feature => {
+            inputs.features.push(feature)
+            this.fireEvent('addfeature', feature)
+          });
+          vueInstance.$destroy();
           d.resolve(inputs)
         }
       }

@@ -16,7 +16,7 @@ let production = false;
 let sourcemap = false;
 
 gulp.task('browserify', [], function() {
-  var bundler = browserify('./index.js', {
+  let bundler = browserify('./index.js', {
     basedir: "./",
     paths: ["./", '../'],
     debug: !production,
@@ -32,7 +32,7 @@ gulp.task('browserify', [], function() {
     appliesTo: { includeExtensions: ['.html'] }
   });
 
-  var bundle = function(){
+  let bundle = function(){
     return bundler.bundle()
       .on('error', function(err){
         console.log(err);
@@ -52,19 +52,14 @@ gulp.task('browserify', [], function() {
       .pipe(gulp.dest('.'));
   };
 
-  var rebundle;
+  let rebundle;
   const del = require('del');
   del(['./plugin.js.map']);
   if (!production) {
-    rebundle = function(){
-      return bundle();
-    };
+    rebundle = () => bundle();
     bundler.on('update', rebundle);
-  }
-  else {
-    rebundle = function(){
-      return bundle();
-    }
+  } else {
+    rebundle = () => bundle();
   }
   return rebundle();
 });
