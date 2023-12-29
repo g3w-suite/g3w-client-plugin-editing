@@ -1,15 +1,16 @@
-const {G3W_FID} = g3wsdk.constant;
-const { base, inherit } =  g3wsdk.core.utils;
-const { GUI } = g3wsdk.gui;
+import CopyFeatureFromOtherLayersComponent from '../../../components/CopyFeaturesFromOtherProjectLayer.vue';
+
+const { G3W_FID }                          = g3wsdk.constant;
+const { base, inherit }                    = g3wsdk.core.utils;
+const { GUI }                              = g3wsdk.gui;
 const {
-  Geometry: {
-    removeZValueToOLFeatureGeometry
-  }
-} = g3wsdk.core.geoutils;
-const t = g3wsdk.core.i18n.tPlugin;
-const { Feature } = g3wsdk.core.layer.features;
-const EditingTask = require('./editingtask');
-const SelectCopyFeaturesFormOtherProjectLayerComponent = require('../../../g3w-editing-components/selectcopyotherprojectlayerfeatures');
+  Geometry: { removeZValueToOLFeatureGeometry }
+}                                          = g3wsdk.core.geoutils;
+const t                                    = g3wsdk.core.i18n.tPlugin;
+const { Feature }                          = g3wsdk.core.layer.features;
+const { CatalogLayersStoresRegistry }      = g3wsdk.core.catalog;
+
+const EditingTask                          = require('./editingtask');
 
 function CopyFeaturesFromOtherProjectLayerTask(options={}) {
   const {copyLayer, external, isVector} = options;
@@ -33,12 +34,17 @@ proto.run = function(inputs, context) {
   const editingLayer = originalLayer.getEditingLayer();
   const source = editingLayer.getSource();
   const selectedFeatures = [];
-  const vueInstance = SelectCopyFeaturesFormOtherProjectLayerComponent({
-    external: this.external,
-    layer: this.copyLayer,
-    features,
-    selectedFeatures
-  });
+
+  /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/g3w-editing-components/selectcopyotherprojectlayerfeatures.js.js@3.6
+   */
+  const Component = Vue.extend(CopyFeatureFromOtherLayersComponent);
+  const vueInstance = new Component({
+    fields:           this.external                  ? null: CatalogLayersStoresRegistry.getLayerById(this.copyLayer.getId()).getFields(),
+    features:         undefined !== features         ? features : [],
+    selectedFeatures: undefined !== selectedFeatures ? selectedFeatures : [],
+  })
+
   const message = vueInstance.$mount().$el;
   const dialog = GUI.showModalDialog({
     title: t('editing.modal.tools.copyfeaturefromprojectlayer.title'),

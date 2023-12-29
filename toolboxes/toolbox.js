@@ -81,8 +81,16 @@ function ToolBox(options={}) {
     title: this.state.title,
     toolsoftool: [...this.state.toolsoftool]
   };
-  
-  this._tools.forEach(tool => tool.setSession(this._session));
+
+  /**
+   * Store key events setters
+   * 
+   * @since g3w-client-plugin-editing@v3.7.0
+   */
+  this._unregisterStartSettersEventsKey = [];
+
+  this._tools
+    .forEach(tool => tool.setSession(this._session));
 
   this._session.onafter('stop', () => {
     if (this.inEditing()) {
@@ -202,8 +210,10 @@ proto.isVectorLayer = function(){
  */
 proto.setFeaturesOptions = function({filter}={}){
   if (filter) {
-    // in case of no features filter request check if no features_filed is present otherwise i get first field
-    if (filter.nofeatures) filter.nofeatures_field = filter.nofeatures_field || this._layer.getEditingFields()[0].name;
+    // in case of no features filter request check if no features_filed is present otherwise it get first field
+    if (filter.nofeatures) {
+      filter.nofeatures_field = filter.nofeatures_field || this._layer.getEditingFields()[0].name;
+    }
     this._getFeaturesOption = {
       filter,
       editing: true,
@@ -211,8 +221,7 @@ proto.setFeaturesOptions = function({filter}={}){
     };
     // in case of constarint attribute set the filter as constraint
     filter.constraint && this.setConstraintFeaturesFilter(filter);
-  }
-  else {
+  } else {
     const filterType = this._layerType === Layer.LayerTypes.TABLE ? 'all': 'bbox';
     this._getFeaturesOption = this.editingService.createEditingDataOptions(filterType, {
       layerId: this.getId()
@@ -249,44 +258,60 @@ proto.start = function(options={}) {
   this.setFeaturesOptions({
     filter
   });
-  
+
+  //register lock features to show message
+  const lockSetter = 'featuresLockedByOtherUser';
+  const unKeyLock = this._layer.getFeaturesStore().onceafter(
+    lockSetter, //setters name
+    () => {                      //handler
+      GUI.showUserMessage({
+        type: 'warning',
+        subtitle: this._layer.getName().toUpperCase(),
+        message: 'plugins.editing.messages.featureslockbyotheruser'
+      })
+    }
+  )
+  //add featuresLockedByOtherUser setter
+  this._unregisterStartSettersEventsKey.push(
+    () => this._layer.getFeaturesStore().un(lockSetter, unKeyLock)
+  );
+
   const handlerAfterSessionGetFeatures = promise => {
     this.emit(EventName);
-    this.setLayerUniqueFieldValues().then(()=>{
-      this.editingService.runEventHandler({
-        type: EventName,
-        id
-      });
-      promise
-        .then(features => {
-          this.stopLoading();
-          this.setEditing(true);
-          this.editingService.runEventHandler({
-            type: 'get-features-editing',
-            id,
-            options: {
-              features
-            }
-          });
+    this.setLayerUniqueFieldValues()
+      .then(async () => {
+        await this.editingService.runEventHandler({
+          type: EventName,
+          id
+        });
+        promise
+          .then(async features => {
+            this.stopLoading();
+            this.setEditing(true);
+            await this.editingService.runEventHandler({
+              type: 'get-features-editing',
+              id,
+              options: {
+                features
+              }
+            });
 
-          d.resolve({
-            features
+            d.resolve({features})
           })
-        })
-        .fail(error => {
-          GUI.notify.error(error.message);
-          this.editingService.runEventHandler({
-            type: 'error-editing',
-            id,
-            error
-          });
-          this.stop();
-          this.stopLoading();
-          d.reject(error);
-        })
-    });
+          .fail(async error => {
+            GUI.notify.error(error.message);
+            await this.editingService.runEventHandler({
+              type: 'error-editing',
+              id,
+              error
+            });
+            this.stop();
+            this.stopLoading();
+            d.reject(error);
+          })
+      });
+  }
 
-  };
   if (this._session) {
     if (!this._session.isStarted()) {
       //added case of mobile
@@ -299,19 +324,25 @@ proto.start = function(options={}) {
             this.setFeaturesOptions({
               filter
             });
-            this._session.start(this._getFeaturesOption)
-              .then(handlerAfterSessionGetFeatures).fail(()=>this.setEditing(false));
+            this._session
+              .start(this._getFeaturesOption)
+              .then(handlerAfterSessionGetFeatures)
+              .fail(()=>this.setEditing(false));
           }, 300);
         })
       } else {
         this._start = true;
         this.startLoading();
-        this._session.start(this._getFeaturesOption).then(handlerAfterSessionGetFeatures)
+        this._session
+          .start(this._getFeaturesOption)
+          .then(handlerAfterSessionGetFeatures)
       }
     } else {
       if (!this._start) {
         this.startLoading();
-        this._session.getFeatures(this._getFeaturesOption).then(handlerAfterSessionGetFeatures);
+        this._session
+          .getFeatures(this._getFeaturesOption)
+          .then(handlerAfterSessionGetFeatures);
         this._start = true;
       }
       this.setEditing(true);
@@ -335,38 +366,45 @@ proto.getFeaturesOption = function() {
 proto.stop = function() {
   const EventName  = 'stop-editing';
   const d = $.Deferred();
-  this.disableCanEditEvent && this.disableCanEditEvent();
+  if (this.disableCanEditEvent) {
+    this.disableCanEditEvent();
+  }
+  this._unregisterStartSettersEventsKey.forEach(fnc => fnc());
+
+  this._unregisterStartSettersEventsKey = [];
+
   if (this._session && this._session.isStarted()) {
-    const is_there_a_father_in_editing = this.editingService.fatherInEditing(this.state.id);
-    if (ApplicationState.online && !is_there_a_father_in_editing) {
-      this._session.stop()
-        .then(() => {
-          this._start = false;
-          this.state.editing.on = false;
-          this.state.enabled = false;
-          this.stopLoading();
-          this._getFeaturesOption = {};
-          this.stopActiveTool();
-          this.enableTools(false);
-          this.clearToolboxMessages();
-          this.setSelected(false);
-          this.emit(EventName);
-          this.clearLayerUniqueFieldsValues();
-          d.resolve(true)
-        })
-        .fail(err => d.reject(err))
-        .always(()=> this.setSelected(false))
-    } else {
-      this.stopActiveTool();
-      // need to be sure to clear
-      this._layer.getEditingLayer().getSource().clear();
-      this.state.editing.on = false;
-      this.enableTools(false);
-      this.clearToolboxMessages();
-      this._unregisterGetFeaturesEvent();
-      this.editingService.stopSessionChildren(this.state.id);
-      this.setSelected(false);
-      this.clearLayerUniqueFieldsValues();
+    if (ApplicationState.online) {
+      if (this.editingService.fathersInEditing(this.state.id).length > 0) {
+        this.stopActiveTool();
+        this.state.editing.on = false;
+        this.enableTools(false);
+        this.clearToolboxMessages();
+        this._unregisterGetFeaturesEvent();
+        this.editingService.stopSessionChildren(this.state.id);
+        this.setSelected(false);
+        this.clearLayerUniqueFieldsValues();
+      } else {
+        this._session.stop()
+          .then(promise => {
+            promise.then(() => {
+              this._start = false;
+              this.state.editing.on = false;
+              this.state.enabled = false;
+              this.stopLoading();
+              this._getFeaturesOption = {};
+              this.stopActiveTool();
+              this.enableTools(false);
+              this.clearToolboxMessages();
+              this.setSelected(false);
+              this.emit(EventName);
+              this.clearLayerUniqueFieldsValues();
+              d.resolve(true)
+            })
+          })
+          .fail(err => d.reject(err))
+          .always(() => this.setSelected(false))
+      }
     }
   } else {
     this.setSelected(false);
