@@ -2108,16 +2108,28 @@ proto.commit = function({
   modal = true,
   close = false,
 } = {}) {
-  const d = $.Deferred();
+  const d             = $.Deferred();
   const commitPromise = d.promise();
-  const { cb={}, messages={success:{}, error:{}} } = this.saveConfig;
-  toolbox = toolbox || this.state.toolboxselected;
-  let session = toolbox.getSession();
-  let layer = toolbox.getLayer();
-  const layerType = layer.getType();
-  const items = commitItems;
-  commitItems = commitItems || session.getCommitItems();
-  const {add=[], delete:cancel=[], update=[], relations={}} = commitItems;
+  const {
+    cb = {},
+    messages = {
+      success:{},
+      error:{}
+    },
+  }                   = this.saveConfig;
+  toolbox             = toolbox || this.state.toolboxselected;
+  let session         = toolbox.getSession();
+  let layer           = toolbox.getLayer();
+  const layerType     = layer.getType();
+  const items         = commitItems;
+  commitItems         = commitItems || session.getCommitItems();
+  const {
+    add = [],
+    delete: cancel = [],
+    update = [],
+    relations = {},
+  } = commitItems;
+
   //check if there are some changes to commit
   if (
     [
@@ -2270,29 +2282,24 @@ proto.commit = function({
 };
 
 /**
- * Start Unique field layer values handlers
- */
-
-/**
- * Clear all unique values fields related to layer
- * Example: is called when leave editing closing editing panel
+ * Clear all unique values fields related to layer (after closing editing panel).
  */
 proto.clearAllLayersUniqueFieldsValues = function() {
   this.layersUniqueFieldsValues = {};
 };
 
 /**
- * Clear single layer unique field values
+ * Clear single layer unique field values (when stopping toolbox editing).
+ * 
  * @param { string } layerId
- * Example: is called when toolbox editing of a layer is stopped
  */
 proto.clearLayerUniqueFieldsValues = function(layerId) {
   this.layersUniqueFieldsValues[layerId] = {};
 };
 
 /**
- * Remove unique values from unique fields of a layer
- * when a feature is delete
+ * Remove unique values from unique fields of a layer (when deleting a feature)
+ * 
  * @param { Object } opts
  * @param { string } opts.layerId
  * @param opts.feature
@@ -2301,19 +2308,13 @@ proto.removeLayerUniqueFieldValuesFromFeature = function({
   layerId,
   feature,
 }) {
-  // Layer has no unique fields values stored
-  if (!this.layersUniqueFieldsValues[layerId]) {
-    return;
+  const fields = this.layersUniqueFieldsValues[layerId];
+  if (fields) {
+    Object
+      .keys(feature.getProperties())
+      .filter(field => undefined !== fields[field])
+      .forEach(field => fields[field].delete(feature.get(field)));
   }
-
-  Object
-    .keys(feature.getProperties())
-    .forEach(field => {
-      //Check if a field is stored as unique values
-      if (undefined !== this.layersUniqueFieldsValues[layerId][field]) {
-        this.layersUniqueFieldsValues[layerId][field].delete(feature.get(field));
-      }
-    });
 };
 
 /**
@@ -2328,29 +2329,32 @@ proto.removeRelationLayerUniqueFieldValuesFromFeature = function({
   feature,
 }) {
 
-  const layer = this.layersUniqueFieldsValues[relationLayerId];
+  const layer  = this.layersUniqueFieldsValues[relationLayerId];
+  const fields = this.layersUniqueFieldsValues[layerId];
 
+  /** @FIXME add description */
   if (undefined === layer) {
     return;
   }
 
+  /** @FIXME add description */
   if (undefined === layer.__uniqueFieldsValuesRelations) {
     layer.__uniqueFieldsValuesRelations = {};
   }
 
   Object
     .keys(feature.getProperties())
-    .forEach(property =>{
+    .forEach(property => {
+      /** @FIXME add description */
       if (undefined === layer.__uniqueFieldsValuesRelations[layerId]) {
         layer.__uniqueFieldsValuesRelations[layerId] = {};
       }
-      // skip when ..
-      if (undefined === this.layersUniqueFieldsValues[layerId][property]) {
-        return;
+      /** @FIXME add description */
+      if (undefined !== fields[property]) {
+        const values = new Set(fields[property]);
+        values.delete(feature.get(property));
+        layer.__uniqueFieldsValuesRelations[layerId][property] = values;
       }
-      const values = new Set(this.layersUniqueFieldsValues[layerId][property]);
-      values.delete(feature.get(property));
-      layer.__uniqueFieldsValuesRelations[layerId][property] = values;
     });
 };
 
@@ -2396,7 +2400,7 @@ proto.saveTemporaryRelationsUniqueFieldsValues = function(layerId) {
     this.layersUniqueFieldsValues[layerId].__uniqueFieldsValuesRelations
   );
 
-  // No relation value unique fileds are stored
+  // skip when no relation unique fields values are stored
   if (undefined === relations) {
     return;
   }
