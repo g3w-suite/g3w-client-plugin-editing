@@ -94,7 +94,7 @@ export default {
     delete_feature_relations: "La suppression d'une fonctionnalité avec des relations associées laissera ces relations orphelines. Il est recommandé de gérer ces relations avant de supprimer la fonctionnalité",
     unlink_relation: "Voulez-vous détacher la relation ?",
     commit_feature: "Voulez-vous enregistrer définitivement les changements ?",
-    change_toolbox_relation: "Layer en relation. Il est obligatoire d'enregistrer les modifications en cours avant de passer à d'autres modifications.",
+    toolbox_has_relation: "cette couche fait partie d'une relation",
     saved: "Les données ont été enregistrées correctement",
     saved_local: "Les données ont été correctement sauvegardées localement",
     loading_data: "Chargement des données",
@@ -137,13 +137,15 @@ export default {
     buttons: {
       save: "Insérer/Modifier",
       save_and_back: "Sauvegarder et retourner au parent",
+      save_and_back_table: "Sauvegarder et et revenir en arrière",
       cancel: "Ignorer modifications"
     }
   },
   modal: {
     tools: {
       copyfeaturefromotherlayer: {
-        title: "Select feature/s"
+        title: "Select feature/s",
+        edit_attributes: "Edit attributes of pasted features in multiple mode"
       },
       copyfeaturefromprojectlayer: {
         title: "Select a feature"

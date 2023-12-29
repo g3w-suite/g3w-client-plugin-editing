@@ -3,139 +3,315 @@
 <!-- vue/components/toolbox.js@v3.4 -->
 
 <template>
-  <div class="toolbox" v-show="state.show">
-    <div :class="{'disableddiv' : !isLayerReady || !canEdit }" :id="'id_toolbox_'+ state.id">
-      <div @click="select" class="panel" style="margin-bottom: 8px;" :class="{'mobile': isMobile(), 'toolboxselected': state.selected }">
-        <div v-show="!isLayerReady" class="bar-loader"></div>
-        <div v-if="state.toolboxheader" class="panel-heading container" style="width:100%;" :style="{ background: state.color}">
-          <div v-if="father" style="margin-right:5px; cursor:pointer;" class="pull-left enabled dropdown">
+  <div
+    v-show = "state.show"
+    class  = "toolbox"
+  >
+    <div
+      :id    = "'id_toolbox_' + state.id"
+      :class = "{ 'disableddiv' : (!isLayerReady || !canEdit) }"
+    >
+
+      <div
+        @click.stop = "select"
+        class       = "panel"
+        style       = "margin-bottom: 8px;"
+        :class      = "{
+          'mobile': isMobile(),
+          'toolboxselected': state.selected
+        }"
+      >
+
+        <div
+          v-show = "!isLayerReady"
+          class  = "bar-loader"
+        ></div>
+
+        <div
+          v-if   = "state.toolboxheader"
+          class  = "panel-heading container"
+          style  = "width:100%;"
+          :style = "{ background: state.color}"
+        >
+
+          <!-- CHILD DEPENDENCIES -->
+          <div
+            v-if  = "father"
+            style = "margin-right:5px; cursor:pointer;"
+            class = "pull-left enabled dropdown"
+          >
             <span :class="g3wtemplate.font['relation']"></span>
-            <div class="dropdown-content skin-background-color" style="padding: 5px; border-radius: 3px;">
-              <div v-for="dependency in state.editing.dependencies" style="font-weight: bold" >{{ dependency }}</div>
+            <div
+              class = "dropdown-content skin-background-color"
+              style = "padding: 5px; border-radius: 3px;"
+            >
+              <div
+                v-for = "dependency in state.editing.dependencies"
+                style = "font-weight: bold"
+              >{{ dependency }}</div>
             </div>
           </div>
-          <div class="panel-title" :class="[father ? 'col-md-6' : 'col-md-8']" v-t-plugin:pre="'editing.toolbox.title'">{{ state.title }}</div>
-          <div v-disabled="!state.startstopediting" data-placement="left" data-toggle="tooltip" ref="editingbutton"
-               @click.stop="toggleEditing"
-               class="start-editing editbtn skin-tooltip-left"
-               :class="{'pull-right': !isMobile(), 'enabled' : isLayerReady,  'g3w-icon-toggled' : state.editing.on}" v-t-title:plugin="edit_layer_tooltip">
-            <span style="font-size: 1.1em; padding: 5px; !important;"  :class="g3wtemplate.font['pencil']"></span>
+
+          <!-- PANEL TITLE -->
+          <div
+            class          = "panel-title"
+            :class         = "[father ? 'col-md-6' : 'col-md-8']"
+            v-t-plugin:pre = "'editing.toolbox.title'"
+          >{{ state.title }}</div>
+
+          <!-- TOGGLE BUTTON -->
+          <div
+            v-disabled       = "editDisabled"
+            data-placement   = "left"
+            data-toggle      = "tooltip"
+            ref              = "editingbutton"
+            @click.stop      = "toggleEditing"
+            class            = "start-editing editbtn skin-tooltip-left"
+            :class           = "{
+              'pull-right': !isMobile(),
+              'enabled': isLayerReady,
+              'g3w-icon-toggled': state.editing.on,
+            }"
+            v-t-title:plugin = "edit_layer_tooltip"
+          >
+            <span
+              style  = "font-size: 1.1em; padding: 5px; !important;"
+              :class = "g3wtemplate.font['pencil']">
+            </span>
           </div>
+
         </div>
-        <bar-loader :loading="state.loading || state.changingtools"></bar-loader>
-        <div class="panel-body" v-show="!state.changingtools">
-          <div class="tools-content row1" style="display: flex; flex-wrap: wrap;">
-            <tool :state="toolstate" :resourcesurl="resourcesurl" @stopactivetool="stopActiveTool" @setactivetool="setActiveTool"
-                  v-for="toolstate in  toolsrow1" :key="toolstate.id">
-            </tool>
+
+        <bar-loader :loading="loading" />
+
+        <div
+          v-show = "!state.changingtools"
+          class  = "panel-body"
+        >
+          <!-- HAS RELATION -->
+          <div v-if="hasRelations" class="has-relations" style="color: #000000">
+            <span :class="g3wtemplate.font['info']" style="color: #007bff; padding-right: 2px"></span>
+            <span v-t-plugin="'editing.messages.toolbox_has_relation'"></span>
+            <divider/>
           </div>
-          <div class="tools-content row2" style="display: flex; flex-wrap: wrap;">
-            <tool :state="toolstate" :resourcesurl="resourcesurl" @stopactivetool="stopActiveTool" @setactivetool="setActiveTool"
-              v-for="toolstate in toolsrow2" :key="toolstate.id">
-            </tool>
+          <!-- MESSAGE -->
+          <div
+            v-if = "state.message"
+            style = "color: #000"
+          >
+            <div class="text-justify" v-t-plugin="state.message"></div>
+            <divider/>
           </div>
-          <div class="tools-content row3" style="display: flex; flex-wrap: wrap;">
-            <tool :state="toolstate" :resourcesurl="resourcesurl" @stopactivetool="stopActiveTool" @setactivetool="setActiveTool"
-              v-for="toolstate in toolsrow3" :key="toolstate.id">
-            </tool>
+
+          <!-- TOOLS CONTENT (1) -->
+          <div
+            class = "tools-content row1"
+            style = "display: flex; flex-wrap: wrap;"
+          >
+            <tool
+              v-for           = "toolstate in toolsrow1"
+              :key            = "toolstate.id"
+              :state          = "toolstate"
+              :resourcesurl   = "resourcesurl"
+              @stopactivetool = "stopActiveTool"
+              @setactivetool  = "setActiveTool"
+            />
           </div>
-          <div class="message" style="margin-top: 5px;" :id="'id_toolbox_messages_'+ state.id">
-            <div v-html="state.message"></div>
+
+          <!-- TOOLS CONTENT (2) -->
+          <div
+            class = "tools-content row2"
+            style = "display: flex; flex-wrap: wrap;"
+          >
+            <tool
+              v-for           = "toolstate in toolsrow2"
+              :key            = "toolstate.id"
+              :state          = "toolstate"
+              :resourcesurl   = "resourcesurl"
+              @stopactivetool = "stopActiveTool"
+              @setactivetool  = "setActiveTool"
+            />
+          </div>
+
+          <!-- TOOLS CONTENT (3) -->
+          <div
+            class = "tools-content row3"
+            style = "display: flex; flex-wrap: wrap;"
+          >
+            <tool
+              v-for           = "toolstate in toolsrow3"
+              :key            = "toolstate.id"
+              :state          = "toolstate"
+              :resourcesurl   = "resourcesurl"
+              @stopactivetool = "stopActiveTool"
+              @setactivetool  = "setActiveTool"
+            />
+          </div>
+
+          <!-- MESSAGES -->
+          <div
+            :id   = "`id_toolbox_messages_${state.id}`"
+            class = "message"
+            style = "margin-top: 5px;"
+          >
             <transition name="fade">
-              <toolsoftool v-if="showtoolsoftool" :tools="state.toolsoftool"></toolsoftool>
+              <toolsoftool
+                v-if   = "showtoolsoftool"
+                :tools = "state.toolsoftool"
+              />
             </transition>
-            <div v-if="currenttoolhelpmessage" class="toolbox_help_message" v-t-plugin="currenttoolhelpmessage"></div>
+            <div
+              v-if       = "currenttoolhelpmessage"
+              class      = "toolbox_help_message"
+              v-t-plugin = "currenttoolhelpmessage"
+            ></div>
           </div>
+
         </div>
+
       </div>
+
     </div>
   </div>
 </template>
 
 <script>
-  import ToolComponent from './Tool.vue';
+  import ToolComponent        from './Tool.vue';
   import ToolsOfToolComponent from './ToolsOfTool.vue';
-  const ApplicationState = g3wsdk.core.ApplicationState;
 
   export default {
-      name: 'Toolbox',
-      props: ['state', 'resourcesurl'],
-      data() {
-        return {
-          active: false,
-          currenttoolhelpmessage: null
+
+    name: 'Toolbox',
+
+    props: [
+      'state',
+      'resourcesurl'
+    ],
+
+    data() {
+      return {
+        active: false,
+        currenttoolhelpmessage: null,
+      };
+    },
+
+    components: {
+      'tool':        ToolComponent,
+      'toolsoftool': ToolsOfToolComponent
+    },
+
+    computed: {
+
+      /**
+       * @since g3w-client-plugin-editing@v3.7.0
+       */
+      editDisabled(){
+        return this.state.loading && !this.state.startstopediting;
+      },
+      /**
+       * @returns { boolean } whether current has related layer(s) (aka. layer relations / joins)
+       *
+       * @since 3.7.0
+       */
+      hasRelations() {
+        return this.state.editing.dependencies.length > 0;
+      },
+
+      loading() {
+        return this.state.loading || this.state.changingtools;
+      },
+
+      toolsrow1() {
+        return this.state.tools.filter(t => t.row === 1);
+      },
+
+      toolsrow2() {
+        return this.state.tools.filter(t => t.row === 2);
+      },
+
+      toolsrow3() {
+        return this.state.tools.filter(t => t.row === 3);
+      },
+
+      canEdit() {
+        return this.state.editing.canEdit;
+      },
+
+      father() {
+        return this.state.editing.father && !!this.state.editing.dependencies.length;
+      },
+
+      showtoolsoftool() {
+        return !!this.state.toolsoftool.length;
+      },
+
+      isLayerReady() {
+        return this.state.layerstate.editing.ready;
+      },
+
+    },
+
+    methods: {
+
+      select() {
+        if (this.isLayerReady && !this.state.selected) {
+          this.$emit('setselectedtoolbox', this.state.id);
         }
       },
-      components: {
-        'tool': ToolComponent,
-        'toolsoftool': ToolsOfToolComponent
-      },
-      methods: {
-        select() {
-          if (!this.isLayerReady) return;
-          if (!this.state.selected) this.$emit('setselectedtoolbox', this.state.id);
-        },
-        toggleEditing() {
-          this.select();
-          if (!this.state.layerstate.editing.ready || this.state.loading) return;
-          this.state.editing.on ? this.$emit('stoptoolbox', this.state.id): this.$emit('starttoolbox', this.state.id);
-        },
-        saveEdits() {
-          this.$emit('savetoolbox', this.state.id);
-        },
-        stopActiveTool() {
-          this.$emit('stopactivetool', this.state.id);
-        },
-        setActiveTool(toolId) {
-          this.$emit('setactivetool', toolId, this.state.id);
+
+      toggleEditing() {
+        this.select();
+        if (this.state.layerstate.editing.ready && !this.state.loading) {
+          this.$emit(this.state.editing.on ? 'stoptoolbox' : 'starttoolbox', this.state.id);
         }
       },
-      computed: {
-        toolsrow1(){
-          return this.state.tools.filter(tool => tool.row === 1);
-        },
-        toolsrow2(){
-          return this.state.tools.filter(tool => tool.row === 2);
-        },
-        toolsrow3(){
-          return this.state.tools.filter(tool => tool.row === 3);
-        },
-        canEdit() {
-          return this.state.editing.canEdit;
-        },
-        father() {
-          return this.state.editing.father && !!this.state.editing.dependencies.length;
-        },
-        showtoolsoftool() {
-          return !!this.state.toolsoftool.length;
-        },
-        isLayerReady() {
-          return this.state.layerstate.editing.ready;
-        }
+
+      saveEdits() {
+        this.$emit('savetoolbox', this.state.id);
       },
-      created() {
-        this.edit_layer_tooltip = 'editing.tooltip.edit_layer';
-        this.$emit('canEdit', {
-          id: this.state.id
-        });
+
+      stopActiveTool() {
+        this.$emit('stopactivetool', this.state.id);
+        this.select();
       },
-      async mounted() {
-        await this.$nextTick();
-        $(this.$refs.editingbutton).tooltip();
-        // is usefult to wait a little bit is some plugin or editing has to chenge some thing to the toolbox
-        // ex. tools visibility etcc. different from default behaviour
+
+      setActiveTool(toolId) {
+        this.$emit('setactivetool', toolId, this.state.id);
+        this.select();
       },
+
+    },
+
     watch: {
-        async'state.activetool'(activetool){
-          await this.$nextTick();
-          this.currenttoolhelpmessage = activetool && activetool.getHelpMessage();
-        }
-       }
-    };
+
+      async'state.activetool'(activetool) {
+        await this.$nextTick();
+        this.currenttoolhelpmessage = activetool && activetool.getHelpMessage();
+      },
+
+    },
+
+    created() {
+      this.edit_layer_tooltip = 'editing.tooltip.edit_layer';
+      this.$emit('canEdit', { id: this.state.id });
+    },
+
+    async mounted() {
+      // wait a little bit so others plugin can change things in toolbox
+      // (eg. tools visibility which differs from default behaviour)
+      await this.$nextTick();
+
+      $(this.$refs.editingbutton).tooltip();
+    },
+
+  };
 </script>
 
 <style scoped>
   .toolbox {
     padding-bottom: 5px;
+  }
+  .panel:not(.toolboxselected) .has-relations {
+    opacity: .4;
   }
 </style>

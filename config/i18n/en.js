@@ -94,7 +94,7 @@ export default {
     delete_feature_relations: "If feature has bindings relations, these relations become orphans. We suggest to handle these relations before detele this feature",
     unlink_relation: "Do you want unlink relation?",
     commit_feature: "Do you want to save the changes",
-    change_toolbox_relation: "Layer has relation/relations. Before switch editing you need to save changes done.",
+    toolbox_has_relation: "this layer is part of a relation",
     saved: "Data saved successfully",
     saved_local:"Data saved locally successfully",
     loading_data: "Loading data",
@@ -137,13 +137,15 @@ export default {
     buttons: {
       save: "Insert/Edit",
       save_and_back: "Save and Back",
+      save_and_back_table: "Save and Back",
       cancel: "Ignore Changes"
     }
   },
   modal: {
     tools: {
       copyfeaturefromotherlayer: {
-        title: "Select feature/s"
+        title: "Select feature/s",
+        edit_attributes: "Edit attributes of pasted features in multiple mode"
       },
       copyfeaturefromprojectlayer: {
         title: "Select a feature"
