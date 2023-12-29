@@ -45,11 +45,10 @@ proto.run = function(inputs, context) {
     // delete father, when try to commit update relation, we receive an error
     //due missing value /null to required field.
 
-    return ownField.reduce((bool, oField) => {
-      const field = relationLayer.getEditingFields()
-        .find((field) => field.name === oField);
-      return bool || !field.validate.required;
-    }, false)
+    return ownField.some(field => {
+      const field = relationLayer.getEditingFields().find(f => f.name === field);
+      return !field || !field.validate.required;
+    });
 
   });
 
