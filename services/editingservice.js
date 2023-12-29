@@ -1645,6 +1645,10 @@ proto.fathersInEditing = function(layerId) {
 };
 
 /**
+ * Based on layerId and relation,
+ * extract field of relation.
+ * ownField are array of fields related to relation and belong to layerId
+ * relationField area array of fields related to relation thar belong to other layer in relation with layerId
  * @param { Object } opts
  * @param opts.layerId
  * @param opts.relation
