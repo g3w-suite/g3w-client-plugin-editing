@@ -2503,6 +2503,12 @@ proto.changeLayerUniqueFieldValues = function({
   oldValue,
   newValue,
 }) {
+  if (
+    undefined === this.layersUniqueFieldsValues[layerId] ||
+    undefined === this.layersUniqueFieldsValues[layerId][field.name]
+  ) {
+    return;
+  }
   const values = this.layersUniqueFieldsValues[layerId][field.name];
   values.delete(oldValue);
   values.add(newValue);
