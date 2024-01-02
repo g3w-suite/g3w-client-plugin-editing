@@ -84,53 +84,51 @@ const API = function({service, plugin} = {}) {
 
   /**
    * Method to start editing api
+   * 
    * @param layerId
-   * @param options
-   * @returns {Promise<unknown>}
+   * @param { Object } options
+   * @param { boolean } [options.selected=true]
+   * @param { boolean } [options.disablemapcontrols=false]
+   * @param { boolean } [options.showselectlayers=true]
+   * @param options.title
+   * 
+   * @returns { Promise<unknown> }
    */
-  this.startEditing = function(layerId, options={}, data=false){
-    const {
-      tools,
-      feature,
-      selected=true,
-      title,
-      disablemapcontrols=false,
-      showselectlayers=true
-    } = options;
+  this.startEditing = function(layerId, options={}, data=false) {
+    options.selected           = undefined === options.selected           ? true : options.selected;
+    options.showselectlayers   = undefined === options.showselectlayers   ? true : options.showselectlayers;
+    options.disablemapcontrols = undefined === options.disablemapcontrols ? false : options.showselectlayers;
     return new Promise((resolve, reject) => {
       // get toolbox related to layer id
       const toolbox = service.getToolBoxById(layerId);
       // set show select layers input visibility
-      service.setShowSelectLayers(showselectlayers);
-      //set selected
-      if (toolbox) {
-        toolbox.setSelected(selected);
-        // set seletcted toolbox
-        if (selected) {
-          service.setSelectedToolbox(toolbox);
-        }
-        if (title) {
-          toolbox.setTitle(title);
-        }
-        // start editing toolbox (options contain also filter type)
-        toolbox
-          .start(options)
-          .then(data => {
-            //disablemapcontrols in conflict
-            if (disablemapcontrols) {
-              service.disableMapControlsConflict(true);
-            }
-            //opts contain information about start editing has features loaded
-            data ? resolve({
-              toolbox,
-              data
-            }) : resolve(toolbox);
-          })
-          .fail(err => reject(err))
-      } else {
-        reject();
+      service.setShowSelectLayers(options.showselectlayers);
+      // skip when ..
+      if (!toolbox) {
+        return reject();
       }
-    })
+      // set selected
+      toolbox.setSelected(options.selected);
+      // set seletcted toolbox
+      if (options.selected) {
+        service.setSelectedToolbox(toolbox);
+      }
+      if (options.title) {
+        toolbox.setTitle(options.title);
+      }
+      // start editing toolbox (options contain also filter type)
+      toolbox
+        .start(options)
+        .then(data => {
+          // disablemapcontrols in conflict
+          if (options.disablemapcontrols) {
+            service.disableMapControlsConflict(true);
+          }
+          // opts contain information about start editing has features loaded
+          resolve(data ? { toolbox, data } : toolbox);
+        })
+        .fail(reject);
+    });
   };
   
   /*
