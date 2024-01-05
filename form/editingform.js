@@ -10,13 +10,15 @@ function EditingFormComponent(options = {}) {
   const EditingService   = require('../services/editingservice');
   const relationsOptions = options.context_inputs || null;
   const layerId          = options.layer.getId();
+  const hasFormStructure = options.layer.getLayerEditingFormStructure(); //@since 3.7.2
   const feature          = (
     relationsOptions &&
     relationsOptions.inputs &&
     relationsOptions.inputs.features &&
     relationsOptions.inputs.features[relationsOptions.inputs.features.length - 1]
   );
-  if (feature) {
+  //handle relations on form only if layer has form structure
+  if (hasFormStructure && feature) {
     (
       feature.isNew()
         ? Promise.resolve()
