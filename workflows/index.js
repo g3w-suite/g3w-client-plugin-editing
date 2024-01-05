@@ -1878,25 +1878,6 @@ export class OpenFormStep extends EditingTask {
   }
 
   /**
-   * @param promise
-   * @param inputs
-   * 
-   * @returns {(function(): void)|*}
-   * 
-   * @private
-   */
-  _cancelFnc(promise, inputs) {
-    return function() {
-      if (!this._isContentChild){
-        GUI.setModal(false);
-        // fire event cancel form to emit to subscrivers
-        this.fireEvent('cancelform', inputs.features);
-      }
-      promise.reject(inputs);
-    }
-  }
-
-  /**
    * @param fieldssetAndUnsetSelectedFeaturesStyle
    * @param fields Array of fields
    * 
@@ -2022,27 +2003,6 @@ export class OpenFormStep extends EditingTask {
   }
 
   /**
-   * @param promise
-   * @param context
-   * @param inputs
-   * 
-   * @returns {(function(*): void)|*}
-   * 
-   * @private
-   */
-  _saveFnc(promise, context, inputs) {
-    return function(fields) {
-      const session = context.session;
-      this._saveFeatures({
-        fields,
-        promise,
-        session,
-        inputs
-      });
-    }
-  }
-
-  /**
    * Build form
    * 
    * @param options
@@ -2094,7 +2054,9 @@ export class OpenFormStep extends EditingTask {
             "plugins.editing.form.buttons.save",
           type: "save",
           class: "btn-success",
-          cbk: this._saveFnc(promise, context, inputs).bind(this)
+          cbk: (fields) => {
+            this._saveFeatures({ fields, promise, inputs, session: context.session });
+          } 
         },
         {
           id: 'cancel',
@@ -2112,7 +2074,13 @@ export class OpenFormStep extends EditingTask {
               }
             }
           },
-          cbk: this._cancelFnc(promise, inputs).bind(this)
+          cbk: () => {
+            if (!this._isContentChild){
+              GUI.setModal(false);
+              this.fireEvent('cancelform', inputs.features); // fire event cancel form to emit to subscrivers
+            }
+            promise.reject(inputs);
+          }
         }
       ]
     });
