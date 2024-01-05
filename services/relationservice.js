@@ -1,7 +1,31 @@
-const {GUI} = g3wsdk.gui;
-const t = g3wsdk.core.i18n.tPlugin;
-const {Layer} = g3wsdk.core.layer;
-const {WorkflowsStack} = g3wsdk.core.workflow;
+import {
+  EditingWorkflow,
+  OpenFormStep,
+  LinkRelationStep,
+  PickProjectLayerFeaturesStep,
+  CopyFeaturesFromOtherProjectLayerStep,
+  AddTableFeatureStep,
+  OpenTableStep,
+  AddFeatureStep,
+}                          from '../workflows';
+
+Object
+  .entries({
+    EditingWorkflow,
+    OpenFormStep,
+    LinkRelationStep,
+    PickProjectLayerFeaturesStep,
+    CopyFeaturesFromOtherProjectLayerStep,
+    AddTableFeatureStep,
+    OpenTableStep,
+    AddFeatureStep,
+  })
+  .forEach(([k, v]) => console.assert(undefined !== v, `${k} is undefined`));
+
+const { GUI }            = g3wsdk.gui;
+const { tPlugin:t }      = g3wsdk.core.i18n;
+const { Layer }          = g3wsdk.core.layer;
+const { WorkflowsStack } = g3wsdk.core.workflow;
 
 // what we can do with each type of relation element
 const RELATIONTOOLS = {
@@ -97,7 +121,72 @@ const RelationService = function(layerId, options = {}) {
         this._relationTools.push(_.cloneDeep(tool));
     });
   }
-  this._setAddLinkWorkflow();
+
+  this._add_link_workflow = ({
+    [Layer.LayerTypes.TABLE]: {
+
+      /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/edittableworkflow.js@v3.7.1 */
+      link(options = {}) {
+        const w = new EditingWorkflow({
+          ...options,
+          backbuttonlabel: 'plugins.editing.form.buttons.save_and_back_table',
+          steps: [ new OpenTableStep() ],
+        });
+        w.YOU_SHOULD_REALLY_GIVE_ME_A_NAME_2 = true;
+        return w;
+      },
+
+      /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addtablefeatureworkflow.js@v3.7.1 */
+      add(options = {}) {
+        return new EditingWorkflow({
+          ...options,
+          steps: [
+            new AddTableFeatureStep(),
+            new OpenFormStep(),
+          ],
+        });
+      },
+
+    },
+    [Layer.LayerTypes.VECTOR]: {
+
+      /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/linkrelationworkflow.js@v3.7.1 */
+      link() {
+        return new EditingWorkflow({
+          steps: [
+            new LinkRelationStep()
+          ]
+        });
+      },
+
+      /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addfeatureworkflow.js@v3.7.1 */
+      add(options = {}) {
+        const w = new EditingWorkflow({
+          ...options,
+          steps: [
+            new AddFeatureStep(options),
+            new OpenFormStep(options),
+          ],
+        });
+        w.addToolsOfTools({ step: options.steps[0], tools: ['snap', 'measure'] });
+        return w;
+      },
+
+      /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/selectandcopyfeaturesfromotherlayerworkflow.js@v3.7.1 */
+      selectandcopy(options) {
+        return new EditingWorkflow({
+          steps: [
+            new PickProjectLayerFeaturesStep(options),
+            new CopyFeaturesFromOtherProjectLayerStep(options),
+            new OpenFormStep(options),
+          ],
+          registerEscKeyEvent: true,
+        });
+      },
+
+    },
+  })[this._layerType];
+
 };
 
 const proto = RelationService.prototype;
@@ -108,54 +197,6 @@ const proto = RelationService.prototype;
  */
 proto.getEditingCapabilities = function() {
   return this.capabilities;
-};
-
-/**
- *
- * @private
- */
-proto._setAddLinkWorkflow = function() {
-  const add_link_workflow = {
-    [Layer.LayerTypes.VECTOR]: {
-      link: require('../workflows/linkrelationworkflow'),
-      add: require('../workflows/addfeatureworkflow'),
-      selectandcopy: require('../workflows/selectandcopyfeaturesfromotherlayerworkflow')
-    },
-    [Layer.LayerTypes.TABLE]: {
-      link: require('../workflows/edittableworkflow'),
-      add: require('../workflows/addtablefeatureworkflow')
-    }
-  };
-
-  this._add_link_workflow = add_link_workflow[this._layerType];
-};
-
-/**
- *
- * @returns {LinkRelationWorflow}
- * @private
- */
-proto._getLinkFeatureWorkflow = function() {
-  return new this._add_link_workflow.link();
-};
-
-/**
- *
- * @returns {AddFeatureWorflow}
- * @private
- */
-proto._getAddFeatureWorkflow = function() {
-  return new this._add_link_workflow.add();
-};
-
-/**
- *
- * @param options
- * @returns {SelectAndCopyFeaturesFromOtherLayerWorflow}
- * @private
- */
-proto._getSelectCopyWorkflow = function(options={}){
-  return new this._add_link_workflow.selectandcopy(options)
 };
 
 /**
@@ -280,8 +321,8 @@ proto.startTableTool = function(relationtool, index) {
   }
   //edit attributes feature
   if (relationtool.state.id === 'editattributes') {
-    const EditTableFeatureWorkflow = require('../workflows/edittablefeatureworkflow');
-    const workflow = new EditTableFeatureWorkflow();
+    /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/edittablefeatureworkflow.js@v3.7.1 */
+    const workflow = new EditingWorkflow({ steps: [ new OpenFormStep() ] });
     workflow.start(options)
       .then(() => {
         //get relation layer fields
@@ -314,25 +355,22 @@ proto.startVectorTool = function(relationtool, index) {
   const d = $.Deferred();
   const relation = this.relations[index];
   const relationfeature = this._getRelationFeature(relation.id);
-  const workflows = {
-    ModifyGeometryVertexWorkflow: require('../workflows/modifygeometryvertexworkflow'),
-    MoveFeatureWorkflow : require('../workflows/movefeatureworkflow'),
-    DeleteFeatureWorkflow : require('../workflows/deletefeatureworkflow'),
-    EditFeatureAttributesWorkflow : require('../workflows/editfeatureattributesworkflow')
-  };
   GUI.setModal(false);
   const options = this._createWorkflowOptions({
     features: [relationfeature]
   });
-  const ClassWorkflow = Object.values(workflows).find(classworkflow => {
-    return relationtool.getOperator() instanceof classworkflow
-  });
-  const workflow = new ClassWorkflow();
+  
+  const workflow = Object.create(Object.getPrototypeOf(relationtool.getOperator()))
   const originalStyle = this._highlightRelationSelect(relationfeature);
-  const promise =(workflow instanceof workflows.DeleteFeatureWorkflow || workflow instanceof workflows.EditFeatureAttributesWorkflow ) && workflow.startFromLastStep(options)
-    || workflow.start(options);
+
   workflow.bindEscKeyUp(() => relationfeature.setStyle(this._originalLayerStyle));
-  promise
+
+  (
+    workflow.YOU_SHOULD_REALLY_GIVE_ME_A_NAME_1 &&
+    workflow.startFromLastStep(options)
+    ||
+    workflow.start(options)
+  )
     .then(outputs => {
       if (relationtool.getId() === 'deletefeature') {
         relationfeature.setStyle(this._originalLayerStyle);
@@ -496,10 +534,11 @@ proto.addRelationFromOtherLayer = function({layer, external}){
   let isVector = false;
   if (external || layer.isGeoLayer() ) {
     isVector = true;
-    workflow = this._getSelectCopyWorkflow({
+    workflow = new this._add_link_workflow.selectandcopy({
       copyLayer: layer,
       isVector,
-      external
+      external,
+      help: 'editing.steps.help.copy',
     });
   }
 
@@ -513,9 +552,8 @@ proto.addRelationFromOtherLayer = function({layer, external}){
  * add relation method
  */
 proto.addRelation = function() {
-
   this.runAddRelationWorkflow({
-    workflow: this._getAddFeatureWorkflow(),
+    workflow: new this._add_link_workflow.add(),
     isVector: this._layerType === Layer.LayerTypes.VECTOR
   })
 };
@@ -623,7 +661,7 @@ proto.runAddRelationWorkflow = function({workflow, isVector=false}={}){
  */
 proto.linkRelation = function() {
   const isVector = this._layerType === Layer.LayerTypes.VECTOR;
-  const workflow = this._getLinkFeatureWorkflow();
+  const workflow = new this._add_link_workflow.link();
   const options = this._createWorkflowOptions();
   const session = options.context.session;
   const {ownField, relationField} = this.getEditingService()._getRelationFieldsFromRelation({

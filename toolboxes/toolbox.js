@@ -1,10 +1,70 @@
-const { ApplicationState, G3WObject } = g3wsdk.core;
-const {base, inherit, debounce, toRawType} = g3wsdk.core.utils;
-const { GUI } = g3wsdk.gui;
-const { tPlugin:t } = g3wsdk.core.i18n;
-const { Layer } = g3wsdk.core.layer;
-const { Session } = g3wsdk.core.editing;
+import {
+  EditingWorkflow,
+  OpenFormStep,
+  ConfirmStep,
+  CopyFeaturesFromOtherLayerStep,
+  SelectElementsStep,
+  PickFeatureStep,
+  ChooseFeatureStep,
+  AddFeatureStep,
+  AddPartToMultigeometriesStep,
+  GetVertexStep,
+  MoveElementsStep,
+  DeletePartFromMultigeometriesStep,
+  MergeFeaturesStep,
+  SplitFeatureStep,
+  MoveFeatureStep,
+  ModifyGeometryVertexStep,
+  DeleteFeatureStep,
+  AddTableFeatureStep,
+  OpenTableStep,
+  AddFeatureStep,
+}                          from '../workflows';
+
+const Tool                 = require('../toolboxes/tool');
+
+Object
+  .entries({
+    EditingWorkflow,
+    OpenFormStep,
+    ConfirmStep,
+    CopyFeaturesFromOtherLayerStep,
+    SelectElementsStep,
+    PickFeatureStep,
+    ChooseFeatureStep,
+    AddFeatureStep,
+    AddPartToMultigeometriesStep,
+    GetVertexStep,
+    MoveElementsStep,
+    DeletePartFromMultigeometriesStep,
+    MergeFeaturesStep,
+    SplitFeatureStep,
+    MoveFeatureStep,
+    ModifyGeometryVertexStep,
+    Tool,
+    AddTableFeatureStep,
+    OpenTableStep,
+    AddFeatureStep,
+  })
+  .forEach(([k, v]) => console.assert(undefined !== v, `${k} is undefined`));
+
+const {
+  ApplicationState,
+  G3WObject
+}                                = g3wsdk.core;
+const {
+  base,
+  inherit,
+  debounce,
+  toRawType
+}                                = g3wsdk.core.utils;
+const { GUI }                    = g3wsdk.gui;
+const { tPlugin:t }              = g3wsdk.core.i18n;
+const { Layer }                  = g3wsdk.core.layer;
+const { Session }                = g3wsdk.core.editing;
 const { getScaleFromResolution } = g3wsdk.ol.utils;
+const { Geometry }               = g3wsdk.core.geometry;
+const { isSameBaseGeometryType } = g3wsdk.core.geoutils;
 
 function ToolBox(options={}) {
   base(this);
@@ -825,6 +885,551 @@ proto.resetDefault = function(){
   }
   this._disabledtools = null;
   this.setShow(true);
+};
+
+/**
+ * ORIGINAL SOURCE: g3w-client-plugin/toolboxes/toolsfactory.js@v3.7.1
+ */
+ToolBox.create = function(layer) {
+
+  /** @type { 'create' | 'update_attributes' | 'update_geometry' | delete' | undefined } undefined means all possible tools base on type */
+  const capabilities    = layer.getEditingCapabilities();
+  const type            = layer.getType();
+  const is_vector       = (undefined === type || Layer.LayerTypes.VECTOR === type);
+  const geometryType    = is_vector && layer.getGeometryType();
+  const is_point        = is_vector && Geometry.isPointGeometryType(geometryType);
+  const is_poly         = is_vector && (Geometry.isPolygonGeometryType(geometryType) || Geometry.isLineGeometryType(geometryType));
+  const is_table        = Layer.LayerTypes.TABLE === type;
+  const isMultiGeometry = geometryType && Geometry.isMultiGeometry(geometryType);
+
+  return new ToolBox({
+    id:          layer.getId(),
+    color:       layer.getColor(),
+    type,
+    layer,
+    lngTitle:    'editing.toolbox.title',
+    title:       ` ${layer.getName()}`,
+    constraints: layer.getEditingConstrains(),
+    tools:       [
+
+      (is_point || is_poly) && {
+        id: 'addfeature',
+        type: ['add_feature'],
+        name: 'editing.tools.add_feature',
+        icon: `add${type}.png`,
+        layer,
+        row: 1,
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addfeatureworkflow.js@v3.7.1 */
+        op(options = {}) {
+          const w = new EditingWorkflow({
+            ...options,
+            steps: [
+              new AddFeatureStep(options),
+              new OpenFormStep(options),
+            ],
+          });
+          w.addToolsOfTools({ step: options.steps[0], tools: ['snap', 'measure'] });
+          return w;
+        },
+      },
+
+      (is_point || is_poly) && {
+        id: 'editattributes',
+        type: ['change_attr_feature'],
+        name: 'editing.tools.update_feature',
+        icon: 'editAttributes.png',
+        layer,
+        row: 1,
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editfeatureattributesworkflow.js@v3.7.1 */
+        op(options = {}) {
+          const w = new EditingWorkflow({
+            ...options,
+            helpMessage: 'editing.tools.update_feature',
+            steps: [
+              new PickFeatureStep(),
+              new ChooseFeatureStep(),
+              new OpenFormStep(),
+            ],
+          });
+          w.YOU_SHOULD_REALLY_GIVE_ME_A_NAME_1 = true;
+          return w;
+        },
+      },
+
+      (is_point || is_poly) && {
+        id: 'deletefeature',
+        type: ['delete_feature'],
+        name: 'editing.tools.delete_feature',
+        icon: 'deletePoint.png',
+        layer,
+        row: 1,
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/deletefeatureworkflow.js@v3.7.1 */
+        op(options = {}) {
+          const w = EditingWorkflow({
+            ...options,
+            steps: [
+              new PickFeatureStep(),
+              new ChooseFeatureStep(),
+              new DeleteFeatureStep(),
+              new ConfirmStep({ type: 'delete' }),
+            ],
+          });
+          w.YOU_SHOULD_REALLY_GIVE_ME_A_NAME_1 = true;
+          return w;
+        },
+      },
+
+      is_poly && {
+        id: 'movevertex',
+        type: ['change_feature'],
+        name: "editing.tools.update_vertex",
+        icon: "moveVertex.png",
+        layer,
+        row: 1,
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/modifygeometryvertexworkflow.js@v3.7.1 */
+        op(options = {}) {
+          const w = new EditingWorkflow({
+            ...options,
+            helpMessage: 'editing.tools.update_vertex',
+            steps: [
+              new PickFeatureStep(options),
+              new ChooseFeatureStep(),
+              new ModifyGeometryVertexStep(),
+            ],
+          })
+          w.addToolsOfTools({ step: options.steps[2], tools: ['snap', 'measure'] });
+          return w;
+        },
+      },
+
+      (is_point || is_poly) && {
+        id: 'editmultiattributes',
+        type: ['change_attr_feature'],
+        name: "editing.tools.update_multi_features",
+        icon: "multiEditAttributes.png",
+        layer,
+        row: 2,
+        once: true,
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editmultifeatureattributesworkflow.js@v3.7.1 */
+        op(options = {}) {
+          return new EditingWorkflow({
+            ...options,
+            steps: [
+              new SelectElementsStep({
+                type: 'multiple',
+                steps: {
+                  select: {
+                    description: 'editing.workflow.steps.' + ApplicationState.ismobile ? 'selectDrawBoxAtLeast2Feature' : 'selectMultiPointSHIFTAtLeast2Feature',
+                    buttonnext: {
+                      disabled: true,
+                      condition:({ features=[] }) => features.length < 2,
+                      done: () => {}
+                    },
+                    directive: 't-plugin',
+                    dynamic: 0,
+                    done: false
+                  }
+                }
+              }),
+              new OpenFormStep({ multi: true }),
+            ],
+            helpMessage: 'editing.tools.update_multi_features',
+            registerEscKeyEvent: true,
+          });
+        },
+      },
+
+      (is_point || is_poly) && {
+        id: 'movefeature',
+        type: ['change_feature'],
+        name: 'editing.tools.move_feature',
+        icon: `move${type}.png`,
+        layer,
+        row: 2,
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/movefeatureworkflow.js@v3.7.1 */
+        op(options = {}) {
+          return new EditingWorkflow({
+            ...options,
+            helpMessage: 'editing.tools.move_feature',
+            steps: [
+              new PickFeatureStep(),
+              new ChooseFeatureStep(),
+              new MoveFeatureStep(),
+            ],
+          });
+        },
+      },
+
+      (is_point || is_poly) && {
+        id: 'copyfeaturesfromotherlayer',
+        type: ['add_feature'],
+        name: "editing.tools.pastefeaturesfromotherlayers",
+        icon: "pasteFeaturesFromOtherLayers.png",
+        layer,
+        once: true,
+        conditions: {
+          enabled: (function() {
+            const map          = GUI.getService('map');
+            const layerId      = layer.getId();
+            const geometryType = layer.getGeometryType();
+            const selection    = map.defaultsLayers.selectionLayer.getSource();
+            const data = {
+              bool: false,
+              tool: undefined
+            };
+            // check selected feature layers
+            const selected = () => {
+              const enabled = data.bool && selection
+                .getFeatures()
+                .filter(f => {
+                  const type = f.getGeometry() && f.getGeometry().getType();
+                  return (f.__layerId !== layerId) && isSameBaseGeometryType(geometryType, type) && ((geometryType === type) || Geometry.isMultiGeometry(geometryType) || !Geometry.isMultiGeometry(type));
+                }).length > 0;
+              data.tool.setEnabled(enabled);
+              return enabled;
+            };
+            return ({ bool, tool = {} }) => {
+              data.tool = tool;
+              data.bool = bool;
+              selection[bool ? 'on' : 'un']('addfeature', selected);
+              selection[bool ? 'on' : 'un']('removefeature', selected);
+              return selected();
+            }
+          }())
+        },
+        row: 2,
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/copyfeaturesfromotherlayerworkflow.js@v3.7.1 */
+        op(options = {}) {
+          const openFormStep = new OpenFormStep({ ...options, help: 'editing.steps.help.copy' });
+          return new EditingWorkflow({
+            ...options,
+            steps: [
+              new CopyFeaturesFromOtherLayerStep({
+                ...options,
+                help: 'editing.steps.help.copy',
+                openFormTask: openFormStep.getTask(),
+              }),
+              openFormStep,
+            ],
+            registerEscKeyEvent: true
+          });
+        },
+      },
+
+      (is_point || is_poly) && {
+        id: 'copyfeatures',
+        type: ['add_feature'],
+        name: "editing.tools.copy",
+        icon: `copy${type}.png`,
+        layer,
+        once: true,
+        row: 2,
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/copyfeaturesworkflow.js@v3.7.1 */
+        op(options = {}) {
+          return new EditingWorkflow({
+            ...options,
+            steps: [
+              new SelectElementsStep({
+                ...options,
+                help: 'editing.steps.help.copy',
+                type: ApplicationState.ismobile ? 'single' :  'multiple',
+                steps: {
+                  select: {
+                    description: 'editing.workflow.steps.' + ApplicationState.ismobile ? 'selectPoint' : 'selectPointSHIFT',
+                    directive: 't-plugin',
+                    done: false
+                  }
+                },
+              }, true),
+              options.layer.getGeometryType().indexOf('Point') >= 0 ? undefined : new GetVertexStep({
+                ...options,
+                help: 'editing.steps.help.copy',
+                steps: {
+                  from: {
+                    description: 'editing.workflow.steps.selectStartVertex',
+                    directive: 't-plugin',
+                    done: false
+                  }
+                }
+              }, true),
+              new MoveElementsStep({
+                ...options,
+                help: 'editing.steps.help.copy',
+                steps: {
+                  to: {
+                    description: 'editing.workflow.steps.selectToPaste',
+                    directive: 't-plugin',
+                    done: false
+                  }
+                }
+              }, true),
+            ].filter(Boolean),
+            registerEscKeyEvent: true,
+          });
+        },
+      },
+
+      (is_point || is_poly) && isMultiGeometry && {
+        id: 'addPart',
+        type: ['add_feature', 'change_feature'],
+        name: "editing.tools.addpart",
+        icon: "addPart.png",
+        layer,
+        once: true,
+        row: 3,
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addparttomultigeometriesworkflow.js@v3.7.1 */
+        op(options = {}) {
+          const w = new EditingWorkflow({
+            ...options,
+            steps: [
+              new PickFeatureStep({
+                help: 'editing.steps.help.select_element',
+                steps: {
+                  select: {
+                    description: 'editing.workflow.steps.select',
+                    directive: 't-plugin',
+                    done: false
+                  }
+                },
+              }),
+              new ChooseFeatureStep({ help: 'editing.steps.help.select_element' }),
+              new AddFeatureStep({
+                ...options,
+                help: 'editing.steps.help.select_element',
+                add: false,
+                steps: {
+                  addfeature: {
+                    description: 'editing.workflow.steps.draw_part',
+                    directive: 't-plugin',
+                    done: false
+                  }
+                },
+                onRun: ({inputs, context}) => {
+                  w.emit('settoolsoftool', [{
+                    type: 'snap',
+                    options: {
+                      layerId: inputs.layer.getId(),
+                      source: inputs.layer.getEditingLayer().getSource(),
+                      active: true
+                    }
+                  }]);
+                  w.emit('active', ['snap']);
+                },
+                onStop: () => {
+                  w.emit('deactive', ['snap']);
+                }
+              }),
+              new AddPartToMultigeometriesStep({
+                ...options,
+                help: 'editing.steps.help.select_element',
+              }),
+            ],
+            helpMessage: 'editing.tools.addpart',
+            registerEscKeyEvent: true
+          });
+          return w;
+        },
+      },
+
+      (is_point || is_poly) && isMultiGeometry && {
+        id: 'deletePart',
+        type: ['change_feature'],
+        name: "editing.tools.deletepart",
+        icon: "deletePart.png",
+        layer,
+        row: 3,
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/deletepartfrommultigeometriesworkflow.js@v3.7.1 */
+        op(options = {}) {
+          return new EditingWorkflow({
+            ...options,
+            steps: [
+              new PickFeatureStep(),
+              new ChooseFeatureStep(),
+              new DeletePartFromMultigeometriesStep(options),
+            ],
+            helpMessage: 'editing.tools.deletepart',
+          });
+        },
+      },
+
+      is_poly && {
+        id: 'splitfeature',
+        type:  ['change_feature'],
+        name: "editing.tools.split",
+        icon: "splitFeatures.png",
+        layer,
+        row: 3,
+        once: true,
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/splitfeatureworkflow.js@v3.7.1 */
+        op(options = {}) {
+          return new EditingWorkflow({
+            ...options,
+            steps: [
+              new SelectElementsStep({
+                ...options,
+                help: 'editing.steps.help.split',
+                type: ApplicationState.ismobile ? 'single' :  'multiple',
+                steps: {
+                  select: {
+                    description: 'editing.workflow.steps.' + ApplicationState.ismobile ? 'selectPoint' : 'selectPointSHIFT',
+                    directive: 't-plugin',
+                    done: false,
+                  }
+                },
+              }, true),
+              new SplitFeatureStep({
+                ...options,
+                help: 'editing.steps.help.split',
+                steps: {
+                  draw_line: {
+                    description: 'editing.workflow.steps.draw_split_line',
+                    directive: 't-plugin',
+                    done: false,
+                  }
+                },
+              }, true),
+            ],
+            registerEscKeyEvent: true,
+          });
+        },
+      },
+
+      is_poly && {
+        id: 'mergefeatures',
+        type: ['change_feature'],
+        name: "editing.tools.merge",
+        icon: "mergeFeatures.png",
+        layer,
+        row: 3,
+        once: true,
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/mergefeaturesworkflow.js@v3.7.1 */
+        op(options = {}) {
+          return new EditingWorkflow({
+            ...options,
+            steps: [
+              new SelectElementsStep({
+                ...options,
+                type: 'bbox',
+                help: 'editing.steps.help.merge',
+                steps: {
+                  select: {
+                    description: 'editing.workflow.steps.' + ApplicationState.ismobile ? 'selectDrawBox' : 'selectSHIFT',
+                    directive: 't-plugin',
+                    done: false,
+                  }
+                },
+              }, true),
+              new MergeFeaturesStep({
+                ...options,
+                help: 'editing.steps.help.merge',
+                steps: {
+                  choose: {
+                    description: 'editing.workflow.steps.merge',
+                    directive: 't-plugin',
+                    done: false,
+                  }
+                },
+              }, true),
+            ],
+            registerEscKeyEvent: true
+          });
+        },
+      },
+
+      is_poly && {
+        id: 'copyfeaturefromexternallayer',
+        type: ['add_feature'],
+        name: "editing.tools.copyfeaturefromexternallayer",
+        icon: "copyPolygonFromFeature.png",
+        layer,
+        row: 3,
+        once: true,
+        visible: tool => {
+          const map  = GUI.getService('map');
+          const type = tool.getLayer().getGeometryType();
+          const has_same_geom = layer => {
+            // check if tool is visible and the layer is a Vector
+            const features = 'VECTOR' === layer.getType() && layer.getSource().getFeatures();
+            return features && features.length ? isSameBaseGeometryType(features[0].getGeometry().getType(), type) : true;
+          };
+          map.onbefore('loadExternalLayer',  layer => !tool.isVisible() && tool.setVisible(has_same_geom(layer)));
+          map.onafter('unloadExternalLayer', layer => {
+            const features = tool.isVisible() && 'VECTOR' === layer.getType() && layer.getSource().getFeatures();
+            if (features && features.length && isSameBaseGeometryType(features[0].getGeometry().getType(), type)) {
+              tool.setVisible(map.getExternalLayers().find(l => undefined !== has_same_geom(l)));
+            }
+          });
+          return false;
+        },
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addfeaturefrommapvectorlayersworkflow.js@v3.7.1 */
+        op(options = {}) {
+          return new EditingWorkflow({
+            ...options,
+            steps: [
+              new SelectElementsStep({
+                ...options,
+                type: 'external',
+                help: 'editing.steps.help.copy'
+              }, false),
+              new OpenFormStep({
+                ...options,
+                help: 'editing.steps.help.copy'
+              }),
+            ],
+            registerEscKeyEvent: true
+          });
+        },
+      },
+
+      is_table && {
+        id: 'addfeature',
+        type: ['add_feature'],
+        name: "editing.tools.add_feature",
+        icon: "addTableRow.png",
+        layer,
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addtablefeatureworkflow.js@v3.7.1 */
+        op(options = {}) {
+          return new EditingWorkflow({
+            ...options,
+            steps: [
+              new AddTableFeatureStep(),
+              new OpenFormStep(),
+            ],
+          });
+        },
+      },
+
+      is_table && {
+        id: 'edittable',
+        type: ['delete_feature', 'change_attr_feature'],
+        name: "editing.tools.update_feature",
+        icon: "editAttributes.png",
+        layer,
+        once: true,
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/edittableworkflow.js@v3.7.1 */
+        op(options = {}) {
+          const w = new EditingWorkflow({
+            ...options,
+            backbuttonlabel: 'plugins.editing.form.buttons.save_and_back_table',
+            steps: [ new OpenTableStep() ],
+          });
+          w.YOU_SHOULD_REALLY_GIVE_ME_A_NAME_2 = true;
+          return w;
+        },
+      },
+
+    ].filter(tool => {
+      // skip when ..
+      if (!tool || (capabilities && !tool.type.filter(type => capabilities.includes(type)).length > 0)) {
+        return false;
+      }
+      // in case of capabilities show all tools on a single row
+      if (capabilities) {
+        tool.row = 1;
+      }
+      return true;
+    }).map(tool => new Tool(tool)),
+  });
 };
 
 module.exports = ToolBox;

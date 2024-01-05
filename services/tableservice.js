@@ -1,9 +1,23 @@
-import { cloneFeature } from '../utils/cloneFeature';
+import { cloneFeature }    from '../utils/cloneFeature';
+import {
+  EditingWorkflow,
+  OpenFormStep,
+  AddTableFeatureStep,
+}                          from '../workflows';
 
-const {base, inherit} = g3wsdk.core.utils;
-const {G3WObject} = g3wsdk.core;
-const {GUI} = g3wsdk.gui;
-const t = g3wsdk.core.i18n.tPlugin;
+Object
+  .entries({
+    cloneFeature,
+    EditingWorkflow,
+    OpenFormStep,
+    AddTableFeatureStep,
+  })
+  .forEach(([k, v]) => console.assert(undefined !== v, `${k} is undefined`));
+
+const { base, inherit } = g3wsdk.core.utils;
+const { G3WObject }     = g3wsdk.core;
+const { GUI }           = g3wsdk.gui;
+const t                 = g3wsdk.core.i18n.tPlugin;
 
 /**
  *
@@ -166,13 +180,18 @@ proto.copyFeature = function(uid) {
       this._features.find(f => f.getUid() === uid),
       this._inputs.layer.getEditingLayer()
     );
-    const addTableFeatureWorflow = require('../workflows/addtablefeatureworkflow');
-    this._workflow = new addTableFeatureWorflow();
-    const inputs = this._inputs;
-    inputs.features.push(feature);
+    /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addtablefeatureworkflow.js@v3.7.1 */
+    this._workflow = new EditingWorkflow({
+        ...options,
+        steps: [
+          new AddTableFeatureStep(),
+          new OpenFormStep(),
+        ],
+      });
+    this._inputs.features.push(feature);
     this._workflow.start({
       context: this._context,
-      inputs
+      inputs: this._inputs
     })
       .then(outputs => {
         const feature = outputs.features[outputs.features.length -1];
@@ -209,9 +228,8 @@ proto.editFeature = function(uid) {
 
   const feature = this._features[index];
 
-  const EditTableFeatureWorkflow = require('../workflows/edittablefeatureworkflow');
-
-  this._workflow = new EditTableFeatureWorkflow();
+  /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/edittablefeatureworkflow.js@v3.7.1 */
+  this._workflow = new EditingWorkflow({ steps: [ new OpenFormStep() ] });
 
   const inputs = this._inputs;
 
