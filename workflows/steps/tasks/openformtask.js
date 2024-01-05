@@ -170,17 +170,6 @@ proto._getForm = async function(inputs, context) {
   return GUI.showContentFactory('form');
 };
 
-proto._cancelFnc = function(promise, inputs) {
-  return () => {
-    if (!this._isContentChild){
-      GUI.setModal(false);
-      // fire event cancel form to emit to subscrivers
-      this.fireEvent('cancelform', inputs.features);
-    }
-    promise.reject(inputs);
-  }
-};
-
 /**
  *
  * @param fieldssetAndUnsetSelectedFeaturesStyle
@@ -294,18 +283,6 @@ proto._saveFeatures = async function({fields, promise, session, inputs}){
   }
 };
 
-proto._saveFnc = function(promise, context, inputs) {
-  return (fields) => {
-    const session = context.session;
-    this._saveFeatures({
-      fields,
-      promise,
-      session,
-      inputs
-    });
-  }
-};
-
 /**
  * Build form
  * @param options
@@ -356,7 +333,9 @@ proto.startForm = async function(options = {}) {
           "plugins.editing.form.buttons.save",
         type: "save",
         class: "btn-success",
-        cbk: this._saveFnc(promise, context, inputs)
+        cbk: (fields) => {
+          this._saveFeatures({ fields, promise, inputs, session: context.session, });
+        }
       },
       {
         id: 'cancel',
@@ -374,7 +353,13 @@ proto.startForm = async function(options = {}) {
             }
           }
         },
-        cbk: this._cancelFnc(promise, inputs)
+        cbk: () => {
+          if (!this._isContentChild){
+            GUI.setModal(false);
+            this.fireEvent('cancelform', inputs.features); // fire event cancel form to emit to subscrivers
+          }
+          promise.reject(inputs);
+        }
       }
     ]
   });
