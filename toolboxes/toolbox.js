@@ -18,7 +18,6 @@ import {
   DeleteFeatureStep,
   AddTableFeatureStep,
   OpenTableStep,
-  AddFeatureStep,
 }                          from '../workflows';
 
 const Tool                 = require('../toolboxes/tool');
@@ -32,7 +31,6 @@ Object
     SelectElementsStep,
     PickFeatureStep,
     ChooseFeatureStep,
-    AddFeatureStep,
     AddPartToMultigeometriesStep,
     GetVertexStep,
     MoveElementsStep,
