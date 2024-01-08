@@ -208,7 +208,7 @@ function EditingService() {
    */
   this._ready = function() {
 
-    // @since 3.7.0
+    // @since g3w-client-plugin-editing@v3.7.0
     this.setRelations1_1FieldsEditable();
 
     // set toolbox colors
@@ -1095,7 +1095,7 @@ proto._attachLayerWidgetsEvent = function(layer) {
           loading,
           relation_id,        // @since g3w-client-plugin-editing@v3.7.0
           relation_reference, // @since g3w-client-plugin-editing@v3.7.0
-          filter_fields=[],   // @since 3.72
+          filter_fields=[],   // @since g3w-client-plugin-editing@v3.7.2
         } = options;
         const self = this;
         if (!usecompleter) {
@@ -2741,7 +2741,7 @@ proto.getExternalLayersWithSameGeometryOfLayer = function(layer) {
  * 
  * @returns (field.key) or (field.value)
  * 
- * @since 3.7.0
+ * @since g3w-client-plugin-editing@v3.7.0
  */
 proto.getFeatureTableFieldValue = function({
   layerId,
