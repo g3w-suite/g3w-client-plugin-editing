@@ -203,12 +203,14 @@
     computed: {
 
       /**
+       * @FIXME add description
        * @since g3w-client-plugin-editing@v3.7.0
        */
-      editDisabled(){
+      editDisabled() {
         return this.state.loading && !this.state.startstopediting;
       },
       /**
+       * @FIXME add description
        * @returns { boolean } whether current has related layer(s) (aka. layer relations / joins)
        *
        * @since 3.7.0
@@ -217,34 +219,64 @@
         return this.state.editing.dependencies.length > 0;
       },
 
+      /**
+       * @FIXME add description
+       * @return {boolean|*}
+       */
       loading() {
         return this.state.loading || this.state.changingtools;
       },
 
+      /**
+       * @FIXME add description
+       * @return {*}
+       */
       toolsrow1() {
         return this.state.tools.filter(t => t.row === 1);
       },
 
+      /**
+       * @FIXME add description
+       * @return {*}
+       */
       toolsrow2() {
         return this.state.tools.filter(t => t.row === 2);
       },
 
+      /**
+       * @FIXME add description
+       * @return {*}
+       */
       toolsrow3() {
         return this.state.tools.filter(t => t.row === 3);
       },
 
+      /**
+       * @FIXME add description
+       * @return {boolean}
+       */
       canEdit() {
         return this.state.editing.canEdit;
       },
 
+      /**
+       * @FIXME add description
+       * @return {boolean}
+       */
       father() {
         return this.state.editing.father && !!this.state.editing.dependencies.length;
       },
-
+      /**
+       * @FIXME add description
+       * @return {boolean}
+       */
       showtoolsoftool() {
         return !!this.state.toolsoftool.length;
       },
-
+      /**
+       * @FIXME add description
+       * @return {Promise<Animation> | Promise<ServiceWorkerRegistration> | Promise<FontFaceSet> | Promise<undefined>}
+       */
       isLayerReady() {
         return this.state.layerstate.editing.ready;
       },
@@ -253,12 +285,18 @@
 
     methods: {
 
+      /**
+       * @FIXME add description
+       */
       select() {
         if (this.isLayerReady && !this.state.selected) {
           this.$emit('setselectedtoolbox', this.state.id);
         }
       },
 
+      /**
+       * @FIXME add description
+       */
       toggleEditing() {
         this.select();
         if (this.state.layerstate.editing.ready && !this.state.loading) {
@@ -266,15 +304,25 @@
         }
       },
 
+      /**
+       * @FIXME add description
+       */
       saveEdits() {
         this.$emit('savetoolbox', this.state.id);
       },
 
+      /**
+       * @FIXME add description
+       */
       stopActiveTool() {
         this.$emit('stopactivetool', this.state.id);
         this.select();
       },
 
+      /**
+       * @FIXME add description
+       * @param toolId
+       */
       setActiveTool(toolId) {
         this.$emit('setactivetool', toolId, this.state.id);
         this.select();
@@ -298,7 +346,7 @@
 
     async mounted() {
       // wait a little bit so others plugin can change things in toolbox
-      // (eg. tools visibility which differs from default behaviour)
+      // (ex. tools visibility which differs from default behaviour)
       await this.$nextTick();
 
       $(this.$refs.editingbutton).tooltip();
