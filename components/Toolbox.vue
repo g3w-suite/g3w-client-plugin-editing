@@ -89,18 +89,32 @@
           class  = "panel-body"
         >
           <!-- HAS RELATION -->
-          <div v-if="hasRelations" class="has-relations" style="color: #000000">
-            <span :class="g3wtemplate.font['info']" style="color: #007bff; padding-right: 2px"></span>
-            <span v-t-plugin="'editing.messages.toolbox_has_relation'"></span>
+          <div
+            v-if  = "hasRelations"
+            class = "has-relations"
+            style = "color: #000000"
+          >
+            <span
+              :class = "g3wtemplate.font['info']"
+              style  = "color: #007bff; padding-right: 2px">
+            </span>
+            <span v-t-plugin = "'editing.messages.toolbox_has_relation'"></span>
+
             <divider/>
+
           </div>
           <!-- MESSAGE -->
           <div
-            v-if = "state.message"
+            v-if  = "state.message"
             style = "color: #000"
           >
-            <div class="text-justify" v-t-plugin="state.message"></div>
+            <div
+              class      = "text-justify"
+              v-t-plugin = "state.message">
+            </div>
+
             <divider/>
+
           </div>
 
           <!-- TOOLS CONTENT (1) -->
