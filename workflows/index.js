@@ -1185,10 +1185,9 @@ export class DeleteFeatureStep extends EditingTask {
 export class DeletePartFromMultigeometriesStep extends EditingTask {
 
   constructor(options = {}) {
-    this.pickFeatureInteraction = null;
 
     super(options);
-
+    this.pickFeatureInteraction = null;
     options.task = this;
     return new EditingStep(options);
   }
