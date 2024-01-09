@@ -209,7 +209,9 @@ proto.getMessage = function() {
 
 /**
  * Return help message to visualize on toolbox help
- * @since 3.6.2
+ * 
+ * @since g3w-client-plugin-editing@v3.6.2
+ * 
  * @returns {*}
  */
 proto.getHelpMessage = function() {
