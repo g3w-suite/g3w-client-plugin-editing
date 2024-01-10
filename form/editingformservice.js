@@ -75,4 +75,4 @@ const EditingFormService = function(options = {}) {
 
 };
 
-module.exports =  EditingFormService;
+module.exports = EditingFormService;
