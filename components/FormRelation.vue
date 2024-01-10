@@ -274,7 +274,9 @@ flex-direction: column
     },
 
     methods: {
-
+      /**
+       * Resize method to adapt table when window is resized
+       */
       resize() {
         // skip when relation form is disabled (or hidden) 
         if (!(this.active && 'none' !== this.$el.style.display)) {
@@ -300,10 +302,17 @@ flex-direction: column
 
       },
 
+      /**
+       * Method to unlink the relation
+       * @param index
+       */
       unlinkRelation(index) {
         this._service.unlinkRelation(index)
       },
 
+      /**
+       * @FIXME add description
+       */
       copyFeatureFromOtherLayer() {
         const EditingService = require('../services/editingservice');
 
@@ -317,11 +326,17 @@ flex-direction: column
         });
       },
 
+      /**
+       * @FIXME add description
+       */
       addVectorRelation() {
         this._service.addRelation();
         this.showAddVectorRelationTools = false;
       },
 
+      /**
+       * @FIXME add description
+       */
       async addRelationAndLink() {
         if (this.isVectorRelation && this.copyFeatureLayers.length) {
           this.showAddVectorRelationTools = !this.showAddVectorRelationTools;
@@ -332,6 +347,9 @@ flex-direction: column
         }
       },
 
+      /**
+       * @FIXME add description
+       */
       startTool(relationtool, index) {
         this._service
           .startTool(relationtool, index)
@@ -339,14 +357,23 @@ flex-direction: column
           .catch(console.warn)
       },
 
+      /**
+       * @FIXME add description
+       */
       linkRelation() {
         this._service.linkRelation();
       },
 
+      /**
+       * @FIXME add description
+       */
       updateExternalKeyValueRelations(input) {
         this._service.updateExternalKeyValueRelations(input);
       },
 
+      /**
+       * @FIXME add description
+       */
       isRequired() {
         return this._service.isRequired();
       },
@@ -360,30 +387,51 @@ flex-direction: column
           .flatMap(({ name, label, value }) => Array.isArray(value) ? [] : [{ name, label, value }]);
       },
 
+      /**
+       * @FIXME add description
+       */
       relationsAttributesSubsetLength(relation) {
         return this.relationAttributesSubset(relation).length > 0;
       },
 
+      /**
+       * @FIXME add description
+       */
       relationsFields(relation) {
         return this._service.relationFields(relation);
       },
 
+      /**
+       * @FIXME add description
+       */
       showAllRelationFields(index) {
         this.showallfieldsindex = this.showallfieldsindex == index ? null : index;
       },
 
+      /**
+       * @FIXME add description
+       */
       showAllFields(index) {
         return this.showallfieldsindex == index;
       },
 
+      /**
+       * @FIXME add description
+       */
       getRelationTools() {
         return this._service.getRelationTools();
       },
 
+      /**
+       * @FIXME add description
+       */
       isLink(field) {
         return -1 !== ['photo', 'link'].indexOf(this.getFieldType(field));
       },
 
+      /**
+       * @FIXME add description
+       */
       getValue(value) {
         if (value && toRawType(value) === 'Object') {
           value = value.value;
@@ -394,15 +442,24 @@ flex-direction: column
         return value;
       },
 
+      /**
+       * @FIXME add description
+       */
       getFileName(value) {
         return this.getValue(value).split('/').pop();
       },
 
+      /**
+       * @FIXME add description
+       */
       _setDataTableSearch() {
         const relationsTable = this.relationsTable;
         $('#filterRelation').on('keyup', function() { relationsTable.search($(this).val()).draw(); });
       },
 
+      /**
+       * @FIXME add description
+       */
       _createDataTable() {
         this.relationsTable = $(this.$refs.relationTable).DataTable({
           "scrollX": true,
@@ -418,6 +475,9 @@ flex-direction: column
         this._setDataTableSearch();
       },
 
+      /**
+       * @FIXME add description
+       */
       destroyTable() {
         if (this.relationsTable) {
           this.relationsTable = this.relationsTable.destroy();
@@ -472,10 +532,21 @@ flex-direction: column
 
     watch: {
 
+      /**
+       * @FIXME add description
+       */
       relations(updatedrelations = []) {
         if (0 === updatedrelations.length) {
           this.destroyTable(); // destroy table when there are no relations
         } else {
+          this._new_relations_ids = this._new_relations_ids
+            .filter(({clientid, id}) => {
+              const newrelation = this.relations.find(r => clientid === r.id);
+              if (newrelation) {
+                newrelation.id = id;
+                return false;
+              }
+            })
           this.updateTable(); // update table when deleting / adding row relations
         }
       },
@@ -490,6 +561,22 @@ flex-direction: column
       const EditingService  = require('../services/editingservice');
 
       const relationLayer   = EditingService.getLayerById(this.relation.child);
+
+      /** @since 3.7.2 Store array of new relations features objects saved on server id
+       * {clientid, id} where client id is a temporary id of relation feature, id is saved id on server
+       * */
+      this._new_relations_ids = [];
+
+      /** @since 3.7.2  Method to listen commit on server when press disk icon save all form*/
+      this.listenNewCommitRelations = ({new_relations={}}) => {
+        if (new_relations[relationLayer.getId()]) {
+          this._new_relations_ids = this._new_relations_ids
+            .concat((new_relations[relationLayer.getId()].new || []).map(({clientid, id}) => ({clientid, id})));
+        }
+      };
+
+      /** @since 3.7.2 Listen commit whe is click on save all button disk icon*/
+      EditingService.on('commit', this.listenNewCommitRelations);
 
       this.isVectorRelation = relationLayer.getType() === Layer.LayerTypes.VECTOR;
 
@@ -529,6 +616,7 @@ flex-direction: column
       this.capabilities = this._service.getEditingCapabilities();
 
       this.formeventbus.$on('changeinput', this.updateExternalKeyValueRelations);
+
     },
 
     async activated() {
@@ -570,7 +658,12 @@ flex-direction: column
     },
 
     beforeDestroy() {
+      const EditingService  = require('../services/editingservice');
       this.loadEventuallyRelationValuesForInputs = true;
+      //set to null for garbage collection
+      this._new_relations_ids = null;
+      //unlisten
+      EditingService.off('commit',this.listenNewCommitRelations);
     },
 
   };

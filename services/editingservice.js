@@ -2207,6 +2207,10 @@ proto.commit = function({
                     ...commitItems.update.map(update => update.id)
                   ]
                 });
+                //@since 3.7.2
+                //it is useful when click on save all disk icon in editing forma for relation purpose
+                this.emit('commit', response.response);
+
               } else { //result is false. An error occurs
                 const parser = new serverErrorParser({
                   error: response.errors
