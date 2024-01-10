@@ -227,7 +227,7 @@
        * @FIXME add description
        * @returns { boolean } whether current has related layer(s) (aka. layer relations / joins)
        *
-       * @since 3.7.0
+       * @since g3w-client-plugin-editing@v3.7.0
        */
       hasRelations() {
         return this.state.editing.dependencies.length > 0;
