@@ -127,8 +127,9 @@ flex-direction: column
           <option
             v-for  = "copyFeatureLayer in copyFeatureLayers"
             :key   = "copyFeatureLayer.id"
-            :value = "copyFeatureLayer.id"
-          >{{ copyFeatureLayer.name }}</option>
+            :value = "copyFeatureLayer.id">
+              {{ copyFeatureLayer.name }}
+          </option>
         </select>
 
           <!-- COPY FEATURE FROM OTHER LAYER -->
