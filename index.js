@@ -1,15 +1,21 @@
 import pluginConfig from './config';
-const {base, inherit} = g3wsdk.core.utils;
+
+const {
+  base,
+  inherit
+} = g3wsdk.core.utils;
 const {Plugin:BasePlugin} = g3wsdk.core.plugin;
 const GUI = g3wsdk.gui.GUI;
 const Service = require('./services/editingservice');
 const EditingPanel = require('./panel');
 
 const Plugin = function() {
+
   base(this, {
     name: 'editing',
     i18n: pluginConfig.i18n,
     service: Service,
+    version: pluginConfig.version,
     fontClasses: [
       {
         name: 'measure',
