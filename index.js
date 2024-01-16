@@ -11,12 +11,12 @@ const Service               = require('./services/editingservice');
 const EditingPanel          = require('./panel');
 
 const Plugin = function() {
-
   base(this, {
-    name: 'editing',
-    i18n: pluginConfig.i18n,
+    name   : 'editing',
+    i18n   : pluginConfig.i18n,
     service: Service,
-    version: pluginConfig.version,
+    version: pluginConfig.version, /**@since v3.8.0 */
+    git    : pluginConfig.git,     /**@since v3.8.0 */
     fontClasses: [
       {
         name: 'measure',
