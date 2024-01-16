@@ -59,7 +59,7 @@ function Editor(options = {}) {
    * 
    * @type { FeaturesStore | OlFeaturesStore }
    */
-  this._featuresstore = this._layer.getType() === Layer.LayerTypes.TABLE ? new FeaturesStore() : new OlFeaturesStore();
+  this._featuresstore = Layer.LayerTypes.TABLE === this._layer.getType() ? new FeaturesStore() : new OlFeaturesStore();
 
   /**
    * Whether editor is active or not
@@ -85,14 +85,12 @@ const proto = Editor.prototype;
  * @param { number[] } options.filter.bbox bounding box Array [xmin, ymin, xmax, ymax]
  *
  * @returns { boolean } whether can perform a server request
- *
- * @private
  */
 proto._canDoGetFeaturesRequest = function(options = {}) {
   const { bbox } = options.filter || {};
   const is_vector = bbox && Layer.LayerTypes.VECTOR === this._layer.getType();
 
-  // first request --> need to peform request
+  // first request --> need to perform request
   if (is_vector && null === this._filter.bbox) {
     this._filter.bbox = bbox;                                                      // store bbox
     return true;
@@ -101,8 +99,10 @@ proto._canDoGetFeaturesRequest = function(options = {}) {
   // subsequent requests --> check if bbox is contained into an already requested bbox
   if (is_vector) {
     const is_cached = ol.extent.containsExtent(this._filter.bbox, bbox);
-    if (!is_cached) this._filter.bbox = ol.extent.extend(this._filter.bbox, bbox); // extend bbox
-    return is_cached;
+    if (!is_cached) {
+      this._filter.bbox = ol.extent.extend(this._filter.bbox, bbox);
+    }
+    return !is_cached;
   }
 
   // default --> perform request
@@ -130,24 +130,31 @@ proto.getSource = function() {
  * 
  * @param items
  * @param reverse
- * 
- * @private
  */
 proto._applyChanges = function(items = [], reverse = true) {
   ChangesManager.execute(this._featuresstore, items, reverse);
 };
 
+/**
+ * @param items
+ * @param reverse
+ */
 proto.setChanges = function(items, reverse) {
   this._applyChanges(items, reverse)
 };
 
+/**
+ * @returns {*}
+ */
 proto.getLayer = function() {
   return this._layer;
 };
 
+/**
+ * @param layer
+ */
 proto.setLayer = function(layer) {
-  this._layer = layer;
-  return this._layer;
+  return this._layer = layer;
 };
 
 proto.removeNotEditablePropriertiesFromFeature = function(feature) {
@@ -161,13 +168,20 @@ proto._cloneFeatures = function(features = []) {
   return features.map(f => f.clone());
 };
 
+/**
+ * @param features
+ */
 proto._addFeaturesFromServer = function(features = []) {
-  features = this._cloneFeatures(features);
-  this._featuresstore.addFeatures(features);
+  this._featuresstore.addFeatures(this._cloneFeatures(features));
 };
 
+/**
+ * @param options
+ * 
+ * @returns { boolean }
+ */
 proto._doGetFeaturesRequest = function(options={}) {
-  if  (ApplicationState.online && !this._allfeatures) {
+  if (ApplicationState.online && !this._allfeatures) {
     return this._canDoGetFeaturesRequest(options);
   }
   return false;
@@ -181,7 +195,7 @@ proto._getFeatures = function(options={}) {
   const doRequest = this._doGetFeaturesRequest(options);
   if (!doRequest) {
     d.resolve();
-  } else{
+  } else {
     /** @TODO simplfy nested promises */
     this._layer
       .getFeatures(options)
@@ -261,6 +275,7 @@ proto.setFieldValueToRelationField = function(
     .getSession(layerId)
     .getEditor()
     .getEditingSource();
+
   ids.forEach(id => {                          // loop relation ids
     const feature = source.getFeatureById(id);
     if (feature) {
@@ -318,7 +333,7 @@ proto.applyCommitResponse = function(response = {}, relations = []) {
 
   features.forEach(f => f.clearState());       // reset state of the editing features (update, new etc..)
 
-  this._layer.setFeatures(features);           // substitute layer features with actual editing features
+  this._layer.setFeatures([...features]);      // substitute layer features with actual editing features ("cloned" to prevent layer actions duplicates, eg. addFeatures)
 
   this.addLockIds(lockids);                    // add lockIds
 };
@@ -447,7 +462,7 @@ proto.readFeatures = function() {
  * @returns features stored in editor featurestore
  */
 proto.readEditingFeatures = function() {
-  return this._featuresstore.readFeatures()
+  return this._featuresstore.readFeatures();
 };
 
 /**
@@ -492,6 +507,5 @@ proto.clear = function() {
     this._layer.resetEditingSource(this._featuresstore.getFeaturesCollection());
   }
 };
-
 
 export default Editor;
