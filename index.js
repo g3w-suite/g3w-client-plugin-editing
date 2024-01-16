@@ -1,9 +1,14 @@
 import pluginConfig from './config';
-const {base, inherit} = g3wsdk.core.utils;
-const {Plugin:BasePlugin} = g3wsdk.core.plugin;
-const GUI = g3wsdk.gui.GUI;
-const Service = require('./services/editingservice');
-const EditingPanel = require('./panel');
+
+const {
+  base,
+  inherit
+}                           = g3wsdk.core.utils;
+const { Plugin:BasePlugin } = g3wsdk.core.plugin;
+const { GUI }               = g3wsdk.gui;
+
+const Service               = require('./services/editingservice');
+const EditingPanel          = require('./panel');
 
 const Plugin = function() {
   base(this, {
@@ -32,7 +37,8 @@ const Plugin = function() {
   const show_errors = {
     some_layers: false
   };
-  this.panel; // editing panel reference
+
+  this.panel = null; // editing panel reference
 
   // check if exist any layer to edit
   if (this.service.loadPlugin()) {
@@ -42,14 +48,14 @@ const Plugin = function() {
     this.service.once('ready', () => {
       //plugin registry
       if (this.registerPlugin(this.config.gid)) {
-        if (!GUI.isready) GUI.on('ready', this.setupGui.bind(this));
-        else this.setupGui();
+        if (GUI.isready) {
+          this.setupGui();
+        } else {
+          GUI.on('ready', this.setupGui.bind(this));
+        }
       }
-      this.setHookLoading({
-        loading: false
-      });
-      const api = this.service.getApi();
-      this.setApi(api);
+      this.setHookLoading({ loading: false });
+      this.setApi(this.service.getApi());
       this.setReady(true);
     });
     //inizialize service
@@ -58,7 +64,9 @@ const Plugin = function() {
 
   //setup plugin interface
   this.setupGui = function() {
-    if (this.config.visible === false) return false;
+    if (false === this.config.visible) {
+      return false;
+    }
     this.config.name = this.config.name ||  "plugins.editing.editing_data";
     this.addToolGroup(pluginGroupTool);
     this.addTools({
@@ -90,14 +98,18 @@ const Plugin = function() {
     return this.panel;
   };
 
-  this.hideEditingPanel = function(options={}){
-    this.panel && GUI.closePanel();
-    this.panel = null;
+  this.hideEditingPanel = function() {
+    if (null !== this.panel) {
+      GUI.closePanel();
+      this.panel = null;
+    }
   };
 
   this.unload = function() {
-    this.panel = null;
-    this.config.visible && this.removeTools();
+    this.hideEditingPanel();
+    if (this.config.visible) {
+      this.removeTools();
+    }
     this.service.clear()
   }
 };

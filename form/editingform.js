@@ -8,6 +8,7 @@ function EditingFormComponent(options = {}) {
   base(this, options);
 
   const EditingService   = require('../services/editingservice');
+
   const relationsOptions = options.context_inputs || null;
   const layerId          = options.layer.getId();
   const hasFormStructure = options.layer.getLayerEditingFormStructure(); // @since g3w-client-plugin-editing@v3.7.2
@@ -33,6 +34,7 @@ function EditingFormComponent(options = {}) {
           .getArray()
           .filter(r =>
             (
+              layerId === r.getFather()                 && // get only child relation features of current editing layer
               EditingService.getLayerById(r.getChild()) && // child layer is in editing
               'ONE' !== r.getType()                        // is not a ONE relation (Join 1:1)
             )

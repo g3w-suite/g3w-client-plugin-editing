@@ -128,6 +128,13 @@ proto.updateMulti = function(bool=false) {
   this._multi = bool;
 };
 
+/**
+ *
+ * @param inputs
+ * @param context
+ * @returns {Promise<*>}
+ * @private
+ */
 proto._getForm = async function(inputs, context) {
   this._session = context.session;
   this._originalLayer = inputs.layer;
@@ -197,10 +204,11 @@ proto.saveAll = function(fields) {
       this.fireEvent('saveform', {
         newFeatures,
         originalFeatures: this._originalFeatures
-      }).then(()=> {
-        newFeatures.forEach((newFeature, index)=> {
-          session.pushUpdate(this.layerId, newFeature, this._originalFeatures[index]);
-        });
+      }).then(() => {
+        newFeatures
+          .forEach((newFeature, index) => {
+            session.pushUpdate(this.layerId, newFeature, this._originalFeatures[index]);
+          });
         //check and handle if layer has relation 1:1
         this.handleRelation1_1LayerFields({
           layerId: this.layerId,
@@ -209,7 +217,6 @@ proto.saveAll = function(fields) {
         }).then(() => {
           this.fireEvent('savedfeature', newFeatures); // called after saved
           this.fireEvent(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
-
           session.save();
           resolve({
             promise: this.promise
@@ -220,6 +227,15 @@ proto.saveAll = function(fields) {
   })
 };
 
+/**
+ *
+ * @param fields
+ * @param promise
+ * @param session
+ * @param inputs
+ * @returns {Promise<void>}
+ * @private
+ */
 proto._saveFeatures = async function({fields, promise, session, inputs}){
   fields = this._multi ? fields.filter(field => field.value !== null) : fields;
   if (fields.length) {
@@ -387,6 +403,12 @@ proto.startForm = async function(options = {}) {
   })
 };
 
+/**
+ *
+ * @param inputs
+ * @param context
+ * @returns {*}
+ */
 proto.run = function(inputs, context) {
   const d = $.Deferred();
   this.promise = d;
@@ -414,10 +436,19 @@ proto.run = function(inputs, context) {
   return d.promise();
 };
 
+/**
+ *
+ * @param layerName
+ * @returns {string}
+ * @private
+ */
 proto._generateFormId = function(layerName) {
   return this._formIdPrefix + layerName;
 };
 
+/**
+ *
+ */
 proto.stop = function() {
   this.disableSidebar(false);
 
