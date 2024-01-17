@@ -1,3 +1,4 @@
+import './g3wsdk';
 import pluginConfig from './config';
 
 const {
