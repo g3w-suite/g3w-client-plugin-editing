@@ -1,5 +1,6 @@
 const EasyAddFeatureWorflow = require('../workflows/easyaddfeatureworkflow');
-const { Feature } = g3wsdk.core.layer.features;
+
+const { Feature }           = g3wsdk.core.layer.features;
 
 const API = function({service, plugin} = {}) {
   this.addFormComponents = function({layerId, components=[]}= {}) {
@@ -9,14 +10,24 @@ const API = function({service, plugin} = {}) {
     });
   };
 
+  /**
+   * @FIXME Add description
+   * @return {string[]}
+   */
   this.getEditableLayersId = function(){
     return Object.keys(service.getEditableLayers());
   };
 
+  /**
+   * @FIXME add description
+   */
   this.getSession = function(options = {}) {
     return service.getSession(options)
   };
 
+  /**
+   * @FIXME add description
+   */
   this.getFeature = function(options = {}) {
     return service.getFeature(options)
   };
@@ -47,7 +58,10 @@ const API = function({service, plugin} = {}) {
    */
   this.showPanel = function(options={}){
     const {toolboxes} = options;
-    toolboxes && Array.isArray(toolboxes) && service.getToolBoxes().forEach(toolbox => toolbox.setShow(toolboxes.indexOf(toolbox.getId()) !== -1));
+    if (toolboxes && Array.isArray(toolboxes)) {
+      service.getToolBoxes()
+        .forEach(toolbox => toolbox.setShow(toolboxes.indexOf(toolbox.getId()) !== -1));
+    }
     service.getPlugin().showEditingPanel(options);
   };
 
@@ -60,7 +74,7 @@ const API = function({service, plugin} = {}) {
   };
 
   /**
-   * Return Toolbx by id if exist
+   * Return Toolbox by id if exist
    * @param toolboxId
    * @returns {*}
    */
@@ -70,44 +84,51 @@ const API = function({service, plugin} = {}) {
 
   /**
    * Method to start editing api
+   * 
    * @param layerId
-   * @param options
-   * @returns {Promise<unknown>}
+   * @param { Object } options
+   * @param { boolean } [options.selected=true]
+   * @param { boolean } [options.disablemapcontrols=false]
+   * @param { boolean } [options.showselectlayers=true]
+   * @param options.title
+   * 
+   * @returns { Promise<unknown> }
    */
-  this.startEditing = function(layerId, options={}, data=false){
-    const {
-      tools,
-      feature,
-      selected=true,
-      title,
-      disablemapcontrols=false,
-      showselectlayers=true
-    } = options;
-    return new Promise((resolve, reject) =>{
+  this.startEditing = function(layerId, options={}, data=false) {
+    options.selected           = undefined === options.selected           ? true : options.selected;
+    options.showselectlayers   = undefined === options.showselectlayers   ? true : options.showselectlayers;
+    options.disablemapcontrols = undefined === options.disablemapcontrols ? false : options.showselectlayers;
+    return new Promise((resolve, reject) => {
       // get toolbox related to layer id
       const toolbox = service.getToolBoxById(layerId);
       // set show select layers input visibility
-      service.setShowSelectLayers(showselectlayers);
-      //setselected
-      if (toolbox) {
-        toolbox.setSelected(selected);
-        // set seletcted toolbox
-        selected && service.setSelectedToolbox(toolbox);
-        title && toolbox.setTitle(title);
-        // start editing toolbox (options contain also filter type)
-        toolbox.start(options).then(data => {
-          //disablemapcontrols in conflict
-          disablemapcontrols && service.disableMapControlsConflict(true);
-          //opts contain information about start editing has features loaded
-          data ? resolve({
-            toolbox,
-            data
-          }) : resolve(toolbox);
-        }).fail(err=> {
-          reject(err)
+      service.setShowSelectLayers(options.showselectlayers);
+      // skip when ..
+      if (!toolbox) {
+        return reject();
+      }
+      // set selected
+      toolbox.setSelected(options.selected);
+      // set seletcted toolbox
+      if (options.selected) {
+        service.setSelectedToolbox(toolbox);
+      }
+      if (options.title) {
+        toolbox.setTitle(options.title);
+      }
+      // start editing toolbox (options contain also filter type)
+      toolbox
+        .start(options)
+        .then(data => {
+          // disablemapcontrols in conflict
+          if (options.disablemapcontrols) {
+            service.disableMapControlsConflict(true);
+          }
+          // opts contain information about start editing has features loaded
+          resolve(data ? { toolbox, data } : toolbox);
         })
-      } else reject();
-    })
+        .fail(reject);
+    });
   };
   
   /*
@@ -119,6 +140,9 @@ const API = function({service, plugin} = {}) {
     service.setSaveConfig(options);
   };
 
+  /**
+   * @FIXME add description
+   */
   this.addNewFeature = function(layerId, options={}) {
     return service.addNewFeature(layerId, options);
   };
@@ -130,12 +154,17 @@ const API = function({service, plugin} = {}) {
    * @returns {Promise<unknown>}
    */
   this.stopEditing = function(layerId, options={}) {
-    return new Promise((resolve, reject)=>{
-      const toolbox = service.getToolBoxById(layerId);
-      toolbox.stop(options).then(resolve).fail(reject)
+    return new Promise((resolve, reject) => {
+      service.getToolBoxById(layerId)
+        .stop(options)
+        .then(resolve)
+        .fail(reject)
     })
   };
 
+  /**
+   * @FIXME add description
+   */
   this.commitChanges = function(options={}){
     return service.commit(options);
   };
@@ -145,10 +174,14 @@ const API = function({service, plugin} = {}) {
    *
   */
   this.resetDefault = function({plugin=true, toolboxes=true}={}){
-    toolboxes && service.getToolBoxes().forEach(toolbox => {
-      toolbox.resetDefault();
-    });
-    plugin && service.resetDefault();
+    if (toolboxes) {
+      service.getToolBoxes().forEach(toolbox => {
+        toolbox.resetDefault();
+      });
+    }
+    if (plugin) {
+      service.resetDefault();
+    }
   };
 
   /**
@@ -191,7 +224,7 @@ const API = function({service, plugin} = {}) {
       const layer = service.getLayerById(layerId);
       // get session
       const session = service.getSessionById(layerId);
-      //exclude an aventually attribut pk (primary key) not editable (mean autoincrement)
+      //exclude an eventually attribute pk (primary key) not editable (mean autoincrement)
       const attributes = layer
         .getEditingFields()
         .filter(attribute => !(attribute.pk && !attribute.editable));
@@ -215,9 +248,7 @@ const API = function({service, plugin} = {}) {
         session.stop();
       };
 
-
       try {
-
         //check if feature has property of layer
         attributes.forEach(a => {
           if (undefined === feature.get(a.name)) {
@@ -266,8 +297,8 @@ const API = function({service, plugin} = {}) {
             })
         })
         .fail(() => {
-          reject();
           stop();
+          reject();
         });
 
       } catch(err) {

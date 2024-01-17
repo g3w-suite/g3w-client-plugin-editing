@@ -1,6 +1,5 @@
 import ChooseFeatureToEditVueComponent from '../../../components/ChooseFeatureToEdit.vue';
 import { VM }                          from '../../../eventbus';
-import fi from "editing/config/i18n/fi";
 
 const {
   base,

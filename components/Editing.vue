@@ -322,7 +322,7 @@
 
         this.$options.service.fireEvent('canRedo', canRedo);
 
-        return canRedo
+        return canRedo;
       },
 
     },
