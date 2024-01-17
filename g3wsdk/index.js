@@ -16,3 +16,19 @@ window.g3wsdk.core.editing = {
   Editor,
   ChangesManager
 };
+
+/**
+ * Default editing capabilities
+ *
+ * @type {string[]}
+ */
+export const DEFAULT_EDITING_CAPABILITIES = [
+  'add_feature',
+  'change_feature',
+  'change_attr_feature',
+  'delete_feature',
+];
+
+window.g3wsdk.constant.DEFAULT_EDITING_CAPABILITIES = DEFAULT_EDITING_CAPABILITIES;
+
+
