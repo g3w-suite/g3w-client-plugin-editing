@@ -36,8 +36,9 @@
 </template>
 
 <script>
+
   const { WorkflowsStack } = g3wsdk.core.workflow;
-  const { FormService }   = g3wsdk.gui.vue.services;
+  const { FormService }    = g3wsdk.gui.vue.services;
 
   export default {
 
@@ -77,11 +78,11 @@
 
         this.loading = true;
 
+        const workflows = [...WorkflowsStack._workflows].reverse();
         /** @TODO simplfy nested promises */
         Promise
           .allSettled(
-            [...WorkflowsStack._workflows]
-            .reverse()
+            workflows
             .map(w => w.getLastStep().getTask().saveAll(w.getContext().service.state.fields))
           )
           .then(() => {
@@ -95,8 +96,8 @@
     },
 
     created() {
-      // skip when ..
-      if (!(WorkflowsStack.getLength() > 1)) {
+     //In case of workflow task are less than 2
+      if (WorkflowsStack.getLength() < 2) {
         return;
       }
 
