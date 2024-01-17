@@ -128,6 +128,13 @@ proto.updateMulti = function(bool=false) {
   this._multi = bool;
 };
 
+/**
+ *
+ * @param inputs
+ * @param context
+ * @returns {Promise<*>}
+ * @private
+ */
 proto._getForm = async function(inputs, context) {
   this._session = context.session;
   this._originalLayer = inputs.layer;
@@ -170,17 +177,6 @@ proto._getForm = async function(inputs, context) {
   return GUI.showContentFactory('form');
 };
 
-proto._cancelFnc = function(promise, inputs) {
-  return function() {
-    if (!this._isContentChild){
-      GUI.setModal(false);
-      // fire event cancel form to emit to subscrivers
-      this.fireEvent('cancelform', inputs.features);
-    }
-    promise.reject(inputs);
-  }
-};
-
 /**
  *
  * @param fieldssetAndUnsetSelectedFeaturesStyle
@@ -208,10 +204,11 @@ proto.saveAll = function(fields) {
       this.fireEvent('saveform', {
         newFeatures,
         originalFeatures: this._originalFeatures
-      }).then(()=> {
-        newFeatures.forEach((newFeature, index)=> {
-          session.pushUpdate(this.layerId, newFeature, this._originalFeatures[index]);
-        });
+      }).then(() => {
+        newFeatures
+          .forEach((newFeature, index) => {
+            session.pushUpdate(this.layerId, newFeature, this._originalFeatures[index]);
+          });
         //check and handle if layer has relation 1:1
         this.handleRelation1_1LayerFields({
           layerId: this.layerId,
@@ -220,7 +217,6 @@ proto.saveAll = function(fields) {
         }).then(() => {
           this.fireEvent('savedfeature', newFeatures); // called after saved
           this.fireEvent(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
-
           session.save();
           resolve({
             promise: this.promise
@@ -231,6 +227,15 @@ proto.saveAll = function(fields) {
   })
 };
 
+/**
+ *
+ * @param fields
+ * @param promise
+ * @param session
+ * @param inputs
+ * @returns {Promise<void>}
+ * @private
+ */
 proto._saveFeatures = async function({fields, promise, session, inputs}){
   fields = this._multi ? fields.filter(field => field.value !== null) : fields;
   if (fields.length) {
@@ -294,18 +299,6 @@ proto._saveFeatures = async function({fields, promise, session, inputs}){
   }
 };
 
-proto._saveFnc = function(promise, context, inputs) {
-  return function(fields) {
-    const session = context.session;
-    this._saveFeatures({
-      fields,
-      promise,
-      session,
-      inputs
-    });
-  }
-};
-
 /**
  * Build form
  * @param options
@@ -356,7 +349,9 @@ proto.startForm = async function(options = {}) {
           "plugins.editing.form.buttons.save",
         type: "save",
         class: "btn-success",
-        cbk: this._saveFnc(promise, context, inputs).bind(this)
+        cbk: (fields) => {
+          this._saveFeatures({ fields, promise, inputs, session: context.session, });
+        }
       },
       {
         id: 'cancel',
@@ -374,7 +369,13 @@ proto.startForm = async function(options = {}) {
             }
           }
         },
-        cbk: this._cancelFnc(promise, inputs).bind(this)
+        cbk: () => {
+          if (!this._isContentChild){
+            GUI.setModal(false);
+            this.fireEvent('cancelform', inputs.features); // fire event cancel form to emit to subscrivers
+          }
+          promise.reject(inputs);
+        }
       }
     ]
   });
@@ -402,6 +403,12 @@ proto.startForm = async function(options = {}) {
   })
 };
 
+/**
+ *
+ * @param inputs
+ * @param context
+ * @returns {*}
+ */
 proto.run = function(inputs, context) {
   const d = $.Deferred();
   this.promise = d;
@@ -429,10 +436,19 @@ proto.run = function(inputs, context) {
   return d.promise();
 };
 
+/**
+ *
+ * @param layerName
+ * @returns {string}
+ * @private
+ */
 proto._generateFormId = function(layerName) {
   return this._formIdPrefix + layerName;
 };
 
+/**
+ *
+ */
 proto.stop = function() {
   this.disableSidebar(false);
 
