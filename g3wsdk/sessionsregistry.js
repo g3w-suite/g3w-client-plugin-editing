@@ -1,7 +1,7 @@
 /**
  * @file Store user session (login / logout)
  * 
- * ORIGINAL SOURCE: g3w-client/src/store/sessions.js@v3.9.0
+ * ORIGINAL SOURCE: g3w-client/src/store/sessions.js@v3.9.1
  * 
  * @since g3w-client-plugin-editing@v4.x
  */

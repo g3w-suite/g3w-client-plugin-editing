@@ -1,7 +1,7 @@
 /**
  * @file
  * 
- * ORIGINAL SOURCE: g3w-client/src/core/editing/editor.js@v3.9.0
+ * ORIGINAL SOURCE: g3w-client/src/core/editing/editor.js@v3.9.1
  * 
  * @since g3w-client-plugin-editing@v4.x
  */
