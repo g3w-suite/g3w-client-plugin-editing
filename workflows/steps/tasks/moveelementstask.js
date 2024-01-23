@@ -1,3 +1,5 @@
+import { cloneFeature } from '../../../utils/cloneFeature'
+
 const {base, inherit} = g3wsdk.core.utils;
 const EditingTask = require('./editingtask');
 
