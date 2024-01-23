@@ -1290,7 +1290,11 @@ export class GetVertexStep extends EditingTask {
   run(inputs) {
     const d = $.Deferred();
     const {features} = inputs;
-    if (!features.length) return;
+    if (!features.length) {
+      return;
+    }
+    /** @since g3w-client-plugin-editing@v3.8.0 */
+    this.setAndUnsetSelectedFeaturesStyle({ promise: d });
     this._snapIteraction = new ol.interaction.Snap({
       features: new ol.Collection(features),
       edge: false
@@ -1538,6 +1542,14 @@ export class MoveElementsStep extends EditingTask {
     return step;
   }
 
+  /**
+   * @param { Object } delta
+   * @param delta.x
+   * @param delta.y
+   * @param delta.coordinates
+   * 
+   * @returns {{ x: number, y: number }}
+   */
   getDeltaXY({x, y, coordinates} = {}) {
     const getCoordinates = (coordinates)=> {
       if (Array.isArray(coordinates[0])){
@@ -1554,10 +1566,18 @@ export class MoveElementsStep extends EditingTask {
     }
   }
 
+  /**
+   * @param inputs
+   * @param context
+   * 
+   * @returns jQuery Promise
+   */
   run(inputs, context) {
     const d = $.Deferred();
     const { layer, features, coordinates } = inputs;
     const source = layer.getEditingLayer().getSource();
+    /** @since g3w-client-plugin-editing@v3.8.0 */
+    this.setAndUnsetSelectedFeaturesStyle({ promise: d });
     const layerId = layer.getId();
     const session = context.session;
     this._snapIteraction = new ol.interaction.Snap({
