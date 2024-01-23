@@ -50,7 +50,8 @@ proto.run = function(inputs, context) {
   /**@since v3.8.0*/
   this.setAndUnsetSelectedFeaturesStyle({
     promise: d
-  })
+  });
+
   const source = layer.getEditingLayer().getSource();
   const layerId = layer.getId();
   const session = context.session;

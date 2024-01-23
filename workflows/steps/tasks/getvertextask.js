@@ -23,7 +23,7 @@ proto.run = function(inputs) {
   /**@since v3.8.0*/
   this.setAndUnsetSelectedFeaturesStyle({
     promise: d
-  })
+  });
 
   this._snapIteraction = new ol.interaction.Snap({
     features: new ol.Collection(features),
