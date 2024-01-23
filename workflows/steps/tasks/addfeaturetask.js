@@ -20,8 +20,15 @@ function AddFeatureTask(options={}) {
   this.drawingFeature;
   this._snap = options.snap === false ? false : true;
   this._finishCondition = options.finishCondition || (() => true);
-  this._condition = options.condition || (()=>true) ;
-  this._stopPromise; /** @since g3w-client-plugin-editing@v3.8.0 */
+  this._condition = options.condition || (() => true) ;
+
+  /**
+   * Handle tasks that stops after `run(inputs, context)` promise (or if ESC key is pressed)
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  this._stopPromise;
+
   /**
    *
    * @param event
@@ -48,10 +55,8 @@ proto.run = function(inputs, context) {
   switch (originalLayer.getType()) {
     case Layer.LayerTypes.VECTOR:
 
-      /**@since v3.8.0*/
-      this.setAndUnsetSelectedFeaturesStyle({
-        promise: this._stopPromise
-      });
+      /** @since g3w-client-plugin-editing@v3.8.0 */
+      this.setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise });
 
       const originalGeometryType = originalLayer.getEditingGeometryType();
       this.geometryType = Geometry.getOLGeometry(originalGeometryType);
