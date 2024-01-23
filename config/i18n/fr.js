@@ -81,7 +81,11 @@ export default {
       selectStartVertex: 'Sélectionner le sommet de départ des fonctionnalités choisies',
       selectToPaste: 'Sélectionner le point où les fonctionnalités sélectionnées seront collées',
       draw_split_line: "Tracez une ligne pour couper la fonctionnalité sélectionnée"
-    }
+    },
+    title: {
+      steps: 'Étapes'
+    },
+    next: 'Suivant',
   },
   messages: {
     featureslockbyotheruser: "Certaines géométries/enregistrements ne sont pas modifiables car ils ont été modifiés par un autre utilisateur",
