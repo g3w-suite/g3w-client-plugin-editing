@@ -1,4 +1,7 @@
-const {base, inherit} = g3wsdk.core.utils;
+const {
+  base,
+  inherit
+}                 = g3wsdk.core.utils;
 const EditingTask = require('./editingtask');
 
 function GetVertexTask(options={}) {
@@ -14,7 +17,14 @@ const proto = GetVertexTask.prototype;
 proto.run = function(inputs) {
   const d = $.Deferred();
   const {features} = inputs;
-  if (!features.length) return;
+  if (!features.length) {
+    return;
+  }
+  /**@since v3.8.0*/
+  this.setAndUnsetSelectedFeaturesStyle({
+    promise: d
+  })
+
   this._snapIteraction = new ol.interaction.Snap({
     features: new ol.Collection(features),
     edge: false
