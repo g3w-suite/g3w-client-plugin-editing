@@ -440,9 +440,16 @@ export class AddFeatureStep extends EditingTask {
 
     this._snap = options.snap === false ? false : true;
 
-    this._finishCondition = options.finishCondition || (()=>true);
+    this._finishCondition = options.finishCondition || (() => true);
 
-    this._condition = options.condition || (()=>true) ;
+    this._condition = options.condition || (() => true);
+
+    /**
+     * Handle tasks that stops after `run(inputs, context)` promise (or if ESC key is pressed)
+     * 
+     * @since g3w-client-plugin-editing@v3.8.0
+     */
+    this._stopPromise;
 
     /**
      *
@@ -472,6 +479,8 @@ export class AddFeatureStep extends EditingTask {
   }
 
   run(inputs, context) {
+    this._stopPromise = $.Deferred();
+
     const d = $.Deferred();
     const originalLayer = inputs.layer;
     const editingLayer = originalLayer.getEditingLayer();
@@ -482,6 +491,9 @@ export class AddFeatureStep extends EditingTask {
     if (Layer.LayerTypes.VECTOR !== originalLayer.getType()) {
       return d.promise();
     }
+
+    /** @since g3w-client-plugin-editing@v3.8.0 */
+    this.setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise });
 
     const originalGeometryType = originalLayer.getEditingGeometryType();
 
@@ -572,6 +584,7 @@ export class AddFeatureStep extends EditingTask {
     this.drawInteraction = null;
     this.drawingFeature = null;
     document.removeEventListener('keydown', this._delKeyRemoveLastPoint);
+    this._stopPromise.resolve(true);
     return true;
   }
 
