@@ -21,7 +21,7 @@ function AddFeatureTask(options={}) {
   this._snap = options.snap === false ? false : true;
   this._finishCondition = options.finishCondition || (() => true);
   this._condition = options.condition || (()=>true) ;
-  this._stopPromise; /** @since v3.8.0
+  this._stopPromise; /** @since g3w-client-plugin-editing@v3.8.0 */
   /**
    *
    * @param event
