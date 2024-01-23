@@ -3,13 +3,12 @@
  * 
  * ORIGINAL SOURCE: g3w-client/src/core/editing/session.js@v3.9.1
  * 
- * @since g3w-client-plugin-editing@v4.x
+ * @since g3w-client-plugin-editing@v3.8.x
  */
 
 import SessionsRegistry from './sessionsregistry';
 import History          from './history';
 
-const { MapLayersStoreRegistry } = g3wsdk.core.map;
 const { base, inherit }          = g3wsdk.core.utils;
 const { G3WObject }              = g3wsdk.core;
 const { Layer }                  = g3wsdk.core.layer;

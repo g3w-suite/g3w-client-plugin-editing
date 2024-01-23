@@ -3,36 +3,40 @@
  * 
  * ORIGINAL SOURCE: g3w-client/src/store/sessions.js@v3.9.1
  * 
- * @since g3w-client-plugin-editing@v4.x
+ * @since g3w-client-plugin-editing@v3.8.x
  */
 
-const SessionsRegistry = function() {
-  this._sessions = {};
+class SessionsRegistry {
 
-  this.register = function(session) {
+  constructor() {
+    this._sessions = {};
+  }
+
+  register(session) {
     const id = session.getId();
     this._sessions[id] = session;
-  };
+  }
 
-  this.unregister = function(id) {
+  unregister(id) {
     delete this._sessions[id];
-  };
+  }
 
-  this.getSession = function(id) {
+  getSession(id) {
     return this._sessions[id];
   };
 
-  this.setSession = function(id, session) {
+  setSession(id, session) {
     this._sessions[id] = session;
-  };
+  }
 
-  this.getSessions = function() {
+  getSessions() {
     return this._sessions;
-  };
+  }
 
-  this.clear = function(){
+  clear() {
     this._sessions = {};
   }
+
 };
 
 export default new SessionsRegistry();
