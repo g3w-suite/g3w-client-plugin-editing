@@ -17,13 +17,13 @@ const proto = GetVertexTask.prototype;
 proto.run = function(inputs) {
   const d = $.Deferred();
   const {features} = inputs;
+
   if (!features.length) {
     return;
   }
-  /**@since v3.8.0*/
-  this.setAndUnsetSelectedFeaturesStyle({
-    promise: d
-  });
+
+  /** @since g3w-client-plugin-editing@v3.8.0 */
+  this.setAndUnsetSelectedFeaturesStyle({ promise: d });
 
   this._snapIteraction = new ol.interaction.Snap({
     features: new ol.Collection(features),
