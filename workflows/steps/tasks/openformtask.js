@@ -179,7 +179,6 @@ proto._getForm = async function(inputs, context) {
 
 /**
  *
- * @param fieldssetAndUnsetSelectedFeaturesStyle
  * @param fields Array of fields
  * @returns {Promise<unknown>}
  */
