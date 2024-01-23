@@ -65,6 +65,7 @@ export default {
       insert_attributes_feature: "Inserisci gli attributi della feature"
     }
   },
+
   workflow: {
     steps: {
       select: 'Clicca sulla feature da selezionare',
@@ -81,7 +82,11 @@ export default {
       selectStartVertex: 'Seleziona il vertice di partenza delle feature selezionate',
       selectToPaste: 'Seleziona il punto dove verranno incollate le features selezionate',
       draw_split_line: "Disegna una linea per tagliare la feature selezionata"
-    }
+    },
+    title: {
+      steps: 'Passi',
+    },
+    next: 'Avanti',
   },
   messages: {
     featureslockbyotheruser: "Ci sono alcune geometrie/records non editabili perchè in modifica da altri utenti",

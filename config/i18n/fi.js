@@ -81,7 +81,11 @@ export default {
       selectStartVertex: 'Osoita valittujen ominaisuuksien alkupiste.',
       selectToPaste: 'Valitse kohta, johon liität valitut ominaisuudet.',
       draw_split_line: "Piirrä viiva, jonka mukaan valittu ominaisuus jaetaan."
-    }
+    },
+    title: {
+      steps: 'Vaiheet'
+    },
+    next: "Seuraava",
   },
   messages: {
     featureslockbyotheruser: "Some features are locked by another user",
