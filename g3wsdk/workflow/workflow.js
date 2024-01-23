@@ -346,7 +346,7 @@ proto.start = function(options = {}) {
 
   if (showUserMessage) {
     GUI.showUserMessage({
-      title: 'sdk.workflow.steps.title',
+      title: 'plugins.editing.workflow.title.steps',
       type: 'tool',
       position: 'left',
       size: 'small',

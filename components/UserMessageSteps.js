@@ -91,8 +91,8 @@ export default function({ steps={} } = {}) {
                 }
               },
               directives: [{
-                name: 't',
-                value: 'sdk.workflow.next'
+                name: 't-plugin',
+                value: 'editing.workflow.next'
               }],
               style: {
                 fontWeight: 'bold'
