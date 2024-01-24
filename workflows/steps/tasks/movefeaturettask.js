@@ -15,6 +15,10 @@ inherit(MoveFeatureTask, EditingTask);
 const proto = MoveFeatureTask.prototype;
 
 proto.run = function(inputs, context) {
+  /** Need two different promise: One for stop() method and clean selected feature,
+   * and other one for run task. If we use the same promise, when stop task without move feature,
+   * this.promise.resolve(), it fires also thenable method listen resolve promise of run task,
+   * that call stop task method.*/
   this.promise = $.Deferred();
   const d = $.Deferred();
   const originalLayer = inputs.layer;
