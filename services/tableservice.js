@@ -1,6 +1,6 @@
+import { EditingWorkflow } from '../g3wsdk/workflow/workflow';
 import { cloneFeature }    from '../utils/cloneFeature';
 import {
-  EditingWorkflow,
   OpenFormStep,
   AddTableFeatureStep,
 }                          from '../workflows';
