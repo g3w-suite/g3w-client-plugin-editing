@@ -1,6 +1,7 @@
 import { setFeaturesSelectedStyle } from './setFeaturesSelectedStyle';
 
 const { WorkflowsStack } = g3wsdk.core.workflow;
+const { Layer }          = g3wsdk.core.layer;
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@3.7.1
@@ -29,7 +30,7 @@ export function setAndUnsetSelectedFeaturesStyle({ promise, inputs } = {}) {
     promise.always(() => { features.flat().forEach((feature => feature.setStyle(originalStyle))) });
   };
 
-  const is_vector = g3wsdk.core.layer.Layer.LayerTypes.VECTOR === layer.getType();
+  const is_vector = Layer.LayerTypes.VECTOR === layer.getType();
   const is_single = WorkflowsStack.getLength();
 
   if (is_vector && is_single) {

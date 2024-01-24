@@ -195,7 +195,7 @@ export class AddFeatureStep extends EditingTask {
     }
 
     /** @since g3w-client-plugin-editing@v3.8.0 */
-    setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise });
+    setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise, inputs });
 
     const originalGeometryType = originalLayer.getEditingGeometryType();
 
@@ -461,7 +461,7 @@ export class ConfirmStep extends EditingTask {
   run(inputs, context) {
     const promise = this._dialog.fnc(inputs, context);
     if (inputs.features) {
-      setAndUnsetSelectedFeaturesStyle({ promise, inputs: this.getInputs() });
+      setAndUnsetSelectedFeaturesStyle({ promise, inputs });
     }
     return promise;
   }
@@ -1016,7 +1016,7 @@ export class GetVertexStep extends EditingTask {
     this._stopPromise = $.Deferred();
 
     /** @since g3w-client-plugin-editing@v3.8.0 */
-    setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise });
+    setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise, inputs });
 
     this._snapIteraction = new ol.interaction.Snap({
       features: new ol.Collection(features),
@@ -1302,7 +1302,7 @@ export class MoveElementsStep extends EditingTask {
     const { layer, features, coordinates } = inputs;
     const source = layer.getEditingLayer().getSource();
     /** @since g3w-client-plugin-editing@v3.8.0 */
-    setAndUnsetSelectedFeaturesStyle({ promise: d });
+    setAndUnsetSelectedFeaturesStyle({ promise: d, inputs });
     const layerId = layer.getId();
     const session = context.session;
     this._snapIteraction = new ol.interaction.Snap({
@@ -1417,7 +1417,7 @@ export class MoveFeatureStep extends EditingTask {
     this.changeKey = null; //
     let isGeometryChange = false; // changed if geometry is changed
 
-    setAndUnsetSelectedFeaturesStyle({ promise: this.promise, inputs: this.getInputs() });
+    setAndUnsetSelectedFeaturesStyle({ promise: this.promise, inputs });
 
     this._translateInteraction = new ol.interaction.Translate({
       features,
@@ -1876,7 +1876,7 @@ export class OpenFormStep extends EditingTask {
     GUI.setLoadingContent(false);
     this.getEditingService().disableMapControlsConflict(true);
 
-    setAndUnsetSelectedFeaturesStyle({ promise: d, inputs: this.getInputs() });
+    setAndUnsetSelectedFeaturesStyle({ promise: d, inputs });
 
     if (!this._multi && Array.isArray(features[features.length -1])) {
       d.resolve();
@@ -2110,7 +2110,7 @@ export class PickFeatureStep extends EditingTask {
         inputs.features = features;
         inputs.coordinate = coordinate;
       }
-      setAndUnsetSelectedFeaturesStyle({ promise: d, inputs: this.getInputs() });
+      setAndUnsetSelectedFeaturesStyle({ promise: d, inputs });
 
       if (this._steps) {
         this.setUserMessageStepDone('select');
@@ -2571,7 +2571,7 @@ export class SplitFeatureStep extends EditingTask {
     this._stopPromise = $.Deferred();
   
     /** @since g3w-client-plugin-editing@v3.8.0 */
-    setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise });
+    setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise, inputs });
 
     const d = $.Deferred();
     const { layer, features } = inputs;
