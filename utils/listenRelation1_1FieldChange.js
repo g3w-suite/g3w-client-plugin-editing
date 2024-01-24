@@ -1,5 +1,5 @@
-import { getRelation1_1ChildFeature }       from '../getRelation1_1ChildFeature';
-import { getChildFieldNameFromRelation1_1 } from '../utils/getChildFieldNameFromRelation1_1';
+import { getRelation1_1ChildFeature }       from './getRelation1_1ChildFeature';
+import { getChildFieldNameFromRelation1_1 } from './getChildFieldNameFromRelation1_1';
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@3.7.1

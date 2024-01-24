@@ -12,6 +12,7 @@ import { getNotEditableFieldsNoPkValues }               from '../utils/getNotEdi
 import { getFeaturesFromSelectionFeatures }             from '../utils/getFeaturesFromSelectionFeatures';
 import { chooseFeatureFromFeatures }                    from '../utils/chooseFeatureFromFeatures';
 import { handleRelation1_1LayerFields }                 from '../utils/handleRelation1_1LayerFields';
+import { listenRelation1_1FieldChange }                 from '../utils/listenRelation1_1FieldChange';
 
 import CopyFeatureFromOtherLayersComponent              from '../components/CopyFeaturesFromOtherLayers.vue';
 import CopyFeatureFromOtherProjectLayersComponent       from '../components/CopyFeaturesFromOtherProjectLayer.vue';
@@ -194,7 +195,7 @@ export class AddFeatureStep extends EditingTask {
     }
 
     /** @since g3w-client-plugin-editing@v3.8.0 */
-    this.setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise });
+    setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise });
 
     const originalGeometryType = originalLayer.getEditingGeometryType();
 
@@ -1015,7 +1016,7 @@ export class GetVertexStep extends EditingTask {
     this._stopPromise = $.Deferred();
 
     /** @since g3w-client-plugin-editing@v3.8.0 */
-    this.setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise });
+    setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise });
 
     this._snapIteraction = new ol.interaction.Snap({
       features: new ol.Collection(features),
@@ -1301,7 +1302,7 @@ export class MoveElementsStep extends EditingTask {
     const { layer, features, coordinates } = inputs;
     const source = layer.getEditingLayer().getSource();
     /** @since g3w-client-plugin-editing@v3.8.0 */
-    this.setAndUnsetSelectedFeaturesStyle({ promise: d });
+    setAndUnsetSelectedFeaturesStyle({ promise: d });
     const layerId = layer.getId();
     const session = context.session;
     this._snapIteraction = new ol.interaction.Snap({
@@ -1621,7 +1622,7 @@ export class OpenFormStep extends EditingTask {
   }
 
   /**
-   * @param fieldssetAndUnsetSelectedFeaturesStyle
+   * @param fields
    * @param fields Array of fields
    * 
    * @returns {Promise<unknown>}
@@ -1847,7 +1848,7 @@ export class OpenFormStep extends EditingTask {
     }
 
     //listen eventually field relation 1:1 changes value
-    this._unwatchs = await this.listenRelation1_1FieldChange({
+    this._unwatchs = await listenRelation1_1FieldChange({
       layerId: this.layerId,
       fields: this._fields,
     })
@@ -2563,7 +2564,7 @@ export class SplitFeatureStep extends EditingTask {
     this._stopPromise = $.Deferred();
   
     /** @since g3w-client-plugin-editing@v3.8.0 */
-    this.setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise });
+    setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise });
 
     const d = $.Deferred();
     const { layer, features } = inputs;

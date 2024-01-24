@@ -1,5 +1,7 @@
 import { setFeaturesSelectedStyle } from './setFeaturesSelectedStyle';
 
+const { WorkflowsStack } = g3wsdk.core.workflow;
+
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@3.7.1
  * 
