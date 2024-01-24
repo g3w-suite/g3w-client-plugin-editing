@@ -13,14 +13,13 @@ import { getFeaturesFromSelectionFeatures }             from '../utils/getFeatur
 import { chooseFeatureFromFeatures }                    from '../utils/chooseFeatureFromFeatures';
 import { handleRelation1_1LayerFields }                 from '../utils/handleRelation1_1LayerFields';
 
-import CopyFeatureFromOtherLayersComponent        from '../components/CopyFeaturesFromOtherLayers.vue';
-import CopyFeatureFromOtherProjectLayersComponent from '../components/CopyFeaturesFromOtherProjectLayer.vue';
-import SaveAll                                    from '../components/SaveAll.vue';
-import TableVueObject                             from '../components/Table.vue';
-import { PickFeaturesInteraction }                from '../interactions/pickfeaturesinteraction';
+import CopyFeatureFromOtherLayersComponent              from '../components/CopyFeaturesFromOtherLayers.vue';
+import CopyFeatureFromOtherProjectLayersComponent       from '../components/CopyFeaturesFromOtherProjectLayer.vue';
+import SaveAll                                          from '../components/SaveAll.vue';
+import TableVueObject                                   from '../components/Table.vue';
+import { PickFeaturesInteraction }                      from '../interactions/pickfeaturesinteraction';
 
-const EditingFormComponent                 = require('../form/editingform');
-const TableService                         = require('../services/tableservice');
+import { EditingTask }                                  from '../g3wsdk/workflow/task';
 
 Object
   .entries({
@@ -31,8 +30,6 @@ Object
     SaveAll,
     TableVueObject,
     PickFeaturesInteraction,
-    EditingFormComponent,
-    TableService,
   })
   .forEach(([k, v]) => console.assert(undefined !== v, `${k} is undefined`));
 
@@ -46,19 +43,14 @@ const {
   dissolve,
   splitFeatures,
 }                                          = g3wsdk.core.geoutils;
-const {
-  removeZValueToOLFeatureGeometry,
-  isPointGeometryType,
-}                                          = g3wsdk.core.geoutils.Geometry;
+const { removeZValueToOLFeatureGeometry }  = g3wsdk.core.geoutils.Geometry;
 const { Layer }                            = g3wsdk.core.layer;
 const { Feature }                          = g3wsdk.core.layer.features;
 const { ProjectsRegistry }                 = g3wsdk.core.project;
 const { GUI }                              = g3wsdk.gui;
 const {
-  Workflow,
-  Step,
+  Step: EditingStep,
   WorkflowsStack,
-  Task
 }                                          = g3wsdk.core.workflow;
 const { t, tPlugin }                       = g3wsdk.core.i18n;
 const { DataRouterService }                = g3wsdk.core.data;
@@ -78,297 +70,6 @@ const { G3W_FID }                          = g3wsdk.constant;
 const { CatalogLayersStoresRegistry }      = g3wsdk.core.catalog;
 const { Component }                        = g3wsdk.gui.vue;
 
-/**
- * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editingworkflow.js@3.7.1
- */
-export class EditingWorkflow extends Workflow {
-  
-  constructor(options = {}) {
-    super(options);
-
-    this.helpMessage  = options.helpMessage ? { help: options.helpMessage } : null;
-
-    this._toolsoftool = [];
-
-    if (true === options.registerEscKeyEvent) {
-      this.registerEscKeyEvent();
-    }
-  }
-
-  addToolsOfTools({ step, tools = [] }) {
-
-    const toolsOfTools = {
-
-      snap: {
-        type: 'snap',
-        options: {
-          checkedAll: false,
-          checked: false,
-          active: true,
-          run({ layer }) {
-            this.active  = true;
-            this.layerId = layer.getId();
-            this.source  = layer.getEditingLayer().getSource();
-          },
-          stop() {
-            this.active = false;
-          }
-        }
-      },
-
-      measure: {
-        type: 'measure',
-        options: {
-          checked: false,
-          run() {
-            setTimeout(() => { this.onChange(this.checked); })
-          },
-          stop() {
-            step.getTask().removeMeasureInteraction();
-          },
-          onChange(bool) {
-            this.checked = bool;
-            step.getTask()[bool ? 'addMeasureInteraction':  'removeMeasureInteraction']();
-          },
-          onBeforeDestroy() {
-            this.onChange(false);
-          }
-        }
-      },
-
-    };
-
-    step.on('run', ({ inputs, context }) => {
-      if (0 == this._toolsoftool.length) {
-        tools.forEach(tool => {
-          if ('measure' !== tool || (Layer.LayerTypes.VECTOR === inputs.layer.getType() && !isPointGeometryType(inputs.layer.getGeometryType()))) {
-            this._toolsoftool.push(toolsOfTools[tool]);
-          }
-        });
-      }
-      this._toolsoftool.forEach(t => t.options.run({ layer: inputs.layer }));
-      this.emit('settoolsoftool', this._toolsoftool);
-    });
-
-    step.on('stop', () => {
-      this._toolsoftool.forEach(t => t.options.stop());
-    });
-  }
-
-  setHelpMessage(message) {
-    this.helpMessage = { help: message };
-  }
-
-  getHelpMessage() {
-    return this.helpMessage;
-  }
-
-  getFeatures() {
-    return this.getInputs().features;
-  }
-
-  startFromLastStep(options) {
-    this.setSteps([ this.getSteps().pop() ]);
-    return this.start(options);
-  }
-
-  getCurrentFeature() {
-    const feats = this.getFeatures();
-    return feats[feats.length -1];
-  }
-
-  getLayer() {
-    return this.getSession().getEditor().getLayer();
-  }
-
-  getSession() {
-    return this.getContext().session;
-  }
-
-  /**
-   * bind interrupt event
-   */
-  escKeyUpHandler(evt) {
-    if (evt.keyCode === 27) {
-      evt.data.workflow.reject();
-      evt.data.callback();
-    }
-  }
-
-  unbindEscKeyUp() {
-    $(document).unbind('keyup', this.escKeyUpHandler);
-  }
-
-  bindEscKeyUp(callback = () => {}) {
-    $(document).on('keyup', { workflow: this, callback }, this.escKeyUpHandler);
-  }
-
-  registerEscKeyEvent(callback) {
-    this.on('start', () => this.bindEscKeyUp(callback));
-    this.on('stop', () => this.unbindEscKeyUp());
-  }
-
-};
-
-class EditingStep extends Step {};
-
-/**
- * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@3.7.1
- * 
- * Base editing task
- *
- * @param options
- *
- * @constructor
- */
-export class EditingTask extends Task {
-
-  constructor(options = {}) {
-
-    super(options);
-
-    this._editingServive;
-
-    this._mapService = GUI.getService('map');
-
-    this.addInteraction = function(interaction) {
-      this._mapService.addInteraction(interaction);
-    };
-
-    this.removeInteraction = function(interaction) {
-      setTimeout(() => this._mapService.removeInteraction(interaction)) // timeout needed to workaround an Openlayers issue
-    };
-
-  }
-
-  /**
-   * @TODO code implementation
-   *
-   * Get editing type from editing config
-   *
-   * @returns { null }
-   */
-  getEditingType() {
-    return null;
-  }
-
-  /**
-   * @FIXME add description
-   */
-  registerPointerMoveCursor() {
-    this._mapService.getMap().on("pointermove", this._pointerMoveCursor)
-  }
-
-  /**
-   * @FIXME add description
-   */
-  unregisterPointerMoveCursor() {
-    this._mapService.getMap().un("pointermove", this._pointerMoveCursor)
-  }
-
-  /**
-   * @param evt
-   *
-   * @private
-   */
-  _pointerMoveCursor(evt) {
-    this.getTargetElement().style.cursor = (this.forEachFeatureAtPixel(evt.pixel, () => true) ? 'pointer' : '');
-  }
-
-  /**
-   * @param steps
-   */
-  setSteps(steps = {}) {
-    this._steps = steps;
-    this.setUserMessageSteps(steps);
-  }
-
-  /**
-   * @returns {{}}
-   */
-  getSteps() {
-    return this._steps;
-  }
-
-  /**
-   * @returns {*}
-   */
-  getMapService() {
-    return this._mapService;
-  }
-
-  /**
-   * @returns {*}
-   */
-  getMap() {
-    return this._mapService.getMap();
-  }
-
-  /**
-   * Disable sidebar
-   * 
-   * @param {Boolean} bool
-   */
-  disableSidebar(bool = true) {
-    if (!this._isContentChild) {
-      GUI.disableSideBar(bool);
-    }
-  }
-
-  /**
-   * @returns {*|EditingService|{}}
-   */
-  getEditingService() {
-    this._editingServive = this._editingServive || require('../services/editingservice');
-    return this._editingServive;
-  }
-
-  /**
-   * @param event
-   * @param options
-   *
-   * @returns {*}
-   */
-  fireEvent(event, options={}) {
-    return this.getEditingService().fireEvent(event, options);
-  }
-
-  /**
-   * @param inputs
-   * @param context
-   */
-  run(inputs, context) {}
-
-  /**
-   * @FIXME add description
-   */
-  stop() {}
-
-  /**
-   * Handle single task
-   */
-  saveSingle(input, context) {
-    context.session.save().then(() => this.getEditingService().saveChange());
-  }
-
-  /**
-   * Cancel single task
-   *
-   * @param input
-   * @param context
-   */
-  cancelSingle(input, context) {
-    context.session.rollback();
-  }
-
-  /**
-   * @param get_default_value to context of task
-   */
-  setContextGetDefaultValue(get_default_value = false) {
-    this.getContext().get_default_value = get_default_value;
-  }
-
-}
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/addfeaturetabletask.js@v3.7.1
@@ -2052,6 +1753,8 @@ export class OpenFormStep extends EditingTask {
    * @returns {Promise<void>}
    */
   async startForm(options = {}) {
+    const EditingFormComponent = require('../form/editingform');
+
     this.getEditingService().setCurrentLayout();
     const { inputs, context, promise } = options;
     const { session } = context;
@@ -2242,6 +1945,7 @@ export class OpenFormStep extends EditingTask {
  */
 const InternalComponent = Vue.extend(TableVueObject);
 const TableComponent = function(options={}) {
+  const TableService = require('../services/tableservice');
   g3wsdk.core.utils.base(this);
   const service = options.service || new TableService({ ...options });
   this.setService(service);

@@ -1,5 +1,5 @@
+import { EditingWorkflow } from '../g3wsdk/workflow/workflow';
 import {
-  EditingWorkflow,
   OpenFormStep,
   ConfirmStep,
   CopyFeaturesFromOtherLayerStep,

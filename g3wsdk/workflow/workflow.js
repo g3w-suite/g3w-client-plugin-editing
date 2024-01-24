@@ -1,3 +1,4 @@
+
 /**
  * @file
  * 
@@ -9,16 +10,17 @@
 import Flow             from './flow';
 import WorkflowsStack   from './stack';
 import Step             from './step';
+import UserMessageSteps from '../../components/UserMessageSteps';
 
-const { GUI }           = g3wsdk.gui;
-const { G3WObject }     = g3wsdk.core;
+const { GUI }                 = g3wsdk.gui;
+const { G3WObject }           = g3wsdk.core;
 const {
   base,
   inherit,
   resolve,
-}                       = g3wsdk.core.utils;
-
-import UserMessageSteps from '../../components/UserMessageSteps';
+}                             = g3wsdk.core.utils;
+const { isPointGeometryType } = g3wsdk.core.geoutils.Geometry;
+const { Layer }               = g3wsdk.core.layer;
 
 /**
  * Workflow Class (manage flow of steps)
@@ -447,3 +449,135 @@ proto.getBackButtonLabel = function() {
 }
 
 export default Workflow;
+
+/**
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editingworkflow.js@3.7.1
+ */
+export class EditingWorkflow extends Workflow {
+  
+  constructor(options = {}) {
+    super(options);
+
+    this.helpMessage  = options.helpMessage ? { help: options.helpMessage } : null;
+
+    this._toolsoftool = [];
+
+    if (true === options.registerEscKeyEvent) {
+      this.registerEscKeyEvent();
+    }
+  }
+
+  addToolsOfTools({ step, tools = [] }) {
+
+    const toolsOfTools = {
+
+      snap: {
+        type: 'snap',
+        options: {
+          checkedAll: false,
+          checked: false,
+          active: true,
+          run({ layer }) {
+            this.active  = true;
+            this.layerId = layer.getId();
+            this.source  = layer.getEditingLayer().getSource();
+          },
+          stop() {
+            this.active = false;
+          }
+        }
+      },
+
+      measure: {
+        type: 'measure',
+        options: {
+          checked: false,
+          run() {
+            setTimeout(() => { this.onChange(this.checked); })
+          },
+          stop() {
+            step.getTask().removeMeasureInteraction();
+          },
+          onChange(bool) {
+            this.checked = bool;
+            step.getTask()[bool ? 'addMeasureInteraction':  'removeMeasureInteraction']();
+          },
+          onBeforeDestroy() {
+            this.onChange(false);
+          }
+        }
+      },
+
+    };
+
+    step.on('run', ({ inputs, context }) => {
+      if (0 == this._toolsoftool.length) {
+        tools.forEach(tool => {
+          if ('measure' !== tool || (Layer.LayerTypes.VECTOR === inputs.layer.getType() && !isPointGeometryType(inputs.layer.getGeometryType()))) {
+            this._toolsoftool.push(toolsOfTools[tool]);
+          }
+        });
+      }
+      this._toolsoftool.forEach(t => t.options.run({ layer: inputs.layer }));
+      this.emit('settoolsoftool', this._toolsoftool);
+    });
+
+    step.on('stop', () => {
+      this._toolsoftool.forEach(t => t.options.stop());
+    });
+  }
+
+  setHelpMessage(message) {
+    this.helpMessage = { help: message };
+  }
+
+  getHelpMessage() {
+    return this.helpMessage;
+  }
+
+  getFeatures() {
+    return this.getInputs().features;
+  }
+
+  startFromLastStep(options) {
+    this.setSteps([ this.getSteps().pop() ]);
+    return this.start(options);
+  }
+
+  getCurrentFeature() {
+    const feats = this.getFeatures();
+    return feats[feats.length -1];
+  }
+
+  getLayer() {
+    return this.getSession().getEditor().getLayer();
+  }
+
+  getSession() {
+    return this.getContext().session;
+  }
+
+  /**
+   * bind interrupt event
+   */
+  escKeyUpHandler(evt) {
+    if (evt.keyCode === 27) {
+      evt.data.workflow.reject();
+      evt.data.callback();
+    }
+  }
+
+  unbindEscKeyUp() {
+    $(document).unbind('keyup', this.escKeyUpHandler);
+  }
+
+  bindEscKeyUp(callback = () => {}) {
+    $(document).on('keyup', { workflow: this, callback }, this.escKeyUpHandler);
+  }
+
+  registerEscKeyEvent(callback) {
+    this.on('start', () => this.bindEscKeyUp(callback));
+    this.on('stop', () => this.unbindEscKeyUp());
+  }
+
+};
