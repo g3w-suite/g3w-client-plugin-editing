@@ -1,3 +1,4 @@
+import { EditingWorkflow } from '../g3wsdk/workflow/workflow';
 import {
   OpenFormStep,
   LinkRelationStep,
