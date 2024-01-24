@@ -116,7 +116,7 @@ export class AddTableFeatureStep extends EditingTask {
     return d.promise();
   };
 
-};
+}
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/addfeaturetask.js@v3.7.1
@@ -300,7 +300,7 @@ export class AddFeatureStep extends EditingTask {
     }
   }
 
-};
+}
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/addparttomultigeometriestask.js@v3.7.1
@@ -770,7 +770,7 @@ export class CopyFeaturesFromOtherProjectLayerStep extends EditingTask {
   stop() {
     return true;
   }
-};
+}
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/deletefeaturetask.js@v3.7.1
@@ -976,7 +976,7 @@ export class DeletePartFromMultigeometriesStep extends EditingTask {
     return d.promise()
   }
 
-};
+}
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/getvertextask.js@v3.7.1
@@ -1050,7 +1050,7 @@ export class GetVertexStep extends EditingTask {
     this._stopPromise.resolve(true);
   }
 
-};
+}
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/linkrelationtask.js@v3.7.1
@@ -1121,7 +1121,7 @@ export class LinkRelationStep extends EditingTask {
     return true;
   }
 
-};
+}
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/modifygeometryvertexTask.js@v3.7.1
@@ -1244,7 +1244,7 @@ export class ModifyGeometryVertexStep extends EditingTask {
     return true;
   }
 
-};
+}
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/moveelementstask.js@v3.7.1
@@ -1382,7 +1382,7 @@ export class MoveElementsStep extends EditingTask {
     return true;
   }
 
-};
+}
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/movefeaturetask.js@v3.7.1
@@ -1456,7 +1456,7 @@ export class MoveFeatureStep extends EditingTask {
     this._translateInteraction = null;
     this.changeKey = null;
   }
-};
+}
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/openformtask.js@v3.7.1
@@ -2061,7 +2061,7 @@ export class OpenTableStep extends EditingTask {
     this.getEditingService().resetCurrentLayout();
   }
 
-};
+}
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/pickfeaturetask.js@v3.7.1
@@ -2128,7 +2128,7 @@ export class PickFeatureStep extends EditingTask {
     return true;
   }
 
-};
+}
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/pickprojectlayerfeaturestask.js@v3.7.1
@@ -2230,7 +2230,7 @@ export class PickProjectLayerFeaturesStep extends EditingTask {
     return true;
   }
 
-};
+}
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/selectelementstask.js@v3.7.1
