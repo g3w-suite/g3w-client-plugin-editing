@@ -81,7 +81,11 @@ export default {
       selectStartVertex: 'Start-Eckpunkt der ausgewählten Features auswählen',
       selectToPaste: 'Den Punkt auswählen, an dem die ausgewählten Features eingefügt werden sollen',
       draw_split_line: "Eine Linie zeichnen, um das ausgewählte Feature zu teilen"
-    }
+    },
+    title: {
+      steps: 'Schritte',
+    },
+    next: 'Weiter',
   },
   messages: {
     featureslockbyotheruser: "Einige Geometrien/Datensätze können nicht bearbeitet werden, da sie von anderen Benutzern bearbeitet werden",

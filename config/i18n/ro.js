@@ -81,7 +81,11 @@ export default  {
       selectStartVertex: 'Selectează vertexul de start a entităților selectate',
       selectToPaste: 'Selectează punctul unde să lipim entitățile selectate',
       draw_split_line: "Desenează o linie pentru a diviza entitatea selectată"
-    }
+    },
+    title: {
+      steps: 'Pași',
+    },
+    next: 'Următorul',
   },
   messages: {
     featureslockbyotheruser: "Unele geometrii/înregistrări nu sunt editabile deoarece sunt editate de către alt utilizator",

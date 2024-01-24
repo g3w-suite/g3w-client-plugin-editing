@@ -61,7 +61,9 @@ const RelationService = function(layerId, options = {}) {
   const relationLayer = this.getLayer();
   this._layerType = relationLayer.getType();
   //get type of relation
-  const relationLayerType = this._layerType === Layer.LayerTypes.VECTOR ? relationLayer.getGeometryType() : Layer.LayerTypes.TABLE;
+  const relationLayerType = this._layerType === Layer.LayerTypes.VECTOR ?
+    relationLayer.getGeometryType() :
+    Layer.LayerTypes.TABLE;
   //
   const { ownField: fatherRelationField} = this.getEditingService()._getRelationFieldsFromRelation({
     layerId: this._parentLayerId,
@@ -359,7 +361,7 @@ proto.startVectorTool = function(relationtool, index) {
   const options = this._createWorkflowOptions({
     features: [relationfeature]
   });
-  
+
   const workflow = Object.create(Object.getPrototypeOf(relationtool.getOperator()))
   const originalStyle = this._highlightRelationSelect(relationfeature);
 
@@ -788,22 +790,19 @@ proto.linkRelation = function() {
 };
 
 /**
- *
- * @returns {*}
+ * Check if relation layer fields has at least one field required
+ * @returns {Boolean}
  * @private
  */
 proto._checkIfExternalFieldRequired = function() {
-  // own Field is relation Field of Relation Layer
-  const {ownField} = this.getEditingService()._getRelationFieldsFromRelation({
-    layerId: this._relationLayerId,
-    relation: this.relation
+  // own Fields is relation Fields array of Relation Layer
+  const { ownField } = this.getEditingService()._getRelationFieldsFromRelation({
+    layerId:  this._relationLayerId,
+    relation: this.relation,
   });
 
-  //ownField is an array
-  return ownField.reduce((bool, oField) => {
-    return bool || this.getEditingService()
-      .isFieldRequired(this._relationLayerId, oField);
-  }, false);
+  //check if at least one filed is required
+  return ownField.some(field => this.getEditingService().isFieldRequired(this._relationLayerId, field));
 };
 
 /**

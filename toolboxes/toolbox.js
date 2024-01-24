@@ -92,9 +92,11 @@ function ToolBox(options={}) {
   });
 
   // get informed when save on server
-  this.uniqueFields && this._session.onafter('saveChangesOnServer', ()=>{
-    this._resetUniqueValues();
-  });
+  if (this.uniqueFields) {
+    this._session.onafter('saveChangesOnServer', () => {
+      this._resetUniqueValues();
+    });
+  }
 
   this._getFeaturesOption = {};
   const historystate = this._session.getHistory().state;
@@ -165,8 +167,13 @@ function ToolBox(options={}) {
       };
       this._getFeaturesOption = options;
       this._registerGetFeaturesEvent(this._getFeaturesOption);
-      if (options.type === Layer.LayerTypes.VECTOR && GUI.getContentLength())
-        GUI.once('closecontent', ()=> setTimeout(()=> this._mapService.getMap().dispatchEvent(this._getFeaturesEvent.event)));
+      if (options.type === Layer.LayerTypes.VECTOR && GUI.getContentLength()) {
+        GUI.once('closecontent', () => {
+          setTimeout(() => {
+            this._mapService.getMap().dispatchEvent(this._getFeaturesEvent.event)
+          })
+        });
+      }
     }
   });
 }
