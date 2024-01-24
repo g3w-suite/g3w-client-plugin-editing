@@ -1290,6 +1290,9 @@ export class GetVertexStep extends EditingTask {
     this._drawInteraction;
     this._snapIteraction;
 
+    /** @since g3w-client-plugin-editing@v3.8.0 */
+    this._stopPromise;
+
     options.task = this;
     const step = new EditingStep(options);
 
@@ -1303,11 +1306,16 @@ export class GetVertexStep extends EditingTask {
   run(inputs) {
     const d = $.Deferred();
     const {features} = inputs;
+
     if (!features.length) {
       return;
     }
+
+    this._stopPromise = $.Deferred();
+
     /** @since g3w-client-plugin-editing@v3.8.0 */
-    this.setAndUnsetSelectedFeaturesStyle({ promise: d });
+    this.setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise });
+
     this._snapIteraction = new ol.interaction.Snap({
       features: new ol.Collection(features),
       edge: false
@@ -1336,6 +1344,8 @@ export class GetVertexStep extends EditingTask {
     this.removeInteraction(this._snapIteraction);
     this._snapIteraction = null;
     this._drawIteraction = null;
+    /** @since g3w-client-plugin-editing@v3.8.0 */
+    this._stopPromise.resolve(true);
   }
 
 };
@@ -2832,6 +2842,9 @@ export class SplitFeatureStep extends EditingTask {
 
     super(options);
 
+    /** @since g3w-client-plugin-editing@v3.8.0 */
+    this._stopPromise;
+
     options.task = this;
     const step = new EditingStep(options);
 
@@ -2843,6 +2856,11 @@ export class SplitFeatureStep extends EditingTask {
   }
 
   run(inputs, context) {
+    this._stopPromise = $.Deferred();
+  
+    /** @since g3w-client-plugin-editing@v3.8.0 */
+    this.setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise });
+
     const d = $.Deferred();
     const { layer, features } = inputs;
     const source = layer.getEditingLayer().getSource();
@@ -2976,6 +2994,8 @@ export class SplitFeatureStep extends EditingTask {
     this.removeInteraction(this._snapIteraction);
     this._drawInteraction = null;
     this._snapIteraction = null;
+    /** @since g3w-client-plugin-editing@v3.8.0 */
+    this._stopPromise.resolve(true);
   }
 
 }
