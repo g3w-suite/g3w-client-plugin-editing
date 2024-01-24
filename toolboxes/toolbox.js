@@ -970,7 +970,7 @@ ToolBox.create = function(layer) {
         row: 1,
         /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/deletefeatureworkflow.js@v3.7.1 */
         op(options = {}) {
-          const w = EditingWorkflow({
+          const w = new EditingWorkflow({
             ...options,
             steps: [
               new PickFeatureStep(),
