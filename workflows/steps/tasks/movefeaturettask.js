@@ -1,7 +1,10 @@
-const {base, inherit} = g3wsdk.core.utils;
+const {
+  base,
+  inherit
+}                 = g3wsdk.core.utils;
 const EditingTask = require('./editingtask');
 
-function MoveFeatureTask(options){
+function MoveFeatureTask(options) {
   this.drawInteraction = null;
   this.promise; // need to be set here in case of picked features
   base(this, options);
@@ -13,6 +16,7 @@ const proto = MoveFeatureTask.prototype;
 
 proto.run = function(inputs, context) {
   this.promise = $.Deferred();
+  const d = $.Deferred();
   const originalLayer = inputs.layer;
   const session = context.session;
   const layerId = originalLayer.getId();
@@ -51,12 +55,14 @@ proto.run = function(inputs, context) {
       }).finally(() => {
         const newFeature = feature.clone();
         session.pushUpdate(layerId, newFeature, originalFeature);
-        this.promise.resolve(inputs);
+        d.resolve(inputs);
       });
-    } else this.promise.resolve(inputs);
+    } else {
+      d.resolve(inputs);
+    }
   });
 
-  return this.promise.promise()
+  return d.promise()
 };
 
 proto.stop = function() {
