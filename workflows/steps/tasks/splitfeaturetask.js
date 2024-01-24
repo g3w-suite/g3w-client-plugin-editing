@@ -8,6 +8,7 @@ const EditingTask = require('./editingtask');
 
 function SplitFeatureTask(options={}){
   base(this, options);
+  this._stopPromise; /** @since g3w-client-plugin-editing@v3.8.0 */
 }
 
 inherit(SplitFeatureTask, EditingTask);
@@ -15,6 +16,9 @@ inherit(SplitFeatureTask, EditingTask);
 const proto = SplitFeatureTask.prototype;
 
 proto.run = function(inputs, context) {
+  this._stopPromise = $.Deferred();
+  /** @since g3w-client-plugin-editing@v3.8.0 */
+  this.setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise });
   const d = $.Deferred();
   const { layer, features } = inputs;
   const source = layer.getEditingLayer().getSource();
@@ -160,6 +164,7 @@ proto.stop = function(){
   this.removeInteraction(this._snapIteraction);
   this._drawInteraction = null;
   this._snapIteraction = null;
+  this._stopPromise.resolve(true); /** @since g3w-client-plugin-editing@v3.8.0 */
 };
 
 module.exports = SplitFeatureTask;
