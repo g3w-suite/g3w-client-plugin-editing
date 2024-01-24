@@ -48,6 +48,11 @@ function Workflow(options = {}) {
   base(this);
 
   /**
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  this._options = options;
+
+  /**
    * @FIXME add description
    */
   this._promise = null;
