@@ -968,7 +968,7 @@ ToolBox.create = function(layer) {
         id: 'deletefeature',
         type: ['delete_feature'],
         name: 'editing.tools.delete_feature',
-        icon: 'deletePoint.png',
+        icon: `delete${IconGeometry}.png`,
         layer,
         row: 1,
         /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/deletefeatureworkflow.js@v3.7.1 */
