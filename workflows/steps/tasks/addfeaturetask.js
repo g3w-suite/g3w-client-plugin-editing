@@ -1,9 +1,16 @@
-const {base, inherit} =  g3wsdk.core.utils;
-const {Layer} = g3wsdk.core.layer;
-const {Geometry} = g3wsdk.core.geometry;
-const {Feature} = g3wsdk.core.layer.features;
-const {AreaInteraction, LengthInteraction} = g3wsdk.ol.interactions.measure;
-const EditingTask = require('./editingtask');
+const {
+  base,
+  inherit
+}                   =  g3wsdk.core.utils;
+const {Layer}       = g3wsdk.core.layer;
+const {Geometry}    = g3wsdk.core.geometry;
+const {Feature}     = g3wsdk.core.layer.features;
+const {
+  AreaInteraction,
+  LengthInteraction
+}                   = g3wsdk.ol.interactions.measure;
+
+const EditingTask   = require('./editingtask');
 
 function AddFeatureTask(options={}) {
   this._add = options.add === undefined ? true : options.add;
@@ -12,8 +19,16 @@ function AddFeatureTask(options={}) {
   this.measeureInteraction;
   this.drawingFeature;
   this._snap = options.snap === false ? false : true;
-  this._finishCondition = options.finishCondition || (()=>true);
-  this._condition = options.condition || (()=>true) ;
+  this._finishCondition = options.finishCondition || (() => true);
+  this._condition = options.condition || (() => true) ;
+
+  /**
+   * Handle tasks that stops after `run(inputs, context)` promise (or if ESC key is pressed)
+   *
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  this._stopPromise;
+
   /**
    *
    * @param event
@@ -30,6 +45,8 @@ inherit(AddFeatureTask, EditingTask);
 const proto = AddFeatureTask.prototype;
 
 proto.run = function(inputs, context) {
+  //create promise and
+  this._stopPromise = $.Deferred();
   const d = $.Deferred();
   const originalLayer = inputs.layer;
   const editingLayer = originalLayer.getEditingLayer();
@@ -37,6 +54,10 @@ proto.run = function(inputs, context) {
   const layerId = originalLayer.getId();
   switch (originalLayer.getType()) {
     case Layer.LayerTypes.VECTOR:
+
+      /** @since g3w-client-plugin-editing@v3.8.0 */
+      this.setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise });
+
       const originalGeometryType = originalLayer.getEditingGeometryType();
       this.geometryType = Geometry.getOLGeometry(originalGeometryType);
       const source = editingLayer.getSource();
@@ -68,7 +89,9 @@ proto.run = function(inputs, context) {
           feature.setTemporaryId();
           source.addFeature(feature);
           session.pushAdd(layerId, feature, false);
-        } else feature = e.feature;
+        } else {
+          feature = e.feature;
+        }
         // set Z values based on layer Geometry
         feature = Geometry.addZValueToOLFeatureGeometry({
           feature,
@@ -124,6 +147,7 @@ proto.stop = function() {
   this.drawInteraction = null;
   this.drawingFeature = null;
   document.removeEventListener('keydown', this._delKeyRemoveLastPoint);
+  this._stopPromise.resolve(true);
   return true;
 };
 
