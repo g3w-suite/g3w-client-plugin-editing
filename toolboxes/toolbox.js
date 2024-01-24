@@ -1027,7 +1027,7 @@ ToolBox.create = function(layer) {
                 type: 'multiple',
                 steps: {
                   select: {
-                    description: 'editing.workflow.steps.' + ApplicationState.ismobile ? 'selectDrawBoxAtLeast2Feature' : 'selectMultiPointSHIFTAtLeast2Feature',
+                    description: `editing.workflow.steps.${ApplicationState.ismobile ? 'selectDrawBoxAtLeast2Feature' : 'selectMultiPointSHIFTAtLeast2Feature'}`,
                     buttonnext: {
                       disabled: true,
                       condition:({ features=[] }) => features.length < 2,
@@ -1143,7 +1143,7 @@ ToolBox.create = function(layer) {
                 type: ApplicationState.ismobile ? 'single' :  'multiple',
                 steps: {
                   select: {
-                    description: 'editing.workflow.steps.' + ApplicationState.ismobile ? 'selectPoint' : 'selectPointSHIFT',
+                    description: `editing.workflow.steps.${ApplicationState.ismobile ? 'selectPoint' : 'selectPointSHIFT'}`,
                     directive: 't-plugin',
                     done: false
                   }
@@ -1279,7 +1279,7 @@ ToolBox.create = function(layer) {
                 type: ApplicationState.ismobile ? 'single' :  'multiple',
                 steps: {
                   select: {
-                    description: 'editing.workflow.steps.' + ApplicationState.ismobile ? 'selectPoint' : 'selectPointSHIFT',
+                    description: `editing.workflow.steps.${ApplicationState.ismobile ? 'selectPoint' : 'selectPointSHIFT'}`,
                     directive: 't-plugin',
                     done: false,
                   }
@@ -1321,7 +1321,7 @@ ToolBox.create = function(layer) {
                 help: 'editing.steps.help.merge',
                 steps: {
                   select: {
-                    description: 'editing.workflow.steps.' + ApplicationState.ismobile ? 'selectDrawBox' : 'selectSHIFT',
+                    description: `editing.workflow.steps.${ApplicationState.ismobile ? 'selectDrawBox' : 'selectSHIFT'}`,
                     directive: 't-plugin',
                     done: false,
                   }
