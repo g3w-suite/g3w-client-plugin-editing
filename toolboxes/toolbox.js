@@ -904,9 +904,11 @@ ToolBox.create = function(layer) {
   const is_vector       = (undefined === type || Layer.LayerTypes.VECTOR === type);
   const geometryType    = is_vector && layer.getGeometryType();
   const is_point        = is_vector && Geometry.isPointGeometryType(geometryType);
-  const is_poly         = is_vector && (Geometry.isPolygonGeometryType(geometryType) || Geometry.isLineGeometryType(geometryType));
+  const is_line         = is_vector && Geometry.isLineGeometryType(geometryType);
+  const is_poly         = is_vector && Geometry.isPolygonGeometryType(geometryType);
   const is_table        = Layer.LayerTypes.TABLE === type;
   const isMultiGeometry = geometryType && Geometry.isMultiGeometry(geometryType);
+  const IconGeometry    = is_vector && (is_point ? 'Point' : is_line ? 'Line' : 'Polygon');
 
   return new ToolBox({
     id:          layer.getId(),
@@ -918,11 +920,11 @@ ToolBox.create = function(layer) {
     constraints: layer.getEditingConstrains(),
     tools:       [
 
-      (is_point || is_poly) && {
+      (is_point || is_line || is_poly) && {
         id: 'addfeature',
         type: ['add_feature'],
         name: 'editing.tools.add_feature',
-        icon: `add${type}.png`,
+        icon: `add${IconGeometry}.png`,
         layer,
         row: 1,
         /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addfeatureworkflow.js@v3.7.1 */
@@ -962,7 +964,7 @@ ToolBox.create = function(layer) {
         },
       },
 
-      (is_point || is_poly) && {
+      (is_vector) && {
         id: 'deletefeature',
         type: ['delete_feature'],
         name: 'editing.tools.delete_feature',
@@ -985,7 +987,7 @@ ToolBox.create = function(layer) {
         },
       },
 
-      is_poly && {
+      (is_line || is_poly) && {
         id: 'movevertex',
         type: ['change_feature'],
         name: "editing.tools.update_vertex",
@@ -1008,7 +1010,7 @@ ToolBox.create = function(layer) {
         },
       },
 
-      (is_point || is_poly) && {
+      (is_vector) && {
         id: 'editmultiattributes',
         type: ['change_attr_feature'],
         name: "editing.tools.update_multi_features",
@@ -1045,11 +1047,11 @@ ToolBox.create = function(layer) {
         },
       },
 
-      (is_point || is_poly) && {
+      (is_vector) && {
         id: 'movefeature',
         type: ['change_feature'],
         name: 'editing.tools.move_feature',
-        icon: `move${type}.png`,
+        icon: `move${IconGeometry}.png`,
         layer,
         row: 2,
         /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/movefeatureworkflow.js@v3.7.1 */
@@ -1066,7 +1068,7 @@ ToolBox.create = function(layer) {
         },
       },
 
-      (is_point || is_poly) && {
+      (is_vector) && {
         id: 'copyfeaturesfromotherlayer',
         type: ['add_feature'],
         name: "editing.tools.pastefeaturesfromotherlayers",
@@ -1122,11 +1124,11 @@ ToolBox.create = function(layer) {
         },
       },
 
-      (is_point || is_poly) && {
+      (is_vector) && {
         id: 'copyfeatures',
         type: ['add_feature'],
         name: "editing.tools.copy",
-        icon: `copy${type}.png`,
+        icon: `copy${IconGeometry}.png`,
         layer,
         once: true,
         row: 2,
@@ -1175,7 +1177,7 @@ ToolBox.create = function(layer) {
         },
       },
 
-      (is_point || is_poly) && isMultiGeometry && {
+      (is_vector && isMultiGeometry) && {
         id: 'addPart',
         type: ['add_feature', 'change_feature'],
         name: "editing.tools.addpart",
@@ -1237,7 +1239,7 @@ ToolBox.create = function(layer) {
         },
       },
 
-      (is_point || is_poly) && isMultiGeometry && {
+      (is_vector && isMultiGeometry) && {
         id: 'deletePart',
         type: ['change_feature'],
         name: "editing.tools.deletepart",
@@ -1258,7 +1260,7 @@ ToolBox.create = function(layer) {
         },
       },
 
-      is_poly && {
+      (is_line || is_poly) && {
         id: 'splitfeature',
         type:  ['change_feature'],
         name: "editing.tools.split",
@@ -1300,7 +1302,7 @@ ToolBox.create = function(layer) {
         },
       },
 
-      is_poly && {
+      (is_line || is_poly) && {
         id: 'mergefeatures',
         type: ['change_feature'],
         name: "editing.tools.merge",
@@ -1342,7 +1344,7 @@ ToolBox.create = function(layer) {
         },
       },
 
-      is_poly && {
+      (is_line || is_poly) && {
         id: 'copyfeaturefromexternallayer',
         type: ['add_feature'],
         name: "editing.tools.copyfeaturefromexternallayer",
