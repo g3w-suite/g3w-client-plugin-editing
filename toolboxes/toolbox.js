@@ -1229,7 +1229,7 @@ ToolBox.create = function(layer) {
               new OpenFormStep(options),
             ],
           });
-          w.addToolsOfTools({ step: w._options.steps[0], tools: ['snap', 'measure'] });
+          w.addToolsOfTools({ step: w.getStep(0), tools: ['snap', 'measure'] });
           return w;
         },
       },
@@ -1298,7 +1298,7 @@ ToolBox.create = function(layer) {
               new ModifyGeometryVertexStep(),
             ],
           })
-          w.addToolsOfTools({ step: w._options.steps[2], tools: ['snap', 'measure'] });
+          w.addToolsOfTools({ step: w.getStep(2), tools: ['snap', 'measure'] });
           return w;
         },
       },
