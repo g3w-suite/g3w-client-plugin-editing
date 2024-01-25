@@ -1127,6 +1127,89 @@ export class LinkRelationStep extends EditingTask {
 }
 
 /**
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/mergefeaturestask.js@v3.7.1
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/mergefeaturesstep.js@v3.7.1
+ */
+export class MergeFeaturesStep extends EditingTask {
+
+  constructor(options = {}) {
+    options.help = "editing.steps.help.merge";
+
+    super(options);
+
+    options.task = this;
+    const step = new EditingStep(options);
+
+    if (options.steps) {
+      this.setSteps(options.steps);
+    }
+
+    return step;
+  }
+
+  run(inputs, context) {
+    const d            = $.Deferred();
+    const {
+      layer,
+      features
+    }                  = inputs;
+    const editingLayer = layer.getEditingLayer();
+    const source       = editingLayer.getSource();
+    const layerId      = layer.getId();
+    const session      = context.session;
+
+    if (features.length < 2) {
+      GUI.showUserMessage({
+        type: 'warning',
+        message: 'plugins.editing.messages.select_min_2_features',
+        autoclose: true
+      });
+      d.reject();
+    } else {
+      chooseFeatureFromFeatures({ features, inputs })
+        .then(async (feature) => {
+          const index           = features.findIndex(_feature => feature === _feature);
+          const originalFeature = feature.clone();
+          const newFeature      = dissolve({features, index});
+
+          if (newFeature) {
+            try {
+              await evaluateExpressionFields({ inputs, context, feature: newFeature });
+            } catch (err) {
+              console.warn(err);
+            }
+            session.pushUpdate(layerId, newFeature, originalFeature);
+            features
+              .filter(_feature => _feature !== feature)
+              .forEach(deleteFeature => {
+                session.pushDelete(layerId, deleteFeature);
+                source.removeFeature(deleteFeature);
+              });
+            inputs.features = [feature];
+            d.resolve(inputs);
+          } else {
+            GUI.showUserMessage({
+              type: 'warning',
+              message: 'plugins.editing.messages.no_feature_selected',
+              autoclose: true
+            });
+            d.reject();
+          }
+        })
+        .catch(() => {
+          d.reject();
+        })
+    }
+    return d.promise();
+  }
+
+  stop() {
+    this.removeInteraction(this._pickInteraction);
+  }
+
+}
+
+/**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/modifygeometryvertexTask.js@v3.7.1
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/modifygeometryvertexstep.js@v3.7.1
  */
@@ -1138,30 +1221,32 @@ export class ModifyGeometryVertexStep extends EditingTask {
 
     super(options);
 
-    this.drawInteraction = null;
+    this.drawInteraction  = null;
 
-    this._originalStyle = null;
+    this._originalStyle   = null;
 
-    this._feature = null;
-
-    this.tooltip;
+    this._feature         = null;
 
     this._deleteCondition = options.deleteCondition;
 
+    this.tooltip;
+
     options.task = this;
+
     return new EditingStep(options);
   }
 
   run(inputs, context) {
-    const d = $.Deferred();
-    const originalLayer = inputs.layer;
-    const editingLayer = originalLayer.getEditingLayer() ;
-    const session = context.session;
-    const layerId = originalLayer.getId();
     let newFeature, originalFeature;
-    const feature = this._feature = inputs.features[0];
-    this.deleteVertexKey;
+    const d             = $.Deferred();
+    const originalLayer = inputs.layer;
+    const editingLayer  = originalLayer.getEditingLayer() ;
+    const session       = context.session;
+    const layerId       = originalLayer.getId();
+    const feature       = this._feature = inputs.features[0];
     this._originalStyle = editingLayer.getStyle();
+
+    this.deleteVertexKey;
     const style = function() {
       const image = new ol.style.Circle({
         radius: 5,
@@ -2711,87 +2796,6 @@ export class SplitFeatureStep extends EditingTask {
     this._snapIteraction = null;
     /** @since g3w-client-plugin-editing@v3.8.0 */
     this._stopPromise.resolve(true);
-  }
-
-}
-
-
-/**
- * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/mergefeaturestask.js@v3.7.1
- * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/mergefeaturesstep.js@v3.7.1
- */
-export class MergeFeaturesStep extends EditingTask {
-  
-  constructor(options = {}) {
-    options.help = "editing.steps.help.merge";
-
-    super(options);
-
-    options.task = this;
-    const step = new EditingStep(options);
-
-    if (options.steps) {
-      this.setSteps(options.steps);
-    }
-
-    return step;
-  }
-
-  run(inputs, context) {
-    const d = $.Deferred();
-    const { layer, features } = inputs;
-    const editingLayer = layer.getEditingLayer();
-    const source = editingLayer.getSource();
-    const layerId = layer.getId();
-    const session = context.session;
-    if (features.length < 2) {
-      GUI.showUserMessage({
-        type: 'warning',
-        message: 'plugins.editing.messages.select_min_2_features',
-        autoclose: true
-      });
-      d.reject();
-    } else {
-      chooseFeatureFromFeatures({ features, inputs: this.getInputs() })
-      .then(async (feature) => {
-        const index = features.findIndex(_feature => feature === _feature);
-        const originalFeature = feature.clone();
-        const newFeature = dissolve({
-          features,
-          index,
-        });
-        if (newFeature) {
-          try {
-            await evaluateExpressionFields({ inputs, context, feature: newFeature });
-          } catch (err) {
-            console.warn(err);
-          }
-          session.pushUpdate(layerId, newFeature, originalFeature);
-          features
-            .filter(_feature => _feature !== feature)
-            .forEach(deleteFeature => {
-              session.pushDelete(layerId, deleteFeature);
-              source.removeFeature(deleteFeature);
-            });
-          inputs.features = [feature];
-          d.resolve(inputs);
-        } else {
-          GUI.showUserMessage({
-            type: 'warning',
-            message: 'plugins.editing.messages.no_feature_selected',
-            autoclose: true
-          });
-          d.reject();
-        }
-      }).catch(() =>{
-        d.reject();
-      })
-    }
-    return d.promise();
-  }
-
-  stop() {
-    this.removeInteraction(this._pickInteraction);
   }
 
 }
