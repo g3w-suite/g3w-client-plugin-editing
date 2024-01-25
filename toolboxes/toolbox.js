@@ -1204,15 +1204,15 @@ ToolBox.create = function(layer) {
   const iconGeometry    = is_vector && (is_point ? 'Point' : is_line ? 'Line' : 'Polygon');
 
   return new ToolBox({
-    id:          layer.getId(),
-    color:       layer.getColor(),
+    id :          layer.getId(),
+    color :       layer.getColor(),
     type,
     layer,
-    lngTitle:    'editing.toolbox.title',
-    title:       ` ${layer.getOrigName()}`,
-    constraints: layer.getEditingConstrains(),
-    tools:       [
-
+    lngTitle :    'editing.toolbox.title',
+    title :       ` ${layer.getOrigName()}`,
+    constraints : layer.getEditingConstrains(),
+    tools :       [
+      //Add Feature
       (is_vector) && {
         id: 'addfeature',
         type: ['add_feature'],
@@ -1233,7 +1233,7 @@ ToolBox.create = function(layer) {
           return w;
         },
       },
-
+      //Edit Attributes Feature
       (is_vector) && {
         id: 'editattributes',
         type: ['change_attr_feature'],
@@ -1256,7 +1256,7 @@ ToolBox.create = function(layer) {
           return w;
         },
       },
-
+      //Delete Feature
       (is_vector) && {
         id: 'deletefeature',
         type: ['delete_feature'],
@@ -1279,7 +1279,7 @@ ToolBox.create = function(layer) {
           return w;
         },
       },
-
+      //Edit vertex Feature
       (is_line || is_poly) && {
         id: 'movevertex',
         type: ['change_feature'],
@@ -1302,7 +1302,7 @@ ToolBox.create = function(layer) {
           return w;
         },
       },
-
+      //Edit Attributes to Multi features
       (is_vector) && {
         id: 'editmultiattributes',
         type: ['change_attr_feature'],
@@ -1339,7 +1339,7 @@ ToolBox.create = function(layer) {
           });
         },
       },
-
+      //Move Feature
       (is_vector) && {
         id: 'movefeature',
         type: ['change_feature'],
@@ -1360,7 +1360,7 @@ ToolBox.create = function(layer) {
           });
         },
       },
-
+      //Copy Feature from another layer
       (is_vector) && {
         id: 'copyfeaturesfromotherlayer',
         type: ['add_feature'],
@@ -1416,7 +1416,7 @@ ToolBox.create = function(layer) {
           });
         },
       },
-
+      //Copy Feature from layer
       (is_vector) && {
         id: 'copyfeatures',
         type: ['add_feature'],
@@ -1469,7 +1469,7 @@ ToolBox.create = function(layer) {
           });
         },
       },
-
+      //Add part to MultiGeometry Feature
       (is_vector && isMultiGeometry) && {
         id: 'addPart',
         type: ['add_feature', 'change_feature'],
@@ -1531,7 +1531,7 @@ ToolBox.create = function(layer) {
           return w;
         },
       },
-
+      //Remove part from MultiGeometry Feature
       (is_vector && isMultiGeometry) && {
         id: 'deletePart',
         type: ['change_feature'],
@@ -1552,7 +1552,7 @@ ToolBox.create = function(layer) {
           });
         },
       },
-
+      // Split Feature
       (is_line || is_poly) && {
         id: 'splitfeature',
         type:  ['change_feature'],
@@ -1594,7 +1594,7 @@ ToolBox.create = function(layer) {
           });
         },
       },
-
+      //Merge features in one
       (is_line || is_poly) && {
         id: 'mergefeatures',
         type: ['change_feature'],
@@ -1636,7 +1636,7 @@ ToolBox.create = function(layer) {
           });
         },
       },
-
+      //Copy Features from external layer
       (is_line || is_poly) && {
         id: 'copyfeaturefromexternallayer',
         type: ['add_feature'],
@@ -1682,6 +1682,7 @@ ToolBox.create = function(layer) {
         },
       },
       //Table layer (alphanumerical - No geometry)
+      //Add Feature
       is_table && {
         id: 'addfeature',
         type: ['add_feature'],
@@ -1699,7 +1700,7 @@ ToolBox.create = function(layer) {
           });
         },
       },
-
+      //Edit Table
       is_table && {
         id: 'edittable',
         type: ['delete_feature', 'change_attr_feature'],
