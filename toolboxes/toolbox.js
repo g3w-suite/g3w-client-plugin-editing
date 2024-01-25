@@ -68,72 +68,58 @@ const { isSameBaseGeometryType } = g3wsdk.core.geoutils;
 function ToolBox(options={}) {
   base(this);
   this.editingService = require('../services/editingservice');
-  this._mapService    = GUI.getService('map');
-  this._start         = false;
-  this._constraints   = options.constraints || {};
-  this._layer         = options.layer;
-  this.uniqueFields   = this.getUniqueFieldsType(this._layer.getEditingFields());
-  if (this.uniqueFields) {
-    this.getFieldUniqueValuesFromServer();
-  }
-  this._layerType = options.type || Layer.LayerTypes.VECTOR;
-  this._loadedExtent = null;
-  this._tools = options.tools;
+
+  this._mapService        = GUI.getService('map');
+  this._start             = false;
+  this._constraints       = options.constraints || {};
+  this._layer             = options.layer;
+  this.uniqueFields       = this.getUniqueFieldsType(this._layer.getEditingFields());
+  this._layerType         = options.type || Layer.LayerTypes.VECTOR;
+  this._loadedExtent      = null;
+  this._tools             = options.tools;
+  this._getFeaturesOption = {};
+  // is used to constraint loading features to a filter set
+  this.constraints        = { filter: null, show: null, tools: []};
+  this._session           = new Session({ id: options.id, editor: this._layer.getEditor()});
+  this._getFeaturesOption = {};
   this._enabledtools;
   this._disabledtools;
-  this._getFeaturesOption = {};
-  const toolsstate = [];
-  this._tools.forEach(tool => toolsstate.push(tool.getState()));
-  this.constraints = {
-    filter: null,
-    show: null,
-    tools: []
-  }; // is used to constraint loading features to a filter set
-  this._session = new Session({
-    id: options.id,
-    editor: this._layer.getEditor()
-  });
 
   // get informed when save on server
   if (this.uniqueFields) {
+    this.getFieldUniqueValuesFromServer();
     this._session.onafter('saveChangesOnServer', () => {
       this._resetUniqueValues();
     });
   }
 
-  this._getFeaturesOption = {};
-  const historystate = this._session.getHistory().state;
-  const sessionstate = this._session.state;
- 
   this.state = {
-    id: options.id,
-    changingtools: false, // used to show or not tools during change phase
-    show: true, // used to show or not the toolbox if we nee to filtered
-    color: options.color || 'blue',
-    title: options.title || "Edit Layer",
-    customTitle: false,
-    loading: false,
-    enabled: false,
-    toolboxheader: true,
-    startstopediting: true,
-    message: null,
-    toolmessages: {
-      help: null
+    id               : options.id,
+    changingtools    : false, // used to show or not tools during change phase
+    show             : true, // used to show or not the toolbox if we need to filtered
+    color            : options.color || 'blue',
+    title            : options.title || "Edit Layer",
+    customTitle      : false,
+    loading          : false,
+    enabled          : false,
+    toolboxheader    : true,
+    startstopediting : true,
+    message          : null,
+    toolmessages     : { help: null },
+    toolsoftool      : [],
+    tools            : this._tools.map(tool => tool.getState()),
+    selected         : false,
+    activetool       : null,
+    editing          : {
+      session      : this._session.state,
+      history      : this._session.getHistory().state,
+      on           : false,
+      dependencies : [],
+      relations    : [],
+      father       : false,
+      canEdit      : true
     },
-    toolsoftool: [],
-    tools: toolsstate,
-    selected: false,
-    activetool: null,
-    editing: {
-      session: sessionstate,
-      history: historystate,
-      on: false,
-      dependencies: [],
-      relations: [],
-      father: false,
-      canEdit: true
-    },
-    layerstate: this._layer.state
+    layerstate       : this._layer.state
   };
 
   /**
@@ -157,8 +143,12 @@ function ToolBox(options={}) {
 
   this._session.onafter('stop', () => {
     if (this.inEditing()) {
-      ApplicationState.online && this.editingService.stopSessionChildren(this.state.id);
-      this._getFeaturesOption.registerEvents && this._unregisterGetFeaturesEvent();
+      if (ApplicationState.online) {
+        this.editingService.stopSessionChildren(this.state.id);
+      }
+      if (this._getFeaturesOption.registerEvents) {
+        this._unregisterGetFeaturesEvent();
+      }
     }
   });
 
@@ -170,7 +160,7 @@ function ToolBox(options={}) {
       };
       this._getFeaturesOption = options;
       this._registerGetFeaturesEvent(this._getFeaturesOption);
-      if (options.type === Layer.LayerTypes.VECTOR && GUI.getContentLength()) {
+      if (Layer.LayerTypes.VECTOR === options.type && GUI.getContentLength()) {
         GUI.once('closecontent', () => {
           setTimeout(() => {
             this._mapService.getMap().dispatchEvent(this._getFeaturesEvent.event)
@@ -185,55 +175,109 @@ inherit(ToolBox, G3WObject);
 
 const proto = ToolBox.prototype;
 
+/**
+ *
+ * @return {*|{toolboxheader: boolean, layerstate, color: string, toolsoftool: *[], show: boolean, customTitle: boolean, startstopediting: boolean, title: string, loading: boolean, message: null, tools: *[], enabled: boolean, editing: {session, father: boolean, canEdit: boolean, history, relations: *[], on: boolean, dependencies: *[]}, toolmessages: {help: null}, changingtools: boolean, id, activetool: null, selected: boolean}}
+ */
 proto.getState = function() {
   return this.state;
 };
 
+/**
+ *
+ * @param bool
+ */
 proto.setShow = function(bool=true){
   this.state.show = bool;
 };
 
+/**
+ *
+ * @return {*}
+ */
 proto.getLayer = function() {
   return this._layer;
 };
 
+/**
+ *
+ * @param bool
+ */
 proto.setFather = function(bool) {
   this.state.editing.father = bool;
 };
 
+/**
+ *
+ * @return {boolean}
+ */
 proto.isFather = function() {
   return this.state.editing.father;
 };
 
-proto.addRelations = function(relations) {
+/**
+ *
+ * @param relations
+ */
+proto.addRelations = function(relations = []) {
   relations.forEach(relation => this.addRelation(relation));
 };
 
+/**
+ *
+ * @return {*}
+ */
 proto.revert = function() {
   return this._session.revert();
 };
 
+/**
+ *
+ * @param relation
+ */
 proto.addRelation = function(relation) {
   this.state.editing.relations.push(relation);
 };
 
+/**
+ *
+ * @return {[]}
+ */
 proto.getDependencies = function() {
   return this.state.editing.dependencies;
 };
 
+/**
+ *
+ * @return {boolean}
+ */
 proto.hasDependencies = function() {
-  return !!this.state.editing.dependencies.length;
+  return this.state.editing.dependencies.length > 0;
 };
 
+/**
+ *
+ * @param dependencies
+ */
 proto.addDependencies = function(dependencies) {
   dependencies.forEach(dependency => this.addDependency(dependency));
 };
 
+/**
+ *
+ * @param dependency
+ */
 proto.addDependency = function(dependency) {
   this.state.editing.dependencies.push(dependency);
 };
 
-proto.getFieldUniqueValuesFromServer = function({reset=false}={}) {
+/**
+ *
+ * @param reset
+ */
+proto.getFieldUniqueValuesFromServer = function({
+  reset=false
+}={}) {
   this._layer.getWidgetData({
     type: 'unique',
     fields: Object.values(this.uniqueFields).map(field => field.name).join()
@@ -242,11 +286,13 @@ proto.getFieldUniqueValuesFromServer = function({reset=false}={}) {
     Object
       .entries(response.data)
       .forEach(([fieldName, values]) => {
-        reset && this.uniqueFields[fieldName].input.options.values.splice(0);
+        if (reset) {
+          this.uniqueFields[fieldName].input.options.values.splice(0);
+        }
         values.forEach(value => this.uniqueFields[fieldName].input.options.values.push(value));
       })
   })
-  .fail(console.log)
+  .fail(console.warn)
 };
 
 /**
@@ -271,7 +317,7 @@ proto.getUniqueFieldsType = function(fields) {
  *
  * @private
  */
-proto._resetUniqueValues = function(){
+proto._resetUniqueValues = function() {
   this.getFieldUniqueValuesFromServer({
     reset: true
   })
@@ -280,15 +326,17 @@ proto._resetUniqueValues = function(){
 /*
 check if vectorLayer
  */
-proto.isVectorLayer = function(){
-  return this._layerType ===  Layer.LayerTypes.VECTOR;
+proto.isVectorLayer = function() {
+  return Layer.LayerTypes.VECTOR === this._layerType;
 };
 
 /**
  * Method to create getFeatures options
  * @param filter
  */
-proto.setFeaturesOptions = function({filter}={}){
+proto.setFeaturesOptions = function({
+  filter } = {}
+) {
   if (filter) {
     // in case of no features filter request check if no features_filed is present otherwise it get first field
     if (filter.nofeatures) {
@@ -304,10 +352,8 @@ proto.setFeaturesOptions = function({filter}={}){
       this.setConstraintFeaturesFilter(filter);
     }
   } else {
-    const filterType = this._layerType === Layer.LayerTypes.TABLE ? 'all': 'bbox';
-    this._getFeaturesOption = this.editingService.createEditingDataOptions(filterType, {
-      layerId: this.getId()
-    });
+    this._getFeaturesOption = this.editingService
+      .createEditingDataOptions(Layer.LayerTypes.TABLE === this._layerType ? 'all': 'bbox', { layerId: this.getId() });
   }
 };
 
@@ -315,7 +361,7 @@ proto.setFeaturesOptions = function({filter}={}){
  *
  * @param constraints
  */
-proto.setEditingConstraints = function(constraints={}){
+proto.setEditingConstraints = function(constraints={}) {
   Object
     .keys(constraints)
     .forEach(constraint => this.constraints[constraint] = constraints[constraint]);
@@ -332,7 +378,7 @@ proto.setLayerUniqueFieldValues = async function() {
 /**
  *
  */
-proto.clearLayerUniqueFieldsValues = function(){
+proto.clearLayerUniqueFieldsValues = function() {
   this.editingService.clearLayerUniqueFieldsValues(this.getId())
 };
 
@@ -341,7 +387,7 @@ proto.start = function(options={}) {
   const d                     = $.Deferred();
   const id                    = this.getId();
   const applicationConstraint = this.editingService.getApplicationEditingConstraintById(id);
-  const EventName = 'start-editing';
+  const EventName             = 'start-editing';
 
   let {
     toolboxheader    = true,
@@ -350,20 +396,18 @@ proto.start = function(options={}) {
     changingtools    = false,
     tools,
     filter,
-  } = options;
+  }                           = options;
 
-  this.state.changingtools = changingtools;
+  this.state.changingtools    = changingtools;
   if (tools) {
     this.setEnablesDisablesTools(tools);
   }
-  this.state.toolboxheader = toolboxheader;
+  this.state.toolboxheader    = toolboxheader;
   this.state.startstopediting = startstopediting;
 
   filter = applicationConstraint && applicationConstraint.filter || this.constraints.filter || filter;
   // set filterOptions
-  this.setFeaturesOptions({
-    filter
-  });
+  this.setFeaturesOptions({ filter });
 
   //register lock features to show message
   const lockSetter = 'featuresLockedByOtherUser';
@@ -831,7 +875,7 @@ proto.setEnableTool = function(toolId) {
 proto.setAddEnableTools = function({
   tools={},
   options= {editing_constraints: true }
-}={}) {
+} = {}) {
   const { editing_constraints = false } = options;
   const ADDONEFEATUREONLYTOOLSID        = [
     'addfeature',
@@ -1637,7 +1681,7 @@ ToolBox.create = function(layer) {
           });
         },
       },
-
+      //Table layer (alphanumerical - No geometry)
       is_table && {
         id: 'addfeature',
         type: ['add_feature'],
