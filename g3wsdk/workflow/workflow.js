@@ -98,12 +98,14 @@ function Workflow(options = {}) {
   this._messages = Step.MESSAGES;
 
   /**
-   * @FIXME add description
+   * Store user messages steps to show when workflow
+   * use a mandatory steps (ex. select: {description}, merge: {description}}
    */
-  this._userMessageSteps = this._steps.reduce((messagesSteps, step) => {
-    const usermessagesteps = step.getTask().getUserMessageSteps();
-    return usermessagesteps && { ...messagesSteps, ...usermessagesteps, } || messagesSteps },
-  {});
+  this._userMessageSteps = this._steps
+    .reduce((messagesSteps, step) => ({
+      ...messagesSteps,
+      ...(step.getTask().getUserMessageSteps() || {})
+    }), {});
 
   /**
    * Holds back button label (in case of child workflow)
@@ -279,7 +281,7 @@ proto.getLastStep = function() {
 };
 
 /**
- * @returns { T }
+ * @returns { Step }
  */
 proto.getRunningStep = function() {
   return this._steps.find(step => step.isRunning());
@@ -289,9 +291,9 @@ proto.getRunningStep = function() {
  * Stop all workflow children 
  */
 proto._stopChild = function() {
-  return this._child ?
-    this._child.stop() :
-    resolve();                 // <-- FIXME: undefined function ? 
+  return this._child
+  ? this._child.stop()
+  : resolve();                 // <-- FIXME: undefined function ?
 };
 
 /**
@@ -341,7 +343,11 @@ proto.start = function(options = {}) {
   const isChild = this._context.isChild || false;
   
   // stop child when a workflow is running 
-  if (!isChild && WorkflowsStack.getLength() && WorkflowsStack.getCurrent() !== this) {
+  if (
+      !isChild
+      && WorkflowsStack.getLength()
+      && WorkflowsStack.getCurrent() !== this
+  ) {
     WorkflowsStack.getCurrent().addChild(this)
   }
 
@@ -364,6 +370,7 @@ proto.start = function(options = {}) {
     });
   }
 
+  //start flow of worflow
   this._flow
     .start(this)
     .then(outputs => {
@@ -400,7 +407,6 @@ proto.stop = function() {
 
   this._promise = null;
 
-
   this
     ._stopChild()                                   // stop child workflow
     .always(() => {                                 // ensure that child is always removed
@@ -430,10 +436,14 @@ proto.clearUserMessagesSteps = function() {
  * @private
  */
 proto._resetUserMessaggeStepsDone = function() {
-  Object.keys(this._userMessageSteps).forEach(type => {
-    const userMessageSteps = this._userMessageSteps[type];
-    userMessageSteps.done = false;
-    if (userMessageSteps.buttonnext) userMessageSteps.buttonnext.disabled = true;
+  Object
+    .keys(this._userMessageSteps)
+    .forEach(type => {
+      const userMessageSteps = this._userMessageSteps[type];
+      userMessageSteps.done = false;
+      if (userMessageSteps.buttonnext) {
+        userMessageSteps.buttonnext.disabled = true;
+      }
   })
 };
 
@@ -516,12 +526,19 @@ export class EditingWorkflow extends Workflow {
     };
 
     step.on('run', ({ inputs, context }) => {
-      if (0 == this._toolsoftool.length) {
-        tools.forEach(tool => {
-          if ('measure' !== tool || (Layer.LayerTypes.VECTOR === inputs.layer.getType() && !isPointGeometryType(inputs.layer.getGeometryType()))) {
-            this._toolsoftool.push(toolsOfTools[tool]);
-          }
-        });
+      if (0 === this._toolsoftool.length) {
+        tools
+          .forEach(tool => {
+            if (
+                'measure' !== tool
+                || (
+                  Layer.LayerTypes.VECTOR === inputs.layer.getType()
+                  && !isPointGeometryType(inputs.layer.getGeometryType())
+                )
+            ) {
+              this._toolsoftool.push(toolsOfTools[tool]);
+            }
+          });
       }
       this._toolsoftool.forEach(t => t.options.run({ layer: inputs.layer }));
       this.emit('settoolsoftool', this._toolsoftool);
@@ -585,4 +602,4 @@ export class EditingWorkflow extends Workflow {
     this.on('stop', () => this.unbindEscKeyUp());
   }
 
-};
+}
