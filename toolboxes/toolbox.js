@@ -908,7 +908,7 @@ ToolBox.create = function(layer) {
   const is_poly         = is_vector && Geometry.isPolygonGeometryType(geometryType);
   const is_table        = Layer.LayerTypes.TABLE === type;
   const isMultiGeometry = geometryType && Geometry.isMultiGeometry(geometryType);
-  const IconGeometry    = is_vector && (is_point ? 'Point' : is_line ? 'Line' : 'Polygon');
+  const iconGeometry    = is_vector && (is_point ? 'Point' : is_line ? 'Line' : 'Polygon');
 
   return new ToolBox({
     id:          layer.getId(),
@@ -924,7 +924,7 @@ ToolBox.create = function(layer) {
         id: 'addfeature',
         type: ['add_feature'],
         name: 'editing.tools.add_feature',
-        icon: `add${IconGeometry}.png`,
+        icon: `add${iconGeometry}.png`,
         layer,
         row: 1,
         /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addfeatureworkflow.js@v3.7.1 */
@@ -968,7 +968,7 @@ ToolBox.create = function(layer) {
         id: 'deletefeature',
         type: ['delete_feature'],
         name: 'editing.tools.delete_feature',
-        icon: `delete${IconGeometry}.png`,
+        icon: `delete${iconGeometry}.png`,
         layer,
         row: 1,
         /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/deletefeatureworkflow.js@v3.7.1 */
@@ -1051,7 +1051,7 @@ ToolBox.create = function(layer) {
         id: 'movefeature',
         type: ['change_feature'],
         name: 'editing.tools.move_feature',
-        icon: `move${IconGeometry}.png`,
+        icon: `move${iconGeometry}.png`,
         layer,
         row: 2,
         /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/movefeatureworkflow.js@v3.7.1 */
@@ -1128,7 +1128,7 @@ ToolBox.create = function(layer) {
         id: 'copyfeatures',
         type: ['add_feature'],
         name: "editing.tools.copy",
-        icon: `copy${IconGeometry}.png`,
+        icon: `copy${iconGeometry}.png`,
         layer,
         once: true,
         row: 2,
