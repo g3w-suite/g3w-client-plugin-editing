@@ -140,7 +140,7 @@ export class AddFeatureStep extends EditingTask {
 
     this.drawingFeature;
 
-    this._snap = options.snap === false ? false : true;
+    this._snap = false === options.snap ? false : true;
 
     this._finishCondition = options.finishCondition || (() => true);
 
@@ -181,6 +181,7 @@ export class AddFeatureStep extends EditingTask {
   }
 
   run(inputs, context) {
+    //create promise to listen to pass to setAndUnsetSelectedFeaturesStyle
     this._stopPromise = $.Deferred();
 
     const d = $.Deferred();
@@ -189,7 +190,7 @@ export class AddFeatureStep extends EditingTask {
     const session = context.session;
     const layerId = originalLayer.getId();
 
-    // skip when ..
+    // Skin when layer type is vector
     if (Layer.LayerTypes.VECTOR !== originalLayer.getType()) {
       return d.promise();
     }
@@ -250,7 +251,6 @@ export class AddFeatureStep extends EditingTask {
 
   /**
    * Method to add Measure
-   * @param geometryType
    */
   addMeasureInteraction() {
     const measureOptions = {
@@ -280,6 +280,19 @@ export class AddFeatureStep extends EditingTask {
     }
   }
 
+  /**
+   * Remove last point/vertex draw
+   */
+  removeLastPoint() {
+    if (this.drawInteraction) {
+      try {
+        this.drawInteraction.removeLastPoint();
+      } catch (err) {
+        console.warn(err)
+      }
+    }
+  }
+
   stop() {
     this.removeInteraction(this.drawInteraction);
     this.removeMeasureInteraction();
@@ -288,16 +301,6 @@ export class AddFeatureStep extends EditingTask {
     document.removeEventListener('keydown', this._delKeyRemoveLastPoint);
     this._stopPromise.resolve(true);
     return true;
-  }
-
-  removeLastPoint() {
-    if (this.drawInteraction) {
-      try {
-        this.drawInteraction.removeLastPoint();
-      } catch (err) {
-        console.log(err)
-      }
-    }
   }
 
 }
@@ -315,12 +318,14 @@ export class AddPartToMultigeometriesStep extends EditingTask {
   }
 
   run(inputs, context) {
-    const d = $.Deferred();
+    const d               = $.Deferred();
     const layerId         = inputs.layer.getId();
     const feature         = inputs.features[0];
     const geometry        = feature.getGeometry();
     const originalFeature = feature.clone();
+
     geometry.setCoordinates([...geometry.getCoordinates(), ...inputs.features[1].getGeometry().getCoordinates()]);
+
     // evaluated geometry expression
     evaluateExpressionFields({ inputs, context, feature })
       .finally(() => {
@@ -351,9 +356,9 @@ export class ChooseFeatureStep extends EditingTask {
     if (1 === inputs.features.length) {
       d.resolve(inputs);
     } else {
-      chooseFeatureFromFeatures({ features: inputs.features, inputs: this.getInputs() })
+      chooseFeatureFromFeatures({ features: inputs.features, inputs })
         .then((feature) => { inputs.features = [feature]; d.resolve(inputs) })
-        .catch(() => { d.reject(); });
+        .catch((err) => { d.reject(err); });
     }
     return d.promise();
   }
@@ -370,13 +375,13 @@ export class ChooseFeatureStep extends EditingTask {
 const Dialogs = {
   delete: {
     fnc(inputs) {
-      let d = $.Deferred();
-      const EditingService = require('../services/editingservice');
-      const layer = inputs.layer;
-      const editingLayer = layer.getEditingLayer();
-      const feature = inputs.features[0];
-      const layerId = layer.getId();
-      const childRelations = layer.getChildren();
+      const EditingService    = require('../services/editingservice');
+      let d                   = $.Deferred();
+      const layer             = inputs.layer;
+      const editingLayer      = layer.getEditingLayer();
+      const feature           = inputs.features[0];
+      const layerId           = layer.getId();
+      const childRelations    = layer.getChildren();
       const relationinediting = childRelations.length && EditingService._filterRelationsInEditing({
         layerId,
         relations: layer.getRelations().getArray()
@@ -405,8 +410,8 @@ const Dialogs = {
   },
   commit: {
     fnc(inputs) {
-      let d = $.Deferred();
-      let close = inputs.close;
+      let d         = $.Deferred();
+      let close     = inputs.close;
       const buttons = {
         SAVE: {
           label: t("save"),
@@ -489,18 +494,16 @@ export class CopyFeaturesFromOtherLayerStep extends EditingTask {
   }
 
   run(inputs, context) {
-    const d = $.Deferred();
-    const originalLayer = inputs.layer;
-    const geometryType = originalLayer.getGeometryType();
-    const layerId = originalLayer.getId();
+    const d                = $.Deferred();
+    const originalLayer    = inputs.layer;
+    const geometryType     = originalLayer.getGeometryType();
+    const layerId          = originalLayer.getId();
     //get attributes/properties from current layer in editing
-    const attributes = originalLayer
-      .getEditingFields()
-      .filter(attribute => !attribute.pk);
-    const session = context.session;
-    const editingLayer = originalLayer.getEditingLayer();
-    const source = editingLayer.getSource();
-    const features = getFeaturesFromSelectionFeatures({ layerId, geometryType });
+    const attributes       = originalLayer.getEditingFields().filter(attribute => !attribute.pk);
+    const session          = context.session;
+    const editingLayer     = originalLayer.getEditingLayer();
+    const source           = editingLayer.getSource();
+    const features         = getFeaturesFromSelectionFeatures({ layerId, geometryType });
     const selectedFeatures = [];
 
     /**
@@ -523,15 +526,11 @@ export class CopyFeaturesFromOtherLayerStep extends EditingTask {
     const editAttributes = Vue.observable({
       state: false
     })
-    const Component = Vue.extend(CopyFeatureFromOtherLayersComponent);
-    const vueInstance = new Component({
-      layers,
-      selectedFeatures,
-      editAttributes
-    });
+    const Component      = Vue.extend(CopyFeatureFromOtherLayersComponent);
+    const vueInstance    = new Component({layers, selectedFeatures, editAttributes});
 
-    const message = vueInstance.$mount().$el;
-    const dialog = GUI.showModalDialog({
+    const message        = vueInstance.$mount().$el;
+    const dialog         = GUI.showModalDialog({
       title: tPlugin('editing.modal.tools.copyfeaturefromotherlayer.title'),
       className: 'modal-left',
       closeButton: false,
@@ -540,9 +539,7 @@ export class CopyFeaturesFromOtherLayerStep extends EditingTask {
         cancel: {
           label: 'Cancel',
           className: 'btn-danger',
-          callback(){
-            d.reject();
-          }
+          callback() {d.reject();}
         },
         ok: {
           label: 'Ok',
@@ -566,15 +563,14 @@ export class CopyFeaturesFromOtherLayerStep extends EditingTask {
                 })
               }
             });
-            const featurePromises = await Promise.allSettled(promisesFeatures);
-            featurePromises.forEach(({status, value:layerFeature}, index) => {
-              if (status === "fulfilled") {
-                const selectedFeature = selectedFeatures[index];
-                // Check if there is an empty filed required not defined
-                isThereEmptyFieldRequiredNotDefined = undefined !== attributes
-                  .find(({name, validate: {required=false}}) => {
-                    return (undefined === layerFeature.properties[name] && required);
-                  });
+
+            (await Promise.allSettled(promisesFeatures))
+              .forEach(({status, value:layerFeature}, index) => {
+                if (status === "fulfilled") {
+                  const selectedFeature = selectedFeatures[index];
+                  // Check if there is an empty filed required not defined
+                  isThereEmptyFieldRequiredNotDefined = undefined !== attributes
+                    .find(({name, validate: {required=false}}) => (undefined === layerFeature.properties[name] && required));
 
                 const feature = new Feature({
                   feature: selectedFeature,
