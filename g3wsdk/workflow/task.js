@@ -70,7 +70,9 @@ proto.setUserMessageSteps = function(steps={}) {
 };
 
 proto.setUserMessageStepDone = function(type) {
-  if (type) this.state.usermessagesteps[type].done = true;
+  if (type) {
+    this.state.usermessagesteps[type].done = true;
+  }
 };
 
 export default Task;

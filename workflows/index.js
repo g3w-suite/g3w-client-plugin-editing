@@ -650,35 +650,38 @@ export class CopyFeaturesFromOtherProjectLayerStep extends EditingTask {
     super(options);
 
     this.copyLayer = options.copyLayer;
-    this.external = options.external;
-    this.isVector = options.isVector;
+    this.external  = options.external;
+    this.isVector  = options.isVector;
 
-    options.task = this;
+    options.task   = this;
     return new EditingStep(options);
   }
 
   run(inputs, context) {
-    const d = $.Deferred();
-    const {features, layer:originalLayer} = inputs;
-    const layerId = originalLayer.getId();
-    const attributes = originalLayer.getEditingFields().filter(attribute => !attribute.pk);
-    const session = context.session;
-    const editingLayer = originalLayer.getEditingLayer();
-    const source = editingLayer.getSource();
+    const d                = $.Deferred();
+    const {
+      features,
+      layer:originalLayer
+    }                      = inputs;
+    const layerId          = originalLayer.getId();
+    const attributes       = originalLayer.getEditingFields().filter(attribute => !attribute.pk);
+    const session          = context.session;
+    const editingLayer     = originalLayer.getEditingLayer();
+    const source           = editingLayer.getSource();
     const selectedFeatures = [];
 
     /**
      * ORIGINAL SOURCE: g3w-client-plugin-editing/g3w-editing-components/selectcopyotherprojectlayerfeatures.js.js@3.6
      */
-    const Component = Vue.extend(CopyFeatureFromOtherProjectLayersComponent);
-    const vueInstance = new Component({
+    const Component        = Vue.extend(CopyFeatureFromOtherProjectLayersComponent);
+    const vueInstance      = new Component({
       fields:           this.external                  ? null: CatalogLayersStoresRegistry.getLayerById(this.copyLayer.getId()).getFields(),
       features:         undefined !== features         ? features : [],
       selectedFeatures: undefined !== selectedFeatures ? selectedFeatures : [],
     })
 
-    const message = vueInstance.$mount().$el;
-    const dialog = GUI.showModalDialog({
+    const message          = vueInstance.$mount().$el;
+    const dialog           = GUI.showModalDialog({
       title: tPlugin('editing.modal.tools.copyfeaturefromprojectlayer.title'),
       className: 'modal-left',
       closeButton: false,
@@ -687,9 +690,7 @@ export class CopyFeaturesFromOtherProjectLayerStep extends EditingTask {
         cancel: {
           label: 'Cancel',
           className: 'btn-danger',
-          callback(){
-            d.reject();
-          }
+          callback(){d.reject();}
         },
         ok: {
           label: 'Ok',
@@ -710,11 +711,13 @@ export class CopyFeaturesFromOtherProjectLayerStep extends EditingTask {
                   properties: attributes.map(attribute => attribute.name)
                 });
 
-                originalLayer.getEditingNotEditableFields().find(field => {
-                  if (originalLayer.isPkField(field)){
-                    feature.set(field, null)
-                  }
-                });
+                originalLayer
+                  .getEditingNotEditableFields()
+                  .find(field => {
+                    if (originalLayer.isPkField(field)){
+                      feature.set(field, null)
+                    }
+                  });
                 //remove eventually Z Values
                 removeZValueToOLFeatureGeometry({
                   feature
@@ -726,24 +729,28 @@ export class CopyFeaturesFromOtherProjectLayerStep extends EditingTask {
               };
               // case vector layer
               if (this.isVector) {
-                if (this.external)
+                if (this.external) {
                   createFeatureWithPropertiesOfSelectedFeature(selectedFeature.getProperties());
-                else {
+                } else {
                   try {
                     const layerProjectFeature = await this.getEditingService().getProjectLayerFeatureById({
                       layerId: this.copyLayer.getId(),
                       fid: selectedFeature.get(G3W_FID)
                     });
-                    if (layerProjectFeature)
+                    if (layerProjectFeature) {
                       createFeatureWithPropertiesOfSelectedFeature(layerProjectFeature.properties);
-                  } catch(err){}
+                    }
+                  } catch(err) {
+                    console.warn(err);
+                  }
                 }
               } else {
                 //TODO case alphanumeric layer
               }
             }
-            if (features.length && features.length === 1) inputs.features.push(features[0]);
-            else {
+            if (features.length && features.length === 1) {
+              inputs.features.push(features[0]);
+            } else {
               isThereEmptyFieldRequiredNotDefined && GUI.showUserMessage({
                 type: 'warning',
                 message: 'plugins.editing.messages.copy_and_paste_from_other_layer_mandatory_fields',
@@ -904,31 +911,33 @@ export class DeletePartFromMultigeometriesStep extends EditingTask {
   }
 
   run(inputs, context) {
-    const d = $.Deferred();
-    const originaLayer = inputs.layer;
-    const editingLayer = inputs.layer.getEditingLayer();
-    const layerId = originaLayer.getId();
-    const session = context.session;
-    const {features, coordinate} = inputs;
-    const feature = features[0];
+    const d               = $.Deferred();
+    const originaLayer    = inputs.layer;
+    const editingLayer    = inputs.layer.getEditingLayer();
+    const layerId         = originaLayer.getId();
+    const session         = context.session;
+    const {
+      features,
+      coordinate
+    }                     = inputs;
+    const feature         = features[0];
     const originalFeature = feature.clone();
-    const geometry = feature.getGeometry();
-    const geometries = multiGeometryToSingleGeometries(geometry);
-    const source = new ol.source.Vector({
-      features: geometries.map(geometry => new ol.Feature(geometry))
-    });
-    const map = this.getMap();
-    const pixel = map.getPixelFromCoordinate(coordinate);
-    let tempLayer = new ol.layer.Vector({
+    const geometry        = feature.getGeometry();
+    const geometries      = multiGeometryToSingleGeometries(geometry);
+    const source          = new ol.source.Vector({features: geometries.map(geometry => new ol.Feature(geometry))});
+    const map             = this.getMap();
+    const pixel           = map.getPixelFromCoordinate(coordinate);
+    let tempLayer         = new ol.layer.Vector({
       source,
       style: editingLayer.getStyle()
     });
 
     map.addLayer(tempLayer);
+
     map.once('postrender', () => {
       let found = false;
       //need to call map.forEachFeatureAtPixel and not this.forEachFeatureAtPixel
-      //beacuse we use arrow function and it referred this to outside context
+      //because we use arrow function, and it referred this to outside context
       map.forEachFeatureAtPixel(pixel, _feature => {
         if (!found) {
           source.removeFeature(_feature);
@@ -942,7 +951,7 @@ export class DeletePartFromMultigeometriesStep extends EditingTask {
               inputs,
               context,
               feature
-            }).finally(()=>{
+            }).finally(() => {
               session.pushUpdate(layerId, feature, originalFeature);
               d.resolve(inputs);
             });
@@ -965,7 +974,7 @@ export class DeletePartFromMultigeometriesStep extends EditingTask {
         }
       );
       //need to call map.forEachFeatureAtPixel and not this.forEachFeatureAtPixel
-      //beacuse we use arrow function and it referred this to outside context
+      //because we use arrow function, and it referred this to outside context
       map.removeLayer(tempLayer);
       tempLayer = null;
     });
@@ -1002,7 +1011,7 @@ export class GetVertexStep extends EditingTask {
   }
 
   run(inputs) {
-    const d = $.Deferred();
+    const d          = $.Deferred();
     const {features} = inputs;
 
     if (!features.length) {
@@ -1025,7 +1034,7 @@ export class GetVertexStep extends EditingTask {
         return !!features.find(feature => areCoordinatesEqual({feature, coordinates}));
       }
     });
-    this._drawIteraction.on('drawend', (evt)=> {
+    this._drawIteraction.on('drawend', (evt) => {
       inputs.coordinates = evt.feature.getGeometry().getCoordinates();
       this.setUserMessageStepDone('from');
       d.resolve(inputs);
@@ -1064,59 +1073,57 @@ export class LinkRelationStep extends EditingTask {
   }
 
   run(inputs, context) {
-    const d = $.Deferred();
     GUI.setModal(false);
-    const editingLayer = inputs.layer.getEditingLayer();
-    this._originalLayerStyle = editingLayer.getStyle();
-    const beforeRun = context.beforeRun;
-    const promise = beforeRun && typeof beforeRun === 'function' ? beforeRun() : Promise.resolve();
+    const d                   = $.Deferred();
+    const editingLayer        = inputs.layer.getEditingLayer();
+    this._originalLayerStyle  = editingLayer.getStyle();
+    const beforeRun           = context.beforeRun;
+    const promise             = beforeRun && typeof beforeRun === 'function' ? beforeRun() : Promise.resolve();
 
-    const {excludeFeatures} = context;
+    const { excludeFeatures } = context;
 
-    const style = context.style;
+    const style               = context.style;
 
-    this._features = editingLayer.getSource().getFeatures();
+    this._features            = editingLayer.getSource().getFeatures();
 
     if (excludeFeatures) {
       this._features = this._features
-        .filter(feature => {
-          return Object
-            .entries(excludeFeatures)
-            .reduce((bool, [field, value]) => bool && feature.get(field) != value, true)
-        })
+        .filter(feature => Object
+          .entries(excludeFeatures)
+          .reduce((bool, [field, value]) => bool && feature.get(field) != value, true)
+        )
     }
 
     if (style) {
-      this._features.forEach(feature =>feature.setStyle(style));
+      this._features.forEach(feature => feature.setStyle(style));
     }
-    promise.then(()=> {
-      this.pickFeatureInteraction = new PickFeatureInteraction({
-        layers: [editingLayer],
-        features: this._features
-      });
-      this.addInteraction(this.pickFeatureInteraction);
-      this.pickFeatureInteraction.on('picked', evt => {
-        const relation = evt.feature;
-        inputs.features.push(relation);
-        GUI.setModal(true);
-        d.resolve(inputs);
-      });
-    }).catch(err => d.reject(err));
+    promise
+      .then(() => {
+        this.pickFeatureInteraction = new PickFeatureInteraction({
+          layers: [editingLayer],
+          features: this._features
+        });
+        this.addInteraction(this.pickFeatureInteraction);
+        this.pickFeatureInteraction.on('picked', evt => {
+          const relation = evt.feature;
+          inputs.features.push(relation);
+          GUI.setModal(true);
+          d.resolve(inputs);
+        });
+      })
+      .catch(err => d.reject(err));
     return d.promise()
   }
 
   stop() {
     GUI.setModal(true);
     this.removeInteraction(this.pickFeatureInteraction);
-    this._features
-      .forEach(feature => feature.setStyle(this._originalLayerStyle));
-
+    this._features.forEach(feature => feature.setStyle(this._originalLayerStyle));
     this.pickFeatureInteraction = null;
     this._features = null;
     this._originalLayerStyle = null;
     return true;
   }
-
 }
 
 /**
