@@ -92,7 +92,7 @@ export class EditingTask extends Task {
 
     super(options);
 
-    this._editingServive;
+    this._editingService;
 
     this._mapService = GUI.getService('map');
 
@@ -184,8 +184,8 @@ export class EditingTask extends Task {
    * @returns {*|EditingService|{}}
    */
   getEditingService() {
-    this._editingServive = this._editingServive || require('../../services/editingservice');
-    return this._editingServive;
+    this._editingService = this._editingService || require('../../services/editingservice');
+    return this._editingService;
   }
 
   /**
