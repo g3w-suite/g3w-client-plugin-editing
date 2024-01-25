@@ -752,12 +752,14 @@ export class CopyFeaturesFromOtherProjectLayerStep extends EditingTask {
             if (features.length && features.length === 1) {
               inputs.features.push(features[0]);
             } else {
-              isThereEmptyFieldRequiredNotDefined && GUI.showUserMessage({
-                type: 'warning',
-                message: 'plugins.editing.messages.copy_and_paste_from_other_layer_mandatory_fields',
-                autoclose: true,
-                duration: 2000
-              });
+              if (isThereEmptyFieldRequiredNotDefined) {
+                GUI.showUserMessage({
+                  type: 'warning',
+                  message: 'plugins.editing.messages.copy_and_paste_from_other_layer_mandatory_fields',
+                  autoclose: true,
+                  duration: 2000
+                });
+              }
               inputs.features.push(features);
             }
             features.forEach(feature => this.fireEvent('addfeature', feature));
