@@ -71,6 +71,7 @@ const { G3W_FID }                          = g3wsdk.constant;
 const { CatalogLayersStoresRegistry }      = g3wsdk.core.catalog;
 const { Component }                        = g3wsdk.gui.vue;
 
+const EditingFormComponent                 = require('../form/editingform');
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/addfeaturetabletask.js@v3.7.1
@@ -1364,13 +1365,15 @@ export class MoveElementsStep extends EditingTask {
    * @returns {{ x: number, y: number }}
    */
   getDeltaXY({x, y, coordinates} = {}) {
-    const getCoordinates = (coordinates)=> {
-      if (Array.isArray(coordinates[0])){
+    const getCoordinates = (coordinates) => {
+      if (Array.isArray(coordinates[0])) {
         return getCoordinates(coordinates[0])
-      } else return {
-        x: coordinates[0],
-        y: coordinates[1]
-      };
+      } else {
+        return {
+          x: coordinates[0],
+          y: coordinates[1]
+        };
+      }
     };
     const xy = getCoordinates(coordinates);
     return {
@@ -1386,33 +1389,34 @@ export class MoveElementsStep extends EditingTask {
    * @returns jQuery Promise
    */
   run(inputs, context) {
-    const d = $.Deferred();
-    const { layer, features, coordinates } = inputs;
-    const source = layer.getEditingLayer().getSource();
-    /** @since g3w-client-plugin-editing@v3.8.0 */
-    setAndUnsetSelectedFeaturesStyle({ promise: d, inputs });
+    const d       = $.Deferred();
+    const {
+      layer,
+      features,
+      coordinates
+    }             = inputs;
+    const source  = layer.getEditingLayer().getSource();
     const layerId = layer.getId();
     const session = context.session;
-    this._snapIteraction = new ol.interaction.Snap({
-      source,
-      edge: false
-    });
 
-    this._drawInteraction = new ol.interaction.Draw({
-      type: 'Point',
-      features: new ol.Collection(),
-    });
+    /** @since g3w-client-plugin-editing@v3.8.0 */
+    setAndUnsetSelectedFeaturesStyle({ promise: d, inputs });
+
+    this._snapIteraction = new ol.interaction.Snap({source, edge: false});
+
+    this._drawInteraction = new ol.interaction.Draw({type: 'Point', features: new ol.Collection(),});
 
     this._drawInteraction.on('drawend', evt => {
-      const [x, y] = evt.feature.getGeometry().getCoordinates();
-      const deltaXY = coordinates ? this.getDeltaXY({
-        x, y, coordinates
-      }) : null;
-      const featuresLength = features.length;
+      const [x, y]                    = evt.feature.getGeometry().getCoordinates();
+      const deltaXY                   = coordinates ? this.getDeltaXY({x, y, coordinates}) : null;
+      const featuresLength            = features.length;
       const promisesDefaultEvaluation = [];
-      for (let i =0; i < featuresLength; i++) {
+
+      for (let i = 0; i < featuresLength; i++) {
         const feature = cloneFeature(features[i], layer);
-        if (deltaXY) feature.getGeometry().translate(deltaXY.x, deltaXY.y);
+        if (deltaXY) {
+          feature.getGeometry().translate(deltaXY.x, deltaXY.y);
+        }
         else {
           const coordinates = feature.getGeometry().getCoordinates();
           const deltaXY = this.getDeltaXY({
@@ -1424,13 +1428,12 @@ export class MoveElementsStep extends EditingTask {
         /**
          * evaluated geometry expression
          */
-        const promise = evaluateExpressionFields({ inputs, context, feature });
-        
-        promisesDefaultEvaluation.push(promise)
+        promisesDefaultEvaluation.push(evaluateExpressionFields({ inputs, context, feature }))
       }
-      Promise.allSettled(promisesDefaultEvaluation)
-        .then(promises => {
-          promises.forEach(({status, value:feature}) => {
+      Promise
+        .allSettled(promisesDefaultEvaluation)
+        .then(promises => promises
+          .forEach(({status, value:feature}) => {
 
             /**
              * @todo improve client core to handle this situation on session.pushAdd not copy pk field not editable only
@@ -1439,7 +1442,9 @@ export class MoveElementsStep extends EditingTask {
             const newFeature = session.pushAdd(layerId, feature);
             // after pushAdd need to set not edit
             if (Object.entries(noteditablefieldsvalues).length) {
-              Object.entries(noteditablefieldsvalues).forEach(([field, value]) => newFeature.set(field, value));
+              Object
+                .entries(noteditablefieldsvalues)
+                .forEach(([field, value]) => newFeature.set(field, value));
             }
 
             //need to add to editing layer source newFeature
@@ -1447,7 +1452,7 @@ export class MoveElementsStep extends EditingTask {
 
             inputs.features.push(newFeature);
           })
-        })
+        )
         .finally(() => {
           /**
            * @type {boolean}
@@ -1495,14 +1500,14 @@ export class MoveFeatureStep extends EditingTask {
      * and other one for run task. If we use the same promise, when stop task without move feature,
      * this.promise.resolve(), it fires also thenable method listen resolve promise of run task,
      * that call stop task method.*/
-    this.promise = $.Deferred();
-    const d = $.Deferred();
-    const originalLayer = inputs.layer;
-    const session = context.session;
-    const layerId = originalLayer.getId();
-    const features = new ol.Collection(inputs.features);
-    let originalFeature = null;
-    this.changeKey = null; //
+    this.promise         = $.Deferred();
+    const d              = $.Deferred();
+    const originalLayer  = inputs.layer;
+    const session        = context.session;
+    const layerId        = originalLayer.getId();
+    const features       = new ol.Collection(inputs.features);
+    let originalFeature  = null;
+    this.changeKey       = null; //
     let isGeometryChange = false; // changed if geometry is changed
 
     setAndUnsetSelectedFeaturesStyle({ promise: this.promise, inputs });
@@ -1511,6 +1516,7 @@ export class MoveFeatureStep extends EditingTask {
       features,
       hitTolerance: (isMobile && isMobile.any) ? 10 : 0
     });
+
     this.addInteraction(this._translateInteraction);
 
     this._translateInteraction.on('translatestart', evt => {
@@ -1557,9 +1563,9 @@ export class OpenFormStep extends EditingTask {
     options.help = "editing.steps.help.insert_attributes_feature";
 
     const {
-      push=false,
-      saveAll=true,
-      multi=false,
+      push    = false,
+      saveAll = true,
+      multi   = false,
       showgoback,
     } = options;
 
@@ -1573,7 +1579,7 @@ export class OpenFormStep extends EditingTask {
     this.showgoback = showgoback;
     /**
      * @since v3.7
-     * to force to push content on top without clear previus content
+     * to force to push content on top without clear previous content
      */
     this.push = push;
 
@@ -1591,7 +1597,7 @@ export class OpenFormStep extends EditingTask {
     /**
      * @FIXME add description
      */
-    this._edit_relations = options.edit_relations === undefined ? true : options._edit_relations;
+    this._edit_relations = undefined === options.edit_relations || options._edit_relations;
 
     /**
      * @FIXME add description
@@ -1680,13 +1686,13 @@ export class OpenFormStep extends EditingTask {
    * @private
    */
   async _getForm(inputs, context) {
-    this._session = context.session;
-    this._originalLayer = inputs.layer;
-    this._editingLayer = this._originalLayer.getEditingLayer();
-    this._layerName = this._originalLayer.getName();
-    this._features = this._multi ? inputs.features : [inputs.features[inputs.features.length - 1]];
+    this._session          = context.session;
+    this._originalLayer    = inputs.layer;
+    this._editingLayer     = this._originalLayer.getEditingLayer();
+    this._layerName        = this._originalLayer.getName();
+    this._features         = this._multi ? inputs.features : [inputs.features[inputs.features.length - 1]];
     this._originalFeatures = this._features.map(feature => feature.clone());
-    const feature = this._features[0];
+    const feature          = this._features[0];
     /**
      * In case of create a child relation feature set a father relation field value
      */
@@ -1697,17 +1703,22 @@ export class OpenFormStep extends EditingTask {
         feature.set(fField, fatherValue[index]);
         this._originalFeatures[0].set(fField, fatherValue[index]);
       })
-
     }
+
     this._fields = await getFormFields({ inputs, context, feature, isChild: this._isContentChild });
     // in case of multi editing set all field to null //
-    this._fields = this._multi ? this._fields.map(field => {
-      const _field = JSON.parse(JSON.stringify(field));
-      _field.value = null;
-      _field.forceNull = true;
-      _field.validate.required = false;
-      return _field;
-    }).filter(field => !field.pk) : this._fields;
+    this._fields = this._multi
+      ? this._fields
+          .map(field => {
+            const _field = JSON.parse(JSON.stringify(field));
+            _field.value = null;
+            _field.forceNull = true;
+            _field.validate.required = false;
+            return _field;
+          })
+          .filter(field => !field.pk)
+      : this._fields;
+
     if (this._originalLayer.hasFormStructure()) {
       const editorFormStructure = this._originalLayer.getEditorFormStructure();
       this._editorFormStructure = editorFormStructure.length ? editorFormStructure : null;
@@ -1725,21 +1736,22 @@ export class OpenFormStep extends EditingTask {
   saveAll(fields) {
     return new Promise(async (resolve, reject) => {
       const {session} = this.getContext();
-      const inputs = this.getInputs();
+      const inputs    = this.getInputs();
       fields = this._multi ? fields.filter(field => field.value !== null) : fields;
+
       if (fields.length) {
         await WorkflowsStack.getCurrent().getContextService().saveDefaultExpressionFieldsNotDependencies();
         const newFeatures = [];
-        this._features.forEach(feature =>{
-          this._originalLayer.setFieldsWithValues(feature, fields);
-          newFeatures.push(feature.clone());
-        });
+        this._features
+          .forEach(feature => {
+            this._originalLayer.setFieldsWithValues(feature, fields);
+            newFeatures.push(feature.clone());
+          });
+
         if (this._isContentChild) {
-          inputs.relationFeatures = {
-            newFeatures,
-            originalFeatures: this._originalFeatures
-          };
+          inputs.relationFeatures = { newFeatures, originalFeatures: this._originalFeatures };
         }
+
         this.fireEvent('saveform', {
           newFeatures,
           originalFeatures: this._originalFeatures
@@ -1748,6 +1760,7 @@ export class OpenFormStep extends EditingTask {
             .forEach((newFeature, index) => {
               session.pushUpdate(this.layerId, newFeature, this._originalFeatures[index]);
             });
+
           //check and handle if layer has relation 1:1
           handleRelation1_1LayerFields({
             layerId: this.layerId,
@@ -1758,9 +1771,7 @@ export class OpenFormStep extends EditingTask {
             this.fireEvent('savedfeature', newFeatures); // called after saved
             this.fireEvent(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
             session.save();
-            resolve({
-              promise: this.promise
-            });
+            resolve({ promise: this.promise });
           })
         })
       }
@@ -1786,15 +1797,10 @@ export class OpenFormStep extends EditingTask {
       GUI.setLoadingContent(true);
       GUI.disableContent(true);
 
-
       await WorkflowsStack.getCurrent().getContextService().saveDefaultExpressionFieldsNotDependencies();
 
       GUI.setLoadingContent(false);
       GUI.disableContent(false);
-
-      /**
-       *
-       */
 
       this._features.forEach(feature => {
         this._originalLayer.setFieldsWithValues(feature, fields);
@@ -1811,7 +1817,7 @@ export class OpenFormStep extends EditingTask {
         originalFeatures: this._originalFeatures
       }).then(() => {
         newFeatures
-          .forEach((newFeature, index)=> session.pushUpdate(this.layerId, newFeature, this._originalFeatures[index]));
+          .forEach((newFeature, index) => session.pushUpdate(this.layerId, newFeature, this._originalFeatures[index]));
 
         //check and handle if layer has relation 1:1
         //async
@@ -1820,7 +1826,7 @@ export class OpenFormStep extends EditingTask {
           features: newFeatures,
           fields,
           task: this,
-        }).then(()=> {
+        }).then(() => {
           GUI.setModal(false);
           this.fireEvent('savedfeature', newFeatures); // called after saved
           this.fireEvent(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
@@ -1849,14 +1855,16 @@ export class OpenFormStep extends EditingTask {
    * @returns {Promise<void>}
    */
   async startForm(options = {}) {
-    const EditingFormComponent = require('../form/editingform');
-
     this.getEditingService().setCurrentLayout();
-    const { inputs, context, promise } = options;
-    const { session } = context;
+    const {
+      inputs,
+      context,
+      promise
+    }                   = options;
+    const { session }   = context;
     const formComponent = options.formComponent || EditingFormComponent;
-    const Form = await this._getForm(inputs, context);
-    const feature = this._originalFeatures[0];
+    const Form          = await this._getForm(inputs, context);
+    const feature       = this._originalFeatures[0];
 
     /**
      * set fields. Useful getParentFormData
@@ -1956,12 +1964,18 @@ export class OpenFormStep extends EditingTask {
    * @returns {*}
    */
   run(inputs, context) {
-    const d = $.Deferred();
-    this.promise = d;
+    const d              = $.Deferred();
+    const {
+      layer,
+      features
+    } = inputs;
+
+    this.promise         = d;
     this._isContentChild = WorkflowsStack.getLength() > 1;
-    const { layer, features } = inputs;
-    this.layerId = layer.getId();
+    this.layerId         = layer.getId();
+
     GUI.setLoadingContent(false);
+
     this.getEditingService().disableMapControlsConflict(true);
 
     setAndUnsetSelectedFeaturesStyle({ promise: d, inputs });
@@ -2080,20 +2094,20 @@ export class OpenTableStep extends EditingTask {
    * @returns {*}
    */
   run(inputs, context) {
-    const d = $.Deferred();
     //set current plugin layout (right content)
     this.getEditingService().setCurrentLayout();
-    const originalLayer = inputs.layer;
-    const layerName = originalLayer.getName();
-    const headers = originalLayer.getEditingFields();
-    this._isContentChild = WorkflowsStack.getLength() > 1;
-    const foreignKey = this._isContentChild && context.excludeFields ? context.excludeFields[0] :  null;
-    const exclude = this._isContentChild && context.exclude;
-    const capabilities = originalLayer.getEditingCapabilities();
-    const editingLayer = originalLayer.getEditingLayer();
 
+    const d              = $.Deferred();
+    const originalLayer  = inputs.layer;
+    const layerName      = originalLayer.getName();
+    const headers        = originalLayer.getEditingFields();
+    this._isContentChild = WorkflowsStack.getLength() > 1;
+    const foreignKey     = this._isContentChild && context.excludeFields ? context.excludeFields[0] :  null;
+    const exclude        = this._isContentChild && context.exclude;
+    const capabilities   = originalLayer.getEditingCapabilities();
+    const editingLayer   = originalLayer.getEditingLayer();
     //get editing features
-    let features = editingLayer.readEditingFeatures();
+    let features         = editingLayer.readEditingFeatures();
 
     if (exclude && features.length > 0) {
       const {value} = exclude;
@@ -2174,6 +2188,7 @@ export class PickFeatureStep extends EditingTask {
     this._tools = options.tools || [];
 
     options.task = this;
+
     const step = new EditingStep(options);
 
     if (options.steps) {
@@ -2184,14 +2199,15 @@ export class PickFeatureStep extends EditingTask {
   }
 
   run(inputs, context) {
-    const d = $.Deferred();
-    const editingLayer = inputs.layer.getEditingLayer();
+    const d                     = $.Deferred();
+    const editingLayer          = inputs.layer.getEditingLayer();
 
     this.pickFeatureInteraction = new PickFeaturesInteraction({
       layer: editingLayer,
     });
 
     this.addInteraction(this.pickFeatureInteraction);
+
     this.pickFeatureInteraction.on('picked', evt => {
       const {features, coordinate} = evt;
       if (inputs.features.length === 0) {
@@ -2229,12 +2245,13 @@ export class PickProjectLayerFeaturesStep extends EditingTask {
 
     super(options);
 
-    this.copyLayer = options.copyLayer;
-    this.external = options.external;
-    this.isVector = options.isVector;
+    this.copyLayer       = options.copyLayer;
+    this.external        = options.external;
+    this.isVector        = options.isVector;
     this.pickInteraction = null;
 
     options.task = this;
+
     return new EditingStep(options);
   }
 
@@ -2251,9 +2268,18 @@ export class PickProjectLayerFeaturesStep extends EditingTask {
     return d.promise()
   }
 
-  async getFeaturesFromLayer({inputs, promise}={}) {
-    let features = [];
-    const geometryType = inputs.layer.getGeometryType();
+  /**
+   *
+   * @param inputs
+   * @param promise
+   * @return {Promise<void>}
+   */
+  async getFeaturesFromLayer({
+    inputs,
+    promise
+  }={}) {
+    let features             = [];
+    const geometryType       = inputs.layer.getGeometryType();
     const interactionPromise = new Promise(async (resolve, reject) => {
       if (this.isVector) {
         //In case of external layer
@@ -2287,6 +2313,7 @@ export class PickProjectLayerFeaturesStep extends EditingTask {
                 features = convertFeaturesGeometryToGeometryTypeOfLayer({ features: data[0].features, geometryType });
               }
             } catch(error) {
+              console.warn(error);
               promise.reject(error);
             } finally {
               resolve();
@@ -2332,12 +2359,13 @@ export class SelectElementsStep extends EditingTask {
     super(options);
 
     this._type = options.type || 'bbox'; // 'single' 'bbox' 'multiple'
-    this._selectInteractions = [];
+    this._selectInteractions    = [];
     this.multipleselectfeatures = [];
     this._originalStyle;
     this._vectorLayer;
 
     options.task = this;
+
     const step = new EditingStep(options);
 
     if (chain) {
@@ -2381,14 +2409,15 @@ export class SelectElementsStep extends EditingTask {
         feature = features[0];
       }
       if (feature) {
-        const features = [feature];
+        const features  = [feature];
         inputs.features = features;
-        if (!buttonnext) {
+
+        if (buttonnext) {
+          this.addRemoveToMultipleSelectFeatures([feature], inputs);
+        } else {
           this._originalStyle = setFeaturesSelectedStyle(features);
           this._steps && this.setUserMessageStepDone('select');
           promise.resolve(inputs);
-        } else {
-          this.addRemoveToMultipleSelectFeatures([feature], inputs);
         }
       }
     });
@@ -2405,26 +2434,28 @@ export class SelectElementsStep extends EditingTask {
    */
   addExternalSelectInteraction({layer, inputs, context, promise, buttonnext=false}= {}) {
     const layerGeometryType = layer.getGeometryType();
-    const layerId = layer.getId();
-    const source = layer.getEditingLayer().getSource();
-    const {session} = this.getContext();
+    const layerId           = layer.getId();
+    const source            = layer.getEditingLayer().getSource();
+    const {session}         = this.getContext();
     // filter external layer only vector - Exclude WMS
-    const layers = this.getMapService().getExternalLayers().filter(externaLayer => {
-      let sameBaseGeometry = true;
-      const type = externaLayer.getType();
-      if (type === 'VECTOR') {
-        const features = externaLayer.getSource().getFeatures();
-        if (features.length > 0) {
-          const feature = features[0];
-          const geometryType = feature.getGeometry().getType();
-          sameBaseGeometry = isSameBaseGeometryType(geometryType, layerGeometryType)
+    const layers = this.getMapService()
+      .getExternalLayers()
+      .filter(externaLayer => {
+        let sameBaseGeometry = true;
+        const type = externaLayer.getType();
+        if ('VECTOR' == type) {
+          const features = externaLayer.getSource().getFeatures();
+          if (features.length > 0) {
+            const feature = features[0];
+            const geometryType = feature.getGeometry().getType();
+            sameBaseGeometry = isSameBaseGeometryType(geometryType, layerGeometryType)
+          }
         }
-      }
-      return sameBaseGeometry;
-    });
-    const singleInteraction = new PickFeaturesInteraction({
-      layers
-    });
+        return sameBaseGeometry;
+      });
+
+    const singleInteraction = new PickFeaturesInteraction({ layers });
+
     singleInteraction.on('picked', evt => {
       if (evt.features.length > 0) {
         const attributes = layer.getEditingFields();
@@ -2437,9 +2468,9 @@ export class SelectElementsStep extends EditingTask {
           properties: attributes.map(attribute => {
             //set media attribute to null or attribute belong to layer but not present o feature copied
             if (
-              attribute.input.type === 'media' ||
-              "undefined" === typeof evt.feature.get(attribute.name) ||
-              attribute.pk
+              attribute.input.type === 'media'
+              || undefined === evt.feature.get(attribute.name)
+              || attribute.pk
             ) {
               evt.feature.set(attribute.name, null);
             }
@@ -2451,9 +2482,7 @@ export class SelectElementsStep extends EditingTask {
         evaluateExpressionFields({ inputs, context, feature })
           .finally(() => {
             //remove eventually Z Values
-            removeZValueToOLFeatureGeometry({
-              feature
-            });
+            removeZValueToOLFeatureGeometry({ feature });
 
             feature.setTemporaryId();
             source.addFeature(feature);
@@ -2476,21 +2505,22 @@ export class SelectElementsStep extends EditingTask {
    * @param inputs
    */
   addRemoveToMultipleSelectFeatures(features=[], inputs) {
-    features.forEach(feature =>{
-      const selIndex = this.multipleselectfeatures.indexOf(feature);
-      if (selIndex < 0) {
-        this._originalStyle = setFeaturesSelectedStyle([feature]);
-        this.multipleselectfeatures.push(feature);
-      } else {
-        this.multipleselectfeatures.splice(selIndex, 1);
-        feature.setStyle(this._originalStyle);
-      }
-      inputs.features = this.multipleselectfeatures;
-    });
+    features
+      .forEach(feature => {
+        const selIndex = this.multipleselectfeatures.indexOf(feature);
+        if (selIndex < 0) {
+          this._originalStyle = setFeaturesSelectedStyle([feature]);
+          this.multipleselectfeatures.push(feature);
+        } else {
+          this.multipleselectfeatures.splice(selIndex, 1);
+          feature.setStyle(this._originalStyle);
+        }
+        inputs.features = this.multipleselectfeatures;
+      });
 
-    this._steps.select.buttonnext.disabled = this._steps.select.buttonnext.condition ?
-      this._steps.select.buttonnext.condition({features:this.multipleselectfeatures}) :
-      this.multipleselectfeatures.length === 0;
+    this._steps.select.buttonnext.disabled = this._steps.select.buttonnext.condition
+      ? this._steps.select.buttonnext.condition({features:this.multipleselectfeatures})
+      : this.multipleselectfeatures.length === 0;
 
     if (this._steps.select.dynamic !== undefined) {
       this._steps.select.dynamic = this.multipleselectfeatures.length;
@@ -2538,16 +2568,16 @@ export class SelectElementsStep extends EditingTask {
           if (features.length > 0) {
             inputs.features = features;
             this._originalStyle = setFeaturesSelectedStyle(features);
-            this._steps && this.setUserMessageStepDone('select');
-            setTimeout(()=>{
-              promise.resolve(inputs);
-            }, 500)
+            if (this._steps) {
+              this.setUserMessageStepDone('select');
+            }
+            setTimeout(() => promise.resolve(inputs), 500);
           } else {
             promise.reject();
           }
         }
       });
-    }  else {
+    } else {
       selectInteractionMultiple = new ol.interaction.DragBox({
         condition: ol.events.condition.shiftKeyOnly
       });
@@ -2557,9 +2587,8 @@ export class SelectElementsStep extends EditingTask {
         const extent = selectInteractionMultiple.getGeometry().getExtent();
         const layerSource = layer.getEditingLayer().getSource();
 
-        layerSource.forEachFeatureIntersectingExtent(extent, feature => {
-          features.push(feature)
-        });
+        layerSource
+          .forEachFeatureIntersectingExtent(extent, feature => features.push(feature));
 
         if (buttonnext) {
           this.addRemoveToMultipleSelectFeatures(features, inputs);
@@ -2589,7 +2618,7 @@ export class SelectElementsStep extends EditingTask {
    * @returns {*}
    */
   run(inputs, context) {
-    const layer = inputs.layer;
+    const layer   = inputs.layer;
     const promise = $.Deferred();
     switch(this._type) {
       case 'single':
@@ -2597,7 +2626,9 @@ export class SelectElementsStep extends EditingTask {
         break;
       case 'multiple':
         const buttonnext = !!this._steps.select.buttonnext;
-        if (buttonnext) this._steps.select.buttonnext.done = () =>{promise.resolve(inputs)};
+        if (buttonnext) {
+          this._steps.select.buttonnext.done = () => promise.resolve(inputs);
+        }
         this.addSingleSelectInteraction({layer, inputs, promise, buttonnext});
         this.addMultipleSelectInteraction({layer, inputs, promise, buttonnext});
         break;
@@ -2613,7 +2644,9 @@ export class SelectElementsStep extends EditingTask {
   }
 
   stop() {
-    this._selectInteractions.forEach(interaction => this.removeInteraction(interaction));
+    this._selectInteractions
+      .forEach(interaction => this.removeInteraction(interaction));
+
     if (this._vectorLayer) {
       this.getMap().removeLayer(this._vectorLayer);
     }
@@ -2622,10 +2655,9 @@ export class SelectElementsStep extends EditingTask {
       .features
       .forEach((feature => feature.setStyle(this._originalStyle)));
 
-    this._originalStyle = null;
-
-    this._vectorLayer = null;
-    this._selectInteractions = [];
+    this._originalStyle         = null;
+    this._vectorLayer           = null;
+    this._selectInteractions    = [];
     this.multipleselectfeatures = [];
   }
 
@@ -2656,19 +2688,22 @@ export class SplitFeatureStep extends EditingTask {
   }
 
   run(inputs, context) {
-    this._stopPromise = $.Deferred();
-  
-    /** @since g3w-client-plugin-editing@v3.8.0 */
-    setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise, inputs });
-
-    const d = $.Deferred();
-    const { layer, features } = inputs;
-    const source = layer.getEditingLayer().getSource();
-    const session = context.session;
-    this._snapIteraction = new ol.interaction.Snap({
+    const d               = $.Deferred();
+    const {
+      layer,
+      features
+    }                     = inputs;
+    const source          = layer.getEditingLayer().getSource();
+    const session         = context.session;
+    this._snapIteraction  = new ol.interaction.Snap({
       source,
       edge: true
     });
+
+    /** @since g3w-client-plugin-editing@v3.8.0 */
+    this._stopPromise     = $.Deferred();
+    setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise, inputs });
+
 
     this._drawInteraction = new ol.interaction.Draw({
       type: 'LineString',
@@ -2684,7 +2719,8 @@ export class SplitFeatureStep extends EditingTask {
         features
       });
       const splittedGeometriesLength = splittedGeometries.length;
-      for (let i=0; i < splittedGeometriesLength; i++) {
+
+      for (let i = 0; i < splittedGeometriesLength; i++) {
         const {uid, geometries} = splittedGeometries[i];
         if (geometries.length > 1) {
           isSplitted = true;
@@ -2722,25 +2758,40 @@ export class SplitFeatureStep extends EditingTask {
     return d.promise();
   }
 
-  async _handleSplitFeature({feature, inputs, context, splittedGeometries=[]}={}){
-    const newFeatures = [];
-    const {layer} = inputs;
-    const session = context.session;
-    const source = layer.getEditingLayer().getSource();
-    const layerId = layer.getId();
-    const oriFeature = feature.clone();
-    inputs.features = splittedGeometries.length ? [] : inputs.features;
+  /**
+   *
+   * @param feature
+   * @param inputs
+   * @param context
+   * @param splittedGeometries
+   * @return {Promise<*[]>}
+   * @private
+   */
+  async _handleSplitFeature({
+    feature,
+    inputs,
+    context,
+    splittedGeometries = []
+  }={}) {
+    const newFeatures              = [];
+    const { layer }                = inputs;
+    const session                  = context.session;
+    const source                   = layer.getEditingLayer().getSource();
+    const layerId                  = layer.getId();
+    const oriFeature               = feature.clone();
+    inputs.features                = splittedGeometries.length ? [] : inputs.features;
     const splittedGeometriesLength = splittedGeometries.length;
-    for (let index=0; index < splittedGeometriesLength; index++) {
+
+    for (let index = 0; index < splittedGeometriesLength; index++) {
       const splittedGeometry = splittedGeometries[index];
-      if (index === 0) {
+      if (0 === index) {
         /**
          * check geometry evaluated expression
          */
         feature.setGeometry(splittedGeometry);
         try {
           await evaluateExpressionFields({ inputs, context, feature });
-        } catch(err){
+        } catch(err) {
           console.warn(err);
         }
 
@@ -2752,9 +2803,7 @@ export class SplitFeatureStep extends EditingTask {
 
         setNullMediaFields({ layer, feature: newFeature });
 
-        feature = new Feature({
-          feature: newFeature
-        });
+        feature = new Feature({ feature: newFeature });
 
         feature.setTemporaryId();
 
@@ -2772,7 +2821,9 @@ export class SplitFeatureStep extends EditingTask {
 
         if (Object.entries(noteditablefieldsvalues).length) {
           const newFeature = session.pushAdd(layerId, feature);
-          Object.entries(noteditablefieldsvalues).forEach(([field, value]) => newFeature.set(field, value));
+          Object.entries(noteditablefieldsvalues)
+            .forEach(([field, value]) => newFeature.set(field, value));
+
           newFeatures.push(newFeature);
           //need to add features with no editable fields on layers source
           source.addFeature(newFeature);
@@ -2781,7 +2832,6 @@ export class SplitFeatureStep extends EditingTask {
           //add feature to source
           source.addFeature(feature);
         }
-
       }
       inputs.features.push(feature);
     }

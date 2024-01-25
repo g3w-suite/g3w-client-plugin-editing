@@ -16,4 +16,4 @@ export function getNotEditableFieldsNoPkValues({
       fields[field] = layer.isPkField(field) ? null : feature.get(field); // NB: Primary Key fields need to be `null`
       return fields;
     }, {});
-};
+}

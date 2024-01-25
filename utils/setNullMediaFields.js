@@ -11,4 +11,4 @@ export function setNullMediaFields({
  layer
    .getEditingMediaFields({})
    .forEach(field => feature.set(field, null))
-};
+}
