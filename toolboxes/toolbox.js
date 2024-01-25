@@ -1315,6 +1315,8 @@ ToolBox.create = function(layer) {
         op(options = {}) {
           return new EditingWorkflow({
             ...options,
+            helpMessage: 'editing.tools.update_multi_features',
+            registerEscKeyEvent: true,
             steps: [
               new SelectElementsStep({
                 type: 'multiple',
@@ -1334,8 +1336,6 @@ ToolBox.create = function(layer) {
               }),
               new OpenFormStep({ multi: true }),
             ],
-            helpMessage: 'editing.tools.update_multi_features',
-            registerEscKeyEvent: true,
           });
         },
       },
@@ -1482,9 +1482,9 @@ ToolBox.create = function(layer) {
         op(options = {}) {
           const w = new EditingWorkflow({
             ...options,
+            helpMessage: 'editing.tools.addpart',
             steps: [
               new PickFeatureStep({
-                help: 'editing.steps.help.select_element',
                 steps: {
                   select: {
                     description: 'editing.workflow.steps.select',
@@ -1525,7 +1525,6 @@ ToolBox.create = function(layer) {
                 help: 'editing.steps.help.select_element',
               }),
             ],
-            helpMessage: 'editing.tools.addpart',
             registerEscKeyEvent: true
           });
           return w;

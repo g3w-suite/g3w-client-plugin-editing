@@ -142,7 +142,7 @@ export class EditingTask extends Task {
     };
 
     this.removeInteraction = function(interaction) {
-      setTimeout(() => this._mapService.removeInteraction(interaction)) // timeout needed to workaround an Openlayers issue
+      setTimeout(() => this._mapService.removeInteraction(interaction)) // timeout needed to work around an Openlayers issue
     };
 
   }
