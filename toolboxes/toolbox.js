@@ -68,12 +68,14 @@ const { isSameBaseGeometryType } = g3wsdk.core.geoutils;
 function ToolBox(options={}) {
   base(this);
   this.editingService = require('../services/editingservice');
-  this._mapService = GUI.getService('map');
-  this._start = false;
-  this._constraints = options.constraints || {};
-  this._layer = options.layer;
-  this.uniqueFields = this.getUniqueFieldsType(this._layer.getEditingFields());
-  this.uniqueFields && this.getFieldUniqueValuesFromServer();
+  this._mapService    = GUI.getService('map');
+  this._start         = false;
+  this._constraints   = options.constraints || {};
+  this._layer         = options.layer;
+  this.uniqueFields   = this.getUniqueFieldsType(this._layer.getEditingFields());
+  if (this.uniqueFields) {
+    this.getFieldUniqueValuesFromServer();
+  }
   this._layerType = options.type || Layer.LayerTypes.VECTOR;
   this._loadedExtent = null;
   this._tools = options.tools;
@@ -232,31 +234,43 @@ proto.addDependency = function(dependency) {
 };
 
 proto.getFieldUniqueValuesFromServer = function({reset=false}={}) {
-  const fieldsName = Object.values(this.uniqueFields).map(field => field.name);
   this._layer.getWidgetData({
     type: 'unique',
-    fields: fieldsName.join()
-  }).then( response => {
-    const data = response.data;
-    Object.entries(data).forEach(([fieldName, values]) => {
-      reset && this.uniqueFields[fieldName].input.options.values.splice(0);
-      values.forEach(value => this.uniqueFields[fieldName].input.options.values.push(value));
-    })
-  }).fail(console.log)
+    fields: Object.values(this.uniqueFields).map(field => field.name).join()
+  })
+  .then((response) => {
+    Object
+      .entries(response.data)
+      .forEach(([fieldName, values]) => {
+        reset && this.uniqueFields[fieldName].input.options.values.splice(0);
+        values.forEach(value => this.uniqueFields[fieldName].input.options.values.push(value));
+      })
+  })
+  .fail(console.log)
 };
 
+/**
+ *
+ * @param fields
+ * @return {{}|null}
+ */
 proto.getUniqueFieldsType = function(fields) {
   const uniqueFields = {};
   let find = false;
-  fields.forEach(field => {
-    if (field.input && field.input.type === 'unique') {
-      uniqueFields[field.name] = field;
-      find = true;
-    }
-  });
+  fields
+    .forEach(field => {
+      if (field.input && 'unique' === field.input.type) {
+        uniqueFields[field.name] = field;
+        find = true;
+      }
+    });
   return find && uniqueFields || null;
 };
 
+/**
+ *
+ * @private
+ */
 proto._resetUniqueValues = function(){
   this.getFieldUniqueValuesFromServer({
     reset: true
@@ -285,8 +299,10 @@ proto.setFeaturesOptions = function({filter}={}){
       editing: true,
       registerEvents: false
     };
-    // in case of constarint attribute set the filter as constraint
-    filter.constraint && this.setConstraintFeaturesFilter(filter);
+    // in case of constraint attribute set the filter as constraint
+    if (filter.constraint) {
+      this.setConstraintFeaturesFilter(filter);
+    }
   } else {
     const filterType = this._layerType === Layer.LayerTypes.TABLE ? 'all': 'bbox';
     this._getFeaturesOption = this.editingService.createEditingDataOptions(filterType, {
@@ -295,30 +311,54 @@ proto.setFeaturesOptions = function({filter}={}){
   }
 };
 
+/**
+ *
+ * @param constraints
+ */
 proto.setEditingConstraints = function(constraints={}){
-  Object.keys(constraints).forEach(constraint => this.constraints[constraint] = constraints[constraint]);
+  Object
+    .keys(constraints)
+    .forEach(constraint => this.constraints[constraint] = constraints[constraint]);
 };
 
-
+/**
+ *
+ * @return {Promise<void>}
+ */
 proto.setLayerUniqueFieldValues = async function() {
   await this.editingService.setLayerUniqueFieldValues(this.getId());
 };
 
+/**
+ *
+ */
 proto.clearLayerUniqueFieldsValues = function(){
   this.editingService.clearLayerUniqueFieldsValues(this.getId())
 };
 
 //added option object to start method to have a control by other plugin how
 proto.start = function(options={}) {
-  let {filter, toolboxheader=true, startstopediting=true, showtools=true, tools, changingtools=false} = options;
+  const d                     = $.Deferred();
+  const id                    = this.getId();
+  const applicationConstraint = this.editingService.getApplicationEditingConstraintById(id);
+  const EventName = 'start-editing';
+
+  let {
+    toolboxheader    = true,
+    startstopediting = true,
+    showtools        = true,
+    changingtools    = false,
+    tools,
+    filter,
+  } = options;
+
   this.state.changingtools = changingtools;
-  tools && this.setEnablesDisablesTools(tools);
+  if (tools) {
+    this.setEnablesDisablesTools(tools);
+  }
   this.state.toolboxheader = toolboxheader;
   this.state.startstopediting = startstopediting;
-  const EventName = 'start-editing';
-  const d = $.Deferred();
-  const id = this.getId();
-  const applicationConstraint = this.editingService.getApplicationEditingConstraintById(this.getId());
+
   filter = applicationConstraint && applicationConstraint.filter || this.constraints.filter || filter;
   // set filterOptions
   this.setFeaturesOptions({
@@ -381,20 +421,24 @@ proto.start = function(options={}) {
   if (this._session) {
     if (!this._session.isStarted()) {
       //added case of mobile
-      if (ApplicationState.ismobile && this._mapService.isMapHidden() && this._layerType === Layer.LayerTypes.VECTOR) {
+      if (
+        ApplicationState.ismobile
+        && this._mapService.isMapHidden()
+        && Layer.LayerTypes.VECTOR === this._layerType
+      ) {
         this.setEditing(true);
-        GUI.getService('map').onceafter('setHidden', () =>{
-          setTimeout(()=>{
-            this._start = true;
-            this.startLoading();
-            this.setFeaturesOptions({
-              filter
-            });
-            this._session
-              .start(this._getFeaturesOption)
-              .then(handlerAfterSessionGetFeatures)
-              .fail(()=>this.setEditing(false));
-          }, 300);
+        GUI
+          .getService('map')
+          .onceafter('setHidden', () =>{
+            setTimeout(() => {
+              this._start = true;
+              this.startLoading();
+              this.setFeaturesOptions({ filter });
+              this._session
+                .start(this._getFeaturesOption)
+                .then(handlerAfterSessionGetFeatures)
+                .fail(()=>this.setEditing(false));
+            }, 300);
         })
       } else {
         this._start = true;
@@ -417,21 +461,35 @@ proto.start = function(options={}) {
   return d.promise();
 };
 
+/**
+ *
+ */
 proto.startLoading = function() {
   this.state.loading = true;
 };
 
+/**
+ *
+ */
 proto.stopLoading = function() {
   this.state.loading = false;
 };
 
+/**
+ *
+ * @return {*}
+ */
 proto.getFeaturesOption = function() {
   return this._getFeaturesOption;
 };
 
+/**
+ *
+ * @return {*}
+ */
 proto.stop = function() {
   const EventName  = 'stop-editing';
-  const d = $.Deferred();
+  const d          = $.Deferred();
   if (this.disableCanEditEvent) {
     this.disableCanEditEvent();
   }
@@ -454,9 +512,10 @@ proto.stop = function() {
         this._session.stop()
           .then(promise => {
             promise.then(() => {
-              this._start = false;
+              this._start           = false;
               this.state.editing.on = false;
-              this.state.enabled = false;
+              this.state.enabled    = false;
+
               this.stopLoading();
               this._getFeaturesOption = {};
               this.stopActiveTool();
@@ -479,10 +538,17 @@ proto.stop = function() {
   return d.promise();
 };
 
+/**
+ *
+ */
 proto.save = function () {
   this._session.commit();
 };
 
+/**
+ *
+ * @private
+ */
 proto._unregisterGetFeaturesEvent = function() {
   switch(this._layerType) {
     case Layer.LayerTypes.VECTOR:
@@ -493,6 +559,11 @@ proto._unregisterGetFeaturesEvent = function() {
   }
 };
 
+/**
+ *
+ * @param options
+ * @private
+ */
 proto._registerGetFeaturesEvent = function(options={}) {
   switch(this._layerType) {
     case Layer.LayerTypes.VECTOR:
@@ -503,20 +574,18 @@ proto._registerGetFeaturesEvent = function(options={}) {
           this._layer.getEditingLayer().setVisible(canEdit);
           //added ApplicationState.online
           if (ApplicationState.online && canEdit && GUI.getContentLength() === 0) {
-            const bbox = this._mapService.getMapBBOX();
-            options.filter.bbox = bbox;
+            options.filter.bbox = this._mapService.getMapBBOX();
             this.state.loading = true;
-            this._session.getFeatures(options).then(promise=> {
-              promise.then(() => {
-                this.state.loading = false;
-              });
-            })
+            this._session
+              .getFeatures(options)
+              .then(promise => {
+                promise.then(() => this.state.loading = false);
+              })
           }
         };
         this._getFeaturesEvent.event = 'moveend';
-        this._getFeaturesEvent.fnc = debounce(fnc, 300);
-        const map = this._mapService.getMap();
-        map.on('moveend', this._getFeaturesEvent.fnc);
+        this._getFeaturesEvent.fnc   = debounce(fnc, 300);
+        this._mapService.getMap().on('moveend', this._getFeaturesEvent.fnc);
       }
       break;
     default:
@@ -524,22 +593,43 @@ proto._registerGetFeaturesEvent = function(options={}) {
   }
 };
 
+/**
+ *
+ * @param filter
+ */
 proto.setConstraintFeaturesFilter = function(filter){
   this.constraintFeatureFilter = filter;
 };
 
+/**
+ *
+ * @return {*|{}}
+ */
 proto.getEditingConstraints = function() {
   return this._constraints;
 };
 
+/**
+ *
+ * @param type
+ * @return {*}
+ */
 proto.getEditingConstraint = function(type) {
   return this.getEditingConstraints()[type];
 };
 
+/**
+ *
+ * @return {boolean}
+ */
 proto.canEdit = function() {
   return this.state.editing.canEdit;
 };
 
+/**
+ *
+ * @private
+ */
 proto._canEdit = function() {
   if (this._constraints.scale) {
     const scale = this._constraints.scale;
@@ -558,45 +648,83 @@ proto._canEdit = function() {
   }
 };
 
+/**
+ *
+ * @private
+ */
 proto._disableCanEdit = function() {
   this.state.editing.canEdit = true;
   this.disableCanEditEvent && this.disableCanEditEvent()
 };
 
+/**
+ *
+ * @param message
+ */
 proto.setMessage = function(message) {
   this.state.message = message;
 };
 
+/**
+ *
+ * @return {null}
+ */
 proto.getMessage = function() {
   return this.state.message;
 };
 
+/**
+ *
+ */
 proto.clearMessage = function() {
   this.setMessage(null);
 };
 
+/**
+ *
+ */
 proto.clearToolboxMessages = function() {
   this.clearToolMessage();
   this.clearMessage();
 };
 
+/**
+ *
+ * @return {*}
+ */
 proto.getId = function() {
   return this.state.id;
 };
 
+/**
+ *
+ * @param id
+ */
 proto.setId = function(id) {
   this.state.id = id;
 };
 
+/**
+ *
+ * @return {string}
+ */
 proto.getTitle = function() {
   return this.state.title;
 };
 
-proto.setTitle = function(title){
+/**
+ *
+ * @param title
+ */
+proto.setTitle = function(title) {
   this.state.customTitle = true;
   this.state.title = title;
 };
 
+/**
+ *
+ * @return {string}
+ */
 proto.getColor = function() {
   return this.state.color;
 };
@@ -611,36 +739,69 @@ proto.setEditing = function(bool=true) {
   this.enableTools(bool);
 };
 
+/**
+ *
+ * @return {boolean}
+ */
 proto.inEditing = function() {
   return this.state.editing.on;
 };
 
+/**
+ *
+ * @return {boolean}
+ */
 proto.isEnabled = function() {
   return this.state.enabled;
 };
 
+/**
+ *
+ * @param bool
+ * @return {boolean}
+ */
 proto.setEnable = function(bool=false) {
   this.state.enabled = bool;
   return this.state.enabled;
 };
 
+/**
+ *
+ * @return {boolean}
+ */
 proto.isLoading = function() {
   return this.state.loading;
 };
 
+/**
+ *
+ * @return {*}
+ */
 proto.isDirty = function() {
   return this.state.editing.history.commit;
 };
 
+/**
+ *
+ * @return {boolean}
+ */
 proto.isSelected = function() {
   return this.state.selected;
 };
 
+/**
+ *
+ * @param bool
+ */
 proto.setSelected = function(bool=false) {
   this.state.selected = bool;
   this.state.selected ? this._canEdit() : this._disableCanEdit();
 };
 
+/**
+ *
+ * @return {*}
+ */
 proto.getTools = function() {
   return this._tools;
 };
@@ -657,31 +818,36 @@ proto.getToolById = function(toolId) {
 
 /**
  *
- * @param tool
+ * @param toolId
  */
-proto.setEnableTool = function(toolId){
-  const tool = this._tools.find(tool => tool.getId() === toolId);
-  tool.setEnabled(true)
+proto.setEnableTool = function(toolId) {
+  this._tools.find(tool => tool.getId() === toolId).setEnabled(true)
 };
 
 /**
  * method to set tools bases on add
  * editing_constraints : true // follow the tools related toi editing conttraints configuration
  */
-
-proto.setAddEnableTools = function({tools={}, options={editing_constraints: true}}={}){
-  const {editing_constraints=false} = options;
-  const ADDONEFEATUREONLYTOOLSID = ['addfeature', 'editattributes', 'movefeature', 'movevertex'];
-  const add_tools = this._tools.filter(tool => {
-    return editing_constraints ?
-      tool.getType().find(type => type ==='add_feature') :
-      ADDONEFEATUREONLYTOOLSID.indexOf(tool.getId()) !== -1;
-  }).map(tool => {
+proto.setAddEnableTools = function({
+  tools={},
+  options= {editing_constraints: true }
+}={}) {
+  const { editing_constraints = false } = options;
+  const ADDONEFEATUREONLYTOOLSID        = [
+    'addfeature',
+    'editattributes',
+    'movefeature',
+    'movevertex'
+  ];
+  const add_tools = this._tools
+    .filter(tool => {
+      return editing_constraints ?
+        tool.getType().find(type => type ==='add_feature') :
+        ADDONEFEATUREONLYTOOLSID.indexOf(tool.getId()) !== -1;
+    })
+    .map(tool => {
       const id = tool.getId();
-      return {
-        id,
-        options: tools[id]
-      }
+      return {id, options: tools[id]}
   });
 
   this.setEnablesDisablesTools({
@@ -694,26 +860,33 @@ proto.setAddEnableTools = function({tools={}, options={editing_constraints: true
 /**
  * method to set tools bases on update
  */
-proto.setUpdateEnableTools = function({tools={}, excludetools=[], options={editing_constraints: true}}){
-  const {editing_constraints=false} = options;
-  const UPDATEONEFEATUREONLYTOOLSID = ['editattributes', 'movefeature', 'movevertex'];
-  const update_tools = this._tools.filter(tool => {
-    // exclude
-    if (excludetools.indexOf(tool.getId()) !== -1) return false;
-    return editing_constraints ?
-      tool.getType().find(type => type ==='change_feature' || type ==='change_attr_feature') :
-      UPDATEONEFEATUREONLYTOOLSID.indexOf(tool.getId()) !== -1;
-  }).map(tool => {
-    const id = tool.getId();
-    return {
-      id,
-      options: tools[id]
-    }
-  });
+proto.setUpdateEnableTools = function({
+  tools={},
+  excludetools=[],
+  options = { editing_constraints: true }
+}) {
+  const { editing_constraints = false } = options;
+  const UPDATEONEFEATUREONLYTOOLSID     = [
+    'editattributes',
+    'movefeature',
+    'movevertex'
+  ];
+  const update_tools = this._tools
+    .filter(tool => {
+      // exclude
+      if (-1 !== excludetools.indexOf(tool.getId()) ) {
+        return false;
+      }
+      return editing_constraints
+        ? tool.getType().find(type => type ==='change_feature' || type ==='change_attr_feature')
+        : -1 !== UPDATEONEFEATUREONLYTOOLSID.indexOf(tool.getId()) ;
+    })
+    .map(tool => {
+      const id = tool.getId();
+      return { id, options: tools[id]}
+    });
 
-  this.setEnablesDisablesTools({
-    enabled: update_tools
-  });
+  this.setEnablesDisablesTools({ enabled: update_tools });
   this.enableTools(true);
 };
 
@@ -730,34 +903,49 @@ proto.setDeleteEnableTools = function(options={}){
  *
  * @param tools
  */
-proto.setEnablesDisablesTools = function(tools){
-  if (tools){
+proto.setEnablesDisablesTools = function(tools) {
+  if (tools) {
     this.state.changingtools = true;
     // Check if tools is an array
-    const {enabled:enableTools=[], disabled:disableTools=[]} = tools;
+    const {
+      enabled  : enableTools = [],
+      disabled : disableTools = []
+    } = tools;
+
     const toolsId = enableTools.length ? [] : this._tools.map(tool => tool.getId());
-    enableTools.forEach(({id, options={}}) => {
-      //check if id of tool passed as argument is right
-      const tool =this.getToolById(id);
-      if (tool) {
-        const {active=false} = options;
-        tool.setOptions(options);
-        tool.isVisible() && toolsId.push(id);
-        active && this.setActiveTool(tool);
-        if (this._enabledtools === undefined) this._enabledtools = [];
-        this._enabledtools.push(tool);
-      }
-    });
+
+    enableTools
+      .forEach(({id, options={}}) => {
+        //check if id of tool passed as argument is right
+        const tool =this.getToolById(id);
+        if (tool) {
+          const {active=false} = options;
+          tool.setOptions(options);
+          if (tool.isVisible()) {
+            toolsId.push(id);
+          }
+          if (active) {
+            this.setActiveTool(tool);
+          }
+          if (this._enabledtools === undefined) {
+            this._enabledtools = [];
+          }
+          this._enabledtools.push(tool);
+       }
+      });
     //disabled and visible
-    disableTools.forEach(({id, options}) =>{
-      const tool = this.getToolById(id);
-      if (tool){
-        if (this._disabledtools === undefined) this._disabledtools = [];
-        this._disabledtools.push(id);
-        //add it toi visible tools
-        toolsId.push(id);
-      }
-    });
+    disableTools
+      .forEach(({id, options}) =>{
+        const tool = this.getToolById(id);
+        if (tool){
+          if (this._disabledtools === undefined) {
+            this._disabledtools = [];
+          }
+          this._disabledtools.push(id);
+          //add it toi visible tools
+          toolsId.push(id);
+        }
+      });
     //set not visible all remain
     this._tools.forEach(tool => !toolsId.includes(tool.getId()) && tool.setVisible(false));
     this.state.changingtools = false;
@@ -765,20 +953,28 @@ proto.setEnablesDisablesTools = function(tools){
 };
 
 // enable all tools
-proto.enableTools = function(bool=false) {
+proto.enableTools = function(bool = false) {
   const tools = this._enabledtools || this._tools;
   const disabledtools = this._disabledtools || [];
-  tools.forEach(tool => {
-    const { conditions:{enabled=bool} } = tool;
-    const enableTool = bool && disabledtools.length ? disabledtools.indexOf(tool.getId()) === -1 : toRawType(enabled) === 'Boolean' ? enabled : enabled({
-      bool,
-      tool
-    });
+  tools
+    .forEach(tool => {
+      const { conditions:{enabled=bool} } = tool;
+      const enableTool = (bool && disabledtools.length)
+        ? disabledtools.indexOf(tool.getId()) === -1
+        : toRawType(enabled) === 'Boolean'
+          ? enabled
+          : enabled({ bool, tool });
     tool.setEnabled(enableTool);
-    !bool && tool.setActive(bool);
+    if (!bool) {
+      tool.setActive(bool);
+    }
   })
 };
 
+/**
+ *
+ * @param tool
+ */
 proto.setActiveTool = function(tool) {
   this.stopActiveTool(tool)
     .then(() => {
@@ -787,40 +983,57 @@ proto.setActiveTool = function(tool) {
       tool.once('settoolsoftool', tools => tools.forEach(tool => this.state.toolsoftool.push(tool)));
       const _activedeactivetooloftools = (activetools, active) => {
         this.state.toolsoftool.forEach(tooloftool => {
-          if (activetools.indexOf(tooloftool.type) !== -1) tooloftool.options.active = active;
+          if (activetools.indexOf(tooloftool.type) !== -1) {
+            tooloftool.options.active = active;
+          }
         });
       };
 
       tool.on('active', (activetools=[]) => _activedeactivetooloftools(activetools, true));
       tool.on('deactive', (activetools=[]) => _activedeactivetooloftools(activetools, false));
+      tool.start(this._mapService.isMapHidden());
 
-      const hideSidebar = this._mapService.isMapHidden();
-      tool.start(hideSidebar);
-      const message = this.getToolMessage();
-      this.setToolMessage(message);
+      this.setToolMessage(this.getToolMessage());
+
     });
 };
 
+/**
+ *
+ */
 proto.clearToolsOfTool = function() {
   this.state.toolsoftool.splice(0);
 };
 
+/**
+ *
+ * @return {null}
+ */
 proto.getActiveTool = function() {
   return this.state.activetool;
 };
 
+/**
+ *
+ */
 proto.restartActiveTool = function() {
   const activeTool = this.getActiveTool();
   this.stopActiveTool();
   this.setActiveTool(activeTool);
 };
 
+/**
+ *
+ * @param tool
+ * @return {*}
+ */
 proto.stopActiveTool = function(tool) {
-  const d = $.Deferred();
+  const d          = $.Deferred();
   const activeTool = this.getActiveTool();
-  if (activeTool && activeTool !== tool) {
+  if (activeTool && tool !== activeTool ) {
     activeTool.removeAllListeners();
-    activeTool.stop(true)
+    activeTool
+      .stop(true)
       .then(() => {
         this.clearToolsOfTool();
         this.clearToolMessage();
@@ -828,45 +1041,81 @@ proto.stopActiveTool = function(tool) {
         setTimeout(d.resolve);
       })
   } else {
-    tool ? tool.removeAllListeners(): null;
+    if (tool) {
+      tool.removeAllListeners();
+    }
     d.resolve()
   }
   return d.promise();
 };
 
+/**
+ *
+ */
 proto.clearToolMessage = function() {
   this.state.toolmessages.help = null;
 };
 
+/**
+ *
+ * @return {*}
+ */
 proto.getToolMessage = function() {
-  const tool = this.getActiveTool();
-  return tool.getMessage();
+  return this.getActiveTool().getMessage();
 };
 
-proto.setToolMessage = function(messages={}) {
+/**
+ *
+ * @param messages
+ */
+proto.setToolMessage = function(messages = {}) {
   this.state.toolmessages.help = messages && messages.help || null;
 };
 
+/**
+ *
+ * @return {*}
+ */
 proto.getSession = function() {
   return this._session;
 };
 
+/**
+ *
+ * @return {*}
+ */
 proto.getEditor = function() {
   return this._editor;
 };
 
+/**
+ *
+ * @param editor
+ */
 proto.setEditor = function(editor) {
   this._editor = editor;
 };
 
+/**
+ *
+ * @return {*}
+ */
 proto.hasChildren = function() {
   return this._layer.hasChildren();
 };
 
+/**
+ *
+ * @return {*}
+ */
 proto.hasFathers = function() {
   return this._layer.hasFathers();
 };
 
+/**
+ *
+ * @return {*}
+ */
 proto.hasRelations = function() {
   return this._layer.hasRelations();
 };
@@ -874,9 +1123,9 @@ proto.hasRelations = function() {
 /**
  * Method to reset default values
  */
-proto.resetDefault = function(){
-  this.state.title = this.originalState.title;
-  this.state.toolboxheader = true;
+proto.resetDefault = function() {
+  this.state.title            = this.originalState.title;
+  this.state.toolboxheader    = true;
   this.state.startstopediting = true;
   this.constraints = {
     filter: null,
@@ -884,7 +1133,7 @@ proto.resetDefault = function(){
     tools: []
   };
 
-  if (this._enabledtools){
+  if (this._enabledtools) {
     this._enabledtools = undefined;
     this.enableTools();
     this._tools.forEach(tool => tool.resetDefault());
