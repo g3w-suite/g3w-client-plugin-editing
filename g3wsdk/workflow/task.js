@@ -29,46 +29,87 @@ proto.setInputs = function(inputs){
   this.inputs = inputs;
 };
 
+/**
+ *
+ * @return {*}
+ */
 proto.getInputs = function(){
   return this.inputs;
 };
 
+/**
+ *
+ * @param context
+ * @return {*}
+ */
 proto.setContext = function(context){
   return this.context = context;
 };
 
+/**
+ *
+ * @return {*}
+ */
 proto.getContext = function(){
   return this.context;
 };
 
+/**
+ *
+ */
 proto.revert = function() {
-  console.log('Revert to implemente ');
+  console.log('Revert to implement ');
 };
 
+/**
+ *
+ */
 proto.panic = function() {
   console.log('Panic to implement ..');
 };
 
+/**
+ *
+ */
 proto.stop = function() {
   console.log('Task Stop to implement ..');
 };
 
+/**
+ *
+ */
 proto.run = function() {
   console.log('Wrong. This method has to be overwrite from task');
 };
 
+/**
+ *
+ * @param task
+ */
 proto.setRoot = function(task) {
   this.state.root = task;
 };
 
+/**
+ *
+ * @return {{}}
+ */
 proto.getUserMessageSteps = function() {
   return this.state.usermessagesteps;
 };
 
+/**
+ *
+ * @param steps
+ */
 proto.setUserMessageSteps = function(steps={}) {
   this.state.usermessagesteps = steps;
 };
 
+/**
+ *
+ * @param type
+ */
 proto.setUserMessageStepDone = function(type) {
   if (type) {
     this.state.usermessagesteps[type].done = true;
@@ -233,4 +274,4 @@ export class EditingTask extends Task {
     this.getContext().get_default_value = get_default_value;
   }
 
-};
+}
