@@ -482,6 +482,11 @@ export class EditingWorkflow extends Workflow {
     }
   }
 
+  /**
+   *
+   * @param step
+   * @param tools
+   */
   addToolsOfTools({ step, tools = [] }) {
 
     const toolsOfTools = {
@@ -530,11 +535,11 @@ export class EditingWorkflow extends Workflow {
         tools
           .forEach(tool => {
             if (
-                'measure' !== tool
-                || (
-                  Layer.LayerTypes.VECTOR === inputs.layer.getType()
-                  && !isPointGeometryType(inputs.layer.getGeometryType())
-                )
+              'measure' !== tool
+              || (
+                Layer.LayerTypes.VECTOR === inputs.layer.getType()
+                && !isPointGeometryType(inputs.layer.getGeometryType())
+              )
             ) {
               this._toolsoftool.push(toolsOfTools[tool]);
             }
@@ -549,32 +554,61 @@ export class EditingWorkflow extends Workflow {
     });
   }
 
+  /**
+   *
+   * @param message
+   */
   setHelpMessage(message) {
     this.helpMessage = { help: message };
   }
 
+  /**
+   *
+   * @return {null|{help: *}}
+   */
   getHelpMessage() {
     return this.helpMessage;
   }
 
+  /**
+   *
+   * @return {*}
+   */
   getFeatures() {
     return this.getInputs().features;
   }
 
+  /**
+   *
+   * @param options
+   * @return {*}
+   */
   startFromLastStep(options) {
     this.setSteps([ this.getSteps().pop() ]);
     return this.start(options);
   }
 
+  /**
+   *
+   * @return {*}
+   */
   getCurrentFeature() {
     const feats = this.getFeatures();
     return feats[feats.length -1];
   }
 
+  /**
+   *
+   * @return {*}
+   */
   getLayer() {
     return this.getSession().getEditor().getLayer();
   }
 
+  /**
+   *
+   * @return {*}
+   */
   getSession() {
     return this.getContext().session;
   }
@@ -589,14 +623,25 @@ export class EditingWorkflow extends Workflow {
     }
   }
 
+  /**
+   *
+   */
   unbindEscKeyUp() {
     $(document).unbind('keyup', this.escKeyUpHandler);
   }
 
+  /**
+   *
+   * @param callback
+   */
   bindEscKeyUp(callback = () => {}) {
     $(document).on('keyup', { workflow: this, callback }, this.escKeyUpHandler);
   }
 
+  /**
+   *
+   * @param callback
+   */
   registerEscKeyEvent(callback) {
     this.on('start', () => this.bindEscKeyUp(callback));
     this.on('stop', () => this.unbindEscKeyUp());
