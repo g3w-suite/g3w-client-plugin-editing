@@ -9,19 +9,6 @@ import {
   AddFeatureStep,
 }                          from '../workflows';
 
-Object
-  .entries({
-    EditingWorkflow,
-    OpenFormStep,
-    LinkRelationStep,
-    PickProjectLayerFeaturesStep,
-    CopyFeaturesFromOtherProjectLayerStep,
-    AddTableFeatureStep,
-    OpenTableStep,
-    AddFeatureStep,
-  })
-  .forEach(([k, v]) => console.assert(undefined !== v, `${k} is undefined`));
-
 const { GUI }            = g3wsdk.gui;
 const { tPlugin:t }      = g3wsdk.core.i18n;
 const { Layer }          = g3wsdk.core.layer;
