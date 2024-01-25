@@ -16,10 +16,10 @@ function Tool(options = {}) {
     icon,
     session,
     layer,
-    once=false,
-    type=[],
-    visible=true,
-    conditions={}
+    once = false,
+    type = [],
+    visible = true,
+    conditions = {},
   }                         = options;
   this._options             = null;
   this._session             = session;
@@ -55,8 +55,8 @@ const proto = Tool.prototype;
 proto.setOptions = function(options={}){
   const {
     messages,
-    enabled=false,
-    visible=true,
+    enabled = false,
+    visible = true,
     disabledtoolsoftools = []
   }                         = options;
   this.state.messages       = messages || this.state.messages;
@@ -94,7 +94,7 @@ proto.getFeature = function() {
  * @returns {{inputs: {features: *[], layer}, context: {session: *}}}
  */
 proto.createOperatorOptions = function(options={features:[]}){
-  const {features=[]} = options;
+  const { features = [] } = options;
   return {
     inputs : {
       layer: this._layer,
@@ -135,7 +135,9 @@ proto.start = function(hideSidebar = false) {
           .then(() => this.editingService.saveChange()); // after save temp change check if editing service has a autosave
       })
       .fail(() => {
-        hideSidebar && GUI.showSidebar();
+        if (hideSidebar) {
+          GUI.showSidebar();
+        }
         this._session
           .rollback()
           .then(() => {})
@@ -326,9 +328,8 @@ proto.clear = function() {
  */
 proto.getMessage = function() {
   const operator = this.getOperator();
-  return operator.getHelpMessage() || operator.getRunningStep() ?
-    this.state.messages :
-    null;
+  return operator.getHelpMessage()
+    || operator.getRunningStep() ? this.state.messages : null;
 };
 
 /**
