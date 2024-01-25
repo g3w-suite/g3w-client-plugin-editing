@@ -920,7 +920,7 @@ ToolBox.create = function(layer) {
     constraints: layer.getEditingConstrains(),
     tools:       [
 
-      (is_point || is_line || is_poly) && {
+      (is_vector) && {
         id: 'addfeature',
         type: ['add_feature'],
         name: 'editing.tools.add_feature',
@@ -941,7 +941,7 @@ ToolBox.create = function(layer) {
         },
       },
 
-      (is_point || is_poly) && {
+      (is_vector) && {
         id: 'editattributes',
         type: ['change_attr_feature'],
         name: 'editing.tools.update_feature',
