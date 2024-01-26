@@ -1,5 +1,8 @@
 import ChooseFeatureToEditVueComponent from '../components/ChooseFeatureToEdit.vue';
 
+const { tPlugin: t }  = g3wsdk.core.i18n;
+
+
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@3.7.1
  * 
@@ -18,7 +21,7 @@ export function chooseFeatureFromFeatures({
      */
     const Component    = Vue.extend(ChooseFeatureToEditVueComponent);
     const vueInstance  = new Component({
-      features:   Array.isArray(features)   ? features : [],
+      features:   Array.isArray(features) ? features : [],
       feature,
       attributes: inputs.layer.getEditingFields().map(({ name, label }) => ({ name, label })),
     });
