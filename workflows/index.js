@@ -2019,10 +2019,10 @@ export class OpenFormStep extends EditingTask {
     // and is resolved without setting form service
     // Ex. copy multiple feature from other layer
     if (
-      false === this._isContentChild || // no child worklow
+      false === this._isContentChild || // no child workflow
       (
         //case edit feature of a table (edit layer alphanumeric)
-        WorkflowsStack.getLength() === 2 && //open features table
+        2 === WorkflowsStack.getLength() && //open features table
         WorkflowsStack.getParent().YOU_SHOULD_REALLY_GIVE_ME_A_NAME_2
       )
     ) {
