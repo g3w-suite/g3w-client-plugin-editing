@@ -2023,7 +2023,7 @@ export class OpenFormStep extends EditingTask {
       (
         //case edit feature of a table (edit layer alphanumeric)
         WorkflowsStack.getLength() === 2 && //open features table
-        WorkflowsStack.getParent().workflow.YOU_SHOULD_REALLY_GIVE_ME_A_NAME_2
+        WorkflowsStack.getParent().YOU_SHOULD_REALLY_GIVE_ME_A_NAME_2
       )
     ) {
       service.disableMapControlsConflict(false);
