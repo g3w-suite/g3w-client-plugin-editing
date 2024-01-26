@@ -37,6 +37,7 @@ const { Layer }               = g3wsdk.core.layer;
 function Workflow(options = {}) {
 
   const {
+    type            = null, /** @since g3w-client-plugin-editing@v3.8.0*/
     inputs          = null,
     context         = null,
     flow            = new Flow(),
@@ -47,6 +48,7 @@ function Workflow(options = {}) {
 
   base(this);
 
+  this._type =  type;
   /**
    * @since g3w-client-plugin-editing@v3.8.0
    */
@@ -119,6 +121,17 @@ function Workflow(options = {}) {
 inherit(Workflow, G3WObject);
 
 const proto = Workflow.prototype;
+
+/**
+ * Check if it is in same type
+ * @param {String | Array.<string[]>} type
+ */
+proto.isType = function(type) {
+  if (Array.isArray(type)) {
+    return Boolean(type.find(t => t === this._type));
+  }
+  return type === this._type;
+};
 
 /**
  * @returns { * }
