@@ -2023,7 +2023,7 @@ export class OpenFormStep extends EditingTask {
       (
         //case edit feature of a table (edit layer alphanumeric)
         2 === WorkflowsStack.getLength() && //open features table
-        WorkflowsStack.getParent().YOU_SHOULD_REALLY_GIVE_ME_A_NAME_2
+        WorkflowsStack.getParent().isType('edittable')
       )
     ) {
       service.disableMapControlsConflict(false);
@@ -2031,7 +2031,7 @@ export class OpenFormStep extends EditingTask {
     }
 
     // force update parent form update
-    if (contextService && !this._isContentChild) {
+    if (contextService && false === this._isContentChild) {
       contextService.setUpdate(false, { force: false });
     }
 
