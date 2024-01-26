@@ -489,6 +489,9 @@ export class EditingWorkflow extends Workflow {
    */
   addToolsOfTools({ step, tools = [] }) {
 
+    /**
+     * @FIXME add description
+     */
     const toolsOfTools = {
 
       snap: {
@@ -555,33 +558,28 @@ export class EditingWorkflow extends Workflow {
   }
 
   /**
-   *
-   * @param message
+   * @FIXME add description
    */
   setHelpMessage(message) {
     this.helpMessage = { help: message };
   }
 
   /**
-   *
-   * @return {null|{help: *}}
+   * @FIXME add description
    */
   getHelpMessage() {
     return this.helpMessage;
   }
 
   /**
-   *
-   * @return {*}
+   * @FIXME add description
    */
   getFeatures() {
     return this.getInputs().features;
   }
 
   /**
-   *
-   * @param options
-   * @return {*}
+   * @FIXME add description
    */
   startFromLastStep(options) {
     this.setSteps([ this.getSteps().pop() ]);
@@ -589,8 +587,7 @@ export class EditingWorkflow extends Workflow {
   }
 
   /**
-   *
-   * @return {*}
+   * @FIXME add description
    */
   getCurrentFeature() {
     const feats = this.getFeatures();
@@ -598,16 +595,14 @@ export class EditingWorkflow extends Workflow {
   }
 
   /**
-   *
-   * @return {*}
+   * @FIXME add description
    */
   getLayer() {
     return this.getSession().getEditor().getLayer();
   }
 
   /**
-   *
-   * @return {*}
+   * @FIXME add description
    */
   getSession() {
     return this.getContext().session;
@@ -624,23 +619,21 @@ export class EditingWorkflow extends Workflow {
   }
 
   /**
-   *
+   * @FIXME add description
    */
   unbindEscKeyUp() {
     $(document).unbind('keyup', this.escKeyUpHandler);
   }
 
   /**
-   *
-   * @param callback
+   * @FIXME add description
    */
   bindEscKeyUp(callback = () => {}) {
     $(document).on('keyup', { workflow: this, callback }, this.escKeyUpHandler);
   }
 
   /**
-   *
-   * @param callback
+   * @FIXME add description
    */
   registerEscKeyEvent(callback) {
     this.on('start', () => this.bindEscKeyUp(callback));

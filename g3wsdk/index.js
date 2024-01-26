@@ -20,6 +20,9 @@ if (
   console.warn('Editing APIs will be removed from g3wsdk after v4.x');
 }
 
+/**
+ * @FIXME add description
+ */
 window.g3wsdk.core.editing = {
   Session,
   SessionsRegistry,
@@ -39,6 +42,9 @@ window.g3wsdk.constant.DEFAULT_EDITING_CAPABILITIES = [
   'delete_feature',
 ];
 
+/**
+ * @FIXME add description
+ */
 window.g3wsdk.core.workflow = {
   Task,
   Step,
