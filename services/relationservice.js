@@ -122,10 +122,10 @@ const RelationService = function(layerId, options = {}) {
       link(options = {}) {
         const w = new EditingWorkflow({
           ...options,
+          type: 'edittable',
           backbuttonlabel: 'plugins.editing.form.buttons.save_and_back_table',
           steps: [ new OpenTableStep() ],
         });
-        w.YOU_SHOULD_REALLY_GIVE_ME_A_NAME_2 = true;
         return w;
       },
 
@@ -133,6 +133,7 @@ const RelationService = function(layerId, options = {}) {
       add(options = {}) {
         return new EditingWorkflow({
           ...options,
+          type: 'addtablefeature',
           steps: [
             new AddTableFeatureStep(),
             new OpenFormStep(),
@@ -146,6 +147,7 @@ const RelationService = function(layerId, options = {}) {
       /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/linkrelationworkflow.js@v3.7.1 */
       link() {
         return new EditingWorkflow({
+          type: 'linkrelation',
           steps: [
             new LinkRelationStep()
           ]
@@ -156,6 +158,7 @@ const RelationService = function(layerId, options = {}) {
       add(options = {}) {
         const w = new EditingWorkflow({
           ...options,
+          type: 'addfeature',
           steps: [
             new AddFeatureStep(options),
             new OpenFormStep(options),
@@ -168,6 +171,7 @@ const RelationService = function(layerId, options = {}) {
       /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/selectandcopyfeaturesfromotherlayerworkflow.js@v3.7.1 */
       selectandcopy(options) {
         return new EditingWorkflow({
+          type: 'selectandcopyfeaturesfromotherlayer',
           steps: [
             new PickProjectLayerFeaturesStep(options),
             new CopyFeaturesFromOtherProjectLayerStep(options),
@@ -318,7 +322,7 @@ proto.startTableTool = function(relationtool, index) {
   //edit attributes feature
   if ('editattributes' === relationtool.state.id) {
     /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/edittablefeatureworkflow.js@v3.7.1 */
-    const workflow = new EditingWorkflow({ steps: [ new OpenFormStep() ] });
+    const workflow = new EditingWorkflow({ type: 'edittablefeature', steps: [ new OpenFormStep() ] });
     workflow.start(options)
       .then(() => {
         //get relation layer fields
@@ -363,7 +367,7 @@ proto.startVectorTool = function(relationtool, index) {
   workflow.bindEscKeyUp(() => relationfeature.setStyle(this._originalLayerStyle));
 
   (
-    workflow.YOU_SHOULD_REALLY_GIVE_ME_A_NAME_1 &&
+    workflow.isType(['deletefeature', 'editattributes']) &&
     workflow.startFromLastStep(options)
     ||
     workflow.start(options)

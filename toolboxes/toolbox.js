@@ -1247,7 +1247,7 @@ ToolBox.create = function(layer) {
           const w = new EditingWorkflow({
             ...options,
             helpMessage: 'editing.tools.update_feature',
-            type: 'editattributes',
+            type: 'editfeatureattributes',
             steps: [
               new PickFeatureStep(),
               new ChooseFeatureStep(),
@@ -1267,7 +1267,7 @@ ToolBox.create = function(layer) {
         row: 1,
         /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/deletefeatureworkflow.js@v3.7.1 */
         op(options = {}) {
-          const w = new EditingWorkflow({
+          return new EditingWorkflow({
             ...options,
             type: 'deletefeature',
             steps: [
@@ -1277,7 +1277,6 @@ ToolBox.create = function(layer) {
               new ConfirmStep({ type: 'delete' }),
             ],
           });
-          return w;
         },
       },
       //Edit vertex Feature
@@ -1292,7 +1291,7 @@ ToolBox.create = function(layer) {
         op(options = {}) {
           const w = new EditingWorkflow({
             ...options,
-            type: 'movevertex',
+            type: 'modifygeometryvertex',
             helpMessage: 'editing.tools.update_vertex',
             steps: [
               new PickFeatureStep(options),
@@ -1488,7 +1487,7 @@ ToolBox.create = function(layer) {
         op(options = {}) {
           const w = new EditingWorkflow({
             ...options,
-            type:'addPart',
+            type: 'addparttomultigeometries',
             helpMessage: 'editing.tools.addpart',
             steps: [
               new PickFeatureStep({
@@ -1549,7 +1548,7 @@ ToolBox.create = function(layer) {
         op(options = {}) {
           return new EditingWorkflow({
             ...options,
-            type: 'deletePart',
+            type: 'deletepartfrommultigeometries',
             steps: [
               new PickFeatureStep(),
               new ChooseFeatureStep(),
@@ -1675,7 +1674,7 @@ ToolBox.create = function(layer) {
         op(options = {}) {
           return new EditingWorkflow({
             ...options,
-            type: 'copyfeaturefromexternallayer',
+            type: 'addfeaturefrommapvectorlayers',
             steps: [
               new SelectElementsStep({
                 ...options,
@@ -1703,7 +1702,7 @@ ToolBox.create = function(layer) {
         op(options = {}) {
           return new EditingWorkflow({
             ...options,
-            type: 'addfeature',
+            type: 'addtablefeature',
             steps: [
               new AddTableFeatureStep(),
               new OpenFormStep(),
@@ -1721,13 +1720,12 @@ ToolBox.create = function(layer) {
         once: true,
         /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/edittableworkflow.js@v3.7.1 */
         op(options = {}) {
-          const w = new EditingWorkflow({
+          return new EditingWorkflow({
             type: 'edittable',
             ...options,
             backbuttonlabel: 'plugins.editing.form.buttons.save_and_back_table',
             steps: [ new OpenTableStep() ],
           });
-          return w;
         },
       },
 

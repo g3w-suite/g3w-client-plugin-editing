@@ -183,6 +183,7 @@ proto.copyFeature = function(uid) {
     /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addtablefeatureworkflow.js@v3.7.1 */
     this._workflow = new EditingWorkflow({
         ...options,
+        type: 'addtablefeature',
         steps: [
           new AddTableFeatureStep(),
           new OpenFormStep(),
@@ -229,7 +230,7 @@ proto.editFeature = function(uid) {
   const feature = this._features[index];
 
   /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/edittablefeatureworkflow.js@v3.7.1 */
-  this._workflow = new EditingWorkflow({ steps: [ new OpenFormStep() ] });
+  this._workflow = new EditingWorkflow({ type: 'edittablefeature', steps: [ new OpenFormStep() ] });
 
   const inputs = this._inputs;
 

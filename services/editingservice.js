@@ -520,6 +520,7 @@ proto.editResultLayerFeature = function({
       /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editnopickmapfeatureattributesworkflow.js@v3.7.1 */
       // edit feature workFlow
       const work = new EditingWorkflow({
+        type: 'editnopickmapfeatureattributes',
         runOnce: true,
         helpMessage: 'editing.tools.update_feature',
         steps: [ new OpenFormStep() ]
@@ -2071,6 +2072,7 @@ proto.showCommitModalWindow = function({
 
     /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/commitfeaturesworkflow.js@v3.7.1 */
     const workflow = new EditingWorkflow({
+      type: 'commitfeatures',
       steps: [ new ConfirmStep({ type: 'commit' }) ]
     })
 
@@ -2971,6 +2973,7 @@ proto.addLayerFeature = function({
    /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/easyaddfeatureworkflow.js@v3.7.1 */
    // create workflow
    const workflow = new EditingWorkflow({
+    type: 'addfeature',
     steps: [
       new OpenFormStep({
         push: true,
