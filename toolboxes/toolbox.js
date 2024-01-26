@@ -1224,6 +1224,7 @@ ToolBox.create = function(layer) {
         op(options = {}) {
           const w = new EditingWorkflow({
             ...options,
+            type: 'addfeature',
             steps: [
               new AddFeatureStep(options),
               new OpenFormStep(options),
@@ -1246,13 +1247,13 @@ ToolBox.create = function(layer) {
           const w = new EditingWorkflow({
             ...options,
             helpMessage: 'editing.tools.update_feature',
+            type: 'editattributes',
             steps: [
               new PickFeatureStep(),
               new ChooseFeatureStep(),
               new OpenFormStep(),
             ],
           });
-          w.YOU_SHOULD_REALLY_GIVE_ME_A_NAME_1 = true;
           return w;
         },
       },
@@ -1268,6 +1269,7 @@ ToolBox.create = function(layer) {
         op(options = {}) {
           const w = new EditingWorkflow({
             ...options,
+            type: 'deletefeature',
             steps: [
               new PickFeatureStep(),
               new ChooseFeatureStep(),
@@ -1275,7 +1277,6 @@ ToolBox.create = function(layer) {
               new ConfirmStep({ type: 'delete' }),
             ],
           });
-          w.YOU_SHOULD_REALLY_GIVE_ME_A_NAME_1 = true;
           return w;
         },
       },
@@ -1291,6 +1292,7 @@ ToolBox.create = function(layer) {
         op(options = {}) {
           const w = new EditingWorkflow({
             ...options,
+            type: 'movevertex',
             helpMessage: 'editing.tools.update_vertex',
             steps: [
               new PickFeatureStep(options),
@@ -1315,6 +1317,7 @@ ToolBox.create = function(layer) {
         op(options = {}) {
           return new EditingWorkflow({
             ...options,
+            type: 'editmultiattributes',
             helpMessage: 'editing.tools.update_multi_features',
             registerEscKeyEvent: true,
             steps: [
@@ -1351,6 +1354,7 @@ ToolBox.create = function(layer) {
         op(options = {}) {
           return new EditingWorkflow({
             ...options,
+            type: 'movefeature',
             helpMessage: 'editing.tools.move_feature',
             steps: [
               new PickFeatureStep(),
@@ -1404,6 +1408,7 @@ ToolBox.create = function(layer) {
           const openFormStep = new OpenFormStep({ ...options, help: 'editing.steps.help.copy' });
           return new EditingWorkflow({
             ...options,
+            type: 'copyfeaturesfromotherlayer',
             steps: [
               new CopyFeaturesFromOtherLayerStep({
                 ...options,
@@ -1429,6 +1434,7 @@ ToolBox.create = function(layer) {
         op(options = {}) {
           return new EditingWorkflow({
             ...options,
+            type: 'copyfeatures',
             steps: [
               new SelectElementsStep({
                 ...options,
@@ -1482,6 +1488,7 @@ ToolBox.create = function(layer) {
         op(options = {}) {
           const w = new EditingWorkflow({
             ...options,
+            type:'addPart',
             helpMessage: 'editing.tools.addpart',
             steps: [
               new PickFeatureStep({
@@ -1542,6 +1549,7 @@ ToolBox.create = function(layer) {
         op(options = {}) {
           return new EditingWorkflow({
             ...options,
+            type: 'deletePart',
             steps: [
               new PickFeatureStep(),
               new ChooseFeatureStep(),
@@ -1564,6 +1572,7 @@ ToolBox.create = function(layer) {
         op(options = {}) {
           return new EditingWorkflow({
             ...options,
+            type: 'splitfeature',
             steps: [
               new SelectElementsStep({
                 ...options,
@@ -1606,6 +1615,7 @@ ToolBox.create = function(layer) {
         op(options = {}) {
           return new EditingWorkflow({
             ...options,
+            type: 'mergefeatures',
             steps: [
               new SelectElementsStep({
                 ...options,
@@ -1665,6 +1675,7 @@ ToolBox.create = function(layer) {
         op(options = {}) {
           return new EditingWorkflow({
             ...options,
+            type: 'copyfeaturefromexternallayer',
             steps: [
               new SelectElementsStep({
                 ...options,
@@ -1692,6 +1703,7 @@ ToolBox.create = function(layer) {
         op(options = {}) {
           return new EditingWorkflow({
             ...options,
+            type: 'addfeature',
             steps: [
               new AddTableFeatureStep(),
               new OpenFormStep(),
@@ -1710,11 +1722,11 @@ ToolBox.create = function(layer) {
         /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/edittableworkflow.js@v3.7.1 */
         op(options = {}) {
           const w = new EditingWorkflow({
+            type: 'edittable',
             ...options,
             backbuttonlabel: 'plugins.editing.form.buttons.save_and_back_table',
             steps: [ new OpenTableStep() ],
           });
-          w.YOU_SHOULD_REALLY_GIVE_ME_A_NAME_2 = true;
           return w;
         },
       },
