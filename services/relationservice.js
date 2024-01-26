@@ -157,7 +157,7 @@ const RelationService = function(layerId, options = {}) {
             new OpenFormStep(options),
           ],
         });
-        w.addToolsOfTools({ step: w._options.steps[0], tools: ['snap', 'measure'] });
+        w.addToolsOfTools({ step: w.getStep(0), tools: ['snap', 'measure'] });
         return w;
       },
 
