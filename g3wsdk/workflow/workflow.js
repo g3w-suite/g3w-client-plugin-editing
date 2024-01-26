@@ -123,7 +123,9 @@ inherit(Workflow, G3WObject);
 const proto = Workflow.prototype;
 
 /**
+ * @since g3w-client-plugin-editing@v3.8.0
  * Check if it is in same type
+ *
  * @param {String | Array.<string[]>} type
  */
 proto.isType = function(type) {
