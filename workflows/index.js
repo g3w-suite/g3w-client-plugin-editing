@@ -2360,7 +2360,7 @@ export class SelectElementsStep extends EditingTask {
 
     super(options);
 
-    this._type = options.type || 'bbox'; // 'single' 'bbox' 'multiple'
+    this._type                  = options.type || 'bbox'; // 'single' 'bbox' 'multiple'
     this._selectInteractions    = [];
     this.multipleselectfeatures = [];
     this._originalStyle;
@@ -2418,7 +2418,9 @@ export class SelectElementsStep extends EditingTask {
           this.addRemoveToMultipleSelectFeatures([feature], inputs);
         } else {
           this._originalStyle = setFeaturesSelectedStyle(features);
-          this._steps && this.setUserMessageStepDone('select');
+          if (this._steps) {
+            this.setUserMessageStepDone('select');
+          }
           promise.resolve(inputs);
         }
       }
@@ -2434,7 +2436,13 @@ export class SelectElementsStep extends EditingTask {
    * @param promise
    * @param buttonnext
    */
-  addExternalSelectInteraction({layer, inputs, context, promise, buttonnext=false}= {}) {
+  addExternalSelectInteraction({
+    layer,
+    inputs,
+    context,
+    promise,
+    buttonnext = false
+  }= {}) {
     const layerGeometryType = layer.getGeometryType();
     const layerId           = layer.getId();
     const source            = layer.getEditingLayer().getSource();
@@ -2470,7 +2478,7 @@ export class SelectElementsStep extends EditingTask {
           properties: attributes.map(attribute => {
             //set media attribute to null or attribute belong to layer but not present o feature copied
             if (
-              attribute.input.type === 'media'
+              'media' === attribute.input.type
               || undefined === evt.feature.get(attribute.name)
               || attribute.pk
             ) {
@@ -2589,8 +2597,9 @@ export class SelectElementsStep extends EditingTask {
         const extent = selectInteractionMultiple.getGeometry().getExtent();
         const layerSource = layer.getEditingLayer().getSource();
 
+        //https://openlayers.org/en/v5.3.0/apidoc/module-ol_source_Cluster-Cluster.html#forEachFeatureIntersectingExtent
         layerSource
-          .forEachFeatureIntersectingExtent(extent, feature => features.push(feature));
+          .forEachFeatureIntersectingExtent(extent, feature => { features.push(feature) });
 
         if (buttonnext) {
           this.addRemoveToMultipleSelectFeatures(features, inputs);
