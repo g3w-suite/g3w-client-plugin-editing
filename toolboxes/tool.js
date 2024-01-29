@@ -4,6 +4,7 @@ const {
 }                   = g3wsdk.core.utils;
 const { GUI }       = g3wsdk.gui;
 const { G3WObject } = g3wsdk.core;
+const { Layer }     = g3wsdk.core.layer;
 
 function Tool(options = {}) {
   base(this);
@@ -143,7 +144,7 @@ proto.start = function(hideSidebar = false) {
           .then(() => {})
       })
       .always(() => {
-        if (!this._once && this._layer.getType() !== 'table') {
+        if (!this._once && Layer.LayerTypes.TABLE !== this._layer.getType() ) {
           startOp(options);
         } else {
           this.stop();
