@@ -22,18 +22,6 @@ import { PickFeaturesInteraction }                      from '../interactions/pi
 
 import { EditingTask }                                  from '../g3wsdk/workflow/task';
 
-Object
-  .entries({
-    VM,
-    cloneFeature,
-    CopyFeatureFromOtherLayersComponent,
-    CopyFeatureFromOtherProjectLayersComponent,
-    SaveAll,
-    TableVueObject,
-    PickFeaturesInteraction,
-  })
-  .forEach(([k, v]) => console.assert(undefined !== v, `${k} is undefined`));
-
 const { ApplicationState }                 = g3wsdk.core;
 const { Geometry }                         = g3wsdk.core.geometry;
 const {
