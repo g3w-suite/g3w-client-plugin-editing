@@ -1209,7 +1209,7 @@ ToolBox.create = function(layer) {
     type,
     layer,
     lngTitle :    'editing.toolbox.title',
-    title :       ` ${layer.getOrigName()}`, // Check if correct https://github.com/g3w-suite/g3w-client-plugin-editing/pull/33
+    title :       ` ${layer.getTitle()}`,
     constraints : layer.getEditingConstrains(),
     tools :       [
       //Add Feature
