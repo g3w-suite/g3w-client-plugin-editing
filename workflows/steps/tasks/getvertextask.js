@@ -1,9 +1,13 @@
-const {base, inherit} = g3wsdk.core.utils;
+const {
+  base,
+  inherit
+}                 = g3wsdk.core.utils;
 const EditingTask = require('./editingtask');
 
 function GetVertexTask(options={}) {
   this._drawInteraction;
   this._snapIteraction;
+  this._stopPromise; /** @since g3w-client-plugin-editing@v3.8.0 */
   base(this, options);
 }
 
@@ -14,7 +18,14 @@ const proto = GetVertexTask.prototype;
 proto.run = function(inputs) {
   const d = $.Deferred();
   const {features} = inputs;
-  if (!features.length) return;
+  if (!features.length) {
+    return;
+  }
+
+  this._stopPromise = $.Deferred();
+  /** @since g3w-client-plugin-editing@v3.8.0 */
+  this.setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise });
+
   this._snapIteraction = new ol.interaction.Snap({
     features: new ol.Collection(features),
     edge: false
@@ -43,6 +54,7 @@ proto.stop = function() {
   this.removeInteraction(this._snapIteraction);
   this._snapIteraction = null;
   this._drawIteraction = null;
+  this._stopPromise.resolve(true); /** @since g3w-client-plugin-editing@v3.8.0 */
 };
 
 module.exports = GetVertexTask;

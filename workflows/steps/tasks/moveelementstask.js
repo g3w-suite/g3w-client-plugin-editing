@@ -1,4 +1,9 @@
-const {base, inherit} = g3wsdk.core.utils;
+import { cloneFeature } from '../../../utils/cloneFeature'
+
+const {
+  base,
+  inherit
+}                 = g3wsdk.core.utils;
 const EditingTask = require('./editingtask');
 
 function MoveElementsTask(options={}){
@@ -9,6 +14,14 @@ inherit(MoveElementsTask, EditingTask);
 
 const proto = MoveElementsTask.prototype;
 
+/**
+ * @param { Object } delta
+ * @param delta.x
+ * @param delta.y
+ * @param delta.coordinates
+ * 
+ * @returns {{ x: number, y: number }}
+ */
 proto.getDeltaXY = function({x, y, coordinates} = {}){
   const getCoordinates = (coordinates)=> {
     if (Array.isArray(coordinates[0])){
@@ -25,9 +38,19 @@ proto.getDeltaXY = function({x, y, coordinates} = {}){
   }
 };
 
+/**
+ * @param inputs
+ * @param context
+ * 
+ * @returns jQuery Promise
+ */
 proto.run = function(inputs, context) {
   const d = $.Deferred();
   const { layer, features, coordinates } = inputs;
+
+  /** @since g3w-client-plugin-editing@v3.8.0 */
+  this.setAndUnsetSelectedFeaturesStyle({ promise: d });
+
   const source = layer.getEditingLayer().getSource();
   const layerId = layer.getId();
   const session = context.session;

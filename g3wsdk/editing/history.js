@@ -3,7 +3,7 @@
  * 
  * ORIGINAL SOURCE: g3w-client/src/core/editing/history.js@v3.9.1
  * 
- * @since g3w-client-plugin-editing@v4.x
+ * @since g3w-client-plugin-editing@v3.8.x
  */
 
 const { base, inherit } = g3wsdk.core.utils;
