@@ -196,7 +196,7 @@ proto.setAndUnsetSelectedFeaturesStyle = function({ promise } = {}) {
 
   if (is_vector && is_single) {
     setTimeout(() => { selectOriginalStyleHandle(); });
-  } else if(is_vector) {
+  } else if (is_vector) {
     selectOriginalStyleHandle();
   }
 };

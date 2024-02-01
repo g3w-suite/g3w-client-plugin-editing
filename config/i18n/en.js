@@ -83,7 +83,11 @@ export default {
       selectStartVertex: 'Select starting vertex of selected features',
       selectToPaste: 'Select the point where paste the features selected',
       draw_split_line: "Draw a line to split selected feature"
-    }
+    },
+    title: {
+      steps: 'Steps'
+    },
+    next: 'Next',
   },
   messages: {
     featureslockbyotheruser: "Some geometries/records are not editable because in editing by other user",
