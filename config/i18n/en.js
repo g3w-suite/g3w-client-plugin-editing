@@ -38,7 +38,9 @@ export default {
     update_vertex: "Update feature vertex",
     update_feature: "Update feature attribute",
     update_multi_features: "Update attributes of selected features",
-    copyfeaturefromexternallayer: "Create Feature from added layer"
+    copyfeaturefromexternallayer: "Create Feature from added layer",
+    addhole: "Add hole",
+    deletehole: "Remove hole"
   },
   toolsoftool: {
     measure: "Show measure",

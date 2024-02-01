@@ -38,7 +38,9 @@ export default {
     update_vertex: "Uppdatera punktens egenskap",
     update_feature: "Uppdatera egenskap",
     update_multi_features: "Ändra attributen för de valda funktionerna",
-    copyfeaturefromexternallayer: "Create Feature from added layer"
+    copyfeaturefromexternallayer: "Skapa funktion från tillagt lager",
+    addhole: "Lägg till hål",
+    deletehole: "Ta bort hålet"
   },
   toolsoftool: {
     measure: "Show measure",

@@ -38,7 +38,9 @@ export default {
     update_vertex: "Mettre à jour les sommets des fonctionnalités",
     update_feature: "Modifier les attributs des fonctionnalités",
     update_multi_features: "Modifier les attributs des fonctionnalités sélectionnées",
-    copyfeaturefromexternallayer: "Create Feature from added layer"
+    copyfeaturefromexternallayer: "Créer une fonctionnalité à partir d'une couche ajoutée",
+    addhole: "Ajouter un trou",
+    deletehole: "Supprimer le trou"
   },
   toolsoftool: {
     measure: "Show measure",

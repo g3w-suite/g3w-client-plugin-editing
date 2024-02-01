@@ -68,7 +68,7 @@ proto.run = function(inputs, context) {
         inputs,
         context,
         feature
-      }).finally(()=>{
+      }).finally(() => {
         newFeature = feature.clone();
         session.pushUpdate(layerId, newFeature, originalFeature);
         inputs.features.push(newFeature);
