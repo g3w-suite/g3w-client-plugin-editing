@@ -83,6 +83,7 @@
         Promise
           .allSettled(
             workflows
+            .filter( w => typeof w.getLastStep().getTask().saveAll === "function") // need to filter only workflow that
             .map(w => w.getLastStep().getTask().saveAll(w.getContext().service.state.fields))
           )
           .then(() => {
