@@ -210,6 +210,7 @@ proto.copyFeature = function(uid) {
       })
       .fail(reject)
       .always(() => {
+        this._workflow.stop();
         /** @TODO check input.features that grow in number */
         console.log('here we are')
       })
