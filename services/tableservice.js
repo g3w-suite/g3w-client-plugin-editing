@@ -141,6 +141,7 @@ proto.deleteFeature = function(uid) {
       (result) => {
         if (result) {
           const index   = this._features.findIndex(f => f.getUid() === uid);
+          const feature = this._features[index];
           const session = this._context.session;
           const layerId = this._inputs.layer.getId();
           this._inputs.layer.getEditingSource().removeFeature(feature);
