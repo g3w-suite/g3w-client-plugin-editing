@@ -1725,8 +1725,8 @@ export class OpenFormStep extends EditingTask {
    */
   saveAll(fields) {
     return new Promise(async (resolve, reject) => {
-      const {session} = this.getContext();
-      const inputs    = this.getInputs();
+      const { session } = this.getContext();
+      const inputs      = this.getInputs();
       fields = this._multi ? fields.filter(field => field.value !== null) : fields;
 
       if (fields.length) {
