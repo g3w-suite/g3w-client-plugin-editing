@@ -500,6 +500,22 @@ flex-direction: column
         this._createDataTable(); // recreate table
       },
 
+      /**
+      * @since 3.7.4
+       * In case of commit new relation to server, update temporary relation.id (__new__) to
+       * saved id on server. It is called when new relation is saved on relation form after click on save all disk,
+       * and when save all disk is click on list of relation table
+      */
+      updateNewRelationId() {
+        this._new_relations_ids
+          .forEach(({clientid, id}) => {
+            const newrelation = this.relations.find(r => clientid === r.id);
+            if (newrelation) {
+              newrelation.id = id;
+            }
+          })
+      }
+
     },
 
     computed: {
@@ -539,18 +555,10 @@ flex-direction: column
         if (0 === updatedrelations.length) {
           this.destroyTable(); // destroy table when there are no relations
         } else {
-          this._new_relations_ids = this._new_relations_ids
-            .filter(({clientid, id}) => {
-              const newrelation = this.relations.find(r => clientid === r.id);
-              if (newrelation) {
-                newrelation.id = id;
-                return false;
-              }
-            })
+          this.updateNewRelationId();
           this.updateTable(); // update table when deleting / adding row relations
         }
       },
-
     },
 
     beforeCreate() {
@@ -569,9 +577,16 @@ flex-direction: column
 
       /** @since 3.7.2  Method to listen commit on server when press disk icon save all form*/
       this.listenNewCommitRelations = ({new_relations={}}) => {
-        if (new_relations[relationLayer.getId()]) {
-          this._new_relations_ids = this._new_relations_ids
-            .concat((new_relations[relationLayer.getId()].new || []).map(({clientid, id}) => ({clientid, id})));
+        // in case of new relation saved on server
+        if (new_relations[relationLayer.getId()] && Array.isArray(new_relations[relationLayer.getId()].new)) {
+          this._new_relations_ids = [
+            ...this._new_relations_ids,
+            ...new_relations[relationLayer.getId()].new.map(({clientid, id}) => ({clientid, id}))
+          ]
+          //when component is active (show) need to update
+          if (this.active) {
+            this.updateNewRelationId();
+          }
         }
       };
 
@@ -660,8 +675,6 @@ flex-direction: column
     beforeDestroy() {
       const EditingService  = require('../services/editingservice');
       this.loadEventuallyRelationValuesForInputs = true;
-      //set to null for garbage collection
-      this._new_relations_ids = null;
       //unlisten
       EditingService.off('commit',this.listenNewCommitRelations);
     },
