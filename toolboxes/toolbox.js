@@ -1,3 +1,52 @@
+import { EditingWorkflow } from '../g3wsdk/workflow/workflow';
+
+import {
+  OpenFormStep,
+  ConfirmStep,
+  CopyFeaturesFromOtherLayerStep,
+  SelectElementsStep,
+  PickFeatureStep,
+  ChooseFeatureStep,
+  AddFeatureStep,
+  AddPartToMultigeometriesStep,
+  GetVertexStep,
+  MoveElementsStep,
+  DeletePartFromMultigeometriesStep,
+  MergeFeaturesStep,
+  SplitFeatureStep,
+  MoveFeatureStep,
+  ModifyGeometryVertexStep,
+  DeleteFeatureStep,
+  AddTableFeatureStep,
+  OpenTableStep,
+}                          from '../workflows';
+
+const Tool                 = require('../toolboxes/tool');
+
+Object
+  .entries({
+    EditingWorkflow,
+    OpenFormStep,
+    ConfirmStep,
+    CopyFeaturesFromOtherLayerStep,
+    SelectElementsStep,
+    PickFeatureStep,
+    ChooseFeatureStep,
+    AddPartToMultigeometriesStep,
+    GetVertexStep,
+    MoveElementsStep,
+    DeletePartFromMultigeometriesStep,
+    MergeFeaturesStep,
+    SplitFeatureStep,
+    MoveFeatureStep,
+    ModifyGeometryVertexStep,
+    Tool,
+    AddTableFeatureStep,
+    OpenTableStep,
+    AddFeatureStep,
+  })
+  .forEach(([k, v]) => console.assert(undefined !== v, `${k} is undefined`));
+
 const {
   ApplicationState,
   G3WObject
@@ -13,74 +62,64 @@ const { tPlugin:t }              = g3wsdk.core.i18n;
 const { Layer }                  = g3wsdk.core.layer;
 const { Session }                = g3wsdk.core.editing;
 const { getScaleFromResolution } = g3wsdk.ol.utils;
+const { Geometry }               = g3wsdk.core.geometry;
+const { isSameBaseGeometryType } = g3wsdk.core.geoutils;
 
 function ToolBox(options={}) {
   base(this);
   this.editingService = require('../services/editingservice');
-  this._mapService = GUI.getService('map');
-  this._start = false;
-  this._constraints = options.constraints || {};
-  this._layer = options.layer;
-  this.uniqueFields = this.getUniqueFieldsType(this._layer.getEditingFields());
-  this.uniqueFields && this.getFieldUniqueValuesFromServer();
-  this._layerType = options.type || Layer.LayerTypes.VECTOR;
-  this._loadedExtent = null;
-  this._tools = options.tools;
+
+  this._mapService        = GUI.getService('map');
+  this._start             = false;
+  this._constraints       = options.constraints || {};
+  this._layer             = options.layer;
+  this.uniqueFields       = this.getUniqueFieldsType(this._layer.getEditingFields());
+  this._layerType         = options.type || Layer.LayerTypes.VECTOR;
+  this._loadedExtent      = null;
+  this._tools             = options.tools;
+  this._getFeaturesOption = {};
+  // is used to constraint loading features to a filter set
+  this.constraints        = { filter: null, show: null, tools: []};
+  this._session           = new Session({ id: options.id, editor: this._layer.getEditor()});
+  this._getFeaturesOption = {};
   this._enabledtools;
   this._disabledtools;
-  this._getFeaturesOption = {};
-  const toolsstate = [];
-  this._tools.forEach(tool => toolsstate.push(tool.getState()));
-  this.constraints = {
-    filter: null,
-    show: null,
-    tools: []
-  }; // is used to constraint loading features to a filter set
-  this._session = new Session({
-    id: options.id,
-    editor: this._layer.getEditor()
-  });
 
   // get informed when save on server
   if (this.uniqueFields) {
+    this.getFieldUniqueValuesFromServer();
     this._session.onafter('saveChangesOnServer', () => {
       this._resetUniqueValues();
     });
   }
 
-  this._getFeaturesOption = {};
-  const historystate = this._session.getHistory().state;
-  const sessionstate = this._session.state;
- 
   this.state = {
-    id: options.id,
-    changingtools: false, // used to show or not tools during change phase
-    show: true, // used to show or not the toolbox if we nee to filtered
-    color: options.color || 'blue',
-    title: options.title || "Edit Layer",
-    customTitle: false,
-    loading: false,
-    enabled: false,
-    toolboxheader: true,
-    startstopediting: true,
-    message: null,
-    toolmessages: {
-      help: null
+    id               : options.id,
+    changingtools    : false, // used to show or not tools during change phase
+    show             : true, // used to show or not the toolbox if we need to filtered
+    color            : options.color || 'blue',
+    title            : options.title || "Edit Layer",
+    customTitle      : false,
+    loading          : false,
+    enabled          : false,
+    toolboxheader    : true,
+    startstopediting : true,
+    message          : null,
+    toolmessages     : { help: null },
+    toolsoftool      : [],
+    tools            : this._tools.map(tool => tool.getState()),
+    selected         : false,
+    activetool       : null,
+    editing          : {
+      session      : this._session.state,
+      history      : this._session.getHistory().state,
+      on           : false,
+      dependencies : [],
+      relations    : [],
+      father       : false,
+      canEdit      : true
     },
-    toolsoftool: [],
-    tools: toolsstate,
-    selected: false,
-    activetool: null,
-    editing: {
-      session: sessionstate,
-      history: historystate,
-      on: false,
-      dependencies: [],
-      relations: [],
-      father: false,
-      canEdit: true
-    },
-    layerstate: this._layer.state
+    layerstate       : this._layer.state
   };
 
   /**
@@ -104,8 +143,12 @@ function ToolBox(options={}) {
 
   this._session.onafter('stop', () => {
     if (this.inEditing()) {
-      ApplicationState.online && this.editingService.stopSessionChildren(this.state.id);
-      this._getFeaturesOption.registerEvents && this._unregisterGetFeaturesEvent();
+      if (ApplicationState.online) {
+        this.editingService.stopSessionChildren(this.state.id);
+      }
+      if (this._getFeaturesOption.registerEvents) {
+        this._unregisterGetFeaturesEvent();
+      }
     }
   });
 
@@ -117,7 +160,7 @@ function ToolBox(options={}) {
       };
       this._getFeaturesOption = options;
       this._registerGetFeaturesEvent(this._getFeaturesOption);
-      if (options.type === Layer.LayerTypes.VECTOR && GUI.getContentLength()) {
+      if (Layer.LayerTypes.VECTOR === options.type && GUI.getContentLength()) {
         GUI.once('closecontent', () => {
           setTimeout(() => {
             this._mapService.getMap().dispatchEvent(this._getFeaturesEvent.event)
@@ -132,81 +175,149 @@ inherit(ToolBox, G3WObject);
 
 const proto = ToolBox.prototype;
 
+/**
+ *
+ * @return {*|{toolboxheader: boolean, layerstate, color: string, toolsoftool: *[], show: boolean, customTitle: boolean, startstopediting: boolean, title: string, loading: boolean, message: null, tools: *[], enabled: boolean, editing: {session, father: boolean, canEdit: boolean, history, relations: *[], on: boolean, dependencies: *[]}, toolmessages: {help: null}, changingtools: boolean, id, activetool: null, selected: boolean}}
+ */
 proto.getState = function() {
   return this.state;
 };
 
+/**
+ *
+ * @param bool
+ */
 proto.setShow = function(bool=true){
   this.state.show = bool;
 };
 
+/**
+ *
+ * @return {*}
+ */
 proto.getLayer = function() {
   return this._layer;
 };
 
+/**
+ *
+ * @param bool
+ */
 proto.setFather = function(bool) {
   this.state.editing.father = bool;
 };
 
+/**
+ *
+ * @return {boolean}
+ */
 proto.isFather = function() {
   return this.state.editing.father;
 };
 
-proto.addRelations = function(relations) {
+/**
+ *
+ * @param relations
+ */
+proto.addRelations = function(relations = []) {
   relations.forEach(relation => this.addRelation(relation));
 };
 
+/**
+ *
+ * @return {*}
+ */
 proto.revert = function() {
   return this._session.revert();
 };
 
+/**
+ *
+ * @param relation
+ */
 proto.addRelation = function(relation) {
   this.state.editing.relations.push(relation);
 };
 
+/**
+ *
+ * @return {[]}
+ */
 proto.getDependencies = function() {
   return this.state.editing.dependencies;
 };
 
+/**
+ *
+ * @return {boolean}
+ */
 proto.hasDependencies = function() {
-  return !!this.state.editing.dependencies.length;
+  return this.state.editing.dependencies.length > 0;
 };
 
+/**
+ *
+ * @param dependencies
+ */
 proto.addDependencies = function(dependencies) {
   dependencies.forEach(dependency => this.addDependency(dependency));
 };
 
+/**
+ *
+ * @param dependency
+ */
 proto.addDependency = function(dependency) {
   this.state.editing.dependencies.push(dependency);
 };
 
-proto.getFieldUniqueValuesFromServer = function({reset=false}={}) {
-  const fieldsName = Object.values(this.uniqueFields).map(field => field.name);
+/**
+ *
+ * @param reset
+ */
+proto.getFieldUniqueValuesFromServer = function({
+  reset=false
+}={}) {
   this._layer.getWidgetData({
     type: 'unique',
-    fields: fieldsName.join()
-  }).then( response => {
-    const data = response.data;
-    Object.entries(data).forEach(([fieldName, values]) => {
-      reset && this.uniqueFields[fieldName].input.options.values.splice(0);
-      values.forEach(value => this.uniqueFields[fieldName].input.options.values.push(value));
-    })
-  }).fail(console.log)
+    fields: Object.values(this.uniqueFields).map(field => field.name).join()
+  })
+  .then((response) => {
+    Object
+      .entries(response.data)
+      .forEach(([fieldName, values]) => {
+        if (reset) {
+          this.uniqueFields[fieldName].input.options.values.splice(0);
+        }
+        values.forEach(value => this.uniqueFields[fieldName].input.options.values.push(value));
+      })
+  })
+  .fail(console.warn)
 };
 
+/**
+ *
+ * @param fields
+ * @return {{}|null}
+ */
 proto.getUniqueFieldsType = function(fields) {
   const uniqueFields = {};
   let find = false;
-  fields.forEach(field => {
-    if (field.input && field.input.type === 'unique') {
-      uniqueFields[field.name] = field;
-      find = true;
-    }
-  });
+  fields
+    .forEach(field => {
+      if (field.input && 'unique' === field.input.type) {
+        uniqueFields[field.name] = field;
+        find = true;
+      }
+    });
   return find && uniqueFields || null;
 };
 
-proto._resetUniqueValues = function(){
+/**
+ *
+ * @private
+ */
+proto._resetUniqueValues = function() {
   this.getFieldUniqueValuesFromServer({
     reset: true
   })
@@ -215,15 +326,17 @@ proto._resetUniqueValues = function(){
 /*
 check if vectorLayer
  */
-proto.isVectorLayer = function(){
-  return this._layerType ===  Layer.LayerTypes.VECTOR;
+proto.isVectorLayer = function() {
+  return Layer.LayerTypes.VECTOR === this._layerType;
 };
 
 /**
  * Method to create getFeatures options
  * @param filter
  */
-proto.setFeaturesOptions = function({filter}={}){
+proto.setFeaturesOptions = function({
+  filter } = {}
+) {
   if (filter) {
     // in case of no features filter request check if no features_filed is present otherwise it get first field
     if (filter.nofeatures) {
@@ -234,45 +347,67 @@ proto.setFeaturesOptions = function({filter}={}){
       editing: true,
       registerEvents: false
     };
-    // in case of constarint attribute set the filter as constraint
-    filter.constraint && this.setConstraintFeaturesFilter(filter);
+    // in case of constraint attribute set the filter as constraint
+    if (filter.constraint) {
+      this.setConstraintFeaturesFilter(filter);
+    }
   } else {
-    const filterType = this._layerType === Layer.LayerTypes.TABLE ? 'all': 'bbox';
-    this._getFeaturesOption = this.editingService.createEditingDataOptions(filterType, {
-      layerId: this.getId()
-    });
+    this._getFeaturesOption = this.editingService
+      .createEditingDataOptions(Layer.LayerTypes.TABLE === this._layerType ? 'all': 'bbox', { layerId: this.getId() });
   }
 };
 
-proto.setEditingConstraints = function(constraints={}){
-  Object.keys(constraints).forEach(constraint => this.constraints[constraint] = constraints[constraint]);
+/**
+ *
+ * @param constraints
+ */
+proto.setEditingConstraints = function(constraints={}) {
+  Object
+    .keys(constraints)
+    .forEach(constraint => this.constraints[constraint] = constraints[constraint]);
 };
 
-
+/**
+ *
+ * @return {Promise<void>}
+ */
 proto.setLayerUniqueFieldValues = async function() {
   await this.editingService.setLayerUniqueFieldValues(this.getId());
 };
 
-proto.clearLayerUniqueFieldsValues = function(){
+/**
+ *
+ */
+proto.clearLayerUniqueFieldsValues = function() {
   this.editingService.clearLayerUniqueFieldsValues(this.getId())
 };
 
 //added option object to start method to have a control by other plugin how
 proto.start = function(options={}) {
-  let {filter, toolboxheader=true, startstopediting=true, showtools=true, tools, changingtools=false} = options;
-  this.state.changingtools = changingtools;
-  tools && this.setEnablesDisablesTools(tools);
-  this.state.toolboxheader = toolboxheader;
+  const d                     = $.Deferred();
+  const id                    = this.getId();
+  const applicationConstraint = this.editingService.getApplicationEditingConstraintById(id);
+  const EventName             = 'start-editing';
+
+  let {
+    toolboxheader    = true,
+    startstopediting = true,
+    showtools        = true,
+    changingtools    = false,
+    tools,
+    filter,
+  }                           = options;
+
+  this.state.changingtools    = changingtools;
+  if (tools) {
+    this.setEnablesDisablesTools(tools);
+  }
+  this.state.toolboxheader    = toolboxheader;
   this.state.startstopediting = startstopediting;
-  const EventName = 'start-editing';
-  const d = $.Deferred();
-  const id = this.getId();
-  const applicationConstraint = this.editingService.getApplicationEditingConstraintById(this.getId());
+
   filter = applicationConstraint && applicationConstraint.filter || this.constraints.filter || filter;
   // set filterOptions
-  this.setFeaturesOptions({
-    filter
-  });
+  this.setFeaturesOptions({ filter });
 
   //register lock features to show message
   const lockSetter = 'featuresLockedByOtherUser';
@@ -330,20 +465,24 @@ proto.start = function(options={}) {
   if (this._session) {
     if (!this._session.isStarted()) {
       //added case of mobile
-      if (ApplicationState.ismobile && this._mapService.isMapHidden() && this._layerType === Layer.LayerTypes.VECTOR) {
+      if (
+        ApplicationState.ismobile
+        && this._mapService.isMapHidden()
+        && Layer.LayerTypes.VECTOR === this._layerType
+      ) {
         this.setEditing(true);
-        GUI.getService('map').onceafter('setHidden', () =>{
-          setTimeout(()=>{
-            this._start = true;
-            this.startLoading();
-            this.setFeaturesOptions({
-              filter
-            });
-            this._session
-              .start(this._getFeaturesOption)
-              .then(handlerAfterSessionGetFeatures)
-              .fail(()=>this.setEditing(false));
-          }, 300);
+        GUI
+          .getService('map')
+          .onceafter('setHidden', () =>{
+            setTimeout(() => {
+              this._start = true;
+              this.startLoading();
+              this.setFeaturesOptions({ filter });
+              this._session
+                .start(this._getFeaturesOption)
+                .then(handlerAfterSessionGetFeatures)
+                .fail(()=>this.setEditing(false));
+            }, 300);
         })
       } else {
         this._start = true;
@@ -366,21 +505,35 @@ proto.start = function(options={}) {
   return d.promise();
 };
 
+/**
+ *
+ */
 proto.startLoading = function() {
   this.state.loading = true;
 };
 
+/**
+ *
+ */
 proto.stopLoading = function() {
   this.state.loading = false;
 };
 
+/**
+ *
+ * @return {*}
+ */
 proto.getFeaturesOption = function() {
   return this._getFeaturesOption;
 };
 
+/**
+ *
+ * @return {*}
+ */
 proto.stop = function() {
   const EventName  = 'stop-editing';
-  const d = $.Deferred();
+  const d          = $.Deferred();
   if (this.disableCanEditEvent) {
     this.disableCanEditEvent();
   }
@@ -403,9 +556,10 @@ proto.stop = function() {
         this._session.stop()
           .then(promise => {
             promise.then(() => {
-              this._start = false;
+              this._start           = false;
               this.state.editing.on = false;
-              this.state.enabled = false;
+              this.state.enabled    = false;
+
               this.stopLoading();
               this._getFeaturesOption = {};
               this.stopActiveTool();
@@ -428,10 +582,17 @@ proto.stop = function() {
   return d.promise();
 };
 
+/**
+ *
+ */
 proto.save = function () {
   this._session.commit();
 };
 
+/**
+ *
+ * @private
+ */
 proto._unregisterGetFeaturesEvent = function() {
   switch(this._layerType) {
     case Layer.LayerTypes.VECTOR:
@@ -442,6 +603,11 @@ proto._unregisterGetFeaturesEvent = function() {
   }
 };
 
+/**
+ *
+ * @param options
+ * @private
+ */
 proto._registerGetFeaturesEvent = function(options={}) {
   switch(this._layerType) {
     case Layer.LayerTypes.VECTOR:
@@ -452,20 +618,18 @@ proto._registerGetFeaturesEvent = function(options={}) {
           this._layer.getEditingLayer().setVisible(canEdit);
           //added ApplicationState.online
           if (ApplicationState.online && canEdit && GUI.getContentLength() === 0) {
-            const bbox = this._mapService.getMapBBOX();
-            options.filter.bbox = bbox;
+            options.filter.bbox = this._mapService.getMapBBOX();
             this.state.loading = true;
-            this._session.getFeatures(options).then(promise=> {
-              promise.then(() => {
-                this.state.loading = false;
-              });
-            })
+            this._session
+              .getFeatures(options)
+              .then(promise => {
+                promise.then(() => this.state.loading = false);
+              })
           }
         };
         this._getFeaturesEvent.event = 'moveend';
-        this._getFeaturesEvent.fnc = debounce(fnc, 300);
-        const map = this._mapService.getMap();
-        map.on('moveend', this._getFeaturesEvent.fnc);
+        this._getFeaturesEvent.fnc   = debounce(fnc, 300);
+        this._mapService.getMap().on('moveend', this._getFeaturesEvent.fnc);
       }
       break;
     default:
@@ -473,22 +637,43 @@ proto._registerGetFeaturesEvent = function(options={}) {
   }
 };
 
+/**
+ *
+ * @param filter
+ */
 proto.setConstraintFeaturesFilter = function(filter){
   this.constraintFeatureFilter = filter;
 };
 
+/**
+ *
+ * @return {*|{}}
+ */
 proto.getEditingConstraints = function() {
   return this._constraints;
 };
 
+/**
+ *
+ * @param type
+ * @return {*}
+ */
 proto.getEditingConstraint = function(type) {
   return this.getEditingConstraints()[type];
 };
 
+/**
+ *
+ * @return {boolean}
+ */
 proto.canEdit = function() {
   return this.state.editing.canEdit;
 };
 
+/**
+ *
+ * @private
+ */
 proto._canEdit = function() {
   if (this._constraints.scale) {
     const scale = this._constraints.scale;
@@ -507,45 +692,83 @@ proto._canEdit = function() {
   }
 };
 
+/**
+ *
+ * @private
+ */
 proto._disableCanEdit = function() {
   this.state.editing.canEdit = true;
   this.disableCanEditEvent && this.disableCanEditEvent()
 };
 
+/**
+ *
+ * @param message
+ */
 proto.setMessage = function(message) {
   this.state.message = message;
 };
 
+/**
+ *
+ * @return {null}
+ */
 proto.getMessage = function() {
   return this.state.message;
 };
 
+/**
+ *
+ */
 proto.clearMessage = function() {
   this.setMessage(null);
 };
 
+/**
+ *
+ */
 proto.clearToolboxMessages = function() {
   this.clearToolMessage();
   this.clearMessage();
 };
 
+/**
+ *
+ * @return {*}
+ */
 proto.getId = function() {
   return this.state.id;
 };
 
+/**
+ *
+ * @param id
+ */
 proto.setId = function(id) {
   this.state.id = id;
 };
 
+/**
+ *
+ * @return {string}
+ */
 proto.getTitle = function() {
   return this.state.title;
 };
 
-proto.setTitle = function(title){
+/**
+ *
+ * @param title
+ */
+proto.setTitle = function(title) {
   this.state.customTitle = true;
   this.state.title = title;
 };
 
+/**
+ *
+ * @return {string}
+ */
 proto.getColor = function() {
   return this.state.color;
 };
@@ -560,36 +783,69 @@ proto.setEditing = function(bool=true) {
   this.enableTools(bool);
 };
 
+/**
+ *
+ * @return {boolean}
+ */
 proto.inEditing = function() {
   return this.state.editing.on;
 };
 
+/**
+ *
+ * @return {boolean}
+ */
 proto.isEnabled = function() {
   return this.state.enabled;
 };
 
+/**
+ *
+ * @param bool
+ * @return {boolean}
+ */
 proto.setEnable = function(bool=false) {
   this.state.enabled = bool;
   return this.state.enabled;
 };
 
+/**
+ *
+ * @return {boolean}
+ */
 proto.isLoading = function() {
   return this.state.loading;
 };
 
+/**
+ *
+ * @return {*}
+ */
 proto.isDirty = function() {
   return this.state.editing.history.commit;
 };
 
+/**
+ *
+ * @return {boolean}
+ */
 proto.isSelected = function() {
   return this.state.selected;
 };
 
+/**
+ *
+ * @param bool
+ */
 proto.setSelected = function(bool=false) {
   this.state.selected = bool;
   this.state.selected ? this._canEdit() : this._disableCanEdit();
 };
 
+/**
+ *
+ * @return {*}
+ */
 proto.getTools = function() {
   return this._tools;
 };
@@ -606,31 +862,36 @@ proto.getToolById = function(toolId) {
 
 /**
  *
- * @param tool
+ * @param toolId
  */
-proto.setEnableTool = function(toolId){
-  const tool = this._tools.find(tool => tool.getId() === toolId);
-  tool.setEnabled(true)
+proto.setEnableTool = function(toolId) {
+  this._tools.find(tool => tool.getId() === toolId).setEnabled(true)
 };
 
 /**
  * method to set tools bases on add
  * editing_constraints : true // follow the tools related toi editing conttraints configuration
  */
-
-proto.setAddEnableTools = function({tools={}, options={editing_constraints: true}}={}){
-  const {editing_constraints=false} = options;
-  const ADDONEFEATUREONLYTOOLSID = ['addfeature', 'editattributes', 'movefeature', 'movevertex'];
-  const add_tools = this._tools.filter(tool => {
-    return editing_constraints ?
-      tool.getType().find(type => type ==='add_feature') :
-      ADDONEFEATUREONLYTOOLSID.indexOf(tool.getId()) !== -1;
-  }).map(tool => {
+proto.setAddEnableTools = function({
+  tools={},
+  options= {editing_constraints: true }
+} = {}) {
+  const { editing_constraints = false } = options;
+  const ADDONEFEATUREONLYTOOLSID        = [
+    'addfeature',
+    'editattributes',
+    'movefeature',
+    'movevertex'
+  ];
+  const add_tools = this._tools
+    .filter(tool => {
+      return editing_constraints ?
+        tool.getType().find(type => type ==='add_feature') :
+        ADDONEFEATUREONLYTOOLSID.indexOf(tool.getId()) !== -1;
+    })
+    .map(tool => {
       const id = tool.getId();
-      return {
-        id,
-        options: tools[id]
-      }
+      return {id, options: tools[id]}
   });
 
   this.setEnablesDisablesTools({
@@ -643,26 +904,33 @@ proto.setAddEnableTools = function({tools={}, options={editing_constraints: true
 /**
  * method to set tools bases on update
  */
-proto.setUpdateEnableTools = function({tools={}, excludetools=[], options={editing_constraints: true}}){
-  const {editing_constraints=false} = options;
-  const UPDATEONEFEATUREONLYTOOLSID = ['editattributes', 'movefeature', 'movevertex'];
-  const update_tools = this._tools.filter(tool => {
-    // exclude
-    if (excludetools.indexOf(tool.getId()) !== -1) return false;
-    return editing_constraints ?
-      tool.getType().find(type => type ==='change_feature' || type ==='change_attr_feature') :
-      UPDATEONEFEATUREONLYTOOLSID.indexOf(tool.getId()) !== -1;
-  }).map(tool => {
-    const id = tool.getId();
-    return {
-      id,
-      options: tools[id]
-    }
-  });
+proto.setUpdateEnableTools = function({
+  tools={},
+  excludetools=[],
+  options = { editing_constraints: true }
+}) {
+  const { editing_constraints = false } = options;
+  const UPDATEONEFEATUREONLYTOOLSID     = [
+    'editattributes',
+    'movefeature',
+    'movevertex'
+  ];
+  const update_tools = this._tools
+    .filter(tool => {
+      // exclude
+      if (-1 !== excludetools.indexOf(tool.getId()) ) {
+        return false;
+      }
+      return editing_constraints
+        ? tool.getType().find(type => type ==='change_feature' || type ==='change_attr_feature')
+        : -1 !== UPDATEONEFEATUREONLYTOOLSID.indexOf(tool.getId()) ;
+    })
+    .map(tool => {
+      const id = tool.getId();
+      return { id, options: tools[id]}
+    });
 
-  this.setEnablesDisablesTools({
-    enabled: update_tools
-  });
+  this.setEnablesDisablesTools({ enabled: update_tools });
   this.enableTools(true);
 };
 
@@ -679,34 +947,49 @@ proto.setDeleteEnableTools = function(options={}){
  *
  * @param tools
  */
-proto.setEnablesDisablesTools = function(tools){
-  if (tools){
+proto.setEnablesDisablesTools = function(tools) {
+  if (tools) {
     this.state.changingtools = true;
     // Check if tools is an array
-    const {enabled:enableTools=[], disabled:disableTools=[]} = tools;
+    const {
+      enabled  : enableTools = [],
+      disabled : disableTools = []
+    } = tools;
+
     const toolsId = enableTools.length ? [] : this._tools.map(tool => tool.getId());
-    enableTools.forEach(({id, options={}}) => {
-      //check if id of tool passed as argument is right
-      const tool =this.getToolById(id);
-      if (tool) {
-        const {active=false} = options;
-        tool.setOptions(options);
-        tool.isVisible() && toolsId.push(id);
-        active && this.setActiveTool(tool);
-        if (this._enabledtools === undefined) this._enabledtools = [];
-        this._enabledtools.push(tool);
-      }
-    });
+
+    enableTools
+      .forEach(({id, options={}}) => {
+        //check if id of tool passed as argument is right
+        const tool =this.getToolById(id);
+        if (tool) {
+          const {active=false} = options;
+          tool.setOptions(options);
+          if (tool.isVisible()) {
+            toolsId.push(id);
+          }
+          if (active) {
+            this.setActiveTool(tool);
+          }
+          if (this._enabledtools === undefined) {
+            this._enabledtools = [];
+          }
+          this._enabledtools.push(tool);
+       }
+      });
     //disabled and visible
-    disableTools.forEach(({id, options}) =>{
-      const tool = this.getToolById(id);
-      if (tool){
-        if (this._disabledtools === undefined) this._disabledtools = [];
-        this._disabledtools.push(id);
-        //add it toi visible tools
-        toolsId.push(id);
-      }
-    });
+    disableTools
+      .forEach(({id, options}) =>{
+        const tool = this.getToolById(id);
+        if (tool){
+          if (this._disabledtools === undefined) {
+            this._disabledtools = [];
+          }
+          this._disabledtools.push(id);
+          //add it toi visible tools
+          toolsId.push(id);
+        }
+      });
     //set not visible all remain
     this._tools.forEach(tool => !toolsId.includes(tool.getId()) && tool.setVisible(false));
     this.state.changingtools = false;
@@ -714,20 +997,28 @@ proto.setEnablesDisablesTools = function(tools){
 };
 
 // enable all tools
-proto.enableTools = function(bool=false) {
+proto.enableTools = function(bool = false) {
   const tools = this._enabledtools || this._tools;
   const disabledtools = this._disabledtools || [];
-  tools.forEach(tool => {
-    const { conditions:{enabled=bool} } = tool;
-    const enableTool = bool && disabledtools.length ? disabledtools.indexOf(tool.getId()) === -1 : toRawType(enabled) === 'Boolean' ? enabled : enabled({
-      bool,
-      tool
-    });
+  tools
+    .forEach(tool => {
+      const { conditions:{enabled=bool} } = tool;
+      const enableTool = (bool && disabledtools.length)
+        ? disabledtools.indexOf(tool.getId()) === -1
+        : toRawType(enabled) === 'Boolean'
+          ? enabled
+          : enabled({ bool, tool });
     tool.setEnabled(enableTool);
-    !bool && tool.setActive(bool);
+    if (!bool) {
+      tool.setActive(bool);
+    }
   })
 };
 
+/**
+ *
+ * @param tool
+ */
 proto.setActiveTool = function(tool) {
   this.stopActiveTool(tool)
     .then(() => {
@@ -736,40 +1027,57 @@ proto.setActiveTool = function(tool) {
       tool.once('settoolsoftool', tools => tools.forEach(tool => this.state.toolsoftool.push(tool)));
       const _activedeactivetooloftools = (activetools, active) => {
         this.state.toolsoftool.forEach(tooloftool => {
-          if (activetools.indexOf(tooloftool.type) !== -1) tooloftool.options.active = active;
+          if (activetools.indexOf(tooloftool.type) !== -1) {
+            tooloftool.options.active = active;
+          }
         });
       };
 
       tool.on('active', (activetools=[]) => _activedeactivetooloftools(activetools, true));
       tool.on('deactive', (activetools=[]) => _activedeactivetooloftools(activetools, false));
+      tool.start(this._mapService.isMapHidden());
 
-      const hideSidebar = this._mapService.isMapHidden();
-      tool.start(hideSidebar);
-      const message = this.getToolMessage();
-      this.setToolMessage(message);
+      this.setToolMessage(this.getToolMessage());
+
     });
 };
 
+/**
+ *
+ */
 proto.clearToolsOfTool = function() {
   this.state.toolsoftool.splice(0);
 };
 
+/**
+ *
+ * @return {null}
+ */
 proto.getActiveTool = function() {
   return this.state.activetool;
 };
 
+/**
+ *
+ */
 proto.restartActiveTool = function() {
   const activeTool = this.getActiveTool();
   this.stopActiveTool();
   this.setActiveTool(activeTool);
 };
 
+/**
+ *
+ * @param tool
+ * @return {*}
+ */
 proto.stopActiveTool = function(tool) {
-  const d = $.Deferred();
+  const d          = $.Deferred();
   const activeTool = this.getActiveTool();
-  if (activeTool && activeTool !== tool) {
+  if (activeTool && tool !== activeTool ) {
     activeTool.removeAllListeners();
-    activeTool.stop(true)
+    activeTool
+      .stop(true)
       .then(() => {
         this.clearToolsOfTool();
         this.clearToolMessage();
@@ -777,45 +1085,81 @@ proto.stopActiveTool = function(tool) {
         setTimeout(d.resolve);
       })
   } else {
-    tool ? tool.removeAllListeners(): null;
+    if (tool) {
+      tool.removeAllListeners();
+    }
     d.resolve()
   }
   return d.promise();
 };
 
+/**
+ *
+ */
 proto.clearToolMessage = function() {
   this.state.toolmessages.help = null;
 };
 
+/**
+ *
+ * @return {*}
+ */
 proto.getToolMessage = function() {
-  const tool = this.getActiveTool();
-  return tool.getMessage();
+  return this.getActiveTool().getMessage();
 };
 
-proto.setToolMessage = function(messages={}) {
+/**
+ *
+ * @param messages
+ */
+proto.setToolMessage = function(messages = {}) {
   this.state.toolmessages.help = messages && messages.help || null;
 };
 
+/**
+ *
+ * @return {*}
+ */
 proto.getSession = function() {
   return this._session;
 };
 
+/**
+ *
+ * @return {*}
+ */
 proto.getEditor = function() {
   return this._editor;
 };
 
+/**
+ *
+ * @param editor
+ */
 proto.setEditor = function(editor) {
   this._editor = editor;
 };
 
+/**
+ *
+ * @return {*}
+ */
 proto.hasChildren = function() {
   return this._layer.hasChildren();
 };
 
+/**
+ *
+ * @return {*}
+ */
 proto.hasFathers = function() {
   return this._layer.hasFathers();
 };
 
+/**
+ *
+ * @return {*}
+ */
 proto.hasRelations = function() {
   return this._layer.hasRelations();
 };
@@ -823,9 +1167,9 @@ proto.hasRelations = function() {
 /**
  * Method to reset default values
  */
-proto.resetDefault = function(){
-  this.state.title = this.originalState.title;
-  this.state.toolboxheader = true;
+proto.resetDefault = function() {
+  this.state.title            = this.originalState.title;
+  this.state.toolboxheader    = true;
   this.state.startstopediting = true;
   this.constraints = {
     filter: null,
@@ -833,13 +1177,570 @@ proto.resetDefault = function(){
     tools: []
   };
 
-  if (this._enabledtools){
+  if (this._enabledtools) {
     this._enabledtools = undefined;
     this.enableTools();
     this._tools.forEach(tool => tool.resetDefault());
   }
   this._disabledtools = null;
   this.setShow(true);
+};
+
+/**
+ * ORIGINAL SOURCE: g3w-client-plugin/toolboxes/toolsfactory.js@v3.7.1
+ */
+ToolBox.create = function(layer) {
+
+  /** @type { 'create' | 'update_attributes' | 'update_geometry' | delete' | undefined } undefined means all possible tools base on type */
+  const capabilities    = layer.getEditingCapabilities();
+  const type            = layer.getType();
+  const is_vector       = (undefined === type || Layer.LayerTypes.VECTOR === type);
+  const geometryType    = is_vector && layer.getGeometryType();
+  const is_point        = is_vector && Geometry.isPointGeometryType(geometryType);
+  const is_line         = is_vector && Geometry.isLineGeometryType(geometryType);
+  const is_poly         = is_vector && Geometry.isPolygonGeometryType(geometryType);
+  const is_table        = Layer.LayerTypes.TABLE === type;
+  const isMultiGeometry = geometryType && Geometry.isMultiGeometry(geometryType);
+  const iconGeometry    = is_vector && (is_point ? 'Point' : is_line ? 'Line' : 'Polygon');
+
+  return new ToolBox({
+    id :          layer.getId(),
+    color :       layer.getColor(),
+    type,
+    layer,
+    lngTitle :    'editing.toolbox.title',
+    title :       ` ${layer.getTitle()}`,
+    constraints : layer.getEditingConstrains(),
+    tools :       [
+      //Add Feature
+      (is_vector) && {
+        id: 'addfeature',
+        type: ['add_feature'],
+        name: 'editing.tools.add_feature',
+        icon: `add${iconGeometry}.png`,
+        layer,
+        row: 1,
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addfeatureworkflow.js@v3.7.1 */
+        op(options = {}) {
+          const w = new EditingWorkflow({
+            ...options,
+            type: 'addfeature',
+            steps: [
+              new AddFeatureStep(options),
+              new OpenFormStep(options),
+            ],
+          });
+          w.addToolsOfTools({ step: w.getStep(0), tools: ['snap', 'measure'] });
+          return w;
+        },
+      },
+      //Edit Attributes Feature
+      (is_vector) && {
+        id: 'editattributes',
+        type: ['change_attr_feature'],
+        name: 'editing.tools.update_feature',
+        icon: 'editAttributes.png',
+        layer,
+        row: 1,
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editfeatureattributesworkflow.js@v3.7.1 */
+        op(options = {}) {
+          const w = new EditingWorkflow({
+            ...options,
+            helpMessage: 'editing.tools.update_feature',
+            type: 'editfeatureattributes',
+            steps: [
+              new PickFeatureStep(),
+              new ChooseFeatureStep(),
+              new OpenFormStep(),
+            ],
+          });
+          return w;
+        },
+      },
+      //Delete Feature
+      (is_vector) && {
+        id: 'deletefeature',
+        type: ['delete_feature'],
+        name: 'editing.tools.delete_feature',
+        icon: `delete${iconGeometry}.png`,
+        layer,
+        row: 1,
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/deletefeatureworkflow.js@v3.7.1 */
+        op(options = {}) {
+          return new EditingWorkflow({
+            ...options,
+            type: 'deletefeature',
+            steps: [
+              new PickFeatureStep(),
+              new ChooseFeatureStep(),
+              new DeleteFeatureStep(),
+              new ConfirmStep({ type: 'delete' }),
+            ],
+          });
+        },
+      },
+      //Edit vertex Feature
+      (is_line || is_poly) && {
+        id: 'movevertex',
+        type: ['change_feature'],
+        name: "editing.tools.update_vertex",
+        icon: "moveVertex.png",
+        layer,
+        row: 1,
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/modifygeometryvertexworkflow.js@v3.7.1 */
+        op(options = {}) {
+          const w = new EditingWorkflow({
+            ...options,
+            type: 'modifygeometryvertex',
+            helpMessage: 'editing.tools.update_vertex',
+            steps: [
+              new PickFeatureStep(options),
+              new ChooseFeatureStep(),
+              new ModifyGeometryVertexStep(),
+            ],
+          })
+          w.addToolsOfTools({ step: w.getStep(2), tools: ['snap', 'measure'] });
+          return w;
+        },
+      },
+      //Edit Attributes to Multi features
+      (is_vector) && {
+        id: 'editmultiattributes',
+        type: ['change_attr_feature'],
+        name: "editing.tools.update_multi_features",
+        icon: "multiEditAttributes.png",
+        layer,
+        row: 2,
+        once: true,
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editmultifeatureattributesworkflow.js@v3.7.1 */
+        op(options = {}) {
+          return new EditingWorkflow({
+            ...options,
+            type: 'editmultiattributes',
+            helpMessage: 'editing.tools.update_multi_features',
+            registerEscKeyEvent: true,
+            steps: [
+              new SelectElementsStep({
+                type: 'multiple',
+                steps: {
+                  select: {
+                    description: `editing.workflow.steps.${ApplicationState.ismobile ? 'selectDrawBoxAtLeast2Feature' : 'selectMultiPointSHIFTAtLeast2Feature'}`,
+                    buttonnext: {
+                      disabled: true,
+                      condition:({ features=[] }) => features.length < 2,
+                      done: () => {}
+                    },
+                    directive: 't-plugin',
+                    dynamic: 0,
+                    done: false
+                  }
+                }
+              }),
+              new OpenFormStep({ multi: true }),
+            ],
+          });
+        },
+      },
+      //Move Feature
+      (is_vector) && {
+        id: 'movefeature',
+        type: ['change_feature'],
+        name: 'editing.tools.move_feature',
+        icon: `move${iconGeometry}.png`,
+        layer,
+        row: 2,
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/movefeatureworkflow.js@v3.7.1 */
+        op(options = {}) {
+          return new EditingWorkflow({
+            ...options,
+            type: 'movefeature',
+            helpMessage: 'editing.tools.move_feature',
+            steps: [
+              new PickFeatureStep(),
+              new ChooseFeatureStep(),
+              new MoveFeatureStep(),
+            ],
+          });
+        },
+      },
+      //Copy Feature from another layer
+      (is_vector) && {
+        id: 'copyfeaturesfromotherlayer',
+        type: ['add_feature'],
+        name: "editing.tools.pastefeaturesfromotherlayers",
+        icon: "pasteFeaturesFromOtherLayers.png",
+        layer,
+        once: true,
+        conditions: {
+          enabled: (function() {
+            const map          = GUI.getService('map');
+            const layerId      = layer.getId();
+            const geometryType = layer.getGeometryType();
+            const selection    = map.defaultsLayers.selectionLayer.getSource();
+            const data = {
+              bool: false,
+              tool: undefined
+            };
+            // check selected feature layers
+            const selected = () => {
+              const enabled = data.bool && selection
+                .getFeatures()
+                .filter(f => {
+                  const type = f.getGeometry() && f.getGeometry().getType();
+                  return (f.__layerId !== layerId) && isSameBaseGeometryType(geometryType, type) && ((geometryType === type) || Geometry.isMultiGeometry(geometryType) || !Geometry.isMultiGeometry(type));
+                }).length > 0;
+              data.tool.setEnabled(enabled);
+              return enabled;
+            };
+            return ({ bool, tool = {} }) => {
+              data.tool = tool;
+              data.bool = bool;
+              selection[bool ? 'on' : 'un']('addfeature', selected);
+              selection[bool ? 'on' : 'un']('removefeature', selected);
+              return selected();
+            }
+          }())
+        },
+        row: 2,
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/copyfeaturesfromotherlayerworkflow.js@v3.7.1 */
+        op(options = {}) {
+          const openFormStep = new OpenFormStep({ ...options, help: 'editing.steps.help.copy' });
+          return new EditingWorkflow({
+            ...options,
+            type: 'copyfeaturesfromotherlayer',
+            steps: [
+              new CopyFeaturesFromOtherLayerStep({
+                ...options,
+                help: 'editing.steps.help.copy',
+                openFormTask: openFormStep.getTask(),
+              }),
+              openFormStep,
+            ],
+            registerEscKeyEvent: true
+          });
+        },
+      },
+      //Copy Feature from layer
+      (is_vector) && {
+        id: 'copyfeatures',
+        type: ['add_feature'],
+        name: "editing.tools.copy",
+        icon: `copy${iconGeometry}.png`,
+        layer,
+        once: true,
+        row: 2,
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/copyfeaturesworkflow.js@v3.7.1 */
+        op(options = {}) {
+          return new EditingWorkflow({
+            ...options,
+            type: 'copyfeatures',
+            steps: [
+              new SelectElementsStep({
+                ...options,
+                help: 'editing.steps.help.copy',
+                type: ApplicationState.ismobile ? 'single' :  'multiple',
+                steps: {
+                  select: {
+                    description: `editing.workflow.steps.${ApplicationState.ismobile ? 'selectPoint' : 'selectPointSHIFT'}`,
+                    directive: 't-plugin',
+                    done: false
+                  }
+                },
+              }, true),
+              options.layer.getGeometryType().indexOf('Point') >= 0 ? undefined : new GetVertexStep({
+                ...options,
+                help: 'editing.steps.help.copy',
+                steps: {
+                  from: {
+                    description: 'editing.workflow.steps.selectStartVertex',
+                    directive: 't-plugin',
+                    done: false
+                  }
+                }
+              }, true),
+              new MoveElementsStep({
+                ...options,
+                help: 'editing.steps.help.copy',
+                steps: {
+                  to: {
+                    description: 'editing.workflow.steps.selectToPaste',
+                    directive: 't-plugin',
+                    done: false
+                  }
+                }
+              }, true),
+            ].filter(Boolean),
+            registerEscKeyEvent: true,
+          });
+        },
+      },
+      //Add part to MultiGeometry Feature
+      (is_vector && isMultiGeometry) && {
+        id: 'addPart',
+        type: ['add_feature', 'change_feature'],
+        name: "editing.tools.addpart",
+        icon: "addPart.png",
+        layer,
+        once: true,
+        row: 3,
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addparttomultigeometriesworkflow.js@v3.7.1 */
+        op(options = {}) {
+          const w = new EditingWorkflow({
+            ...options,
+            type: 'addparttomultigeometries',
+            helpMessage: 'editing.tools.addpart',
+            steps: [
+              new PickFeatureStep({
+                steps: {
+                  select: {
+                    description: 'editing.workflow.steps.select',
+                    directive: 't-plugin',
+                    done: false
+                  }
+                },
+              }),
+              new ChooseFeatureStep({ help: 'editing.steps.help.select_element' }),
+              new AddFeatureStep({
+                ...options,
+                help: 'editing.steps.help.select_element',
+                add: false,
+                steps: {
+                  addfeature: {
+                    description: 'editing.workflow.steps.draw_part',
+                    directive: 't-plugin',
+                    done: false
+                  }
+                },
+                onRun: ({inputs, context}) => {
+                  w.emit('settoolsoftool', [{
+                    type: 'snap',
+                    options: {
+                      layerId: inputs.layer.getId(),
+                      source: inputs.layer.getEditingLayer().getSource(),
+                      active: true
+                    }
+                  }]);
+                  w.emit('active', ['snap']);
+                },
+                onStop: () => {
+                  w.emit('deactive', ['snap']);
+                }
+              }),
+              new AddPartToMultigeometriesStep({
+                ...options,
+                help: 'editing.steps.help.select_element',
+              }),
+            ],
+            registerEscKeyEvent: true
+          });
+          return w;
+        },
+      },
+      //Remove part from MultiGeometry Feature
+      (is_vector && isMultiGeometry) && {
+        id: 'deletePart',
+        type: ['change_feature'],
+        name: "editing.tools.deletepart",
+        icon: "deletePart.png",
+        layer,
+        row: 3,
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/deletepartfrommultigeometriesworkflow.js@v3.7.1 */
+        op(options = {}) {
+          return new EditingWorkflow({
+            ...options,
+            type: 'deletepartfrommultigeometries',
+            steps: [
+              new PickFeatureStep(),
+              new ChooseFeatureStep(),
+              new DeletePartFromMultigeometriesStep(options),
+            ],
+            helpMessage: 'editing.tools.deletepart',
+          });
+        },
+      },
+      // Split Feature
+      (is_line || is_poly) && {
+        id: 'splitfeature',
+        type:  ['change_feature'],
+        name: "editing.tools.split",
+        icon: "splitFeatures.png",
+        layer,
+        row: 3,
+        once: true,
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/splitfeatureworkflow.js@v3.7.1 */
+        op(options = {}) {
+          return new EditingWorkflow({
+            ...options,
+            type: 'splitfeature',
+            steps: [
+              new SelectElementsStep({
+                ...options,
+                help: 'editing.steps.help.split',
+                type: ApplicationState.ismobile ? 'single' :  'multiple',
+                steps: {
+                  select: {
+                    description: `editing.workflow.steps.${ApplicationState.ismobile ? 'selectPoint' : 'selectPointSHIFT'}`,
+                    directive: 't-plugin',
+                    done: false,
+                  }
+                },
+              }, true),
+              new SplitFeatureStep({
+                ...options,
+                help: 'editing.steps.help.split',
+                steps: {
+                  draw_line: {
+                    description: 'editing.workflow.steps.draw_split_line',
+                    directive: 't-plugin',
+                    done: false,
+                  }
+                },
+              }, true),
+            ],
+            registerEscKeyEvent: true,
+          });
+        },
+      },
+      //Merge features in one
+      (is_line || is_poly) && {
+        id: 'mergefeatures',
+        type: ['change_feature'],
+        name: "editing.tools.merge",
+        icon: "mergeFeatures.png",
+        layer,
+        row: 3,
+        once: true,
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/mergefeaturesworkflow.js@v3.7.1 */
+        op(options = {}) {
+          return new EditingWorkflow({
+            ...options,
+            type: 'mergefeatures',
+            steps: [
+              new SelectElementsStep({
+                ...options,
+                type: 'bbox',
+                help: 'editing.steps.help.merge',
+                steps: {
+                  select: {
+                    description: `editing.workflow.steps.${ApplicationState.ismobile ? 'selectDrawBox' : 'selectSHIFT'}`,
+                    directive: 't-plugin',
+                    done: false,
+                  }
+                },
+              }, true),
+              new MergeFeaturesStep({
+                ...options,
+                help: 'editing.steps.help.merge',
+                steps: {
+                  choose: {
+                    description: 'editing.workflow.steps.merge',
+                    directive: 't-plugin',
+                    done: false,
+                  }
+                },
+              }, true),
+            ],
+            registerEscKeyEvent: true
+          });
+        },
+      },
+      //Copy Features from external layer
+      (is_line || is_poly) && {
+        id: 'copyfeaturefromexternallayer',
+        type: ['add_feature'],
+        name: "editing.tools.copyfeaturefromexternallayer",
+        icon: "copyPolygonFromFeature.png",
+        layer,
+        row: 3,
+        once: true,
+        visible: tool => {
+          const map  = GUI.getService('map');
+          const type = tool.getLayer().getGeometryType();
+          const has_same_geom = layer => {
+            // check if tool is visible and the layer is a Vector
+            const features = 'VECTOR' === layer.getType() && layer.getSource().getFeatures();
+            return features && features.length ? isSameBaseGeometryType(features[0].getGeometry().getType(), type) : true;
+          };
+          map.onbefore('loadExternalLayer',  layer => !tool.isVisible() && tool.setVisible(has_same_geom(layer)));
+          map.onafter('unloadExternalLayer', layer => {
+            const features = tool.isVisible() && 'VECTOR' === layer.getType() && layer.getSource().getFeatures();
+            if (features && features.length && isSameBaseGeometryType(features[0].getGeometry().getType(), type)) {
+              tool.setVisible(map.getExternalLayers().find(l => undefined !== has_same_geom(l)));
+            }
+          });
+          return false;
+        },
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addfeaturefrommapvectorlayersworkflow.js@v3.7.1 */
+        op(options = {}) {
+          return new EditingWorkflow({
+            ...options,
+            type: 'addfeaturefrommapvectorlayers',
+            steps: [
+              new SelectElementsStep({
+                ...options,
+                type: 'external',
+                help: 'editing.steps.help.copy'
+              }, false),
+              new OpenFormStep({
+                ...options,
+                help: 'editing.steps.help.copy'
+              }),
+            ],
+            registerEscKeyEvent: true
+          });
+        },
+      },
+      //Table layer (alphanumerical - No geometry)
+      //Add Feature
+      is_table && {
+        id: 'addfeature',
+        type: ['add_feature'],
+        name: "editing.tools.add_feature",
+        icon: "addTableRow.png",
+        layer,
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addtablefeatureworkflow.js@v3.7.1 */
+        op(options = {}) {
+          return new EditingWorkflow({
+            ...options,
+            type: 'addtablefeature',
+            steps: [
+              new AddTableFeatureStep(),
+              new OpenFormStep(),
+            ],
+          });
+        },
+      },
+      //Edit Table
+      is_table && {
+        id: 'edittable',
+        type: ['delete_feature', 'change_attr_feature'],
+        name: "editing.tools.update_feature",
+        icon: "editAttributes.png",
+        layer,
+        once: true,
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/edittableworkflow.js@v3.7.1 */
+        op(options = {}) {
+          return new EditingWorkflow({
+            type: 'edittable',
+            ...options,
+            backbuttonlabel: 'plugins.editing.form.buttons.save_and_back_table',
+            steps: [ new OpenTableStep() ],
+          });
+        },
+      },
+
+    ].filter(tool => {
+      // skip when ..
+      if (!tool || (capabilities && !tool.type.filter(type => capabilities.includes(type)).length > 0)) {
+        return false;
+      }
+      // in case of capabilities show all tools on a single row
+      if (capabilities) {
+        tool.row = 1;
+      }
+      return true;
+    }).map(tool => new Tool(tool)),
+  });
 };
 
 module.exports = ToolBox;

@@ -98,6 +98,9 @@ inherit(Flow, G3WObject);
 
 const proto = Flow.prototype;
 
+/**
+ * @FIXME add description
+ */
 proto.clearQueques = function(){
   this.queques.micro.clear();
   this.queques.end.clear();
