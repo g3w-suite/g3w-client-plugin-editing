@@ -221,7 +221,7 @@ flex-direction: column
                   target    = "_blank">{{ getValue(attribute.value) }}
                 </a>
                 <!-- TEXTUAL ATTRIBUTE -->
-                  <span v-else>{{ getValue(_service.getRelationFeatureValue(relation.id, attribute.name)) }}</span>
+                <span v-else>{{ getValue(_service.getRelationFeatureValue(relation.id, attribute.name)) }}</span>
               </td>
             </tr>
           </tbody>
@@ -237,13 +237,15 @@ flex-direction: column
 
   const { tPlugin: t }  = g3wsdk.core.i18n;
   const { toRawType }   = g3wsdk.core.utils;
-  const RelationService = require('../services/relationservice');
   const { Layer }       = g3wsdk.core.layer;
   const {
     fieldsMixin,
     resizeMixin,
     mediaMixin,
   }                     = g3wsdk.gui.vue.Mixins;
+
+  const RelationService = require('../services/relationservice');
+
 
   export default {
 

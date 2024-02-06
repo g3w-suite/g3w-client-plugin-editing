@@ -1727,8 +1727,7 @@ export class OpenFormStep extends EditingTask {
     return new Promise(async (resolve, reject) => {
       const { session } = this.getContext();
       const inputs      = this.getInputs();
-      fields = this._multi ? fields.filter(field => field.value !== null) : fields;
-
+      fields = this._multi ? fields.filter(field => null !== field.value) : fields;
       if (fields.length) {
         await WorkflowsStack.getCurrent().getContextService().saveDefaultExpressionFieldsNotDependencies();
         const newFeatures = [];
