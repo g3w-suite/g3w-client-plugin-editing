@@ -39,7 +39,7 @@ function EditorToolBoxesFactory() {
       layer,
       tools,
       lngTitle: 'editing.toolbox.title',
-      title: ` ${layer.getTitle()}`,
+      title: ` ${layer.getTitle()}`, //backport https://github.com/g3w-suite/g3w-client-plugin-editing/pull/94
       constraints
     })
   };

@@ -1102,7 +1102,13 @@ proto._attachLayerWidgetsEvent = function(layer) {
                 field.input.options.values = [];
                 //check if field has a relation reference widget
                 // and no filter fields set
-                if (relation_reference && filter_fields.length === 0) {
+                if (
+                  relation_reference
+                  && (
+                    [undefined, null].indexOf(filter_fields) > -1
+                    || filter_fields.length === 0
+                    )
+                ) {
                   //get data with fformatter
                   layer.getFilterData({
                     fformatter: field.name
@@ -2351,7 +2357,7 @@ proto.removeRelationLayerUniqueFieldValuesFromFeature = function({
   const fields = this.layersUniqueFieldsValues[layerId];
 
   /** @FIXME add description */
-  if (undefined === layer) {
+  if (undefined === layer || undefined === fields) {
     return;
   }
 
