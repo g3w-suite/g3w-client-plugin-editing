@@ -384,7 +384,7 @@ proto.setRelations1_1FieldsEditable = function() {
 /**
  * Get Father layer fields related (in Relation) to Child Layer,
  *
- * ie. father fields having same `vectorjoin_id` attribute to `relation.id` value
+ * ex. father fields having same `vectorjoin_id` attribute to `relation.id` value
  *
  * @param { Relation } relation
  *
@@ -461,10 +461,21 @@ proto.editResultLayerFeature = function({
   feature,
 } = {}) {
 
-  const fid = feature.attributes[G3W_FID];
+  const fid = feature.attributes[G3W_FID] || feature.id;
 
-  this.getToolBoxes().forEach(tb => tb.setShow(tb.getId() === layer.id));
+  if (undefined === fid) {
+    return
+  }
+
+  this.getToolBoxes().forEach(tb => tb.setShow(layer.id === tb.getId()));
   this.getPlugin().showEditingPanel();
+  //hide select layer list @since v3.8.0
+  this.setShowSelectLayers(false);
+
+  this.subscribe('closeeditingpanel', () => {
+    this.setShowSelectLayers(true);
+    return { once: true }
+  });
 
   const toolBox   = this.getToolBoxById(layer.id);
   const { scale } = toolBox.getEditingConstraints(); // get scale constraint from setting layer
