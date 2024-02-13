@@ -77,7 +77,7 @@ function Workflow(options = {}) {
   /**
    * All steps of flow
    */
-  this._steps = steps;
+  this._steps = steps || [];
 
   /**
    * Whether is child of another workflow
@@ -103,11 +103,12 @@ function Workflow(options = {}) {
    * Store user messages steps to show when workflow
    * use a mandatory steps (ex. select: {description}, merge: {description}}
    */
-  this._userMessageSteps = this._steps
-    .reduce((messagesSteps, step) => ({
-      ...messagesSteps,
-      ...(step.getTask().getUserMessageSteps() || {})
-    }), {});
+  this._userMessageSteps = {};
+
+  if (this._steps.length > 0) {
+    this.setUserMessagesSteps(this._steps);
+  }
+
 
   /**
    * Holds back button label (in case of child workflow)
@@ -121,6 +122,18 @@ function Workflow(options = {}) {
 inherit(Workflow, G3WObject);
 
 const proto = Workflow.prototype;
+
+/**
+ *
+ * @param steps
+ */
+proto.setUserMessagesSteps = function(steps) {
+  this._userMessageSteps = steps
+    .reduce((messagesSteps, step) => ({
+      ...messagesSteps,
+      ...(step.getTask().getUserMessageSteps() || {})
+    }), {});
+};
 
 /**
  * @since g3w-client-plugin-editing@v3.8.0
@@ -244,8 +257,9 @@ proto.addStep = function(step) {
 /**
  * @param steps
  */
-proto.setSteps = function(steps) {
+proto.setSteps = function(steps=[]) {
   this._steps = steps;
+  this.setUserMessagesSteps(steps);
 };
 
 /**
