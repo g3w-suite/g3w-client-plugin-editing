@@ -1,12 +1,24 @@
-import API from '../api'
+import { EditingWorkflow } from '../g3wsdk/workflow/workflow';
+import {
+  OpenFormStep,
+  ConfirmStep
+} from '../workflows';
+
+Object
+  .entries({
+    EditingWorkflow,
+    OpenFormStep,
+    ConfirmStep,
+  })
+  .forEach(([k, v]) => console.assert(undefined !== v, `${k} is undefined`));
 
 const { G3W_FID }                     = g3wsdk.constant;
 const {
   ApplicationState,
-  ApplicationService
+  ApplicationService,
 }                                     = g3wsdk.core;
 const { DataRouterService }           = g3wsdk.core.data;
-const { base, inherit, XHR }          = g3wsdk.core.utils;
+const { base, inherit, XHR, noop }    = g3wsdk.core.utils;
 const { Geometry }                    = g3wsdk.core.geometry;
 const {
   getFeaturesFromResponseVectorApi,
@@ -27,8 +39,7 @@ const {
   getResolutionFromScale,
 }                                     = g3wsdk.ol.utils;
 
-const ToolBoxesFactory                = require('../toolboxes/toolboxesfactory');
-const CommitFeaturesWorkflow          = require('../workflows/commitfeaturesworkflow');
+const ToolBox                         = require('../toolboxes/toolbox');
 
 const MAPCONTROL_TOGGLED_EVENT_NAME   = 'mapcontrol:toggled';
 const OFFLINE_ITEMS                   = { CHANGES: 'EDITING_CHANGES' };
@@ -218,13 +229,39 @@ function EditingService() {
     this._layersstore.addLayers(this.getLayers());
 
     // create toolboxes
-    this._buildToolBoxes();
+    for (const layer of this.getLayers()) {
+      this.addToolBox(ToolBox.create(layer));
+    }
 
     // create a dependencies tree
     this._createToolBoxDependencies();
 
     // set Api service
-    this.setApi({ api: new API({ service: this }) });
+    this.setApi({
+      /** ORIGINAL SOURCE: g3w-client-plugin-editing/api/index.js@v3.7.1 */
+      api: {
+        getSession:                       this.getSession.bind(this),
+        getFeature:                       this.getFeature.bind(this),
+        subscribe:                        this.subscribe.bind(this),
+        unsubscribe:                      this.unsubscribe.bind(this),
+        getToolBoxById:                   this.getToolBoxById.bind(this),
+        setSaveConfig:                    this.setSaveConfig.bind(this),
+        addNewFeature:                    this.addNewFeature.bind(this),
+        addFormComponents:                this.addFormComponents.bind(this),
+        commitChanges:                    this.commit.bind(this),
+        setApplicationEditingConstraints: this.setApplicationEditingConstraints.bind(this),
+        getMapService:                    this.getMapService.bind(this),
+        updateLayerFeature:               noop,
+        deleteLayerFeature:               noop,
+        addLayerFeature:                  this.addLayerFeature.bind(this),
+        showPanel:                        this.showPanel.bind(this),
+        hidePanel:                        this.hidePanel.bind(this),
+        resetDefault:                     this.resetAPIDefault.bind(this),
+        startEditing:                     this.startEditing.bind(this),
+        stopEditing:                      this.stopEditing.bind(this),
+      }
+    }
+  );
 
     this.registerResultEditingAction();
 
@@ -415,6 +452,8 @@ proto.unregisterResultEditingAction = function() {
 };
 
 /**
+ * ORIGINAL SOURCE: g3w-client-plugin/toolboxes/toolboxesfactory.js@v3.7.1
+ * 
  * Start to edit selected feature from results
  */
 proto.editResultLayerFeature = function({
@@ -478,9 +517,14 @@ proto.editResultLayerFeature = function({
 
       this.setSelectedToolbox(toolBox);
 
+      /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editnopickmapfeatureattributesworkflow.js@v3.7.1 */
       // edit feature workFlow
-      const workflow = require('../workflows/editnopickmapfeatureattributesworkflow');
-      const work = (new workflow({ runOnce: true }));
+      const work = new EditingWorkflow({
+        type: 'editnopickmapfeatureattributes',
+        runOnce: true,
+        helpMessage: 'editing.tools.update_feature',
+        steps: [ new OpenFormStep() ]
+      });
       work
         .start({
           inputs: { layer: _layer, features: [feature] },
@@ -937,17 +981,6 @@ proto.getEditingLayer = function(id) {
   return this._editableLayers[id].getEditingLayer();
 };
 
-/** 
- * @param options contain eventually editing type (create/update/delete)
- * @private
- */
-proto._buildToolBoxes = function(options={}) {
-  for (const layer of this.getLayers()) {
-    const toolbox = ToolBoxesFactory.build(layer, options);
-    this.addToolBox(toolbox);
-  }
-};
-
 /**
  * @param toolbox
  */
@@ -1062,6 +1095,25 @@ proto.resetDefault = function() {
 };
 
 /**
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/api/index.js@v3.7.1
+ * 
+ * Reset default toolbox state modified by other plugin
+ * 
+ * @since g3w-client-plugin-editing@v3.7.2
+ */
+proto.resetAPIDefault = function({
+  plugin=true,
+  toolboxes=true,
+} = {}) {
+  if (toolboxes) {
+    this.getToolBoxes().forEach(tb => { tb.resetDefault(); });
+  }
+  if (plugin) {
+    this.resetDefault();
+  }
+}
+
+/**
  * Get data from api when a field of a layer
  * is related to a wgis form widget (ex. relation reference, value map, etc..)
  * 
@@ -1102,7 +1154,13 @@ proto._attachLayerWidgetsEvent = function(layer) {
                 field.input.options.values = [];
                 //check if field has a relation reference widget
                 // and no filter fields set
-                if (relation_reference && filter_fields.length === 0) {
+                if (
+                  relation_reference
+                  && (
+                    [undefined, null].indexOf(filter_fields) > -1
+                    || filter_fields.length === 0
+                    )
+                ) {
                   //get data with fformatter
                   layer.getFilterData({
                     fformatter: field.name
@@ -1472,6 +1530,17 @@ proto.getToolBoxes = function() {
  */
 proto.getEditableLayers = function() {
   return this._editableLayers;
+};
+
+/**
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/api/index.js@v3.7.1
+ * 
+ * @returns { string[] }
+ * 
+ * @since g3w-client-plugin-editing@v3.7.2
+ */
+proto.getEditableLayersId = function() {
+  return Object.keys(this.getEditableLayers());
 };
 
 /**
@@ -2006,9 +2075,13 @@ proto.showCommitModalWindow = function({
   };
 
   return new Promise((resolve, reject) =>{
-    const workflow = new CommitFeaturesWorkflow({
-      type: 'commit'
-    });
+
+    /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/commitfeaturesworkflow.js@v3.7.1 */
+    const workflow = new EditingWorkflow({
+      type: 'commitfeatures',
+      steps: [ new ConfirmStep({ type: 'commit' }) ]
+    })
+
     workflow.start({
       inputs: {
         layer,
@@ -2351,7 +2424,7 @@ proto.removeRelationLayerUniqueFieldValuesFromFeature = function({
   const fields = this.layersUniqueFieldsValues[layerId];
 
   /** @FIXME add description */
-  if (undefined === layer) {
+  if (undefined === layer || undefined === fields) {
     return;
   }
 
@@ -2762,6 +2835,203 @@ proto.getFeatureTableFieldValue = function({
   // return key for key-values fields (raw field value otherwise)
   return kv_field ? kv_field.key : value;
 }
+
+/**
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/api/index.js@v3.7.1
+ * 
+ * Show editing panel
+ * 
+ * @param options
+ * @param options.toolboxes
+ *
+ * @since g3w-client-plugin-editing@v3.7.2
+ */
+proto.showPanel = function(options = {}) {
+  if (options.toolboxes && Array.isArray(options.toolboxes)) {
+    this.getToolBoxes().forEach(tb => tb.setShow(-1 !== options.toolboxes.indexOf(tb.getId())));
+  }
+  this.getPlugin().showEditingPanel(options);
+};
+
+/**
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/api/index.js@v3.7.1
+ * 
+ * Hide Editing Panel
+ * 
+ * @param options
+ *
+ * @since g3w-client-plugin-editing@v3.7.2
+ */
+proto.hidePanel = function(options = {}) {
+  this.getPlugin().hideEditingPanel(options);
+};
+
+/**
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/api/index.js@v3.7.1
+ * 
+ * Start editing API
+ * 
+ * @param layerId
+ * @param { Object } options
+ * @param { boolean } [options.selected=true]
+ * @param { boolean } [options.disablemapcontrols=false]
+ * @param { boolean } [options.showselectlayers=true]
+ * @param options.title
+ * 
+ * @returns { Promise<unknown> }
+ * 
+ * @since g3w-client-plugin-editing@v3.7.2
+ */
+proto.startEditing = function(layerId, options = {}, data = false) {
+  options.selected           = undefined === options.selected           ? true : options.selected;
+  options.showselectlayers   = undefined === options.showselectlayers   ? true : options.showselectlayers;
+  options.disablemapcontrols = undefined === options.disablemapcontrols ? false : options.showselectlayers;
+  return new Promise((resolve, reject) => {
+    // get toolbox related to layer id
+    const toolbox = this.getToolBoxById(layerId);
+    // set show select layers input visibility
+    this.setShowSelectLayers(options.showselectlayers);
+    // skip when ..
+    if (!toolbox) {
+      return reject();
+    }
+    // set selected
+    toolbox.setSelected(options.selected);
+    // set seletcted toolbox
+    if (options.selected) {
+      this.setSelectedToolbox(toolbox);
+    }
+    if (options.title) {
+      toolbox.setTitle(options.title);
+    }
+    // start editing toolbox (options contain also filter type)
+    toolbox
+      .start(options)
+      .then(data => {
+        // disablemapcontrols in conflict
+        if (options.disablemapcontrols) {
+          this.disableMapControlsConflict(true);
+        }
+        // opts contain information about start editing has features loaded
+        resolve(data ? { toolbox, data } : toolbox);
+      })
+      .fail(reject);
+  });
+};
+
+/**
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/api/index.js@v3.7.1
+ * 
+ * Stop editing on layerId
+ * 
+ * @param layerId
+ * @param options
+ * 
+ * @returns { Promise<unknown> }
+ * 
+ * @since g3w-client-plugin-editing@v3.7.2
+ */
+proto.stopEditing = function(layerId, options = {}) {
+  return new Promise((resolve, reject) => {
+    this.getToolBoxById(layerId)
+      .stop(options)
+      .then(resolve)
+      .fail(reject)
+  })
+};
+
+/**
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/api/index.js@v3.7.1
+ * 
+ * Add Feature
+ * 
+ * @param { Object } opts
+ * @param opts.layerId
+ * @param opts.feature
+ * 
+ * @since g3w-client-plugin-editing@v3.7.2
+ */
+proto.addLayerFeature = function({
+ layerId,
+ feature,
+} = {}) {
+ // skip when mandatory params are missing
+ if (undefined === feature || undefined === layerId) {
+   return Promise.reject();
+ }
+ return new Promise((resolve, reject) => {
+   const layer = this.getLayerById(layerId);
+   // get session
+   const session = this.getSessionById(layerId);
+   // exclude an eventually attribute pk (primary key) not editable (mean autoincrement)
+   const attributes = layer
+     .getEditingFields()
+     .filter(attr => !(attr.pk && !attr.editable));
+   // start session (get no features but set layer in editing)
+   session.start({
+     filter: {
+       nofeatures: true,                    // no feature
+       nofeatures_field: attributes[0].name // get first field in editing form
+     },
+     editing: true,
+   })
+
+   /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/easyaddfeatureworkflow.js@v3.7.1 */
+   // create workflow
+   const workflow = new EditingWorkflow({
+    type: 'addfeature',
+    steps: [
+      new OpenFormStep({
+        push: true,
+        showgoback: false,
+        saveAll: false,
+      })
+    ],
+  });
+
+   const stop = cb => {
+     workflow.stop();
+     session.stop();
+     return cb();
+   };
+
+   try {
+     //check if feature has property of layer
+     attributes.forEach(a => {
+       if (undefined === feature.get(a.name)) {
+         feature.set(a.name, null);
+       }
+     })
+
+     //set feature as g3w feature
+     feature = new Feature({ feature, properties: attributes.map(a => a.name) });
+     //set new
+     feature.setTemporaryId();
+
+     // add to session and source as new feature
+     session.pushAdd(layerId, feature, false);
+     layer.getEditingLayer().getSource().addFeature(feature);
+
+     //start workflow
+     workflow.start({
+       inputs:  { layer, features: [feature] },
+       context: { session },
+     })
+     .then(() => {
+       session.save();
+       this
+         .commit({ modal: false, toolbox: this.getToolBoxById(layerId) })
+         .then(() => stop(resolve))
+         .fail(() => stop(reject))
+     })
+     .fail(() => stop(reject));
+
+   } catch(e) {
+     console.warn(e);
+     reject();
+   }
+ })
+};
 
 EditingService.EDITING_FIELDS_TYPE = ['unique'];
 

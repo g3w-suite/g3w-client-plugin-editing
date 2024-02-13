@@ -1,15 +1,28 @@
-import Editor           from './editor';
-import ChangesManager   from './changesmanager';
-import SessionsRegistry from './sessionsregistry';
-import Session          from './session';
+import Editor           from './editing/editor';
+import ChangesManager   from './editing/changesmanager';
+import SessionsRegistry from './editing/sessionsregistry';
+import Session          from './editing/session';
+import Task             from './workflow/task';
+import Step             from './workflow/step';
+import Flow             from './workflow/flow';
+import Workflow         from './workflow/workflow';
+import WorkflowsStack   from './workflow/stack';
 
 /**
- * Editing API will be removed from core after g3w-client@v.4.x 
+ * Editing APIs will be removed from core after g3w-client@v.4.x
  */
-if (window.g3wsdk.core.editing || g3wsdk.version < '4') {
-  console.log('g3wsdk.core.editing will be overwritten');
+if (
+  window.g3wsdk.core.editing ||
+  window.g3wsdk.core.workflow ||
+  window.g3wsdk.constant.DEFAULT_EDITING_CAPABILITIES ||
+  g3wsdk.version < '4'
+) {
+  console.warn('Editing APIs will be removed from g3wsdk after v4.x');
 }
 
+/**
+ * @FIXME add description
+ */
 window.g3wsdk.core.editing = {
   Session,
   SessionsRegistry,
@@ -22,13 +35,20 @@ window.g3wsdk.core.editing = {
  *
  * @type {string[]}
  */
-export const DEFAULT_EDITING_CAPABILITIES = [
+window.g3wsdk.constant.DEFAULT_EDITING_CAPABILITIES = [
   'add_feature',
   'change_feature',
   'change_attr_feature',
   'delete_feature',
 ];
 
-window.g3wsdk.constant.DEFAULT_EDITING_CAPABILITIES = DEFAULT_EDITING_CAPABILITIES;
-
-
+/**
+ * @FIXME add description
+ */
+window.g3wsdk.core.workflow = {
+  Task,
+  Step,
+  Flow,
+  Workflow,
+  WorkflowsStack
+};

@@ -81,7 +81,11 @@ export default {
       selectStartVertex: 'Visa startpunkten för valda egenskaper.',
       selectToPaste: 'Välj punkt till vilken de valda egenskaperna ska fogas.',
       draw_split_line: "Rita en linje enligt vilken den valda egenskapen ska uppdelas."
-    }
+    },
+    title: {
+      steps: 'Skeden',
+    },
+    next: "Nästa",
   },
   messages: {
     featureslockbyotheruser: "Jotkut geometriat/tietueet eivät ole muokattavissa, koska muut käyttäjät muokkaavat niitä",
