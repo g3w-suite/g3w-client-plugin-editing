@@ -1084,6 +1084,7 @@ proto.stopActiveTool = function(tool) {
         this.state.activetool = null;
         setTimeout(d.resolve);
       })
+      .fail(err => console.warn(err))
   } else {
     if (tool) {
       tool.removeAllListeners();
@@ -1475,7 +1476,7 @@ ToolBox.create = function(layer) {
         },
       },
       //Add part to MultiGeometry Feature
-      (is_vector && isMultiGeometry) && {
+      (is_vector) && {
         id: 'addPart',
         type: ['add_feature', 'change_feature'],
         name: "editing.tools.addpart",
@@ -1483,6 +1484,7 @@ ToolBox.create = function(layer) {
         layer,
         once: true,
         row: 3,
+        visible: isMultiGeometry,
         /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addparttomultigeometriesworkflow.js@v3.7.1 */
         op(options = {}) {
           const w = new EditingWorkflow({
@@ -1537,13 +1539,14 @@ ToolBox.create = function(layer) {
         },
       },
       //Remove part from MultiGeometry Feature
-      (is_vector && isMultiGeometry) && {
+      (is_vector) && {
         id: 'deletePart',
         type: ['change_feature'],
         name: "editing.tools.deletepart",
         icon: "deletePart.png",
         layer,
         row: 3,
+        visible: isMultiGeometry,
         /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/deletepartfrommultigeometriesworkflow.js@v3.7.1 */
         op(options = {}) {
           return new EditingWorkflow({
