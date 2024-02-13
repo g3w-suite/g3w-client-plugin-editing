@@ -1,7 +1,7 @@
 import { EditingWorkflow } from '../g3wsdk/workflow/workflow';
 import {
   OpenFormStep,
-  ConfirmStep
+  ConfirmStep, PickFeatureStep, ChooseFeatureStep, AddFeatureStep, AddPartToMultigeometriesStep
 } from '../workflows';
 
 Object
@@ -460,7 +460,6 @@ proto.editResultLayerFeature = function({
   layer,
   feature,
 } = {}) {
-
   const fid = feature.attributes[G3W_FID] || feature.id;
 
   if (undefined === fid) {
@@ -479,17 +478,18 @@ proto.editResultLayerFeature = function({
 
   const toolBox   = this.getToolBoxById(layer.id);
   const { scale } = toolBox.getEditingConstraints(); // get scale constraint from setting layer
-  const has_geom  = feature.geometry && undefined !== scale;
+  const has_geom  = feature.geometry;
   // start toolbox (filtered by feature id)
   toolBox
     .start({ filter: { fids: fid } })
     .then(({ features = [] }) => {
       const _layer = toolBox.getLayer();
       const source = _layer.getEditingLayer().getSource();
+      const isVectorLayer = Layer.LayerTypes.VECTOR === _layer.getType();
 
       // get feature from Editing layer source (with styles)
       const feature = (
-        (_layer.getType() === Layer.LayerTypes.VECTOR)
+        (isVectorLayer)
           ? source.getFeatures()
           : source.readFeatures()
         ).find(f => f.getId() == fid);
@@ -500,12 +500,12 @@ proto.editResultLayerFeature = function({
       }
 
       /**If feature has geometry, zoom to geometry */
-      if (feature.getGeometry()) {
+      if (has_geom) {
         this._mapService.zoomToGeometry(feature.getGeometry());
         // check map scale after zoom to feature
         // if currentScale is more that scale constraint set by layer editing
         // need to go to scale setting by layer editing constraint
-        if (has_geom) {
+        if (undefined !== scale) {
           this._mapService.getMap().once('moveend', () => {
             const units        = this._mapService.getMapUnits();
             const map          = this._mapService.getMap();
@@ -527,16 +527,64 @@ proto.editResultLayerFeature = function({
       const session = toolBox.getSession();
 
       this.setSelectedToolbox(toolBox);
+      // in case of vector layer when feature has no geometry, need to
+      // add geometry
+      if ((isVectorLayer && !has_geom)) {
+        const addPartTool = toolBox.getTools().find(t => 'addPart' === t.getId());
+        //check if layer is single geometry. Need to show and change behaviour
+        if (!Geometry.isMultiGeometry(_layer.getGeometryType())) {
+          addPartTool.setVisible(true);
+        }
 
-      /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editnopickmapfeatureattributesworkflow.js@v3.7.1 */
-      // edit feature workFlow
-      const work = new EditingWorkflow({
+        //get workflow
+        const op = addPartTool.getOperator();
+        const w = new EditingWorkflow({
+          type: 'drawgeometry',
+          helpMessage: 'editing.workflow.steps.draw_geometry',
+          steps: [
+            new AddFeatureStep({
+              add: false,
+              steps: {
+                addfeature: {
+                  description: 'editing.workflow.steps.draw_geometry',
+                  directive: 't-plugin',
+                  done: false
+                }
+              },
+              onRun: ({inputs, context}) => {
+                w.emit('settoolsoftool', [{
+                  type: 'snap',
+                  options: {
+                    layerId: inputs.layer.getId(),
+                    source: inputs.layer.getEditingLayer().getSource(),
+                    active: true
+                  }
+                }]);
+                w.emit('active', ['snap']);
+              },
+              onStop: () => {
+                w.emit('deactive', ['snap']);
+              }
+            }),
+            new AddPartToMultigeometriesStep({}),
+          ],
+          registerEscKeyEvent: true
+        })
+
+        addPartTool.setOperator(w);
+
+        this.subscribe('closeeditingpanel', () => {
+          addPartTool.setOperator(op);
+          addPartTool.setVisible(Geometry.isMultiGeometry(_layer.getGeometryType()));
+        })
+      }
+      // /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editnopickmapfeatureattributesworkflow.js@v3.7.1 *
+      (new EditingWorkflow({
         type: 'editnopickmapfeatureattributes',
         runOnce: true,
         helpMessage: 'editing.tools.update_feature',
         steps: [ new OpenFormStep() ]
-      });
-      work
+      }))
         .start({
           inputs: { layer: _layer, features: [feature] },
           context: { session }
@@ -548,6 +596,7 @@ proto.editResultLayerFeature = function({
 
     })
     .fail(err => console.warn(err));
+
 };
 
 /**
