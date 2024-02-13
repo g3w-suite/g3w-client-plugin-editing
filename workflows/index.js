@@ -309,11 +309,19 @@ export class AddPartToMultigeometriesStep extends EditingTask {
   run(inputs, context) {
     const d               = $.Deferred();
     const layerId         = inputs.layer.getId();
-    const feature         = inputs.features[0];
-    const geometry        = feature.getGeometry();
-    const originalFeature = feature.clone();
-
-    geometry.setCoordinates([...geometry.getCoordinates(), ...inputs.features[1].getGeometry().getCoordinates()]);
+    let feature;
+    let originalFeature;
+    //case add part
+    if (inputs.features.length > 1) {
+      feature         =  inputs.features[0];
+      const geometry  = feature.getGeometry();
+      originalFeature = feature.clone();
+      geometry.setCoordinates([...geometry.getCoordinates(), ...inputs.features[1].getGeometry().getCoordinates()]);
+    } else {
+      feature         = inputs.layer.getEditingLayer().getSource().getFeatures()[0];
+      originalFeature = feature.clone();
+      feature.setGeometry(inputs.features[0].getGeometry());
+    }
 
     // evaluated geometry expression
     evaluateExpressionFields({ inputs, context, feature })
