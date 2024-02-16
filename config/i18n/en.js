@@ -38,7 +38,7 @@ export default {
     update_vertex: "Update feature vertex",
     update_feature: "Update feature attribute",
     update_multi_features: "Update attributes of selected features",
-    copyfeaturefromexternallayer: "Create Feature from existing feature"
+    copyfeaturefromexternallayer: "Create Feature from added layer"
   },
   toolsoftool: {
     measure: "Show measure",
@@ -81,7 +81,11 @@ export default {
       selectStartVertex: 'Select starting vertex of selected features',
       selectToPaste: 'Select the point where paste the features selected',
       draw_split_line: "Draw a line to split selected feature"
-    }
+    },
+    title: {
+      steps: 'Steps'
+    },
+    next: 'Next',
   },
   messages: {
     featureslockbyotheruser: "Some geometries/records are not editable because in editing by other user",
@@ -94,7 +98,7 @@ export default {
     delete_feature_relations: "If feature has bindings relations, these relations become orphans. We suggest to handle these relations before detele this feature",
     unlink_relation: "Do you want unlink relation?",
     commit_feature: "Do you want to save the changes",
-    change_toolbox_relation: "Layer has relation/relations. Before switch editing you need to save changes done.",
+    toolbox_has_relation: "this layer is part of a relation",
     saved: "Data saved successfully",
     saved_local:"Data saved locally successfully",
     loading_data: "Loading data",
@@ -113,18 +117,16 @@ export default {
     },
     loading_table_data: "Building Data Table. Please wait ...",
     copy_and_paste_from_other_layer_mandatory_fields: "It is necessary to fill in any mandatory fields on the features pasted before saving",
-    no_feature_selected: "No feature selected"
+    no_feature_selected: "No feature selected",
+    select_min_2_features: 'Select at least 2 features'
   },
   relation: {
     table: {
-      info: `
-                  <div>
-                    Select relations to link it to current editing feature.
-                  </div>
-                  <div>
-               
-                `
-    }
+      info: `<div>Select relations to link it to current editing feature.</div>`
+    },
+    draw_new_feature:"Draw new feature",
+    draw_or_copy:"or",
+    copy_feature_from_other_layer:"Copy feature from other layer"
   },
   form: {
     relations: {
@@ -137,15 +139,17 @@ export default {
       }
     },
     buttons: {
-      save: "Save and Exit",
+      save: "Insert/Edit",
       save_and_back: "Save and Back",
+      save_and_back_table: "Save and Back",
       cancel: "Ignore Changes"
     }
   },
   modal: {
     tools: {
       copyfeaturefromotherlayer: {
-        title: "Select feature/s"
+        title: "Select feature/s",
+        edit_attributes: "Edit attributes of pasted features in multiple mode"
       },
       copyfeaturefromprojectlayer: {
         title: "Select a feature"

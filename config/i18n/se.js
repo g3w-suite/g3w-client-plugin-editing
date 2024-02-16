@@ -37,7 +37,8 @@ export default {
     move_feature: "Flytta egenskap",
     update_vertex: "Uppdatera punktens egenskap",
     update_feature: "Uppdatera egenskap",
-    copyfeaturefromexternallayer: "Create Feature from existing feature"
+    update_multi_features: "Ändra attributen för de valda funktionerna",
+    copyfeaturefromexternallayer: "Create Feature from added layer"
   },
   toolsoftool: {
     measure: "Show measure",
@@ -80,7 +81,11 @@ export default {
       selectStartVertex: 'Visa startpunkten för valda egenskaper.',
       selectToPaste: 'Välj punkt till vilken de valda egenskaperna ska fogas.',
       draw_split_line: "Rita en linje enligt vilken den valda egenskapen ska uppdelas."
-    }
+    },
+    title: {
+      steps: 'Skeden',
+    },
+    next: "Nästa",
   },
   messages: {
     featureslockbyotheruser: "Jotkut geometriat/tietueet eivät ole muokattavissa, koska muut käyttäjät muokkaavat niitä",
@@ -93,7 +98,7 @@ export default {
     delete_feature_relations: "Om egenskapen saknar bindande relationer blir dessa relationer föräldralösa. Vi rekommenderar att du behandlar dessa relationer innan du lämnar programmet",
     unlink_relation: "Vill du ta bort relationen?",
     commit_feature: "Ska ändringarna sparas?",
-    change_toolbox_relation: "Nivån har en relation/relationer. Spara ändringarna innan du börjar redigera.",
+    toolbox_has_relation: "detta lager är en del av en relation",
     saved: "Uppgifterna sparades",
     saved_local:"Uppgifterna sparades lokalt.",
     loading_data: "Uppgifterna laddas",
@@ -112,18 +117,16 @@ export default {
     },
     loading_table_data: "Building Data Table. Please wait ...",
     copy_and_paste_from_other_layer_mandatory_fields: "It is necessary to fill in any mandatory fields on the features pasted before saving",
-    no_feature_selected: "No feature selected"
+    no_feature_selected: "No feature selected",
+    select_min_2_features: 'Select at least 2 features'
   },
   relation: {
     table: {
-      info: `
-                  <div>
-					Välj relation för länkning till egenskap som ska redigeras.
-                  </div>
-                  <div>
-               
-                `
-    }
+      info: `<div>Välj relation för länkning till egenskap som ska redigeras.</div>`
+    },
+    draw_new_feature:"Draw new feature",
+    draw_or_copy:"or",
+    copy_feature_from_other_layer:"Copy feature from other layer"
   },
   form: {
     relations: {
@@ -136,15 +139,17 @@ export default {
       }
     },
     buttons: {
-      save: "Spara och avsluta",
+      save: "Infoga/Redigera",
       save_and_back: "Spara och gå tillbaka",
+      save_and_back_table: "Spara och gå tillbaka",
       cancel: "Ignorera ändringar"
     }
   },
   modal: {
     tools: {
       copyfeaturefromotherlayer: {
-        title: "Select feature/s"
+        title: "Select feature/s",
+        edit_attributes: "Edit attributes of pasted features in multiple mode"
       },
       copyfeaturefromprojectlayer: {
         title: "Select a feature"

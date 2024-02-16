@@ -38,7 +38,7 @@ export default {
     update_vertex: "Feature vertex aktualisieren",
     update_feature: "Feature-Attribut aktualisieren",
     update_multi_features: "Attribute ausgewählter Features aktualisieren",
-    copyfeaturefromexternallayer: "Create Feature from existing feature"
+    copyfeaturefromexternallayer: "Create Feature from added layer"
   },
   toolsoftool: {
     measure: "Messung anzeigen",
@@ -81,7 +81,11 @@ export default {
       selectStartVertex: 'Start-Eckpunkt der ausgewählten Features auswählen',
       selectToPaste: 'Den Punkt auswählen, an dem die ausgewählten Features eingefügt werden sollen',
       draw_split_line: "Eine Linie zeichnen, um das ausgewählte Feature zu teilen"
-    }
+    },
+    title: {
+      steps: 'Schritte',
+    },
+    next: 'Weiter',
   },
   messages: {
     featureslockbyotheruser: "Einige Geometrien/Datensätze können nicht bearbeitet werden, da sie von anderen Benutzern bearbeitet werden",
@@ -94,7 +98,7 @@ export default {
     delete_feature_relations: "Wenn ein Feature Verknüpfungen beinhaltet, werden diese Relationen verwaist. Wir schlagen vor, diese Relationen zu behandeln, bevor das Feature gelöscht wird",
     unlink_relation: "Soll die Verknüpfung aufgehoben werden?",
     commit_feature: "Änderungen speichern?",
-    change_toolbox_relation: "Layer hat Relation(en). Bevor man zur Bearbeitung wechselt, muss man die Änderungen speichern.",
+    toolbox_has_relation: "Diese Ebene ist Teil einer Beziehung",
     saved: "Daten erfolgreich gespeichert",
     saved_local:"Daten erfolgreich lokal gespeichert",
     loading_data: "Daten laden",
@@ -113,18 +117,16 @@ export default {
     },
     loading_table_data: "Datentabelle wird erstellt. Bitte warten ...",
     copy_and_paste_from_other_layer_mandatory_fields: "Vor dem Speichern müssen alle Pflichtfelder des eingegebenen features ausgefüllt werden",
-    no_feature_selected: "Keine feature ausgewählt"
+    no_feature_selected: "Keine feature ausgewählt",
+    select_min_2_features: 'Select at least 2 features'
   },
   relation: {
     table: {
-      info: `
-                  <div>
-                    Wählen Sie Relationen aus, um sie mit dem aktuellen Feature zu verknüpfen.
-                  </div>
-                  <div>
-               
-                `
-    }
+      info: `<div>Wählen Sie Relationen aus, um sie mit dem aktuellen Feature zu verknüpfen.</div>`
+    },
+    draw_new_feature:"Zeichnen Sie eine neue feature",
+    draw_or_copy:"oder",
+    copy_feature_from_other_layer:"Kopieren Sie feature aus einer anderen layer"
   },
   form: {
     relations: {
@@ -137,15 +139,17 @@ export default {
       }
     },
     buttons: {
-      save: "Speichern und schließen",
+      save: "Einfügung/Bearbeiten",
       save_and_back: "Speichern und zurück",
+      save_and_back_table: "Speichern und zurück",
       cancel: "Änderungen ignorieren"
     }
   },
   modal: {
     tools: {
       copyfeaturefromotherlayer: {
-        title: "Select feature/s"
+        title: "Select feature/s",
+        edit_attributes: "Edit attributes of pasted features in multiple mode"
       },
       copyfeaturefromprojectlayer: {
         title: "Select one feature"

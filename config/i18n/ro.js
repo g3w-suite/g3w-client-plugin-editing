@@ -38,7 +38,7 @@ export default  {
     update_vertex: "Actualizează vertecșii entității",
     update_feature: "Actualizează atributul entității",
     update_multi_features: "Actualizează atributele entităților selectate",
-    copyfeaturefromexternallayer: "Create Feature from existing feature"
+    copyfeaturefromexternallayer: "Create Feature from added layer"
   },
   toolsoftool: {
     measure: "Arată măsurătorile",
@@ -81,7 +81,11 @@ export default  {
       selectStartVertex: 'Selectează vertexul de start a entităților selectate',
       selectToPaste: 'Selectează punctul unde să lipim entitățile selectate',
       draw_split_line: "Desenează o linie pentru a diviza entitatea selectată"
-    }
+    },
+    title: {
+      steps: 'Pași',
+    },
+    next: 'Următorul',
   },
   messages: {
     featureslockbyotheruser: "Unele geometrii/înregistrări nu sunt editabile deoarece sunt editate de către alt utilizator",
@@ -94,7 +98,7 @@ export default  {
     delete_feature_relations: "Dacă entitatea are relații care trimit la ea, acele relații devin orfane. Sugerăm să vă ocupați de acele elemente înainte să eliminați această entitate.",
     unlink_relation: "Dorești să eliminați legătura cu relația?",
     commit_feature: "Salvăm?",
-    change_toolbox_relation: "Stratul este relaționat. Înainte de a trece la alte modificări trebuiesc salvate modificările.",
+    toolbox_has_relation: "acest strat face parte dintr-o relație",
     saved: "Datele sunt salvate",
     saved_local:"Datele s-au salvat local",
     loading_data: "Datele se încarcă.",
@@ -113,17 +117,16 @@ export default  {
     },
     loading_table_data: "Încărcăm tabelul de date ...",
     copy_and_paste_from_other_layer_mandatory_fields: "Înainte de a salva, este necesar să completați toate câmpurile obligatorii ale entități introduse",
-    no_feature_selected: "Nicio feature selectată"
+    no_feature_selected: "Nicio feature selectată",
+    select_min_2_features: 'Select at least 2 features'
   },
   relation: {
     table: {
-      info: `
-                  <div>
-                    Selectează relațiile pentru a face legătura cu entitatea curentă.
-                  </div>
-                  <div>
-                `
-    }
+      info: `<div>Selectează relațiile pentru a face legătura cu entitatea curentă.</div>`
+    },
+    draw_new_feature:"Desenați o nouă feature",
+    draw_or_copy: "sau",
+    copy_feature_from_other_layer: "Copiați feature dintr-un alt layer"
   },
   form: {
     relations: {
@@ -136,15 +139,17 @@ export default  {
       }
     },
     buttons: {
-      save: "Salvează și ieși",
+      save: "Inserați/Editați",
       save_and_back: "Salvează și dă înapoi",
+      save_and_back_table: "Salvează și dă înapoi",
       cancel: "Ignorați modificările"
     }
   },
   modal: {
     tools: {
       copyfeaturefromotherlayer: {
-        title: "Select feature/s"
+        title: "Select feature/s",
+        edit_attributes: "Edit attributes of pasted features in multiple mode"
       },
       copyfeaturefromprojectlayer: {
         title: "Select a feature"

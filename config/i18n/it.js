@@ -20,9 +20,14 @@ export default {
   toolbox: {
     title: 'Edita'
   },
+  table: {
+    edit: "Edita feature",
+    copy: "Crea una copia",
+    delete: "Cancella feature"
+  },
   tools: {
     copy: "Copia features",
-    pastefeaturesfromotherlayers: "Copia features da altro layer",
+    pastefeaturesfromotherlayers: "Incolla features da altro layer",
     addpart: "Aggiungi parte alla geometria",
     deletepart: "Cancella parte dalla geometria",
     merge: "Dissolvi features",
@@ -33,17 +38,12 @@ export default {
     update_vertex: "Aggiorna vertici feature",
     update_feature: "Modifica attributi feature",
     update_multi_features: "Modifica gli attributi delle features selezionate",
-    copyfeaturefromexternallayer: "Crea feature dal layer esistente"
+    copyfeaturefromexternallayer: "Crea feature dal layer aggiunto"
   },
   toolsoftool: {
     measure: "Visualizza misura",
     snap: "Snap sul layer",
     snapall: "Snap su tutti i layer"
-  },
-  table: {
-    edit: "Edita feature",
-    copy: "Crea una copia",
-    delete: "Cancella feature"
   },
   steps: {
     help: {
@@ -65,6 +65,7 @@ export default {
       insert_attributes_feature: "Inserisci gli attributi della feature"
     }
   },
+
   workflow: {
     steps: {
       select: 'Clicca sulla feature da selezionare',
@@ -81,7 +82,11 @@ export default {
       selectStartVertex: 'Seleziona il vertice di partenza delle feature selezionate',
       selectToPaste: 'Seleziona il punto dove verranno incollate le features selezionate',
       draw_split_line: "Disegna una linea per tagliare la feature selezionata"
-    }
+    },
+    title: {
+      steps: 'Passi',
+    },
+    next: 'Avanti',
   },
   messages: {
     featureslockbyotheruser: "Ci sono alcune geometrie/records non editabili perchè in modifica da altri utenti",
@@ -94,7 +99,7 @@ export default {
     delete_feature_relations: "Cancellando una feature con relazioni associate, tale relazioni rimarranno orfane. Si consiglia di gestire tali relazioni prima di cancellare la feature",
     unlink_relation: "Vuoi staccare la relazione?",
     commit_feature: "Vuoi salvare definitivamente le modifiche",
-    change_toolbox_relation: "Layer in relazione. Prima di passare ad altri editing è obbligatorio salvare le modifiche correnti.",
+    toolbox_has_relation: "questo livello fa parte di una relazione",
     saved: "I dati sono stati salvati correttamente",
     saved_local: "I dati sono stati salvati correttamente in locale",
     loading_data: "Caricamento dati",
@@ -102,6 +107,7 @@ export default {
     constraints: {
       enable_editing: "Aumentare il livello di zoom per abilitare l'editing \nScala di attivazione 1:"
     },
+    pdf: "Anteprima del documento non disponibile. Clicca qui ",
     commit: {
       header: "La lista sotto riporta tutte le modifiche che verranno salvate.",
       header_add: "<b>Aggiunte</b> riporta il numero delle features aggiunte",
@@ -112,12 +118,16 @@ export default {
     },
     loading_table_data: "Costruzione tabella dati in corso. Attendere ...",
     copy_and_paste_from_other_layer_mandatory_fields: "Necessario compilare eventuali campi obbligatori sulle features incollate prima del salvataggio",
-    no_feature_selected: "Nessuna feature selezionata"
+    no_feature_selected: "Nessuna feature selezionata",
+    select_min_2_features: 'Seleziona come minimo due features'
   },
   relation: {
     table: {
       info: `<div>Seleziona le relazioni per associarle alla feature in editing.</div>`
-    }
+    },
+    draw_new_feature: "Disegna nuova geometria",
+    draw_or_copy: "oppure",
+    copy_feature_from_other_layer: "Copia geometria da altro layer"
   },
   form: {
     relations: {
@@ -130,15 +140,18 @@ export default {
       }
     },
     buttons: {
-      save: "Salva ed Esci",
+      save: "Inserisci/Modifica",
+      save_table: 'Modifica',
       save_and_back: "Salva e torna al padre",
+      save_and_back_table: "Salva e torna indietro",
       cancel: "Ignora Modifiche"
     }
   },
   modal: {
     tools: {
       copyfeaturefromotherlayer: {
-        title: "Seleziona feature/s"
+        title: "Seleziona feature/s",
+        edit_attributes: "Edita attributi delle features in multiple mode"
       },
       copyfeaturefromprojectlayer: {
         title: "Seleziona una feature"

@@ -1,6 +1,6 @@
 {
   "name": "editing",
-  "version": "3.5.5",
+  "version": "3.8.0-alpha.1",
   "description": "",
   "main": "index.js",
   "directories": {
@@ -8,10 +8,7 @@
   },
   "dependencies": {},
   "devDependencies": {},
-  "scripts": {
-    "watch": "gulp watch",
-    "build": "gulp default"
-  },
+  "scripts": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/g3w-suite/g3w-client-plugin-editing.git"
@@ -21,7 +18,7 @@
     "plugin"
   ],
   "author": "",
-  "license": "ISC",
+  "license": "MPL-2.0",
   "bugs": {
     "url": "https://github.com/g3w-suite/g3w-client-plugin-editing/issues"
   },
