@@ -2196,7 +2196,7 @@ proto.commit = async function({
   let resolve, reject;
 
   const prom = new Promise((res, rej) => { resolve = res; reject = rej; });
-  const {
+  let {
     cb = {},
     messages = {
       success: {},
