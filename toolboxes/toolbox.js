@@ -292,7 +292,7 @@ proto.getFieldUniqueValuesFromServer = function({
         values.forEach(value => this.uniqueFields[fieldName].input.options.values.push(value));
       })
   })
-  .fail(console.warn)
+  .catch(console.warn)
 };
 
 /**
@@ -384,7 +384,6 @@ proto.clearLayerUniqueFieldsValues = function() {
 
 //added option object to start method to have a control by other plugin how
 proto.start = function(options={}) {
-  const d                     = $.Deferred();
   const id                    = this.getId();
   const applicationConstraint = this.editingService.getApplicationEditingConstraintById(id);
   const EventName             = 'start-editing';
@@ -426,83 +425,121 @@ proto.start = function(options={}) {
     () => this._layer.getFeaturesStore().un(lockSetter, unKeyLock)
   );
 
-  const handlerAfterSessionGetFeatures = promise => {
-    this.emit(EventName);
-    this.setLayerUniqueFieldValues()
-      .then(async () => {
-        await this.editingService.runEventHandler({
-          type: EventName,
-          id
+  return new Promise((resolve, reject) => {
+
+    const handlerAfterSessionGetFeatures = promise => {
+      this.emit(EventName);
+      this.setLayerUniqueFieldValues()
+        .then(async () => {
+          await this.editingService.runEventHandler({ type: EventName, id });
+          promise
+            .then(async features => {
+              this.stopLoading();
+              this.setEditing(true);
+              await this.editingService.runEventHandler({
+                type: 'get-features-editing',
+                id,
+                options: {
+                  features
+                }
+              });
+              resolve({features})
+            })
+            .catch(async error => {
+              GUI.notify.error(error.message);
+              await this.editingService.runEventHandler({
+                type: 'error-editing',
+                id,
+                error
+              });
+              this.stop();
+              this.stopLoading();
+              reject(error);
+            })
         });
-        promise
-          .then(async features => {
-            this.stopLoading();
-            this.setEditing(true);
-            await this.editingService.runEventHandler({
-              type: 'get-features-editing',
-              id,
-              options: {
-                features
-              }
-            });
-
-            d.resolve({features})
-          })
-          .fail(async error => {
-            GUI.notify.error(error.message);
-            await this.editingService.runEventHandler({
-              type: 'error-editing',
-              id,
-              error
-            });
-            this.stop();
-            this.stopLoading();
-            d.reject(error);
-          })
-      });
-  }
-
-  if (this._session) {
-    if (!this._session.isStarted()) {
-      //added case of mobile
-      if (
-        ApplicationState.ismobile
-        && this._mapService.isMapHidden()
-        && Layer.LayerTypes.VECTOR === this._layerType
-      ) {
-        this.setEditing(true);
-        GUI
-          .getService('map')
-          .onceafter('setHidden', () =>{
-            setTimeout(() => {
-              this._start = true;
-              this.startLoading();
-              this.setFeaturesOptions({ filter });
-              this._session
-                .start(this._getFeaturesOption)
-                .then(handlerAfterSessionGetFeatures)
-                .fail(()=>this.setEditing(false));
-            }, 300);
-        })
-      } else {
-        this._start = true;
-        this.startLoading();
-        this._session
-          .start(this._getFeaturesOption)
-          .then(handlerAfterSessionGetFeatures)
-      }
-    } else {
-      if (!this._start) {
-        this.startLoading();
-        this._session
-          .getFeatures(this._getFeaturesOption)
-          .then(handlerAfterSessionGetFeatures);
-        this._start = true;
-      }
-      this.setEditing(true);
     }
-  }
-  return d.promise();
+  
+    if (this._session) {
+      if (!this._session.isStarted()) {
+        //added case of mobile
+        if (
+          ApplicationState.ismobile
+          && this._mapService.isMapHidden()
+          && Layer.LayerTypes.VECTOR === this._layerType
+        ) {
+          this.setEditing(true);
+          GUI
+            .getService('map')
+            .onceafter('setHidden', () =>{
+              setTimeout(() => {
+                this._start = true;
+                this.startLoading();
+                this.setFeaturesOptions({ filter });
+                this._session
+                  .start(this._getFeaturesOption)
+                  .then(handlerAfterSessionGetFeatures)
+                  .fail(()=>this.setEditing(false));
+              }, 300);
+          })
+        } else {
+          this._start = true;
+          this.startLoading();
+          this._session
+            .start(this._getFeaturesOption)
+            .then(handlerAfterSessionGetFeatures)
+        }
+      } else {
+        if (!this._start) {
+          this.startLoading();
+          this._session
+            .getFeatures(this._getFeaturesOption)
+            .then(handlerAfterSessionGetFeatures);
+          this._start = true;
+        }
+        this.setEditing(true);
+        this.stop();
+        this.stopLoading();
+        reject(error);
+      };
+  
+      if (this._session) {
+        if (!this._session.isStarted()) {
+          //added case of mobile
+          if (ApplicationState.ismobile && this._mapService.isMapHidden() && this._layerType === Layer.LayerTypes.VECTOR) {
+            this.setEditing(true);
+            GUI.getService('map').onceafter('setHidden', () =>{
+              setTimeout(()=>{
+                this._start = true;
+                this.startLoading();
+                this.setFeaturesOptions({
+                  filter
+                });
+                this._session.start(this._getFeaturesOption)
+                  .then(handlerAfterSessionGetFeatures)
+                  .catch(handlerCatchAfterSessionGetFeature)
+              }, 300);
+            })
+          } else {
+            this._start = true;
+            this.startLoading();
+            this._session.start(this._getFeaturesOption)
+              .then(handlerAfterSessionGetFeatures)
+              .catch(handlerCatchAfterSessionGetFeature)
+          }
+        } else {
+          if (!this._start) {
+            this.startLoading();
+            this._session.getFeatures(this._getFeaturesOption)
+              .then(handlerAfterSessionGetFeatures)
+              .catch(handlerCatchAfterSessionGetFeature);
+            this._start = true;
+          }
+          this.setEditing(true);
+        }
+      }
+    }
+  });
+
 };
 
 /**
@@ -531,9 +568,7 @@ proto.getFeaturesOption = function() {
  *
  * @return {*}
  */
-proto.stop = function() {
-  const EventName  = 'stop-editing';
-  const d          = $.Deferred();
+proto.stop = async function() {
   if (this.disableCanEditEvent) {
     this.disableCanEditEvent();
   }
@@ -541,45 +576,44 @@ proto.stop = function() {
 
   this._unregisterStartSettersEventsKey = [];
 
-  if (this._session && this._session.isStarted()) {
-    if (ApplicationState.online) {
-      if (this.editingService.fathersInEditing(this.state.id).length > 0) {
-        this.stopActiveTool();
-        this.state.editing.on = false;
-        this.enableTools(false);
-        this.clearToolboxMessages();
-        this._unregisterGetFeaturesEvent();
-        this.editingService.stopSessionChildren(this.state.id);
-        this.setSelected(false);
-        this.clearLayerUniqueFieldsValues();
-      } else {
-        this._session.stop()
-          .then(promise => {
-            promise.then(() => {
-              this._start           = false;
-              this.state.editing.on = false;
-              this.state.enabled    = false;
-
-              this.stopLoading();
-              this._getFeaturesOption = {};
-              this.stopActiveTool();
-              this.enableTools(false);
-              this.clearToolboxMessages();
-              this.setSelected(false);
-              this.emit(EventName);
-              this.clearLayerUniqueFieldsValues();
-              d.resolve(true)
-            })
-          })
-          .fail(err => d.reject(err))
-          .always(() => this.setSelected(false))
-      }
-    }
-  } else {
-    this.setSelected(false);
-    d.resolve(true)
+  if (!this._session || !this._session.isStarted() || !ApplicationState.online) {
+    return;
   }
-  return d.promise();
+
+  const has_fathers = this.editingService.fathersInEditing(this.state.id).length > 0;
+
+  if (has_fathers) {
+    this.stopActiveTool();
+    this.state.editing.on = false;
+    this.enableTools(false);
+    this.clearToolboxMessages();
+    this._unregisterGetFeaturesEvent();
+    this.editingService.stopSessionChildren(this.state.id);
+    this.setSelected(false);
+    this.clearLayerUniqueFieldsValues();
+  }
+
+  if (!has_fathers) {
+    try {
+      await (await this._session.stop());
+      this._start           = false;
+      this.state.editing.on = false;
+      this.state.enabled    = false;
+
+      this.stopLoading();
+      this._getFeaturesOption = {};
+      this.stopActiveTool();
+      this.enableTools(false);
+      this.clearToolboxMessages();
+      this.setSelected(false);
+      this.emit('stop-editing');
+      this.clearLayerUniqueFieldsValues();
+
+      return true;
+    } finally {
+      this.setSelected(false)
+    }
+  }
 };
 
 /**
@@ -1072,25 +1106,25 @@ proto.restartActiveTool = function() {
  * @return {*}
  */
 proto.stopActiveTool = function(tool) {
-  const d          = $.Deferred();
-  const activeTool = this.getActiveTool();
-  if (activeTool && tool !== activeTool ) {
-    activeTool.removeAllListeners();
-    activeTool
-      .stop(true)
-      .then(() => {
-        this.clearToolsOfTool();
-        this.clearToolMessage();
-        this.state.activetool = null;
-        setTimeout(d.resolve);
-      })
-  } else {
-    if (tool) {
-      tool.removeAllListeners();
+  return new Promise((resolve, reject) => {
+    const activeTool = this.getActiveTool();
+    if (activeTool && tool !== activeTool ) {
+      activeTool.removeAllListeners();
+      activeTool
+        .stop(true)
+        .then(() => {
+          this.clearToolsOfTool();
+          this.clearToolMessage();
+          this.state.activetool = null;
+          setTimeout(resolve);
+        })
+    } else {
+      if (tool) {
+        tool.removeAllListeners();
+      }
+      resolve()
     }
-    d.resolve()
-  }
-  return d.promise();
+  });
 };
 
 /**

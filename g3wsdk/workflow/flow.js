@@ -19,42 +19,50 @@ function Flow() {
   let context = null;
   let d;
   let _workflow;
+
   this.queques = {
     end: new Queque(),
     micro: new Queque()
   };
+
   //start workflow
   this.start = function(workflow) {
-    d = $.Deferred();
-    if (counter > 0) {
-      console.log("reset workflow before restarting");
-    }
-    _workflow = workflow;
-    inputs = workflow.getInputs();
-    context = workflow.getContext();
-    steps = workflow.getSteps();
-    // check if there are steps
-    if (steps && steps.length) {
-      //run step (first)
-      this.runStep(steps[0], inputs, context);
-    }
     // return a promise that will be reolved if all step go right
-    return d.promise();
+    return new Promise((resolve, reject) => {
+
+      // Assign d module variable to an object having resolve, reject methods used on other module method
+      d = { resolve, reject };
+
+      if (counter > 0) {
+        console.log("reset workflow before restarting");
+      }
+
+      _workflow = workflow;
+      inputs    = workflow.getInputs();
+      context   = workflow.getContext();
+      steps     = workflow.getSteps();
+
+      // check if there are steps
+      if (steps && steps.length) {
+        this.runStep(steps[0], inputs, context); // run step (first)
+      }
+    });
   };
 
   //run step
-  this.runStep = function(step, inputs) {
+  this.runStep = async function(step, inputs) {
     //run step that run task
-    _workflow.setMessages({
-      help: step.state.help
-    });
+    _workflow.setMessages({ help: step.state.help });
     const runMicroTasks = this.queques.micro.getLength();
-    step.run(inputs, context, this.queques)
-      .then(outputs => {
-        runMicroTasks && this.queques.micro.run();
-        this.onDone(outputs);
-      })
-      .fail(error => this.onError(error));
+    try {
+      const outputs = await step.run(inputs, context, this.queques);
+      if (runMicroTasks) {
+        this.queques.micro.run();
+      }
+      this.onDone(outputs);
+    } catch (e) {
+      this.onError(e);
+    }
   };
 
   //check if all step are resolved
@@ -76,21 +84,17 @@ function Flow() {
   };
 
   // stop flow
-  this.stop = function() {
-    const d = $.Deferred();
-    steps[counter].isRunning() ? steps[counter].stop() : null;
+  this.stop = async function() {
+    if (steps[counter].isRunning()) {
+      steps[counter].stop();
+    }
     this.clearQueques();
     if (counter > 0) {
-      // set counter to 0
-      counter = 0;
-      // reject flow
-      d.reject();
-    } else {
-      //reject to force rollback session
-      d.resolve();
+      counter = 0;             // set counter to 0
+      return Promise.reject(); // reject flow
     }
-    return d.promise();
   };
+
   base(this)
 }
 

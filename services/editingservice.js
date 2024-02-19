@@ -532,8 +532,8 @@ proto.editResultLayerFeature = function({
         })
         .then(() => session
           .save()
-          .then(() => this.saveChange()))
-        .fail(() => session.rollback());
+          .then(() => this.saveChange())
+        ).catch(() => session.rollback());
 
     })
     .fail(err => console.warn(err));
@@ -732,26 +732,20 @@ proto.checkOfflineChanges = function({
           layerIds.push(layerId);
           const toolbox = this.getToolBoxById(layerId);
           const commitItems = changes[layerId];
-          promises.push(this.commit({
-            toolbox,
-            commitItems,
-            modal
-          }))
+          promises.push(this.commit({ toolbox, commitItems, modal }));
         }
-
-        $.when
-          .apply(this, promises)
-          .then(() =>resolve())
-          .fail(error=>reject(error))
-          .always(() =>{
-            unlock && layerIds.forEach(layerId => {
-              this.getLayerById(layerId).unlock()
-            });
+        Promise
+          .all(promises)
+          .then(() => resolve())
+          .catch(e => reject(e))
+          .finally(() => {
+            if (unlock) {
+              layerIds.forEach(layerId => this.getLayerById(layerId).unlock());
+            }
             // always reset items to null
             this.setOfflineItem(OFFLINE_ITEMS.CHANGES);
           })
-      }, 1000)
-
+      }, 1000);
     }
   })
 };
@@ -1214,7 +1208,7 @@ proto._attachLayerWidgetsEvent = function(layer) {
                         resolve(field.input.options.values);
                       }
                     })
-                    .fail(error => {
+                    .catch(error => {
                       loading.state = 'error';
                       reject(error);
                     });
@@ -1568,15 +1562,15 @@ proto.stop = function() {
           commitpromises.push(this.commit({toolbox, modal:true}));
         }
       });
-    $.when.apply(this, commitpromises)
-      .always(() => {
-        this._toolboxes
-          .forEach(toolbox => toolbox.stop());
+    Promise
+      .all(commitpromises)
+      .finally(() => {
+        this._toolboxes.forEach(toolbox => toolbox.stop());
         this.clearState();
         //this.activeQueryInfo();
         this._mapService.refreshMap();
         resolve();
-    });
+      });
   });
 };
 
@@ -1939,9 +1933,10 @@ proto.getLayersDependencyFeatures = function(layerId, opts = {}) {
                 toolbox.stopLoading();
               } else {
                 //request features from server
-                session.getFeatures(options)
-                  .always(promise => {
-                    promise.always(() => {
+                session
+                  .getFeatures(options)
+                  .finally(promise => {
+                    promise.finally(() => {
                       toolbox.stopLoading();
                       resolve(id);
                     });
@@ -1950,12 +1945,13 @@ proto.getLayersDependencyFeatures = function(layerId, opts = {}) {
             })
         } else {
           //start session and get features
-          session.start(options)
-            .always(promise => {
-              promise.always(() => {
+          session
+            .start(options)
+            .finally(promise => {
+              promise.finally(() => {
                 toolbox.stopLoading();
                 resolve(id);
-              })
+              });
             });
         }
       } else {
@@ -1971,7 +1967,8 @@ proto.getLayersDependencyFeatures = function(layerId, opts = {}) {
     promises.push(promise);
   });
   // at the end se loading false
-  Promise.all(promises)
+  Promise
+    .all(promises)
     .finally(() => relations.forEach(relation => {
       if (relation.setLoading) {
         relation.setLoading(false);
@@ -1992,11 +1989,10 @@ proto.commitDirtyToolBoxes = function(layerId) {
   return new Promise((resolve, reject) => {
     const toolbox = this.getToolBoxById(layerId);
     if (toolbox.isDirty() && toolbox.hasDependencies()) {
-      this.commit({toolbox})
-        .then(() => {
-          resolve(toolbox);
-        })
-        .fail(() => {
+      this
+        .commit({ toolbox })
+        .then(() => resolve(toolbox))
+        .catch(() => {
           toolbox.revert()
             .then(() => {
               toolbox.getDependencies()
@@ -2007,9 +2003,10 @@ proto.commitDirtyToolBoxes = function(layerId) {
                 })
             })
           reject(toolbox);
-        })
-    } else
+        });
+    } else {
       resolve(toolbox);
+    }
   });
 };
 
@@ -2095,10 +2092,10 @@ proto.showCommitModalWindow = function({
           closeButton: false
         });
         resolve(messages);
-        commitPromise.always(()=>dialog.modal('hide')) // hide saving dialog
+        commitPromise.finally(() => dialog.modal('hide')) // hide saving dialog
       })
-      .fail(error => reject(error))
-      .always(()=> workflow.stop())
+      .catch(error => reject(error))
+      .finally(()=> workflow.stop())
   })
 };
 
@@ -2189,19 +2186,21 @@ proto.showChangesToResult = async function() {
  *
  * @returns {*}
  */
-proto.commit = function({
+proto.commit = async function({
   toolbox,
   commitItems,
   modal = true,
   close = false,
 } = {}) {
-  const d             = $.Deferred();
-  const commitPromise = d.promise();
-  const {
+
+  let resolve, reject;
+
+  const prom = new Promise((res, rej) => { resolve = res; reject = rej; });
+  let {
     cb = {},
     messages = {
-      success:{},
-      error:{}
+      success: {},
+      error: {}
     },
   }                   = this.saveConfig;
   toolbox             = toolbox || this.state.toolboxselected;
@@ -2232,142 +2231,107 @@ proto.commit = function({
       autoclose: true,
       closable: false
     });
-
-    d.resolve(toolbox);
-
-    return d.promise();
+    return toolbox;
   }
 
-  const promise = modal ? this.showCommitModalWindow({
-    layer,
-    commitItems,
-    close,
-    commitPromise // add a commit promise
-  }) : Promise.resolve(messages);
+  try {
 
-  promise
-    .then(messages => {
-      //check if application is online
-      if (ApplicationState.online) {
-        session.commit({items: items || commitItems})
-          .then((commitItems, response) => {
-            //@TODO need to double check why ApplicationState.online is repeated
-            if (ApplicationState.online) {
-              //if result is true
-              if (response.result) {
-                const {autoclose=true, message="plugins.editing.messages.saved"} = messages.success;
-                if (messages && messages.success) {
-                  GUI.showUserMessage({
-                    type: 'success',
-                    message,
-                    duration: 3000,
-                    autoclose
-                  });
-                }
+    messages = await (
+      modal
+        ? this.showCommitModalWindow({ layer, commitItems, close, commitPromise: prom /* add a commit promise */ })
+        : Promise.resolve(messages)
+    );
 
-                //In case of vector layer need to refresh map commit changes
-                if (layerType === Layer.LayerTypes.VECTOR) {
-                  this._mapService.refreshMap({force: true});
-                }
-
-                if (cb.done && cb.done instanceof Function) {
-                  cb.done(toolbox);
-                }
-
-                //add items when close editing to results to show changes
-                this.addLayersFeaturesToShowOnResult({
-                  layerId: toolbox.getId(),
-                  fids: [
-                    ...response.response.new.map(({id}) => id),
-                    ...commitItems.update.map(update => update.id)
-                  ]
-                });
-                //@since 3.7.2
-                //it is useful when click on save all disk icon in editing forma for relation purpose
-                this.emit('commit', response.response);
-
-              } else { //result is false. An error occurs
-                const parser = new serverErrorParser({
-                  error: response.errors
-                });
-
-                const errorMessage = parser.parse({
-                  type: 'String'
-                });
-
-                const {autoclose=false, message} = messages.error;
-
-                GUI.showUserMessage({
-                  type: 'alert',
-                  message: message || errorMessage,
-                  textMessage: !message,
-                  autoclose
-                });
-
-                if (cb.error && cb.error instanceof Function) {
-                  cb.error(toolbox, message || errorMessage);
-                }
-              }
-
-              d.resolve(toolbox);
-            }
-          })
-          .fail((error={}) => {
-            //parse error server
-            const parser = new serverErrorParser({
-              error: error.errors ? error.errors : error
-            });
-            //set type string
-            const errorMessage = parser.parse({
-              type: 'String'
-            });
-
-            const {autoclose = false, message} = messages.error;
-
-            GUI.showUserMessage({
-              type: 'alert',
-              message: message || errorMessage,
-              textMessage: !message,
-              autoclose
-            });
-
-            d.reject(toolbox);
-
-            if (cb.error && cb.error instanceof Function) {
-              cb.error(toolbox, message || errorMessage);
-            }
-          });
-      //case offline
-    } else {
-      this.saveOfflineItem({
-        data: {
-          [session.getId()]: commitItems
-        },
-        id: OFFLINE_ITEMS.CHANGES
-      })
-        .then(() =>{
-          GUI.showUserMessage({
-            type: 'success',
-            message: "plugins.editing.messages.saved_local",
-            autoclose: true
-          });
+    // application is offline
+    if (!ApplicationState.online) {
+      this
+        .saveOfflineItem({
+          data: { [session.getId()]: commitItems },
+          id: OFFLINE_ITEMS.CHANGES
+        })
+        .then(() => {
+          GUI.showUserMessage({ type: 'success', message: "plugins.editing.messages.saved_local", autoclose: true });
           session.clearHistory();
-          d.resolve(toolbox);
+          resolve(toolbox);
         })
         .catch(error => {
-          GUI.showUserMessage({
-            type: 'alert',
-            message: error,
-            textMessage: true,
-          });
-
-          d.reject(toolbox);
+          GUI.showUserMessage({ type: 'alert', message: error, textMessage: true });
+          reject(toolbox);
         })
       }
-    })
-    .catch(() => {
-      d.reject(toolbox)
-  });
+
+    // application is online
+    if (ApplicationState.online) {
+      session
+        .commit({items: items || commitItems})
+        .then((commitItems, response) => {
+
+          // @TODO need to double check why ApplicationState.online is repeated
+          if (!ApplicationState.online) {
+            return;
+          }
+
+          const {
+            autoclose = true,
+            message   = "plugins.editing.messages.saved",
+          } = response.result ? messages.success : {};
+
+          // error message
+          const error = !response.result && (messages.error.message || (new serverErrorParser({ error: response.errors })).parse({ type: 'String' }));
+
+          if (response.result && messages && messages.success) {
+            GUI.showUserMessage({ type: 'success', message, duration: 3000, autoclose });
+          }
+
+          // vector layer → refresh map commit changes
+          if (response.result && layerType === Layer.LayerTypes.VECTOR) {
+            this._mapService.refreshMap({force: true});
+          }
+
+          if (response.result && cb.done && cb.done instanceof Function) {
+            cb.done(toolbox);
+          }
+
+          if (response.result) {
+            //add items when close editing to results to show changes
+            this.addLayersFeaturesToShowOnResult({
+              layerId: toolbox.getId(),
+              fids: [
+                ...response.response.new.map(r => r.id),
+                ...commitItems.update.map(u => u.id)
+              ]
+            });
+            //@since 3.7.2
+            // it is useful when click on save all disk icon in editing forma for relation purpose
+            this.emit('commit', response.response);
+          }
+
+          // result is false. An error occurs
+          if (!response.result) {
+            const { autoclose = false } = messages.error;
+            GUI.showUserMessage({ type: 'alert', message: error, textMessage: !messages.error.message, autoclose });
+          }
+
+          if (!response.result && cb.error instanceof Function) {
+            cb.error(toolbox, error);
+          }
+
+          resolve(toolbox);
+        })
+        .catch((e = {}) => {
+          // parse server error as string
+          const error = messages.error.message || (new serverErrorParser({ error: e.errors ? e.errors : e })).parse({ type: 'String' });
+          const { autoclose = false, } = messages.error;
+          GUI.showUserMessage({ type: 'alert', message: error, textMessage: !messages.error.message, autoclose });
+          reject(toolbox);
+          if (cb.error && cb.error instanceof Function) {
+            cb.error(toolbox, error);
+          }
+        });
+    }
+  } catch(e) {
+    _reject(toolbox);
+  }
 
   return commitPromise;
 };

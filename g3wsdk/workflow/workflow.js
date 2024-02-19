@@ -57,7 +57,12 @@ function Workflow(options = {}) {
   /**
    * @FIXME add description
    */
-  this._promise = null;
+  this._resPromise = undefined;
+
+  /**
+   * @FIXME add description
+   */
+  this._rejPromise = undefined;
 
   /**
    * Mandatory inputs to work with editing
@@ -324,8 +329,8 @@ proto._isThereUserMessaggeSteps = function() {
  * @FIXME add description
  */
 proto.reject  = function() {
-  if (this._promise) {
-    this._promise.reject();
+  if (this._rejPromise) {
+    this._rejPromise.reject();
   }
 };
 
@@ -333,8 +338,8 @@ proto.reject  = function() {
  * @FIXME add description
  */
 proto.resolve = function() {
-  if (this._promise) {
-    this._promise.resolve();
+  if (this._resPromise) {
+    this._resPromise.resolve();
   }
 };
 
@@ -349,67 +354,67 @@ proto.resolve = function() {
  * @fires start
  */
 proto.start = function(options = {}) {
-  const d       = $.Deferred();
+  return new Promise((res, rej) => {
+    this._rejPromise = rej;
+    this._resPromise = res;
 
-  this._promise = d;
-  this._inputs  = options.inputs;
-  this._context = options.context || {};
-
-  const isChild = this._context.isChild || false;
+    this._inputs  = options.inputs;
+    this._context = options.context || {};
   
-  // stop child when a workflow is running 
-  if (
-      !isChild
-      && WorkflowsStack.getLength()
-      && WorkflowsStack.getCurrent() !== this
-  ) {
-    WorkflowsStack.getCurrent().addChild(this)
-  }
-
-  this._stackIndex = WorkflowsStack.push(this);
-  this._flow       = options.flow || this._flow;
-  this._steps      = options.steps || this._steps;
-
-  const showUserMessage = this._isThereUserMessaggeSteps();
-
-  if (showUserMessage) {
-    GUI.showUserMessage({
-      title: 'plugins.editing.workflow.title.steps',
-      type: 'tool',
-      position: 'left',
-      size: 'small',
-      closable: false,
-      hooks: {
-        body: UserMessageSteps({ steps: this._userMessageSteps })
-      }
-    });
-  }
-
-  //start flow of worflow
-  this._flow
-    .start(this)
-    .then(outputs => {
-      if (showUserMessage) {
-        setTimeout(() => { this.clearUserMessagesSteps(); d.resolve(outputs); }, 500);
-      } else {
-        d.resolve(outputs);
-      }
-    })
-    .fail(error => {
-      if (showUserMessage) {
-        this.clearUserMessagesSteps();
-      }
-      d.reject(error);
-    })
-    .always(() => {
-      if (this.runOnce) {
-        this.stop();
-      }
-    });
-
-  this.emit('start');
-
-  return d.promise();
+    const isChild = this._context.isChild || false;
+    
+    // stop child when a workflow is running 
+    if (
+        !isChild
+        && WorkflowsStack.getLength()
+        && WorkflowsStack.getCurrent() !== this
+    ) {
+      WorkflowsStack.getCurrent().addChild(this)
+    }
+  
+    this._stackIndex = WorkflowsStack.push(this);
+    this._flow       = options.flow || this._flow;
+    this._steps      = options.steps || this._steps;
+  
+    const showUserMessage = this._isThereUserMessaggeSteps();
+  
+    if (showUserMessage) {
+      GUI.showUserMessage({
+        title: 'plugins.editing.workflow.title.steps',
+        type: 'tool',
+        position: 'left',
+        size: 'small',
+        closable: false,
+        hooks: {
+          body: UserMessageSteps({ steps: this._userMessageSteps })
+        }
+      });
+    }
+  
+    //start flow of worflow
+    this._flow
+      .start(this)
+      .then(outputs => {
+        if (showUserMessage) {
+          setTimeout(() => { this.clearUserMessagesSteps(); res(outputs); }, 500);
+        } else {
+          res(outputs);
+        }
+      })
+      .catch(e => {
+        if (showUserMessage) {
+          this.clearUserMessagesSteps();
+        }
+        rej(e);
+      })
+      .finally(() => {
+        if (this.runOnce) {
+          this.stop();
+        }
+      });
+  
+    this.emit('start');
+  });
 };
 
 /**
@@ -417,26 +422,23 @@ proto.start = function(options = {}) {
  * 
  * @fires stop
  */
+// stop workflow during flow
 proto.stop = function() {
-  const d = $.Deferred();
-
-  this._promise = null;
-
-  this
-    ._stopChild()                                   // stop child workflow
-    .always(() => {                                 // ensure that child is always removed
-      this.removeChild();
-      WorkflowsStack.removeAt(this.getStackIndex());
-      this._flow
-        .stop()
-        .then(d.resolve)
-        .fail(d.reject)
-        .always(() => this.clearMessages())
-  });
-  
-  this.emit('stop');
-  
-  return d.promise();
+  // reset promise
+  this._rejPromise = undefined;
+  this._resPromise = undefined;
+  return new Promise((resolve, reject) => {
+    // stop child workflow
+    this._stopChild()
+      // in every case remove child
+      .finally(() => {
+        this.removeChild();
+        WorkflowsStack.removeAt(this.getStackIndex());
+        // call stop flow
+        this._flow.stop().then(resolve).catch(reject).finally(() => this.clearMessages())
+      });
+    this.emit('stop');
+  })
 };
 
 /**

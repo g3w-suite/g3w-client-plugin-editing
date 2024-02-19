@@ -142,12 +142,11 @@
        */
       commit(toolboxId) {
         this.saving = true;
-        this.$options.service
-          .commit({
-            toolbox: this.$options.service.getToolBoxById(toolboxId),
-            modal: false,
-          })
-          .always(() => this.saving = false);
+        this.$options.service.commit({
+          toolbox: this.$options.service.getToolBoxById(toolboxId),
+          modal: false,
+        })
+        .finally(() => this.saving = false);
       },
 
       saveAll() {},
@@ -159,8 +158,7 @@
         const toolbox = this._getToolBoxById(toolboxId);
         if (ApplicationState.online && toolbox.canEdit()) {
           //check if a dependency layer (in relation) has some changes not commietd
-          const dirtyId = toolbox.getDependencies()
-            .find(id => this._getToolBoxById(id).isDirty());
+          const dirtyId = toolbox.getDependencies().find(id => this._getToolBoxById(id).isDirty());
           if (dirtyId) {
             //if there is a layer with not saved/committed changes ask before get start toolbox
             //otherwise changes made on relation layers are not sync with current database state
@@ -178,9 +176,7 @@
       stopToolBox(toolboxId) {
         const toolbox = this._getToolBoxById(toolboxId);
         if (toolbox.state.editing.history.commit) {
-          this.$options.service
-            .commit()
-            .always(() => toolbox.stop());
+          this.$options.service.commit().finally(() => toolbox.stop());
         } else {
           toolbox.stop();
         }

@@ -53,35 +53,34 @@ const proto = History.prototype;
  * @param uniqueId
  * @param items
  */
-proto.add = function(uniqueId, items) {
-  //state object is an array of feature/features changed in a transaction
-  const d = $.Deferred();
+proto.add = async function(uniqueId, items) {
+  const is_null = null === this._current;
+
+  // state object is an array of feature/features changed in a transaction
   // before insert an item into the history
   // check if are at last state step (no redo was done)
   // If we are in the middle of undo, delete all changes
   // in the history from the current "state" so if it
   // can create a new history
-  if (this._current === null) {
-    this._states = [{
-      id: uniqueId,
-      items
-    }]
-  } else {
-    if (this._states.length > 0 && this._current < this.getLastState().id) {
-      this._states = this._states.filter(state => state.id <= this._current);
-    }
-    this._states.push({
-      id: uniqueId,
-      items
-    });
+
+  if (is_null) {
+    this._states = [{ id: uniqueId, items }];
+  }
+
+  if (!is_null && this._states.length > 0 && this._current < this.getLastState().id) {
+    this._states = this._states.filter(state => state.id <= this._current);
+  }
+
+  if (!is_null) {
+    this._states.push({ id: uniqueId, items });
   }
 
   this._current = uniqueId;
   this._setState();
+
   // return unique id key
   // it can be used in save relation
-  d.resolve(uniqueId);
-  return d.promise();
+  return uniqueId;
 };
 
 /**

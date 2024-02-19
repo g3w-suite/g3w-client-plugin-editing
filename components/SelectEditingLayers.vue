@@ -52,9 +52,7 @@
             toolbox.setShow(has_layers ? is_selected : true);
 
             if (has_layers && !is_selected && is_commit) {
-              EditingService
-                .commit({ toolbox })
-                .always(() => toolbox.stop());
+              EditingService.commit({ toolbox }).finally(() => toolbox.stop());
             }
             if (has_layers && !is_selected && !is_commit) {
               toolbox.stop();

@@ -88,9 +88,9 @@
           )
           .then(() => {
             EditingService.commit({ modal: false })
-            .then(()   => { WorkflowsStack._workflows.forEach(w => w.getContext().service.setUpdate(false, { force: false })); })
-            .fail((err)   => console.warn(err))
-            .always(() => { this.loading = false });
+            .then(()    => { WorkflowsStack._workflows.forEach(w => w.getContext().service.setUpdate(false, { force: false })); })
+            .catch(e    => console.warn(e))
+            .finally(() => { this.loading = false });
         })
       },
 

@@ -208,8 +208,8 @@ proto.copyFeature = function(uid) {
         this.state.features.push(newFeature);
         resolve(newFeature)
       })
-      .fail(reject)
-      .always(() => {
+      .catch(reject)
+      .finally(() => {
         this._workflow.stop();
         /** @TODO check input.features that grow in number */
         console.log('here we are')
@@ -254,8 +254,8 @@ proto.editFeature = function(uid) {
           });
       });
     })
-    .fail(console.warn)
-    .always(() =>  this._workflow.stop())
+    .catch(console.warn)
+    .finally(() =>  this._workflow.stop())
 };
 
 /**
