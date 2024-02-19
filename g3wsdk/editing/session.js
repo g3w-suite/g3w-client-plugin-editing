@@ -329,7 +329,7 @@ proto.rollback = async function(changes) {
   if (changes) {
     return this._editor.rollback(changes);
   }
-  const changes = this._filterChanges();
+  changes = this._filterChanges();
   await this._editor.rollback(changes.own);
   for (const id in changes.dependencies) {
     SessionsRegistry.getSession(id).rollback(changes.dependencies[id]);
