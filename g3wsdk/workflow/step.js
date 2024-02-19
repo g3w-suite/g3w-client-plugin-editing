@@ -121,30 +121,28 @@ proto.registerEscKeyEvent = function(callback) {
  * 
  * @fires run
  */ 
-proto.run = function(inputs, context, queques) {
-  const d = $.Deferred();
-
+proto.run = async function(inputs, context, queques) {
   this.emit('run', { inputs, context });
 
-  if (this._task) {
-    try {
-      this.state.running = true;                // change state to running
-      this._task.setInputs(inputs);
-      this._task.setContext(context);
-      this._task
-        .run(inputs, context, queques)
-        .then(outputs => { this.stop(); d.resolve(outputs); })
-        .fail(err     => { this.stop(); d.reject(err); });
-    } catch(err) {
-      console.warn(err)
-      this.state.error = err;
-      this.state.error = 'Problem ..';
-      this.stop();
-      d.reject(err);
-    }
+  // skip when ..
+  if (!this._task) {
+    return;
   }
 
-  return d.promise();
+  try {
+    this.state.running = true;                // change state to running
+    this._task.setInputs(inputs);
+    this._task.setContext(context);
+    const out = await this._task.run(inputs, context, queques);
+    this.stop();
+    return out;
+  } catch(e) {
+    console.warn(e)
+    this.state.error = e;
+    this.state.error = 'Problem ..';
+    this.stop();
+    return Promise.reject(e);
+  }
 };
 
 /**

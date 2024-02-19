@@ -112,36 +112,21 @@ proto.unregister = function() {
 /**
  * @param options
  */
-proto._start = function(options={}) {
-  const d = $.Deferred();
-  this._editor.start(options)
-    .then(features => {
-      this.state.started = true;
-      d.resolve(features);
-    })
-    .fail(err => {
-      d.reject(err);
-    });
-  return d.promise();
+proto._start = async function(options={}) {
+  const features = await this._editor.start(options);
+  this.state.started = true;
+  return features;
 };
 
 //method to getFeature from server by editor
-proto._getFeatures = function(options={}) {
-  const d = $.Deferred();
-  if (!this._allfeatures) {
-    this._allfeatures = !options.filter;
-    this._editor.getFeatures(options)
-      .then(promise => {
-        promise
-          .then(features => {
-            this.state.getfeatures = true;
-            d.resolve(features);
-          })
-          .fail(err => d.reject(err));
-      });
-  } else d.resolve([]);
-
-  return d.promise();
+proto._getFeatures = async function(options={}) {
+  if (this._allfeatures) {
+    return [];
+  }
+  this._allfeatures = !options.filter;
+  const features = await (await this._editor.getFeatures(options));
+  this.state.getfeatures = true;
+  return features;
 };
 
 /**
@@ -170,23 +155,15 @@ proto.setEditor = function(editor) {
  * 
  * @param options
  */
-proto.save = function(options={}) {
-  //fill history
-  const d = $.Deferred();
-  // add temporary modify to history
-  if (this._temporarychanges.length) {
-    const uniqueId = options.id || Date.now();
-    this._history.add(uniqueId, this._temporarychanges)
-      .then(() => {
-        // clear to temporary changes
-        this._temporarychanges = [];
-        // resolve if unique id
-        d.resolve(uniqueId);
-      });
-  } else {
-    d.resolve(null);
+proto.save = async function(options={}) {
+  if (!this._temporarychanges.length) {
+    return null;
   }
-  return d.promise();
+  // add temporary modify to history
+  const uniqueId = options.id || Date.now();
+  await this._history.add(uniqueId, this._temporarychanges); // fill history
+  this._temporarychanges = [];                               // clear to temporary changes
+  return uniqueId;                                           // resolve if unique id
 };
 
 /**
@@ -315,15 +292,9 @@ proto.push = function(New, Old) {
 /**
  * Revert (cancel) all changes in history and clean session
  */
-proto.revert = function() {
-  const d = $.Deferred();
-  this._editor
-    .revert()
-    .then(() => {
-      this._history.clear();
-      d.resolve();
-    });
-  return d.promise();
+proto.revert = async function() {
+  await this._editor.revert();
+  this._history.clear();
 };
 
 /**
@@ -354,26 +325,17 @@ proto._filterChanges = function() {
 /**
  * @param changes
  */
-proto.rollback = function(changes) {
+proto.rollback = async function(changes) {
   if (changes) {
     return this._editor.rollback(changes);
-  } else {
-    const d = $.Deferred();
-    const changes = this._filterChanges();
-    this._editor
-      .rollback(changes.own)
-      .then(() => {
-        const {dependencies} = changes;
-        for (const id in dependencies) {
-          SessionsRegistry.getSession(id).rollback(dependencies[id]);
-        }
-        d.resolve(dependencies);
-      });
-
-    this._temporarychanges = [];
-
-    return d.promise();
   }
+  const changes = this._filterChanges();
+  await this._editor.rollback(changes.own);
+  for (const id in changes.dependencies) {
+    SessionsRegistry.getSession(id).rollback(changes.dependencies[id]);
+  }
+  this._temporarychanges = [];
+  return changes.dependencies;
 };
 
 /**
@@ -571,13 +533,11 @@ proto.set3DGeometryType = function({
  * @param opts.items
  * @param opts.relations
  */
-proto.commit = function({
+proto.commit = async function({
   ids = null,
   items,
   relations = true
 } = {}) {
-
-  const d = $.Deferred();
 
   let commit; // committed items
 
@@ -585,7 +545,7 @@ proto.commit = function({
   if (ids) {
     commit = this._history.commit(ids);
     this._history.clear(ids);
-    return d.promise();
+    return;
   }
 
   commit = items || this._serializeCommit(this._history.commit());
@@ -594,40 +554,31 @@ proto.commit = function({
     commit.relations = {};
   }
 
-  this._editor
-    .commit(commit)
-    .then(response => {
+  const response = await this._editor.commit(commit);
 
-      // skip when response is null or undefined and response.result is false
-      if (!(response && response.result)) {
-        d.reject(response);
-        return;
-      }
-      
-      const { new_relations = {} } = response.response; // check if new relations are saved on server
+  // skip when response is null or undefined and response.result is false
+  if (!(response && response.result)) {
+    return Promise.reject(response);
+  }
+  
+  const { new_relations = {} } = response.response; // check if new relations are saved on server
 
-      // sync server data with local data
-      for (const id in new_relations) {
-        SessionsRegistry
-          .getSession(id)               // get session of relation by id
-          .getEditor()
-          .applyCommitResponse({        // apply commit response to current editing relation layer
-            response: new_relations[id],
-            result: true
-          });
-      }
+  // sync server data with local data
+  for (const id in new_relations) {
+    SessionsRegistry
+      .getSession(id)               // get session of relation by id
+      .getEditor()
+      .applyCommitResponse({        // apply commit response to current editing relation layer
+        response: new_relations[id],
+        result: true
+      });
+  }
 
-      this._history.clear();            // clear history
+  this._history.clear();            // clear history
 
-      this.saveChangesOnServer(commit); // dispatch setter event.
+  this.saveChangesOnServer(commit); // dispatch setter event.
 
-      d.resolve(commit, response);
-
-    })
-    .fail(err => d.reject(err));
-
-  return d.promise();
-
+  return [commit, response];
 };
 
 /**
@@ -640,19 +591,11 @@ proto._canStop = function() {
 /**
  * stop session
  */
-proto._stop = function() {
-  const d = $.Deferred();
+proto._stop = async function() {
   if (this._canStop()) {
-    this._editor.stop()
-      .then(() => {
-        this.clear();
-        d.resolve();
-      })
-      .fail(err => d.reject(err));
-  } else {
-    d.resolve();
+    await this._editor.stop();
+    this.clear();
   }
-  return d.promise();
 };
 
 /**

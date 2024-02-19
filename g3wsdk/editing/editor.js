@@ -190,37 +190,20 @@ proto._doGetFeaturesRequest = function(options={}) {
 /**
  * get features from server method
  */
-proto._getFeatures = function(options={}) {
-  const d         = $.Deferred();
-  const doRequest = this._doGetFeaturesRequest(options);
-  if (!doRequest) {
-    d.resolve();
-  } else {
-    /** @TODO simplfy nested promises */
-    this._layer
-      .getFeatures(options)
-      .then(p => {
-        p
-          .then(features => {
-            this._addFeaturesFromServer(features);
-            this._allfeatures = !options.filter;
-            return d.resolve(features);
-          })
-          .fail(d.reject)
-      })
-      .fail(d.reject);
+proto._getFeatures = async function(options={}) {
+  if (this._doGetFeaturesRequest(options)) {
+    const features = await (await this._layer.getFeatures(options));
+    this._addFeaturesFromServer(features);
+    this._allfeatures = !options.filter;
+    return features;
   }
-  return d.promise();
 };
 
 /**
  * revert (cancel) all changes in history and clean session
  */
-proto.revert = function() {
-  const d = $.Deferred();
+proto.revert = async function() {
   this._featuresstore.setFeatures(this._cloneFeatures(this._layer.readFeatures()));
-  d.resolve();
-  return d.promise();
 };
 
 /**
@@ -230,11 +213,8 @@ proto.revert = function() {
  * 
  * @returns {*}
  */
-proto.rollback = function(changes = []) {
-  const d = $.Deferred();
+proto.rollback = async function(changes = []) {
   this._applyChanges(changes, true);
-  d.resolve();
-  return d.promise()
 };
 
 /**
@@ -361,10 +341,7 @@ proto.getLockIds = function() {
  *
  * @returns jQuery promise
  */
-proto.commit = function(commit) {
-
-  const d = $.Deferred();
-
+proto.commit = async function(commit) {
   let relations = [];
 
   // check if there are commit relations binded to new feature
@@ -387,40 +364,20 @@ proto.commit = function(commit) {
         });
   }
 
-  /** @TODO simplfy nested promises */
-  this._layer
-    .commit(commit)
-    .then(p => {
-      p
-        .then(r => { this.applyCommitResponse(r, relations); d.resolve(r); })
-        .fail(e => d.reject(e))
-    })
-    .fail(err => d.reject(err));
+  const r = await (await this._layer.commit(commit));
 
-  return d.promise();
+  this.applyCommitResponse(r, relations);
+
+  return r;
 };
 
 /**
  * start editing
  */
-proto.start = function(options = {}) {
-  const d = $.Deferred();
-
-  /** @TODO simplfy nested promises */
-  this
-    .getFeatures(options)       // load layer features based on filter type
-    .then(p => {
-      p
-        .then(features => {
-          d.resolve(features);  // features are already inside featuresstore
-          this._started = true; // if all ok set to started
-        })
-        .fail(d.reject)
-
-    })
-    .fail(d.reject);
-
-  return d.promise()
+proto.start = async function(options = {}) {
+  const features = await (await this.getFeatures(options)); // load layer features based on filter type
+  this._started = true;                                     // if all ok set to started
+  return features;                                          // features are already inside featuresstore
 };
 
 /**
@@ -468,13 +425,10 @@ proto.readEditingFeatures = function() {
 /**
  * stop editor
  */
-proto.stop = function() {
-  const d = $.Deferred();
-  this._layer
-    .unlock()
-    .then(response => { this.clear(); d.resolve(response); })
-    .fail(d.reject);
-  return d.promise();
+proto.stop = async function() {
+  const response = await this._layer.unlock();
+  this.clear(); 
+  return response;
 };
 
 /**
