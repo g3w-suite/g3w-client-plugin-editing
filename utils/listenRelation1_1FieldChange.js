@@ -1,3 +1,4 @@
+import { VM }                               from '../eventbus';
 import { getRelation1_1ChildFeature }       from './getRelation1_1ChildFeature';
 import { getChildFieldNameFromRelation1_1 } from './getChildFieldNameFromRelation1_1';
 
