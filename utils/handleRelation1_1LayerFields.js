@@ -32,6 +32,7 @@ export async function handleRelation1_1LayerFields({
       return new Promise(async (resolve) => {
         // skip when layer is not a father layer (1:1 relation)
         if (layerId !== relation.getFather()) {
+          resolve();
           return;
         }
         const fatherField = relation.getFatherField()[0];
@@ -39,6 +40,7 @@ export async function handleRelation1_1LayerFields({
 
         //no set father field value. No set
         if (null === value) {
+          resolve();
           return
         }
 
