@@ -655,6 +655,7 @@ proto.handleRelation1_1LayerFields = async function({
       return new Promise(async (resolve) => {
         // skip when layer is not a father layer (1:1 relation)
         if (layerId !== relation.getFather()) {
+          resolve();
           return;
         }
         const fatherField = relation.getFatherField()[0];
@@ -662,6 +663,7 @@ proto.handleRelation1_1LayerFields = async function({
 
         //no set father field value. No set
         if (null === value) {
+          resolve();
           return
         }
 
