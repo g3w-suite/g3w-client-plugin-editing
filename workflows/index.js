@@ -1,4 +1,3 @@
-import { VM }                                           from '../eventbus';
 import { cloneFeature }                                 from '../utils/cloneFeature';
 import { areCoordinatesEqual }                          from '../utils/areCoordinatesEqual';
 import { evaluateExpressionFields }                     from '../utils/evaluateExpressionFields';
