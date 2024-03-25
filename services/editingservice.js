@@ -2345,7 +2345,7 @@ proto.commit = function({
         },
         id: OFFLINE_ITEMS.CHANGES
       })
-        .then(() =>{
+        .then(() => {
           GUI.showUserMessage({
             type: 'success',
             message: "plugins.editing.messages.saved_local",
