@@ -164,7 +164,7 @@
           if (dirtyId) {
             //if there is a layer with not saved/committed changes ask before get start toolbox
             //otherwise changes made on relation layers are not sync with current database state
-            //example Join 1:1 fields
+            //example Joins 1:1 fields
             try      { await this.$options.service.commitDirtyToolBoxes(dirtyId); }
             catch(e) { console.warn(e); }
           }
@@ -247,7 +247,7 @@
           selected.clearMessage();
         }
 
-        // set current selected toolbox to true
+        // set the current selected toolbox to true
         toolbox.setSelected(true);
 
         this.state.toolboxselected = toolbox;
