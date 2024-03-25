@@ -114,7 +114,8 @@
 
     data() {
       return {
-        saving: false, // whether to show loading bar while committing to server (click on save disk icon)  
+        saving: false, // whether to show loading bar while committing to server (click on save disk icon)
+        layersInEditing: 0, //@since 3.8.0 Number of layers in editing
       };
     },
 
@@ -168,7 +169,9 @@
             try      { await this.$options.service.commitDirtyToolBoxes(dirtyId); }
             catch(e) { console.warn(e); }
           }
-          toolbox.start();
+          toolbox
+            .start()
+            .then(() => this.layersInEditing++)
         }
       },
 
@@ -182,7 +185,9 @@
             .commit()
             .always(() => toolbox.stop());
         } else {
-          toolbox.stop();
+          toolbox
+            .stop()
+            .then(() => this.layersInEditing--)
         }
       },
 
@@ -332,6 +337,13 @@
       canCommit(bool) {
         this.$options.service.registerLeavePage(bool);
       },
+      /**
+       * @since 3.8.0
+       * @param { Number } n number of layer in editing
+       */
+      layersInEditing(n) {
+        document.getElementsByClassName('close-pane-button')[0].classList[0 === n ? 'remove' : 'add']('g3w-disabled');
+      }
 
     },
 
