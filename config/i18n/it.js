@@ -1,4 +1,7 @@
 export default {
+  close_editing_panel: {
+    message: "Uscire dall'editing per chiudere il form"
+  },
   errors: {
     no_layers: "Si è verificato un errore nel caricamento dei layers in editing.",
     some_layers: "Si è verificato un errore nel caricamento di alcuni layers in editing"
