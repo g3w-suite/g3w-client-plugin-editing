@@ -1,4 +1,7 @@
 export default  {
+  close_editing_panel: {
+    message: "To close editing form need to exit from editing layer"
+  },
   errors: {
     no_layers: "Avem o eroare. Straturile nu sunt editabile",
     some_layers: "Avem o eroare: Anumite straturi nu se pot edita"
