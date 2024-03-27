@@ -1,4 +1,7 @@
 export default {
+  close_editing_panel: {
+    message: "To close editing form need to exit from editing layer"
+  },
   errors: {
     no_layers: "Une erreur s'est produite lors du chargement des layers dans l'édition.",
     some_layers: "Une erreur s'est produite lors du chargement de certaines layers dans l'édition."

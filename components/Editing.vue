@@ -7,6 +7,8 @@
 
     <bar-loader :loading="saving"/>
 
+    <helpdiv v-if ="layersInEditing > 0" style="font-weight: bold" message="plugins.editing.close_editing_panel.message" />
+
     <!-- OFFLINE MESSAGE -->
     <div
       v-if  = "!appState.online"
