@@ -185,7 +185,7 @@
         if (toolbox.state.editing.history.commit) {
           this.$options.service
             .commit()
-            .always(() => toolbox.stop());
+            .always(() => toolbox.stop().then(() => this.layersInEditing--));
         } else {
           toolbox
             .stop()
