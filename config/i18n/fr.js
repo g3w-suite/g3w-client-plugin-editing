@@ -69,6 +69,7 @@ export default {
     steps: {
       select: 'Cliquer sur la fonctionnalité à sélectionner',
       draw_part: "Dessiner la nouvelle partie",
+      draw_geometry : "Draw geometry",
       merge: 'Sélectionner la fonction à introduire en fondu',
       selectPoint: "Cliquer sur la fonctionnalité pour la sélectionner",
       selectSHIFT: 'Sélectionner des fonctionnalités en maintenant la touche SHIFT enfoncée',

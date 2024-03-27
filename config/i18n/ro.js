@@ -69,6 +69,7 @@ export default  {
     steps: {
       select: 'Click pe entitate pentru a o selecta',
       draw_part: "Desenează o parte nouă",
+      draw_geometry : "Draw geometry",
       merge: 'Selectează partea de dizolvat',
       selectSHIFT: 'Selectează entități prin desen triunghi apăsând SHIFT',
       selectDrawBox: "Selectează entități desenând un dreptunghi prin două puncte opuse",

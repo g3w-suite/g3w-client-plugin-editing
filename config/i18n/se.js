@@ -69,6 +69,7 @@ export default {
     steps: {
       select: 'Välj egenskap',
       draw_part: "Rita ny del",
+      draw_geometry : "Draw geometry",
       merge: 'Välj egenskap att slå samman',
       selectSHIFT: 'Tryck SHIFT, om du vill välja objekt med hjälp av rektangel.',  //Tero 10.12.2020
       selectDrawBox: "Rita upp den rektangel inom vilken objekten väljs ", //Tero 10.12.2020

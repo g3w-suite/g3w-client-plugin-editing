@@ -70,6 +70,7 @@ export default {
     steps: {
       select: 'Clicca sulla feature da selezionare',
       draw_part: "Disegna la nuova parte",
+      draw_geometry : "Disegna la geometria",
       merge: 'Seleziona la feature su cui dissolvere',
       selectPoint: "Clicca sulla feature per selezionarla",
       selectSHIFT: 'Seleziona le features tenedo premuto il tasto SHIFT',

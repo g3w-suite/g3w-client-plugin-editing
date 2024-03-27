@@ -69,6 +69,7 @@ export default {
     steps: {
       select: 'Click on feature to select',
       draw_part: "Draw new part",
+      draw_geometry : "Draw geometry",
       merge: 'Select featurewhere dissolve',
       selectSHIFT: 'Select features drawing a rectangle pressing SHIFT',
       selectDrawBox: "Select features drawing a rectangle by two point of opposite corners",

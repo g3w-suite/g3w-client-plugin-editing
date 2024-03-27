@@ -300,6 +300,14 @@ proto.getOperator = function() {
 };
 
 /**
+ * @since 3.8.0
+ * @param op (workflow instance)
+ */
+proto.setOperator = function(op) {
+  this._op = op;
+};
+
+/**
  *
  * @returns {*}
  */
