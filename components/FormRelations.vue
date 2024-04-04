@@ -1,4 +1,4 @@
-<!-- ORIGINAL SOURCE: -->
+<!-- ORIGINAL SOURCE: @TODO check is it used -->
 <!-- form/components/relations/vue/relations.html@v3.4 -->
 <!-- form/components/relations/vue/relations.js@v3.4 -->
 

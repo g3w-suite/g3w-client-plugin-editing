@@ -3,7 +3,7 @@
 <!-- form/components/relation/vue/relation.js@v3.4 -->
 
 <template>
-    <div
+  <div
       v-disabled  = "loading"
       style = "margin-bottom: 5px;"
     >
@@ -76,12 +76,12 @@
         v-if  = "showAddVectorRelationTools"
         ref   = "relation_vector_tools"
         style = "
-display: flex;
-flex-direction: column;
-border: 2px solid #eee;
-background-color: #fff;
-padding: 10px;
-"
+          display: flex;
+          flex-direction: column;
+          border: 2px solid #eee;
+          background-color: #fff;
+          padding: 10px;
+        "
       >
         <!-- ADD VECTOR RELATION -->
         <div>
@@ -110,10 +110,10 @@ padding: 10px;
         <div
           id    = "g3w-select-editable-layers-content"
           style = "
-flex-grow: 1;
-display: flex;
-flex-direction: column
-"
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column
+          "
         >
 
           <div
@@ -429,14 +429,14 @@ flex-direction: column
        * @FIXME add description
        */
       isLink(field) {
-        return -1 !== ['photo', 'link'].indexOf(this.getFieldType(field));
+        return ['photo', 'link'].includes(this.getFieldType(field));
       },
 
       /**
        * @FIXME add description
        */
       getValue(value) {
-        if (value && toRawType(value) === 'Object') {
+        if (value && 'Object' === toRawType(value)) {
           value = value.value;
         } else if ('string' == typeof value && 0 === value.indexOf('_new_')) {
           value = null;
@@ -498,7 +498,7 @@ flex-direction: column
         this.destroyTable();     // destroy old table
         this.show = false;       // set show false to hide table
         await this.$nextTick();  // wait rerender
-        this.show = true;        // show with new relations array
+        this.show = true;        // show with a new relations array
         await this.$nextTick();
         this._createDataTable(); // recreate table
       },
@@ -506,16 +506,14 @@ flex-direction: column
       /**
       * @since 3.7.4
        * In case of commit new relation to server, update temporary relation.id (__new__) to
-       * saved id on server. It is called when new relation is saved on relation form after click on save all disk,
-       * and when save all disk is click on list of relation table
+       * saved id on server. It is called when new relation is saved on a relation form after click on save all disk,
+       * and when save all disks are click on a list of relation table
       */
       updateNewRelationId() {
         this._new_relations_ids
           .forEach(({clientid, id}) => {
             const newrelation = this.relations.find(r => clientid === r.id);
-            if (newrelation) {
-              newrelation.id = id;
-            }
+            if (newrelation) { newrelation.id = id }
           })
       }
 
@@ -556,7 +554,7 @@ flex-direction: column
        */
       relations(updatedrelations = []) {
         if (0 === updatedrelations.length) {
-          this.destroyTable(); // destroy table when there are no relations
+          this.destroyTable(); // destroy the table when there are no relations
         } else {
           this.updateNewRelationId();
           this.updateTable(); // update table when deleting / adding row relations
@@ -578,7 +576,7 @@ flex-direction: column
        * */
       this._new_relations_ids = [];
 
-      /** @since 3.7.2  Method to listen commit on server when press disk icon save all form*/
+      /** @since 3.7.2 Method to listen commit on server when press disk icon save all form*/
       this.listenNewCommitRelations = ({new_relations={}}) => {
         // in case of new relation saved on server
         if (new_relations[relationLayer.getId()] && Array.isArray(new_relations[relationLayer.getId()].new)) {
@@ -587,16 +585,14 @@ flex-direction: column
             ...new_relations[relationLayer.getId()].new.map(({clientid, id}) => ({clientid, id}))
           ]
           //when component is active (show) need to update
-          if (this.active) {
-            this.updateNewRelationId();
-          }
+          if (this.active) { this.updateNewRelationId(); }
         }
       };
 
       /** @since 3.7.2 Listen commit whe is click on save all button disk icon*/
       EditingService.on('commit', this.listenNewCommitRelations);
 
-      this.isVectorRelation = relationLayer.getType() === Layer.LayerTypes.VECTOR;
+      this.isVectorRelation = Layer.LayerTypes.VECTOR === relationLayer.getType();
 
       // vector relation --> get all layers with same geometry
       if (this.isVectorRelation) {

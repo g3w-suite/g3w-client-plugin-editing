@@ -93,7 +93,7 @@
           .then(() => {
             EditingService.commit({ modal: false })
             .then(()   => { WorkflowsStack._workflows.forEach(w => w.getContext().service.setUpdate(false, { force: false })); })
-            .fail((err)   => console.warn(err))
+            .fail((e)   => console.warn(e))
             .always(() => { this.loading = false });
         })
       },
