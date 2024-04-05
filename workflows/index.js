@@ -1235,9 +1235,6 @@ export class ModifyGeometryVertexStep extends EditingTask {
     const layerId       = originalLayer.getId();
     const feature       = this._feature = inputs.features[0];
     this._originalStyle = editingLayer.getStyle();
-
-    setAndUnsetSelectedFeaturesStyle({ promise: this.promise, inputs, style: this.selectStyle });
-
     this.deleteVertexKey;
     const style = function() {
       const image = new ol.style.Circle({
@@ -1249,8 +1246,14 @@ export class ModifyGeometryVertexStep extends EditingTask {
         new ol.style.Style({
           image,
           geometry(feature) {
-            const coordinates = feature.getGeometry().getCoordinates()[0];
-            return new ol.geom.MultiPoint(coordinates);
+            return new ol
+              .geom
+              .MultiPoint(
+                ( // in the case of multipolygon geometry
+                  Geometry.isPolygonGeometryType(originalLayer.getGeometryType()) &&
+                  Geometry.isMultiGeometry(originalLayer.getGeometryType())
+                ) ? feature.getGeometry().getCoordinates()[0][0] : feature.getGeometry().getCoordinates()[0]
+              )
           }
         }),
         new ol.style.Style({
@@ -1290,10 +1293,11 @@ export class ModifyGeometryVertexStep extends EditingTask {
         });
         /**
          *
-         * end of evaluate
+         * end of evaluating
          */
       }
     });
+
     return d.promise();
   }
 
