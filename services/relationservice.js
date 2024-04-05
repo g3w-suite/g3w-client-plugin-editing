@@ -9,7 +9,7 @@ import {
   AddFeatureStep,
   ModifyGeometryVertexStep,
   MoveFeatureStep,
-} from '../workflows';
+}                          from '../workflows';
 
 const { GUI }            = g3wsdk.gui;
 const { tPlugin:t }      = g3wsdk.core.i18n;
