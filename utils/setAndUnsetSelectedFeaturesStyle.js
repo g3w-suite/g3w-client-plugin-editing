@@ -10,8 +10,10 @@ const { Layer }          = g3wsdk.core.layer;
  * reset original style when workflow (tool) is done.
  * 
  * @param promise jQuery promise
+ * @param { Object } inputs
+ * @param { ol.style.Style }  style
  */
-export function setAndUnsetSelectedFeaturesStyle({ promise, inputs } = {}) {
+export function setAndUnsetSelectedFeaturesStyle({ promise, inputs, style } = {}) {
   
   /** @FIXME temporary add in order to fix issue on pending promise (but which issue ?) */
   const {
@@ -26,7 +28,7 @@ export function setAndUnsetSelectedFeaturesStyle({ promise, inputs } = {}) {
    *       need to wait.
    */
   const selectOriginalStyleHandle = () => {
-    const originalStyle = setFeaturesSelectedStyle(features);
+    const originalStyle = setFeaturesSelectedStyle(features, style);
     promise.always(() => { features.flat().forEach((feature => feature.setStyle(originalStyle))) });
   };
 
@@ -35,7 +37,7 @@ export function setAndUnsetSelectedFeaturesStyle({ promise, inputs } = {}) {
 
   if (is_vector && is_single) {
     setTimeout(() => { selectOriginalStyleHandle(); });
-  } else if(is_vector) {
+  } else if (is_vector) {
     selectOriginalStyleHandle();
   }
-};
+}

@@ -184,7 +184,7 @@ export class AddFeatureStep extends EditingTask {
     }
 
     /** @since g3w-client-plugin-editing@v3.8.0 */
-    setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise, inputs });
+    setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise, inputs, style: this.selectStyle });
 
     const originalGeometryType = originalLayer.getEditingGeometryType();
 
@@ -454,7 +454,7 @@ export class ConfirmStep extends EditingTask {
   run(inputs, context) {
     const promise = this._dialog.fnc(inputs, context);
     if (inputs.features) {
-      setAndUnsetSelectedFeaturesStyle({ promise, inputs });
+      setAndUnsetSelectedFeaturesStyle({ promise, inputs, style: this.selectStyle });
     }
     return promise;
   }
@@ -538,7 +538,7 @@ export class CopyFeaturesFromOtherLayerStep extends EditingTask {
             const promisesFeatures = [];
             selectedFeatures.forEach(selectedFeature => {
               /**
-               * check if layer belong to project or not
+               * check if the layer belongs to project or not
                */
               if (this.getEditingService().getProjectLayerById(selectedFeature.__layerId)) {
                 promisesFeatures.push(this.getEditingService().getProjectLayerFeatureById({
@@ -800,7 +800,7 @@ export class DeleteFeatureStep extends EditingTask {
     const session         = context.session;
     const feature         = inputs.features[0];
 
-    //get all relations of current editing layer that are in editing
+    //get all relations of the current editing layer that are in editing
     const relations       = EditingService._filterRelationsInEditing({
       layerId,
       relations: originaLayer.getRelations() ?
@@ -1011,7 +1011,7 @@ export class GetVertexStep extends EditingTask {
     this._stopPromise = $.Deferred();
 
     /** @since g3w-client-plugin-editing@v3.8.0 */
-    setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise, inputs });
+    setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise, inputs, style: this.selectStyle });
 
     this._snapIteraction = new ol.interaction.Snap({
       features: new ol.Collection(features),
@@ -1236,6 +1236,8 @@ export class ModifyGeometryVertexStep extends EditingTask {
     const feature       = this._feature = inputs.features[0];
     this._originalStyle = editingLayer.getStyle();
 
+    setAndUnsetSelectedFeaturesStyle({ promise: this.promise, inputs, style: this.selectStyle });
+
     this.deleteVertexKey;
     const style = function() {
       const image = new ol.style.Circle({
@@ -1389,7 +1391,7 @@ export class MoveElementsStep extends EditingTask {
     const session = context.session;
 
     /** @since g3w-client-plugin-editing@v3.8.0 */
-    setAndUnsetSelectedFeaturesStyle({ promise: d, inputs });
+    setAndUnsetSelectedFeaturesStyle({ promise: d, inputs, style: this.selectStyle });
 
     this._snapIteraction = new ol.interaction.Snap({source, edge: false});
 
@@ -1485,9 +1487,9 @@ export class MoveFeatureStep extends EditingTask {
   }
 
   run(inputs, context) {
-    /** Need two different promise: One for stop() method and clean selected feature,
-     * and other one for run task. If we use the same promise, when stop task without move feature,
-     * this.promise.resolve(), it fires also thenable method listen resolve promise of run task,
+    /** Need two different promises: One for stop() method and clean-selected feature,
+     * and another one for a run task. If we use the same promise, when stop a task without move feature,
+     * this.promise.resolve(), it fires also thenable method listens to resolve promise of a run task,
      * that call stop task method.*/
     this.promise         = $.Deferred();
     const d              = $.Deferred();
@@ -1498,8 +1500,7 @@ export class MoveFeatureStep extends EditingTask {
     let originalFeature  = null;
     this.changeKey       = null; //
     let isGeometryChange = false; // changed if geometry is changed
-
-    setAndUnsetSelectedFeaturesStyle({ promise: this.promise, inputs });
+    setAndUnsetSelectedFeaturesStyle({ promise: this.promise, inputs, style: this.selectStyle });
 
     this._translateInteraction = new ol.interaction.Translate({
       features,
@@ -1962,8 +1963,7 @@ export class OpenFormStep extends EditingTask {
     GUI.setLoadingContent(false);
 
     this.getEditingService().disableMapControlsConflict(true);
-
-    setAndUnsetSelectedFeaturesStyle({ promise: d, inputs });
+    setAndUnsetSelectedFeaturesStyle({ promise: d, inputs, style: this.selectStyle });
 
     if (!this._multi && Array.isArray(features[features.length -1])) {
       d.resolve();
@@ -2200,7 +2200,7 @@ export class PickFeatureStep extends EditingTask {
         inputs.features = features;
         inputs.coordinate = coordinate;
       }
-      setAndUnsetSelectedFeaturesStyle({ promise: d, inputs });
+      setAndUnsetSelectedFeaturesStyle({ promise: d, inputs, style: this.selectStyle });
 
       if (this._steps) {
         this.setUserMessageStepDone('select');
@@ -2697,7 +2697,7 @@ export class SplitFeatureStep extends EditingTask {
 
     /** @since g3w-client-plugin-editing@v3.8.0 */
     this._stopPromise     = $.Deferred();
-    setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise, inputs });
+    setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise, inputs, style: this.selectStyle });
 
 
     this._drawInteraction = new ol.interaction.Draw({

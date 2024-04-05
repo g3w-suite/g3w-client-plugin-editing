@@ -135,6 +135,8 @@ export class EditingTask extends Task {
 
     this._editingService;
 
+    this.selectStyle = options.selectStyle; /* @since 3.8.0 */
+
     this._mapService = GUI.getService('map');
 
     this.addInteraction = function(interaction) {
