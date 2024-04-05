@@ -176,6 +176,7 @@
                     v-for              = "relationtool in getRelationTools()"
                     :key               = "relationtool.state.name"
                     class              = "skin-tooltip-right editbtn enabled"
+                    :class             = "{ 'toggled': relationtool.state.active }"
                     @click.stop        = "startTool(relationtool, index)"
                     data-toggle        = "tooltip"
                     data-placement     = "right"
@@ -239,6 +240,7 @@
   const { tPlugin: t }  = g3wsdk.core.i18n;
   const { toRawType }   = g3wsdk.core.utils;
   const { Layer }       = g3wsdk.core.layer;
+  const { GUI }         = g3wsdk.gui;
   const {
     fieldsMixin,
     resizeMixin,
@@ -602,16 +604,16 @@
 
         for (const layer of project_layers) {
           layers.push({
-            id: layer.getId(),
-            name: layer.getName(),
+            id:       layer.getId(),
+            name:     layer.getName(),
             external: false,
           });
         }
 
         for (const layer of external_layers) {
           layers.push({
-            id: layer.get('id'),
-            name: layer.get('name'),
+            id:       layer.get('id'),
+            name:     layer.get('name'),
             external: true,
           });
         }
@@ -634,6 +636,12 @@
     },
 
     async activated() {
+      //in the case of vector relation, the current extent of map whe is actived
+      //it used to sto an extent of the map at the moment of possibible editing (and zoom)
+      // to relation feature
+      if (this.isVectorRelation) {
+        this.mapExtent = GUI.getService('map').getMapBBOX();
+      }
       this.showAddVectorRelationTools = false;
 
       if (!this.loadEventuallyRelationValuesForInputs) {
@@ -645,9 +653,7 @@
             id:        EditingService._getRelationId({ layerId: this.layerId, relation: this.relation }),
             component: this,
           });
-        } catch(err) {
-          console.warn(err)
-        }
+        } catch(e) { console.warn(e) }
 
         this.loading = false;
 
@@ -676,6 +682,12 @@
       this.loadEventuallyRelationValuesForInputs = true;
       //unlisten
       EditingService.off('commit',this.listenNewCommitRelations);
+      //In the case of vector relation, restore the beginning extent of the map;
+      //in the case we zoomed to relation feature
+      if (this.isVectorRelation && (null !== this._service.currentRelationFeatureId)) {
+        GUI.getService('map').zoomToExtent(this.mapExtent);
+        this.mapExtent = null;
+      }
     },
 
   };
