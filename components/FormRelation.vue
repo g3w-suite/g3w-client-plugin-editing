@@ -46,8 +46,10 @@
             :placeholder = "placeholdersearch"
           >
         </div>
-        <div style="display: flex; justify-content: flex-end">
-
+        <div
+          class="g3w-editing-relations-add-link-tools"
+          style="display: flex; justify-content: flex-end"
+        >
           <!-- CHANGE ATTRIBUTE -->
           <span
             v-if                      = "undefined !== capabilities.relation.find(capability => 'change_attr_feature' === capability)"
@@ -596,7 +598,7 @@
 
       this.isVectorRelation = Layer.LayerTypes.VECTOR === relationLayer.getType();
 
-      // vector relation --> get all layers with same geometry
+      // vector relation --> get all layers with the same geometry
       if (this.isVectorRelation) {
         const project_layers  = EditingService.getProjectLayersWithSameGeometryOfLayer(relationLayer, { exclude: [this.relation.father] });
         const external_layers = EditingService.getExternalLayersWithSameGeometryOfLayer(relationLayer);

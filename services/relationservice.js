@@ -82,6 +82,17 @@ const SELECTED_STYLE = {
   })
 }
 
+/**
+ * @since 3.8.0
+ * Enable/Disable elements
+ * @param { Boolean } bool true enabled
+ */
+const enableDOMElements = (bool = true) => {
+  document.querySelectorAll('.editing-save-all-form').forEach(c => c.classList[bool ? 'remove' : 'add']('g3w-disabled'));
+  document.querySelectorAll('.g3w-editing-relations-add-link-tools').forEach(c => c.classList[bool ? 'remove' : 'add']('g3w-disabled'));
+  document.querySelectorAll('.g3wform_footer').forEach(c => c.classList[bool ? 'remove' : 'add']('g3w-disabled'))
+}
+
 const RelationService = function(layerId, options = {}) {
   // layerId is id of the parent of relation
   this._parentLayerId                     = layerId;
@@ -455,8 +466,7 @@ proto.startVectorTool = function(relationtool, index) {
     //set modal false
     GUI.setModal(false);
     //need to disable saveAll and back
-    document.querySelectorAll('.g3wform_header').forEach(c => c.classList.add('g3w-disabled'));
-    document.querySelectorAll('.g3wform_footer').forEach(c => c.classList.add('g3w-disabled'))
+    enableDOMElements(false);
 
     const workflow = new EditingWorkflow({
       type: relationtool.type,
@@ -472,8 +482,7 @@ proto.startVectorTool = function(relationtool, index) {
       bool => {
         if (!bool) {
           //need to enable saveAll and back
-          document.querySelectorAll('.g3wform_header').forEach(c => c.classList.remove('g3w-disabled'));
-          document.querySelectorAll('.g3wform_footer').forEach(c => c.classList.remove('g3w-disabled'));
+          enableDOMElements(true);
           GUI.setModal(true);
           workflow.unbindEscKeyUp();
           workflow.stop();
