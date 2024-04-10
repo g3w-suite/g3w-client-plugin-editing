@@ -1,4 +1,7 @@
 export default {
+  close_editing_panel: {
+    message: "To close editing form need to exit from editing layer"
+  },
   errors: {
     no_layers: "Ett fel uppstod. Nivåerna kan inte redigeras.",
     some_layers: "Ett fel uppstod. Vissa nivåer kan inte redigeras."
