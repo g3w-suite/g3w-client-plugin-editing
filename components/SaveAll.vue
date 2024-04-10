@@ -65,7 +65,7 @@
 
     computed: {
       /**
-       * Set disabling save all button when it is not enabled (a case of parent form is not valid,
+       * Set disabling save all buttons when it is not enabled (a case of parent form is not valid,
        * or when current form i not valid or valid but not updated)
        * @return {boolean}
        */
@@ -104,20 +104,15 @@
       //set enabled to true as default value;
       this.enabled = true;
       //In the case of a workflow task are less than 2
-      if (WorkflowsStack.getLength() < 2) {
-        return;
-      }
+      if (WorkflowsStack.getLength() < 2) { return; }
 
       this.enabled = WorkflowsStack
         ._workflows
         .slice(0, WorkflowsStack.getLength() - 1)
-        .reduce((enabled, w) => {
+        .reduce((bool, w) => {
           const { service } = w.getContext();
-          const {
-            valid = true,
-            update = false
-          } = (service instanceof FormService) ? service.getState() : {};
-          return valid && update && enabled;
+          const { valid = true, update = false} = (service instanceof FormService) ? service.getState() : {};
+          return valid && update && bool;
           }, true);
     },
 
