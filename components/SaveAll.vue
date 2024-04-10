@@ -111,8 +111,8 @@
         .slice(0, WorkflowsStack.getLength() - 1)
         .reduce((bool, w) => {
           const { service } = w.getContext();
-          const { valid = true, update = false} = (service instanceof FormService) ? service.getState() : {};
-          return valid && update && bool;
+          const { valid = true } = (service instanceof FormService) ? service.getState() : {};
+          return bool && valid;
           }, true);
     },
 
