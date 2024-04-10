@@ -152,38 +152,45 @@ const RelationService = function(layerId, options = {}) {
   this._add_link_workflow = null;
   //get editing constraint type
   this.capabilities       = {
-    parent: this._parentLayer.getEditingCapabilities(),
+    parent:   this._parentLayer.getEditingCapabilities(),
     relation: this._parentLayer.getEditingCapabilities()
   };
-  //check if relationLayer is a TABLE Layer and with capabilities value check add tools
-  if (Layer.LayerTypes.TABLE === relationLayerType) {
-    if (undefined !== this.capabilities.relation.find(capability => 'delete_feature' === capability )) {
-      this._relationTools.push({
-        state: {
-          icon: 'deleteTableRow.png',
-          id: 'deletefeature',
-          name: "editing.tools.delete_feature",
-        }
+
+  this.relations.forEach((_, i) => {
+    const tools = [];
+    //check if relationLayer is a TABLE Layer and with capabilities value check add tools
+    if (Layer.LayerTypes.TABLE === relationLayerType) {
+      if (undefined !== this.capabilities.relation.find(capability => 'delete_feature' === capability )) {
+        tools.push({
+          state: {
+            icon: 'deleteTableRow.png',
+            id:   `${i}_deletefeature`,
+            name: "editing.tools.delete_feature",
+          }
+        });
+      }
+      if (undefined !== this.capabilities.relation.find(capability => 'change_attr_feature' === capability)) {
+        tools.push({
+          state: {
+            icon: 'editAttributes.png',
+            id:   `${i}_editattributes`,
+            name: "editing.tools.update_feature",
+          }
+        })
+      }
+    }
+    else {
+      this.getEditingService()
+        .getToolBoxById(this._relationLayerId)
+        .getTools().forEach(tool => {
+          if ([...(RELATIONTOOLS[relationLayerType] || []), ...RELATIONTOOLS.default].find(id => id === tool.getId())) {
+            tools.push({ state: Vue.observable({ ...tool.state, id: `${i}_${tool.state.id}` }) , type: tool.getOperator().type });
+          }
       });
     }
-    if (undefined !== this.capabilities.relation.find(capability => 'change_attr_feature' === capability)) {
-      this._relationTools.push({
-        state: {
-          icon: 'editAttributes.png',
-          id: 'editattributes',
-          name: "editing.tools.update_feature",
-        }
-      })
-    }
-  } else {
-    this.getEditingService()
-      .getToolBoxById(this._relationLayerId)
-      .getTools().forEach(tool => {
-        if ([...(RELATIONTOOLS[relationLayerType] || []), ...RELATIONTOOLS.default].find(id => id === tool.getId())) {
-          this._relationTools.push({ state: Vue.observable({ ...tool.state }) , type: tool.getOperator().type });
-        }
-      });
-  }
+    this._relationTools.push(tools);
+  })
+
 
   this._add_link_workflow = ({
     [Layer.LayerTypes.TABLE]: {
@@ -269,8 +276,8 @@ proto.getEditingCapabilities = function() {
  *
  * @returns {[]}
  */
-proto.getRelationTools = function() {
-  return this._relationTools;
+proto.getRelationTools = function(index) {
+  return this._relationTools[index];
 };
 
 /**
@@ -281,7 +288,7 @@ proto.getRelationTools = function() {
  */
 proto._highlightRelationSelect = function(relation) {
   const originalStyle = this.getLayer().getEditingLayer().getStyle();
-  const geometryType = this.getLayer().getGeometryType();
+  const geometryType  = this.getLayer().getGeometryType();
 
   relation.setStyle(SELECTED_STYLE[geometryType]);
 
@@ -297,8 +304,10 @@ proto._highlightRelationSelect = function(relation) {
 proto.startTool = async function(relationtool, index) {
   relationtool.state.active = !relationtool.state.active;
   if (relationtool.state.active) {
-    this._relationTools.forEach(t => {
-      if (relationtool.state.id !== t.state.id) { t.state.active = false; }
+    this._relationTools.forEach(tools => {
+      tools.forEach(t => {
+        if (relationtool.state.id !== t.state.id) { t.state.active = false; }
+      })
     })
     await VM.$nextTick();
     //in case of do something with map features
@@ -344,12 +353,13 @@ proto.forceParentsFromServiceWorkflowToUpdated = function() {
  */
 proto.startTableTool = function(relationtool, index) {
   const d                = $.Deferred();
+  const toolId           = relationtool.state.id.split(`${index}_`)[1];
   const relation         = this.relations[index];
   const featurestore     = this.getLayer().getEditingSource();
   const relationfeature  = featurestore.getFeatureById(relation.id);
   const options          = this._createWorkflowOptions({ features: [relationfeature] });
   // delete feature
-  if ('deletefeature' === relationtool.state.id) {
+  if ('deletefeature' === toolId) {
     GUI.dialog.confirm(t("editing.messages.delete_feature"), result => {
       if (result) {
         this.getCurrentWorkflowData().session.pushDelete(this._relationLayerId, relationfeature);
@@ -368,7 +378,7 @@ proto.startTableTool = function(relationtool, index) {
     });
   }
   //edit attributes feature
-  if ('editattributes' === relationtool.state.id) {
+  if ('editattributes' === toolId) {
     /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/edittablefeatureworkflow.js@v3.7.1 */
     const workflow = new EditingWorkflow({ type: 'edittablefeature', steps: [ new OpenFormStep() ] });
     workflow.start(options)
@@ -402,38 +412,42 @@ proto.startTableTool = function(relationtool, index) {
  * @returns {*}
  */
 proto.startVectorTool = function(relationtool, index) {
-  const d               = $.Deferred();
-  const relation        = this.relations[index];
-  const relationfeature = this._getRelationFeature(relation.id);
+  const d                = $.Deferred();
+  const toolId           = relationtool.state.id.split(`${index}_`)[1];
+  const relation         = this.relations[index];
+  const relationfeature  = this._getRelationFeature(relation.id);
   const featurestore     = this.getLayer().getEditingSource();
   //get selected vector style
   const selectStyle = SELECTED_STYLE[this.getLayer().getGeometryType()];
 
   const options         = this._createWorkflowOptions({ features: [relationfeature] });
-  if ('deletefeature' === relationtool.state.id) {
+  if ('deletefeature' === toolId) {
 
     setAndUnsetSelectedFeaturesStyle({ promise: d, inputs: { features: [ relationfeature ], layer: this.getLayer() }, style: selectStyle })
 
-    GUI.dialog.confirm(t("editing.messages.delete_feature"), result => {
-      if (result) {
-        this.getCurrentWorkflowData().session.pushDelete(this._relationLayerId, relationfeature);
-        this.relations.splice(index, 1);
-        this.getEditingService().removeRelationLayerUniqueFieldValuesFromFeature({
-          layerId: this._relationLayerId,
-          relationLayerId: this._parentLayerId,
-          feature: relationfeature
-        });
-        featurestore.removeFeature(relationfeature);
-        this.forceParentsFromServiceWorkflowToUpdated();
-        d.resolve(result);
-      } else {
-        d.reject(result);
+    GUI.dialog.confirm(
+      t("editing.messages.delete_feature"),
+      result => {
+        if (result) {
+          this.getCurrentWorkflowData().session.pushDelete(this._relationLayerId, relationfeature);
+          this.relations.splice(index, 1);
+          this.getEditingService().removeRelationLayerUniqueFieldValuesFromFeature({
+            layerId: this._relationLayerId,
+            relationLayerId: this._parentLayerId,
+            feature: relationfeature
+          });
+          featurestore.removeFeature(relationfeature);
+          this.forceParentsFromServiceWorkflowToUpdated();
+          d.resolve(result);
+        } else {
+          d.reject(result);
+        }
       }
-    });
+    );
   }
 
   //edit attributes feature
-  if ('editattributes' === relationtool.state.id) {
+  if ('editattributes' === toolId) {
     /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/edittablefeatureworkflow.js@v3.7.1 */
     const workflow = new EditingWorkflow({ type: 'edittablefeature', steps: [ new OpenFormStep({ selectStyle }) ] });
     workflow.start(options)
@@ -451,12 +465,15 @@ proto.startVectorTool = function(relationtool, index) {
           });
         d.resolve(true);
       })
-      .fail(err => d.reject(false))
+      .fail(e => {
+        console.warn(e);
+        d.reject(false);
+      })
       .always(() => workflow.stop());
   }
 
   //move vertex and move feature tool
-  if (['movevertex', 'movefeature'].includes(relationtool.state.id)) {
+  if (['movevertex', 'movefeature'].includes(toolId)) {
     //GUI.disableContent(true);
     if (this.currentRelationFeatureId !== relationfeature.getId()) {
       this.currentRelationFeatureId = relationfeature.getId();
@@ -473,7 +490,7 @@ proto.startVectorTool = function(relationtool, index) {
       steps: [ new {
         'movevertex':  ModifyGeometryVertexStep,
         'movefeature': MoveFeatureStep,
-      }[relationtool.state.id]({ selectStyle }) ]
+      }[toolId]({ selectStyle }) ]
     });
 
 

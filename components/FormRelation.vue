@@ -175,7 +175,7 @@
               <td>
                 <div style="display: flex">
                   <div
-                    v-for              = "relationtool in getRelationTools()"
+                    v-for              = "relationtool in getRelationTools(index)"
                     :key               = "relationtool.state.name"
                     class              = "skin-tooltip-right editbtn enabled"
                     :class             = "{ 'toggled': relationtool.state.active }"
@@ -425,8 +425,8 @@
       /**
        * @FIXME add description
        */
-      getRelationTools() {
-        return this._service.getRelationTools();
+      getRelationTools(index) {
+        return this._service.getRelationTools(index);
       },
 
       /**
@@ -580,7 +580,7 @@
        * */
       this._new_relations_ids = [];
 
-      /** @since 3.7.2 Method to listen commit on server when press disk icon save all form*/
+      /** @since 3.7.2 Method to listen commit on server when press disk icon saves all form*/
       this.listenNewCommitRelations = ({new_relations={}}) => {
         // in case of new relation saved on server
         if (new_relations[relationLayer.getId()] && Array.isArray(new_relations[relationLayer.getId()].new)) {
