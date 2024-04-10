@@ -85,11 +85,18 @@
           padding: 10px;
         "
       >
+        <span style="align-self: self-end" @click.stop="closeRelationVectorTools">
+          <i
+            class="g3w-icon skin-color"
+            style="font-weight: bold; cursor: pointer;"
+            :class="g3wtemplate.font['close']">
+          </i>
+        </span>
         <!-- ADD VECTOR RELATION -->
         <div>
           <div
-            class="g3w-editing-new-relation-vector-type"
-            v-t-plugin="'editing.relation.draw_new_feature'">
+            class      = "g3w-editing-new-relation-vector-type"
+            v-t-plugin = "'editing.relation.draw_new_feature'">
           </div>
           <button
             class       = "btn skin-button"
@@ -99,61 +106,64 @@
             <i :class="g3wtemplate.font['pencil']"></i>
           </button>
         </div>
+        <!--  COPY FEATURE FROM OTHER LAYER      -->
+        <section v-if="copyFeatureLayers.length > 0">
+          <divider/>
 
-        <divider/>
+          <div
+            style      = "align-self: center"
+            v-t-plugin = "'editing.relation.draw_or_copy'">
+          </div>
 
-        <div
-          style="align-self: center"
-          v-t-plugin="'editing.relation.draw_or_copy'">
-        </div>
+          <divider/>
 
-        <divider/>
-
-        <div
-          id    = "g3w-select-editable-layers-content"
-          style = "
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column
-          "
-        >
+          <div
+            id    = "g3w-select-editable-layers-content"
+            style = "
+              flex-grow: 1;
+              display: flex;
+              flex-direction: column
+            "
+          >
 
           <div
             class="g3w-editing-new-relation-vector-type"
             v-t-plugin="'editing.relation.copy_feature_from_other_layer'">
           </div>
 
-        <select
-          id        = "g3w-select-editable-layers-to-copy"
-          v-select2 = "'copylayerid'"
-        >
-          <option
-            v-for  = "copyFeatureLayer in copyFeatureLayers"
-            :key   = "copyFeatureLayer.id"
-            :value = "copyFeatureLayer.id">
-              {{ copyFeatureLayer.name }}
-          </option>
-        </select>
+          <select
+            id        = "g3w-select-editable-layers-to-copy"
+            v-select2 = "'copylayerid'"
+          >
+            <option
+              v-for  = "copyFeatureLayer in copyFeatureLayers"
+              :key   = "copyFeatureLayer.id"
+              :value = "copyFeatureLayer.id">
+                {{ copyFeatureLayer.name }}
+            </option>
+          </select>
 
           <!-- COPY FEATURE FROM OTHER LAYER -->
           <button
-            class       = "btn skin-button"
-            @click.stop = "copyFeatureFromOtherLayer"
+                  class       = "btn skin-button"
+                  @click.stop = "copyFeatureFromOtherLayer"
           >
-            <i :class="g3wtemplate.font['clipboard']"></i>
+              <i :class="g3wtemplate.font['clipboard']"></i>
           </button>
-        </div>
+          </div>
+        </section>
 
       </section>
 
       <!-- RELATION CONTENT -->
       <div
-        ref   = "relation_body"
-        class = "box-body"
-        style = "padding:0;"
+        ref        = "relation_body"
+        class      = "box-body"
+        style      = "padding:0;"
+        v-disabled = "showAddVectorRelationTools"
       >
         <table
-          v-if  = "relationsLength"
+          v-if  = "relationsLength > 0"
           ref   = "relationTable"
           class = "table g3wform-relation-table table-striped"
           style = "width:100%"
@@ -174,15 +184,14 @@
             >
               <td>
                 <div style="display: flex">
+                  <!-- RELATION TOOLS                  -->
                   <div
-                    v-for              = "relationtool in getRelationTools(index)"
-                    :key               = "relationtool.state.name"
-                    class              = "skin-tooltip-right editbtn enabled"
-                    :class             = "{ 'toggled': relationtool.state.active }"
-                    @click.stop        = "startTool(relationtool, index)"
-                    data-toggle        = "tooltip"
-                    data-placement     = "right"
-                    v-t-tooltip:plugin = "relationtool.state.name"
+                    v-for                    = "relationtool in getRelationTools(index)"
+                    :key                     = "relationtool.state.id"
+                    class                    = "editbtn enabled"
+                    :class                   = "{ 'toggled': relationtool.state.active }"
+                    @click.stop              = "startTool(relationtool, index)"
+                    v-t-tooltip:top.create   = "`plugins.${relationtool.state.name}`"
                   >
                     <img
                       height = "20px"
@@ -251,7 +260,6 @@
 
   const RelationService = require('../services/relationservice');
 
-
   export default {
 
     mixins: [
@@ -303,9 +311,7 @@
             - (this.isVectorRelation && this.showAddVectorRelationTools ? $(this.$refs.relation_vector_tools).outerHeight() : 0)
           );
 
-        if (this.relationsTable) {
-          this.relationsTable.columns.adjust();
-        }
+        if (this.relationsTable) { this.relationsTable.columns.adjust() }
 
       },
 
@@ -334,6 +340,16 @@
       },
 
       /**
+      * @since 3.8.0
+      */
+      async closeRelationVectorTools() {
+        this.showAddVectorRelationTools = false;
+        this._service.enableDOMElements(true);
+        await this.$nextTick();
+        this.resize();
+      },
+
+      /**
        * @FIXME add description
        */
       addVectorRelation() {
@@ -345,8 +361,9 @@
        * @FIXME add description
        */
       async addRelationAndLink() {
-        if (this.isVectorRelation && this.copyFeatureLayers.length) {
+        if (this.isVectorRelation) {
           this.showAddVectorRelationTools = !this.showAddVectorRelationTools;
+          this._service.enableDOMElements(false);
           await this.$nextTick();
           this.resize();
         } else {
@@ -412,14 +429,14 @@
        * @FIXME add description
        */
       showAllRelationFields(index) {
-        this.showallfieldsindex = this.showallfieldsindex == index ? null : index;
+        this.showallfieldsindex = this.showAllFields(index) ? null : index;
       },
 
       /**
        * @FIXME add description
        */
       showAllFields(index) {
-        return this.showallfieldsindex == index;
+        return index === this.showallfieldsindex ;
       },
 
       /**
@@ -460,24 +477,24 @@
        * @FIXME add description
        */
       _setDataTableSearch() {
-        const relationsTable = this.relationsTable;
-        $('#filterRelation').on('keyup', function() { relationsTable.search($(this).val()).draw(); });
+        $('#filterRelation').on('keyup', function() { this.relationsTable.search($(this).val()).draw(); });
       },
 
       /**
        * @FIXME add description
        */
       _createDataTable() {
-        this.relationsTable = $(this.$refs.relationTable).DataTable({
-          "scrollX": true,
-          "order": [ 2, 'asc' ],
-          "destroy": true,
-          "scrollResize": true,
-          "scrollCollapse": true,
-          "pageLength": 10,
-          columnDefs: [
-            { orderable: false, targets: [0, 1] }]
-        });
+        this.relationsTable = $(this.$refs.relationTable)
+          .DataTable({
+            "scrollX":        true,
+            "order":          [ 2, 'asc' ],
+            "destroy":        true,
+            "scrollResize":   true,
+            "scrollCollapse": true,
+            "pageLength":     10,
+            "columnDefs":     [ { orderable: false, targets: [0, 1] } ]
+          });
+
         $(".dataTables_filter, .dataTables_length").hide();
         this._setDataTableSearch();
       },
@@ -510,12 +527,12 @@
       /**
       * @since 3.7.4
        * In case of commit new relation to server, update temporary relation.id (__new__) to
-       * saved id on server. It is called when new relation is saved on a relation form after click on save all disk,
+       * saved id on server. It is called when a new relation is saved on a relation form after click on save all disk,
        * and when save all disks are click on a list of relation table
       */
       updateNewRelationId() {
         this._new_relations_ids
-          .forEach(({clientid, id}) => {
+          .forEach(({ clientid, id }) => {
             const newrelation = this.relations.find(r => clientid === r.id);
             if (newrelation) { newrelation.id = id }
           })
@@ -529,7 +546,7 @@
        * @returns { boolean }
        */
       relationsLength() {
-        return this.relations.length > 0;
+        return this.relations.length;
       },
 
       /**
@@ -544,8 +561,8 @@
        */
       enableAddLinkButtons() {
         return (
-          (this.relations.length === 0) ||
-          (this.relation.type !== 'ONE')
+          (0 === this.relationsLength) ||
+          ('ONE' !== this.relation.type)
         );
       },
 
@@ -580,6 +597,7 @@
        * */
       this._new_relations_ids = [];
 
+
       /** @since 3.7.2 Method to listen commit on server when press disk icon saves all form*/
       this.listenNewCommitRelations = ({new_relations={}}) => {
         // in case of new relation saved on server
@@ -604,6 +622,7 @@
         const external_layers = EditingService.getExternalLayersWithSameGeometryOfLayer(relationLayer);
         const layers          = [];
 
+        //Project Layers
         for (const layer of project_layers) {
           layers.push({
             id:       layer.getId(),
@@ -612,6 +631,7 @@
           });
         }
 
+        //External Layer
         for (const layer of external_layers) {
           layers.push({
             id:       layer.get('id'),
@@ -641,9 +661,8 @@
       //in the case of vector relation, the current extent of map whe is actived
       //it used to sto an extent of the map at the moment of possibible editing (and zoom)
       // to relation feature
-      if (this.isVectorRelation) {
-        this.mapExtent = GUI.getService('map').getMapBBOX();
-      }
+      if (this.isVectorRelation) { this.mapExtent = GUI.getService('map').getMapBBOX() }
+
       this.showAddVectorRelationTools = false;
 
       if (!this.loadEventuallyRelationValuesForInputs) {
@@ -667,9 +686,7 @@
 
       await this.$nextTick();
 
-      if (!this.relationsTable && this.relationsLength) {
-        this._createDataTable();
-      }
+      if (!this.relationsTable && this.relationsLength > 0) { this._createDataTable() }
 
       this.resize();
     },

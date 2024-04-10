@@ -19,18 +19,7 @@ const { GUI }            = g3wsdk.gui;
 const { tPlugin:t }      = g3wsdk.core.i18n;
 const { Layer }          = g3wsdk.core.layer;
 const { WorkflowsStack } = g3wsdk.core.workflow;
-
-// what we can do with each type of relation element
-const RELATIONTOOLS = {
-  default:           ['editattributes', 'deletefeature'],
-  'table' :          [],
-  'Point':           ['movefeature'],
-  'MultiPoint':      ['movefeature'],
-  'LineString':      ['movevertex'],
-  'MultiLineString': ['movevertex'],
-  'Polygon':         ['movefeature', 'movevertex'],
-  'MultiPolygon':    ['movefeature', 'movevertex'],
-};
+const { Geometry }       = g3wsdk.core.geometry;
 
 //Vector style for selected relation
 const SELECTED_STYLE = {
@@ -82,17 +71,6 @@ const SELECTED_STYLE = {
   })
 }
 
-/**
- * @since 3.8.0
- * Enable/Disable elements
- * @param { Boolean } bool true enabled
- */
-const enableDOMElements = (bool = true) => {
-  document.querySelectorAll('.editing-save-all-form').forEach(c => c.classList[bool ? 'remove' : 'add']('g3w-disabled'));
-  document.querySelectorAll('.g3w-editing-relations-add-link-tools').forEach(c => c.classList[bool ? 'remove' : 'add']('g3w-disabled'));
-  document.querySelectorAll('.g3wform_footer').forEach(c => c.classList[bool ? 'remove' : 'add']('g3w-disabled'))
-}
-
 const RelationService = function(layerId, options = {}) {
   // layerId is id of the parent of relation
   this._parentLayerId                     = layerId;
@@ -109,21 +87,16 @@ const RelationService = function(layerId, options = {}) {
   this.relations                          = relations;
   //editing service (main service of plugin)
   this._editingService;
-  this.currentRelationFeatureId = null; // @since 3.8.0 get current relation feature on editing
-  this.currentWorkflow          = null;
-  this._isExternalFieldRequired = false;
+  this.currentRelationFeatureId           = null; // @since 3.8.0 get current relation feature on editing
+  this.currentWorkflow                    = null;
+  this._isExternalFieldRequired           = false;
   // this._relationLayerId is layer id of relation layer
   this._relationLayerId                   = this.relation.child === this._parentLayerId
     ? this.relation.father
     : this.relation.child;
-  // layer in relation
-  const relationLayer                     = this.getLayer();
-  this._layerType                         = relationLayer.getType();
-  //get a type of relation
-  const relationLayerType                 =  Layer.LayerTypes.VECTOR === this._layerType
-    ? relationLayer.getGeometryType()
-    : Layer.LayerTypes.TABLE;
-  //
+  // layer in relation type
+  this._layerType                         = this.getLayer().getType();
+
   const { ownField: fatherRelationField } = this.getEditingService()._getRelationFieldsFromRelation({ layerId: this._parentLayerId, relation: this.relation });
 
   // Store father relation fields editable and pk
@@ -135,7 +108,8 @@ const RelationService = function(layerId, options = {}) {
   }
   //check if external fields
   this._isExternalFieldRequired = this._checkIfExternalFieldRequired();
-  // check if the parent field is editable. If not, get the id of parent feature so the server can generate the right value
+  // Check if the parent field is editable.
+  // If not, get the id of parent feature so the server can generate the right value
   // to fill the field with the relation layer feature when commit
 
   this._currentParentFeatureRelationFieldsValue = fatherRelationField
@@ -146,9 +120,9 @@ const RelationService = function(layerId, options = {}) {
       return accumulator;
     }, {})
 
-
   ///////////////////////////////////////
-  this._relationTools     = [];
+
+  this.relationTools      = [];
   this._add_link_workflow = null;
   //get editing constraint type
   this.capabilities       = {
@@ -156,41 +130,8 @@ const RelationService = function(layerId, options = {}) {
     relation: this._parentLayer.getEditingCapabilities()
   };
 
-  this.relations.forEach((_, i) => {
-    const tools = [];
-    //check if relationLayer is a TABLE Layer and with capabilities value check add tools
-    if (Layer.LayerTypes.TABLE === relationLayerType) {
-      if (undefined !== this.capabilities.relation.find(capability => 'delete_feature' === capability )) {
-        tools.push({
-          state: {
-            icon: 'deleteTableRow.png',
-            id:   `${i}_deletefeature`,
-            name: "editing.tools.delete_feature",
-          }
-        });
-      }
-      if (undefined !== this.capabilities.relation.find(capability => 'change_attr_feature' === capability)) {
-        tools.push({
-          state: {
-            icon: 'editAttributes.png',
-            id:   `${i}_editattributes`,
-            name: "editing.tools.update_feature",
-          }
-        })
-      }
-    }
-    else {
-      this.getEditingService()
-        .getToolBoxById(this._relationLayerId)
-        .getTools().forEach(tool => {
-          if ([...(RELATIONTOOLS[relationLayerType] || []), ...RELATIONTOOLS.default].find(id => id === tool.getId())) {
-            tools.push({ state: Vue.observable({ ...tool.state, id: `${i}_${tool.state.id}` }) , type: tool.getOperator().type });
-          }
-      });
-    }
-    this._relationTools.push(tools);
-  })
-
+  //add tools for each relation
+  this.relations.forEach((_, i) => this.addRelationTools(i) );
 
   this._add_link_workflow = ({
     [Layer.LayerTypes.TABLE]: {
@@ -265,6 +206,17 @@ const RelationService = function(layerId, options = {}) {
 const proto = RelationService.prototype;
 
 /**
+ * @since 3.8.0
+ * Enable/Disable elements
+ * @param { Boolean } bool true enabled
+ */
+proto.enableDOMElements = (bool = true) => {
+  document.querySelectorAll('.editing-save-all-form').forEach(c => c.classList[bool ? 'remove' : 'add']('g3w-disabled'));
+  document.querySelectorAll('.g3w-editing-relations-add-link-tools').forEach(c => c.classList[bool ? 'remove' : 'add']('g3w-disabled'));
+  document.querySelectorAll('.g3wform_footer').forEach(c => c.classList[bool ? 'remove' : 'add']('g3w-disabled'))
+}
+
+/**
  * Return editing capabilities
  * @returns {*|{parent: *, relation: *}}
  */
@@ -272,12 +224,62 @@ proto.getEditingCapabilities = function() {
   return this.capabilities;
 };
 
+proto.addRelationTools = function(index) {
+
+  const tools = [];
+
+  if (undefined !== this.capabilities.relation.find(capability => 'change_attr_feature' === capability)) {
+    tools.push({
+      state: Vue.observable({
+        icon:   'editAttributes.png',
+        id:     `${index}_editattributes`,
+        name:   "editing.tools.update_feature",
+        enabled: true,
+        active:  false,
+      }),
+      type: 'editfeatureattributes',
+    })
+  }
+
+  if (undefined !== this.capabilities.relation.find(capability => 'delete_feature' === capability )) {
+    tools.push({
+      state: Vue.observable({
+        icon:   'deleteTableRow.png',
+        id:     `${index}_deletefeature`,
+        name:   "editing.tools.delete_feature",
+        enabled: true,
+        active:  false,
+      }),
+      type: 'deletefeature',
+    });
+  }
+
+  //vector relation layers add other tools if it has capability to chenge feature
+  if (Layer.LayerTypes.VECTOR === this._layerType && this.capabilities.relation.find(capability => 'change_feature' === capability))  {
+    this.getEditingService()
+      .getToolBoxById(this._relationLayerId)
+      .getTools()
+      .filter(t => {
+        //in the case of Point geometry
+        if (Geometry.isPointGeometryType(this.getLayer().getGeometryType())) {
+          return 'movefeature' === t.getId();
+        }
+        //case Line or Polygon
+        return ['movefeature', 'movevertex'].includes(t.getId());
+      })
+      .forEach(t => tools.push({ state: Vue.observable({ ...t.state, id: `${index}_${t.state.id}` }) , type: t.getOperator().type }));
+  }
+
+  this.relationTools.push(tools);
+  return tools;
+};
+
 /**
  *
  * @returns {[]}
  */
 proto.getRelationTools = function(index) {
-  return this._relationTools[index];
+  return this.relationTools[index] || this.addRelationTools(index);
 };
 
 /**
@@ -304,19 +306,143 @@ proto._highlightRelationSelect = function(relation) {
 proto.startTool = async function(relationtool, index) {
   relationtool.state.active = !relationtool.state.active;
   if (relationtool.state.active) {
-    this._relationTools.forEach(tools => {
-      tools.forEach(t => {
-        if (relationtool.state.id !== t.state.id) { t.state.active = false; }
-      })
+    this.relationTools.forEach(tools => {
+      tools.forEach(t => { if (relationtool.state.id !== t.state.id) { t.state.active = false; } })
     })
     await VM.$nextTick();
     //in case of do something with map features
     return new Promise((resolve, reject) => {
-      const toolPromise = (
-        (Layer.LayerTypes.VECTOR === this._layerType && this.startVectorTool(relationtool, index))
-        ||
-        (Layer.LayerTypes.TABLE === this._layerType && this.startTableTool(relationtool, index))
-      );
+      const d                = $.Deferred();
+      const toolPromise      = d.promise();
+      const is_vector        = Layer.LayerTypes.VECTOR === this._layerType;
+      const toolId           = relationtool.state.id.split(`${index}_`)[1];
+      const relation         = this.relations[index];
+      const relationfeature  = this._getRelationFeature(relation.id);
+      const featurestore     = this.getLayer().getEditingSource();
+      //get selected vector style
+      const selectStyle = is_vector && SELECTED_STYLE[this.getLayer().getGeometryType()];
+      const options          = this._createWorkflowOptions({ features: [relationfeature] });
+
+      //DELETE FEATURE RELATION
+      if ('deletefeature' === toolId) {
+
+        setAndUnsetSelectedFeaturesStyle({ promise: d, inputs: { features: [ relationfeature ], layer: this.getLayer() }, style: selectStyle })
+
+        GUI.dialog.confirm(
+          t("editing.messages.delete_feature"),
+          result => {
+            if (result) {
+              this.getCurrentWorkflowData().session.pushDelete(this._relationLayerId, relationfeature);
+              //reome relation feature from relations featues
+              this.relations.splice(index, 1);
+              //remove tools from relation tools
+              this.relationTools.splice(index, 1);
+              this.getEditingService().removeRelationLayerUniqueFieldValuesFromFeature({
+                layerId: this._relationLayerId,
+                relationLayerId: this._parentLayerId,
+                feature: relationfeature
+              });
+              featurestore.removeFeature(relationfeature);
+              this.forceParentsFromServiceWorkflowToUpdated();
+
+              d.resolve(result);
+            } else {
+              d.reject(result);
+            }
+          }
+        );
+      }
+
+      //EDIT ATTRIBUTE FEATURE RELATION
+      if ('editattributes' === toolId) {
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/edittablefeatureworkflow.js@v3.7.1 */
+        const workflow = new EditingWorkflow({ type: 'edittablefeature', steps: [ new OpenFormStep({ selectStyle }) ] });
+        workflow.start(options)
+          .then(() => {
+            //get relation layer fields
+            this._getRelationFieldsValue(relationfeature)
+              .forEach(_field => {
+                relation.fields
+                  .forEach(field => {
+                    if (field.name === _field.name) {
+                      //in case of sync feature get data value of sync feature
+                      field.value = _field.value;
+                    }
+                  })
+              });
+            d.resolve(true);
+          })
+          .fail(e => {
+            console.warn(e);
+            d.reject(false);
+          })
+          .always(() => workflow.stop());
+      }
+
+      //MOVE vertex or MOVE feature tool
+      if (['movevertex', 'movefeature'].includes(toolId)) {
+
+        if (this.currentRelationFeatureId !== relationfeature.getId()) {
+          this.currentRelationFeatureId = relationfeature.getId();
+          //zoom to relation vector feature
+          GUI.getService('map').zoomToFeatures([ relationfeature ])
+        }
+        //set modal false
+        GUI.setModal(false);
+        //need to disable saveAll and back
+        this.enableDOMElements(false);
+
+        const workflow = new EditingWorkflow({
+          type: relationtool.type,
+          steps: [ new {
+            'movevertex':  ModifyGeometryVertexStep,
+            'movefeature': MoveFeatureStep,
+          }[toolId]({ selectStyle }) ]
+        });
+
+        //watch eventually deactive when another tool is activated
+        const unwatch = VM.$watch(
+          () => relationtool.state.active,
+          bool => {
+            if (!bool) {
+              //need to enable saveAll and back
+              this.enableDOMElements(true);
+              GUI.setModal(true);
+              workflow.unbindEscKeyUp();
+              workflow.stop();
+              unwatch();
+              d.reject(false);
+            }
+          }
+        )
+        //bind listen esc key
+        workflow.bindEscKeyUp(() => {
+          GUI.setModal(true);
+          unwatch();
+          d.reject(false);
+        });
+
+        workflow.start(options)
+          .then(() => {
+            WorkflowsStack
+              .getParents()
+              .filter(w => w.getContextService().setUpdate)
+              .forEach(w => w.getContextService().setUpdate(true, { force: true }));
+            d.resolve(true);
+            setTimeout(() => this.startTool(relationtool, index));
+          })
+          .fail(e => {
+            console.warn(e);
+            d.reject(false);
+          })
+          .always(() => {
+            workflow.unbindEscKeyUp();
+            workflow.stop();
+            unwatch();
+          })
+      }
+
+
       toolPromise
         .then(() => {
           this.emitEventToParentWorkFlow();
@@ -328,6 +454,7 @@ proto.startTool = async function(relationtool, index) {
         })
         .always(() => relationtool.state.active = false);
     })
+
   } else {
     return Promise.resolve();
   }
@@ -346,199 +473,6 @@ proto.forceParentsFromServiceWorkflowToUpdated = function() {
         .setUpdate(true, {force: true})
     }
   });
-};
-
-/**
- * Method to start table tool
- * @param relationtool
- * @param index
- * @returns {*}
- */
-proto.startTableTool = function(relationtool, index) {
-  const d                = $.Deferred();
-  const toolId           = relationtool.state.id.split(`${index}_`)[1];
-  const relation         = this.relations[index];
-  const featurestore     = this.getLayer().getEditingSource();
-  const relationfeature  = featurestore.getFeatureById(relation.id);
-  const options          = this._createWorkflowOptions({ features: [relationfeature] });
-  // delete feature
-  if ('deletefeature' === toolId) {
-    GUI.dialog.confirm(t("editing.messages.delete_feature"), result => {
-      if (result) {
-        this.getCurrentWorkflowData().session.pushDelete(this._relationLayerId, relationfeature);
-        this.relations.splice(index, 1);
-        this.getEditingService().removeRelationLayerUniqueFieldValuesFromFeature({
-          layerId: this._relationLayerId,
-          relationLayerId: this._parentLayerId,
-          feature: relationfeature
-        });
-        featurestore.removeFeature(relationfeature);
-        this.forceParentsFromServiceWorkflowToUpdated();
-        d.resolve(result);
-      } else {
-        d.reject(result);
-      }
-    });
-  }
-  //edit attributes feature
-  if ('editattributes' === toolId) {
-    /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/edittablefeatureworkflow.js@v3.7.1 */
-    const workflow = new EditingWorkflow({ type: 'edittablefeature', steps: [ new OpenFormStep() ] });
-    workflow.start(options)
-      .then(() => {
-        //get relation layer fields
-        this._getRelationFieldsValue(relationfeature)
-          .forEach(_field => {
-            relation.fields
-              .forEach(field => {
-                if (field.name === _field.name) {
-                  //in case of sync feature get data value of sync feature
-                  field.value = _field.value;
-                }
-              })
-          });
-        d.resolve(true);
-      })
-      .fail(e => {
-        console.warn(e);
-        d.reject(false)
-      })
-      .always(() => workflow.stop());
-  }
-  return d.promise()
-};
-
-/**
- *
- * @param relationtool
- * @param index
- * @returns {*}
- */
-proto.startVectorTool = function(relationtool, index) {
-  const d                = $.Deferred();
-  const toolId           = relationtool.state.id.split(`${index}_`)[1];
-  const relation         = this.relations[index];
-  const relationfeature  = this._getRelationFeature(relation.id);
-  const featurestore     = this.getLayer().getEditingSource();
-  //get selected vector style
-  const selectStyle = SELECTED_STYLE[this.getLayer().getGeometryType()];
-
-  const options         = this._createWorkflowOptions({ features: [relationfeature] });
-  if ('deletefeature' === toolId) {
-
-    setAndUnsetSelectedFeaturesStyle({ promise: d, inputs: { features: [ relationfeature ], layer: this.getLayer() }, style: selectStyle })
-
-    GUI.dialog.confirm(
-      t("editing.messages.delete_feature"),
-      result => {
-        if (result) {
-          this.getCurrentWorkflowData().session.pushDelete(this._relationLayerId, relationfeature);
-          this.relations.splice(index, 1);
-          this.getEditingService().removeRelationLayerUniqueFieldValuesFromFeature({
-            layerId: this._relationLayerId,
-            relationLayerId: this._parentLayerId,
-            feature: relationfeature
-          });
-          featurestore.removeFeature(relationfeature);
-          this.forceParentsFromServiceWorkflowToUpdated();
-          d.resolve(result);
-        } else {
-          d.reject(result);
-        }
-      }
-    );
-  }
-
-  //edit attributes feature
-  if ('editattributes' === toolId) {
-    /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/edittablefeatureworkflow.js@v3.7.1 */
-    const workflow = new EditingWorkflow({ type: 'edittablefeature', steps: [ new OpenFormStep({ selectStyle }) ] });
-    workflow.start(options)
-      .then(() => {
-        //get relation layer fields
-        this._getRelationFieldsValue(relationfeature)
-          .forEach(_field => {
-            relation.fields
-              .forEach(field => {
-                if (field.name === _field.name) {
-                  //in case of sync feature get data value of sync feature
-                  field.value = _field.value;
-                }
-              })
-          });
-        d.resolve(true);
-      })
-      .fail(e => {
-        console.warn(e);
-        d.reject(false);
-      })
-      .always(() => workflow.stop());
-  }
-
-  //move vertex and move feature tool
-  if (['movevertex', 'movefeature'].includes(toolId)) {
-    //GUI.disableContent(true);
-    if (this.currentRelationFeatureId !== relationfeature.getId()) {
-      this.currentRelationFeatureId = relationfeature.getId();
-      //zoom to relation vector feature
-      GUI.getService('map').zoomToFeatures([ relationfeature ])
-    }
-    //set modal false
-    GUI.setModal(false);
-    //need to disable saveAll and back
-    enableDOMElements(false);
-
-    const workflow = new EditingWorkflow({
-      type: relationtool.type,
-      steps: [ new {
-        'movevertex':  ModifyGeometryVertexStep,
-        'movefeature': MoveFeatureStep,
-      }[toolId]({ selectStyle }) ]
-    });
-
-    //watch eventually deactive when another tool is activated
-    const unwatch = VM.$watch(
-      () => relationtool.state.active,
-      bool => {
-        if (!bool) {
-          //need to enable saveAll and back
-          enableDOMElements(true);
-          GUI.setModal(true);
-          workflow.unbindEscKeyUp();
-          workflow.stop();
-          unwatch();
-          d.reject(false);
-        }
-      }
-    )
-    //bind listen esc key
-    workflow.bindEscKeyUp(() => {
-      GUI.setModal(true);
-      unwatch();
-      d.reject(false);
-    });
-
-    workflow.start(options)
-      .then(() => {
-        WorkflowsStack
-          .getParents()
-          .filter(w => w.getContextService().setUpdate)
-          .forEach(w => w.getContextService().setUpdate(true, { force: true }));
-        d.resolve(true);
-        setTimeout(() => this.startTool(relationtool, index));
-      })
-      .fail(e => {
-        console.warn(e);
-        d.reject(false);
-      })
-      .always(() => {
-        workflow.unbindEscKeyUp();
-        workflow.stop();
-        unwatch();
-      })
-  }
-
-  return d.promise()
 };
 
 /**
@@ -704,7 +638,7 @@ proto.addRelation = function() {
 proto.runAddRelationWorkflow = function({ workflow, isVector = false } = {} ) {
   if (isVector) {
     GUI.setModal(false);
-    //GUI.hideContent(true);
+    GUI.hideContent(true);
   }
   const options = this._createWorkflowOptions();
   const session = options.context.session;
