@@ -145,10 +145,10 @@
 
           <!-- COPY FEATURE FROM OTHER LAYER -->
           <button
-                  class       = "btn skin-button"
-                  @click.stop = "copyFeatureFromOtherLayer"
+            class       = "btn skin-button"
+            @click.stop = "copyFeatureFromOtherLayer"
           >
-              <i :class="g3wtemplate.font['clipboard']"></i>
+            <i :class="g3wtemplate.font['clipboard']"></i>
           </button>
           </div>
         </section>
@@ -240,7 +240,7 @@
           </tbody>
         </table>
       </div>
-    </div>
+  </div>
 </template>
 
 <script>
@@ -344,7 +344,6 @@
       */
       async closeRelationVectorTools() {
         this.showAddVectorRelationTools = false;
-        this._service.enableDOMElements(true);
         await this.$nextTick();
         this.resize();
       },
@@ -363,7 +362,6 @@
       async addRelationAndLink() {
         if (this.isVectorRelation) {
           this.showAddVectorRelationTools = !this.showAddVectorRelationTools;
-          this._service.enableDOMElements(false);
           await this.$nextTick();
           this.resize();
         } else {
@@ -581,6 +579,10 @@
           this.updateTable(); // update table when deleting / adding row relations
         }
       },
+      //Enable/disable dome element of table of relations, based on show/hide creation of vector tools
+      showAddVectorRelationTools(bool) {
+        this._service.enableDOMElements(!bool);
+      }
     },
 
     beforeCreate() {
