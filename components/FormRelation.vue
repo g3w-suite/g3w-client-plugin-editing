@@ -5,22 +5,14 @@
 <template>
   <div
       v-disabled  = "loading"
-      style = "margin-bottom: 5px;"
+      style       = "margin-bottom: 5px;"
     >
       <bar-loader :loading="loading"/>
 
       <!-- RELATION TITLE -->
       <div
         ref   = "relation_header_title"
-        class = "box-header with-border skin-color"
-        style = "
-          width: 100%;
-          display: flex;
-          font-weight: bold;
-          font-size: 1.3em;
-          align-items: center;
-          background-color: #fff;
-        "
+        class = "relation_header_title box-header with-border skin-color"
       >
         <span v-t-plugin="'editing.edit_relation'"></span>
         <span style="margin-left: 2px;">: {{ relation.name.toUpperCase() }}</span>
@@ -29,15 +21,10 @@
       <!-- RELATION TOOLS -->
       <div
         ref   = "relation_header_tools"
-        class = "box-header with-border"
-        style = "
-          width: 100%;
-          display: flex;
-          background-color: #fff;
-        "
+        class = "relation_header_tools box-header with-border"
       >
         <!-- SEARCH BOX -->
-        <div id="search-box" style="margin-right: auto;">
+        <div id="search-box">
           <input
             v-if         = "relationsLength"
             type         = "text"
@@ -46,10 +33,7 @@
             :placeholder = "placeholdersearch"
           >
         </div>
-        <div
-          class="g3w-editing-relations-add-link-tools"
-          style="display: flex; justify-content: flex-end"
-        >
+        <div class="g3w-editing-relations-add-link-tools">
           <!-- CHANGE ATTRIBUTE -->
           <span
             v-if                      = "undefined !== capabilities.relation.find(capability => 'change_attr_feature' === capability)"
@@ -77,13 +61,7 @@
       <section
         v-if  = "showAddVectorRelationTools"
         ref   = "relation_vector_tools"
-        style = "
-          display: flex;
-          flex-direction: column;
-          border: 2px solid #eee;
-          background-color: #fff;
-          padding: 10px;
-        "
+        class = "relation_vector_tools"
       >
         <span style="align-self: self-end" @click.stop="closeRelationVectorTools">
           <i
@@ -117,14 +95,7 @@
 
           <divider/>
 
-          <div
-            id    = "g3w-select-editable-layers-content"
-            style = "
-              flex-grow: 1;
-              display: flex;
-              flex-direction: column
-            "
-          >
+          <div id="g3w-select-editable-layers-content">
 
           <div
             class="g3w-editing-new-relation-vector-type"
@@ -158,15 +129,13 @@
       <!-- RELATION CONTENT -->
       <div
         ref        = "relation_body"
-        class      = "box-body"
-        style      = "padding:0;"
+        class      = "relation_body box-body"
         v-disabled = "showAddVectorRelationTools"
       >
         <table
           v-if  = "relationsLength > 0"
           ref   = "relationTable"
           class = "table g3wform-relation-table table-striped"
-          style = "width:100%"
         >
           <thead>
             <tr>
@@ -718,5 +687,43 @@
   .g3w-editing-new-relation-vector-type {
     margin-bottom: 5px;
     font-weight: bold;
+  }
+  .relation_header_title {
+    width: 100%;
+    display: flex;
+    font-weight: bold;
+    font-size: 1.3em;
+    align-items: center;
+    background-color: #fff;
+  }
+  .relation_header_tools {
+    width: 100%;
+    display: flex;
+    background-color: #fff;
+  }
+  .g3w-editing-relations-add-link-tools {
+    display: flex;
+    justify-content: flex-end
+  }
+  .relation_vector_tools {
+    display: flex;
+    flex-direction: column;
+    border: 2px solid #eee;
+    background-color: #fff;
+    padding: 10px;
+  }
+  #g3w-select-editable-layers-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column
+  }
+  #search-box {
+    margin-right: auto;
+  }
+  .relation_body {
+    padding: 0;
+  }
+  .g3wform-relation-table {
+    width: 100%
   }
 </style>
