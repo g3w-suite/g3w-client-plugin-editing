@@ -185,10 +185,7 @@
                   aria-hidden              = "true"
                 ></div>
               </td>
-              <td
-                v-for  = "attribute in relationAttributesSubset(relation)"
-                v-show = "null !== index"
-              >
+              <td v-for  = "attribute in relationAttributesSubset(relation)">
                 <!-- MEDIA ATTRIBUTE-->
                 <div
                   v-if = "isMedia(attribute.value) && getValue(attribute.value)"
