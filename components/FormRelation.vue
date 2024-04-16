@@ -185,10 +185,7 @@
                   aria-hidden              = "true"
                 ></div>
               </td>
-              <td
-                v-for  = "attribute in relationAttributesSubset(relation)"
-                v-show = "!showAllFields(index)"
-              >
+              <td v-for  = "attribute in relationAttributesSubset(relation)">
                 <!-- MEDIA ATTRIBUTE-->
                 <div
                   v-if = "isMedia(attribute.value) && getValue(attribute.value)"
@@ -251,7 +248,6 @@
         showAddVectorRelationTools: false,
         copylayerid:                null, // used for vector relation layer
         active:                     false,
-        showallfieldsindex:         null,
         tooltips: {
           add_relation:            "plugins.editing.form.relations.tooltips.add_relation",
           link_relation:           "plugins.editing.form.relations.tooltips.link_relation",
@@ -392,20 +388,6 @@
        */
       relationsFields(relation) {
         return this._service.relationFields(relation);
-      },
-
-      /**
-       * @FIXME add description
-       */
-      showAllRelationFields(index) {
-        this.showallfieldsindex = this.showAllFields(index) ? null : index;
-      },
-
-      /**
-       * @FIXME add description
-       */
-      showAllFields(index) {
-        return index === this.showallfieldsindex ;
       },
 
       /**
