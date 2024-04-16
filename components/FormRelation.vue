@@ -264,8 +264,9 @@
     },
 
     methods: {
+
       /**
-       * Resize method to adapt table when a window is resized
+       * Adapt table when window is resized
        */
       resize() {
         // skip when a relation form is disabled (or hidden)
@@ -293,7 +294,7 @@
       },
 
       /**
-       * Method to unlink the relation
+       * Unlink relation by index
        * @param index
        */
       unlinkRelation(index) {
@@ -451,13 +452,6 @@
       /**
        * @FIXME add description
        */
-      _setDataTableSearch() {
-        $('#filterRelation').on('keyup', function() { this.relationsTable.search($(this).val()).draw(); });
-      },
-
-      /**
-       * @FIXME add description
-       */
       _createDataTable() {
         this.relationsTable = $(this.$refs.relationTable)
           .DataTable({
@@ -471,7 +465,8 @@
           });
 
         $(".dataTables_filter, .dataTables_length").hide();
-        this._setDataTableSearch();
+        // set data table search
+        $('#filterRelation').on('keyup', () => { this.relationsTable.search($(this).val()).draw(); });
       },
 
       /**
@@ -500,11 +495,13 @@
       },
 
       /**
-      * @since 3.7.4
-       * In case of commit new relation to server, update temporary relation.id (__new__) to
-       * saved id on server. It is called when a new relation is saved on a relation form after click on save all disk,
-       * and when save all disks are click on a list of relation table
-      */
+       * In case of commit new relation to server, update temporary relation.id (__new__)
+       * to saved id on server. It is called when a new relation is saved on a relation form
+       * after click on save all disk, and when save all disks are click on a list of relation
+       * table.
+       * 
+       * @since g3w-client-plugin-editing@3.7.4
+       */
       updateNewRelationId() {
         this._new_relations_ids
           .forEach(({ clientid, id }) => {
@@ -535,10 +532,7 @@
        * @returns { boolean }
        */
       enableAddLinkButtons() {
-        return (
-          (0 === this.relationsLength) ||
-          ('ONE' !== this.relation.type)
-        );
+        return (0 === this.relationsLength || 'ONE' !== this.relation.type);
       },
 
     },
@@ -571,22 +565,28 @@
 
       const relationLayer   = EditingService.getLayerById(this.relation.child);
 
-      /** @since 3.7.2 Store array of new relations features objects saved on server id
-       * {clientid, id} where client id is a temporary id of relation feature, id is saved id on server
-       * */
+      /** 
+       * Array of new relations features objects saved on server id
+       * {clientid, id} where client id is a temporary id of relation
+       * feature, id is saved id on server.
+       * 
+       * @since g3w-client-plugin-editing@3.7.2
+       */
       this._new_relations_ids = [];
 
 
-      /** @since 3.7.2 Method to listen commit on server when press disk icon saves all form*/
-      this.listenNewCommitRelations = ({new_relations={}}) => {
-        // in case of new relation saved on server
+      /** @since 3.7.2 Listen commit on server when press disk icon saves all form*/
+      this.listenNewCommitRelations = ({ new_relations = {} }) => {
+        // there is a new relation saved on server
         if (new_relations[relationLayer.getId()] && Array.isArray(new_relations[relationLayer.getId()].new)) {
           this._new_relations_ids = [
             ...this._new_relations_ids,
             ...new_relations[relationLayer.getId()].new.map(({clientid, id}) => ({clientid, id}))
           ]
-          //when component is active (show) need to update
-          if (this.active) { this.updateNewRelationId(); }
+          // component is active (show) → need to update
+          if (this.active) {
+            this.updateNewRelationId();
+          }
         }
       };
 
@@ -595,13 +595,13 @@
 
       this.isVectorRelation = Layer.LayerTypes.VECTOR === relationLayer.getType();
 
-      // vector relation --> get all layers with the same geometry
+      // vector relation → get all layers with the same geometry
       if (this.isVectorRelation) {
         const project_layers  = EditingService.getProjectLayersWithSameGeometryOfLayer(relationLayer, { exclude: [this.relation.father] });
         const external_layers = EditingService.getExternalLayersWithSameGeometryOfLayer(relationLayer);
         const layers          = [];
 
-        //Project Layers
+        // project Layers
         for (const layer of project_layers) {
           layers.push({
             id:       layer.getId(),
@@ -610,7 +610,7 @@
           });
         }
 
-        //External Layer
+        // external Layer
         for (const layer of external_layers) {
           layers.push({
             id:       layer.get('id'),
@@ -637,10 +637,13 @@
     },
 
     async activated() {
+
       //in the case of vector relation, the current extent of map whe is actived
       //it used to sto an extent of the map at the moment of possibible editing (and zoom)
       // to relation feature
-      if (this.isVectorRelation) { this.mapExtent = GUI.getService('map').getMapBBOX() }
+      if (this.isVectorRelation) {
+        this.mapExtent = GUI.getService('map').getMapBBOX();
+      }
 
       this.showAddVectorRelationTools = false;
 
@@ -678,10 +681,10 @@
     beforeDestroy() {
       const EditingService  = require('../services/editingservice');
       this.loadEventuallyRelationValuesForInputs = true;
-      //unlisten
+      // unlisten
       EditingService.off('commit',this.listenNewCommitRelations);
-      //In the case of vector relation, restore the beginning extent of the map;
-      //in the case we zoomed to relation feature
+      // In the case of vector relation, restore the beginning extent of the map;
+      // in the case we zoomed to relation feature
       if (this.isVectorRelation && (null !== this._service.currentRelationFeatureId)) {
         GUI.getService('map').zoomToExtent(this.mapExtent);
         this.mapExtent = null;
