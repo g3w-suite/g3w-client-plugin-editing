@@ -292,8 +292,6 @@
             + 'px';
         }
 
-        console.log(this.relationsTable);
-
         if (this.relationsTable) {
           this.relationsTable.columns.adjust();
         }
@@ -383,13 +381,15 @@
       _createDataTable() {
         this.relationsTable = $(this.$refs.relationTable)
           .DataTable({
-            "scrollX":        true,
-            "order":          [ 2, 'asc' ],
-            "destroy":        true,
-            "scrollResize":   true,
-            "scrollCollapse": true,
-            "pageLength":     10,
-            "columnDefs":     [ { orderable: false, targets: [0, 1] } ]
+            scrollX:        true,
+            order:          [ 2, 'asc' ],
+            destroy:        true,
+            scrollResize:   true,
+            scrollCollapse: true,
+            responsive:     true,
+            pageLength:     10,
+            columnDefs:     [ { orderable: false, targets: [0, 1] } ],
+            autoWidth:      false,
           });
 
         $(".dataTables_filter, .dataTables_length").hide();
