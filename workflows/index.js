@@ -1864,24 +1864,24 @@ export class OpenFormStep extends EditingTask {
       .setInput({ key: 'fields', value: this._fields });
 
     const formService = Form({
-      formComponent,
-      title: "plugins.editing.editing_attributes",
-      name: this._layerName,
-      crumb: {title: this._layerName},
-      id: this._generateFormId(this._layerName),
-      dataid: this._layerName,
-      layer: this._originalLayer,
-      isnew: this._originalFeatures.length > 1 ? false : feature.isNew(), // specify if is a new feature
       feature,
-      parentData: getParentFormData(),
-      fields: this._fields,
-      context_inputs: !this._multi && this._edit_relations && {context, inputs},
-      formStructure: this._editorFormStructure,
-      modal: true,
-      push: this.push || this._isContentChild, //@since v3.7 need to take in account this.push value
-      showgoback: undefined !== this.showgoback ? this.showgoback : !this._isContentChild,
+      formComponent,
+      title:           "plugins.editing.editing_attributes",
+      name:            this._layerName,
+      crumb:           { title: this._layerName },
+      id:              this._generateFormId(this._layerName),
+      dataid:          this._layerName,
+      layer:           this._originalLayer,
+      isnew:           this._originalFeatures.length > 1 ? false : feature.isNew(), // specify if is a new feature
+      parentData:      getParentFormData(),
+      fields:          this._fields,
+      context_inputs:  !this._multi && this._edit_relations && {context, inputs},
+      formStructure:   this._editorFormStructure,
+      modal:           true,
+      push:            this.push || this._isContentChild, //@since v3.7 need to take in account this.push value
+      showgoback:      undefined !== this.showgoback ? this.showgoback : !this._isContentChild,
       headerComponent: this._saveAll && SaveAll,
-      buttons: [
+      buttons:         [
         {
           id: 'save',
           title: this._isContentChild ?
