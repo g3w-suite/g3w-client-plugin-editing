@@ -87,24 +87,28 @@
         Promise
           .allSettled(
             workflows
-            .filter( w => typeof w.getLastStep().getTask().saveAll === "function") // need to filter only workflow that
-            .map(w => w.getLastStep().getTask().saveAll(w.getContext().service.state.fields))
+              .filter( w => "function" === typeof w.getLastStep().getTask().saveAll) // need to filter only workflow that
+              .map(w => w.getLastStep().getTask().saveAll(w.getContext().service.state.fields))
           )
           .then(() => {
-            EditingService.commit({ modal: false })
-            .then(()   => { WorkflowsStack._workflows.forEach(w => w.getContext().service.setUpdate(false, { force: false })); })
-            .fail((e)   => console.warn(e))
-            .always(() => { this.loading = false });
+            EditingService
+              .commit({ modal: false })
+              .then(()   => { WorkflowsStack._workflows.forEach(w => w.getContext().service.setUpdate(false, { force: false })); })
+              .fail((e)   => console.warn(e))
+              .always(() => { this.loading = false });
         })
       },
 
     },
 
     created() {
-      //set enabled to true as default value;
+      // set enabled to true as default value;
       this.enabled = true;
-      //In the case of a workflow task are less than 2
-      if (WorkflowsStack.getLength() < 2) { return; }
+
+      // skip when workflow tasks are less than 2
+      if (WorkflowsStack.getLength() < 2) {
+        return;
+      }
 
       this.enabled = WorkflowsStack
         ._workflows
