@@ -23,6 +23,7 @@
         ref   = "relation_header_tools"
         class = "relation_header_tools box-header with-border"
       >
+
         <!-- SEARCH BOX -->
         <div id="search-box">
           <input
@@ -33,10 +34,12 @@
             :placeholder = "placeholdersearch"
           >
         </div>
+
         <div class="g3w-editing-relations-add-link-tools">
+
           <!-- CHANGE ATTRIBUTE -->
           <span
-            v-if                      = "undefined !== capabilities.relation.find(capability => 'change_attr_feature' === capability)"
+            v-if                      = "undefined !== capabilities.relation.find(cap => 'change_attr_feature' === cap)"
             class                     = "g3w-icon add-link"
             align                     = "center"
             v-t-tooltip:bottom.create = "tooltips.link_relation"
@@ -46,7 +49,7 @@
 
           <!-- ADD FEATURE -->
           <span
-            v-if                      = "undefined !== capabilities.relation.find(capability => 'add_feature' === capability)"
+            v-if                      = "undefined !== capabilities.relation.find(cap => 'add_feature' === cap)"
             v-t-tooltip:bottom.create = "tooltips.add_relation"
             @click                    = "enableAddLinkButtons ? addRelationAndLink() : null"
             class                     = "g3w-icon add-link pull-right"
@@ -89,14 +92,14 @@
         <!-- COPY FEATURE FROM OTHER LAYER -->
         <section v-if="copyFeatureLayers.length > 0">
 
-          <divider/>
+          <span class="divider"></span>
 
           <div
             style      = "align-self: center"
             v-t-plugin = "'editing.relation.draw_or_copy'"
           ></div>
 
-          <divider/>
+          <span class="divider"></span>
 
           <div id="g3w-select-editable-layers-content">
 
@@ -737,5 +740,19 @@
   .close_vector_relation_tool > .g3w-icon {
     font-weight: bold;
     cursor: pointer;
+  }
+  .divider {
+    display: block;
+    position: relative;
+    padding: 0;
+    margin-bottom: 5px;
+    height: 0;
+    width: 100%;
+    max-height: 0;
+    font-size: 1px;
+    line-height: 0;
+    clear: both;
+    border: none;
+    border-bottom: 2px solid #eee;
   }
 </style>
