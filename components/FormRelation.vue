@@ -4,9 +4,10 @@
 
 <template>
     <div
-      v-if  = "active"
+      v-disabled  = "loading"
       style = "margin-bottom: 5px;"
     >
+      <bar-loader :loading="loading"/>
 
       <!-- RELATION TITLE -->
       <div
@@ -277,10 +278,10 @@ flex-direction: column
 
     methods: {
       /**
-       * Resize method to adapt table when window is resized
+       * Resize method to adapt table when a window is resized
        */
       resize() {
-        // skip when relation form is disabled (or hidden) 
+        // skip when a relation form is disabled (or hidden)
         if (!(this.active && 'none' !== this.$el.style.display)) {
           return;
         }

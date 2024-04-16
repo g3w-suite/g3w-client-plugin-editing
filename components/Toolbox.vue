@@ -346,10 +346,17 @@
 
     watch: {
 
-      async'state.activetool'(activetool) {
+      async 'state.activetool'(activetool) {
         await this.$nextTick();
         this.currenttoolhelpmessage = activetool && activetool.getHelpMessage();
       },
+      /**
+       * Method to watch toolbox in editing state
+       * @param bool
+       */
+      'state.editing.on'(bool) {
+        this.$emit('on-editing', bool);
+      }
 
     },
 

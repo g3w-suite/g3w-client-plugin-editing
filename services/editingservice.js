@@ -1421,14 +1421,11 @@ proto.getRelationsAttributesByFeature = function({
   relation,
   feature,
 } = {}) {
-
   const layer = this.getToolBoxById(layerId).getLayer();
-  const relations = this.getRelationsByFeature({layerId, relation, feature});
+  const relations = this.getRelationsByFeature({ layerId, relation, feature });
   return relations
     .map(relation => ({
-      fields: layer.getFieldsWithValues(relation, {
-        relation: true
-      }),
+      fields: layer.getFieldsWithValues(relation, { relation: true }),
       id: relation.getId()
     }))
 
@@ -1470,10 +1467,18 @@ proto.getRelationsByFeature = function({
   relation,
   feature,
 } = {}) {
+  //get father layer
+  const fatherLayer = this.getLayerById(relation.getFather ? relation.getFather() : relation.father);
   const { ownField, relationField } = this._getRelationFieldsFromRelation({ layerId, relation });
   // get features of relation child layers
   // Loop relation fields
-  const values = relationField.map(field => feature.get(field));
+  const values = relationField.map(field => {
+    //In case of new feature, need to check if field is pk field
+    if (feature.isNew() && fatherLayer.isPkField(field)) {
+      return feature.getId();
+    }
+    return feature.get(field)
+  });
   return this
     ._getFeaturesByLayerId(layerId)
     .filter(feature => ownField.every((field, i) => feature.get(field) == values[i]));
@@ -1679,6 +1684,7 @@ proto.getRelationsInEditing = function({
   let relationinediting;
   relations.forEach(relation => {
     const relationLayerId = this._getRelationLayerId({layerId, relation});
+    //check if the layer is editable
     if (this.getLayerById(relationLayerId)) {
       relationinediting = {
         relation: relation.getState(),
@@ -2155,10 +2161,64 @@ proto.showCommitModalWindow = function({
           closeButton: false
         });
         resolve(messages);
-        commitPromise.always(()=>dialog.modal('hide')) // hide saving dialog
+        commitPromise.always(() => dialog.modal('hide')) // hide saving dialog
       })
-      .fail(error => reject(error))
-      .always(()=> workflow.stop())
+      .fail(async error => {
+        const promises = [];
+        const rollbackRelations = (relations={}) => {
+          Object
+            .entries(relations)
+            .forEach(([ layerId, {add, delete:del, update, relations = {}}]) => {
+              const layer = this.getLayerById(layerId);
+              const sourceLayer = layer.getEditingSource();
+              // check if the relation layer has some features
+              if (sourceLayer.readFeatures().length > 0) {
+
+                //add a need to remove
+                add.forEach(({id}) => {
+                  sourceLayer.removeFeature(sourceLayer.getFeatureById(id))
+                })
+
+                // //need to get original values
+                update.forEach(({ id }) => {
+                  promises.push(
+                    new Promise((resolve, reject) => {
+                      this.getProjectLayerFeatureById({ layerId, fid: id })
+                        .then(f => {
+                          const feature = sourceLayer.getFeatureById(id);
+                          feature.setProperties(f.properties);
+                          feature.setGeometry(f.geometry);
+                          resolve();
+                        }).catch(reject);
+                    })
+                  )
+                })
+              }
+
+              //need to add again.
+              del.forEach(id => {
+                promises.push(
+                  new Promise((resolve, reject) => {
+                    this.getProjectLayerFeatureById({ layerId, fid: id })
+                      .then(f => {
+                        const feature = new ol.Feature({ geometry: f.geometry })
+                        feature.setProperties(f.properties);
+                        feature.setId(id);
+                        // need to add again to source because it is for relation layer is locked
+                        sourceLayer.addFeature(new Feature({ feature }));
+                        resolve();
+                      }).catch(reject);
+                  })
+                )
+              })
+              rollbackRelations(relations);
+            })
+        }
+        rollbackRelations(commitItems.relations);
+        await Promise.allSettled(promises);
+        reject(error)
+      })
+      .always(() => workflow.stop())
   })
 };
 
@@ -2405,7 +2465,7 @@ proto.commit = function({
         },
         id: OFFLINE_ITEMS.CHANGES
       })
-        .then(() =>{
+        .then(() => {
           GUI.showUserMessage({
             type: 'success',
             message: "plugins.editing.messages.saved_local",
@@ -2425,7 +2485,8 @@ proto.commit = function({
         })
       }
     })
-    .catch(() => {
+    .catch((e) => {
+      console.warn(e);
       d.reject(toolbox)
   });
 
@@ -2809,7 +2870,6 @@ proto.getProjectLayerFeatureById = async function({
   } catch(e) {
     console.warn(e);
   }
-
   return feature;
 };
 

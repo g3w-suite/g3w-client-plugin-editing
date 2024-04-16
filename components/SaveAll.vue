@@ -64,9 +64,13 @@
     },
 
     computed: {
-
+      /**
+       * Set disabling save all button when it is not enabled (a case of parent form is not valid,
+       * or when current form i not valid or valid but not updated)
+       * @return {boolean}
+       */
       disabled() {
-        return !this.enabled && (!this.valid || !this.update);
+        return !this.enabled || !(this.valid && this.update);
       },
 
     },
@@ -97,7 +101,9 @@
     },
 
     created() {
-     //In case of workflow task are less than 2
+      //set enabled to true as default value;
+      this.enabled = true;
+      //In the case of a workflow task are less than 2
       if (WorkflowsStack.getLength() < 2) {
         return;
       }

@@ -7,6 +7,8 @@
 
     <bar-loader :loading="saving"/>
 
+    <helpdiv v-if ="layersInEditing > 0" style="font-weight: bold" message="plugins.editing.close_editing_panel.message" />
+
     <!-- OFFLINE MESSAGE -->
     <div
       v-if  = "!appState.online"
@@ -94,6 +96,7 @@
         @savetoolbox        = "saveToolBox"
         @setactivetool      = "startActiveTool"
         @stopactivetool     = "stopActiveTool"
+        @on-editing         = "updateLayersInEditing"
       />
     </div>
 
@@ -114,7 +117,8 @@
 
     data() {
       return {
-        saving: false, // whether to show loading bar while committing to server (click on save disk icon)  
+        saving:          false, // whether to show loading bar while committing to server (click on save disk icon)
+        layersInEditing: 0, //@since 3.8.0 Number of layers in editing
       };
     },
 
@@ -128,6 +132,14 @@
     },
 
     methods: {
+      /**
+       * Method that handle editing state of toolbox layer
+       * @since 3.8.0
+       * @param bool
+       */
+      updateLayersInEditing(bool) {
+        this.layersInEditing += bool ? 1 : -1;
+      },
 
       undo() {
         this.$options.service.undo();
@@ -158,17 +170,18 @@
       async startToolBox(toolboxId) {
         const toolbox = this._getToolBoxById(toolboxId);
         if (ApplicationState.online && toolbox.canEdit()) {
-          //check if a dependency layer (in relation) has some changes not commietd
+          //check if a dependency layer (in relation) has some changes not committed
           const dirtyId = toolbox.getDependencies()
             .find(id => this._getToolBoxById(id).isDirty());
           if (dirtyId) {
-            //if there is a layer with not saved/committed changes ask before get start toolbox
+            //if there is a layer with not saved/committed changes ask before get start toolbox,
             //otherwise changes made on relation layers are not sync with current database state
-            //example Join 1:1 fields
+            //example Joins 1:1 fields
             try      { await this.$options.service.commitDirtyToolBoxes(dirtyId); }
             catch(e) { console.warn(e); }
           }
-          toolbox.start();
+          toolbox
+            .start()
         }
       },
 
@@ -182,7 +195,8 @@
             .commit()
             .always(() => toolbox.stop());
         } else {
-          toolbox.stop();
+          toolbox
+            .stop()
         }
       },
 
@@ -247,7 +261,7 @@
           selected.clearMessage();
         }
 
-        // set current selected toolbox to true
+        // set the current selected toolbox to true
         toolbox.setSelected(true);
 
         this.state.toolboxselected = toolbox;
@@ -332,6 +346,13 @@
       canCommit(bool) {
         this.$options.service.registerLeavePage(bool);
       },
+      /**
+       * @since 3.8.0
+       * @param { Number } n number of layer in editing
+       */
+      layersInEditing(n) {
+        document.getElementsByClassName('close-pane-button')[0].classList[0 === n ? 'remove' : 'add']('g3w-disabled');
+      }
 
     },
 
