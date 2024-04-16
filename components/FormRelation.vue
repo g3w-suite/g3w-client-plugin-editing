@@ -372,13 +372,6 @@
       },
 
       /**
-       * @FIXME add description
-       */
-      isRequired() {
-        return this._service.isRequired();
-      },
-
-      /**
        * @returns { Array } attributes 
        */
       relationAttributesSubset(relation) {
