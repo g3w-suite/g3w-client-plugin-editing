@@ -63,13 +63,14 @@
         ref   = "relation_vector_tools"
         class = "relation_vector_tools"
       >
-        <span style="align-self: self-end" @click.stop="closeRelationVectorTools">
-          <i
-            class="g3w-icon skin-color"
-            style="font-weight: bold; cursor: pointer;"
-            :class="g3wtemplate.font['close']">
-          </i>
+
+        <span
+          @click.stop = "closeRelationVectorTools"
+          class       = "close_vector_relation_tool"
+        >
+          <i class="g3w-icon skin-color" :class="g3wtemplate.font['close']"></i>
         </span>
+
         <!-- ADD VECTOR RELATION -->
         <div>
           <div
@@ -84,44 +85,47 @@
             <i :class="g3wtemplate.font['pencil']"></i>
           </button>
         </div>
-        <!--  COPY FEATURE FROM OTHER LAYER      -->
+
+        <!-- COPY FEATURE FROM OTHER LAYER -->
         <section v-if="copyFeatureLayers.length > 0">
+
           <divider/>
 
           <div
             style      = "align-self: center"
-            v-t-plugin = "'editing.relation.draw_or_copy'">
-          </div>
+            v-t-plugin = "'editing.relation.draw_or_copy'"
+          ></div>
 
           <divider/>
 
           <div id="g3w-select-editable-layers-content">
 
-          <div
-            class="g3w-editing-new-relation-vector-type"
-            v-t-plugin="'editing.relation.copy_feature_from_other_layer'">
+            <div
+              class      = "g3w-editing-new-relation-vector-type"
+              v-t-plugin = "'editing.relation.copy_feature_from_other_layer'"
+            ></div>
+
+            <select
+              id        = "g3w-select-editable-layers-to-copy"
+              v-select2 = "'copylayerid'"
+            >
+              <option
+                v-for  = "copyFeatureLayer in copyFeatureLayers"
+                :key   = "copyFeatureLayer.id"
+                :value = "copyFeatureLayer.id"
+              >{{ copyFeatureLayer.name }}</option>
+            </select>
+
+            <!-- COPY FEATURE FROM OTHER LAYER -->
+            <button
+              class       = "btn skin-button"
+              @click.stop = "copyFeatureFromOtherLayer"
+            >
+              <i :class="g3wtemplate.font['clipboard']"></i>
+            </button>
+
           </div>
 
-          <select
-            id        = "g3w-select-editable-layers-to-copy"
-            v-select2 = "'copylayerid'"
-          >
-            <option
-              v-for  = "copyFeatureLayer in copyFeatureLayers"
-              :key   = "copyFeatureLayer.id"
-              :value = "copyFeatureLayer.id">
-                {{ copyFeatureLayer.name }}
-            </option>
-          </select>
-
-          <!-- COPY FEATURE FROM OTHER LAYER -->
-          <button
-            class       = "btn skin-button"
-            @click.stop = "copyFeatureFromOtherLayer"
-          >
-            <i :class="g3wtemplate.font['clipboard']"></i>
-          </button>
-          </div>
         </section>
 
       </section>
@@ -141,9 +145,7 @@
             <tr>
               <th v-t="'tools'"></th>
               <th></th>
-              <th v-for="attribute in relationAttributesSubset(relations[0])">
-                {{ attribute.label }}
-              </th>
+              <th v-for="attribute in relationAttributesSubset(relations[0])">{{ attribute.label }}</th>
             </tr>
           </thead>
           <tbody>
@@ -153,7 +155,7 @@
             >
               <td>
                 <div style="display: flex">
-                  <!-- RELATION TOOLS                  -->
+                  <!-- RELATION TOOLS -->
                   <div
                     v-for                    = "relationtool in getRelationTools(index)"
                     :key                     = "relationtool.state.id"
@@ -172,7 +174,7 @@
               </td>
               <td class="action-cell">
                 <div
-                  v-if                     = "!fieldrequired && undefined !== capabilities.relation.find(capability => 'change_attr_feature' === capability)"
+                  v-if                     = "!fieldrequired && undefined !== capabilities.relation.find(cap => 'change_attr_feature' === cap)"
                   class                    = "g3w-mini-relation-icon g3w-icon"
                   :class                   = "g3wtemplate.font['unlink']"
                   @click.stop              = "unlinkRelation(index)"
@@ -209,6 +211,7 @@
           </tbody>
         </table>
       </div>
+
   </div>
 </template>
 
@@ -280,7 +283,9 @@
             - (this.isVectorRelation && this.showAddVectorRelationTools ? $(this.$refs.relation_vector_tools).outerHeight() : 0)
           );
 
-        if (this.relationsTable) { this.relationsTable.columns.adjust() }
+        if (this.relationsTable) {
+          this.relationsTable.columns.adjust();
+        }
 
       },
 
@@ -309,8 +314,8 @@
       },
 
       /**
-      * @since 3.8.0
-      */
+       * @since 3.8.0
+       */
       async closeRelationVectorTools() {
         this.showAddVectorRelationTools = false;
         await this.$nextTick();
@@ -725,5 +730,12 @@
   }
   .g3wform-relation-table {
     width: 100%
+  }
+  .close_vector_relation_tool {
+    align-self: self-end;
+  }
+  .close_vector_relation_tool > .g3w-icon {
+    font-weight: bold;
+    cursor: pointer;
   }
 </style>
