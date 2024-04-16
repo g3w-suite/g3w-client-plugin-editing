@@ -31,7 +31,7 @@
             type         = "text"
             class        = "form-control"
             id           = "filterRelation"
-            :placeholder = "`${t('editing.search')} ...`"
+            :placeholder = "placeholdersearch"
           >
         </div>
 
@@ -43,17 +43,17 @@
             class                     = "g3w-icon add-link"
             align                     = "center"
             v-t-tooltip:bottom.create = "'plugins.editing.form.relations.tooltips.link_relation'"
-            @click.stop               = "enableAddLinkButtons ? this._service.linkRelation() : null"
-            :class                    = "[{ 'disabled': !enableAddLinkButtons }, g3wtemplate.font['link']]"
+            @click.stop               = "show_add_link ? _service.linkRelation() : null"
+            :class                    = "[{ 'disabled': !show_add_link }, g3wtemplate.font['link']]"
           ></span>
 
           <!-- ADD FEATURE -->
           <span
             v-if                      = "undefined !== capabilities.relation.find(cap => 'add_feature' === cap)"
             v-t-tooltip:bottom.create = "'plugins.editing.form.relations.tooltips.add_relation'"
-            @click                    = "enableAddLinkButtons ? addRelationAndLink() : null"
+            @click                    = "show_add_link ? addRelationAndLink() : null"
             class                     = "g3w-icon add-link pull-right"
-            :class                    = "[{ 'disabled' : !enableAddLinkButtons }, g3wtemplate.font['plus']]"
+            :class                    = "[{ 'disabled' : !show_add_link }, g3wtemplate.font['plus']]"
           ></span>
 
         </div>
@@ -160,7 +160,7 @@
                 <div style="display: flex">
                   <!-- RELATION TOOLS -->
                   <div
-                    v-for                    = "tool in this._service.getRelationTools(index)"
+                    v-for                    = "tool in _service.getRelationTools(index)"
                     :key                     = "tool.state.id"
                     class                    = "editbtn enabled"
                     :class                   = "{ 'toggled': tool.state.active }"
@@ -170,7 +170,7 @@
                     <img
                       height = "20px"
                       width  = "20px"
-                      :src   = "`${resourcesurl}images/${relationtool.state.icon}`"
+                      :src   = "`${resourcesurl}images/${tool.state.icon}`"
                     />
                   </div>
                 </div>
@@ -180,7 +180,7 @@
                   v-if                     = "!fieldrequired && undefined !== capabilities.relation.find(cap => 'change_attr_feature' === cap)"
                   class                    = "g3w-mini-relation-icon g3w-icon"
                   :class                   = "g3wtemplate.font['unlink']"
-                  @click.stop              = "this._service.unlinkRelation(index)"
+                  @click.stop              = "_service.unlinkRelation(index)"
                   v-t-tooltip:right.create = "'plugins.editing.form.relations.tooltips.unlink_relation'"
                   aria-hidden              = "true"
                 ></div>
@@ -202,16 +202,16 @@
                       <i class="fa-2x" :class="g3wtemplate.font[getMediaType(attribute.value.mime_type).type]"></i>
                     </div>
                   </a>
-                  <div class="filename">{{ getFileName(attribute.value) }}</div>
+                  <div class="filename">{{ getValue(attribute.value).split('/').pop() }}</div>
                 </div>
                 <!-- LINK ATTRIBUTE -->
                 <a
-                  v-else-if = "isLink(attribute)"
+                  v-else-if = "['photo', 'link'].includes(getFieldType(attribute))"
                   :href     = "getValue(attribute.value)"
                   target    = "_blank">{{ getValue(attribute.value) }}
                 </a>
                 <!-- TEXTUAL ATTRIBUTE -->
-                <span v-else>{{ getValue(this._service.getRelationFeatureValue(relation.id, attribute.name)) }}</span>
+                <span v-else>{{ getValue(_service.getRelationFeatureValue(relation.id, attribute.name)) }}</span>
               </td>
             </tr>
           </tbody>
@@ -250,11 +250,22 @@
 
     data() {
       return {
-        loading :         false,
-        show_vector_tools: false, // whether show vector relation tools 
-        copylayerid:      null,  // used for vector relation layer
-        active:           false,
-        value:            null,
+        loading :           false,
+        show_vector_tools:  false, // whether show vector relation tools 
+        copylayerid:        null,  // used for vector relation layer
+        copyFeatureLayers:  [],
+        active:             false,
+        value:              null,
+        placeholdersearch:  `${t('editing.search')} ...`,
+
+        /** 
+         * Array of new relations features objects saved on server id
+         * {clientid, id} where client id is a temporary id of relation
+         * feature, id is saved id on server.
+         * 
+         * @since g3w-client-plugin-editing@3.7.2
+         */
+        _new_relations_ids: [],
       };
     },
 
@@ -269,18 +280,22 @@
           return;
         }
 
-        $(this.$refs.relation_body)
-          .find('div.dataTables_scrollBody')
-          .height(
-              $(".g3wform_body:visible").height()
-            - $('.g3wform_footer:visible').height()
-            - $(this.$refs.relation_header_title).outerHeight()
-            - $(this.$refs.relation_header_tools).outerHeight()
-            - $(this.$el).find('.dataTables_scrollHead').outerHeight()
-            - $(this.$el).find('.dataTables_paginate.paging_simple_numbers').outerHeight()
-            - $('.editing-save-all-form:visible').outerHeight()
-            - (this.isVectorRelation && this.show_vector_tools ? $(this.$refs.relation_vector_tools).outerHeight() : 0)
-          );
+        const table = this.$refs.relation_body.querySelector('div.dataTables_scrollBody');
+
+        if (table) {
+          table.style.height =
+              ((document.querySelector('.g3wform_body')                                              || {}).offsetHeight || 0)
+            - ((document.querySelector('.g3wform_footer')                                            || {}).offsetHeight || 0)
+            - ((this.$refs.relation_header_title                                                     || {}).offsetHeight || 0)
+            - ((this.$refs.relation_header_tools                                                     || {}).offsetHeight || 0)
+            - ((this.$el.querySelector('.dataTables_scrollHead')                                     || {}).offsetHeight || 0)
+            - ((this.$el.querySelector('.dataTables_paginate.paging_simple_numbers')                 || {}).offsetHeight || 0)
+            - ((document.querySelector('.editing-save-all-form')                                     || {}).offsetHeight || 0)
+            - (( this.isVectorRelation && this.show_vector_tools && this.$refs.relation_vector_tools || {}).offsetHeight || 0)
+            + 'px';
+        }
+
+        console.log(this.relationsTable);
 
         if (this.relationsTable) {
           this.relationsTable.columns.adjust();
@@ -304,7 +319,7 @@
       },
 
       /**
-       * @since 3.8.0
+       * @since g3w-client-plugin-editing@3.8.0
        */
       async closeRelationVectorTools() {
         this.show_vector_tools = false;
@@ -336,9 +351,9 @@
       /**
        * @FIXME add description
        */
-      startTool(relationtool, index) {
+      startTool(tool, index) {
         this._service
-          .startTool(relationtool, index)
+          .startTool(tool, index)
           .then(() => {})
           .catch(console.warn)
       },
@@ -355,13 +370,6 @@
       /**
        * @FIXME add description
        */
-      isLink(field) {
-        return ['photo', 'link'].includes(this.getFieldType(field));
-      },
-
-      /**
-       * @FIXME add description
-       */
       getValue(value) {
         if (value && 'Object' === toRawType(value)) {
           value = value.value;
@@ -370,13 +378,6 @@
         }
         this.value = value;
         return value;
-      },
-
-      /**
-       * @FIXME add description
-       */
-      getFileName(value) {
-        return this.getValue(value).split('/').pop();
       },
 
       /**
@@ -413,7 +414,7 @@
       /**
        * @returns {Promise<void>}
        * 
-       * @since g3w-client-plugin-editing@v3.7.0
+       * @since g3w-client-plugin-editing@3.7.0
        */
       async updateTable() {
         this.destroyTable();     // destroy old table
@@ -467,6 +468,8 @@
     computed: {
 
       /**
+       * @TODO find out where `this.relations` is setted
+       * 
        * @returns { boolean }
        */
       relationsLength() {
@@ -481,9 +484,9 @@
       },
 
       /**
-       * @returns { boolean }
+       * @returns { boolean } whether show add link buttons
        */
-      enableAddLinkButtons() {
+      show_add_link() {
         return (0 === this.relations.length || 'ONE' !== this.relation.type);
       },
 
@@ -504,7 +507,7 @@
       },
 
       /**
-       * Toggle dom element of table of relations, based on show/hide creation of vector tools
+       * Toggle dom element of relations table, based on show/hide creation of vector tools
        */
       show_vector_tools(bool) {
         this._service.enableDOMElements(!bool);
@@ -519,15 +522,6 @@
     created() {
       const EditingService = require('../services/editingservice');
       const relationLayer  = EditingService.getLayerById(this.relation.child);
-
-      /** 
-       * Array of new relations features objects saved on server id
-       * {clientid, id} where client id is a temporary id of relation
-       * feature, id is saved id on server.
-       * 
-       * @since g3w-client-plugin-editing@3.7.2
-       */
-      this._new_relations_ids = [];
 
       this.listenNewCommitRelations = this.listenNewCommitRelations.bind(this);
 
@@ -552,8 +546,9 @@
               external: true,
             })),
         ].sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));                   // sorted by name
-        this.copylayerid       = this.copyFeatureLayers.length ? this.copyFeatureLayers[0].id : null; // current layer = first layer found
       }
+
+      this.copylayerid = this.copyFeatureLayers.length ? this.copyFeatureLayers[0].id : null; // current layer = first layer found
 
       this.loadEventuallyRelationValuesForInputs = false;
 
