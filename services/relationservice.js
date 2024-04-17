@@ -828,7 +828,7 @@ proto._createWorkflowOptions = function(options = {}) {
   const data   = this.getCurrentWorkflowData();
   const parent = Object.entries(this._currentParentFeatureRelationFieldsValue);
   return  {
-    parentFeature: data.feature.parentFeature, // get parent feature
+    parentFeature: data.feature,               // get parent feature
     context: {
       session: data.session,                   // get parent workflow
       excludeFields: fields.ownField,          // array of fields to be excluded
