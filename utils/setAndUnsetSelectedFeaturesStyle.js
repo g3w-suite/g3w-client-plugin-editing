@@ -1,4 +1,5 @@
-import { setFeaturesSelectedStyle } from './setFeaturesSelectedStyle';
+import { promisify }                from '../utils/promisify';
+import { setFeaturesSelectedStyle } from '../utils/setFeaturesSelectedStyle';
 
 const { WorkflowsStack } = g3wsdk.core.workflow;
 const { Layer }          = g3wsdk.core.layer;
@@ -29,7 +30,7 @@ export function setAndUnsetSelectedFeaturesStyle({ promise, inputs, style } = {}
    */
   const selectOriginalStyleHandle = () => {
     const originalStyle = setFeaturesSelectedStyle(features, style);
-    promise.always(() => { features.flat().forEach((feature => feature.setStyle(originalStyle))) });
+    promisify(promise).finally(() => { features.flat().forEach((feature => feature.setStyle(originalStyle))) });
   };
 
   const is_vector = Layer.LayerTypes.VECTOR === layer.getType();

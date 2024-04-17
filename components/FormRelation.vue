@@ -68,7 +68,7 @@
       >
 
         <span
-          @click.stop = "closeRelationVectorTools"
+          @click.stop = "closeVectorTools"
           class       = "close_vector_relation_tool"
         >
           <i class="g3w-icon skin-color" :class="g3wtemplate.font['close']"></i>
@@ -316,7 +316,7 @@
       /**
        * @since g3w-client-plugin-editing@3.8.0
        */
-      async closeRelationVectorTools() {
+      async closeVectorTools() {
         this.show_vector_tools = false;
         await this.$nextTick();
         this.resize();
@@ -450,8 +450,8 @@
         // there is a new relation saved on server
         if (new_relations[relationLayer.getId()] && Array.isArray(new_relations[relationLayer.getId()].new)) {
           this._new_relations_ids = [
-            ...this._new_relations_ids,
-            ...new_relations[relationLayer.getId()].new.map(({clientid, id}) => ({clientid, id}))
+            ...(this._new_relations_ids || []),
+            ...new_relations[relationLayer.getId()].new.map(({ clientid, id }) => ({clientid, id}))
           ]
           // component is active (show) → need to update
           if (this.active) {
