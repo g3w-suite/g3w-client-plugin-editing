@@ -254,15 +254,6 @@
         active:             false,
         value:              null,
         placeholdersearch:  `${t('editing.search')} ...`,
-
-        /** 
-         * Array of new relations features objects saved on server id
-         * {clientid, id} where client id is a temporary id of relation
-         * feature, id is saved id on server.
-         * 
-         * @since g3w-client-plugin-editing@3.7.2
-         */
-        _new_relations_ids: [],
       };
     },
 
@@ -425,21 +416,20 @@
       /**
        * In case of commit new relation to server, update temporary relation.id (__new__)
        * to saved id on server. It is called when a new relation is saved on a relation form
-       * after click on save all disk, and when save all disks are click on a list of relation
+       * after click on save all disks, and when save all disks are click on a list of relation
        * table.
        * 
        * @since g3w-client-plugin-editing@3.7.4
        */
       updateNewRelationId() {
-        this._new_relations_ids
-          .forEach(({ clientid, id }) => {
+        this._new_relations_ids.forEach(({ clientid, id }) => {
             const newrelation = this.relations.find(r => clientid === r.id);
             if (newrelation) { newrelation.id = id }
           })
       },
 
       /**
-       * Listen commit on server when press disk icon saves all form
+       * Listen to commit on server when press disk icon saves all form
        * 
        * @since g3w-client-plugin-editing@3.7.4
        */
@@ -451,7 +441,7 @@
         if (new_relations[relationLayer.getId()] && Array.isArray(new_relations[relationLayer.getId()].new)) {
           this._new_relations_ids = [
             ...(this._new_relations_ids || []),
-            ...new_relations[relationLayer.getId()].new.map(({ clientid, id }) => ({clientid, id}))
+            ...new_relations[relationLayer.getId()].new.map(({ clientid, id }) => ({ clientid, id }))
           ]
           // component is active (show) → need to update
           if (this.active) {
@@ -504,7 +494,7 @@
       },
 
       /**
-       * Toggle dom element of relations table, based on show/hide creation of vector tools
+       * Toggle dom element of relation table, based on show/hide creation of vector tools
        */
       show_vector_tools(bool) {
         this._service.enableDOMElements(!bool);
@@ -519,6 +509,15 @@
     created() {
       const EditingService = require('../services/editingservice');
       const relationLayer  = EditingService.getLayerById(this.relation.child);
+
+      /**
+       * Array of new relations features objects saved on server id
+       * {clientid, id} where client id is a temporary id of relation
+       * feature, id is saved id on server.
+       *
+       * @since g3w-client-plugin-editing@3.7.2
+       */
+      this._new_relations_ids       =  [];
 
       this.listenNewCommitRelations = this.listenNewCommitRelations.bind(this);
 
