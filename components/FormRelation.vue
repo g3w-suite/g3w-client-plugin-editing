@@ -423,9 +423,9 @@
        */
       updateNewRelationId() {
         this._new_relations_ids.forEach(({ clientid, id }) => {
-            const newrelation = this.relations.find(r => clientid === r.id);
-            if (newrelation) { newrelation.id = id }
-          })
+          const newrelation = this.relations.find(r => clientid === r.id);
+          if (newrelation) { newrelation.id = id }
+        })
       },
 
       /**
