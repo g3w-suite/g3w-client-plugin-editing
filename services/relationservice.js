@@ -318,7 +318,7 @@ proto.startTool = async function(relationtool, index) {
 
   await VM.$nextTick();
 
-  //in case of do something with map features
+  // do something with map features
 
   const d = {};
   const promise = new Promise((resolve, reject) => { Object.assign(d, { resolve, reject }) })
@@ -359,6 +359,18 @@ proto.startTool = async function(relationtool, index) {
     );
   }
 
+  // zoom to relation vector feature
+  if (['movevertex', 'movefeature'].includes(toolId) && this.currentRelationFeatureId !== relationfeature.getId()) {
+    this.currentRelationFeatureId = relationfeature.getId();
+    GUI.getService('map').zoomToFeatures([ relationfeature ]);
+  }
+
+  // disable modal and buttons (saveAll and back)
+  if (['movevertex', 'movefeature'].includes(toolId)) {
+    GUI.setModal(false);
+    this.enableDOMElements(false);
+  }
+
   // EDIT ATTRIBUTE FEATURE RELATION
   if ('editattributes' === toolId) {
     /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/edittablefeatureworkflow.js@v3.7.1 */
@@ -379,27 +391,16 @@ proto.startTool = async function(relationtool, index) {
             })
         });
       d.resolve(true);
-    } catch (error) {
+    } catch (e) {
       console.warn(e);
-      d.reject(false);
+      d.reject(e);
     }
 
     workflow.stop();
   }
 
-  if (['movevertex', 'movefeature'].includes(toolId) && this.currentRelationFeatureId !== relationfeature.getId()) {
-    this.currentRelationFeatureId = relationfeature.getId();
-    // zoom to relation vector feature
-    GUI.getService('map').zoomToFeatures([ relationfeature ]);
-  }
-
   // MOVE vertex or MOVE feature tool
   if (['movevertex', 'movefeature'].includes(toolId)) {
-    //set modal false
-    GUI.setModal(false);
-    //need to disable saveAll and back
-    this.enableDOMElements(false);
-
     const workflow = new EditingWorkflow({
       type: relationtool.type,
       steps: [ new {
@@ -408,7 +409,7 @@ proto.startTool = async function(relationtool, index) {
       }[toolId]({ selectStyle }) ]
     });
 
-    //watch eventually deactive when another tool is activated
+    // watch eventually deactive when another tool is activated
     const unwatch = VM.$watch(
       () => relationtool.state.active,
       bool => {
@@ -423,7 +424,7 @@ proto.startTool = async function(relationtool, index) {
         }
       }
     )
-    //bind listen esc key
+    // bind listen esc key
     workflow.bindEscKeyUp(() => {
       GUI.setModal(true);
       unwatch();
@@ -441,7 +442,7 @@ proto.startTool = async function(relationtool, index) {
       setTimeout(() => this.startTool(relationtool, index));
     } catch(e) {
       console.warn(e);
-      d.reject(false);
+      d.reject(e);
     }
 
     workflow.unbindEscKeyUp();
