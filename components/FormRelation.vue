@@ -460,6 +460,49 @@
         }
       },
 
+      /**
+       * Changes the relation field value when and if the parent changes the value of relation field
+       * 
+       * @param input
+       */
+      updateExternalKeyValueRelations(input) {
+        const EditingService = this._service.getEditingService();
+
+        //ownFiled is the field of relation feature link to parent feature layer
+        const { ownField, relationField } = EditingService._getRelationFieldsFromRelation({
+          layerId:  this._service._relationLayerId,
+          relation: this._service.relation
+        });
+
+        // get if parent form input that is changing
+        // is the field in relation of the current feature relation Layer
+
+        // skip when ..
+        if (false === (this._service._fatherFields.editable.length > 0 && relationField.find(rField => rField === input.name))) {
+          return;
+        }
+
+        // change currentParent Feature relation value
+        this._service._currentParentFeatureRelationFieldsValue[input.name] = input.value;
+
+        // loop relation fields of current feature
+        this._service.relations
+          .map(relation => relation.fields.find(f => -1 !== ownField.indexOf(f.name)))
+          .filter(Boolean)
+          .forEach(field => {
+            field.value     = this._service._currentParentFeatureRelationFieldsValue[field.name];
+            relation        = this._service._getRelationFeature(relation.id);
+            const oRelation = relation.clone();
+            relation.set(field.name, input.value);
+            if (!relation.isNew()) {
+              EditingService
+                .getToolBoxById(this._service._relationLayerId)
+                .getSession()
+                .pushUpdate(this._service._relationLayerId, relation, oRelation);
+            }
+          });
+      },
+
     },
 
     computed: {
@@ -556,7 +599,7 @@
 
       this.capabilities = this._service.getEditingCapabilities();
 
-      this.formeventbus.$on('changeinput', this._service.updateExternalKeyValueRelations.bind(this));
+      this.formeventbus.$on('changeinput', this.updateExternalKeyValueRelations.bind(this));
 
     },
 
