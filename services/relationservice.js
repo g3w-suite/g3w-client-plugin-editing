@@ -22,100 +22,87 @@ const { Layer }          = g3wsdk.core.layer;
 const { WorkflowsStack } = g3wsdk.core.workflow;
 const { Geometry }       = g3wsdk.core.geometry;
 
-//Vector style for selected relation
-const SELECTED_STYLE = {
-  'Point':  new ol.style.Style({
-    image: new ol.style.Circle({
-      radius: 8,
-      fill: new ol.style.Fill({
-        color: 'rgb(255,89,0)'
-      })
-    })
-  }),
-  'MultiPoint': new ol.style.Style({
-    image: new ol.style.Circle({
-      radius: 8,
-      fill: new ol.style.Fill({
-        color: 'rgb(255,89,0)'
-      })
-    })
-  }),
-  'Linestring': new ol.style.Style({
-    stroke: new ol.style.Stroke({
-      color: 'rgb(255,89,0)',
-      width: 8
-    })
-  }),
-  'MultiLinestring': new ol.style.Style({
-    stroke: new ol.style.Stroke({
-      color: 'rgb(255,89,0)',
-      width: 8
-    })
-  }),
-  'Polygon': new ol.style.Style({
-    stroke: new ol.style.Stroke({
-      color: 'rgb(255,89,0)',
-      width: 8
-    }),
-    fill: new ol.style.Fill({
-      color: 'rgb(255,89,0)'
-    })
-  }),
-  'MultiPolygon': new ol.style.Style({
-    stroke: new ol.style.Stroke({
-      color: 'rgb(255,89,0)',
-      width: 8
-    }),
-    fill: new ol.style.Fill({
-      color: 'rgb(255,89,0)'
-    })
-  })
+const color = 'rgb(255,89,0)';
+// Vector styles for selected relation
+const SELECTED_STYLES = {
+  'Point':           new ol.style.Style({ image:  new ol.style.Circle({ radius: 8, fill: new ol.style.Fill({ color }) }) }),
+  'MultiPoint':      new ol.style.Style({ image:  new ol.style.Circle({ radius: 8, fill: new ol.style.Fill({ color }) }) }),
+  'Linestring':      new ol.style.Style({ stroke: new ol.style.Stroke({ width: 8, color }) }),
+  'MultiLinestring': new ol.style.Style({ stroke: new ol.style.Stroke({ width: 8, color }) }),
+  'Polygon':         new ol.style.Style({ stroke: new ol.style.Stroke({ width: 8, color }), fill: new ol.style.Fill({ color }) }),
+  'MultiPolygon':    new ol.style.Style({ stroke: new ol.style.Stroke({ width: 8, color }), fill: new ol.style.Fill({ color }) }),
 }
 
 const RelationService = function(layerId, options = {}) {
-  // layerId is id of the parent of relation
-  this._parentLayerId                     = layerId;
-  this._parentWorkFlow                    = this.getCurrentWorkflow();
-  this._parentLayer                       = this._parentWorkFlow.getLayer();
+
   /**
-   * relation: contain information about relation from parent layer and current relation layer (ex. child, fields, relationid, etc....)
-   * relations: Array of a relations object id and fields linked to current parent feature that is in editing
-   *
+   * layerId is id of the parent of relation
    */
-  const { relation, relations }           = options;
-  this.relation                           = relation;
-  // relation feature link to current parent feature
-  this.relations                          = relations;
-  //editing service (main service of plugin)
+  this._parentLayerId  = layerId;
+  this._parentWorkFlow = this.getCurrentWorkflow();
+  this._parentLayer    = this._parentWorkFlow.getLayer();
+
+  /**
+   * Contain information about relation from parent layer and current relation layer (ex. child, fields, relationid, etc....)
+   */
+  this.relation = options.relation;
+
+  /**
+   * @type { Array } of a relations object id and fields linked to current parent feature (that is in editing)
+   */
+  this.relations = options.relations;
+
+  /**
+   * editing service (main service of plugin)
+   */
   this._editingService;
-  this.currentRelationFeatureId           = null; // @since 3.8.0 get current relation feature on editing
-  this.currentWorkflow                    = null;
-  this._isExternalFieldRequired           = false;
-  // this._relationLayerId is layer id of relation layer
-  this._relationLayerId                   = this.relation.child === this._parentLayerId
+
+  /**
+   * Current relation feature (in editing)
+   * 
+   * @since g3w-client-plugin*editing@3.8.0
+   */
+  this.currentRelationFeatureId = null;
+  this.currentWorkflow          = null;
+  this._isExternalFieldRequired = false;
+
+  /**
+   * layer id of relation layer
+   */
+  this._relationLayerId = this.relation.child === this._parentLayerId
     ? this.relation.father
     : this.relation.child;
-  // layer in relation type
-  this._layerType                         = this.getLayer().getType();
+
+  /**
+   * layer in relation type
+   */ 
+  this._layerType = this.getLayer().getType();
 
   const { ownField: fatherRelationField } = this.getEditingService()._getRelationFieldsFromRelation({ layerId: this._parentLayerId, relation: this.relation });
 
-  // Store father relation fields editable and pk
-  this._fatherRelationFields    = {
-    //get editable fields
+  /**
+   * Father relation fields (editable and pk)
+   */
+  this._fatherFields    = {
+    // get editable fields
     editable: fatherRelationField.filter(fRField => this._parentLayer.isEditingFieldEditable(fRField)),
-    //check if father field is a pk and is not editable
+    // check if father field is a pk and is not editable
     pk:       fatherRelationField.find(fRField => this._parentLayer.isPkField(fRField) && !this._parentLayer.isEditingFieldEditable(fRField)),
   }
-  //check if external fields
-  this._isExternalFieldRequired = this._checkIfExternalFieldRequired();
-  // Check if the parent field is editable.
-  // If not, get the id of parent feature so the server can generate the right value
-  // to fill the field with the relation layer feature when commit
 
+  /**
+   * @type { boolean } whether has external fields
+   */
+  this._isExternalFieldRequired = this._checkIfExternalFieldRequired();
+
+  /**
+   * Check if the parent field is editable.
+   * If not, get the id of parent feature so the server can generate the right value
+   * to fill the field with the relation layer feature when commit
+   */
   this._currentParentFeatureRelationFieldsValue = fatherRelationField
     .reduce((accumulator, fField) => {
-      accumulator[fField] = fField === this._fatherRelationFields.pk //check if isPk
+      accumulator[fField] = fField === this._fatherFields.pk //check if isPk
         ? this.getCurrentWorkflowData().feature.getId()
         : this.getCurrentWorkflowData().feature.get(fField);
       return accumulator;
@@ -123,15 +110,18 @@ const RelationService = function(layerId, options = {}) {
 
   ///////////////////////////////////////
 
-  this.relationTools      = [];
-  this._add_link_workflow = null;
-  //get editing constraint type
-  this.capabilities       = {
+  this.relationTools = [];
+  // this._add_link_workflow = null;
+
+  /**
+   * editing constraint type
+   */
+  this.capabilities = {
     parent:   this._parentLayer.getEditingCapabilities(),
     relation: this._parentLayer.getEditingCapabilities()
   };
 
-  //add tools for each relation
+  // add tools for each relation
   this.relations.forEach((_, i) => this.addRelationTools(i) );
 
   this._add_link_workflow = ({
@@ -212,9 +202,9 @@ const proto = RelationService.prototype;
  * @param { Boolean } bool true enabled
  */
 proto.enableDOMElements = (bool = true) => {
-  document.querySelectorAll('.editing-save-all-form').forEach(c => c.classList[bool ? 'remove' : 'add']('g3w-disabled'));
-  document.querySelectorAll('.g3w-editing-relations-add-link-tools').forEach(c => c.classList[bool ? 'remove' : 'add']('g3w-disabled'));
-  document.querySelectorAll('.g3wform_footer').forEach(c => c.classList[bool ? 'remove' : 'add']('g3w-disabled'))
+  document
+    .querySelectorAll('.editing-save-all-form, .g3w-editing-relations-add-link-tools, .g3wform_footer')
+    .forEach(c => c.classList.toggle('g3w-disabled', !bool))
 }
 
 /**
@@ -227,49 +217,51 @@ proto.getEditingCapabilities = function() {
 
 proto.addRelationTools = function(index) {
 
-  const tools = [];
+  const capabilities = this.capabilities.relation;
 
-  if (undefined !== this.capabilities.relation.find(capability => 'change_attr_feature' === capability)) {
-    tools.push({
+  const tools = [
+
+    // edit attributes
+    capabilities.some(cap => 'change_attr_feature' === cap) && {
       state: Vue.observable({
         icon:   'editAttributes.png',
         id:     `${index}_editattributes`,
-        name:   "editing.tools.update_feature",
+        name:   'editing.tools.update_feature',
         enabled: true,
         active:  false,
       }),
       type: 'editfeatureattributes',
-    })
-  }
+    },
 
-  if (undefined !== this.capabilities.relation.find(capability => 'delete_feature' === capability )) {
-    tools.push({
+    // delete feature
+    capabilities.some(cap => 'delete_feature' === cap) && {
       state: Vue.observable({
         icon:   'deleteTableRow.png',
         id:     `${index}_deletefeature`,
-        name:   "editing.tools.delete_feature",
+        name:   'editing.tools.delete_feature',
         enabled: true,
         active:  false,
       }),
       type: 'deletefeature',
-    });
-  }
+    },
 
-  //vector relation layers add other tools if it has capability to chenge feature
-  if (Layer.LayerTypes.VECTOR === this._layerType && this.capabilities.relation.find(capability => 'change_feature' === capability))  {
-    this.getEditingService()
-      .getToolBoxById(this._relationLayerId)
-      .getTools()
-      .filter(t => {
-        //in the case of Point geometry
-        if (Geometry.isPointGeometryType(this.getLayer().getGeometryType())) {
-          return 'movefeature' === t.getId();
-        }
-        //case Line or Polygon
-        return ['movefeature', 'movevertex'].includes(t.getId());
-      })
-      .forEach(t => tools.push({ state: Vue.observable({ ...t.state, id: `${index}_${t.state.id}` }) , type: t.getOperator().type }));
-  }
+    // other vector tools (eg. move feature)
+    capabilities.some(cap => 'change_feature' === cap) && Layer.LayerTypes.VECTOR === this._layerType && (
+      this
+        .getEditingService()
+        .getToolBoxById(this._relationLayerId)
+        .getTools()
+        .filter(t => Geometry.isPointGeometryType(this.getLayer().getGeometryType())
+            ? 'movefeature' === t.getId()                       // Point geometry
+            : ['movefeature', 'movevertex'].includes(t.getId()) // Line or Polygon
+        )
+        .map(tool => ({
+          state: Vue.observable({ ...tool.state, id: `${index}_${tool.state.id}` }),
+          type: tool.getOperator().type,
+        }))
+    )
+
+  ].flat().filter(Boolean);
 
   this.relationTools.push(tools);
   return tools;
@@ -281,21 +273,6 @@ proto.addRelationTools = function(index) {
  */
 proto.getRelationTools = function(index) {
   return this.relationTools[index] || this.addRelationTools(index);
-};
-
-/**
- *
- * @param relation
- * @returns {*}
- * @private
- */
-proto._highlightRelationSelect = function(relation) {
-  const originalStyle = this.getLayer().getEditingLayer().getStyle();
-  const geometryType  = this.getLayer().getGeometryType();
-
-  relation.setStyle(SELECTED_STYLE[geometryType]);
-
-  return originalStyle;
 };
 
 /**
@@ -328,7 +305,7 @@ proto.startTool = async function(relationtool, index) {
   const relation        = this.relations[index];
   const relationfeature = this._getRelationFeature(relation.id);
   const featurestore    = this.getLayer().getEditingSource();
-  const selectStyle     = is_vector && SELECTED_STYLE[this.getLayer().getGeometryType()]; // get selected vector style
+  const selectStyle     = is_vector && SELECTED_STYLES[this.getLayer().getGeometryType()]; // get selected vector style
   const options         = this._createWorkflowOptions({ features: [relationfeature] });
 
   // DELETE FEATURE RELATION
@@ -353,7 +330,7 @@ proto.startTool = async function(relationtool, index) {
           feature: relationfeature
         });
         featurestore.removeFeature(relationfeature);
-        this.forceParentsFromServiceWorkflowToUpdated();
+        this.updateParentWorkflows();
         d.resolve(result);
       }
     );
@@ -380,7 +357,9 @@ proto.startTool = async function(relationtool, index) {
       await promisify(workflow.start(options));
 
       //get relation layer fields
-      this._getRelationFieldsValue(relationfeature)
+      this
+        .getLayer()
+        .getFieldsWithValues(relationfeature, { relation: true })
         .forEach(_field => {
           relation.fields
             .forEach(field => {
@@ -452,7 +431,6 @@ proto.startTool = async function(relationtool, index) {
 
   try {
     await promise;
-    this.emitEventToParentWorkFlow();
   } catch (e) {
     console.trace('START TOOL FAILED', e);
     return Promise.reject(e);
@@ -464,17 +442,17 @@ proto.startTool = async function(relationtool, index) {
 /**
  * force parent workflow form service to update
  */
-proto.forceParentsFromServiceWorkflowToUpdated = function() {
-  const workflowParents = WorkflowsStack.getParents() || [this.getCurrentWorkflow()];
-  workflowParents.forEach(workflow => {
-    //check if workflow has service (form service)
-    if (workflow.getContextService()) {
-      workflow
-        .getContextService()
-        .setUpdate(true, {force: true})
-    }
-  });
-};
+proto.updateParentWorkflows = function() {
+  (WorkflowsStack.getParents() || [this.getCurrentWorkflow()])
+    .forEach(workflow => {
+      //check if workflow has service (form service)
+      if (workflow.getContextService()) {
+        workflow
+          .getContextService()
+          .setUpdate(true, {force: true})
+      }
+    });
+  };
 
 /**
  *
@@ -499,103 +477,6 @@ proto.getEditingLayer = function() {
 proto.getEditingService = function() {
   this._editingService = this._editingService || require('./editingservice');
   return this._editingService;
-};
-
-/**
- * function that changes the relation field value when and if the parent changes the value of relation field
- * @param input
- */
-proto.updateExternalKeyValueRelations = function(input) {
-  //ownFiled is the field of relation feature link to parent feature layer
-  const { ownField, relationField } = this.getEditingService()._getRelationFieldsFromRelation({
-    layerId:  this._relationLayerId,
-    relation: this.relation
-  });
-  // get if parent form input that is changing
-  // is the field in relation of the current feature relation Layer
-  if (this._fatherRelationFields.editable.length > 0 && relationField.find(rField => rField === input.name)) {
-    // change currentParent Feature relation value
-    this._currentParentFeatureRelationFieldsValue[input.name] = input.value;
-    // loop all features relations
-    this.relations.forEach(relation => {
-      // field relation field of current relation feature
-      const field = relation.fields.find(field => ownField.indexOf(field.name) !== -1);
-      //if field is find
-      if (field) {
-        field.value = this._currentParentFeatureRelationFieldsValue[field.name];
-        relation = this._getRelationFeature(relation.id);
-        const originalRelation = relation.clone();
-        relation.set(field.name, input.value);
-        if (!relation.isNew()) {
-          this.getEditingService().getToolBoxById(this._relationLayerId).getSession().pushUpdate(this._relationLayerId, relation, originalRelation);
-        }
-      }
-    })
-  }
-};
-
-/**
- *
- * @param relation
- * @returns {*}
- * @private
- */
-proto._getRelationFieldsValue = function(relation) {
-  return this.getLayer().getFieldsWithValues(relation, { relation: true });
-};
-
-/**
- *
- * @param relation
- * @returns {{id: *, fields: *}}
- * @private
- */
-proto._createRelationObj = function(relation) {
-  return {
-    fields: this._getRelationFieldsValue(relation),
-    id:     relation.getId()
-  }
-};
-
-/**
- *
- * @param type
- * @param options
- */
-proto.emitEventToParentWorkFlow = function(type, options={}) {
-  //type=set-main-component event name to set table parent visible
-  if (type) {
-    this._parentWorkFlow.getContextService().getEventBus().$emit(type, options);
-  }
-};
-
-/**
- *
- * @param type
- * @returns {*|string}
- * @private
- */
-proto._getRelationAsFatherStyleColor = function(type) {
-  const fatherLayerStyle = this.getEditingLayer(this._parentLayerId).getStyle();
-  let fatherLayerStyleColor;
-  switch (type) {
-    case 'Point':
-      fatherLayerStyleColor = fatherLayerStyle.getImage() && fatherLayerStyle.getImage().getFill();
-      break;
-    case 'Line':
-      fatherLayerStyleColor = fatherLayerStyle.getStroke() || fatherLayerStyle.getFill();
-      break;
-    case 'Polygon':
-      fatherLayerStyleColor = fatherLayerStyle.getFill() || fatherLayerStyle.getStroke();
-      break;
-  }
-  return (
-    (
-      fatherLayerStyleColor &&
-      fatherLayerStyleColor.getColor()
-    ) ||
-    '#000000'
-  );
 };
 
 /**
@@ -636,104 +517,100 @@ proto.addRelation = function() {
 /**
  * Common method to add a relation
  */
-proto.runAddRelationWorkflow = function({ workflow, isVector = false } = {} ) {
+proto.runAddRelationWorkflow = async function({ workflow, isVector = false } = {} ) {
+
   if (isVector) {
     GUI.setModal(false);
     GUI.hideContent(true);
   }
+
   const options = this._createWorkflowOptions();
-  const session = options.context.session;
   const { ownField, relationField } = this.getEditingService()._getRelationFieldsFromRelation({
     layerId:  this._relationLayerId,
     relation: this.relation
   });
 
-  const { parentFeature } = options;
-  const promise =  workflow.start(options);
-  if (isVector) { workflow.bindEscKeyUp() }
-  promise
-    .then(outputs => {
-      const { newFeatures, originalFeatures } = outputs.relationFeatures;
+  try {
+    const outputs = await promisify(workflow.start(options));
 
-      /**
-       * Set Relation child feature value
-       * @param oIndex
-       * @param value
-       */
-      const setRelationFieldValue = ({ oIndex, value }) => {
-        newFeatures.forEach((newFeature, index) => {
-          const originalFeature = originalFeatures[index];
-          newFeature.set(ownField[oIndex], value);
-          if (parentFeature.isNew()) {
-            originalFeature.set(ownField[oIndex], value);
-          }
-          this.getLayer().getEditingSource().updateFeature(newFeature);
-          session.pushUpdate(this._relationLayerId, newFeature, originalFeature);
-        })
-      };
-      Object
-        .entries(this._currentParentFeatureRelationFieldsValue)
-        .forEach(([field, value]) => {
-          setRelationFieldValue({
-            oIndex: relationField.findIndex(rField => field === rField),
-            value
-          });
-        })
-      //check if parent features are new and if parent layer has editable fields
-      if (parentFeature.isNew() && this._fatherRelationFields.editable.length > 0) {
-        const keyRelationFeatureChange = parentFeature.on('propertychange', evt => {
-          if (parentFeature.isNew()) {
-            //check if input is relation field
-            if (relationField.find(evt.key)) {
-              //set value to relation field
-              setRelationFieldValue({
-                oIndex: relationField.findIndex(rField => evt.key === rField),
-                value:  evt.target.get(evt.key)
-              });
-            }
-          } else {
-            ol.Observable.unByKey(keyRelationFeatureChange);
-          }
-        })
-      }
-      newFeatures.forEach(newFeature => this.relations.push(this._createRelationObj(newFeature)));
+    if (isVector) {
+      workflow.bindEscKeyUp();
+    }
+    
+    const { newFeatures, originalFeatures } = outputs.relationFeatures;
 
-      this.emitEventToParentWorkFlow();
-    })
-    .fail(inputs => {
+    // Set Relation child feature value
+    const setRelationFieldValue = ({ oIndex, value }) => {
+      newFeatures.forEach((newFeature, i) => {
+        newFeature.set(ownField[oIndex], value);
+        if (options.parentFeature.isNew()) {
+          originalFeatures[i].set(ownField[oIndex], value);
+        }
+        this.getLayer().getEditingSource().updateFeature(newFeature);
+        options.context.session.pushUpdate(this._relationLayerId, newFeature, originalFeatures[i]);
+      })
+    };
 
-      if (inputs && inputs.relationFeatures) {
-        /**
-         * needed in case of save all pressed on openformtask
-         */
-        const {relationFeatures: { newFeatures=[] } } = inputs;
-        newFeatures.forEach(newFeature => {
-          this.relations.push(this._createRelationObj(newFeature));
+    Object
+      .entries(this._currentParentFeatureRelationFieldsValue)
+      .forEach(([field, value]) => {
+        setRelationFieldValue({
+          oIndex: relationField.findIndex(rField => field === rField),
+          value
         });
-      }
+      });
 
-      session.rollbackDependecies([this._relationLayerId])
-    })
-    .always(() => {
+    //check if parent features are new and if parent layer has editable fields
+    if (options.parentFeature.isNew() && this._fatherFields.editable.length > 0) {
+      const keyRelationFeatureChange = options.parentFeature.on('propertychange', evt => {
+        if (options.parentFeature.isNew()) {
+          //check if input is relation field
+          if (relationField.find(evt.key)) {
+            //set value to relation field
+            setRelationFieldValue({
+              oIndex: relationField.findIndex(rField => evt.key === rField),
+              value:  evt.target.get(evt.key)
+            });
+          }
+        } else {
+          ol.Observable.unByKey(keyRelationFeatureChange);
+        }
+      })
+    }
 
-      workflow.stop();
+    this.relations.push(
+      ...(newFeatures || []).map(f => ({ id: f.getId(), fields: this.getLayer().getFieldsWithValues(f, { relation: true }) }))
+    )
 
-      if (isVector) {
-        workflow.unbindEscKeyUp();
-        GUI.hideContent(false);
-        GUI.setModal(true);
-      }
-    })
+  } catch(inputs) {
+    console.warn(inputs);
+
+    // in case of save all pressed on openformtask
+    if (inputs && inputs.relationFeatures) {
+      this.relations.push(
+        ...(inputs.relationFeatures.newFeatures || []).map(f => ({ id: f.getId(), fields: this.getLayer().getFieldsWithValues(f, { relation: true }) }))
+      )
+    }
+
+    options.context.session.rollbackDependecies([this._relationLayerId])
+  }
+  
+  workflow.stop();
+
+  if (isVector) {
+    workflow.unbindEscKeyUp();
+    GUI.hideContent(false);
+    GUI.setModal(true);
+  }
 };
 
 /**
  * Link relation (bind) to parent feature layer
  */
-proto.linkRelation = function() {
+proto.linkRelation = async function() {
   const isVector = Layer.LayerTypes.VECTOR === this._layerType;
   const workflow = new this._add_link_workflow.link();
   const options  = this._createWorkflowOptions();
-  const session  = options.context.session;
   const { ownField, relationField } = this.getEditingService()._getRelationFieldsFromRelation({
     layerId:  this._relationLayerId,
     relation: this.relation
@@ -755,28 +632,27 @@ proto.linkRelation = function() {
 
   const { feature } = this.getCurrentWorkflowData();
 
-  const dependencyOptions = {
+  const getRelationFeatures = () => this.getEditingService().getLayersDependencyFeatures(this._parentLayerId, {
     relations:  [this.relation],
     feature,
     operator:   'not',
     filterType: isVector ? 'bbox' : 'fid'
+  });
+
+  let response = {
+    promise: undefined,
+    showContent: false,
   };
-  const getRelationFeatures = () => this.getEditingService().getLayersDependencyFeatures(this._parentLayerId, dependencyOptions);
 
-  let preWorkflowStart;
-
-  if (isVector) {
-    const mapService = this.getEditingService().getMapService();
+  if (!isVector) {
+    await getRelationFeatures();
+  } else {
     options.context.beforeRun = async () => {
-      //show map spinner
-      mapService.showMapSpinner();
-
+      const map = this.getEditingService().getMapService();
+      map.showMapSpinner();
       await new Promise((resolve) => setTimeout(resolve));
-
       await getRelationFeatures();
-      //hide mapSpinner
-      mapService.hideMapSpinner();
-
+      map.hideMapSpinner();
       GUI.showUserMessage({
         type: 'info',
         size: 'small',
@@ -785,64 +661,54 @@ proto.linkRelation = function() {
       })
     };
 
-    preWorkflowStart = new Promise((resolve) => {
+    workflow.bindEscKeyUp();
 
-      workflow.bindEscKeyUp();
-
-      resolve({
-        promise: workflow.start(options),
-        showContent: true
-      })
-    });
-  } else {
-
-    preWorkflowStart = new Promise((resolve) => getRelationFeatures().then(() => resolve({})));
+    response = {
+      promise: workflow.start(options),
+      showContent: true
+    };
   }
 
-  preWorkflowStart.then(({ promise, showContent=false } = {})=> {
-    let linked = false;
+  let linked = false;
 
-    promise = promise || workflow.start(options);
-
-    promise
-      .then(outputs => {
-        if (outputs.features.length > 0) {
-          //loop on features selected
-          outputs.features.forEach(relation => {
-            if (undefined === this.relations.find(rel => rel.id === relation.getId())) {
-              linked = linked || true;
-              const originalRelation = relation.clone();
-              Object
-                .entries(this._currentParentFeatureRelationFieldsValue)
-                .forEach(([field, value]) => {
-                  relation.set(ownField[relationField.findIndex(rField => field === rField)], value);
-                })
-              this.getCurrentWorkflowData()
-                .session
-                .pushUpdate(this._relationLayerId , relation, originalRelation);
-              this.relations.push(this._createRelationObj(relation));
-              this.emitEventToParentWorkFlow();
-            } else {
-              // in case already present
-              GUI.notify.warning(t("editing.relation_already_added"));
-            }
-          });
-        }
-      })
-      .fail((e) => {
-        console.warn(e);
-        session.rollbackDependecies([this._relationLayerId]);
-      })
-      .always(() => {
-        if (showContent) {
-          GUI.closeUserMessage();
-          GUI.hideContent(false);
-          workflow.unbindEscKeyUp();
-        }
-        if (linked) { this.forceParentsFromServiceWorkflowToUpdated() }
-        workflow.stop();
+  try {
+    const outputs = promisify(response.promise || workflow.start(options));
+    // loop on features selected
+    (outputs.features || []).forEach(relation => {
+      if (undefined === this.relations.find(rel => rel.id === relation.getId())) {
+        linked = linked || true;
+        const originalRelation = relation.clone();
+        Object
+          .entries(this._currentParentFeatureRelationFieldsValue)
+          .forEach(([field, value]) => {
+            relation.set(ownField[relationField.findIndex(rField => field === rField)], value);
+          })
+        this.getCurrentWorkflowData().session.pushUpdate(this._relationLayerId , relation, originalRelation);
+        this.relations.push({
+          fields: this.getLayer().getFieldsWithValues(relation, { relation: true }),
+          id:     relation.getId()
+        });
+      } else {
+        // in case already present
+        GUI.notify.warning(t("editing.relation_already_added"));
+      }
     });
-  })
+  } catch (e) {
+    console.warn(e);
+    options.context.session.rollbackDependecies([this._relationLayerId]);
+  }
+
+  if (response.showContent) {
+    GUI.closeUserMessage();
+    GUI.hideContent(false);
+    workflow.unbindEscKeyUp();
+  }
+
+  if (linked) {
+    this.updateParentWorkflows();
+  }
+
+  workflow.stop();
 };
 
 /**
@@ -915,7 +781,7 @@ proto.unlinkRelation = function(index, dialog= true) {
 
     this.getCurrentWorkflowData().session.pushUpdate(this._relationLayerId, feature, originalRelation);
     this.relations.splice(index, 1);
-    this.forceParentsFromServiceWorkflowToUpdated();
+    this.updateParentWorkflows();
     d.resolve(true);
   };
   if (dialog) {
@@ -954,33 +820,20 @@ proto.getCurrentWorkflowData = function() {
  * @returns {{parentFeature, inputs: {features: *[], layer: *}, context: {fatherValue: *, session: *, fatherField: *, excludeFields: *[]}}}
  * @private
  */
-proto._createWorkflowOptions = function(options= {}) {
-  const { ownField, relationField } = this.getEditingService()._getRelationFieldsFromRelation({
+proto._createWorkflowOptions = function(options = {}) {
+  const fields = this.getEditingService()._getRelationFieldsFromRelation({
     layerId:  this._relationLayerId,
     relation: this.relation
   });
-  const {
-    feature: parentFeature,
-    session
-  } = this.getCurrentWorkflowData();
-
-  const fatherValue = [];
-  const fatherField = [];
-
-  Object
-    .entries(this._currentParentFeatureRelationFieldsValue)
-    .forEach(([field, value]) => {
-      fatherField.push(ownField[relationField.findIndex(rField => field === rField)]);
-      fatherValue.push(value);
-  })
-
+  const data   = this.getCurrentWorkflowData();
+  const parent = Object.entries(this._currentParentFeatureRelationFieldsValue);
   return  {
-    parentFeature, //get parent feature
+    parentFeature: data.feature.parentFeature, // get parent feature
     context: {
-      session, //get parent workflow
-      excludeFields: ownField, //ownField is an Array to exclude
-      fatherValue,
-      fatherField
+      session: data.session,                   // get parent workflow
+      excludeFields: fields.ownField,          // array of fields to be excluded
+      fatherValue: parent.map(([_, value]) => value),
+      fatherField: parent.map(([field]) => fields.ownField[fields.relationField.findIndex(rField => field === rField)]),
     },
     inputs: {
       features: options.features || [],
@@ -996,46 +849,49 @@ proto._createWorkflowOptions = function(options= {}) {
  */
 proto.getUnlinkedStyle = function() {
   let style;
-  const geometryType = this.getLayer().getGeometryType();
-  switch (geometryType) {
+  const type = this.getLayer().getGeometryType();
+
+  // get relation as father style color
+  const _getColor = (type) => {
+    const fatherLayerStyle = this.getEditingLayer(this._parentLayerId).getStyle();
+    let style; // father layer style
+    switch (type) {
+      case 'Point':
+        style = fatherLayerStyle.getImage() && fatherLayerStyle.getImage().getFill();
+        break;
+      case 'Line':
+        style = fatherLayerStyle.getStroke() || fatherLayerStyle.getFill();
+        break;
+      case 'Polygon':
+        style = fatherLayerStyle.getFill() || fatherLayerStyle.getStroke();
+        break;
+    }
+    return (style && style.getColor()) || '#000';
+  }
+
+  switch (type) {
     case 'Point':
     case 'MultiPoint':
       style = new ol.style.Style({
         image: new ol.style.Circle({
           radius: 8,
-          fill: new ol.style.Fill({
-            color: this._getRelationAsFatherStyleColor('Point')
-          }),
-          stroke: new ol.style.Stroke({
-            width: 5,
-            color:  'yellow'
-          })
+          fill:   new ol.style.Fill({ color: _getColor('Point') }),
+          stroke: new ol.style.Stroke({ width: 5, color:  'yellow' })
         })
       });
       break;
     case 'Line':
     case 'MultiLine':
       style = new ol.style.Style({
-        fill: new ol.style.Fill({
-          color: this._getRelationAsFatherStyleColor('Line')
-        }),
-        stroke: new ol.style.Stroke({
-          width: 5,
-          color: 'yellow'
-        })
+        fill:   new ol.style.Fill({ color: _getColor('Line') }),
+        stroke: new ol.style.Stroke({ width: 5, color: 'yellow' })
       });
       break;
     case 'Polygon':
     case 'MultiPolygon':
       style =  new ol.style.Style({
-        stroke: new ol.style.Stroke({
-          color: 'yellow' ,
-          width: 5
-        }),
-        fill: new ol.style.Fill({
-          color: this._getRelationAsFatherStyleColor('Polygon'),
-          opacity: 0.5
-        })
+        stroke: new ol.style.Stroke({ width: 5, color: 'yellow' }),
+        fill:   new ol.style.Fill({ opacity: 0.5, color: _getColor('Polygon') })
       })
   }
 
