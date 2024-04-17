@@ -15,7 +15,6 @@ import { listenRelation1_1FieldChange }                 from '../utils/listenRel
 
 import CopyFeatureFromOtherLayersComponent              from '../components/CopyFeaturesFromOtherLayers.vue';
 import CopyFeatureFromOtherProjectLayersComponent       from '../components/CopyFeaturesFromOtherProjectLayer.vue';
-import SaveAll                                          from '../components/SaveAll.vue';
 import TableVueObject                                   from '../components/Table.vue';
 import { PickFeaturesInteraction }                      from '../interactions/pickfeaturesinteraction';
 
@@ -57,6 +56,7 @@ const {
 const { G3W_FID }                          = g3wsdk.constant;
 const { CatalogLayersStoresRegistry }      = g3wsdk.core.catalog;
 const { Component }                        = g3wsdk.gui.vue;
+const { FormService }                      = g3wsdk.gui.vue.services;
 
 const EditingFormComponent                 = require('../form/editingform');
 
@@ -1737,8 +1737,10 @@ export class OpenFormStep extends EditingTask {
   /**
    * Build form
    */
-  async startForm({ inputs, context, promise}) {
-    this.getEditingService().setCurrentLayout();
+  async startForm({ inputs, context, promise }) {
+    const EditingService = this.getEditingService();
+
+    EditingService.setCurrentLayout();
 
     this._originalLayer    = inputs.layer;
     this._editingLayer     = this._originalLayer.getEditingLayer();
@@ -1777,7 +1779,7 @@ export class OpenFormStep extends EditingTask {
       .getCurrent()
       .setInput({ key: 'fields', value: this._fields });
 
-    const formService = GUI.showContentFactory('form')({
+    const formService = GUI.showForm({
       feature:         this._originalFeatures[0],
       formComponent:   /*opts.formComponent ||*/ EditingFormComponent,
       title:           "plugins.editing.editing_attributes",
@@ -1794,7 +1796,96 @@ export class OpenFormStep extends EditingTask {
       modal:           true,
       push:            this.push || this._isContentChild, //@since v3.7 need to take in account this.push value
       showgoback:      undefined !== this.showgoback ? this.showgoback : !this._isContentChild,
-      headerComponent: this._saveAll && SaveAll,
+      /** @TODO make it straightforward: `headerComponent` vs `buttons` ? */
+      headerComponent: this._saveAll && {
+        template: /* html */ `
+          <section class="editing-save-all-form">
+            <bar-loader :loading="loading"/>
+            <div
+              class = "editing-button"
+              style = "background-color: #fff; display: flex; justify-content: flex-end; width: 100%;"
+            >
+              <span
+                v-disabled          = "disabled"
+                @click.stop.prevent = "save"
+              >
+                <i
+                  class  = "skin-color"
+                  :class = "g3wtemplate.font['save']"
+                  style  = "font-size: 1.8em; padding: 5px; border-radius: 5px; cursor: pointer; box-shadow: 0 3px 5px rgba(0,0,0,0.5); margin: 5px;"
+                ></i>
+              </span>
+            </div>
+          </section>`,
+
+          name: 'Saveall',
+
+          /** @TODO figure out who populate these props (ie. core client code?) */
+          props: {
+            update: { type: Boolean },
+            valid: { type: Boolean },
+          },
+
+          data() {
+            return {
+              loading: false,
+              enabled: true,
+            };
+          },
+
+          computed: {
+            /**
+             * Disable save all buttons when it is not enabled (a case of parent form is not valid,
+             * or when current form is not valid or valid but not updated)
+             * @return {boolean}
+             */
+            disabled() {
+              return !this.enabled || !(this.valid && this.update);
+            },
+
+          },
+
+          methods: {
+
+            async save() {
+              this.loading = true;
+
+              await Promise.allSettled(
+                [...WorkflowsStack._workflows]
+                  .reverse()
+                  .filter( w => "function" === typeof w.getLastStep().getTask().saveAll) // need to filter only workflow that
+                  .map(w => w.getLastStep().getTask().saveAll(w.getContext().service.state.fields))
+              )
+
+              EditingService
+                .commit({ modal: false })
+                .then(()   => { WorkflowsStack._workflows.forEach(w => w.getContext().service.setUpdate(false, { force: false })); })
+                .fail((e)  => console.warn(e))
+                .always(() => { this.loading = false });
+            },
+
+          },
+
+          created() {
+            // set enabled to true as default value;
+            // this.enabled = true;
+
+            // skip when workflow tasks are less than 2
+            if (WorkflowsStack.getLength() < 2) {
+              return;
+            }
+
+            this.enabled = WorkflowsStack
+              ._workflows
+              .slice(0, WorkflowsStack.getLength() - 1)
+              .reduce((bool, w) => {
+                const { service } = w.getContext();
+                const { valid = true } = (service instanceof FormService) ? service.getState() : {};
+                return bool && valid;
+                }, true);
+          },
+
+      },
       buttons:         [
         {
           id: 'save',
