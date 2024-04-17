@@ -212,7 +212,16 @@ const proto = RelationService.prototype;
  * @param { Boolean } bool true enabled
  */
 proto.enableDOMElements = (bool = true) => {
-  document.querySelectorAll('.editing-save-all-form').forEach(c => c.classList[bool ? 'remove' : 'add']('g3w-disabled'));
+  document.querySelectorAll('.editing-save-all-form').forEach(c => {
+      if (bool && c.classList.contains('g3w-disabled')) {
+        c.classList.remove('g3w-disabled');
+      }
+
+      if (!bool && !c.querySelector('.save-all-icon').classList.contains('g3w-disabled')) {
+        c.classList.add('g3w-disabled');
+      }
+
+  });
   document.querySelectorAll('.g3w-editing-relations-add-link-tools').forEach(c => c.classList[bool ? 'remove' : 'add']('g3w-disabled'));
   document.querySelectorAll('.g3wform_footer').forEach(c => c.classList[bool ? 'remove' : 'add']('g3w-disabled'))
 }

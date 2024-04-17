@@ -1806,6 +1806,7 @@ export class OpenFormStep extends EditingTask {
               style = "background-color: #fff; display: flex; justify-content: flex-end; width: 100%;"
             >
               <span
+                class               = "save-all-icon"
                 v-disabled          = "disabled"
                 @click.stop.prevent = "save"
               >
