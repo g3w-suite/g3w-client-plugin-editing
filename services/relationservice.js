@@ -662,7 +662,7 @@ module.exports = class RelationService {
     let linked = false;
 
     try {
-      const outputs = promisify(response.promise || workflow.start(options));
+      const outputs = await promisify(response.promise || workflow.start(options));
       // loop on features selected
       (outputs.features || []).forEach(relation => {
         if (undefined === this.relations.find(rel => rel.id === relation.getId())) {
