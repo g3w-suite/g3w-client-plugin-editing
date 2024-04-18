@@ -31,7 +31,6 @@ const TableService = function(options = {}) {
   this._inputs = options.inputs;
   this._layerId = options.inputs.layer.getId();
   this._fatherValue = options.fatherValue;
-  this._foreignKey = options.foreignKey;
   this._workflow = null;
   this._deleteFeaturesIndexes = [];
   this._isrelation = options.isrelation || false;
@@ -57,11 +56,6 @@ const TableService = function(options = {}) {
    */
   this.init = function() {
     const EditingService = require('./editingservice');
-    //filter the original feature based on if is a relation
-    if (this._isrelation) {
-      this._features.filter(feature => feature.get(this._foreignKey) !== this._fatherValue);
-    }
-
     // set values
     if (this._features.length > 0) {
       const baseFeature = this._features[0];

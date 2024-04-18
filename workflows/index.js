@@ -2100,16 +2100,14 @@ export class OpenTableStep extends EditingTask {
     const layerName      = originalLayer.getName();
     const headers        = originalLayer.getEditingFields();
     this._isContentChild = WorkflowsStack.getLength() > 1;
-    const foreignKey     = this._isContentChild && context.excludeFields ? context.excludeFields[0] :  null;
-    const exclude        = this._isContentChild && context.exclude;
+    const excludeFields    = this._isContentChild ? (context.excludeFields || []) : [];
     const capabilities   = originalLayer.getEditingCapabilities();
     const editingLayer   = originalLayer.getEditingLayer();
     //get editing features
     let features         = editingLayer.readEditingFeatures();
-
-    if (exclude && features.length > 0) {
-      const {value} = exclude;
-      features = features.filter(feature => feature.get(foreignKey) != value);
+    if (excludeFields.length > 0 && features.length > 0) {
+      //filter features already bind to parent feature
+      features = features.filter(feat => !excludeFields.reduce((a, f, i) => a && context.fatherValue[i] === `${feat.get(f)}` , true));
     }
 
     const content = new TableComponent({
@@ -2122,7 +2120,6 @@ export class OpenTableStep extends EditingTask {
       inputs,
       capabilities,
       fatherValue: context.fatherValue,
-      foreignKey
     });
 
     GUI.disableSideBar(true);
@@ -2135,9 +2132,7 @@ export class OpenTableStep extends EditingTask {
     });
 
     setTimeout(() => {
-      content.once('ready', () => setTimeout(()=> {
-        GUI.closeUserMessage();
-      }));
+      content.once('ready', () => setTimeout(() => { GUI.closeUserMessage() }));
 
       GUI.showContent({
         content,
