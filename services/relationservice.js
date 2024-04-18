@@ -316,6 +316,8 @@ module.exports = class RelationService {
                 relationLayerId: this.parent.layerId,
                 feature: relationfeature
               });
+              //@TODO Need to handle deletion of new relation feature (not yet committed) check saveAll button status
+              // relationfeature.isNew())
               featurestore.removeFeature(relationfeature);
               this.updateParentWorkflows();
               d.resolve(res);
