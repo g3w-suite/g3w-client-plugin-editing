@@ -132,11 +132,11 @@ module.exports = class RelationService {
       [Layer.LayerTypes.VECTOR]: {
 
         /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/linkrelationworkflow.js@v3.7.1 */
-        link() {
+        link(options = {}) {
           return new EditingWorkflow({
             type: 'linkrelation',
             steps: [
-              new LinkRelationStep()
+              new LinkRelationStep(options)
             ]
           });
         },
@@ -156,7 +156,7 @@ module.exports = class RelationService {
         },
 
         /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/selectandcopyfeaturesfromotherlayerworkflow.js@v3.7.1 */
-        selectandcopy(options) {
+        selectandcopy(options = {}) {
           return new EditingWorkflow({
             type: 'selectandcopyfeaturesfromotherlayer',
             steps: [
@@ -236,7 +236,7 @@ module.exports = class RelationService {
         type: 'deletefeature',
       },
 
-      // other vector tools (eg. move feature)
+      // other vector tools (e.g., move feature)
       this.capabilities.includes('change_feature') && Layer.LayerTypes.VECTOR === this._layerType && (
         this
           .getEditingService()
@@ -598,8 +598,10 @@ module.exports = class RelationService {
    * Link relation (bind) to parent feature layer
    */
   async linkRelation() {
-    const isVector = Layer.LayerTypes.VECTOR === this._layerType;
-    const workflow = new this._add_link_workflow.link();
+    const is_vector = Layer.LayerTypes.VECTOR === this._layerType;
+    const workflow = new this._add_link_workflow.link( is_vector ? {
+      selectStyle: SELECTED_STYLES[this.getLayer().getGeometryType()]
+    } : {});
     const options  = this._createWorkflowOptions();
     const { ownField, relationField } = this.getEditingService()._getRelationFieldsFromRelation({
       layerId:  this._relationLayerId,
@@ -614,10 +616,8 @@ module.exports = class RelationService {
 
 
     //check if a vector layer
-    if (isVector) {
+    if (is_vector) {
       GUI.setModal(false);
-      GUI.hideContent(true);
-      options.context.style = this.getUnlinkedStyle();
     }
 
     const { feature } = this.getEditingService().getCurrentWorkflowData();
@@ -626,7 +626,7 @@ module.exports = class RelationService {
       relations:  [this.relation],
       feature,
       operator:   'not',
-      filterType: isVector ? 'bbox' : 'fid'
+      filterType: is_vector ? 'bbox' : 'fid'
     });
 
     let response = {
@@ -634,29 +634,23 @@ module.exports = class RelationService {
       showContent: false,
     };
 
-    if (!isVector) {
-      await getRelationFeatures();
-    } else {
+    if (is_vector) {
       options.context.beforeRun = async () => {
-        const map = this.getEditingService().getMapService();
-        map.showMapSpinner();
         await new Promise((resolve) => setTimeout(resolve));
         await getRelationFeatures();
-        map.hideMapSpinner();
-        GUI.showUserMessage({
-          type: 'info',
-          size: 'small',
-          message: t('editing.messages.press_esc'),
-          closable: false
-        })
       };
 
       workflow.bindEscKeyUp();
 
       response = {
-        promise: workflow.start(options),
+        promise:     workflow.start(options),
         showContent: true
       };
+
+      this.enableDOMElements(false);
+
+    } else {
+      await getRelationFeatures();
     }
 
     let linked = false;
@@ -671,7 +665,7 @@ module.exports = class RelationService {
           Object
             .entries(this.parent.values)
             .forEach(([field, value]) => {
-              relation.set(ownField[relationField.findIndex(rField => field === rField)], value);
+              relation.set(ownField[relationField.findIndex(rF => field === rF)], value);
             })
           this.getEditingService().getCurrentWorkflowData().session.pushUpdate(this._relationLayerId , relation, originalRelation);
           this.relations.push({
@@ -688,9 +682,12 @@ module.exports = class RelationService {
       options.context.session.rollbackDependecies([this._relationLayerId]);
     }
 
+    if (is_vector) {
+      this.enableDOMElements(true);
+    }
+
     if (response.showContent) {
       GUI.closeUserMessage();
-      GUI.hideContent(false);
       workflow.unbindEscKeyUp();
     }
 
@@ -707,7 +704,7 @@ module.exports = class RelationService {
    * @param dialog
    * @returns JQuery Promise
    */
-  unlinkRelation(index, dialog= true) {
+  unlinkRelation(index, dialog = true) {
     const d            = $.Deferred();
     const { ownField } = this.getEditingService()._getRelationFieldsFromRelation({
       layerId:  this._relationLayerId,
@@ -768,59 +765,4 @@ module.exports = class RelationService {
       }
     };
   }
-
-  /**
-   * @returns {ol.style.Style}
-   */
-  getUnlinkedStyle() {
-    let style;
-    const type = this.getLayer().getGeometryType();
-
-    // get relation as father style color
-    const _getColor = (type) => {
-      const fatherLayerStyle = this.getEditingLayer(this.parent.layerId).getStyle();
-      let style; // father layer style
-      switch (type) {
-        case 'Point':
-          style = fatherLayerStyle.getImage() && fatherLayerStyle.getImage().getFill();
-          break;
-        case 'Line':
-          style = fatherLayerStyle.getStroke() || fatherLayerStyle.getFill();
-          break;
-        case 'Polygon':
-          style = fatherLayerStyle.getFill() || fatherLayerStyle.getStroke();
-          break;
-      }
-      return (style && style.getColor()) || '#000';
-    }
-
-    switch (type) {
-      case 'Point':
-      case 'MultiPoint':
-        style = new ol.style.Style({
-          image: new ol.style.Circle({
-            radius: 8,
-            fill:   new ol.style.Fill({ color: _getColor('Point') }),
-            stroke: new ol.style.Stroke({ width: 5, color:  'yellow' })
-          })
-        });
-        break;
-      case 'Line':
-      case 'MultiLine':
-        style = new ol.style.Style({
-          fill:   new ol.style.Fill({ color: _getColor('Line') }),
-          stroke: new ol.style.Stroke({ width: 5, color: 'yellow' })
-        });
-        break;
-      case 'Polygon':
-      case 'MultiPolygon':
-        style =  new ol.style.Style({
-          stroke: new ol.style.Stroke({ width: 5, color: 'yellow' }),
-          fill:   new ol.style.Fill({ opacity: 0.5, color: _getColor('Polygon') })
-        })
-    }
-
-    return style;
-  }
-
 };

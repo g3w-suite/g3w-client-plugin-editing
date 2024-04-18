@@ -1062,36 +1062,44 @@ export class LinkRelationStep extends EditingTask {
     return new EditingStep(options);
   }
 
+  /**
+   *
+   *
+   * @param inputs
+   * @param context
+   * @return { JQuery Promise }
+   */
   run(inputs, context) {
     GUI.setModal(false);
     const d                   = $.Deferred();
     const editingLayer        = inputs.layer.getEditingLayer();
     this._originalLayerStyle  = editingLayer.getStyle();
-    const beforeRun           = context.beforeRun;
-    const promise             = beforeRun && typeof beforeRun === 'function' ? beforeRun() : Promise.resolve();
+    const promise             = context.beforeRun && typeof context.beforeRun === 'function' ? context.beforeRun() : Promise.resolve();
 
     const { excludeFeatures } = context;
 
-    const style               = context.style;
-
-    this._features            = editingLayer.getSource().getFeatures();
-
-    if (excludeFeatures) {
-      this._features = this._features
-        .filter(feature => Object
-          .entries(excludeFeatures)
-          .reduce((bool, [field, value]) => bool && feature.get(field) != value, true)
-        )
-    }
-
-    if (style) {
-      this._features.forEach(feature => feature.setStyle(style));
-    }
     promise
       .then(() => {
+        let features = editingLayer.getSource().getFeatures();
+
+        if (excludeFeatures) {
+          features = features
+            .filter(feature => Object
+              .entries(excludeFeatures)
+              .reduce((bool, [field, value]) => bool && feature.get(field) != value, true)
+            )
+        }
+        this._stopPromise = $.Deferred();
+
+        setAndUnsetSelectedFeaturesStyle({
+          promise: this._stopPromise.promise(),
+          inputs: { layer: inputs.layer, features },
+          style: this.selectStyle
+        });
+
         this.pickFeatureInteraction = new PickFeatureInteraction({
           layers: [editingLayer],
-          features: this._features
+          features
         });
         this.addInteraction(this.pickFeatureInteraction);
         this.pickFeatureInteraction.on('picked', evt => {
@@ -1101,17 +1109,20 @@ export class LinkRelationStep extends EditingTask {
           d.resolve(inputs);
         });
       })
-      .catch(err => d.reject(err));
-    return d.promise()
+      .catch(e => {
+        console.warn(e);
+        d.reject(e);
+      });
+
+    return d.promise();
   }
 
   stop() {
     GUI.setModal(true);
     this.removeInteraction(this.pickFeatureInteraction);
-    this._features.forEach(feature => feature.setStyle(this._originalLayerStyle));
     this.pickFeatureInteraction = null;
-    this._features = null;
-    this._originalLayerStyle = null;
+    this._originalLayerStyle    = null;
+    if (this._stopPromise) { this._stopPromise.resolve(true)}
     return true;
   }
 }
