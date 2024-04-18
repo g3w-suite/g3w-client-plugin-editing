@@ -133,8 +133,6 @@ export class EditingTask extends Task {
 
     super(options);
 
-    this._editingService;
-
     this.selectStyle = options.selectStyle; /* @since 3.8.0 */
 
     this._mapService = GUI.getService('map');
@@ -227,8 +225,7 @@ export class EditingTask extends Task {
    * @returns {*|EditingService|{}}
    */
   getEditingService() {
-    this._editingService = this._editingService || require('../../services/editingservice');
-    return this._editingService;
+    return require('../../services/editingservice');
   }
 
   /**
