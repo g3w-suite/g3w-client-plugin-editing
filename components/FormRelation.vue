@@ -39,7 +39,7 @@
 
           <!-- CHANGE ATTRIBUTE -->
           <span
-            v-if                      = "undefined !== capabilities.relation.find(cap => 'change_attr_feature' === cap)"
+            v-if                      = "undefined !== capabilities.find(cap => 'change_attr_feature' === cap)"
             class                     = "g3w-icon add-link"
             align                     = "center"
             v-t-tooltip:bottom.create = "'plugins.editing.form.relations.tooltips.link_relation'"
@@ -49,7 +49,7 @@
 
           <!-- ADD FEATURE -->
           <span
-            v-if                      = "undefined !== capabilities.relation.find(cap => 'add_feature' === cap)"
+            v-if                      = "undefined !== capabilities.find(cap => 'add_feature' === cap)"
             v-t-tooltip:bottom.create = "'plugins.editing.form.relations.tooltips.add_relation'"
             @click                    = "show_add_link ? addRelationAndLink() : null"
             class                     = "g3w-icon add-link pull-right"
@@ -160,7 +160,7 @@
                 <div style="display: flex">
                   <!-- RELATION TOOLS -->
                   <div
-                    v-for                    = "tool in _service.getRelationTools(index)"
+                    v-for                    = "tool in _service.getTools(index)"
                     :key                     = "tool.state.id"
                     class                    = "editbtn enabled"
                     :class                   = "{ 'toggled': tool.state.active }"
@@ -177,7 +177,7 @@
               </td>
               <td class="action-cell">
                 <div
-                  v-if                     = "!fieldrequired && undefined !== capabilities.relation.find(cap => 'change_attr_feature' === cap)"
+                  v-if                     = "!fieldrequired && undefined !== capabilities.find(cap => 'change_attr_feature' === cap)"
                   class                    = "g3w-mini-relation-icon g3w-icon"
                   :class                   = "g3wtemplate.font['unlink']"
                   @click.stop              = "_service.unlinkRelation(index)"
@@ -208,7 +208,7 @@
                   target    = "_blank">{{ getValue(attribute.value) }}
                 </a>
                 <!-- TEXTUAL ATTRIBUTE -->
-                <span v-else>{{ getValue(_service.getRelationFeatureValue(relation.id, attribute.name)) }}</span>
+                <span v-else>{{ getValue(getRelationFeatureValue(relation.id, attribute.name)) }}</span>
               </td>
             </tr>
           </tbody>
@@ -357,8 +357,8 @@
        * @returns { Array } attributes 
        */
       relationAttributesSubset(relation) {
-        return this._service
-          .relationFields(relation)
+        return relation.fields
+          .map(({ label, name, value }) => ({ name, label, value }))
           .flatMap(({ name, label, value }) => Array.isArray(value) ? [] : [{ name, label, value }]);
       },
 
@@ -478,20 +478,20 @@
         // is the field in relation of the current feature relation Layer
 
         // skip when ..
-        if (false === (this._service._fatherFields.editable.length > 0 && relationField.find(rField => rField === input.name))) {
+        if (false === (this._service.parent.editable.length > 0 && relationField.find(rField => rField === input.name))) {
           return;
         }
 
         // change currentParent Feature relation value
-        this._service._currentParentFeatureRelationFieldsValue[input.name] = input.value;
+        this._service.parent.values[input.name] = input.value;
 
         // loop relation fields of current feature
         this._service.relations
           .map(relation => relation.fields.find(f => -1 !== ownField.indexOf(f.name)))
           .filter(Boolean)
           .forEach(field => {
-            field.value     = this._service._currentParentFeatureRelationFieldsValue[field.name];
-            relation        = this._service._getRelationFeature(relation.id);
+            field.value     = this._service.parent.values[field.name];
+            relation        = this._service.getLayer().getEditingSource().getFeatureById(relation.id);
             const oRelation = relation.clone();
             relation.set(field.name, input.value);
             if (!relation.isNew()) {
@@ -502,6 +502,21 @@
             }
           });
       },
+
+        /**
+         * ORIGINAL SOURCE: g3w-client-plugin-editing@v3.7.0/services/relationservice.js
+         * 
+         * Get value from feature if layer has key value
+         */
+        getRelationFeatureValue(featureId, property) {
+          return this._service
+            .getEditingService()
+            .getFeatureTableFieldValue({
+              layerId: this._service._relationLayerId,
+              feature: this._service.getLayer().getEditingSource().getFeatureById(featureId),
+              property,
+            });
+        },
 
     },
 
@@ -517,10 +532,14 @@
       },
 
       /**
-       * @returns { boolean }
+       * @returns { boolean } whether has external fields (relation layer fields have at least one field required)
        */
       fieldrequired() {
-        return this._service.isRequired();
+        const EditingService = this._service.getEditingService();
+      return EditingService
+        ._getRelationFieldsFromRelation({ layerId: this._service._relationLayerId, relation: this._service.relation })
+        .ownField // own Fields is a relation Fields array of Relation Layer
+        .some(field => EditingService.isFieldRequired(this._service._relationLayerId, field));
       },
 
       /**
