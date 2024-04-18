@@ -43,7 +43,7 @@
             class                     = "g3w-icon add-link"
             align                     = "center"
             v-t-tooltip:bottom.create = "'plugins.editing.form.relations.tooltips.link_relation'"
-            @click.stop               = "show_add_link ? _service.linkRelation() : null"
+            @click.stop               = "show_add_link ? linkRelation() : null"
             :class                    = "[{ 'disabled': !show_add_link }, g3wtemplate.font['link']]"
           ></span>
 
@@ -137,7 +137,7 @@
       <div
         ref        = "relation_body"
         class      = "relation_body box-body"
-        v-disabled = "show_vector_tools"
+        v-disabled = "disabled"
       >
         <table
           v-if  = "relationsLength > 0"
@@ -248,7 +248,8 @@
     data() {
       return {
         loading :           false,
-        show_vector_tools:  false, // whether show vector relation tools 
+        show_vector_tools:  false, // whether show vector relation tools
+        disabled:           false, //disable relatins rows
         copylayerid:        null,  // used for vector relation layer
         copyFeatureLayers:  [],
         active:             false,
@@ -320,6 +321,17 @@
         this._service.addRelation();
         this.show_vector_tools = false;
       },
+
+      /**
+       * @since 3.8.0
+        * @return {Promise<void>}
+       */
+      async linkRelation() {
+        this.disabled = true;
+        await this._service.linkRelation();
+        this.disabled = false;
+      },
+
 
       /**
        * @FIXME add description
@@ -558,8 +570,8 @@
        */
       show_vector_tools(bool) {
         this._service.enableDOMElements(!bool);
+        this.disabled = bool;
       },
-
     },
 
     beforeCreate() {
