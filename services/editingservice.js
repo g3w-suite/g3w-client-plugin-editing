@@ -1914,11 +1914,9 @@ proto.getLayersDependencyFeatures = async function(layerId, opts = {}) {
 
       const id = this._getRelationId({ layerId, relation });
 
-      console.log(relation);
-
       opts.relation    = relation;
       opts.layerId     = layerId;
-      opts.filterType  = 'ONE' === relation.getType() ? '1:1' :  opts.filterType; // In case of relation 1:1
+      opts.filterType  = 'ONE' === (relation.getType ? relation.getType() : relation.type) ? '1:1' :  opts.filterType; // In a case of relation 1:1
       const filterType =  opts.filterType || 'fid';
       const options    = this.createEditingDataOptions(filterType, opts);
       const session    = this._sessions[id];
