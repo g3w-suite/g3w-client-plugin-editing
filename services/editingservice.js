@@ -1893,45 +1893,65 @@ proto._getRelationId = function({
  * 
  * @returns { Promise<Awaited<unknown>[]> }
  */
-proto.getLayersDependencyFeatures = function(layerId, opts = {}) {
-  const promises = [];
-  const layer = this.getLayerById(layerId);
-  const relations = opts.relations ?
-    opts.relations :
-    layer.getChildren().length && layer.getRelations() ?
-      this._filterRelationsInEditing({
-        relations: layer.getRelations()
-          .getArray()
-          .filter(relation => relation.getFather() === layerId),
-        layerId
-      }) :
-      [];
-  const online = ApplicationState.online;
-  relations.forEach(relation => {
-    if (relation.setLoading) {
-      relation.setLoading(true);
-    } else {
-      relation.loading = true;
-    }
-    const id = this._getRelationId({ layerId, relation });
-    //Promise
-    const promise = new Promise(resolve => {
-      opts.relation = relation;
-      opts.layerId = layerId;
-      //In case of relation 1:1
-      opts.filterType = 'ONE' === relation.getType() ? '1:1' :  opts.filterType;
+proto.getLayersDependencyFeatures = async function(layerId, opts = {}) {
+  const layer     = this.getLayerById(layerId);
+  const relations = opts.relations
+    ? opts.relations
+    : layer.getChildren().length && layer.getRelations()
+      ? this._filterRelationsInEditing({ layerId, relations: layer.getRelations().getArray().filter(r => r.getFather() === layerId) })
+      : [];
+
+  let response;
+  
+  try {
+    response = await Promise.all(relations.map(relation => {
+
+      if (relation.setLoading) {
+        relation.setLoading(true);
+      } else {
+        relation.loading = true;
+      }
+
+      const id = this._getRelationId({ layerId, relation });
+
+      console.log(relation);
+
+      opts.relation    = relation;
+      opts.layerId     = layerId;
+      opts.filterType  = 'ONE' === relation.getType() ? '1:1' :  opts.filterType; // In case of relation 1:1
       const filterType =  opts.filterType || 'fid';
-      const options = this.createEditingDataOptions(filterType, opts);
-      const session = this._sessions[id];
-      const toolbox = this.getToolBoxById(id);
-      //check if si online and it has session
-      if (online && session) {
-        //show bar loading
+      const options    = this.createEditingDataOptions(filterType, opts);
+      const session    = this._sessions[id];
+      const toolbox    = this.getToolBoxById(id);
+
+      // Promise
+      return new Promise(resolve => {
+
+        // application is offline → try to get feature from source
+        if (!ApplicationState.online || !session) {
+          this.getLayersDependencyFeaturesFromSource({
+            layerId: id,
+            relation,
+            feature: opts.feature,
+            operator: opts.operator
+          }).then(() => resolve(id))
+          return;
+        }
+
+        // show bar loading
         toolbox.startLoading();
-        //check is session is already start
-        if (session.isStarted()) {
-          //try to get feature from source
-          //without server reques
+
+        // start session and get features
+        if (!session.isStarted()) {
+          session.start(options)
+          .always(promise => {
+            promise.always(() => {
+              toolbox.stopLoading();
+              resolve(id);
+            })
+          });
+        } else {
+          // try to get feature from source without server reques
           this.getLayersDependencyFeaturesFromSource({
             layerId: id,
             relation,
@@ -1954,39 +1974,23 @@ proto.getLayersDependencyFeatures = function(layerId, opts = {}) {
                   });
               }
             })
-        } else {
-          //start session and get features
-          session.start(options)
-            .always(promise => {
-              promise.always(() => {
-                toolbox.stopLoading();
-                resolve(id);
-              })
-            });
         }
-      } else {
-        //try to get feature from source
-        this.getLayersDependencyFeaturesFromSource({
-          layerId: id,
-          relation,
-          feature: opts.feature,
-          operator: opts.operator
-        }).then(() => resolve(id))
-      }
-    });
-    promises.push(promise);
-  });
-  // at the end se loading false
-  Promise.all(promises)
-    .finally(() => relations.forEach(relation => {
-      if (relation.setLoading) {
-        relation.setLoading(false);
-      } else {
-        relation.loading = false;
-      }
+      });
     }));
+  } catch (e) {
+    console.warn(e);
+  }
 
-  return Promise.all(promises);
+  // at the end se loading false
+  relations.forEach(relation => {
+    if (relation.setLoading) {
+      relation.setLoading(false);
+    } else {
+      relation.loading = false;
+    }
+  });
+
+  return response;
 };
 
 /**
