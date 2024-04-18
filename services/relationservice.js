@@ -94,7 +94,7 @@ module.exports = class RelationService {
     ///////////////////////////////////////
 
     /**
-     * editing constraint type
+     * editing a constraint type
      */
     this.capabilities = parentLayer.getEditingCapabilities();
 
@@ -172,7 +172,7 @@ module.exports = class RelationService {
     })[this._layerType];
 
     // add tools for each relation
-    this.relations.forEach((_, i) => this.addTools(i) );
+    this.relations.forEach((r) => this.addTools(r.id) );
 
   }
 
@@ -184,9 +184,17 @@ module.exports = class RelationService {
    * @since g3w-client-plugin-editing@3.8.0
    */
   enableDOMElements(bool = true) {
-    document
-      .querySelectorAll('.editing-save-all-form, .g3w-editing-relations-add-link-tools, .g3wform_footer')
-      .forEach(c => c.classList.toggle('g3w-disabled', !bool))
+
+    document.querySelectorAll('.editing-save-all-form').forEach(c => {
+
+      if (bool && c.classList.contains('g3w-disabled')) { c.classList.remove('g3w-disabled'); }
+
+      if (!bool && !c.querySelector('.save-all-icon').classList.contains('g3w-disabled')) { c.classList.add('g3w-disabled'); }
+
+    });
+
+    document.querySelectorAll('.g3w-editing-relations-add-link-tools, .g3wform_footer').forEach(c => c.classList.toggle('g3w-disabled', !bool))
+
   }
 
   /**
@@ -200,7 +208,7 @@ module.exports = class RelationService {
   /**
    * Add relation tools
    */
-  addTools(index) {
+  addTools(id) {
 
     const tools = [
 
@@ -208,7 +216,7 @@ module.exports = class RelationService {
       this.capabilities.includes('change_attr_feature') && {
         state: Vue.observable({
           icon:   'editAttributes.png',
-          id:     `${index}_editattributes`,
+          id:     `${id}_editattributes`,
           name:   'editing.tools.update_feature',
           enabled: true,
           active:  false,
@@ -220,7 +228,7 @@ module.exports = class RelationService {
       this.capabilities.includes('delete_feature') && {
         state: Vue.observable({
           icon:   'deleteTableRow.png',
-          id:     `${index}_deletefeature`,
+          id:     `${id}_deletefeature`,
           name:   'editing.tools.delete_feature',
           enabled: true,
           active:  false,
@@ -239,7 +247,7 @@ module.exports = class RelationService {
               : ['movefeature', 'movevertex'].includes(t.getId()) // Line or Polygon
           )
           .map(tool => ({
-            state: Vue.observable({ ...tool.state, id: `${index}_${tool.state.id}` }),
+            state: Vue.observable({ ...tool.state, id: `${id}_${tool.state.id}` }),
             type: tool.getOperator().type,
           }))
       )
@@ -254,7 +262,7 @@ module.exports = class RelationService {
    * @returns {[]}
    */
   getTools(index) {
-    return this.tools[index] || this.addTools(index);
+    return this.tools[index] || this.addTools(this.relations[index].id);
   }
 
   /**
@@ -283,8 +291,8 @@ module.exports = class RelationService {
     const promise = new Promise((resolve, reject) => { Object.assign(d, { resolve, reject }) })
 
     const is_vector       = Layer.LayerTypes.VECTOR === this._layerType;
-    const toolId          = relationtool.state.id.split(`${index}_`)[1];
     const relation        = this.relations[index];
+    const toolId          = relationtool.state.id.split(`${relation.id}_`)[1];
     const relationfeature = this.getLayer().getEditingSource().getFeatureById(relation.id);
     const featurestore    = this.getLayer().getEditingSource();
     const selectStyle     = is_vector && SELECTED_STYLES[this.getLayer().getGeometryType()]; // get selected vector style
@@ -297,24 +305,27 @@ module.exports = class RelationService {
 
       GUI.dialog.confirm(
         t("editing.messages.delete_feature"),
-        result => {
-          // skip when ..
-          if (!result) {
-            d.reject(result);
-            return;
+          res => {
+            //confirm to delete
+            if (res) {
+              this.getEditingService().getCurrentWorkflowData().session.pushDelete(this._relationLayerId, relationfeature);
+              this.relations.splice(index, 1);     // remove feature from relation features
+              this.tools.splice(index, 1); // remove tool from relation tools
+              this.getEditingService().removeRelationLayerUniqueFieldValuesFromFeature({
+                layerId: this._relationLayerId,
+                relationLayerId: this.parent.layerId,
+                feature: relationfeature
+              });
+              featurestore.removeFeature(relationfeature);
+              this.updateParentWorkflows();
+              d.resolve(res);
+            }
+
+            if (!res) {
+              d.reject();
+            }
+
           }
-          this.getEditingService().getCurrentWorkflowData().session.pushDelete(this._relationLayerId, relationfeature);
-          this.relations.splice(index, 1); // remove feature from relations featues
-          this.tools.splice(index, 1);     // remove tool from relation tools
-          this.getEditingService().removeRelationLayerUniqueFieldValuesFromFeature({
-            layerId: this._relationLayerId,
-            relationLayerId: this.parent.layerId,
-            feature: relationfeature
-          });
-          featurestore.removeFeature(relationfeature);
-          this.updateParentWorkflows();
-          d.resolve(result);
-        }
       );
     }
 

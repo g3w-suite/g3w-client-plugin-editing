@@ -406,11 +406,9 @@
        */
       async updateTable() {
         this.destroyTable();     // destroy old table
-        this.show = false;       // set show false to hide table
         await this.$nextTick();  // wait rerender
-        this.show = true;        // show with a new relations array
-        await this.$nextTick();
         this._createDataTable(); // recreate table
+        this.resize();
       },
 
       /**
@@ -481,7 +479,7 @@
           .filter(Boolean)
           .forEach(field => {
             field.value     = this._service.parent.values[field.name];
-            relation        = this._service.getLayer().getEditingSource().getFeatureById(relation.id);
+            const relation        = this._service.getLayer().getEditingSource().getFeatureById(relation.id);
             const oRelation = relation.clone();
             relation.set(field.name, input.value);
             if (!relation.isNew()) {
@@ -533,7 +531,7 @@
       },
 
       /**
-       * @returns { boolean } whether show add link buttons
+       * @returns { boolean } whether show adds link buttons
        */
       show_add_link() {
         return (0 === this.relations.length || 'ONE' !== this.relation.type);
