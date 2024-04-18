@@ -1896,10 +1896,8 @@ proto._getRelationId = function({
 proto.getLayersDependencyFeatures = async function(layerId, opts = {}) {
   const layer     = this.getLayerById(layerId);
   const relations = opts.relations
-    ? opts.relations
-    : layer.getChildren().length && layer.getRelations()
-      ? this._filterRelationsInEditing({ layerId, relations: layer.getRelations().getArray().filter(r => r.getFather() === layerId) })
-      : [];
+    || layer.getChildren().length && layer.getRelations() && this._filterRelationsInEditing({ layerId, relations: layer.getRelations().getArray().filter(r => r.getFather() === layerId) })
+    || [];
 
   let response;
   
