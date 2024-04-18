@@ -20,6 +20,8 @@ const { tPlugin:t }      = g3wsdk.core.i18n;
 const { Layer }          = g3wsdk.core.layer;
 const { WorkflowsStack } = g3wsdk.core.workflow;
 const { Geometry }       = g3wsdk.core.geometry;
+const { FormService }    = g3wsdk.gui.vue.services;
+
 
 const color = 'rgb(255,89,0)';
 // Vector styles for selected relation
@@ -309,17 +311,29 @@ module.exports = class RelationService {
             //confirm to delete
             if (res) {
               this.getEditingService().getCurrentWorkflowData().session.pushDelete(this._relationLayerId, relationfeature);
-              this.relations.splice(index, 1);     // remove feature from relation features
-              this.tools.splice(index, 1); // remove tool from relation tools
+              this.relations.splice(index, 1); // remove feature from relation features
+              this.tools.splice(index, 1);     // remove tool from relation tools
               this.getEditingService().removeRelationLayerUniqueFieldValuesFromFeature({
                 layerId: this._relationLayerId,
                 relationLayerId: this.parent.layerId,
                 feature: relationfeature
               });
-              //@TODO Need to handle deletion of new relation feature (not yet committed) check saveAll button status
-              // relationfeature.isNew())
               featurestore.removeFeature(relationfeature);
-              this.updateParentWorkflows();
+              // check if relation feature delete is new.
+              // In this case, we need to check if there are temporary changes not related to this current feature
+              if (
+                  relationfeature.isNew()
+                  && !WorkflowsStack
+                    ._workflows
+                    .reduce((a,w) => a || w.getSession()._temporarychanges.filter(({ feature }) => relationfeature.getUid() !== feature.getUid()).length > 0, false)
+              ) {
+                WorkflowsStack._workflows
+                  .filter(w => FormService instanceof w.getContextService())
+                  .forEach(w => setTimeout(() => w.getContextService().state.update = false));
+              } else {
+                //set parent workflow update
+                this.updateParentWorkflows();
+              }
               d.resolve(res);
             }
 
