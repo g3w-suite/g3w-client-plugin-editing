@@ -205,7 +205,7 @@ module.exports = class RelationService {
     const tools = [
 
       // edit attributes
-      this.capabilities.some(cap => 'change_attr_feature' === cap) && {
+      this.capabilities.includes('change_attr_feature') && {
         state: Vue.observable({
           icon:   'editAttributes.png',
           id:     `${index}_editattributes`,
@@ -217,7 +217,7 @@ module.exports = class RelationService {
       },
 
       // delete feature
-      this.capabilities.some(cap => 'delete_feature' === cap) && {
+      this.capabilities.includes('delete_feature') && {
         state: Vue.observable({
           icon:   'deleteTableRow.png',
           id:     `${index}_deletefeature`,
@@ -229,7 +229,7 @@ module.exports = class RelationService {
       },
 
       // other vector tools (eg. move feature)
-      this.capabilities.some(cap => 'change_feature' === cap) && Layer.LayerTypes.VECTOR === this._layerType && (
+      this.capabilities.includes('change_feature') && Layer.LayerTypes.VECTOR === this._layerType && (
         this
           .getEditingService()
           .getToolBoxById(this._relationLayerId)

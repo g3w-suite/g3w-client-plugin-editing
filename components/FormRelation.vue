@@ -39,7 +39,7 @@
 
           <!-- CHANGE ATTRIBUTE -->
           <span
-            v-if                      = "undefined !== capabilities.find(cap => 'change_attr_feature' === cap)"
+            v-if                      = "capabilities.includes('change_attr_feature')"
             class                     = "g3w-icon add-link"
             align                     = "center"
             v-t-tooltip:bottom.create = "'plugins.editing.form.relations.tooltips.link_relation'"
@@ -49,7 +49,7 @@
 
           <!-- ADD FEATURE -->
           <span
-            v-if                      = "undefined !== capabilities.find(cap => 'add_feature' === cap)"
+            v-if                      = "capabilities.includes('add_feature')"
             v-t-tooltip:bottom.create = "'plugins.editing.form.relations.tooltips.add_relation'"
             @click                    = "show_add_link ? addRelationAndLink() : null"
             class                     = "g3w-icon add-link pull-right"
@@ -177,7 +177,7 @@
               </td>
               <td class="action-cell">
                 <div
-                  v-if                     = "!fieldrequired && undefined !== capabilities.find(cap => 'change_attr_feature' === cap)"
+                  v-if                     = "!fieldrequired && capabilities.includes('change_attr_feature')"
                   class                    = "g3w-mini-relation-icon g3w-icon"
                   :class                   = "g3wtemplate.font['unlink']"
                   @click.stop              = "_service.unlinkRelation(index)"
