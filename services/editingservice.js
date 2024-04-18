@@ -1,4 +1,5 @@
 import { EditingWorkflow } from '../g3wsdk/workflow/workflow';
+import { promisify }       from '../utils/promisify';
 import {
   OpenFormStep,
   ConfirmStep
@@ -1918,59 +1919,40 @@ proto.getLayersDependencyFeatures = async function(layerId, opts = {}) {
       const filterType =  opts.filterType || 'fid';
       const options    = this.createEditingDataOptions(filterType, opts);
       const session    = this._sessions[id];
+      const online     = ApplicationState.online && session;
       const toolbox    = this.getToolBoxById(id);
 
       // Promise
-      return new Promise(resolve => {
+      return new Promise(async (resolve) => {
 
-        // application is offline → try to get feature from source
-        if (!ApplicationState.online || !session) {
+        // try to get feature from source without server reques
+        const find = (!ApplicationState.online || !session || session.isStarted()) && await promisify(
           this.getLayersDependencyFeaturesFromSource({
-            layerId: id,
-            relation,
-            feature: opts.feature,
-            operator: opts.operator
-          }).then(() => resolve(id))
-          return;
-        }
+          layerId: id,
+          relation,
+          feature: opts.feature,
+          operator: opts.operator
+        }));
 
-        // show bar loading
         toolbox.startLoading();
 
-        // start session and get features
-        if (!session.isStarted()) {
-          session.start(options)
-          .always(promise => {
-            promise.always(() => {
-              toolbox.stopLoading();
-              resolve(id);
-            })
-          });
-        } else {
-          // try to get feature from source without server reques
-          this.getLayersDependencyFeaturesFromSource({
-            layerId: id,
-            relation,
-            feature: opts.feature,
-            operator: opts.operator
-          })
-            .then(find => {
-              //if found
-              if (find) {
-                resolve(id);
-                toolbox.stopLoading();
-              } else {
-                //request features from server
-                session.getFeatures(options)
-                  .always(promise => {
-                    promise.always(() => {
-                      toolbox.stopLoading();
-                      resolve(id);
-                    });
-                  });
-              }
-            })
+        try {
+          if (online && !session.isStarted()) {
+            await promisify(session.start(options));       // start session and get features
+          } else if (online && !find) {
+            await promisify(session.getFeatures(options)); // request features from server
+          }
+        } catch (promise) {
+          if (promise && promise.always) {
+            try { await promisify(promise) } catch (e) { console.warn(e) }
+          } else {
+            console.warn(e);
+          }
         }
+
+        toolbox.stopLoading();
+
+        resolve(id);
       });
     }));
   } catch (e) {
