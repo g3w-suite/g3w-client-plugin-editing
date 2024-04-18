@@ -260,7 +260,7 @@
     methods: {
 
       /**
-       * Adapt table when window is resized
+       * Adapt table when a window is resized
        */
       resize() {
         // skip when a relation form is disabled (or hidden)
@@ -272,13 +272,13 @@
 
         if (table) {
           table.style.height =
-              ((document.querySelector('.g3wform_body')                                              || {}).offsetHeight || 0)
-            - ((document.querySelector('.g3wform_footer')                                            || {}).offsetHeight || 0)
+              ((document.querySelector('.g3wform_body')                                     || {}).offsetHeight || 0)
+            - ((document.querySelector('.g3wform_footer')                                   || {}).offsetHeight || 0)
             - ((this.$refs.relation_header_title                                                     || {}).offsetHeight || 0)
             - ((this.$refs.relation_header_tools                                                     || {}).offsetHeight || 0)
             - ((this.$el.querySelector('.dataTables_scrollHead')                                     || {}).offsetHeight || 0)
             - ((this.$el.querySelector('.dataTables_paginate.paging_simple_numbers')                 || {}).offsetHeight || 0)
-            - ((document.querySelector('.editing-save-all-form')                                     || {}).offsetHeight || 0)
+            - ((document.querySelector('.editing-save-all-form')                            || {}).offsetHeight || 0)
             - (( this.isVectorRelation && this.show_vector_tools && this.$refs.relation_vector_tools || {}).offsetHeight || 0)
             + 'px';
         }
