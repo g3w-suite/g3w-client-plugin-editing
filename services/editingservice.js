@@ -1943,11 +1943,7 @@ proto.getLayersDependencyFeatures = async function(layerId, opts = {}) {
             await promisify(session.getFeatures(options)); // request features from server
           }
         } catch (promise) {
-          if (promise && promise.always) {
-            try { await promisify(promise) } catch (e) { console.warn(e) }
-          } else {
-            console.warn(e);
-          }
+          try { await promisify(promise) } catch (e) { console.warn(e, promise); }
         }
 
         toolbox.stopLoading();
