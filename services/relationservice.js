@@ -323,12 +323,13 @@ module.exports = class RelationService {
               // In this case, we need to check if there are temporary changes not related to this current feature
               if (
                   relationfeature.isNew()
-                  && !WorkflowsStack
+                  && undefined === WorkflowsStack
                     ._workflows
-                    .reduce((a,w) => a || w.getSession()._temporarychanges.filter(({ feature }) => relationfeature.getUid() !== feature.getUid()).length > 0, false)
+                    .find(w => w.getSession()._temporarychanges.filter(({ feature }) => relationfeature.getUid() !== feature.getUid()).length > 0)
               ) {
+                console.log(FormService)
                 WorkflowsStack._workflows
-                  .filter(w => FormService instanceof w.getContextService())
+                  .filter(w => w.getContextService() instanceof FormService)
                   .forEach(w => setTimeout(() => w.getContextService().state.update = false));
               } else {
                 //set parent workflow update
