@@ -2024,7 +2024,8 @@ export class OpenFormStep extends EditingTask {
     this.disableSidebar(false);
 
     const service        = this.getEditingService();
-    const GIVE_ME_A_NAME = false === this._isContentChild || // no child workflow
+    //Check if form coming from the parent table component
+    const is_parent_table = false === this._isContentChild || // no child workflow
       (
         // case edit feature of a table (edit layer alphanumeric)
         2 === WorkflowsStack.getLength() && //open features table
@@ -2034,11 +2035,11 @@ export class OpenFormStep extends EditingTask {
     // when the last feature of features is Array
     // and is resolved without setting form service
     // Ex. copy multiple features from another layer
-    if (GIVE_ME_A_NAME) {
+    if (is_parent_table) {
       service.disableMapControlsConflict(false);
     }
 
-    const contextService = GIVE_ME_A_NAME && WorkflowsStack.getCurrent().getContextService();
+    const contextService = is_parent_table && WorkflowsStack.getCurrent().getContextService();
 
     // force update parent form update
     if (contextService && false === this._isContentChild) {
