@@ -346,18 +346,6 @@ module.exports = class RelationService {
       );
     }
 
-    // zoom to relation vector feature
-    if (['movevertex', 'movefeature'].includes(toolId) && this.currentRelationFeatureId !== relationfeature.getId()) {
-      this.currentRelationFeatureId = relationfeature.getId();
-      GUI.getService('map').zoomToFeatures([ relationfeature ]);
-    }
-
-    // disable modal and buttons (saveAll and back)
-    if (['movevertex', 'movefeature'].includes(toolId)) {
-      GUI.setModal(false);
-      this.enableDOMElements(false);
-    }
-
     // EDIT ATTRIBUTE FEATURE RELATION
     if ('editattributes' === toolId) {
       /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/edittablefeatureworkflow.js@v3.7.1 */
@@ -388,8 +376,17 @@ module.exports = class RelationService {
       workflow.stop();
     }
 
+    // zoom to relation vector feature
+    if (['movevertex', 'movefeature'].includes(toolId) && this.currentRelationFeatureId !== relationfeature.getId()) {
+      this.currentRelationFeatureId = relationfeature.getId();
+      GUI.getService('map').zoomToFeatures([ relationfeature ]);
+    }
+
     // MOVE vertex or MOVE feature tool
     if (['movevertex', 'movefeature'].includes(toolId)) {
+      // disable modal and buttons (saveAll and back)
+      GUI.setModal(false);
+      this.enableDOMElements(false);
       const workflow = new EditingWorkflow({
         type: relationtool.type,
         steps: [ new {
