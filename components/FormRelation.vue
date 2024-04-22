@@ -140,7 +140,7 @@
         v-disabled = "disabled"
       >
         <table
-          v-if  = "relationsLength > 0"
+          v-if  = "relationsLength > 0 && !update"
           ref   = "relationTable"
           class = "table g3wform-relation-table table-striped"
         >
@@ -154,6 +154,7 @@
           <tbody>
             <tr
               v-for = "(relation, index) in relations"
+              :key  = "relation.id"
               class = "featurebox-header"
             >
               <td>
@@ -420,7 +421,7 @@
         this.destroyTable();     // destroy old table
         await this.$nextTick();  // wait rerender
         this._createDataTable(); // recreate table
-        this.resize();
+        setTimeout(() => this.resize())
       },
 
       /**
@@ -434,8 +435,19 @@
       updateNewRelationId() {
         this._new_relations_ids.forEach(({ clientid, id }) => {
           const newrelation = this.relations.find(r => clientid === r.id);
-          if (newrelation) { newrelation.id = id }
+          if (newrelation) {
+            newrelation.id = id;
+            //replace tools with new id
+            (
+              this._service.tools
+              .find(ts => ts.find(t => t.state.id.split(`${clientid}_`).length > 1))
+            || []
+            )
+              .forEach(t => t.state.id = t.state.id.replace(`${clientid}_`, `${id}_`));
+
+          }
         })
+
       },
 
       /**
@@ -453,10 +465,6 @@
             ...(this._new_relations_ids || []),
             ...new_relations[relationLayer.getId()].new.map(({ clientid, id }) => ({ clientid, id }))
           ]
-          // component is active (show) → need to update
-          if (this.active) {
-            this.updateNewRelationId();
-          }
         }
       },
 
@@ -556,13 +564,15 @@
       /**
        * @FIXME add description
        */
-      relations(updatedrelations = []) {
+      relations(_, updatedrelations = []) {
         if (0 === updatedrelations.length) {
           this.destroyTable(); // destroy the table when there are no relations
         } else {
+          // component is active (show) → need to update
           this.updateNewRelationId();
           this.updateTable(); // update table when deleting / adding row relations
         }
+
       },
 
       /**

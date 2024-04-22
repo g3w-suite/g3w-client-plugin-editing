@@ -211,6 +211,7 @@ module.exports = class RelationService {
    * Add relation tools
    */
   addTools(id) {
+    console.log(id)
 
     const tools = [
 
@@ -368,7 +369,7 @@ module.exports = class RelationService {
               })
           });
         d.resolve(true);
-      } catch (e) {
+      } catch(e) {
         console.warn(e);
         d.reject(e);
       }
@@ -529,6 +530,7 @@ module.exports = class RelationService {
     }
 
     const options = this._createWorkflowOptions();
+
     const { ownField, relationField } = this.getEditingService()._getRelationFieldsFromRelation({
       layerId:  this._relationLayerId,
       relation: this.relation
@@ -537,9 +539,7 @@ module.exports = class RelationService {
     try {
       const outputs = await promisify(workflow.start(options));
 
-      if (isVector) {
-        workflow.bindEscKeyUp();
-      }
+      if (isVector) { workflow.bindEscKeyUp(); }
       
       const { newFeatures, originalFeatures } = outputs.relationFeatures;
 
@@ -564,7 +564,7 @@ module.exports = class RelationService {
           });
         });
 
-      //check if parent features are new and if parent layer has editable fields
+      //check if parent feature is new and if parent layer has editable fields
       if (options.parentFeature.isNew() && this.parent.editable.length > 0) {
         const keyRelationFeatureChange = options.parentFeature.on('propertychange', evt => {
           if (options.parentFeature.isNew()) {
