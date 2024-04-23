@@ -605,7 +605,7 @@ export class EditingWorkflow extends Workflow {
    * @FIXME add description
    */
   getLayer() {
-    return this.getSession().getEditor().getLayer();
+    return this.getInputs().layer;
   }
 
   /**
