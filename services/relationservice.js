@@ -86,10 +86,16 @@ module.exports = class RelationService {
       // to fill the field with the relation layer feature when commit
       values: fatherRelationField
         .reduce((accumulator, fField) => {
+          //get feature
           const feature = this.getEditingService().getCurrentWorkflow().getCurrentFeature();
+          //get fields of form because contains values that have temporary changes not yet saved
+          // in case of form fields
+          const fields  = this.getEditingService().getCurrentWorkflow().getInputs().fields;
           accumulator[fField] = (fField === pk && feature.isNew()) //check if isPk and parent feature isNew
             ? feature.getId()
-            : feature.get(fField);
+              //check if fields are set (parent workflow is a form)
+              // or for example, for feature property field value
+            : fields ? fields.find(f => fField === f.name).value: feature.get(fField);
           return accumulator;
         }, {}),
     }
