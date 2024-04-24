@@ -69,7 +69,7 @@ module.exports = class RelationService {
 
     const { ownField: fatherRelationField } = this.getEditingService()._getRelationFieldsFromRelation({ layerId, relation: this.relation });
 
-    const parentPK = fatherRelationField.find(fRField => parentLayer.isPkField(fRField) && !parentLayer.isEditingFieldEditable(fRField))
+    const pk = fatherRelationField.find(fRField => parentLayer.isPkField(fRField))
 
     /**
      * Father relation fields (editable and pk)
@@ -80,15 +80,16 @@ module.exports = class RelationService {
       // get editable fields
       editable: fatherRelationField.filter(fRField => parentLayer.isEditingFieldEditable(fRField)),
       // check if father field is a pk and is not editable
-      pk: parentPK,
+      pk,
       // Check if the parent field is editable.
       // If not, get the id of parent feature so the server can generate the right value
       // to fill the field with the relation layer feature when commit
-      values:   fatherRelationField
+      values: fatherRelationField
         .reduce((accumulator, fField) => {
-          accumulator[fField] = fField === parentPK //check if isPk
-            ? this.getEditingService().getCurrentWorkflowData().feature.getId()
-            : this.getEditingService().getCurrentWorkflowData().feature.get(fField);
+          const feature = this.getEditingService().getCurrentWorkflow().getCurrentFeature();
+          accumulator[fField] = (fField === pk && feature.isNew()) //check if isPk and parent feature isNew
+            ? feature.getId()
+            : feature.get(fField);
           return accumulator;
         }, {}),
     }
@@ -211,7 +212,6 @@ module.exports = class RelationService {
    * Add relation tools
    */
   addTools(id) {
-    console.log(id)
 
     const tools = [
 
@@ -315,9 +315,9 @@ module.exports = class RelationService {
               this.relations.splice(index, 1); // remove feature from relation features
               this.tools.splice(index, 1);     // remove tool from relation tools
               this.getEditingService().removeRelationLayerUniqueFieldValuesFromFeature({
-                layerId: this._relationLayerId,
+                layerId:         this._relationLayerId,
                 relationLayerId: this.parent.layerId,
-                feature: relationfeature
+                feature:         relationfeature
               });
               featurestore.removeFeature(relationfeature);
               // check if relation feature delete is new.
@@ -328,7 +328,6 @@ module.exports = class RelationService {
                     ._workflows
                     .find(w => w.getSession()._temporarychanges.filter(({ feature }) => relationfeature.getUid() !== feature.getUid()).length > 0)
               ) {
-                console.log(FormService)
                 WorkflowsStack._workflows
                   .filter(w => w.getContextService() instanceof FormService)
                   .forEach(w => setTimeout(() => w.getContextService().state.update = false));
@@ -359,13 +358,11 @@ module.exports = class RelationService {
         this
           .getLayer()
           .getFieldsWithValues(relationfeature, { relation: true })
-          .forEach(_field => {
+          .forEach(f => {
             relation.fields
-              .forEach(field => {
-                if (field.name === _field.name) {
-                  //in case of sync feature get data value of sync feature
-                  field.value = _field.value;
-                }
+              .forEach(rf => {
+                //in case of sync feature get data value of sync feature
+                if (rf.name === f.name) { rf.value = f.value; }
               })
           });
         d.resolve(true);
