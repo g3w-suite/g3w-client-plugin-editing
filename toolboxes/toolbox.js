@@ -1535,6 +1535,7 @@ ToolBox.create = function(layer) {
             ],
             registerEscKeyEvent: true
           });
+          w.addToolsOfTools({ step: w.getStep(2), tools: ['snap', 'measure'] });
           return w;
         },
       },
