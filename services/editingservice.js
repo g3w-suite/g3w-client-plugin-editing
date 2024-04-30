@@ -478,7 +478,7 @@ proto.editResultLayerFeature = function({
 
   const toolBox   = this.getToolBoxById(layer.id);
   const { scale } = toolBox.getEditingConstraints(); // get scale constraint from setting layer
-  const has_geom  = feature.geometry;
+
   // start toolbox (filtered by feature id)
   toolBox
     .start({ filter: { fids: fid } })
@@ -499,12 +499,17 @@ proto.editResultLayerFeature = function({
         return;
       }
 
+      //need to be check here if feature returned by server has geometry
+      //because if coming from a query result where it is not checked return geometry
+      //from response in QGIS project, we assume the wrong value.
+      const has_geom = feature.getGeometry();
+
       /**If feature has geometry, zoom to geometry */
       if (has_geom) {
         this._mapService.zoomToGeometry(feature.getGeometry());
         // check map scale after zoom to feature
         // if currentScale is more that scale constraint set by layer editing
-        // need to go to scale setting by layer editing constraint
+        // needs to go to scale setting by layer editing constraint
         if (undefined !== scale) {
           this._mapService.getMap().once('moveend', () => {
             const units        = this._mapService.getMapUnits();
@@ -527,7 +532,7 @@ proto.editResultLayerFeature = function({
       const session = toolBox.getSession();
 
       this.setSelectedToolbox(toolBox);
-      // in case of vector layer when feature has no geometry, need to
+      // in the case of vector layer when feature has no geometry, need to
       // add geometry
       if ((isVectorLayer && !has_geom)) {
         const addPartTool = toolBox.getTools().find(t => 'addPart' === t.getId());
