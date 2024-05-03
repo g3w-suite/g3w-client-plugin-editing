@@ -15,7 +15,6 @@ import { listenRelation1_1FieldChange }                 from '../utils/listenRel
 
 import CopyFeatureFromOtherLayersComponent              from '../components/CopyFeaturesFromOtherLayers.vue';
 import CopyFeatureFromOtherProjectLayersComponent       from '../components/CopyFeaturesFromOtherProjectLayer.vue';
-import SaveAll                                          from '../components/SaveAll.vue';
 import TableVueObject                                   from '../components/Table.vue';
 import { PickFeaturesInteraction }                      from '../interactions/pickfeaturesinteraction';
 
@@ -57,6 +56,7 @@ const {
 const { G3W_FID }                          = g3wsdk.constant;
 const { CatalogLayersStoresRegistry }      = g3wsdk.core.catalog;
 const { Component }                        = g3wsdk.gui.vue;
+const { FormService }                      = g3wsdk.gui.vue.services;
 
 const EditingFormComponent                 = require('../form/editingform');
 
@@ -184,7 +184,7 @@ export class AddFeatureStep extends EditingTask {
     }
 
     /** @since g3w-client-plugin-editing@v3.8.0 */
-    setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise, inputs });
+    setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise, inputs, style: this.selectStyle });
 
     const originalGeometryType = originalLayer.getEditingGeometryType();
 
@@ -462,7 +462,7 @@ export class ConfirmStep extends EditingTask {
   run(inputs, context) {
     const promise = this._dialog.fnc(inputs, context);
     if (inputs.features) {
-      setAndUnsetSelectedFeaturesStyle({ promise, inputs });
+      setAndUnsetSelectedFeaturesStyle({ promise, inputs, style: this.selectStyle });
     }
     return promise;
   }
@@ -546,7 +546,7 @@ export class CopyFeaturesFromOtherLayerStep extends EditingTask {
             const promisesFeatures = [];
             selectedFeatures.forEach(selectedFeature => {
               /**
-               * check if layer belong to project or not
+               * check if the layer belongs to project or not
                */
               if (this.getEditingService().getProjectLayerById(selectedFeature.__layerId)) {
                 promisesFeatures.push(this.getEditingService().getProjectLayerFeatureById({
@@ -808,7 +808,7 @@ export class DeleteFeatureStep extends EditingTask {
     const session         = context.session;
     const feature         = inputs.features[0];
 
-    //get all relations of current editing layer that are in editing
+    //get all relations of the current editing layer that are in editing
     const relations       = EditingService._filterRelationsInEditing({
       layerId,
       relations: originaLayer.getRelations() ?
@@ -1019,7 +1019,7 @@ export class GetVertexStep extends EditingTask {
     this._stopPromise = $.Deferred();
 
     /** @since g3w-client-plugin-editing@v3.8.0 */
-    setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise, inputs });
+    setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise, inputs, style: this.selectStyle });
 
     this._snapIteraction = new ol.interaction.Snap({
       features: new ol.Collection(features),
@@ -1070,36 +1070,44 @@ export class LinkRelationStep extends EditingTask {
     return new EditingStep(options);
   }
 
+  /**
+   *
+   *
+   * @param inputs
+   * @param context
+   * @return { JQuery Promise }
+   */
   run(inputs, context) {
     GUI.setModal(false);
     const d                   = $.Deferred();
     const editingLayer        = inputs.layer.getEditingLayer();
     this._originalLayerStyle  = editingLayer.getStyle();
-    const beforeRun           = context.beforeRun;
-    const promise             = beforeRun && typeof beforeRun === 'function' ? beforeRun() : Promise.resolve();
+    const promise             = context.beforeRun && typeof context.beforeRun === 'function' ? context.beforeRun() : Promise.resolve();
 
     const { excludeFeatures } = context;
 
-    const style               = context.style;
-
-    this._features            = editingLayer.getSource().getFeatures();
-
-    if (excludeFeatures) {
-      this._features = this._features
-        .filter(feature => Object
-          .entries(excludeFeatures)
-          .reduce((bool, [field, value]) => bool && feature.get(field) != value, true)
-        )
-    }
-
-    if (style) {
-      this._features.forEach(feature => feature.setStyle(style));
-    }
     promise
       .then(() => {
+        let features = editingLayer.getSource().getFeatures();
+
+        if (excludeFeatures) {
+          features = features
+            .filter(feature => Object
+              .entries(excludeFeatures)
+              .reduce((bool, [field, value]) => bool && feature.get(field) != value, true)
+            )
+        }
+        this._stopPromise = $.Deferred();
+
+        setAndUnsetSelectedFeaturesStyle({
+          promise: this._stopPromise.promise(),
+          inputs: { layer: inputs.layer, features },
+          style: this.selectStyle
+        });
+
         this.pickFeatureInteraction = new PickFeatureInteraction({
           layers: [editingLayer],
-          features: this._features
+          features
         });
         this.addInteraction(this.pickFeatureInteraction);
         this.pickFeatureInteraction.on('picked', evt => {
@@ -1109,17 +1117,20 @@ export class LinkRelationStep extends EditingTask {
           d.resolve(inputs);
         });
       })
-      .catch(err => d.reject(err));
-    return d.promise()
+      .catch(e => {
+        console.warn(e);
+        d.reject(e);
+      });
+
+    return d.promise();
   }
 
   stop() {
     GUI.setModal(true);
     this.removeInteraction(this.pickFeatureInteraction);
-    this._features.forEach(feature => feature.setStyle(this._originalLayerStyle));
     this.pickFeatureInteraction = null;
-    this._features = null;
-    this._originalLayerStyle = null;
+    this._originalLayerStyle    = null;
+    if (this._stopPromise) { this._stopPromise.resolve(true)}
     return true;
   }
 }
@@ -1243,7 +1254,6 @@ export class ModifyGeometryVertexStep extends EditingTask {
     const layerId       = originalLayer.getId();
     const feature       = this._feature = inputs.features[0];
     this._originalStyle = editingLayer.getStyle();
-
     this.deleteVertexKey;
     const style = function() {
       const image = new ol.style.Circle({
@@ -1255,8 +1265,14 @@ export class ModifyGeometryVertexStep extends EditingTask {
         new ol.style.Style({
           image,
           geometry(feature) {
-            const coordinates = feature.getGeometry().getCoordinates()[0];
-            return new ol.geom.MultiPoint(coordinates);
+            return new ol
+              .geom
+              .MultiPoint(
+                ( // in the case of multipolygon geometry
+                  Geometry.isPolygonGeometryType(originalLayer.getGeometryType()) &&
+                  Geometry.isMultiGeometry(originalLayer.getGeometryType())
+                ) ? feature.getGeometry().getCoordinates()[0][0] : feature.getGeometry().getCoordinates()[0]
+              )
           }
         }),
         new ol.style.Style({
@@ -1296,10 +1312,11 @@ export class ModifyGeometryVertexStep extends EditingTask {
         });
         /**
          *
-         * end of evaluate
+         * end of evaluating
          */
       }
     });
+
     return d.promise();
   }
 
@@ -1397,7 +1414,7 @@ export class MoveElementsStep extends EditingTask {
     const session = context.session;
 
     /** @since g3w-client-plugin-editing@v3.8.0 */
-    setAndUnsetSelectedFeaturesStyle({ promise: d, inputs });
+    setAndUnsetSelectedFeaturesStyle({ promise: d, inputs, style: this.selectStyle });
 
     this._snapIteraction = new ol.interaction.Snap({source, edge: false});
 
@@ -1493,9 +1510,9 @@ export class MoveFeatureStep extends EditingTask {
   }
 
   run(inputs, context) {
-    /** Need two different promise: One for stop() method and clean selected feature,
-     * and other one for run task. If we use the same promise, when stop task without move feature,
-     * this.promise.resolve(), it fires also thenable method listen resolve promise of run task,
+    /** Need two different promises: One for stop() method and clean-selected feature,
+     * and another one for a run task. If we use the same promise, when stop a task without move feature,
+     * this.promise.resolve(), it fires also thenable method listens to resolve promise of a run task,
      * that call stop task method.*/
     this.promise         = $.Deferred();
     const d              = $.Deferred();
@@ -1506,8 +1523,7 @@ export class MoveFeatureStep extends EditingTask {
     let originalFeature  = null;
     this.changeKey       = null; //
     let isGeometryChange = false; // changed if geometry is changed
-
-    setAndUnsetSelectedFeaturesStyle({ promise: this.promise, inputs });
+    setAndUnsetSelectedFeaturesStyle({ promise: this.promise, inputs, style: this.selectStyle });
 
     this._translateInteraction = new ol.interaction.Translate({
       features,
@@ -1597,11 +1613,6 @@ export class OpenFormStep extends EditingTask {
     this._edit_relations = undefined === options.edit_relations || options._edit_relations;
 
     /**
-     * @FIXME add description
-     */
-    this._formIdPrefix = 'form_';
-
-    /**
      * @FIXME set a default value + add description
      */
     this.layerId;
@@ -1644,18 +1655,7 @@ export class OpenFormStep extends EditingTask {
     /**
      * @FIXME set a default value + add description
      */
-    this._session;
-
-    /**
-     * @FIXME set a default value + add description
-     */
-    this._editorFormStructure;
-
-    /**
-     * @FIXME set a default value + add description
-     */
     this.promise;
-
 
     /**
      * @since g3w-client-plugin-editing@v3.7.0
@@ -1675,27 +1675,103 @@ export class OpenFormStep extends EditingTask {
   }
 
   /**
+   * @param fields
+   * @param fields Array of fields
+   * 
+   * @returns {Promise<unknown>}
+   */
+  async saveAll(fields) {
+    const { session } = this.getContext();
+    fields = this._multi ? fields.filter(field => null !== field.value) : fields;
+
+    // skip when ..
+    if (!fields.length) {
+      return;
+    }
+
+    await WorkflowsStack.getCurrent().getContextService().saveDefaultExpressionFieldsNotDependencies();
+
+    const newFeatures = [];
+
+    this._features.forEach(f => {
+      this._originalLayer.setFieldsWithValues(f, fields);
+      newFeatures.push(f.clone());
+    });
+
+    if (this._isContentChild) {
+      this.getInputs().relationFeatures = { newFeatures, originalFeatures: this._originalFeatures };
+    }
+
+    await this.fireEvent('saveform', { newFeatures, originalFeatures: this._originalFeatures });
+
+    newFeatures.forEach((f, i) => session.pushUpdate(this.layerId, f, this._originalFeatures[i]));
+
+    //check and handle if layer has relation 1:1
+    await handleRelation1_1LayerFields({
+      layerId: this.layerId,
+      features: newFeatures,
+      fields,
+      task: this,
+    })
+
+    this.fireEvent('savedfeature', newFeatures);                 // called after saved
+    this.fireEvent(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
+
+    session.save();
+
+    return { promise: this.promise };
+  }
+
+  /**
    * @param inputs
    * @param context
    * 
-   * @returns {Promise<*>}
-   * 
-   * @private
+   * @returns {*}
    */
-  async _getForm(inputs, context) {
-    this._session          = context.session;
+  run(inputs, context) {
+    const d              = $.Deferred();
+    const {
+      layer,
+      features
+    } = inputs;
+
+    this.promise         = d;
+    this._isContentChild = WorkflowsStack.getLength() > 1;
+    this.layerId         = layer.getId();
+
+    GUI.setLoadingContent(false);
+
+    this.getEditingService().disableMapControlsConflict(true);
+    setAndUnsetSelectedFeaturesStyle({ promise: d, inputs, style: this.selectStyle });
+
+    if (!this._multi && Array.isArray(features[features.length -1])) {
+      d.resolve();
+    } else {
+      this.startForm({ inputs, context, promise: d });
+    }
+
+    return d.promise();
+  }
+
+  /**
+   * Build form
+   */
+  async startForm({ inputs, context, promise }) {
+    const EditingService = this.getEditingService();
+
+    EditingService.setCurrentLayout();
+
     this._originalLayer    = inputs.layer;
     this._editingLayer     = this._originalLayer.getEditingLayer();
     this._layerName        = this._originalLayer.getName();
     this._features         = this._multi ? inputs.features : [inputs.features[inputs.features.length - 1]];
-    this._originalFeatures = this._features.map(feature => feature.clone());
-    const feature          = this._features[0];
-    /**
-     * In case of create a child relation feature set a father relation field value
-     */
+    this._originalFeatures = this._features.map(f => f.clone());
+    let feature            = this._features[0];
+
+    // create a child relation feature set a father relation field value
     if (this._isContentChild) {
       //Are array
-      const {fatherValue=[], fatherField=[]} = context;
+      const { fatherValue=[], fatherField=[] } = context;
       fatherField.forEach((fField, index) => {
         feature.set(fField, fatherValue[index]);
         this._originalFeatures[0].set(fField, fatherValue[index]);
@@ -1703,204 +1779,199 @@ export class OpenFormStep extends EditingTask {
     }
 
     this._fields = await getFormFields({ inputs, context, feature, isChild: this._isContentChild });
-    // in case of multi editing set all field to null //
-    this._fields = this._multi
-      ? this._fields
-          .map(field => {
-            const _field = JSON.parse(JSON.stringify(field));
-            _field.value = null;
-            _field.forceNull = true;
-            _field.validate.required = false;
-            return _field;
-          })
-          .filter(field => !field.pk)
-      : this._fields;
 
-    if (this._originalLayer.hasFormStructure()) {
-      const editorFormStructure = this._originalLayer.getEditorFormStructure();
-      this._editorFormStructure = editorFormStructure.length ? editorFormStructure : null;
+    // in the case of multi editing set all fields to null
+    if (this._multi) {
+      this._fields = this._fields
+        .map(field => {
+          const f = JSON.parse(JSON.stringify(field));
+          f.value = null;
+          f.forceNull = true;
+          f.validate.required = false;
+          return f;
+        })
+        .filter(field => !field.pk)
     }
 
-    return GUI.showContentFactory('form');
-  }
-
-  /**
-   * @param fields
-   * @param fields Array of fields
-   * 
-   * @returns {Promise<unknown>}
-   */
-  saveAll(fields) {
-    return new Promise(async (resolve, reject) => {
-      const { session } = this.getContext();
-      const inputs      = this.getInputs();
-      fields = this._multi ? fields.filter(field => null !== field.value) : fields;
-      if (fields.length) {
-        await WorkflowsStack.getCurrent().getContextService().saveDefaultExpressionFieldsNotDependencies();
-        const newFeatures = [];
-        this._features
-          .forEach(feature => {
-            this._originalLayer.setFieldsWithValues(feature, fields);
-            newFeatures.push(feature.clone());
-          });
-
-        if (this._isContentChild) {
-          inputs.relationFeatures = { newFeatures, originalFeatures: this._originalFeatures };
-        }
-
-        this.fireEvent('saveform', {
-          newFeatures,
-          originalFeatures: this._originalFeatures
-        }).then(() => {
-          newFeatures
-            .forEach((newFeature, index) => {
-              session.pushUpdate(this.layerId, newFeature, this._originalFeatures[index]);
-            });
-
-          //check and handle if layer has relation 1:1
-          handleRelation1_1LayerFields({
-            layerId: this.layerId,
-            features: newFeatures,
-            fields,
-            task: this,
-          }).then(() => {
-            this.fireEvent('savedfeature', newFeatures); // called after saved
-            this.fireEvent(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
-            session.save();
-            resolve({ promise: this.promise });
-          })
-        })
-      }
-    })
-  }
-
-  /**
-   * @param fields
-   * @param promise
-   * @param session
-   * @param inputs
-   * 
-   * @returns {Promise<void>}
-   * 
-   * @private
-   */
-  async _saveFeatures({fields, promise, session, inputs}) {
-    fields = this._multi ? fields.filter(field => field.value !== null) : fields;
-    if (fields.length) {
-      const newFeatures = [];
-
-      // @since 3.5.15
-      GUI.setLoadingContent(true);
-      GUI.disableContent(true);
-
-      await WorkflowsStack.getCurrent().getContextService().saveDefaultExpressionFieldsNotDependencies();
-
-      GUI.setLoadingContent(false);
-      GUI.disableContent(false);
-
-      this._features.forEach(feature => {
-        this._originalLayer.setFieldsWithValues(feature, fields);
-        newFeatures.push(feature.clone());
-      });
-      if (this._isContentChild) {
-        inputs.relationFeatures = {
-          newFeatures,
-          originalFeatures: this._originalFeatures
-        };
-      }
-      this.fireEvent('saveform', {
-        newFeatures,
-        originalFeatures: this._originalFeatures
-      }).then(() => {
-        newFeatures
-          .forEach((newFeature, index) => session.pushUpdate(this.layerId, newFeature, this._originalFeatures[index]));
-
-        //check and handle if layer has relation 1:1
-        //async
-        handleRelation1_1LayerFields({
-          layerId: this.layerId,
-          features: newFeatures,
-          fields,
-          task: this,
-        }).then(() => {
-          GUI.setModal(false);
-          this.fireEvent('savedfeature', newFeatures); // called after saved
-          this.fireEvent(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
-          // In case of save of child it means that child is updated so also parent
-          if (this._isContentChild) {
-            WorkflowsStack
-              .getParents()
-              .forEach(workflow => workflow.getContextService().setUpdate(true, {force: true}));
-          }
-          promise.resolve(inputs);
-        })
-      })
-    } else {
-
-      GUI.setModal(false);
-
-      promise.resolve(inputs);
-    }
-  }
-
-  /**
-   * Build form
-   * 
-   * @param options
-   * 
-   * @returns {Promise<void>}
-   */
-  async startForm(options = {}) {
-    this.getEditingService().setCurrentLayout();
-    const {
-      inputs,
-      context,
-      promise
-    }                   = options;
-    const { session }   = context;
-    const formComponent = options.formComponent || EditingFormComponent;
-    const Form          = await this._getForm(inputs, context);
-    const feature       = this._originalFeatures[0];
-
-    /**
-     * set fields. Useful getParentFormData
-     */
+    // set fields. Useful getParentFormData
     WorkflowsStack
       .getCurrent()
-      .setInput({key: 'fields', value: this._fields});
+      .setInput({ key: 'fields', value: this._fields });
 
-    const formService = Form({
-      formComponent,
-      title: "plugins.editing.editing_attributes",
-      name: this._layerName,
-      crumb: {title: this._layerName},
-      id: this._generateFormId(this._layerName),
-      dataid: this._layerName,
-      layer: this._originalLayer,
-      isnew: this._originalFeatures.length > 1 ? false : feature.isNew(), // specify if is a new feature
-      feature,
-      parentData: getParentFormData(),
-      fields: this._fields,
-      context_inputs: !this._multi && this._edit_relations && {context, inputs},
-      formStructure: this._editorFormStructure,
-      modal: true,
-      push: this.push || this._isContentChild, //@since v3.7 need to take in account this.push value
-      showgoback: undefined !== this.showgoback ? this.showgoback : !this._isContentChild,
-      headerComponent: this._saveAll && SaveAll,
-      buttons: [
+    const formService = GUI.showForm({
+      feature:         this._originalFeatures[0],
+      formComponent:   /*opts.formComponent ||*/ EditingFormComponent,
+      title:           "plugins.editing.editing_attributes",
+      name:            this._layerName,
+      crumb:           { title: this._layerName },
+      id:              'form_' + this._layerName,
+      dataid:          this._layerName,
+      layer:           this._originalLayer,
+      isnew:           this._originalFeatures.length > 1 ? false : this._originalFeatures[0].isNew(), // specify if is a new feature
+      parentData:      getParentFormData(),
+      fields:          this._fields,
+      context_inputs:  !this._multi && this._edit_relations && { context, inputs },
+      formStructure:   this._originalLayer.hasFormStructure() && this._originalLayer.getEditorFormStructure().length ? this._originalLayer.getEditorFormStructure() : undefined,
+      modal:           true,
+      push:            this.push || this._isContentChild, //@since v3.7 need to take in account this.push value
+      showgoback:      undefined !== this.showgoback ? this.showgoback : !this._isContentChild,
+      /** @TODO make it straightforward: `headerComponent` vs `buttons` ? */
+      headerComponent: this._saveAll && {
+        template: /* html */ `
+          <section class="editing-save-all-form">
+            <bar-loader :loading="loading"/>
+            <div
+              class = "editing-button"
+              style = "background-color: #fff; display: flex; justify-content: flex-end; width: 100%;"
+            >
+              <span
+                class               = "save-all-icon"
+                v-disabled          = "disabled"
+                @click.stop.prevent = "save"
+              >
+                <i
+                  class  = "skin-color"
+                  :class = "g3wtemplate.font['save']"
+                  style  = "font-size: 1.8em; padding: 5px; border-radius: 5px; cursor: pointer; box-shadow: 0 3px 5px rgba(0,0,0,0.5); margin: 5px;"
+                ></i>
+              </span>
+            </div>
+          </section>`,
+
+          name: 'Saveall',
+
+          /** @TODO figure out who populate these props (ie. core client code?) */
+          props: {
+            update: { type: Boolean },
+            valid: { type: Boolean },
+          },
+
+          data() {
+            return {
+              loading: false,
+              enabled: true,
+            };
+          },
+
+          computed: {
+            /**
+             * Disable save all buttons when it is not enabled (a case of parent form is not valid,
+             * or when current form is not valid or valid but not updated)
+             * @return {boolean}
+             */
+            disabled() {
+              return !this.enabled || !(this.valid && this.update);
+            },
+
+          },
+
+          methods: {
+
+            async save() {
+              this.loading = true;
+
+              await Promise.allSettled(
+                [...WorkflowsStack._workflows]
+                  .reverse()
+                  .filter( w => "function" === typeof w.getLastStep().getTask().saveAll) // need to filter only workflow that
+                  .map(w => w.getLastStep().getTask().saveAll(w.getContext().service.state.fields))
+              )
+
+              EditingService
+                .commit({ modal: false })
+                .then(()   => { WorkflowsStack._workflows.forEach(w => w.getContext().service.setUpdate(false, { force: false })); })
+                .fail((e)  => console.warn(e))
+                .always(() => { this.loading = false });
+            },
+
+          },
+
+          created() {
+            // set enabled to true as default value;
+            // this.enabled = true;
+
+            // skip when workflow tasks are less than 2
+            if (WorkflowsStack.getLength() < 2) {
+              return;
+            }
+
+            this.enabled = WorkflowsStack
+              ._workflows
+              .slice(0, WorkflowsStack.getLength() - 1)
+              .reduce((bool, w) => {
+                const { service } = w.getContext();
+                const { valid = true } = (service instanceof FormService) ? service.getState() : {};
+                return bool && valid;
+                }, true);
+          },
+
+      },
+      buttons:         [
         {
           id: 'save',
-          title: this._isContentChild ?
-            (
-              //check if parent has custom back label set
-              WorkflowsStack.getParent().getBackButtonLabel() ||
-              "plugins.editing.form.buttons.save_and_back"
-            ) :
-            "plugins.editing.form.buttons.save",
+          title: this._isContentChild
+            ? WorkflowsStack.getParent().getBackButtonLabel() || "plugins.editing.form.buttons.save_and_back" // get custom back label from parent
+            : "plugins.editing.form.buttons.save",
           type: "save",
           class: "btn-success",
-          cbk: (fields) => {
-            this._saveFeatures({ fields, promise, inputs, session: context.session });
+          // save features
+          cbk: async (fields) => {
+            fields = this._multi ? fields.filter(field => null !== field.value) : fields;
+
+            // skip when ..
+            if (!fields.length) {
+              GUI.setModal(false);
+              promise.resolve(inputs);
+              return;
+            }
+
+            const newFeatures = [];
+
+            // @since 3.5.15
+            GUI.setLoadingContent(true);
+            GUI.disableContent(true);
+
+            await WorkflowsStack.getCurrent().getContextService().saveDefaultExpressionFieldsNotDependencies();
+
+            GUI.setLoadingContent(false);
+            GUI.disableContent(false);
+
+            this._features.forEach(feature => {
+              this._originalLayer.setFieldsWithValues(feature, fields);
+              newFeatures.push(feature.clone());
+            });
+
+            if (this._isContentChild) {
+              inputs.relationFeatures = {
+                newFeatures,
+                originalFeatures: this._originalFeatures
+              };
+            }
+
+            this
+              .fireEvent('saveform', { newFeatures, originalFeatures: this._originalFeatures})
+              .then(async () => {
+                newFeatures.forEach((f, i) => context.session.pushUpdate(this.layerId, f, this._originalFeatures[i]));
+
+                // check and handle if layer has relation 1:1
+                await handleRelation1_1LayerFields({
+                  layerId: this.layerId,
+                  features: newFeatures,
+                  fields,
+                  task: this,
+                });
+
+                GUI.setModal(false);
+                this.fireEvent('savedfeature', newFeatures); // called after saved
+                this.fireEvent(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
+                // In case of save of child it means that child is updated so also parent
+                if (this._isContentChild) {
+                  WorkflowsStack
+                    .getParents()
+                    .forEach(workflow => workflow.getContextService().setUpdate(true, {force: true}));
+                }
+                promise.resolve(inputs);
+              });
           } 
         },
         {
@@ -1929,75 +2000,29 @@ export class OpenFormStep extends EditingTask {
         }
       ]
     });
-    //fire openform event
+
+    // fire openform event
     this.fireEvent('openform',
       {
-        layerId:this.layerId,
-        session,
+        layerId: this.layerId,
+        session: context.session,
         feature: this._originalFeature,
         formService
       }
     );
 
-    const currentWorkflow = WorkflowsStack.getCurrent();
-    // in case of called single task no workflow is set
-    if (currentWorkflow) {
-      //set context service to form Service
-      currentWorkflow.setContextService(formService);
+    // set context service to form Service in case of single task (ie. no workflow)
+    if (WorkflowsStack.getCurrent()) {
+      WorkflowsStack.getCurrent().setContextService(formService);
     }
 
     //listen eventually field relation 1:1 changes value
     this._unwatchs = await listenRelation1_1FieldChange({
       layerId: this.layerId,
       fields: this._fields,
-    })
-  }
+    });
 
-  /**
-   * @param inputs
-   * @param context
-   * 
-   * @returns {*}
-   */
-  run(inputs, context) {
-    const d              = $.Deferred();
-    const {
-      layer,
-      features
-    } = inputs;
-
-    this.promise         = d;
-    this._isContentChild = WorkflowsStack.getLength() > 1;
-    this.layerId         = layer.getId();
-
-    GUI.setLoadingContent(false);
-
-    this.getEditingService().disableMapControlsConflict(true);
-
-    setAndUnsetSelectedFeaturesStyle({ promise: d, inputs });
-
-    if (!this._multi && Array.isArray(features[features.length -1])) {
-      d.resolve();
-    } else {
-      this.startForm({
-        inputs,
-        context,
-        promise: d
-      });
-      this.disableSidebar(true);
-    }
-
-    return d.promise();
-  }
-
-  /**
-   * @param layerName
-   * @returns {string}
-   * 
-   * @private
-   */
-  _generateFormId(layerName) {
-    return this._formIdPrefix + layerName;
+    this.disableSidebar(true);
   }
 
   /**
@@ -2006,23 +2031,23 @@ export class OpenFormStep extends EditingTask {
   stop() {
     this.disableSidebar(false);
 
-    const service = this.getEditingService();
-    let contextService;
+    const service        = this.getEditingService();
+    //Check if form coming from the parent table component
+    const is_parent_table = false === this._isContentChild || // no child workflow
+      (
+        // case edit feature of a table (edit layer alphanumeric)
+        2 === WorkflowsStack.getLength() && //open features table
+        WorkflowsStack.getParent().isType('edittable')
+      );
 
     // when the last feature of features is Array
     // and is resolved without setting form service
-    // Ex. copy multiple feature from other layer
-    if (
-      false === this._isContentChild || // no child workflow
-      (
-        //case edit feature of a table (edit layer alphanumeric)
-        2 === WorkflowsStack.getLength() && //open features table
-        WorkflowsStack.getParent().isType('edittable')
-      )
-    ) {
+    // Ex. copy multiple features from another layer
+    if (is_parent_table) {
       service.disableMapControlsConflict(false);
-      contextService = WorkflowsStack.getCurrent().getContextService();
     }
+
+    const contextService = is_parent_table && WorkflowsStack.getCurrent().getContextService();
 
     // force update parent form update
     if (contextService && false === this._isContentChild) {
@@ -2034,13 +2059,11 @@ export class OpenFormStep extends EditingTask {
     service.resetCurrentLayout();
 
     this.fireEvent('closeform');
-    this.fireEvent(`closeform_${this.layerId}`); // need to check layerId
+    this.fireEvent(`closeform_${this.layerId}`);
 
     this.layerId = null;
     this.promise = null;
-    // class unwatch
     this._unwatchs.forEach(unwatch => unwatch());
-    //reset to Empty Array
     this._unwatchs = [];
   }
 
@@ -2064,6 +2087,7 @@ const TableComponent = function(options={}) {
     return g3wsdk.core.utils.base(this, 'unmount');
   };
 };
+
 g3wsdk.core.utils.inherit(TableComponent, Component);
 
 /**
@@ -2076,8 +2100,6 @@ export class OpenTableStep extends EditingTask {
     options.help = "editing.steps.help.edit_table";
 
     super(options);
-
-    this._formIdPrefix = 'form_';
 
     options.task = this;
     return new EditingStep(options);
@@ -2098,16 +2120,14 @@ export class OpenTableStep extends EditingTask {
     const layerName      = originalLayer.getName();
     const headers        = originalLayer.getEditingFields();
     this._isContentChild = WorkflowsStack.getLength() > 1;
-    const foreignKey     = this._isContentChild && context.excludeFields ? context.excludeFields[0] :  null;
-    const exclude        = this._isContentChild && context.exclude;
+    const excludeFields    = this._isContentChild ? (context.excludeFields || []) : [];
     const capabilities   = originalLayer.getEditingCapabilities();
     const editingLayer   = originalLayer.getEditingLayer();
     //get editing features
     let features         = editingLayer.readEditingFeatures();
-
-    if (exclude && features.length > 0) {
-      const {value} = exclude;
-      features = features.filter(feature => feature.get(foreignKey) != value);
+    if (excludeFields.length > 0 && features.length > 0) {
+      //filter features already bind to parent feature
+      features = features.filter(feat => !excludeFields.reduce((a, f, i) => a && context.fatherValue[i] === `${feat.get(f)}` , true));
     }
 
     const content = new TableComponent({
@@ -2120,7 +2140,6 @@ export class OpenTableStep extends EditingTask {
       inputs,
       capabilities,
       fatherValue: context.fatherValue,
-      foreignKey
     });
 
     GUI.disableSideBar(true);
@@ -2133,9 +2152,7 @@ export class OpenTableStep extends EditingTask {
     });
 
     setTimeout(() => {
-      content.once('ready', () => setTimeout(()=> {
-        GUI.closeUserMessage();
-      }));
+      content.once('ready', () => setTimeout(() => { GUI.closeUserMessage() }));
 
       GUI.showContent({
         content,
@@ -2210,7 +2227,7 @@ export class PickFeatureStep extends EditingTask {
         inputs.features = features;
         inputs.coordinate = coordinate;
       }
-      setAndUnsetSelectedFeaturesStyle({ promise: d, inputs });
+      setAndUnsetSelectedFeaturesStyle({ promise: d, inputs, style: this.selectStyle });
 
       if (this._steps) {
         this.setUserMessageStepDone('select');
@@ -2707,7 +2724,7 @@ export class SplitFeatureStep extends EditingTask {
 
     /** @since g3w-client-plugin-editing@v3.8.0 */
     this._stopPromise     = $.Deferred();
-    setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise, inputs });
+    setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise, inputs, style: this.selectStyle });
 
 
     this._drawInteraction = new ol.interaction.Draw({

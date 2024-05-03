@@ -5,7 +5,7 @@
  * 
  * @param feature
  * 
- * @returns {{ originalStyle: *, selectedStyle: * }} selected style based on geometry type
+ * @returns {{ originalStyle: *, selectedStyle: * }} selected style based on a geometry type
  */
 function getSelectedStyle(feature) {
   return {
@@ -19,17 +19,19 @@ function getSelectedStyle(feature) {
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@3.7.1
  * 
- * Set selected style to features and return original feature style
+ * Set selected style to feature and return original feature style
  * 
  * @param { Array } features
+ * @param { ol.style.Style } style  @since 3.8.0 custom select style
  * 
  * @returns { ol.style.Style }
  */
-export function setFeaturesSelectedStyle(features=[]) {
-  if (features.length > 0) {                                       // copy feature from other layers when selecting multiple features
+export function setFeaturesSelectedStyle(features=[], style) {
+  if (features.length > 0) {
+    // copy feature from other layers when selecting multiple features
     const arr = features.flat();                                   // flat nested features
-    const style = getSelectedStyle(arr[0]);
-    arr.forEach(feature => feature.setStyle(style.selectedStyle));
-    return style.originalStyle;
+    const { originalStyle, selectedStyle } = getSelectedStyle(arr[0]);
+    arr.forEach(feature => feature.setStyle(style || selectedStyle));
+    return originalStyle;
   }
-};
+}

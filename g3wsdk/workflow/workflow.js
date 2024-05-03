@@ -403,26 +403,18 @@ proto.start = function(options = {}) {
   this._flow
     .start(this)
     .then(outputs => {
-      if (showUserMessage) {
-        setTimeout(() => { this.clearUserMessagesSteps(); d.resolve(outputs); }, 500);
-      } else {
-        d.resolve(outputs);
-      }
+      if (showUserMessage) { setTimeout(() => { this.clearUserMessagesSteps(); d.resolve(outputs); }, 500); }
+      else { d.resolve(outputs); }
     })
-    .fail(error => {
-      if (showUserMessage) {
-        this.clearUserMessagesSteps();
-      }
-      d.reject(error);
+    .fail(e => {
+      if (showUserMessage) { this.clearUserMessagesSteps(); }
+      d.reject(e);
     })
     .always(() => {
-      if (this.runOnce) {
-        this.stop();
-      }
+      if (this.runOnce) { this.stop(); }
     });
 
   this.emit('start');
-
   return d.promise();
 };
 
@@ -627,7 +619,7 @@ export class EditingWorkflow extends Workflow {
    * @FIXME add description
    */
   getLayer() {
-    return this.getSession().getEditor().getLayer();
+    return this.getInputs().layer;
   }
 
   /**

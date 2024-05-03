@@ -1,4 +1,5 @@
-import { setFeaturesSelectedStyle } from './setFeaturesSelectedStyle';
+import { promisify }                from '../utils/promisify';
+import { setFeaturesSelectedStyle } from '../utils/setFeaturesSelectedStyle';
 
 const { WorkflowsStack } = g3wsdk.core.workflow;
 const { Layer }          = g3wsdk.core.layer;
@@ -10,8 +11,10 @@ const { Layer }          = g3wsdk.core.layer;
  * reset original style when workflow (tool) is done.
  * 
  * @param promise jQuery promise
+ * @param { Object } inputs
+ * @param { ol.style.Style }  style
  */
-export function setAndUnsetSelectedFeaturesStyle({ promise, inputs } = {}) {
+export function setAndUnsetSelectedFeaturesStyle({ promise, inputs, style } = {}) {
   
   /** @FIXME temporary add in order to fix issue on pending promise (but which issue ?) */
   const {
@@ -26,8 +29,8 @@ export function setAndUnsetSelectedFeaturesStyle({ promise, inputs } = {}) {
    *       need to wait.
    */
   const selectOriginalStyleHandle = () => {
-    const originalStyle = setFeaturesSelectedStyle(features);
-    promise.always(() => { features.flat().forEach((feature => feature.setStyle(originalStyle))) });
+    const originalStyle = setFeaturesSelectedStyle(features, style);
+    promisify(promise).finally(() => { features.flat().forEach((feature => feature.setStyle(originalStyle))) });
   };
 
   const is_vector = Layer.LayerTypes.VECTOR === layer.getType();
@@ -35,7 +38,7 @@ export function setAndUnsetSelectedFeaturesStyle({ promise, inputs } = {}) {
 
   if (is_vector && is_single) {
     setTimeout(() => { selectOriginalStyleHandle(); });
-  } else if(is_vector) {
+  } else if (is_vector) {
     selectOriginalStyleHandle();
   }
-};
+}
