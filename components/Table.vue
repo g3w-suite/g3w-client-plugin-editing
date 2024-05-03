@@ -16,7 +16,6 @@
 
       <div class="editing_table_header_content">
         <h3 class="editing_table_title">{{ state.title }}</h3>
-        <h-resize @h_size_change="changeSize" />
       </div>
 
       <div
@@ -169,17 +168,12 @@
 
     methods: {
 
-      async changeSize() {
-        await this.$nextTick();
-        setTimeout(() => this.resize());
-      },
-
       showTool(type) {
         return undefined !== this.state.capabilities.find(capability => capability === type);
       },
 
       async resize() {
-        // skip when element is hidden
+        // skip when an element is hidden
         if (this.$el.style.display === 'none') {
           return;
         }
