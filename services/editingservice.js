@@ -431,10 +431,9 @@ proto.setShowSelectLayers = function(bool=true) {
  * Register result editing action
  */
 proto.registerResultEditingAction = function() {
-  const queryResultsService = GUI.getService('queryresults');
   this.setterKeys.push({
     setter: 'editFeature',
-    key: queryResultsService.onafter('editFeature', ({layer, feature}) => {
+    key: GUI.getService('queryresults').onafter('editFeature', ({layer, feature}) => {
       this.editResultLayerFeature({
         layer,
         feature
@@ -447,8 +446,7 @@ proto.registerResultEditingAction = function() {
  * Unregister action from query result service setters
  */
 proto.unregisterResultEditingAction = function() {
-  const queryResultsService = GUI.getService('queryresults');
-  this.setterKeys.forEach(({ setter, key }) => queryResultsService.un(setter, key));
+  this.setterKeys.forEach(({ setter, key }) => GUI.getService('queryresults').un(setter, key));
 };
 
 /**
