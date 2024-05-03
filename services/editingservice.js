@@ -433,12 +433,7 @@ proto.setShowSelectLayers = function(bool=true) {
 proto.registerResultEditingAction = function() {
   this.setterKeys.push({
     setter: 'editFeature',
-    key: GUI.getService('queryresults').onafter('editFeature', ({layer, feature}) => {
-      this.editResultLayerFeature({
-        layer,
-        feature
-      })
-    })
+    key:    GUI.getService('queryresults').onafter('editFeature', ({ layer, feature }) => this.editResultLayerFeature({ layer, feature }) )
   });
 };
 
@@ -469,10 +464,7 @@ proto.editResultLayerFeature = function({
   //hide select layer list @since v3.8.0
   this.setShowSelectLayers(false);
 
-  this.subscribe('closeeditingpanel', () => {
-    this.setShowSelectLayers(true);
-    return { once: true }
-  });
+  this.subscribe('closeeditingpanel', () => { this.setShowSelectLayers(true); return { once: true } });
 
   const toolBox   = this.getToolBoxById(layer.id);
   const { scale } = toolBox.getEditingConstraints(); // get scale constraint from setting layer
@@ -485,19 +477,19 @@ proto.editResultLayerFeature = function({
       const source = _layer.getEditingLayer().getSource();
       const isVectorLayer = Layer.LayerTypes.VECTOR === _layer.getType();
 
-      // get feature from Editing layer source (with styles)
+      // get feature from an Editing layer source (with styles)
       const feature = (
         (isVectorLayer)
           ? source.getFeatures()
           : source.readFeatures()
-        ).find(f => f.getId() == fid);
+        ).find(f => fid == f.getId());
 
       // skip when not feature is get from server
       if (!feature) {
         return;
       }
 
-      //need to be check here if feature returned by server has geometry
+      //need to be checked here if feature returned by server has geometry
       //because if coming from a query result where it is not checked return geometry
       //from response in QGIS project, we assume the wrong value.
       const has_geom = feature.getGeometry();
@@ -550,7 +542,7 @@ proto.editResultLayerFeature = function({
               steps: {
                 addfeature: {
                   description: 'editing.workflow.steps.draw_geometry',
-                  directive: 't-plugin',
+                  directive:   't-plugin',
                   done: false
                 }
               },
@@ -559,15 +551,13 @@ proto.editResultLayerFeature = function({
                   type: 'snap',
                   options: {
                     layerId: inputs.layer.getId(),
-                    source: inputs.layer.getEditingLayer().getSource(),
-                    active: true
+                    source:  inputs.layer.getEditingLayer().getSource(),
+                    active:  true
                   }
                 }]);
                 w.emit('active', ['snap']);
               },
-              onStop: () => {
-                w.emit('deactive', ['snap']);
-              }
+              onStop: () => w.emit('deactive', ['snap'])
             }),
             new AddPartToMultigeometriesStep({}),
           ],
@@ -589,16 +579,14 @@ proto.editResultLayerFeature = function({
         steps: [ new OpenFormStep() ]
       }))
         .start({
-          inputs: { layer: _layer, features: [feature] },
+          inputs:  { layer: _layer, features: [feature] },
           context: { session }
         })
-        .then(() => session
-          .save()
-          .then(() => this.saveChange()))
-        .fail(() => session.rollback());
+        .then(()  => session.save().then(() => this.saveChange()))
+        .fail((e) => {console.warn(e); session.rollback() })
 
     })
-    .fail(err => console.warn(err));
+    .fail(e => console.warn(e));
 
 };
 
