@@ -2,7 +2,9 @@ import { EditingWorkflow } from '../g3wsdk/workflow/workflow';
 import { promisify }       from '../utils/promisify';
 import {
   OpenFormStep,
-  ConfirmStep, PickFeatureStep, ChooseFeatureStep, AddFeatureStep, AddPartToMultigeometriesStep
+  ConfirmStep,
+  AddFeatureStep,
+  AddPartToMultigeometriesStep,
 } from '../workflows';
 
 Object
@@ -428,168 +430,168 @@ module.exports = new (class EditingService extends PluginService {
     this.state.showselectlayers = bool;
   }
 
-/**
- * Register result editing action
- */
-proto.registerResultEditingAction = function() {
-  this.setterKeys.push({
-    setter: 'editFeature',
-    key:    GUI.getService('queryresults').onafter('editFeature', ({ layer, feature }) => this.editResultLayerFeature({ layer, feature }) )
-  });
-};
-
-/**
- * Unregister action from query result service setters
- */
-proto.unregisterResultEditingAction = function() {
-  this.setterKeys.forEach(({ setter, key }) => GUI.getService('queryresults').un(setter, key));
-};
-
-/**
- * ORIGINAL SOURCE: g3w-client-plugin/toolboxes/toolboxesfactory.js@v3.7.1
- * 
- * Start to edit selected feature from results
- */
-proto.editResultLayerFeature = function({
-  layer,
-  feature,
-} = {}) {
-  const fid = feature.attributes[G3W_FID] || feature.id;
-
-  if (undefined === fid) {
-    return
+  /**
+   * Register result editing action
+   */
+   registerResultEditingAction() {
+    this.setterKeys.push({
+      setter: 'editFeature',
+      key:    GUI.getService('queryresults').onafter('editFeature', ({ layer, feature }) => this.editResultLayerFeature({ layer, feature }) )
+    });
   }
 
-  this.getToolBoxes().forEach(tb => tb.setShow(layer.id === tb.getId()));
-  this.getPlugin().showEditingPanel();
-  //hide select layer list @since v3.8.0
-  this.setShowSelectLayers(false);
+  /**
+   * Unregister action from query result service setters
+   */
+   unregisterResultEditingAction() {
+    this.setterKeys.forEach(({ setter, key }) => GUI.getService('queryresults').un(setter, key));
+   }
 
-  this.subscribe('closeeditingpanel', () => { this.setShowSelectLayers(true); return { once: true } });
+  /**
+   * ORIGINAL SOURCE: g3w-client-plugin/toolboxes/toolboxesfactory.js@v3.7.1
+   *
+   * Start to edit selected feature from results
+   */
+  editResultLayerFeature({
+    layer,
+    feature,
+  } = {}) {
+    const fid = feature.attributes[G3W_FID] || feature.id;
 
-  const toolBox   = this.getToolBoxById(layer.id);
-  const { scale } = toolBox.getEditingConstraints(); // get scale constraint from setting layer
+    if (undefined === fid) {
+      return
+    }
 
-  // start toolbox (filtered by feature id)
-  toolBox
-    .start({ filter: { fids: fid } })
-    .then(({ features = [] }) => {
-      const _layer = toolBox.getLayer();
-      const source = _layer.getEditingLayer().getSource();
-      const isVectorLayer = Layer.LayerTypes.VECTOR === _layer.getType();
+    this.getToolBoxes().forEach(tb => tb.setShow(layer.id === tb.getId()));
+    this.getPlugin().showEditingPanel();
+    //hide select layer list @since v3.8.0
+    this.setShowSelectLayers(false);
 
-      // get feature from an Editing layer source (with styles)
-      const feature = (
-        (isVectorLayer)
-          ? source.getFeatures()
-          : source.readFeatures()
-        ).find(f => fid == f.getId());
+    this.subscribe('closeeditingpanel', () => { this.setShowSelectLayers(true); return { once: true } });
 
-      // skip when not feature is get from server
-      if (!feature) {
-        return;
-      }
+    const toolBox   = this.getToolBoxById(layer.id);
+    const { scale } = toolBox.getEditingConstraints(); // get scale constraint from setting layer
 
-      //need to be checked here if feature returned by server has geometry
-      //because if coming from a query result where it is not checked return geometry
-      //from response in QGIS project, we assume the wrong value.
-      const has_geom = feature.getGeometry();
+    // start toolbox (filtered by feature id)
+    toolBox
+      .start({ filter: { fids: fid } })
+      .then(({ features = [] }) => {
+        const _layer = toolBox.getLayer();
+        const source = _layer.getEditingLayer().getSource();
+        const isVectorLayer = Layer.LayerTypes.VECTOR === _layer.getType();
 
-      /**If feature has geometry, zoom to geometry */
-      if (has_geom) {
-        this._mapService.zoomToGeometry(feature.getGeometry());
-        // check map scale after zoom to feature
-        // if currentScale is more that scale constraint set by layer editing
-        // needs to go to scale setting by layer editing constraint
-        if (undefined !== scale) {
-          this._mapService.getMap().once('moveend', () => {
-            const units        = this._mapService.getMapUnits();
-            const map          = this._mapService.getMap();
-            const currentScale = parseInt(getScaleFromResolution(map.getView().getResolution(), units));
-            if (currentScale > scale) {
-              map.getView().setResolution(getResolutionFromScale(scale, units));
-            }
-            //set select only here otherwise is show editing constraint
+        // get feature from an Editing layer source (with styles)
+        const feature = (
+          (isVectorLayer)
+            ? source.getFeatures()
+            : source.readFeatures()
+          ).find(f => fid == f.getId());
+
+        // skip when not feature is get from server
+        if (!feature) {
+          return;
+        }
+
+        //need to be checked here if feature returned by server has geometry
+        //because if coming from a query result where it is not checked return geometry
+        //from response in QGIS project, we assume the wrong value.
+        const has_geom = feature.getGeometry();
+
+        /**If feature has geometry, zoom to geometry */
+        if (has_geom) {
+          this._mapService.zoomToGeometry(feature.getGeometry());
+          // check map scale after zoom to feature
+          // if currentScale is more that scale constraint set by layer editing
+          // needs to go to scale setting by layer editing constraint
+          if (undefined !== scale) {
+            this._mapService.getMap().once('moveend', () => {
+              const units        = this._mapService.getMapUnits();
+              const map          = this._mapService.getMap();
+              const currentScale = parseInt(getScaleFromResolution(map.getView().getResolution(), units));
+              if (currentScale > scale) {
+                map.getView().setResolution(getResolutionFromScale(scale, units));
+              }
+              //set select only here otherwise is show editing constraint
+              toolBox.setSelected(true);
+            });
+          } else {
             toolBox.setSelected(true);
-          });
+          }
         } else {
+          //set select toolbox
           toolBox.setSelected(true);
         }
-      } else {
-        //set select toolbox
-        toolBox.setSelected(true);
-      }
 
-      const session = toolBox.getSession();
+        const session = toolBox.getSession();
 
-      this.setSelectedToolbox(toolBox);
-      // in the case of vector layer when feature has no geometry, need to
-      // add geometry
-      if ((isVectorLayer && !has_geom)) {
-        const addPartTool = toolBox.getTools().find(t => 'addPart' === t.getId());
-        //check if layer is single geometry. Need to show and change behaviour
-        if (!Geometry.isMultiGeometry(_layer.getGeometryType())) {
-          addPartTool.setVisible(true);
-        }
+        this.setSelectedToolbox(toolBox);
+        // in the case of vector layer when feature has no geometry, need to
+        // add geometry
+        if ((isVectorLayer && !has_geom)) {
+          const addPartTool = toolBox.getTools().find(t => 'addPart' === t.getId());
+          //check if layer is single geometry. Need to show and change behaviour
+          if (!Geometry.isMultiGeometry(_layer.getGeometryType())) {
+            addPartTool.setVisible(true);
+          }
 
-        //get workflow
-        const op = addPartTool.getOperator();
-        const w = new EditingWorkflow({
-          type: 'drawgeometry',
-          helpMessage: 'editing.workflow.steps.draw_geometry',
-          steps: [
-            new AddFeatureStep({
-              add: false,
-              steps: {
-                addfeature: {
-                  description: 'editing.workflow.steps.draw_geometry',
-                  directive:   't-plugin',
-                  done: false
-                }
-              },
-              onRun: ({inputs, context}) => {
-                w.emit('settoolsoftool', [{
-                  type: 'snap',
-                  options: {
-                    layerId: inputs.layer.getId(),
-                    source:  inputs.layer.getEditingLayer().getSource(),
-                    active:  true
+          //get workflow
+          const op = addPartTool.getOperator();
+          const w = new EditingWorkflow({
+            type: 'drawgeometry',
+            helpMessage: 'editing.workflow.steps.draw_geometry',
+            steps: [
+              new AddFeatureStep({
+                add: false,
+                steps: {
+                  addfeature: {
+                    description: 'editing.workflow.steps.draw_geometry',
+                    directive:   't-plugin',
+                    done: false
                   }
-                }]);
-                w.emit('active', ['snap']);
-              },
-              onStop: () => w.emit('deactive', ['snap'])
-            }),
-            new AddPartToMultigeometriesStep({}),
-          ],
-          registerEscKeyEvent: true
-        })
+                },
+                onRun: ({inputs, context}) => {
+                  w.emit('settoolsoftool', [{
+                    type: 'snap',
+                    options: {
+                      layerId: inputs.layer.getId(),
+                      source:  inputs.layer.getEditingLayer().getSource(),
+                      active:  true
+                    }
+                  }]);
+                  w.emit('active', ['snap']);
+                },
+                onStop: () => w.emit('deactive', ['snap'])
+              }),
+              new AddPartToMultigeometriesStep({}),
+            ],
+            registerEscKeyEvent: true
+          })
 
-        addPartTool.setOperator(w);
+          addPartTool.setOperator(w);
 
-        this.subscribe('closeeditingpanel', () => {
-          addPartTool.setOperator(op);
-          addPartTool.setVisible(Geometry.isMultiGeometry(_layer.getGeometryType()));
-        })
-      }
-      // /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editnopickmapfeatureattributesworkflow.js@v3.7.1 *
-      (new EditingWorkflow({
-        type: 'editnopickmapfeatureattributes',
-        runOnce: true,
-        helpMessage: 'editing.tools.update_feature',
-        steps: [ new OpenFormStep() ]
-      }))
-        .start({
-          inputs:  { layer: _layer, features: [feature] },
-          context: { session }
-        })
-        .then(()  => session.save().then(() => this.saveChange()))
-        .fail((e) => {console.warn(e); session.rollback() })
+          this.subscribe('closeeditingpanel', () => {
+            addPartTool.setOperator(op);
+            addPartTool.setVisible(Geometry.isMultiGeometry(_layer.getGeometryType()));
+          })
+        }
+        // /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editnopickmapfeatureattributesworkflow.js@v3.7.1 *
+        (new EditingWorkflow({
+          type: 'editnopickmapfeatureattributes',
+          runOnce: true,
+          helpMessage: 'editing.tools.update_feature',
+          steps: [ new OpenFormStep() ]
+        }))
+          .start({
+            inputs:  { layer: _layer, features: [feature] },
+            context: { session }
+          })
+          .then(()  => session.save().then(() => this.saveChange()))
+          .fail((e) => {console.warn(e); session.rollback() })
 
-    })
-    .fail(e => console.warn(e));
+      })
+      .fail(e => console.warn(e));
 
-};
+  }
 
   /**
    * @FIXME add description
