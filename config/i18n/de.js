@@ -72,7 +72,7 @@ export default {
     steps: {
       select: 'Zum Auswählen auf ein Feature klicken',
       draw_part: "Neues Teil zeichnen",
-      draw_geometry : "Draw geometry",
+      draw_geometry : "Geometrie zeichnen",
       merge: 'Feature zum Auflösen auswählen',
       selectSHIFT: 'Features auswählen indem ein Rechteck mit SHIFT gezeichnet wird',
       selectDrawBox: "Features auswählen, indem man ein Rechteck mit zwei gegenüberliegenden Eckpunkten zeichnet",

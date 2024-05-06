@@ -73,7 +73,7 @@ export default {
       select: 'Valitse ominaisuus',
       draw_part: "Piirrä uusi osa",
       merge: 'Valitse ominaisuus yhdistääksesi',
-      draw_geometry : "Draw geometry",
+      draw_geometry : "Piirrä geometria",
       selectSHIFT: 'Paina SHIFT, jos haluat valita kohteita suorakulmiovalinnalla.',  //Tero 10.12.2020
       selectDrawBox: "Piirrä suorakulmio, jonka siältä kohteet valitaan ", //Tero 10.12.2020
       selectDrawBoxAtLeast2Feature: "Piirrä suorakulmio, jonka siältä kohteet vähintään 2 valitaan ",
