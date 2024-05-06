@@ -18,6 +18,7 @@ import CopyFeatureFromOtherProjectLayersComponent       from '../components/Copy
 import TableVueObject                                   from '../components/Table.vue';
 import { PickFeaturesInteraction }                      from '../interactions/pickfeaturesinteraction';
 
+import WorkflowsStack                                   from '../g3wsdk/workflow/stack'
 import { EditingTask }                                  from '../g3wsdk/workflow/task';
 
 const { ApplicationState }                 = g3wsdk.core;
@@ -35,10 +36,7 @@ const { Layer }                            = g3wsdk.core.layer;
 const { Feature }                          = g3wsdk.core.layer.features;
 const { ProjectsRegistry }                 = g3wsdk.core.project;
 const { GUI }                              = g3wsdk.gui;
-const {
-  Step: EditingStep,
-  WorkflowsStack,
-}                                          = g3wsdk.core.workflow;
+const { Step: EditingStep, }               = g3wsdk.core.workflow;
 const { t, tPlugin }                       = g3wsdk.core.i18n;
 const { DataRouterService }                = g3wsdk.core.data;
 const {

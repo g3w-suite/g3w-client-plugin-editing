@@ -149,21 +149,21 @@ export default class Workflow extends G3WObject {
    */
   getContextService() {
     return this.getContext().service;
-  };
+  }
 
   /**
    * @param service
    */
   setContextService(service) {
     this.getContext().service = service;
-  };
+  }
 
   /**
    * @returns { null | * }
    */
   getStackIndex() {
     return this._stackIndex;
-  };
+  }
 
   /**
    * @param workflow
@@ -174,7 +174,7 @@ export default class Workflow extends G3WObject {
     } else {
       this._child = workflow;
     }
-  };
+  }
 
   /**
    * @FIXME add description
@@ -184,7 +184,7 @@ export default class Workflow extends G3WObject {
       WorkflowsStack.removeAt(this._child.getStackIndex());
     }
     this._child = null;
-  };
+  }
 
   /**
    * @param input.key
@@ -195,7 +195,7 @@ export default class Workflow extends G3WObject {
     value,
   }) {
     this._inputs[key] = value;
-  };
+  }
 
   /**
    * @TODO check if deprecated (probably unused)
@@ -206,49 +206,49 @@ export default class Workflow extends G3WObject {
    */
   _setInputs(inputs) {
   this._inputs = inputs;
-  };
+  }
 
   /**
    * @returns { null | * }
    */
   getInputs() {
     return this._inputs;
-  };
+  }
 
   /**
    * @param context
    */
   setContext(context) {
     this._context = context;
-  };
+  }
 
   /**
    * @returns { * | {} | null }
    */
   getContext() {
     return this._context;
-  };
+  }
 
   /**
    * @returns {*}
    */
   getFlow() {
     return this._flow;
-  };
+  }
 
   /**
    * @param flow
    */
   setFlow(flow) {
     this._flow = flow;
-  };
+  }
 
   /**
    * @param step
    */
   addStep(step) {
     this._steps.push(step);
-  };
+  }
 
   /**
    * @param steps
@@ -256,14 +256,14 @@ export default class Workflow extends G3WObject {
   setSteps(steps=[]) {
     this._steps = steps;
     this.setUserMessagesSteps(steps);
-  };
+  }
 
   /**
    * @returns { * | Array }
    */
   getSteps() {
     return this._steps;
-  };
+  }
 
   /**
    * @param index
@@ -272,21 +272,21 @@ export default class Workflow extends G3WObject {
    */
   getStep(index) {
     return this._steps[index];
-  };
+  }
 
   /**
    * @param messages
    */
   setMessages(messages) {
     Object.assign(this._messages, messages);
-  };
+  }
 
   /**
    * @FIXME add description
    */
   getMessages() {
     return this._messages;
-  };
+  }
 
   /**
    * @FIXME add description
@@ -296,21 +296,21 @@ export default class Workflow extends G3WObject {
     if (this._isThereUserMessaggeSteps()) {
       this.clearUserMessagesSteps();
     }
-  };
+  }
 
   /**
    * @returns { * | null }
    */
   getLastStep() {
     return this._steps.length ? this._steps[ this._steps.length - 1 ] : null;
-  };
+  }
 
   /**
    * @returns { Step }
    */
   getRunningStep() {
     return this._steps.find(step => step.isRunning());
-  };
+  }
 
   /**
    * Stop all workflow children 
@@ -319,7 +319,7 @@ export default class Workflow extends G3WObject {
     return this._child
     ? this._child.stop()
     : resolve();                 // <-- FIXME: undefined function ?
-  };
+  }
 
   /**
    * @returns { number }
@@ -328,7 +328,7 @@ export default class Workflow extends G3WObject {
    */
   _isThereUserMessaggeSteps() {
     return Object.keys(this._userMessageSteps).length;
-  };
+  }
 
   /**
    * @FIXME add description
@@ -337,7 +337,7 @@ export default class Workflow extends G3WObject {
     if (this._promise) {
       this._promise.reject();
     }
-  };
+  }
 
   /**
    * @FIXME add description
@@ -346,7 +346,7 @@ export default class Workflow extends G3WObject {
     if (this._promise) {
       this._promise.resolve();
     }
-  };
+  }
 
   /**
    * Start workflow
@@ -412,7 +412,7 @@ export default class Workflow extends G3WObject {
 
     this.emit('start');
     return d.promise();
-  };
+  }
 
   /**
    * Stop workflow during flow
@@ -439,7 +439,7 @@ export default class Workflow extends G3WObject {
     this.emit('stop');
     
     return d.promise();
-  };
+  }
 
   /**
    * @FIXME add description
@@ -447,7 +447,7 @@ export default class Workflow extends G3WObject {
   clearUserMessagesSteps() {
     this._resetUserMessaggeStepsDone();
     GUI.closeUserMessage();
-  };
+  }
 
   /**
    * @private
@@ -462,7 +462,7 @@ export default class Workflow extends G3WObject {
           userMessageSteps.buttonnext.disabled = true;
         }
     })
-  };
+  }
 
   /**
    * @since 3.9.0
@@ -548,7 +548,7 @@ export class EditingWorkflow extends Workflow {
         }
       },
 
-    };
+    }
 
     step.on('run', ({ inputs, context }) => {
       if (0 === this._toolsoftool.length) {

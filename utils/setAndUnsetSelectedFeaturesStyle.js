@@ -1,8 +1,8 @@
+import WorkflowsStack               from '../g3wsdk/workflow/stack'
 import { promisify }                from '../utils/promisify';
 import { setFeaturesSelectedStyle } from '../utils/setFeaturesSelectedStyle';
 
-const { WorkflowsStack } = g3wsdk.core.workflow;
-const { Layer }          = g3wsdk.core.layer;
+const { Layer } = g3wsdk.core.layer;
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@3.7.1

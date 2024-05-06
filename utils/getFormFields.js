@@ -1,3 +1,5 @@
+import WorkflowsStack from '../g3wsdk/workflow/stack'
+
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@3.7.1
  * 
@@ -6,7 +8,7 @@
  * @returns {*}
  */
 function getRootWorkflowLayerId() {
-  return g3wsdk.core.workflow.WorkflowsStack.getFirst().getInputs().layer.getId()
+  return WorkflowsStack.getFirst().getInputs().layer.getId()
  };
 
 /**

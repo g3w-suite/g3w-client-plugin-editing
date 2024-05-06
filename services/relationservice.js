@@ -1,4 +1,5 @@
 import { EditingWorkflow }                  from '../g3wsdk/workflow/workflow';
+import WorkflowsStack                       from '../g3wsdk/workflow/stack'
 import { setAndUnsetSelectedFeaturesStyle } from '../utils/setAndUnsetSelectedFeaturesStyle';
 import { promisify }                        from '../utils/promisify';
 import { VM }                               from '../eventbus';
@@ -18,7 +19,6 @@ import {
 const { GUI }            = g3wsdk.gui;
 const { tPlugin:t }      = g3wsdk.core.i18n;
 const { Layer }          = g3wsdk.core.layer;
-const { WorkflowsStack } = g3wsdk.core.workflow;
 const { Geometry }       = g3wsdk.core.geometry;
 const { FormService }    = g3wsdk.gui.vue.services;
 

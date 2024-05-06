@@ -1,4 +1,5 @@
 import { EditingWorkflow } from '../g3wsdk/workflow/workflow';
+import WorkflowsStack      from '../g3wsdk/workflow/stack'
 import { promisify }       from '../utils/promisify';
 import {
   OpenFormStep,
@@ -6,6 +7,7 @@ import {
   AddFeatureStep,
   AddPartToMultigeometriesStep,
 } from '../workflows';
+
 
 Object
   .entries({
@@ -27,7 +29,6 @@ const {
   getFeaturesFromResponseVectorApi,
   isSameBaseGeometryType,
 }                                     = g3wsdk.core.geoutils;
-const { WorkflowsStack }              = g3wsdk.core.workflow;
 const { PluginService }               = g3wsdk.core.plugin;
 const { SessionsRegistry }            = g3wsdk.core.editing;
 const { CatalogLayersStoresRegistry } = g3wsdk.core.catalog;
