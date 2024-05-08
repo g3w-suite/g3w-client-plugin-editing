@@ -1,3 +1,4 @@
+import { getRelationFieldsFromRelation } from './getRelationFieldsFromRelation';
 /**
  * @param { Object } opts
  * @param opts.layerId
@@ -26,6 +27,6 @@ export function getRelationsAttributesByFeature({
     .filter(feature => ownField.every((field, i) => feature.get(field) == values[i])) // get relations by feature
     .map(relation => ({
       fields: layer.getFieldsWithValues(relation, { relation: true }),
-      id: relation.getId()
+      id:     relation.getId()
     }))
 }
