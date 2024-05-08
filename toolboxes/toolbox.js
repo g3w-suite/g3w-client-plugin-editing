@@ -1,6 +1,7 @@
 import { createEditingDataOptions }  from '../utils/createEditingDataOptions';
 import { setLayerUniqueFieldValues } from '../utils/setLayerUniqueFieldValues';
 import { getRelationsInEditing }     from '../utils/getRelationsInEditing';
+import { getRelationId }             from '../utils/getRelationId';
 import { EditingWorkflow }           from '../g3wsdk/workflow/workflow';
 
 import {

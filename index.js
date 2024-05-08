@@ -1281,7 +1281,7 @@ new (class extends Plugin {
         internalPanel: new (Vue.extend(EditingVueComponent))({
           service:       this,
           resourcesurl:  opts.resourcesUrl || GUI.getResourcesUrl(),
-          showcommitbar: opts.showcommitbar,
+          showcommitbar: undefined !== opts.showcommitbar ? opts.showcommitbar : true,
         }),
       });
       GUI.showPanel(this.state.panel);
