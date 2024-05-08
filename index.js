@@ -259,7 +259,7 @@ new (class extends Plugin {
                 if (relationLayer) {
                   const response = await promisify(relationLayer.getDataTable({ ordering: options.key }));
                   if (response && response.features) {
-                    options.values.push(...(response.features || []).forEach(feature => ({
+                    options.values.push(...(response.features || []).map(feature => ({
                       key: feature.properties[options.key],
                       value: feature.properties[options.value]
                     })));
