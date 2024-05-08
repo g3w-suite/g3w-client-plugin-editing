@@ -20,10 +20,10 @@ import { getProjectLayerFeatureById }                   from '../utils/getProjec
 import { getEditingLayerById }                          from '../utils/getEditingLayerById';
 import { setLayerUniqueFieldValues }                    from '../utils/setLayerUniqueFieldValues';
 import { getRelationsInEditingByFeature }               from '../utils/getRelationsInEditingByFeature';
+import { getFeatureTableFieldValue }                    from '../utils/getFeatureTableFieldValue';
 
 import CopyFeatureFromOtherLayersComponent              from '../components/CopyFeaturesFromOtherLayers.vue';
 import CopyFeatureFromOtherProjectLayersComponent       from '../components/CopyFeaturesFromOtherProjectLayer.vue';
-import TableVueObject                                   from '../components/Table.vue';
 import { PickFeaturesInteraction }                      from '../interactions/pickfeaturesinteraction';
 
 import WorkflowsStack                                   from '../g3wsdk/workflow/stack'
@@ -31,7 +31,7 @@ import { EditingTask }                                  from '../g3wsdk/workflow
 import EditingStep                                      from '../g3wsdk/workflow/step';
 
 const { G3W_FID }                                            = g3wsdk.constant;
-const { ApplicationState }                                   = g3wsdk.core;
+const { G3WObject, ApplicationState }                        = g3wsdk.core;
 const { CatalogLayersStoresRegistry }                        = g3wsdk.core.catalog;
 const { DataRouterService }                                  = g3wsdk.core.data;
 const { Geometry }                                           = g3wsdk.core.geometry;
@@ -2135,27 +2135,6 @@ export class OpenFormStep extends EditingTask {
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/opentabletask.js@v3.7.1
- */
-const InternalComponent = Vue.extend(TableVueObject);
-const TableComponent = function(options={}) {
-  const TableService = require('../services/tableservice');
-  g3wsdk.core.utils.base(this);
-  const service = options.service || new TableService({ ...options });
-  this.setService(service);
-  const internalComponent = new InternalComponent({ service });
-  this.setInternalComponent(internalComponent);
-  internalComponent.state = service.state;
-  service.once('ready', () => this.emit('ready'));
-  this.unmount = function() {
-    service.cancel();
-    return g3wsdk.core.utils.base(this, 'unmount');
-  };
-};
-
-g3wsdk.core.utils.inherit(TableComponent, Component);
-
-/**
- * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/opentabletask.js@v3.7.1
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/opentablestep.js@v3.7.1
  */
 export class OpenTableStep extends EditingTask {
@@ -2176,56 +2155,50 @@ export class OpenTableStep extends EditingTask {
    * @returns {*}
    */
   run(inputs, context) {
-    //set current plugin layout (right content)
+    // set current plugin layout (right content)
     g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').setCurrentLayout();
 
     const d              = $.Deferred();
-    const originalLayer  = inputs.layer;
-    const layerName      = originalLayer.getName();
-    const headers        = originalLayer.getEditingFields();
     this._isContentChild = WorkflowsStack.getLength() > 1;
-    const excludeFields    = this._isContentChild ? (context.excludeFields || []) : [];
-    const capabilities   = originalLayer.getEditingCapabilities();
-    const editingLayer   = originalLayer.getEditingLayer();
-    //get editing features
-    let features         = editingLayer.readEditingFeatures();
-    if (excludeFields.length > 0 && features.length > 0) {
-      //filter features already bind to parent feature
-      features = features.filter(feat => !excludeFields.reduce((a, f, i) => a && context.fatherValue[i] === `${feat.get(f)}` , true));
-    }
 
-    const content = new TableComponent({
-      title: `${layerName}`,
-      features,
-      promise: d,
-      push: this._isContentChild,
-      headers,
-      context,
+    const features = (inputs.layer.readEditingFeatures() || []);
+    const headers  = (inputs.layer.getEditingFields() || []).filter(h => features.length ? Object.keys(features[0].getProperties()).includes(h.name) : true);
+
+    /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/opentabletask.js@v3.7.1 */
+    const service = Object.assign(new G3WObject, { state: {
       inputs,
-      capabilities,
-      fatherValue: context.fatherValue,
-    });
+      context,
+      promise: d,
+      headers, // column names
+      features,
+      ofeatures: features.length
+        // ordered properties
+        ? features.map(f => headers.map(h => h.name).reduce((props, header) => Object.assign(props, {
+          [header]: getFeatureTableFieldValue({ layerId: inputs.layer.getId(), feature: f, property: header }),
+          '__gis3w_feature_uid': f.getUid(), // private attribute unique value
+        }), {}))
+        /** @FIXME broken code ? `0 === features.length` */
+        // features already bind to parent feature
+        : features.filter(feat => !((this._isContentChild && context.excludeFields) || []).reduce((a, f, i) => a && context.fatherValue[i] === `${feat.get(f)}`, true)),
+      title:        `${inputs.layer.getName()}` || 'Link relation',
+      isrelation:   this._isContentChild,
+      capabilities: inputs.layer.getEditingCapabilities(),
+      layerId:      inputs.layer.getId(),
+      workflow:     null,
+    } });
 
-    GUI.disableSideBar(true);
-
-    GUI.showUserMessage({
-      type: 'loading',
-      message: 'plugins.editing.messages.loading_table_data',
-      autoclose: false,
+    GUI.showContent({
+      content: new Component({
+        title: `${inputs.layer.getName()}`,
+        push: this._isContentChild,
+        service,
+        state: service.state,
+        internalComponent: new (Vue.extend(require('../components/Table.vue')))({ service }),
+      }),
+      push: this._isContentChild,
+      showgoback: false,
       closable: false
     });
-
-    setTimeout(() => {
-      content.once('ready', () => setTimeout(() => { GUI.closeUserMessage() }));
-
-      GUI.showContent({
-        content,
-        //perc: 100,
-        push: this._isContentChild,
-        showgoback: false,
-        closable: false
-      });
-    }, 300);
 
     return d.promise();
   }

@@ -44,7 +44,7 @@
 
       <tbody>
         <tr
-          v-for = "(feature, index) in state.features"
+          v-for = "(feature, index) in state.ofeatures"
           :key  = "feature.__gis3w_feature_uid"
           :id   = "feature.__gis3w_feature_uid"
         >
@@ -142,8 +142,24 @@
 </template>
 
 <script>
+  import { cloneFeature }                      from '../utils/cloneFeature';
+  import { getRelationsInEditing }             from '../utils/getRelationsInEditing';
+  import { getFeatureTableFieldValue }         from '../utils/getFeatureTableFieldValue';
+  import { EditingWorkflow }                   from '../g3wsdk/workflow/workflow';
+  import { OpenFormStep, AddTableFeatureStep } from '../workflows';
+
+  const { tPlugin }     = g3wsdk.core.i18n;
+  const { GUI }         = g3wsdk.gui;
   const { resizeMixin } = g3wsdk.gui.vue.Mixins;
   const Media_Field     = g3wsdk.gui.vue.Fields.media_field;
+
+  Object
+    .entries({
+      EditingWorkflow,
+      OpenFormStep,
+      AddTableFeatureStep,
+    })
+    .forEach(([k, v]) => console.assert(undefined !== v, `${k} is undefined`));
 
   export default {
 
@@ -156,12 +172,10 @@
     },
 
     data() {
-
-      this.dataTable = null;
-
       return {
-        state: null,
-        show: true
+        dataTable: null,
+        show: true,
+        state: this.$options.service.state,
       };
 
     },
@@ -169,7 +183,7 @@
     methods: {
 
       showTool(type) {
-        return undefined !== this.state.capabilities.find(capability => capability === type);
+        return undefined !== this.state.capabilities.find(cap => cap === type);
       },
 
       async resize() {
@@ -201,54 +215,178 @@
       },
 
       showValue(key) {
-        return !!this.state.headers.find(header => header.name === key);
+        return !!this.state.headers.find(h => h.name === key);
       },
 
       isMediaField(name) {
-        return this.$options.service.isMediaField(name)
+        let isMedia = false;
+        for (let i=0; i < this.state.headers.length; i++) {
+          const header = this.state.headers[i];
+          if (header.name === name && header.input.type === 'media' ) {
+            isMedia = true;
+            break;
+          }
+        }
+        return isMedia;
       },
 
       stop() {
-        this.$options.service.cancel();
+        this.state.promise.reject();
       },
 
       save() {
-        this.state.isrelation ?
-          this.$options.service.linkFeatures(this._linkFeatures) :
-          this.$options.service.save();
+        this.state.isrelation
+          // link features (by indexes)
+          ? this.state.promise.resolve({ features: (this._linkFeatures || []).map(i => this.state.features[i]) })
+          : this.state.promise.resolve();
       },
 
       cancel() {
-        this.$options.service.cancel();
+        this.state.promise.reject();
       },
 
+      /**
+       * @param uid feature uid
+       * 
+       * @returns {Promise<unknown>}
+       */
       async deleteFeature(uid) {
         const element = $(`#editing_table table tr#${uid}`);
-        this.$options.service.deleteFeature(uid)
-          .then(async () => {
-            this.dataTable
-              .row(element)
-              .remove()
-              .draw();
-            await this.$nextTick();
-          })
-          .catch(()=>{});
+
+        const layer = this.state.inputs.layer;
+        const layerId = layer.getId();
+        const childRelations = layer.getChildren();
+        const relationinediting = childRelations.length && getRelationsInEditing({
+          layerId,
+          relations: layer.getRelations().getArray()
+        }).length > 0;
+    
+        try {
+          await (
+            new Promise((resolve, reject) =>{
+              GUI.dialog.confirm(
+                `<h4>${tPlugin('editing.messages.delete_feature')}</h4>
+                <div style="font-size:1.2em;">${ relationinediting ?tPlugin('editing.messages.delete_feature_relations') : ''}</div>`,
+                (result) => {
+                  if (result) {
+                    const index   = this.state.features.findIndex(f => f.getUid() === uid);
+                    const feature = this.state.features[index];
+                    const session = this.state.context.session;
+                    const layerId = this.state.inputs.layer.getId();
+                    this.state.inputs.layer.getEditingSource().removeFeature(feature);
+                    session.pushDelete(layerId, feature);
+                    this.state.ofeatures.splice(index, 1);
+                    resolve()
+                  } else {
+                    reject()
+                  }
+              });
+            })
+          );
+
+          this.dataTable.row(element).remove().draw();
+
+          await this.$nextTick();
+        } catch (e) {
+          console.warn(e);
+        }
+        
+
       },
 
-      copyFeature(uid) {
-        this.$options.service.copyFeature(uid)
-          .then(async(feature) => {
-            this.show = false;
-            this.dataTable.destroy();
-            await this.$nextTick();
-            this.show = true;
-            await this.$nextTick();
-            this.setDataTable();
-        })
+     /**
+      * Copy feature tool from another table feature
+      * 
+      * @param uid
+      * 
+      * @returns {Promise<unknown>}
+      */
+      async copyFeature(uid) {
+        await (
+          new Promise((resolve, reject) => {
+            const feature = cloneFeature(
+              this.state.features.find(f => f.getUid() === uid),
+              this.state.inputs.layer.getEditingLayer()
+            );
+            /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addtablefeatureworkflow.js@v3.7.1 */
+            this.state.workflow = new EditingWorkflow({
+                type: 'addtablefeature',
+                steps: [
+                  new AddTableFeatureStep(),
+                  new OpenFormStep(),
+                ],
+              });
+            this.state.inputs.features.push(feature);
+            this.state.workflow.start({
+              context: this.state.context,
+              inputs: this.state.inputs
+            })
+              .then(outputs => {
+                const feature = outputs.features[outputs.features.length -1];
+                const newFeature = {};
+                Object.entries(this.state.ofeatures[0]).forEach(([key, value]) => {
+                  newFeature[key] = getFeatureTableFieldValue({
+                    layerId: this.state.layerId,
+                    feature,
+                    property: key
+                  });
+                });
+                newFeature.__gis3w_feature_uid = feature.getUid();
+                this.state.ofeatures.push(newFeature);
+                resolve(newFeature)
+              })
+              .fail(reject)
+              .always(() => {
+                this.state.workflow.stop();
+                /** @TODO check input.features that grow in number */
+                console.log('here we are')
+              })
+          })
+        );
+
+        this.show = false;
+        this.dataTable.destroy();
+
+        await this.$nextTick();
+
+        this.show = true;
+
+        await this.$nextTick();
+
+        this.setDataTable();
       },
 
       editFeature(uid) {
-        this.$options.service.editFeature(uid);
+        const index = this.state.features.findIndex(f => f.getUid() === uid);
+    
+        const feature = this.features[index];
+    
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/edittablefeatureworkflow.js@v3.7.1 */
+        this.state.workflow = new EditingWorkflow({ type: 'edittablefeature', steps: [ new OpenFormStep() ] });
+    
+        const inputs = this.state.inputs;
+    
+        inputs.features.push(feature);
+    
+        this.state.workflow
+          .start({
+            context: this.state.context,
+            inputs
+          })
+          .then(outputs => {
+            const feature = outputs.features[outputs.features.length -1];
+            Object
+              .entries(this.state.ofeatures[index])
+              .forEach(([key, _]) => {
+                this.state.ofeatures[index][key] = getFeatureTableFieldValue({
+                  layerId: this.state.layerId,
+                  feature,
+                  property: key
+                });
+            });
+          })
+          .fail(console.warn)
+          .always(() =>  this.state.workflow.stop())
       },
 
       linkFeature(index, evt) {
@@ -257,10 +395,6 @@
         } else {
           this._linkFeatures = this._linkFeatures.filter(addindex => addindex !== index);
         }
-      },
-
-      _setLayout() {
-        return this.$options.service._setLayout();
       },
 
       getValue(value) {
@@ -286,14 +420,17 @@
 
     },
 
-    watch: {
-
-      'state.features'(features) {},
-
-    },
-
     beforeCreate() {
       this.delayType = 'debounce';
+
+      GUI.disableSideBar(true);
+
+      GUI.showUserMessage({
+        type: 'loading',
+        message: 'plugins.editing.messages.loading_table_data',
+        autoclose: false,
+        closable: false
+      });
     },
 
     async mounted() {
@@ -308,16 +445,14 @@
 
       $('#table-editing-tools i').tooltip();
 
-      this.$options.service.emit('ready');
-
       this.resize();
 
+      setTimeout( () => GUI.closeUserMessage(), 300);
     },
 
     beforeDestroy() {
-      if (this._linkFeatures) {
-        this._linkFeatures = null;
-      }
+      this.cancel();
+      this._linkFeatures = null;
       this.dataTable.destroy();
     },
 
@@ -325,7 +460,6 @@
 </script>
 
 <style scoped>
-
   #table-editing-tools {
     display:flex;
     justify-content: space-between;
@@ -348,6 +482,7 @@
     justify-content: space-between;
     align-items: baseline;
   }
+
   .editing_table_relation_messagge {
     font-weight: bold
   }
