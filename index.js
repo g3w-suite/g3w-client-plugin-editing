@@ -276,6 +276,7 @@ new (class extends Plugin {
                 return features;
   
               } catch (e) {
+                console.warn(e);
                 options.loading.state = 'error';
                 return Promise.reject(e);
               }
