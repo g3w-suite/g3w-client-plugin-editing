@@ -221,20 +221,25 @@
 
 <script>
 
-  /** @FIXME circular dependency ? */
-  // import EditingService from "../services/editingservice";
+  import { getRelationFieldsFromRelation }            from '../utils/getRelationFieldsFromRelation';
+  import { getRelationId }                            from '../utils/getRelationId';
+  import { getProjectLayersWithSameGeometryOfLayer }  from '../utils/getProjectLayersWithSameGeometryOfLayer';
+  import { getExternalLayersWithSameGeometryOfLayer } from '../utils/getExternalLayersWithSameGeometryOfLayer';
+  import { getFeatureTableFieldValue }                from '../utils/getFeatureTableFieldValue';
+  import { getEditingLayerById }                      from '../utils/getEditingLayerById';
 
-  const { tPlugin: t }  = g3wsdk.core.i18n;
-  const { toRawType }   = g3wsdk.core.utils;
-  const { Layer }       = g3wsdk.core.layer;
-  const { GUI }         = g3wsdk.gui;
+  const { CatalogLayersStoresRegistry } = g3wsdk.core.catalog;
+  const { tPlugin: t }                  = g3wsdk.core.i18n;
+  const { toRawType }                   = g3wsdk.core.utils;
+  const { Layer }                       = g3wsdk.core.layer;
+  const { GUI }                         = g3wsdk.gui;
   const {
     fieldsMixin,
     resizeMixin,
     mediaMixin,
-  }                     = g3wsdk.gui.vue.Mixins;
+  }                                     = g3wsdk.gui.vue.Mixins;
 
-  const RelationService = require('../services/relationservice');
+  const RelationService                 = require('../services/relationservice');
 
   export default {
 
@@ -295,13 +300,12 @@
        * @FIXME add description
        */
       copyFeatureFromOtherLayer() {
-        const EditingService = require('../services/editingservice');
         const copyLayer      = this.copyFeatureLayers.find(layer => layer.id === this.copylayerid);
 
         this._service.addRelationFromOtherLayer({
           layer: copyLayer.external ?
-            EditingService.getMapService().getLayerById(this.copylayerid) :
-            EditingService.getProjectLayerById(this.copylayerid),
+            GUI.getService('map').getLayerById(this.copylayerid) :
+            CatalogLayersStoresRegistry.getLayerById(this.copylayerid),
           external: copyLayer.external
         });
       },
@@ -456,8 +460,7 @@
        * @since g3w-client-plugin-editing@3.7.4
        */
       listenNewCommitRelations({ new_relations = {} }) {
-        const EditingService = require('../services/editingservice');
-        const relationLayer  = EditingService.getLayerById(this.relation.child);
+        const relationLayer = getEditingLayerById(this.relation.child);
 
         // there is a new relation saved on server
         if (new_relations[relationLayer.getId()] && Array.isArray(new_relations[relationLayer.getId()].new)) {
@@ -474,10 +477,9 @@
        * @param input
        */
       updateExternalKeyValueRelations(input) {
-        const EditingService = this._service.getEditingService();
 
         //ownFiled is the field of relation feature link to parent feature layer
-        const { ownField, relationField } = EditingService._getRelationFieldsFromRelation({
+        const { ownField, relationField } = getRelationFieldsFromRelation({
           layerId:  this._service._relationLayerId,
           relation: this._service.relation
         });
@@ -503,7 +505,7 @@
             const oRelation = relation.clone();
             relation.set(field.name, input.value);
             if (!relation.isNew()) {
-              EditingService
+              g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing')
                 .getToolBoxById(this._service._relationLayerId)
                 .getSession()
                 .pushUpdate(this._service._relationLayerId, relation, oRelation);
@@ -517,9 +519,7 @@
          * Get value from feature if layer has key value
          */
         getRelationFeatureValue(featureId, property) {
-          return this._service
-            .getEditingService()
-            .getFeatureTableFieldValue({
+          return getFeatureTableFieldValue({
               layerId: this._service._relationLayerId,
               feature: this._service.getLayer().getEditingSource().getFeatureById(featureId),
               property,
@@ -543,11 +543,9 @@
        * @returns { boolean } whether has external fields (relation layer fields have at least one field required)
        */
       fieldrequired() {
-        const EditingService = this._service.getEditingService();
-      return EditingService
-        ._getRelationFieldsFromRelation({ layerId: this._service._relationLayerId, relation: this._service.relation })
-        .ownField // own Fields is a relation Fields array of Relation Layer
-        .some(field => EditingService.isFieldRequired(this._service._relationLayerId, field));
+        return getRelationFieldsFromRelation({ layerId: this._service._relationLayerId, relation: this._service.relation })
+          .ownField // own Fields is a relation Fields array of Relation Layer
+          .some(field => getEditingLayerById(this._service._relationLayerId).isFieldRequired(field));
       },
 
       /**
@@ -589,8 +587,7 @@
     },
 
     created() {
-      const EditingService = require('../services/editingservice');
-      const relationLayer  = EditingService.getLayerById(this.relation.child);
+      const relationLayer  = getEditingLayerById(this.relation.child);
 
       /**
        * Array of new relations features objects saved on server id
@@ -604,7 +601,7 @@
       this.listenNewCommitRelations = this.listenNewCommitRelations.bind(this);
 
       /** @since 3.7.2 Listen commit when is click on save all button disk icon*/
-      EditingService.on('commit', this.listenNewCommitRelations);
+      g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').on('commit', this.listenNewCommitRelations);
 
       this.isVectorRelation = Layer.LayerTypes.VECTOR === relationLayer.getType();
 
@@ -612,13 +609,13 @@
       if (this.isVectorRelation) {
         this.copyFeatureLayers = [
           // project_layers
-          ...(EditingService.getProjectLayersWithSameGeometryOfLayer(relationLayer, { exclude: [this.relation.father] }) || []).map(layer => ({
+          ...(getProjectLayersWithSameGeometryOfLayer(relationLayer, { exclude: [this.relation.father] }) || []).map(layer => ({
               id:       layer.getId(),
               name:     layer.getName(),
               external: false,
             })),
           // external_layers
-          ...(EditingService.getExternalLayersWithSameGeometryOfLayer(relationLayer) || []).map(layer => ({
+          ...(getExternalLayersWithSameGeometryOfLayer(relationLayer) || []).map(layer => ({
               id:       layer.get('id'),
               name:     layer.get('name'),
               external: true,
@@ -642,8 +639,6 @@
     },
 
     async activated() {
-      const EditingService = require('../services/editingservice');
-
       //in the case of vector relation, the current extent of map whe is actived
       //it used to sto an extent of the map at the moment of possibible editing (and zoom)
       // to relation feature
@@ -657,9 +652,9 @@
         this.loading = true;
 
         try {
-          await EditingService.runEventHandler({
+          await g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').runEventHandler({
             type:      'show-relation-editing',
-            id:        EditingService._getRelationId({ layerId: this.layerId, relation: this.relation }),
+            id:        getRelationId({ layerId: this.layerId, relation: this.relation }),
             component: this,
           });
         } catch(e) {
@@ -688,10 +683,9 @@
     },
 
     beforeDestroy() {
-      const EditingService  = require('../services/editingservice');
       this.loadEventuallyRelationValuesForInputs = true;
       // unlisten
-      EditingService.off('commit',this.listenNewCommitRelations);
+      g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').off('commit',this.listenNewCommitRelations);
       // In the case of vector relation, restore the beginning extent of the map;
       // in the case we zoomed to relation feature
       if (this.isVectorRelation && (null !== this._service.currentRelationFeatureId)) {

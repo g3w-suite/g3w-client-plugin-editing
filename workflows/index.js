@@ -12,6 +12,14 @@ import { getFeaturesFromSelectionFeatures }             from '../utils/getFeatur
 import { chooseFeatureFromFeatures }                    from '../utils/chooseFeatureFromFeatures';
 import { handleRelation1_1LayerFields }                 from '../utils/handleRelation1_1LayerFields';
 import { listenRelation1_1FieldChange }                 from '../utils/listenRelation1_1FieldChange';
+import { getRelationFieldsFromRelation }                from '../utils/getRelationFieldsFromRelation';
+import { getRelationId }                                from '../utils/getRelationId';
+import { getRelationsInEditing }                        from '../utils/getRelationsInEditing';
+import { getLayersDependencyFeatures }                  from '../utils/getLayersDependencyFeatures';
+import { getProjectLayerFeatureById }                   from '../utils/getProjectLayerFeatureById';
+import { getEditingLayerById }                          from '../utils/getEditingLayerById';
+import { setLayerUniqueFieldValues }                    from '../utils/setLayerUniqueFieldValues';
+import { getRelationsInEditingByFeature }               from '../utils/getRelationsInEditingByFeature';
 
 import CopyFeatureFromOtherLayersComponent              from '../components/CopyFeaturesFromOtherLayers.vue';
 import CopyFeatureFromOtherProjectLayersComponent       from '../components/CopyFeaturesFromOtherProjectLayer.vue';
@@ -22,8 +30,11 @@ import WorkflowsStack                                   from '../g3wsdk/workflow
 import { EditingTask }                                  from '../g3wsdk/workflow/task';
 import EditingStep                                      from '../g3wsdk/workflow/step';
 
-const { ApplicationState }                 = g3wsdk.core;
-const { Geometry }                         = g3wsdk.core.geometry;
+const { G3W_FID }                                            = g3wsdk.constant;
+const { ApplicationState }                                   = g3wsdk.core;
+const { CatalogLayersStoresRegistry }                        = g3wsdk.core.catalog;
+const { DataRouterService }                                  = g3wsdk.core.data;
+const { Geometry }                                           = g3wsdk.core.geometry;
 const {
   convertSingleMultiGeometry,
   isSameBaseGeometryType,
@@ -31,32 +42,18 @@ const {
   singleGeometriesToMultiGeometry,
   dissolve,
   splitFeatures,
-}                                          = g3wsdk.core.geoutils;
-const { removeZValueToOLFeatureGeometry }  = g3wsdk.core.geoutils.Geometry;
-const { Layer }                            = g3wsdk.core.layer;
-const { Feature }                          = g3wsdk.core.layer.features;
-const { ProjectsRegistry }                 = g3wsdk.core.project;
-const { GUI }                              = g3wsdk.gui;
-const { t, tPlugin }                       = g3wsdk.core.i18n;
-const { DataRouterService }                = g3wsdk.core.data;
-const {
-  AreaInteraction,
-  LengthInteraction
-}                                          = g3wsdk.ol.interactions.measure;
-const {
-  PickFeatureInteraction,
-  PickCoordinatesInteraction
-}                                          = g3wsdk.ol.interactions;
-const {
-  createMeasureTooltip,
-  removeMeasureTooltip
-}                                          = g3wsdk.ol.utils;
-const { G3W_FID }                          = g3wsdk.constant;
-const { CatalogLayersStoresRegistry }      = g3wsdk.core.catalog;
-const { Component }                        = g3wsdk.gui.vue;
-const { FormService }                      = g3wsdk.gui.vue.services;
-
-const EditingFormComponent                 = require('../form/editingform');
+}                                                            = g3wsdk.core.geoutils;
+const { removeZValueToOLFeatureGeometry }                    = g3wsdk.core.geoutils.Geometry;
+const { t, tPlugin }                                         = g3wsdk.core.i18n;
+const { Layer }                                              = g3wsdk.core.layer;
+const { Feature }                                            = g3wsdk.core.layer.features;
+const { ProjectsRegistry }                                   = g3wsdk.core.project;
+const { GUI }                                                = g3wsdk.gui;
+const { Component, FormComponent }                           = g3wsdk.gui.vue;
+const { FormService }                                        = g3wsdk.gui.vue.services;
+const { AreaInteraction, LengthInteraction }                 = g3wsdk.ol.interactions.measure;
+const { PickFeatureInteraction, PickCoordinatesInteraction } = g3wsdk.ol.interactions;
+const { createMeasureTooltip, removeMeasureTooltip }         = g3wsdk.ol.utils;
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/addfeaturetabletask.js@v3.7.1
@@ -240,7 +237,7 @@ export class AddFeatureStep extends EditingTask {
    */
   addMeasureInteraction() {
     const measureOptions = {
-      projection: this.getMapService().getProjection(),
+      projection: GUI.getService('map').getProjection(),
       drawColor: 'transparent',
       feature: this.drawingFeature
     };
@@ -304,11 +301,12 @@ export class AddPartToMultigeometriesStep extends EditingTask {
   }
 
   run(inputs, context) {
-    const d               = $.Deferred();
-    const layerId         = inputs.layer.getId();
+    const d       = $.Deferred();
+    const layerId = inputs.layer.getId();
     let feature;
     let originalFeature;
-    //case add part
+
+    // add part
     if (inputs.features.length > 1) {
       feature         =  inputs.features[0];
       const geometry  = feature.getGeometry();
@@ -369,14 +367,13 @@ export class ChooseFeatureStep extends EditingTask {
 const Dialogs = {
   delete: {
     fnc(inputs) {
-      const EditingService    = require('../services/editingservice');
       let d                   = $.Deferred();
       const layer             = inputs.layer;
       const editingLayer      = layer.getEditingLayer();
       const feature           = inputs.features[0];
       const layerId           = layer.getId();
       const childRelations    = layer.getChildren();
-      const relationinediting = childRelations.length && EditingService._filterRelationsInEditing({
+      const relationinediting = childRelations.length && getRelationsInEditing({
         layerId,
         relations: layer.getRelations().getArray()
       }).length > 0;
@@ -388,10 +385,14 @@ const Dialogs = {
           (result) => {
             if (result) {
               editingLayer.getSource().removeFeature(feature);
-              EditingService.removeLayerUniqueFieldValuesFromFeature({
-                layerId,
-                feature
-              });
+              // Remove unique values from unique fields of a layer (when deleting a feature)
+              const fields = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[layerId];
+              if (fields) {
+                Object
+                  .keys(feature.getProperties())
+                  .filter(field => undefined !== fields[field])
+                  .forEach(field => fields[field].delete(feature.get(field)));
+              }
               d.resolve(inputs);
             } else {
               d.reject(inputs);
@@ -546,8 +547,8 @@ export class CopyFeaturesFromOtherLayerStep extends EditingTask {
               /**
                * check if the layer belongs to project or not
                */
-              if (this.getEditingService().getProjectLayerById(selectedFeature.__layerId)) {
-                promisesFeatures.push(this.getEditingService().getProjectLayerFeatureById({
+              if (CatalogLayersStoresRegistry.getLayerById(selectedFeature.__layerId)) {
+                promisesFeatures.push(getProjectLayerFeatureById({
                   layerId: selectedFeature.__layerId,
                   fid: selectedFeature.get(G3W_FID)
                 }));
@@ -727,7 +728,7 @@ export class CopyFeaturesFromOtherProjectLayerStep extends EditingTask {
                   createFeatureWithPropertiesOfSelectedFeature(selectedFeature.getProperties());
                 } else {
                   try {
-                    const layerProjectFeature = await this.getEditingService().getProjectLayerFeatureById({
+                    const layerProjectFeature = await getProjectLayerFeatureById({
                       layerId: this.copyLayer.getId(),
                       fid: selectedFeature.get(G3W_FID)
                     });
@@ -797,7 +798,6 @@ export class DeleteFeatureStep extends EditingTask {
    */
   run(inputs, context) {
 
-    const EditingService  = require('../services/editingservice');
     const RelationService = require('../services/relationservice');
 
     const d               = $.Deferred();
@@ -807,7 +807,7 @@ export class DeleteFeatureStep extends EditingTask {
     const feature         = inputs.features[0];
 
     //get all relations of the current editing layer that are in editing
-    const relations       = EditingService._filterRelationsInEditing({
+    const relations       = getRelationsInEditing({
       layerId,
       relations: originaLayer.getRelations() ?
         originaLayer.getRelations().getArray() :
@@ -816,16 +816,13 @@ export class DeleteFeatureStep extends EditingTask {
       //and filter relations
       .filter(relation => {
         //get relation layer id that are in relation with layerId (current layer in editing)
-        const relationLayerId = EditingService._getRelationId({
-          layerId,
-          relation
-        });
+        const relationLayerId = getRelationId({ layerId, relation });
 
         //get relation layer
-        const relationLayer = EditingService.getLayerById(relationLayerId);
+        const relationLayer = getEditingLayerById(relationLayerId);
 
         //get fields of relation layer that are in relation with layerId
-        const { ownField } = EditingService._getRelationFieldsFromRelation({
+        const { ownField } = getRelationFieldsFromRelation({
           layerId: relationLayerId,
           relation
         });
@@ -842,14 +839,14 @@ export class DeleteFeatureStep extends EditingTask {
       });
 
     const promise = relations.length > 0 ?
-      EditingService.getLayersDependencyFeatures(layerId, {feature, relations}) :
+      getLayersDependencyFeatures(layerId, {feature, relations}) :
       Promise.resolve();
 
     //promise return features relations and add to relation layer child
     promise.then(() => {
 
       //get data features
-      const relationsInEditing = EditingService.getRelationsInEditing({
+      const relationsInEditing = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').getRelationsInEditing({
         layerId,
         relations,
         feature,
@@ -1739,7 +1736,7 @@ export class OpenFormStep extends EditingTask {
 
     GUI.setLoadingContent(false);
 
-    this.getEditingService().disableMapControlsConflict(true);
+    GUI.getService('map').disableClickMapControls(true);
     setAndUnsetSelectedFeaturesStyle({ promise: d, inputs, style: this.selectStyle });
 
     if (!this._multi && Array.isArray(features[features.length -1])) {
@@ -1755,9 +1752,8 @@ export class OpenFormStep extends EditingTask {
    * Build form
    */
   async startForm({ inputs, context, promise }) {
-    const EditingService = this.getEditingService();
 
-    EditingService.setCurrentLayout();
+    g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').setCurrentLayout();
 
     this._originalLayer    = inputs.layer;
     this._editingLayer     = this._originalLayer.getEditingLayer();
@@ -1792,13 +1788,83 @@ export class OpenFormStep extends EditingTask {
     }
 
     // set fields. Useful getParentFormData
-    WorkflowsStack
-      .getCurrent()
-      .setInput({ key: 'fields', value: this._fields });
+    WorkflowsStack.getCurrent().setInput({ key: 'fields', value: this._fields });
 
     const formService = GUI.showForm({
       feature:         this._originalFeatures[0],
-      formComponent:   /*opts.formComponent ||*/ EditingFormComponent,
+      formComponent:   class extends FormComponent {
+        constructor(options = {}) {
+          super(options);
+      
+          const relationsOptions = options.context_inputs || {};
+          const layerId          = options.layer.getId();
+          const hasFormStructure = options.layer.getLayerEditingFormStructure(); // @since g3w-client-plugin-editing@v3.7.2
+          const feature          = ((relationsOptions.inputs || {}).features && relationsOptions.inputs.features[relationsOptions.inputs.features.length - 1]);
+      
+          // skip relations that doesn't have form structure
+          if (!hasFormStructure || !feature) {
+            return;
+          }
+      
+          (
+            feature.isNew()
+              ? Promise.resolve()
+              : getLayersDependencyFeatures(layerId, {
+                // @since g3w-client-plugin-editin@v3.7.0
+                relations: options.layer.getRelations().getArray().filter(r =>
+                  layerId === r.getFather()         && // get only child relation features of current editing layer
+                  getEditingLayerById(r.getChild()) && // child layer is in editing
+                  'ONE' !== r.getType()                // is not a ONE relation (Join 1:1)
+                ),
+                feature,
+                filterType: 'fid',
+              })
+          ).then(() => {
+
+            const { layer, features } = relationsOptions.inputs || {};
+            const layerId = layer.getId();
+
+            this.addFormComponents([
+              // custom form components
+              ...(g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.formComponents[layerId] || []),
+              // relation components
+              // get only relation with type not ONE and layer is the father
+              // get relation layers that set in editing on g3w-admin
+              ...getRelationsInEditingByFeature({
+                  layerId,
+                  relations: layer.getRelations().getArray().filter(r => r.getType() !== 'ONE' && r.getFather() === layerId),
+                  feature: features[features.length - 1],
+                }).map(({ relation, relations }) => ({
+                  title:     "plugins.editing.edit_relation",
+                  name:      relation.name,
+                  id:        relation.id,
+                  header:    false,            // hide header form
+                  component: Vue.extend({
+                    mixins: [ require('../components/FormRelation.vue') ],
+                    name: `relation_${Date.now()}`,
+                    data() {
+                      return {
+                        layerId,
+                        relation,
+                        relations,
+                        resourcesurl: GUI.getResourcesUrl(),
+                        formeventbus: this.getService().getEventBus() || null
+                      };
+                    },
+                  }),
+                }))
+            ]);
+      
+            // overwrite click on relation handler
+            this.getService().handleRelation = async function({ relation }) {
+              GUI.setLoadingContent(true);
+              await setLayerUniqueFieldValues(options.layer.getRelationById(relation.name).getChild());
+              this.setCurrentComponentById(relation.name);
+              GUI.setLoadingContent(false);
+            };
+          });
+        }
+      },
       title:           "plugins.editing.editing_attributes",
       name:            this._layerName,
       crumb:           { title: this._layerName },
@@ -1875,7 +1941,7 @@ export class OpenFormStep extends EditingTask {
                   .map(w => w.getLastStep().getTask().saveAll(w.getContext().service.state.fields))
               )
 
-              EditingService
+              g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing')
                 .commit({ modal: false })
                 .then(()   => { WorkflowsStack._workflows.forEach(w => w.getContext().service.setUpdate(false, { force: false })); })
                 .fail((e)  => console.warn(e))
@@ -2029,7 +2095,6 @@ export class OpenFormStep extends EditingTask {
   stop() {
     this.disableSidebar(false);
 
-    const service        = this.getEditingService();
     //Check if form coming from the parent table component
     const is_parent_table = false === this._isContentChild || // no child workflow
       (
@@ -2042,7 +2107,7 @@ export class OpenFormStep extends EditingTask {
     // and is resolved without setting form service
     // Ex. copy multiple features from another layer
     if (is_parent_table) {
-      service.disableMapControlsConflict(false);
+      GUI.getService('map').disableClickMapControls(false);
     }
 
     const contextService = is_parent_table && WorkflowsStack.getCurrent().getContextService();
@@ -2054,7 +2119,7 @@ export class OpenFormStep extends EditingTask {
 
     GUI.closeForm({ pop: this.push || this._isContentChild });
 
-    service.resetCurrentLayout();
+    g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').resetCurrentLayout();
 
     this.fireEvent('closeform');
     this.fireEvent(`closeform_${this.layerId}`);
@@ -2111,7 +2176,7 @@ export class OpenTableStep extends EditingTask {
    */
   run(inputs, context) {
     //set current plugin layout (right content)
-    this.getEditingService().setCurrentLayout();
+    g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').setCurrentLayout();
 
     const d              = $.Deferred();
     const originalLayer  = inputs.layer;
@@ -2171,7 +2236,7 @@ export class OpenTableStep extends EditingTask {
     this.disableSidebar(false);
     GUI[this._isContentChild ? 'popContent' : 'closeContent']();
     //reset current plugin layout (right content) to application
-    this.getEditingService().resetCurrentLayout();
+    g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').resetCurrentLayout();
   }
 
 }
@@ -2457,7 +2522,8 @@ export class SelectElementsStep extends EditingTask {
     const source            = layer.getEditingLayer().getSource();
     const {session}         = this.getContext();
     // filter external layer only vector - Exclude WMS
-    const layers = this.getMapService()
+    const layers = GUI
+      .getService('map')
       .getExternalLayers()
       .filter(externaLayer => {
         let sameBaseGeometry = true;

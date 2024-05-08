@@ -107,9 +107,15 @@
 <script>
   import ToolboxComponent             from './Toolbox.vue';
   import SelectEditingLayersComponent from './SelectEditingLayers.vue';
+  import { promisify }                from '../utils/promisify';
 
-  const { GUI }              = g3wsdk.gui;
-  const { ApplicationState } = g3wsdk.core;
+  const { GUI }                         = g3wsdk.gui;
+  const {
+    ApplicationState,
+    ApplicationService,
+  }                                     = g3wsdk.core;
+  const { CatalogLayersStoresRegistry } = g3wsdk.core.catalog;
+  const { DataRouterService }           = g3wsdk.core.data;
 
   export default {
 
@@ -117,8 +123,13 @@
 
     data() {
       return {
+        state:         this.$options.service.state,
+        service:       this.$options.service,
+        resourcesurl:  this.$options.resourcesurl,
+        showcommitbar: this.$options.showcommitbar,
         saving:          false, // whether to show loading bar while committing to server (click on save disk icon)
         layersInEditing: 0, //@since 3.8.0 Number of layers in editing
+        editingButtonsEnabled: true,
       };
     },
 
@@ -142,11 +153,11 @@
       },
 
       undo() {
-        this.$options.service.undo();
+        this.service.undo();
       },
 
       redo() {
-        this.$options.service.redo();
+        this.service.redo();
       },
 
       /**
@@ -154,9 +165,9 @@
        */
       commit(toolboxId) {
         this.saving = true;
-        this.$options.service
+        this.service
           .commit({
-            toolbox: this.$options.service.getToolBoxById(toolboxId),
+            toolbox: this.service.getToolBoxById(toolboxId),
             modal: false,
           })
           .always(() => this.saving = false);
@@ -177,7 +188,7 @@
             //if there is a layer with not saved/committed changes ask before get start toolbox,
             //otherwise changes made on relation layers are not sync with current database state
             //example Joins 1:1 fields
-            try      { await this.$options.service.commitDirtyToolBoxes(dirtyId); }
+            try      { await this.commitDirtyToolBoxes(dirtyId); }
             catch(e) { console.warn(e); }
           }
           toolbox
@@ -191,12 +202,9 @@
       stopToolBox(toolboxId) {
         const toolbox = this._getToolBoxById(toolboxId);
         if (toolbox.state.editing.history.commit) {
-          this.$options.service
-            .commit()
-            .always(() => toolbox.stop());
+          this.service.commit().always(() => toolbox.stop());
         } else {
-          toolbox
-            .stop()
+          toolbox.stop()
         }
       },
 
@@ -252,7 +260,7 @@
        */
       async setSelectedToolbox(toolboxId) {
         const toolbox   = this._getToolBoxById(toolboxId);      // get toolbox by id
-        const toolboxes = this.$options.service.getToolBoxes(); // get all toolboxes
+        const toolboxes = this.service.getToolBoxes(); // get all toolboxes
         const selected  = toolboxes.find(t => t.isSelected());  // check if exist already toolbox selected (first time)
 
         // set already selected false
@@ -275,7 +283,37 @@
        * @private
        */
       _checkDirtyToolBoxes(toolboxId) {
-        return this.$options.service.commitDirtyToolBoxes(toolboxId);
+        return this.commitDirtyToolBoxes(toolboxId);
+      },
+
+      /**
+       * @param { string } layerId
+       *
+       * @returns { Promise<unknown> }
+       */
+      async commitDirtyToolBoxes(layerId) {
+        const service = this.service;
+        const toolbox = service.getToolBoxById(layerId);
+
+        if (!toolbox.isDirty() || !toolbox.hasDependencies()) {
+          return toolbox;
+        }
+
+        try {
+          await promisify(service.commit({ toolbox }));
+          return toolbox;
+        } catch (e) {
+          await promisify(toolbox.revert());
+          toolbox
+            .getDependencies()
+            .forEach((layerId) => {
+              if (service.getLayerById(layerId).getChildren().indexOf(layerId) !== -1) {
+                service.getToolBoxById(layerId).revert();
+              }
+            });
+          return Promise.reject(toolbox);
+        }
+
       },
 
       /**
@@ -286,7 +324,7 @@
        * @private
        */
       _getToolBoxById(toolboxId) {
-        return this.$options.service.getToolBoxById(toolboxId);
+        return this.service.getToolBoxById(toolboxId);
       },
 
       /**
@@ -296,6 +334,82 @@
        */
       _enableEditingButtons(bool) {
         this.editingButtonsEnabled = !bool;
+      },
+
+      /**
+       * Called by Editing Panel on creation time
+       */
+      registerOnLineOffLineEvent() {
+        // Array of object setter(as key), key to unby (as value)
+        this.unByKeys = this.unByKeys || [];
+
+        // in case of starting panel editing check if there arae some chenging pending
+        // if true it have to commit chanhes on server and ulock all layers features temporary locked
+        if (ApplicationState.online) {
+          this.checkOfflineChanges({ unlock: true });
+        }
+
+        this.unByKeys.push({
+          owner : ApplicationService,
+          setter: 'offline',
+          key: ApplicationService.onafter('offline', () => {})
+        });
+
+        this.unByKeys.push({
+          owner : ApplicationService,
+          setter: 'online',
+          key: ApplicationService.onafter('online', () => this.checkOfflineChanges({ modal:false }).catch(e => GUI.notify.error(e)))
+        });
+
+      },
+
+      /**
+       * Check if alread have off lines changes
+       *
+       * @param { Object }  opts
+       * @param { boolean } [opts.modal=true]
+       * @param { boolean } [opts.unlock=false]
+       *
+       * @returns { Promise<unknown> }
+       */
+      checkOfflineChanges({
+        modal = true,
+        unlock = false,
+      } = {}) {
+        return new Promise((resolve, reject) => {
+          const changes = ApplicationService.getOfflineItem('EDITING_CHANGES');
+          // if find changes offline previously
+          if (!changes) {
+            return;
+          }
+          const promises = [];
+          const layerIds = [];
+          //FORCE TO WAIT OTHERWISE STILL OFF LINE
+          setTimeout(() => {
+            for (const layerId in changes) {
+              layerIds.push(layerId);
+              const toolbox = this.service.getToolBoxById(layerId);
+              const commitItems = changes[layerId];
+              promises.push(this.service.commit({
+                toolbox,
+                commitItems,
+                modal
+              }))
+            }
+
+            $.when
+              .apply(this.service, promises)
+              .then(() =>resolve())
+              .fail(error=>reject(error))
+              .always(() =>{
+                unlock && layerIds.forEach(layerId => {
+                  this.service.getLayerById(layerId).unlock()
+                });
+                // always reset items to null
+                ApplicationService.setOfflineItem('EDITING_CHANGES');
+              })
+          }, 1000)
+        });
       },
 
     },
@@ -308,7 +422,7 @@
 
       canCommit() {
         return (
-          'default' === this.$options.service.getSaveConfig().mode &&
+          'default' === this.state.saveConfig.mode &&
           this.state.toolboxselected &&
           this.state.toolboxselected.state.editing.history.commit &&
           this.editingButtonsEnabled
@@ -322,7 +436,7 @@
           this.editingButtonsEnabled
         );
 
-        this.$options.service.fireEvent('canUndo', canUndo);
+        this.service.fireEvent('canUndo', canUndo);
 
         return canUndo;
       },
@@ -334,7 +448,7 @@
           this.editingButtonsEnabled
         );
 
-        this.$options.service.fireEvent('canRedo', canRedo);
+        this.service.fireEvent('canRedo', canRedo);
 
         return canRedo;
       },
@@ -344,7 +458,7 @@
     watch:{
 
       canCommit(bool) {
-        this.$options.service.registerLeavePage(bool);
+        ApplicationService.registerLeavePage({ bool });
       },
       /**
        * @since 3.8.0
@@ -357,33 +471,78 @@
     },
 
     created() {
-
       this.appState = ApplicationState;
 
-      this.$options.service.registerOnLineOffLineEvent();
+      this.registerOnLineOffLineEvent();
 
       GUI.closeContent();
 
-      this.$options.service.setOpenEditingPanel(true);
+      // open editing panel state
+      this.state.open = false;
+      CatalogLayersStoresRegistry.getLayers({ EDITABLE: true }).forEach(layer => layer.setInEditing(true));
 
       GUI.on('opencontent',  this._enableEditingButtons);
       GUI.on('closeform',    this._enableEditingButtons);
       GUI.on('closecontent', this._enableEditingButtons);
     },
 
-    beforeDestroy() {
-      this.$options.service.setOpenEditingPanel(false);
+    /**
+     * Called on close editingpanel panel
+     */
+    async beforeDestroy() {
+      this.service.stop();
+
+      // reset editing panel state
+      this.state.open = false;
+      CatalogLayersStoresRegistry.getLayers({ EDITABLE: true }).forEach(layer => layer.setInEditing(false));
 
       GUI.off('opencontent',  this._enableEditingButtons);
       GUI.off('closeform',    this._enableEditingButtons);
       GUI.off('closecontent', this._enableEditingButtons);
 
-      this.$options.service.unregisterOnLineOffLineEvent();
+      // unregister "online" and "offline" events
+      this.unByKeys.forEach(({ owner, setter, key }) => owner.un(setter, key));
 
-      this.$options.service.fireEvent('closeeditingpanel');
+      this.service.fireEvent('closeeditingpanel');
 
-      this.$options.service.onCloseEditingPanel();
-      this.$options.service.clearAllLayersUniqueFieldsValues();
+      // Show feature that are updated or created with editing on result content
+      const layerIdChanges = Object.keys(this.state.featuresOnClose);
+      if (layerIdChanges.length) {
+        const inputs = {
+          layers: [],
+          fids: [],
+          formatter: 1
+        };
+        layerIdChanges
+          .forEach(layerId => {
+            const fids = [...this.state.featuresOnClose[layerId]];
+            if (fids.length) {
+              const layer = CatalogLayersStoresRegistry.getLayerById(layerId);
+              inputs.layers.push(layer);
+              inputs.fids.push(fids);
+            }
+          });
+
+        const promise = inputs.layers.length ?
+          DataRouterService.getData('search:layersfids', {
+            inputs,
+            outputs: {
+              title: 'plugins.editing.editing_changes',
+              show: {loading: false}
+            }
+          }) :
+          Promise.resolve();
+        try {
+          await promise;
+        } catch(err) {}
+      }
+
+      this.state.featuresOnClose = {};
+
+      this.service.getToolBoxes().forEach(toolbox => toolbox.resetDefault());
+
+      // clear all unique values fields related to layer (after closing editing panel).
+      this.state.uniqueFieldsValues = {};
     },
 
   };

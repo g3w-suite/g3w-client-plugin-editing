@@ -1,4 +1,7 @@
-import { EditingWorkflow } from '../g3wsdk/workflow/workflow';
+import { createEditingDataOptions }  from '../utils/createEditingDataOptions';
+import { setLayerUniqueFieldValues } from '../utils/setLayerUniqueFieldValues';
+import { getRelationsInEditing }     from '../utils/getRelationsInEditing';
+import { EditingWorkflow }           from '../g3wsdk/workflow/workflow';
 
 import {
   OpenFormStep,
@@ -65,11 +68,54 @@ const { getScaleFromResolution } = g3wsdk.ol.utils;
 const { Geometry }               = g3wsdk.core.geometry;
 const { isSameBaseGeometryType } = g3wsdk.core.geoutils;
 
+/**
+ * @param { string } layerId
+ */
+function _stopSessionChildren(layerId) {
+  const service = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing');
+  const layer = service.getLayerById(layerId);
+  const relations = getRelationsInEditing({
+    relations: layer.getRelations() ? layer.getRelations().getArray() : [],
+    layerId
+  });
+  relations
+    .filter(relation => relation.getFather() === layerId)
+    .forEach(relation => {
+      const relationId = getRelationId({ layerId, relation });
+      // In case of no editing is started (click on pencil of relation layer) need to stop (unlock) features
+      if (!service.getToolBoxById(relationId).inEditing()) {
+        service.state.sessions[relationId].stop();
+      }
+    })
+}
+
+/**
+ * Check if father relation is editing and has commit feature
+ *
+ * @param { string } layerId
+ *
+ * @returns father in editing
+ */
+function _fathersInEditing(layerId) {
+  const service = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing');
+  return service.getLayerById(layerId)
+    .getFathers()
+    .filter(id => {
+      const toolbox = service.getToolBoxById(id);
+      if (toolbox && toolbox.inEditing() && toolbox.isDirty()) {
+        //get temporary relations object
+        const {relations={}} = toolbox.getSession().getCommitItems();
+        //check if layerId has some changes
+        return Object
+          .keys(relations)
+          .find(relationLayerId => layerId === relationLayerId);
+      }
+    });
+}
+
 function ToolBox(options={}) {
   base(this);
-  this.editingService = require('../services/editingservice');
 
-  this._mapService        = GUI.getService('map');
   this._start             = false;
   this._constraints       = options.constraints || {};
   this._layer             = options.layer;
@@ -144,7 +190,7 @@ function ToolBox(options={}) {
   this._session.onafter('stop', () => {
     if (this.inEditing()) {
       if (ApplicationState.online) {
-        this.editingService.stopSessionChildren(this.state.id);
+        _stopSessionChildren(this.state.id);
       }
       if (this._getFeaturesOption.registerEvents) {
         this._unregisterGetFeaturesEvent();
@@ -163,7 +209,7 @@ function ToolBox(options={}) {
       if (Layer.LayerTypes.VECTOR === options.type && GUI.getContentLength()) {
         GUI.once('closecontent', () => {
           setTimeout(() => {
-            this._mapService.getMap().dispatchEvent(this._getFeaturesEvent.event)
+            GUI.getService('map').getMap().dispatchEvent(this._getFeaturesEvent.event)
           })
         });
       }
@@ -352,8 +398,7 @@ proto.setFeaturesOptions = function({
       this.setConstraintFeaturesFilter(filter);
     }
   } else {
-    this._getFeaturesOption = this.editingService
-      .createEditingDataOptions(Layer.LayerTypes.TABLE === this._layerType ? 'all': 'bbox', { layerId: this.getId() });
+    this._getFeaturesOption = createEditingDataOptions(Layer.LayerTypes.TABLE === this._layerType ? 'all': 'bbox', { layerId: this.getId() });
   }
 };
 
@@ -368,25 +413,17 @@ proto.setEditingConstraints = function(constraints={}) {
 };
 
 /**
- *
- * @return {Promise<void>}
- */
-proto.setLayerUniqueFieldValues = async function() {
-  await this.editingService.setLayerUniqueFieldValues(this.getId());
-};
-
-/**
- *
+ * Clear single layer unique field values (when stopping toolbox editing).
  */
 proto.clearLayerUniqueFieldsValues = function() {
-  this.editingService.clearLayerUniqueFieldsValues(this.getId())
+  g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[this.getId()] = {};
 };
 
 //added option object to start method to have a control by other plugin how
 proto.start = function(options={}) {
   const d                     = $.Deferred();
   const id                    = this.getId();
-  const applicationConstraint = this.editingService.getApplicationEditingConstraintById(id);
+  const applicationConstraint = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.constraints.toolboxes[id];
   const EventName             = 'start-editing';
 
   let {
@@ -428,9 +465,9 @@ proto.start = function(options={}) {
 
   const handlerAfterSessionGetFeatures = promise => {
     this.emit(EventName);
-    this.setLayerUniqueFieldValues()
+    setLayerUniqueFieldValues(this.getId())
       .then(async () => {
-        await this.editingService.runEventHandler({
+        await g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').runEventHandler({
           type: EventName,
           id
         });
@@ -438,7 +475,7 @@ proto.start = function(options={}) {
           .then(async features => {
             this.stopLoading();
             this.setEditing(true);
-            await this.editingService.runEventHandler({
+            await g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').runEventHandler({
               type: 'get-features-editing',
               id,
               options: {
@@ -450,7 +487,7 @@ proto.start = function(options={}) {
           })
           .fail(async error => {
             GUI.notify.error(error.message);
-            await this.editingService.runEventHandler({
+            await g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').runEventHandler({
               type: 'error-editing',
               id,
               error
@@ -467,7 +504,7 @@ proto.start = function(options={}) {
       //added case of mobile
       if (
         ApplicationState.ismobile
-        && this._mapService.isMapHidden()
+        && GUI.getService('map').isMapHidden()
         && Layer.LayerTypes.VECTOR === this._layerType
       ) {
         this.setEditing(true);
@@ -543,13 +580,13 @@ proto.stop = function() {
 
   if (this._session && this._session.isStarted()) {
     if (ApplicationState.online) {
-      if (this.editingService.fathersInEditing(this.state.id).length > 0) {
+      if (_fathersInEditing(this.state.id).length > 0) {
         this.stopActiveTool();
         this.state.editing.on = false;
         this.enableTools(false);
         this.clearToolboxMessages();
         this._unregisterGetFeaturesEvent();
-        this.editingService.stopSessionChildren(this.state.id);
+        _stopSessionChildren(this.state.id);
         this.setSelected(false);
         this.clearLayerUniqueFieldsValues();
       } else {
@@ -596,7 +633,7 @@ proto.save = function () {
 proto._unregisterGetFeaturesEvent = function() {
   switch(this._layerType) {
     case Layer.LayerTypes.VECTOR:
-      this._mapService.getMap().un(this._getFeaturesEvent.event, this._getFeaturesEvent.fnc);
+      GUI.getService('map').getMap().un(this._getFeaturesEvent.event, this._getFeaturesEvent.fnc);
       break;
     default:
       return;
@@ -618,7 +655,7 @@ proto._registerGetFeaturesEvent = function(options={}) {
           this._layer.getEditingLayer().setVisible(canEdit);
           //added ApplicationState.online
           if (ApplicationState.online && canEdit && GUI.getContentLength() === 0) {
-            options.filter.bbox = this._mapService.getMapBBOX();
+            options.filter.bbox = GUI.getService('map').getMapBBOX();
             this.state.loading = true;
             this._session
               .getFeatures(options)
@@ -629,7 +666,7 @@ proto._registerGetFeaturesEvent = function(options={}) {
         };
         this._getFeaturesEvent.event = 'moveend';
         this._getFeaturesEvent.fnc   = debounce(fnc, 300);
-        this._mapService.getMap().on('moveend', this._getFeaturesEvent.fnc);
+        GUI.getService('map').getMap().on('moveend', this._getFeaturesEvent.fnc);
       }
       break;
     default:
@@ -678,16 +715,16 @@ proto._canEdit = function() {
   if (this._constraints.scale) {
     const scale = this._constraints.scale;
     const message = `${t('editing.messages.constraints.enable_editing')}${scale}`.toUpperCase();
-    this.state.editing.canEdit = getScaleFromResolution(this._mapService.getMap().getView().getResolution()) <= scale;
+    this.state.editing.canEdit = getScaleFromResolution(GUI.getService('map').getMap().getView().getResolution()) <= scale;
     GUI.setModal(!this.state.editing.canEdit, message);
     const fnc = (event) => {
       this.state.editing.canEdit = getScaleFromResolution(event.target.getResolution()) <= scale;
       GUI.setModal(!this.state.editing.canEdit, message);
     };
-    this._mapService.getMap().getView().on('change:resolution', fnc);
+    GUI.getService('map').getMap().getView().on('change:resolution', fnc);
     this.disableCanEditEvent = () => {
       GUI.setModal(false);
-      this._mapService.getMap().getView().un('change:resolution', fnc);
+      GUI.getService('map').getMap().getView().un('change:resolution', fnc);
     }
   }
 };
@@ -1035,7 +1072,7 @@ proto.setActiveTool = function(tool) {
 
       tool.on('active', (activetools=[]) => _activedeactivetooloftools(activetools, true));
       tool.on('deactive', (activetools=[]) => _activedeactivetooloftools(activetools, false));
-      tool.start(this._mapService.isMapHidden());
+      tool.start(GUI.getService('map').isMapHidden());
 
       this.setToolMessage(this.getToolMessage());
 
@@ -1084,7 +1121,7 @@ proto.stopActiveTool = function(tool) {
         this.state.activetool = null;
         setTimeout(d.resolve);
       })
-      .fail(err => console.warn(err))
+      .fail(console.warn)
   } else {
     if (tool) {
       tool.removeAllListeners();

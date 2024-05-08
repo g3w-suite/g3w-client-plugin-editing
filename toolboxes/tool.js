@@ -9,7 +9,6 @@ const { Layer }     = g3wsdk.core.layer;
 function Tool(options = {}) {
   base(this);
 
-  this.editingService       = require('../services/editingservice');
   const {
     name,
     row,
@@ -133,7 +132,7 @@ proto.start = function(hideSidebar = false) {
       .then(() => {
         this._session
           .save()
-          .then(() => this.editingService.saveChange()); // after save temp change check if editing service has a autosave
+          .then(() => g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').saveChange()); // after save temp change check if editing service has a autosave
       })
       .fail(() => {
         if (hideSidebar) {
@@ -300,8 +299,9 @@ proto.getOperator = function() {
 };
 
 /**
- * @since 3.8.0
  * @param op (workflow instance)
+ *
+ * @since g3w-client-plugin-editing@3.8.0
  */
 proto.setOperator = function(op) {
   this._op = op;

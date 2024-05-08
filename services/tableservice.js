@@ -1,5 +1,7 @@
-import { EditingWorkflow } from '../g3wsdk/workflow/workflow';
-import { cloneFeature }    from '../utils/cloneFeature';
+import { EditingWorkflow }           from '../g3wsdk/workflow/workflow';
+import { cloneFeature }              from '../utils/cloneFeature';
+import { getRelationsInEditing }     from '../utils/getRelationsInEditing';
+import { getFeatureTableFieldValue } from '../utils/getFeatureTableFieldValue';
 import {
   OpenFormStep,
   AddTableFeatureStep,
@@ -14,7 +16,6 @@ Object
   })
   .forEach(([k, v]) => console.assert(undefined !== v, `${k} is undefined`));
 
-const { base, inherit } = g3wsdk.core.utils;
 const { G3WObject }     = g3wsdk.core;
 const { GUI }           = g3wsdk.gui;
 const t                 = g3wsdk.core.i18n.tPlugin;
@@ -59,7 +60,6 @@ module.exports = class TableService extends G3WObject {
    * Init function service
    */
   init() {
-    const EditingService = require('./editingservice');
     // set values
     if (this._features.length > 0) {
       const baseFeature = this._features[0];
@@ -78,7 +78,7 @@ module.exports = class TableService extends G3WObject {
       this.state.features = features.map(feature => {
         const orderedProperties = {};
         headers.forEach(header => {
-          orderedProperties[header] = EditingService.getFeatureTableFieldValue({
+          orderedProperties[header] = getFeatureTableFieldValue({
             layerId: this._layerId,
             feature,
             property: header
@@ -128,11 +128,10 @@ module.exports = class TableService extends G3WObject {
   * @returns {Promise<unknown>}
   */
   deleteFeature(uid) {
-    const EditingService = require('./editingservice');
     const layer = this._inputs.layer;
     const layerId = layer.getId();
     const childRelations = layer.getChildren();
-    const relationinediting = childRelations.length && EditingService._filterRelationsInEditing({
+    const relationinediting = childRelations.length && getRelationsInEditing({
       layerId,
       relations: layer.getRelations().getArray()
     }).length > 0;
@@ -166,7 +165,6 @@ module.exports = class TableService extends G3WObject {
   * @returns {Promise<unknown>}
   */
   copyFeature(uid) {
-    const EditingService = require('./editingservice');
     return new Promise((resolve, reject) => {
       const feature = cloneFeature(
         this._features.find(f => f.getUid() === uid),
@@ -189,7 +187,7 @@ module.exports = class TableService extends G3WObject {
           const feature = outputs.features[outputs.features.length -1];
           const newFeature = {};
           Object.entries(this.state.features[0]).forEach(([key, value]) => {
-            newFeature[key] = EditingService.getFeatureTableFieldValue({
+            newFeature[key] = getFeatureTableFieldValue({
               layerId: this._layerId,
               feature,
               property: key
@@ -213,9 +211,6 @@ module.exports = class TableService extends G3WObject {
   * @param uid
   */
   editFeature(uid) {
-
-    const EditingService = require('./editingservice');
-
     const index = this._features.findIndex(f => f.getUid() === uid);
 
     const feature = this._features[index];
@@ -237,7 +232,7 @@ module.exports = class TableService extends G3WObject {
         Object
           .entries(this.state.features[index])
           .forEach(([key, _]) => {
-            this.state.features[index][key] = EditingService.getFeatureTableFieldValue({
+            this.state.features[index][key] = getFeatureTableFieldValue({
               layerId: this._layerId,
               feature,
               property: key

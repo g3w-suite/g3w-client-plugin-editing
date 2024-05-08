@@ -53,10 +53,9 @@
 
 <script>
 
-  const { GUI }        = g3wsdk.gui;
-  const { Layer }      = g3wsdk.core.layer;
-  const mapService     = GUI.getService('map');
-  const editingService = require('../services/editingservice');
+  const { GUI }             = g3wsdk.gui;
+  const { Layer }           = g3wsdk.core.layer;
+  const mapService          = GUI.getService('map');
 
   let snapInteraction;
 
@@ -182,7 +181,7 @@
        */
       this.unwatches = [];
 
-      editingService
+      g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing')
         .getLayers()
         .forEach(layer => {
           const layerId = layer.getId();
@@ -192,7 +191,7 @@
             return;
           }
 
-          const toolbox = editingService.getToolBoxById(layerId);
+          const toolbox = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').getToolBoxById(layerId);
           const source  = toolbox.getLayer().getEditingSource();
 
           this.features.extend(source.readFeatures());

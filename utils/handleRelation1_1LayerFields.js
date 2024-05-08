@@ -1,4 +1,8 @@
-import { getChildFieldNameFromRelation1_1 } from './getChildFieldNameFromRelation1_1';
+import { getChildFieldNameFromRelation1_1 }                        from './getChildFieldNameFromRelation1_1';
+import { getRelation1_1ByLayerId }                                 from '../utils/getRelation1_1ByLayerId';
+import { getRelation1_1EditingLayerFieldsReferredToChildRelation } from './getRelation1_1EditingLayerFieldsReferredToChildRelation';
+
+const { CatalogLayersStoresRegistry } = g3wsdk.core.catalog;
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@3.7.1
@@ -23,11 +27,10 @@ export async function handleRelation1_1LayerFields({
     return;
   }
 
-  const service = require('../services/editingservice');
+  const service = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing');
 
   // Get layer relation 1:1
-  const promises = service
-    .getRelation1_1ByLayerId(layerId)
+  const promises = getRelation1_1ByLayerId(layerId)
     .map(relation => {
       return new Promise(async (resolve) => {
         // skip when layer is not a father layer (1:1 relation)
@@ -54,8 +57,7 @@ export async function handleRelation1_1LayerFields({
         //check if child feature is already add to
         childFeature = source.readFeatures().find(f => f.get(childField) === value)
 
-        const fieldsUpdated = undefined !== service
-          .getRelation1_1EditingLayerFieldsReferredToChildRelation(relation)
+        const fieldsUpdated = undefined !== getRelation1_1EditingLayerFieldsReferredToChildRelation(relation)
           .find(({name}) => fields.find(f => f.name == name).update)
 
         const isNewChildFeature = undefined === childFeature;
@@ -68,8 +70,8 @@ export async function handleRelation1_1LayerFields({
             childFeature = new g3wsdk.core.layer.features.Feature();
             childFeature.setTemporaryId();
             // set name attribute to `null`
-            service
-              .getProjectLayerById(childLayerId)
+            CatalogLayersStoresRegistry
+              .getLayerById(childLayerId)
               .getEditingFields()
               .forEach(field => childFeature.set(field.name, null));
             //set father field value
@@ -90,8 +92,7 @@ export async function handleRelation1_1LayerFields({
           if (childFeature) {
             // Loop editable only field of father layerId when
             // a child relation (1:1) is bind to current feature
-            const editiableRelatedFieldChild = service
-              .getRelation1_1EditingLayerFieldsReferredToChildRelation(relation)
+            const editiableRelatedFieldChild = getRelation1_1EditingLayerFieldsReferredToChildRelation(relation)
               .filter(field => field.editable);
 
             editiableRelatedFieldChild

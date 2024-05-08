@@ -23,7 +23,6 @@
 </template>
 
 <script>
-  const EditingService = require('../services/editingservice');
 
   export default {
 
@@ -33,7 +32,7 @@
       return {
         selectedlayers: [],
         editinglayers: Object
-          .entries(EditingService.getEditableLayers())
+          .entries(g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').getEditableLayers())
           .map(([id, layer]) => ({ id, name: layer.getName(), title: layer.getTitle() })),
       };
     },
@@ -45,14 +44,14 @@
 
         this.editinglayers
           .forEach(({ id }) => {
-            const toolbox     = EditingService.getToolBoxById(id);
+            const toolbox     = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').getToolBoxById(id);
             const is_commit   = has_layers && toolbox.state.editing.history.commit;
             const is_selected = (-1 !== layers.indexOf(id));
 
             toolbox.setShow(has_layers ? is_selected : true);
 
             if (has_layers && !is_selected && is_commit) {
-              EditingService
+              g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing')
                 .commit({ toolbox })
                 .always(() => toolbox.stop());
             }

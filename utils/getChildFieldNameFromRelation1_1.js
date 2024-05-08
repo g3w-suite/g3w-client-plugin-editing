@@ -16,7 +16,5 @@ export function getChildFieldNameFromRelation1_1({
   relation,
   field,
 } = {}) {
-  return relation.getPrefix() ?
-    field.name.split(relation.getPrefix())[1] :
-    field.name;
+  return relation.getPrefix() ? field.name.split(relation.getPrefix())[1] : field.name;
 }

@@ -1,6 +1,8 @@
-import { VM }                               from '../eventbus';
-import { getRelation1_1ChildFeature }       from './getRelation1_1ChildFeature';
-import { getChildFieldNameFromRelation1_1 } from './getChildFieldNameFromRelation1_1';
+import { VM }                                                      from '../eventbus';
+import { getRelation1_1ChildFeature }                              from './getRelation1_1ChildFeature';
+import { getChildFieldNameFromRelation1_1 }                        from './getChildFieldNameFromRelation1_1';
+import { getRelation1_1ByLayerId }                                 from '../utils/getRelation1_1ByLayerId';
+import { getRelation1_1EditingLayerFieldsReferredToChildRelation } from './getRelation1_1EditingLayerFieldsReferredToChildRelation';
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@3.7.1
@@ -20,10 +22,10 @@ export async function listenRelation1_1FieldChange({
 } = {}) {
   const unwatches = []; // unwatches field value (event change)
 
-  const service = require('../services/editingservice'); //get editing service
+  const service = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing'); //get editing service
 
   // get all relation 1:1 of current layer
-  for (const relation of service.getRelation1_1ByLayerId(layerId)) {
+  for (const relation of getRelation1_1ByLayerId(layerId)) {
 
     const childLayerId = relation.getChild();                             // get relation child layer id
     const fatherField  = relation.getFatherField();
@@ -41,8 +43,7 @@ export async function listenRelation1_1FieldChange({
     }
 
     //store original editable property of fields relation to child layer relation
-    const editableRelatedFatherChild = service
-      .getRelation1_1EditingLayerFieldsReferredToChildRelation(relation)
+    const editableRelatedFatherChild = getRelation1_1EditingLayerFieldsReferredToChildRelation(relation)
       .reduce((accumulator, field) => {
         const formField = fields.find(f => f.name === field.name)
         accumulator[formField.name] = formField.editable;

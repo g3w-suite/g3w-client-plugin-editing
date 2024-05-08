@@ -135,14 +135,12 @@ export class EditingTask extends Task {
 
     this.selectStyle = options.selectStyle; /* @since 3.8.0 */
 
-    this._mapService = GUI.getService('map');
-
     this.addInteraction = function(interaction) {
-      this._mapService.addInteraction(interaction);
+      GUI.getService('map').addInteraction(interaction);
     };
 
     this.removeInteraction = function(interaction) {
-      setTimeout(() => this._mapService.removeInteraction(interaction)) // timeout needed to work around an Openlayers issue
+      setTimeout(() => GUI.getService('map').removeInteraction(interaction)) // timeout needed to work around an Openlayers issue
     };
 
   }
@@ -162,14 +160,14 @@ export class EditingTask extends Task {
    * @FIXME add description
    */
   registerPointerMoveCursor() {
-    this._mapService.getMap().on("pointermove", this._pointerMoveCursor)
+    GUI.getService('map').getMap().on("pointermove", this._pointerMoveCursor)
   }
 
   /**
    * @FIXME add description
    */
   unregisterPointerMoveCursor() {
-    this._mapService.getMap().un("pointermove", this._pointerMoveCursor)
+    GUI.getService('map').getMap().un("pointermove", this._pointerMoveCursor)
   }
 
   /**
@@ -199,15 +197,8 @@ export class EditingTask extends Task {
   /**
    * @returns {*}
    */
-  getMapService() {
-    return this._mapService;
-  }
-
-  /**
-   * @returns {*}
-   */
   getMap() {
-    return this._mapService.getMap();
+    return GUI.getService('map').getMap();
   }
 
   /**
@@ -222,20 +213,13 @@ export class EditingTask extends Task {
   }
 
   /**
-   * @returns {*|EditingService|{}}
-   */
-  getEditingService() {
-    return require('../../services/editingservice');
-  }
-
-  /**
    * @param event
    * @param options
    *
    * @returns {*}
    */
   fireEvent(event, options={}) {
-    return this.getEditingService().fireEvent(event, options);
+    return g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').fireEvent(event, options);
   }
 
   /**
@@ -253,7 +237,7 @@ export class EditingTask extends Task {
    * Handle single task
    */
   saveSingle(input, context) {
-    context.session.save().then(() => this.getEditingService().saveChange());
+    context.session.save().then(() => g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').saveChange());
   }
 
   /**
