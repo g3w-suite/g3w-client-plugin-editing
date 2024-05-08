@@ -1823,6 +1823,7 @@ export class OpenFormStep extends EditingTask {
 
             const { layer, features } = relationsOptions.inputs || {};
             const layerId = layer.getId();
+            const formeventbus = this.service.getEventBus() || null;
 
             this.addFormComponents([
               // custom form components
@@ -1848,7 +1849,7 @@ export class OpenFormStep extends EditingTask {
                         relation,
                         relations,
                         resourcesurl: GUI.getResourcesUrl(),
-                        formeventbus: this.getService().getEventBus() || null
+                        formeventbus,
                       };
                     },
                   }),
@@ -1856,7 +1857,7 @@ export class OpenFormStep extends EditingTask {
             ]);
       
             // overwrite click on relation handler
-            this.getService().handleRelation = async function({ relation }) {
+            this.service.handleRelation = async function({ relation }) {
               GUI.setLoadingContent(true);
               await setLayerUniqueFieldValues(options.layer.getRelationById(relation.name).getChild());
               this.setCurrentComponentById(relation.name);
