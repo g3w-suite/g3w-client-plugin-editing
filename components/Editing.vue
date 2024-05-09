@@ -182,11 +182,10 @@
        * @param toolboxId
        */
       async startToolBox(toolboxId) {
-        const toolbox = this._getToolBoxById(toolboxId);
+        const toolbox = this.service.getToolBoxById(toolboxId);
         if (ApplicationState.online && toolbox.canEdit()) {
           //check if a dependency layer (in relation) has some changes not committed
-          const dirtyId = toolbox.getDependencies()
-            .find(id => this._getToolBoxById(id).isDirty());
+          const dirtyId = toolbox.getDependencies().find(id => this.service.getToolBoxById(id).isDirty());
           if (dirtyId) {
             //if there is a layer with not saved/committed changes ask before get start toolbox,
             //otherwise changes made on relation layers are not sync with current database state
@@ -194,8 +193,7 @@
             try      { await this.commitDirtyToolBoxes(dirtyId); }
             catch(e) { console.warn(e); }
           }
-          toolbox
-            .start()
+          toolbox.start()
         }
       },
 
@@ -203,7 +201,7 @@
        * @param toolboxId
        */
       stopToolBox(toolboxId) {
-        const toolbox = this._getToolBoxById(toolboxId);
+        const toolbox = this.service.getToolBoxById(toolboxId);
         if (toolbox.state.editing.history.commit) {
           this.service.commit().always(() => toolbox.stop());
         } else {
@@ -215,19 +213,7 @@
        * @param toolboxId
        */
       saveToolBox(toolboxId) {
-        this._getToolBoxById(toolboxId).save();
-      },
-
-      /**
-       * @param toolId
-       * @param toolboxId
-       * 
-       * @private
-       */
-      _setActiveToolOfToolbooxSelected(toolId, toolboxId) {
-        const toolbox                  = this._getToolBoxById(toolboxId);
-        this.state.toolboxidactivetool = toolboxId;
-        toolbox.setActiveTool(toolbox.getToolById(toolId));
+        this.service.getToolBoxById(toolboxId).save();
       },
 
       /**
@@ -236,33 +222,30 @@
        * @param toolId
        * @param toolboxId
        */
-      startActiveTool(toolId, toolboxId) {
+      async startActiveTool(toolId, toolboxId) {
         if (this.state.toolboxidactivetool && toolboxId !== this.state.toolboxidactivetool) {
-          this
-            ._checkDirtyToolBoxes(this.state.toolboxidactivetool)
-            .then(toolbox => {
-              if (toolbox) {
-                toolbox.stopActiveTool();
-              }
-              this._setActiveToolOfToolbooxSelected(toolId, toolboxId);
-            });
-        } else {
-          this._setActiveToolOfToolbooxSelected(toolId, toolboxId);
+          const toolbox = await this.commitDirtyToolBoxes(this.state.toolboxidactivetool);
+          if (toolbox) {
+            toolbox.stopActiveTool();
+          }
         }
+        const toolbox                  = this.service.getToolBoxById(toolboxId);
+        this.state.toolboxidactivetool = toolboxId;
+        toolbox.setActiveTool(toolbox.getToolById(toolId));
       },
 
       /**
        * @param toolboxId
        */
       stopActiveTool(toolboxId) {
-        this._getToolBoxById(toolboxId).stopActiveTool();
+        this.service.getToolBoxById(toolboxId).stopActiveTool();
       },
 
       /**
        * @param toolboxId
        */
       async setSelectedToolbox(toolboxId) {
-        const toolbox   = this._getToolBoxById(toolboxId);      // get toolbox by id
+        const toolbox   = this.service.getToolBoxById(toolboxId);      // get toolbox by id
         const toolboxes = this.service.getToolBoxes(); // get all toolboxes
         const selected  = toolboxes.find(t => t.isSelected());  // check if exist already toolbox selected (first time)
 
@@ -276,17 +259,6 @@
         toolbox.setSelected(true);
 
         this.state.toolboxselected = toolbox;
-      },
-
-      /**
-       * @param toolboxId
-       * 
-       * @returns {*}
-       * 
-       * @private
-       */
-      _checkDirtyToolBoxes(toolboxId) {
-        return this.commitDirtyToolBoxes(toolboxId);
       },
 
       /**
@@ -321,17 +293,6 @@
           return Promise.reject(toolbox);
         }
 
-      },
-
-      /**
-       * @param toolboxId
-       * 
-       * @returns {*}
-       * 
-       * @private
-       */
-      _getToolBoxById(toolboxId) {
-        return this.service.getToolBoxById(toolboxId);
       },
 
       /**
