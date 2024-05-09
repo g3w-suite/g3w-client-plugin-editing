@@ -375,7 +375,7 @@
       editFeature(uid) {
         const index = this.state.features.findIndex(f => f.getUid() === uid);
     
-        const feature = this.features[index];
+        const feature = this.state.features[index];
     
         /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/edittablefeatureworkflow.js@v3.7.1 */
         this.state.workflow = new EditingWorkflow({ type: 'edittablefeature', steps: [ new OpenFormStep() ] });
