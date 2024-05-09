@@ -9,7 +9,6 @@ import { getRelation1_1EditingLayerFieldsReferredToChildRelation } from './utils
 import { createFeature }                                           from './utils/createFeature';
 import {
   OpenFormStep,
-  ConfirmStep,
   AddFeatureStep,
   AddPartToMultigeometriesStep,
 }                                                                  from './workflows';
@@ -37,7 +36,6 @@ Object
   .entries({
     EditingWorkflow,
     OpenFormStep,
-    ConfirmStep,
     AddFeatureStep,
     AddPartToMultigeometriesStep,
     showCommitModalWindow,
@@ -1378,6 +1376,7 @@ new (class extends Plugin {
    */
   showEditingPanel(opts={}) {
     if (this.getLayers().length > 0) {
+      console.log(opts);
       this.state.panel = new Panel({
         ...opts,
         id: "editing-panel",

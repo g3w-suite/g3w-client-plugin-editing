@@ -101,7 +101,7 @@ export default {
     delete_feature: "Voulez-vous supprimer la fonctionnalité sélectionnée ?",
     delete_feature_relations: "La suppression d'une fonctionnalité avec des relations associées laissera ces relations orphelines. Il est recommandé de gérer ces relations avant de supprimer la fonctionnalité",
     unlink_relation: "Voulez-vous détacher la relation ?",
-    commit_feature: "Voulez-vous enregistrer définitivement les changements ?",
+    commit_feature: "Sommaire des changements",
     toolbox_has_relation: "cette couche fait partie d'une relation",
     saved: "Les données ont été enregistrées correctement",
     saved_local: "Les données ont été correctement sauvegardées localement",
@@ -115,9 +115,9 @@ export default {
       header: "La liste ci-dessous montre toutes les modifications qui seront enregistrées.",
       header_add: "<b>Ajouts</b> indique le nombre de fonctionnalités ajoutées",
       header_update_delete: "<b>Modifié</b> e <b>Supprimé</b> liste les ids",
-      add: "Ajouté (n. fonctionnalités)",
-      delete: "Supprimé(id)",
-      update: "Modifié(id)"
+      add: "Ajouté",
+      delete: "Supprimé",
+      update: "Modifié"
     },
     loading_table_data: "Building Data Table. Please wait ...",
     copy_and_paste_from_other_layer_mandatory_fields: "Avant d'enregistrer, il est nécessaire de remplir tous les champs obligatoires du features saisi",

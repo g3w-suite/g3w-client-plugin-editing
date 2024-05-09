@@ -101,7 +101,7 @@ export default {
     delete_feature: "Soll das ausgewählte Feature gelöscht werden?",
     delete_feature_relations: "Wenn ein Feature Verknüpfungen beinhaltet, werden diese Relationen verwaist. Wir schlagen vor, diese Relationen zu behandeln, bevor das Feature gelöscht wird",
     unlink_relation: "Soll die Verknüpfung aufgehoben werden?",
-    commit_feature: "Änderungen speichern?",
+    commit_feature: "Zusammenfassung der Änderungen",
     toolbox_has_relation: "Diese Ebene ist Teil einer Beziehung",
     saved: "Daten erfolgreich gespeichert",
     saved_local:"Daten erfolgreich lokal gespeichert",
@@ -115,9 +115,9 @@ export default {
       header: "Die folgende Liste zeigt alle zu übernehmenden Änderungen.",
       header_add: "<b>Hinzufgefügt</b> Die Anzahl der hinzugefügten Features anzeigen",
       header_update_delete: "<b>Bearbeitet</b> und <b>Gelöscht</b> Die Liste der Feature-ID anzeigen",
-      add: "Hinzugefügt(n. Features)",
-      delete: "Gelöscht(id)",
-      update: "Bearbeitet(id)"
+      add: "Hinzugefügt",
+      delete: "Gelöscht",
+      update: "Bearbeitet"
     },
     loading_table_data: "Datentabelle wird erstellt. Bitte warten ...",
     copy_and_paste_from_other_layer_mandatory_fields: "Vor dem Speichern müssen alle Pflichtfelder des eingegebenen features ausgefüllt werden",

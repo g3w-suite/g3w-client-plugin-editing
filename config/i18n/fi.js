@@ -101,7 +101,7 @@ export default {
     delete_feature: "Haluatko poistaa valitun ominaisuuden?",
     delete_feature_relations: "Mikäli ominaisuudella on sitovia relaatioita, näistä relaatiosta tulee orpoja. Suosittelemme käsittelemään nämä relaatiot ennen poistamista",
     unlink_relation: "Haluatko poistaa relaation?",
-    commit_feature: "Tallennetaanko muutokset?",
+    commit_feature: "Yhteenveto muutoksista",
     toolbox_has_relation: "tämä kerros on osa relaatiota",
     saved: "Tiedot tallennettu onnistuneesti",
     saved_local:"Tiedot on tallennettu onnistuneesti paikallisesti.",
@@ -115,9 +115,9 @@ export default {
       header: "Seuraava luettelo näyttää kaikki muutokset.",
       header_add: "<b>Lisätty</b> näytä lisättyjen ominaisuuksien lukumäärä",
       header_update_delete: "<b>Muokattu</b> ja <b>Poistettu</b> Näytä listä ominaisuuksien id:stä",
-      add: "Lisätty(n. ominaisuutta)",
-      delete: "Poistettu(id)",
-      update: "Muokattu(id)"
+      add: "Lisätty",
+      delete: "Poistettu",
+      update: "Muokattu"
     },
     loading_table_data: "Building Data Table. Please wait ...",
     copy_and_paste_from_other_layer_mandatory_fields: "It is necessary to fill in any mandatory fields on the features pasted before saving",

@@ -101,7 +101,7 @@ export default {
     delete_feature: "Vill du ta bort den valda egenskapen?",
     delete_feature_relations: "Om egenskapen saknar bindande relationer blir dessa relationer föräldralösa. Vi rekommenderar att du behandlar dessa relationer innan du lämnar programmet",
     unlink_relation: "Vill du ta bort relationen?",
-    commit_feature: "Ska ändringarna sparas?",
+    commit_feature: "Sammanfattning av ändringar",
     toolbox_has_relation: "detta lager är en del av en relation",
     saved: "Uppgifterna sparades",
     saved_local:"Uppgifterna sparades lokalt.",
@@ -115,9 +115,9 @@ export default {
       header: "Följande lista visar alla ändringar.",
       header_add: "<b>Tillagda</b> visar antalet egenskaper som lagts till",
       header_update_delete: "<b>Redigerad</b> och <b>Borttagen</b> Visa en lista på egenskapernas id",
-      add: "(n. egenskaper) har lagts till",
-      delete: "Borttagen (id)",
-      update: "Redigerad(id)"
+      add: "har lagts till",
+      delete: "Borttagen",
+      update: "Redigerad"
     },
     loading_table_data: "Building Data Table. Please wait ...",
     copy_and_paste_from_other_layer_mandatory_fields: "It is necessary to fill in any mandatory fields on the features pasted before saving",

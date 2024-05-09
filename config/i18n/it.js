@@ -102,7 +102,7 @@ export default {
     delete_feature: "Vuoi eliminare l'elemento selezionato?",
     delete_feature_relations: "Cancellando una feature con relazioni associate, tale relazioni rimarranno orfane. Si consiglia di gestire tali relazioni prima di cancellare la feature",
     unlink_relation: "Vuoi staccare la relazione?",
-    commit_feature: "Vuoi salvare definitivamente le modifiche",
+    commit_feature: "Riepilogo modifiche",
     toolbox_has_relation: "questo livello fa parte di una relazione",
     saved: "I dati sono stati salvati correttamente",
     saved_local: "I dati sono stati salvati correttamente in locale",
@@ -116,9 +116,9 @@ export default {
       header: "La lista sotto riporta tutte le modifiche che verranno salvate.",
       header_add: "<b>Aggiunte</b> riporta il numero delle features aggiunte",
       header_update_delete: "<b>Modificate</b> e <b>Cancellate</b> riporta la lista degli id",
-      add: "Aggiunte (n. features)",
-      delete: "Cancellate(id)",
-      update: "Modificate(id)"
+      add: "Aggiunte",
+      delete: "Cancellate",
+      update: "Aggiornate"
     },
     loading_table_data: "Costruzione tabella dati in corso. Attendere ...",
     copy_and_paste_from_other_layer_mandatory_fields: "Necessario compilare eventuali campi obbligatori sulle features incollate prima del salvataggio",

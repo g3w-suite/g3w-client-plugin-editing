@@ -101,7 +101,7 @@ export default {
     delete_feature: "Do you want delete selected feature ?",
     delete_feature_relations: "If feature has bindings relations, these relations become orphans. We suggest to handle these relations before detele this feature",
     unlink_relation: "Do you want unlink relation?",
-    commit_feature: "Do you want to save the changes",
+    commit_feature: "Summary of changes",
     toolbox_has_relation: "this layer is part of a relation",
     saved: "Data saved successfully",
     saved_local:"Data saved locally successfully",
@@ -115,9 +115,9 @@ export default {
       header: "The following list show all changes to commit.",
       header_add: "<b>Added</b> show the number of features added",
       header_update_delete: "<b>Modified</b> and <b>Deleted</b> show the list of features id",
-      add: "Added(n. features)",
-      delete: "Deleted(id)",
-      update: "Modified(id)"
+      add: "Added",
+      delete: "Deleted",
+      update: "Updated"
     },
     loading_table_data: "Building Data Table. Please wait ...",
     copy_and_paste_from_other_layer_mandatory_fields: "It is necessary to fill in any mandatory fields on the features pasted before saving",

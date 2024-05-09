@@ -435,7 +435,7 @@ const Dialogs = {
       // NOW I HAVE TO IMPLEMENT WHAT HAPPEND ID NO ACTION HAPPEND
       const dialog = GUI.dialog.dialog({
         message: inputs.message,
-        title: tPlugin("editing.messages.commit_feature") + " " +inputs.layer.getName() + "?",
+        title: `${tPlugin("editing.messages.commit_feature")}: "${inputs.layer.getName()}"`,
         buttons
       });
       return d.promise()
@@ -1878,7 +1878,7 @@ export class OpenFormStep extends EditingTask {
       parentData:      getParentFormData(),
       fields:          this._fields,
       context_inputs:  !this._multi && this._edit_relations && { context, inputs },
-      formStructure:   this._originalLayer.hasFormStructure() && this._originalLayer.getEditorFormStructure().length ? this._originalLayer.getEditorFormStructure() : undefined,
+      formStructure:   this._originalLayer.hasFormStructure() && this._originalLayer.getLayerEditingFormStructure().length ? this._originalLayer.getLayerEditingFormStructure() : undefined,
       modal:           true,
       push:            this.push || this._isContentChild, //@since v3.7 need to take in account this.push value
       showgoback:      undefined !== this.showgoback ? this.showgoback : !this._isContentChild,

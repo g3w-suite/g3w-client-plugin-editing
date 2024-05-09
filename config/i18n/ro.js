@@ -101,7 +101,7 @@ export default  {
     delete_feature: "Șterg entitatea selectată?",
     delete_feature_relations: "Dacă entitatea are relații care trimit la ea, acele relații devin orfane. Sugerăm să vă ocupați de acele elemente înainte să eliminați această entitate.",
     unlink_relation: "Dorești să eliminați legătura cu relația?",
-    commit_feature: "Salvăm?",
+    commit_feature: "Rezumatul modificărilor",
     toolbox_has_relation: "acest strat face parte dintr-o relație",
     saved: "Datele sunt salvate",
     saved_local:"Datele s-au salvat local",
@@ -115,9 +115,9 @@ export default  {
       header: "Lista cu toate modificările.",
       header_add: "<b>Adăugate</b> arată nr. de entități adăugate",
       header_update_delete: "<b>Modificate</b> și <b>Șterse</b> arată lista de id-uri de entități",
-      add: "Adăugate(n. entități)",
-      delete: "Eliminate(id)",
-      update: "Modificate(id)"
+      add: "Adăugate",
+      delete: "Eliminate",
+      update: "Modificate"
     },
     loading_table_data: "Încărcăm tabelul de date ...",
     copy_and_paste_from_other_layer_mandatory_fields: "Înainte de a salva, este necesar să completați toate câmpurile obligatorii ale entități introduse",
