@@ -2168,22 +2168,27 @@ export class OpenTableStep extends EditingTask {
 
     const features = (inputs.layer.readEditingFeatures() || []);
     const headers  = (inputs.layer.getEditingFields() || []).filter(h => features.length ? Object.keys(features[0].getProperties()).includes(h.name) : true);
-
+    this._isContentChild = WorkflowsStack.getLength() > 1;
+    const excludeFields = this._isContentChild ? (context.excludeFields || []) : [];
     const service = Object.assign(new G3WObject, { state: {
       inputs,
       context,
       promise: d,
       headers, // column names
       features,
-      ofeatures: features.length
+      ofeatures: features.length > 0
         // ordered properties
-        ? features.map(f => headers.map(h => h.name).reduce((props, header) => Object.assign(props, {
-          [header]: getFeatureTableFieldValue({ layerId: inputs.layer.getId(), feature: f, property: header }),
-          '__gis3w_feature_uid': f.getUid(), // private attribute unique value
-        }), {}))
-        /** @FIXME broken code ? `0 === features.length` */
+        ? (
+          excludeFields.length > 0
+            ? features.filter(feat => !excludeFields.reduce((a, f, i) => a && context.fatherValue[i] === `${feat.get(f)}` , true))
+            : features
+        )
+          .map(f => headers.map(h => h.name).reduce((props, header) => Object.assign(props, {
+            [header]: getFeatureTableFieldValue({ layerId: inputs.layer.getId(), feature: f, property: header }),
+            '__gis3w_feature_uid': f.getUid(), // private attribute unique value
+          }), {}))
         // features already bind to parent feature
-        : features.filter(feat => !((this._isContentChild && context.excludeFields) || []).reduce((a, f, i) => a && context.fatherValue[i] === `${feat.get(f)}`, true)),
+        : features,
       title:        `${inputs.layer.getName()}` || 'Link relation',
       isrelation:   this._isContentChild,
       capabilities: inputs.layer.getEditingCapabilities(),
