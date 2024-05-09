@@ -53,40 +53,41 @@
             <div id="table-editing-tools">
 
               <!-- EDIT FEATURE -->
-              <i
-                v-if             = "showTool('change_attr_feature')"
-                :class           = "g3wtemplate.font['pencil']"
-                class            = "g3w-icon skin-tooltip-right"
-                data-placement   = "right"
-                style            = "color:#30cce7;"
-                v-t-title:plugin = "'editing.table.edit'"
-                aria-hidden      = "true"
-                @click.stop      = "editFeature(feature.__gis3w_feature_uid)"
-              ></i>
+              <span v-t-tooltip:right.create ="'plugins.editing.table.edit'">
+               <i
+                 v-if             = "showTool('change_attr_feature')"
+                 :class           = "g3wtemplate.font['pencil']"
+                 class            = "g3w-icon"
+                 style            = "color:#30cce7;"
+                 aria-hidden      = "true"
+                 @click.stop      = "editFeature(feature.__gis3w_feature_uid)"
+               ></i>
+              </span>
+
 
               <!-- COPY FEATURE -->
-              <i
-                v-if             = "showTool('add_feature')"
-                :class           = "g3wtemplate.font['copy-paste']"
-                class            = "g3w-icon skin-tooltip-right"
-                data-placement   = "right"
-                style            = "color:#d98b14; padding: 5px 7px 5px 7px;"
-                v-t-title:plugin = "'editing.table.copy'"
-                aria-hidden      = "true"
-                @click.stop      = "copyFeature(feature.__gis3w_feature_uid)"
-              ></i>
+              <span v-t-tooltip:right.create ="'plugins.editing.table.copy'">
+                <i
+                  v-if             = "showTool('add_feature')"
+                  :class           = "g3wtemplate.font['copy-paste']"
+                  class            = "g3w-icon"
+                  style            = "color:#d98b14; padding: 5px 7px 5px 7px;"
+                  aria-hidden      = "true"
+                  @click.stop      = "copyFeature(feature.__gis3w_feature_uid)"
+                ></i>
+              </span>
 
               <!-- DELETE FEATURE -->
-              <i
-                v-if             = "showTool('delete_feature')"
-                :class           = "g3wtemplate.font['trash-o']"
-                class            = "g3w-icon skin-tooltip-right"
-                data-placement   = "right"
-                style            = "color:red;"
-                v-t-title:plugin = "'editing.table.delete'"
-                aria-hidden      = "true"
-                @click.stop      = "deleteFeature(feature.__gis3w_feature_uid)"
-              ></i>
+              <span v-t-tooltip:right.create ="'plugins.editing.table.delete'">
+                <i
+                  v-if             = "showTool('delete_feature')"
+                  :class           = "g3wtemplate.font['trash-o']"
+                  class            = "g3w-icon"
+                  style            = "color:red;"
+                  aria-hidden      = "true"
+                  @click.stop      = "deleteFeature(feature.__gis3w_feature_uid)"
+                ></i>
+              </span>
 
             </div>
           </td>
@@ -458,8 +459,6 @@
       }
 
       this.setDataTable();
-
-      $('#table-editing-tools i').tooltip();
 
       this.resize();
 
