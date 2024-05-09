@@ -7,10 +7,14 @@ import { createEditingDataOptions }      from '../utils/createEditingDataOptions
 const { ApplicationState } = g3wsdk.core;
 
 /**
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+ * 
  * @param { string } layerId
  * @param opts
  *
  * @returns { Promise<Awaited<unknown>[]> }
+ * 
+ * @since g3w-client-plugin-editing@v3.8.0
  */
 export async function getLayersDependencyFeatures(layerId, opts = {}) {
   const service   = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing'); //get editing service

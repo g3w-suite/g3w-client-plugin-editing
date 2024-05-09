@@ -8,6 +8,8 @@ const { GUI }                         = g3wsdk.gui;
 const t                               = g3wsdk.core.i18n.tPlugin;
 
 /**
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+ * 
  * @param { Object } opts
  * @param opts.layer
  * @param opts.commitItems
@@ -15,6 +17,8 @@ const t                               = g3wsdk.core.i18n.tPlugin;
  * @param opts.commitPromise
  *
  * @returns { Promise<unknown> }
+ * 
+ * @since g3w-client-plugin-editing@v3.8.0
  */
 export function showCommitModalWindow({
   layer,

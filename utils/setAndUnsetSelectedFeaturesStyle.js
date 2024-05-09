@@ -5,7 +5,7 @@ import { setFeaturesSelectedStyle } from '../utils/setFeaturesSelectedStyle';
 const { Layer } = g3wsdk.core.layer;
 
 /**
- * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@3.7.1
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
  * 
  * Method that set selected style to current editing features and
  * reset original style when workflow (tool) is done.

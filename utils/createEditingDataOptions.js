@@ -1,6 +1,8 @@
 const { GUI } = g3wsdk.gui;
 
 /**
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+ * 
  * @param { 'all' | 'bbox' | 'field' | 'fid' | '1:1' } filterType
  * @param { Object } options
  * @param options.feature
@@ -8,6 +10,8 @@ const { GUI } = g3wsdk.gui;
  * @param options.field
  * @param options.layerId
  * @param options.operator
+ * 
+ * @since g3w-client-plugin-editing@v3.8.0
  */
 export function createEditingDataOptions(filterType = 'all', options = {}) {
  let filter;

@@ -230,10 +230,16 @@
         return isMedia;
       },
 
+      /**
+       * ORIGINAL SOURCE: g3w-client-plugin-editing/services/tableservice.js@v3.7.8
+       */
       stop() {
         this.state.promise.reject();
       },
 
+      /**
+       * ORIGINAL SOURCE: g3w-client-plugin-editing/services/tableservice.js@v3.7.8
+       */
       save() {
         this.state.isrelation
           // link features (by indexes)
@@ -241,11 +247,16 @@
           : this.state.promise.resolve();
       },
 
+      /**
+       * ORIGINAL SOURCE: g3w-client-plugin-editing/services/tableservice.js@v3.7.8
+       */
       cancel() {
         this.state.promise.reject();
       },
 
       /**
+       * ORIGINAL SOURCE: g3w-client-plugin-editing/services/tableservice.js@v3.7.8
+       * 
        * @param uid feature uid
        * 
        * @returns {Promise<unknown>}
@@ -295,6 +306,8 @@
       },
 
      /**
+      * ORIGINAL SOURCE: g3w-client-plugin-editing/services/tableservice.js@v3.7.8
+      * 
       * Copy feature tool from another table feature
       * 
       * @param uid
@@ -356,6 +369,9 @@
         this.setDataTable();
       },
 
+      /**
+       * ORIGINAL SOURCE: g3w-client-plugin-editing/services/tableservice.js@v3.7.8
+       */
       editFeature(uid) {
         const index = this.state.features.findIndex(f => f.getUid() === uid);
     

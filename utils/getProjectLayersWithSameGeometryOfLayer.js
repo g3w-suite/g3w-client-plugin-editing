@@ -3,11 +3,15 @@ const { isSameBaseGeometryType }      = g3wsdk.core.geoutils;
 const { CatalogLayersStoresRegistry } = g3wsdk.core.catalog;
 
 /**
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+ * 
  * @param layer
  * @param { Object } options
  * @param { Array }  options.exclude
  *
  * @returns {*}
+ * 
+ * @since g3w-client-plugin-editing@v3.8.0
  */
 export function getProjectLayersWithSameGeometryOfLayer(layer, options = { exclude: [] }) {
   const { exclude = [] } = options;

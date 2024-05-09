@@ -70,7 +70,10 @@ const { Geometry }               = g3wsdk.core.geometry;
 const { isSameBaseGeometryType } = g3wsdk.core.geoutils;
 
 /**
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+ * 
  * @param { string } layerId
+ *
  */
 function _stopSessionChildren(layerId) {
   const service = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing');
@@ -91,6 +94,8 @@ function _stopSessionChildren(layerId) {
 }
 
 /**
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+ * 
  * Check if father relation is editing and has commit feature
  *
  * @param { string } layerId

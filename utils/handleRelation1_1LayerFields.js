@@ -5,7 +5,7 @@ import { getRelation1_1EditingLayerFieldsReferredToChildRelation } from './getRe
 const { CatalogLayersStoresRegistry } = g3wsdk.core.catalog;
 
 /**
- * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@3.7.1
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
  * 
  * Handle layer relation 1:1 features related to feature
  *

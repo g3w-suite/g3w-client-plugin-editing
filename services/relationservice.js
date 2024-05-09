@@ -56,7 +56,7 @@ module.exports = class RelationService {
     /**
      * Current relation feature (in editing)
      * 
-     * @since g3w-client-plugin*editing@3.8.0
+     * @since g3w-client-plugin*editing@v3.8.0
      */
     this.currentRelationFeatureId = null;
 
@@ -193,7 +193,7 @@ module.exports = class RelationService {
    * 
    * @param { Boolean } bool true enabled
    * 
-   * @since g3w-client-plugin-editing@3.8.0
+   * @since g3w-client-plugin-editing@v3.8.0
    */
   enableDOMElements(bool = true) {
 

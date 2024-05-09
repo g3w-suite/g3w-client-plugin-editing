@@ -1,4 +1,6 @@
 /**
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+ * 
  * Get Father layer fields related (in Relation) to Child Layer,
  *
  * ie. father fields having same `vectorjoin_id` attribute to `relation.id` value

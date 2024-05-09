@@ -64,7 +64,11 @@ new (class extends Plugin {
     });
 
     /**
+     * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+     * 
      * Global plugin state
+     * 
+     * @since g3w-client-plugin-editing@v3.8.0
      */
     this.state = {
       open:                false, // check if panel is open or not
@@ -160,6 +164,11 @@ new (class extends Plugin {
     this._init();
   }
 
+  /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
   async _init() {
     // skip when no editable layer
     if (!CatalogLayersStoresRegistry.getLayers({ EDITABLE: true }).length) {
@@ -518,34 +527,44 @@ new (class extends Plugin {
   }
 
  /**
-  * [API Method] Get session
+  * [API Method] ORIGINAL SOURCE: g3w-client-plugin-editing/api/index.js@v3.7.8
+  * 
+  * Get session
   *
   * @param layerId
   *
   * @returns {*}
+  * 
+  * @since g3w-client-plugin-editing@v3.8.0
   */
   getSession({ layerId } = {}) {
     return this.getToolBoxById(layerId).getSession();
   }
 
   /**
-   * [API Method]
+   * [API Method] ORIGINAL SOURCE: g3w-client-plugin-editing/api/index.js@v3.7.8
    *
    * @param layerId
    *
    * @returns Feature in editing
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
    */
   getFeature({ layerId } = {}) {
     return this.getToolBoxById(layerId).getActiveTool().getFeature();
   }
 
   /**
-   * [API Method] Subscribe handler function on event
+   * [API Method] ORIGINAL SOURCE: g3w-client-plugin-editing/api/index.js@v3.7.8
+   * 
+   * Subscribe handler function on event
    *
    * @param event
    * @param { Function } fnc
    *
    * @returns { Function } function
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
    */
   subscribe(event, fnc) {
     if (!this.state.subscribers[event]) this.state.subscribers[event] = [];
@@ -554,20 +573,28 @@ new (class extends Plugin {
   }
 
   /**
-   * [API Method] Unsubscribe handler function on event
+   * [API Method] ORIGINAL SOURCE: g3w-client-plugin-editing/api/index.js@v3.7.8
+   * 
+   * Unsubscribe handler function on event
    *
    * @param event
    * @param fnc
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
    */
   unsubscribe(event, fnc) {
     this.state.subscribers[event] = this.state.subscribers[event].filter(subscribe => subscribe !== fnc);
   }
 
   /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+   * 
    * @param event
    * @param options
    *
    * @returns { Promise<unknown> }
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
    */
   async fireEvent(event, options={}) {
     if (this.state.subscribers[event]) {
@@ -581,7 +608,11 @@ new (class extends Plugin {
   }
 
   /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+   * 
    * Undo method
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
    */
   undo() {
     const session = this.state.toolboxselected.getSession();
@@ -606,7 +637,9 @@ new (class extends Plugin {
   }
 
   /**
-   * @FIXME add description
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
    */
   redo() {
     const session = this.state.toolboxselected.getSession();
@@ -629,16 +662,24 @@ new (class extends Plugin {
   }
 
   /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+   * 
    * @param id
    *
    * @returns {*}
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
    */
   getEditingLayer(id) {
     return this.state.editableLayers[id].getEditingLayer();
   }
 
   /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+   * 
    * @param toolbox
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
    */
   addToolBox(toolbox) {
     this.state._toolboxes.push(toolbox);
@@ -648,11 +689,15 @@ new (class extends Plugin {
   }
 
   /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+   * 
    * @param { Object } handler
    * @param handler.type
    * @param handler.id
    *
    * @returns { Promise<void> }
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
    */
   async runEventHandler({
     type,
@@ -664,7 +709,11 @@ new (class extends Plugin {
   }
 
   /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+   * 
    * Reset default values
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
    */
   resetDefault() {
     this.state.saveConfig = {
@@ -699,31 +748,45 @@ new (class extends Plugin {
   }
 
   /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+   * 
    * @returns { Array }
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
    */
   getLayers() {
     return Object.values(this.state.editableLayers);
   }
 
   /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+   * 
    * @param { string } layerId
    *
    * @returns {*}
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
    */
   getLayerById(layerId) {
     return this.state.editableLayers[layerId];
   }
 
   /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+   * 
    * @param { string } toolboxId
    *
    * @returns {*}
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
    */
   getToolBoxById(toolboxId) {
     return this.state._toolboxes.find(tb => tb.getId() === toolboxId);
   }
 
   /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+   * 
    * Get layer session by id (layer id is the same of session)
    *
    * @param id
@@ -737,10 +800,14 @@ new (class extends Plugin {
   }
 
   /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+   * 
    * Method to apply filter editing contsraint to toolbox editing
    * Apply filter editing contsraint to toolbox editing
    *
    * @param constraints
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
    */
   setApplicationEditingConstraints(constraints={showToolboxesExcluded: true, toolboxes:{}}) {
     this.state.constraints = {
@@ -759,23 +826,35 @@ new (class extends Plugin {
   }
 
   /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+   * 
    * @returns { Array }
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
    */
   getToolBoxes() {
     return this.state._toolboxes;
   }
 
   /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+   * 
    * @returns {*|{}}
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
    */
   getEditableLayers() {
     return this.state.editableLayers;
   }
 
   /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+   * 
    * Stop editing
    *
    * @returns { Promise<unknown> }
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
    */
   async stop() {
     const commitpromises = [];
@@ -800,7 +879,11 @@ new (class extends Plugin {
   }
 
  /**
+  * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+  * 
   * Function called very single change saved temporary
+  * 
+  * @since g3w-client-plugin-editing@v3.8.0
   */
   async saveChange() {
     if ('autosave' === this.state.saveConfig.mode) {
@@ -809,6 +892,8 @@ new (class extends Plugin {
   }
 
   /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+   * 
    * Commit and save changes on server persistently
    *
    * @param { Object } commit
@@ -820,6 +905,8 @@ new (class extends Plugin {
    * @param { boolean } commit.close
    *
    * @returns {*}
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
    */
   commit({
     toolbox,
@@ -1008,10 +1095,14 @@ new (class extends Plugin {
   }
 
  /**
+  * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+  * 
   * @param { Object } opts
   * @param { string } opts.layerId
   * @param { Array }  opts.sessionItems
   * @param opts.action
+  * 
+  * @since g3w-client-plugin-editing@v3.8.0
   */
   undoRedoLayerUniqueFieldValues({
     layerId,
@@ -1053,9 +1144,13 @@ new (class extends Plugin {
   }
 
   /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+   * 
    * @param { Object } opts
    * @param opts.relationSessionItems
    * @param opts.action
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
    */
   undoRedoRelationUniqueFieldValues({
     relationSessionItems,
@@ -1235,16 +1330,25 @@ new (class extends Plugin {
   }
 
   /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+   * 
    * @param { Object } save
    * @param save.mode     - default or autosave
    * @param save.cb       - object contain done/error two functions
    * @param save.modal    - Boolean true or false to show to ask
    * @param save.messages - object success or error
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
    */
   setSaveConfig({ mode = 'default', cb = {}, modal = false, messages } = {}) {
     Object.assign(this.state.saveConfig, { mode, modal, messages, cb: { ...this.state.saveConfig.cb, ...cb }});
   }
 
+  /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8 
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
   addFormComponents({ layerId, components = [] } = {}) {
     this.state.formComponents[layerId] = (this.state.formComponents[layerId] || []).concat(components)
   }
@@ -1269,8 +1373,8 @@ new (class extends Plugin {
   /**
    * Show editing panel toolbars
    * 
-   * ORIGINAL SOURCE: g3w-client-plugin-editing/g3w-editing-components/editing.js.js@3.6
-   * ORIGINAL SOURCE: g3w-client-plugin-editing/g3w-editing-components/panel.js.js@3.6
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/g3w-editing-components/editing.js.js@v3.6
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/g3w-editing-components/panel.js.js@v3.6
    */
   showEditingPanel(opts={}) {
     if (this.getLayers().length > 0) {
@@ -1316,10 +1420,16 @@ new (class extends Plugin {
     GUI.getService('queryresults').un('editFeature', this.state.editFeatureKey);
   }
   
+  /**
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
   setCurrentLayout() {
     ApplicationService.setCurrentLayout(this.getName());
   }
 
+  /**
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
   resetCurrentLayout() {
     ApplicationService.setCurrentLayout(this.state.currentLayout);
   }

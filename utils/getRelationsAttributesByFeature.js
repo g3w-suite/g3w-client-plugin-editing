@@ -1,11 +1,16 @@
 import { getRelationFieldsFromRelation } from './getRelationFieldsFromRelation';
+
 /**
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+ * 
  * @param { Object } opts
  * @param opts.layerId
  * @param opts.relation
  * @param opts.feature
  *
  * @returns { BigUint64Array }
+ * 
+ * @since g3w-client-plugin-editing@v3.8.0
  */
 export function getRelationsAttributesByFeature({
   layerId,

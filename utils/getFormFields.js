@@ -1,7 +1,7 @@
 import WorkflowsStack from '../g3wsdk/workflow/stack'
 
 /**
- * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@3.7.1
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
  * 
  * Get form fields
  *
@@ -10,6 +10,8 @@ import WorkflowsStack from '../g3wsdk/workflow/stack'
  * @param form.context.excludeFields
  * @param form.context.get_default_value
  * @param form.isChild                   - whether is child form (ie. belongs to relation)
+ * 
+ * @since g3w-client-plugin-editing@v3.8.0
  */
 export async function getFormFields({
   inputs,

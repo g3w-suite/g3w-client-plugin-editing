@@ -1,7 +1,7 @@
 import WorkflowsStack from '../g3wsdk/workflow/stack'
 
 /**
- * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@3.7.1
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
  * 
  * @returns { undefined | { feature: * , qgs_layer_id: * } }
  */

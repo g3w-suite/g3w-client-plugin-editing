@@ -2,8 +2,9 @@ import { getLayersDependencyFeatures } from '../utils/getLayersDependencyFeature
 
 const { CatalogLayersStoresRegistry } = g3wsdk.core.catalog;
 const { DataRouterService }           = g3wsdk.core.data;
+
 /**
- * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@3.7.1
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
  * 
  * @param { Object } opts
  * @param opts.relation
@@ -12,8 +13,6 @@ const { DataRouterService }           = g3wsdk.core.data;
  * @returns {Promise<{feature: *, locked: boolean}>}
  * 
  * @since g3w-client-plugin-editing@v3.7.0
- * 
- * @private
  */
 export async function getRelation1_1ChildFeature({
   relation,

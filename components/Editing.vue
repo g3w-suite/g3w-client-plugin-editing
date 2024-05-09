@@ -143,10 +143,13 @@
     },
 
     methods: {
+
       /**
-       * Method that handle editing state of toolbox layer
-       * @since 3.8.0
+       * Handle editing state of toolbox layer
+       * 
        * @param bool
+       * 
+       * @since g3w-client-plugin-editing@v3.8.0
        */
       updateLayersInEditing(bool) {
         this.layersInEditing += bool ? 1 : -1;
@@ -287,9 +290,13 @@
       },
 
       /**
+       * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+       * 
        * @param { string } layerId
        *
        * @returns { Promise<unknown> }
+       * 
+       * @since g3w-client-plugin-editing@v3.8.0
        */
       async commitDirtyToolBoxes(layerId) {
         const service = this.service;
@@ -337,7 +344,11 @@
       },
 
       /**
+       * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+       * 
        * Called by Editing Panel on creation time
+       * 
+       * @since g3w-client-plugin-editing@v3.8.0
        */
       registerOnLineOffLineEvent() {
         // Array of object setter(as key), key to unby (as value)
@@ -364,6 +375,8 @@
       },
 
       /**
+       * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+       * 
        * Check if alread have off lines changes
        *
        * @param { Object }  opts
@@ -371,6 +384,8 @@
        * @param { boolean } [opts.unlock=false]
        *
        * @returns { Promise<unknown> }
+       * 
+       * @since g3w-client-plugin-editing@v3.8.0
        */
       checkOfflineChanges({
         modal = true,
@@ -460,9 +475,11 @@
       canCommit(bool) {
         ApplicationService.registerLeavePage({ bool });
       },
+
       /**
-       * @since 3.8.0
        * @param { Number } n number of layer in editing
+       * 
+       * @since g3w-client-plugin-editing@v3.8.0
        */
       layersInEditing(n) {
         document.getElementsByClassName('close-pane-button')[0].classList[0 === n ? 'remove' : 'add']('g3w-disabled');
@@ -487,6 +504,8 @@
     },
 
     /**
+     * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+     * 
      * Called on close editingpanel panel
      */
     async beforeDestroy() {

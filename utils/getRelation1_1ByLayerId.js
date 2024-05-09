@@ -1,11 +1,13 @@
 const { CatalogLayersStoresRegistry } = g3wsdk.core.catalog;
 
 /**
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+ * 
  * Get Relation 1:1 from layerId
  *
  * @param layerId
  *
- * @returns Array of relations related to layerId that are Join 1:1 (Type ONE)
+ * @returns { Array } relations related to layerId that are Join 1:1 (Type ONE)
  *
  * @since g3w-client-plugin-editing@v3.7.0
  */

@@ -483,7 +483,7 @@ export default class Workflow extends G3WObject {
 }
 
 /**
- * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editingworkflow.js@3.7.1
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editingworkflow.js@v3.7.1
  */
 export class EditingWorkflow extends Workflow {
   

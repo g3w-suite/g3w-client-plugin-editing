@@ -1,11 +1,13 @@
 /**
- * Based on layer id and relation, return the layer id
- * of the other layer that is in relation with layerId
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+ * 
  * @param { Object } opts
  * @param opts.layerId
  * @param opts.relation
  *
- * @returns {*|{configurable: boolean}|{configurable}|boolean|(function(): *)}
+ * @returns the layer id of the other layer that is in relation with layerId
+ * 
+ * @since g3w-client-plugin-editing@v3.8.0
  */
 export function getRelationId({
   layerId,
@@ -14,5 +16,5 @@ export function getRelationId({
   const fatherId = relation.getFather ? relation.getFather() : relation.father;
   const childId  = relation.getChild  ? relation.getChild()  : relation.child;
 
-  return fatherId === layerId ? childId: fatherId;
+  return fatherId === layerId ? childId : fatherId;
 }

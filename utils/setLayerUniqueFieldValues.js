@@ -1,9 +1,13 @@
 const { CatalogLayersStoresRegistry } = g3wsdk.core.catalog;
 
 /**
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+ * 
  * @param { string } layerId
  *
  * @returns { Promise<*> }
+ * 
+ * @since g3w-client-plugin-editing@v3.8.0
  */
 export async function setLayerUniqueFieldValues(layerId) {
   const service = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing'); //get editing service

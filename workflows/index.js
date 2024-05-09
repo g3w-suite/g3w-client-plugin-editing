@@ -502,7 +502,7 @@ export class CopyFeaturesFromOtherLayerStep extends EditingTask {
     const selectedFeatures = [];
 
     /**
-     * ORIGINAL SOURCE: g3w-client-plugin-editing/g3w-editing-components/selectcopyotherlayersfeatures.js.js@3.6
+     * ORIGINAL SOURCE: g3w-client-plugin-editing/g3w-editing-components/selectcopyotherlayersfeatures.js.js@v3.6
      */
     const layers = {};
     (features || []).forEach(f => {
@@ -666,7 +666,7 @@ export class CopyFeaturesFromOtherProjectLayerStep extends EditingTask {
     const selectedFeatures = [];
 
     /**
-     * ORIGINAL SOURCE: g3w-client-plugin-editing/g3w-editing-components/selectcopyotherprojectlayerfeatures.js.js@3.6
+     * ORIGINAL SOURCE: g3w-client-plugin-editing/g3w-editing-components/selectcopyotherprojectlayerfeatures.js.js@v3.6
      */
     const Component        = Vue.extend(CopyFeatureFromOtherProjectLayersComponent);
     const vueInstance      = new Component({
@@ -1792,6 +1792,8 @@ export class OpenFormStep extends EditingTask {
 
     const formService = GUI.showForm({
       feature:         this._originalFeatures[0],
+      /** ORIGINAL SOURCE: g3w-client-plugin-editing/form/editingform.js@v3.7.8 */
+      /** ORIGINAL SOURCE: g3w-client-plugin-editing/form/editingformservice.js@v3.7.8 */
       formComponent:   class extends FormComponent {
         constructor(options = {}) {
           super(options);
@@ -2149,6 +2151,9 @@ export class OpenTableStep extends EditingTask {
   }
 
   /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/opentabletask.js@v3.7.1
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/services/tableservice.js@v3.7.8
+   * 
    * @param inputs
    * @param context
    * 
@@ -2164,7 +2169,6 @@ export class OpenTableStep extends EditingTask {
     const features = (inputs.layer.readEditingFeatures() || []);
     const headers  = (inputs.layer.getEditingFields() || []).filter(h => features.length ? Object.keys(features[0].getProperties()).includes(h.name) : true);
 
-    /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/opentabletask.js@v3.7.1 */
     const service = Object.assign(new G3WObject, { state: {
       inputs,
       context,

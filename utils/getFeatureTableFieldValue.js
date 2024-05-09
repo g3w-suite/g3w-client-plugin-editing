@@ -1,4 +1,6 @@
 /**
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+ * 
  * Finalize "formatter" value for any kind of field
  *
  * @param { string }   opts.layerId

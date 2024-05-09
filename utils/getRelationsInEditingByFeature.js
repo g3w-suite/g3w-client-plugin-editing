@@ -1,6 +1,8 @@
 import { getRelationsAttributesByFeature } from '../utils/getRelationsAttributesByFeature';
 
 /**
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+ * 
  * Get Relation in editing
  *
  * @param { Object } opts
@@ -9,6 +11,8 @@ import { getRelationsAttributesByFeature } from '../utils/getRelationsAttributes
  * @param opts.feature
  *
  * @returns { Array }
+ * 
+ * @since g3w-client-plugin-editing@v3.8.0
  */
 export function getRelationsInEditingByFeature({
   layerId,

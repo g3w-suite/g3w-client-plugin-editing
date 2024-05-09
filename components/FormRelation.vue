@@ -311,7 +311,7 @@
       },
 
       /**
-       * @since g3w-client-plugin-editing@3.8.0
+       * @since g3w-client-plugin-editing@v3.8.0
        */
       async closeVectorTools() {
         this.show_vector_tools = false;
@@ -419,7 +419,7 @@
       /**
        * @returns {Promise<void>}
        * 
-       * @since g3w-client-plugin-editing@3.7.0
+       * @since g3w-client-plugin-editing@v3.7.0
        */
       async updateTable() {
         this.destroyTable();     // destroy old table
@@ -434,7 +434,7 @@
        * after click on save all disks, and when save all disks are click on a list of relation
        * table.
        * 
-       * @since g3w-client-plugin-editing@3.7.4
+       * @since g3w-client-plugin-editing@v3.7.4
        */
       updateNewRelationId() {
         this._new_relations_ids.forEach(({ clientid, id }) => {
@@ -457,7 +457,7 @@
       /**
        * Listen to commit on server when press disk icon saves all form
        * 
-       * @since g3w-client-plugin-editing@3.7.4
+       * @since g3w-client-plugin-editing@v3.7.4
        */
       listenNewCommitRelations({ new_relations = {} }) {
         const relationLayer = getEditingLayerById(this.relation.child);
@@ -594,7 +594,7 @@
        * {clientid, id} where client id is a temporary id of relation
        * feature, id is saved id on server.
        *
-       * @since g3w-client-plugin-editing@3.7.2
+       * @since g3w-client-plugin-editing@v3.7.2
        */
       this._new_relations_ids       =  [];
 

@@ -119,7 +119,7 @@ proto.setUserMessageStepDone = function(type) {
 export default Task;
 
 /**
- * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@3.7.1
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
  * 
  * Base editing task
  *

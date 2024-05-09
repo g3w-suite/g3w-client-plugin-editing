@@ -279,7 +279,7 @@ module.exports = class Tool extends G3WObject {
   /**
    * @param op (workflow instance)
    *
-   * @since g3w-client-plugin-editing@3.8.0
+   * @since g3w-client-plugin-editing@v3.8.0
    */
   setOperator(op) {
     this._op = op;

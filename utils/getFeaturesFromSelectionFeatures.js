@@ -1,7 +1,7 @@
 import { convertFeaturesGeometryToGeometryTypeOfLayer } from './convertFeaturesGeometryToGeometryTypeOfLayer';
 
 /**
- * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@3.7.1
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
  * 
  * @param layerId
  * @param geometryType
