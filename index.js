@@ -1376,7 +1376,6 @@ new (class extends Plugin {
    */
   showEditingPanel(opts={}) {
     if (this.getLayers().length > 0) {
-      console.log(opts);
       this.state.panel = new Panel({
         ...opts,
         id: "editing-panel",
