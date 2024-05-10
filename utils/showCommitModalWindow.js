@@ -18,10 +18,11 @@ const { t, tPlugin }                  = g3wsdk.core.i18n;
  * @returns { string } 
  */
 function _list_changes(commits) {
+  console.log(commits);
   return Object
     .keys(commits)
     .filter(c => 'relations' !== c)
-    .map(c => `<h4>${tPlugin('editing.messages.commit.' + c)} (${ commits[c].length })</h4>`+ `<ul style="padding-left: 1.5em;">${ commits[c].map(item => `<li>#${item.id} ${item.geometry ? item.geometry.type : ''}</li>`).join('')}</ul><hr>`).join('');
+    .map(c => `<h4>${tPlugin('editing.messages.commit.' + c)} (${ commits[c].length })</h4>`+ `<ul style="padding-left: 1.5em;">${ commits[c].map(item => `<li>#${item.id || item} ${item.geometry ? item.geometry.type : ''}</li>`).join('')}</ul><hr>`).join('');
 }
 
 async function _rollback(relations = {}) {
@@ -78,6 +79,8 @@ export async function showCommitModalWindow({
   close,
   commitPromise,
 }) {
+
+  console.log(layer);
 
   /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/commitfeaturesworkflow.js@v3.7.1 */
   const workflow = new EditingWorkflow({
