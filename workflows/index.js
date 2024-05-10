@@ -846,7 +846,7 @@ export class DeleteFeatureStep extends EditingTask {
     promise.then(() => {
 
       //get data features
-      const relationsInEditing = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').getRelationsInEditing({
+      const relationsInEditing = getRelationsInEditing({
         layerId,
         relations,
         feature,
