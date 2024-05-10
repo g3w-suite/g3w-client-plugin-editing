@@ -758,7 +758,7 @@ export class DeleteFeatureStep extends EditingTask {
     promise.then(() => {
 
       //get data features
-      const relationsInEditing = getRelationsInEditing({
+      const relationsInEditing = getRelationsInEditingByFeature({
         layerId,
         relations,
         feature,
