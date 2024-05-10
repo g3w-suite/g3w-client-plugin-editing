@@ -18,8 +18,8 @@ const { t, tPlugin }                  = g3wsdk.core.i18n;
  * @returns { string } 
  */
 function _list_changes(commits, layer) {
-  console.log(commits, layer);
-  const features = layer.readFeatures();
+  const features  = layer.readFeatures();
+  const efeatures = layer.readEditingFeatures();
   return Object
     .keys(commits)
     .filter(c => 'relations' !== c)
@@ -27,11 +27,21 @@ function _list_changes(commits, layer) {
       `<h4>${tPlugin('editing.messages.commit.' + c)} (${ commits[c].length })</h4>`
       + `<ul style="list-style: none; padding-left: 0;">`
       + `${ commits[c].map(item => {
-        const id   = item.id || item;
-        const type = item.geometry ? item.geometry.type : '';
-        let attrs  = features.find(f => id === f.getId()) || {};
-        attrs = Object.entries(attrs.getProperties ? attrs.getProperties() : {}).sort((a,b) => a[0]>b[0]).map(([k,v]) => `<b>${k}</b>: ${v}<br>`).join('')
-        return `<li style="margin-bottom: 8px;"><details><summary style="display: list-item;font-weight: bold;padding: 0.5em;cursor: pointer;background-color: rgb(255, 255, 0, 0.25);font-size: medium;user-select: none;">#${id} ${type}</summary>${attrs}</details></li>`
+        const id     = item.id || item;
+        const type   = item.geometry ? item.geometry.type : '';
+        const feat   = features.find(f => id === f.getId()) || {};
+        const efeat  = efeatures.find(f => id === f.getId()) || {};
+        console.log(feat, efeat);
+        const attrs = Object.entries(feat.getProperties ? feat.getProperties() : {}).sort((a,b) => a[0] > b[0]);
+        return `<li style="margin-bottom: 8px;"><details><summary style="display: list-item;font-weight: bold;padding: 0.5em;cursor: pointer;background-color: rgb(255, 255, 0, 0.25);font-size: medium;user-select: none;">${type} #${id}</summary>${
+          attrs.map(([k,v]) => {
+            console.log(k);
+            const edited = efeat && v !== efeat.get(k);
+            const ins = edited ? ` ← <ins style="background-color: lime; text-decoration-line: none;">${ efeat.get(k) }</ins>` : '';
+            const del = edited ? `<del style="background-color: tomato;">${v}</del>` : '';
+            return `<b style="padding-left: 1ch;">${k}</b>: ${ (del + ins) || v} <br>`;
+          }).join('')
+        }</details></li>`
       }).join('')}`
       + `</ul><hr>`).join('');
 }
