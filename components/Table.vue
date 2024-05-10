@@ -278,7 +278,7 @@
             new Promise((resolve, reject) =>{
               GUI.dialog.confirm(
                 `<h4>${tPlugin('editing.messages.delete_feature')}</h4>
-                <div style="font-size:1.2em;">${ relationinediting ?tPlugin('editing.messages.delete_feature_relations') : ''}</div>`,
+                <div style="font-size:1.2em;">${ relationinediting ? tPlugin('editing.messages.delete_feature_relations') : ''}</div>`,
                 (result) => {
                   if (result) {
                     const index   = this.state.features.findIndex(f => f.getUid() === uid);
