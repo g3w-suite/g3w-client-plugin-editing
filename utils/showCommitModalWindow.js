@@ -32,7 +32,7 @@ function _list_changes(commits, layer) {
         const id     = item.id || item;
         const type   = item.geometry ? item.geometry.type : '';
         const feat   = features.find(f => id === f.getId()) || {};
-        const efeat  = features.find(f => id === f.getId()) || {};
+        const efeat  = efeatures.find(f => id === f.getId()) || {};
         const attrs = Object.entries(feat.getProperties ? feat.getProperties() : {}).sort((a,b) => a[0] > b[0]);
         return `<li style="margin-bottom: 8px;"><details><summary style="display: list-item;font-weight: bold;padding: 0.5em;cursor: pointer;background-color: rgb(255, 255, 0, 0.25);font-size: medium;user-select: none;">${type} #${id}</summary>${
           attrs.map(([k,v]) => {
