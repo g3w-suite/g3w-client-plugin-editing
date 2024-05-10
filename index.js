@@ -727,7 +727,7 @@ new (class extends Plugin {
   }
 
   /**
-   * ORIGINAL SOURCE: g3w-client-plugin-editing/api/index.js@v3.7.1
+   * [API Method] ORIGINAL SOURCE: g3w-client-plugin-editing/api/index.js@v3.7.1
    *
    * Reset default toolbox state modified by other plugin
    *
@@ -1170,7 +1170,7 @@ new (class extends Plugin {
   }
 
   /**
-   * ORIGINAL SOURCE: g3w-client-plugin-editing/api/index.js@v3.7.1
+   * [API Method] ORIGINAL SOURCE: g3w-client-plugin-editing/api/index.js@v3.7.1
    *
    * Stop editing on layerId
    *
@@ -1188,7 +1188,7 @@ new (class extends Plugin {
   }
 
   /**
-   * ORIGINAL SOURCE: g3w-client-plugin-editing/api/index.js@v3.7.1
+   * [API Method] ORIGINAL SOURCE: g3w-client-plugin-editing/api/index.js@v3.7.1
    *
    * Start editing API
    *
@@ -1235,7 +1235,7 @@ new (class extends Plugin {
   }
 
   /**
-   * ORIGINAL SOURCE: g3w-client-plugin-editing/api/index.js@v3.7.1
+   * [API Method] ORIGINAL SOURCE: g3w-client-plugin-editing/api/index.js@v3.7.1
    *
    * Add Feature
    *
@@ -1352,7 +1352,7 @@ new (class extends Plugin {
   }
 
   /**
-   * ORIGINAL SOURCE: g3w-client-plugin-editing/api/index.js@v3.7.1
+   * [API Method] ORIGINAL SOURCE: g3w-client-plugin-editing/api/index.js@v3.7.1
    *
    * Show editing panel
    *

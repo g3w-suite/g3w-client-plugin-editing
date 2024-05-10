@@ -537,7 +537,6 @@ module.exports = class RelationService {
    * add relation method
    */
   addRelation() {
-
     this.runAddRelationWorkflow({
       workflow: new this._add_link_workflow.add(),
       isVector: Layer.LayerTypes.VECTOR === this._layerType,
