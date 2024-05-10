@@ -758,7 +758,7 @@ export class DeleteFeatureStep extends EditingTask {
     promise.then(() => {
 
       //get data features
-      const relationsInEditing = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').getRelationsInEditing({
+      const relationsInEditing = getRelationsInEditing({
         layerId,
         relations,
         feature,
@@ -2088,7 +2088,7 @@ export class OpenTableStep extends EditingTask {
       promise: d,
       headers, // column names
       features,
-      ofeatures: features.length > 0
+      rows: features.length > 0
         // ordered properties
         ? (
           excludeFields.length > 0
