@@ -11,3 +11,17 @@ export function promisify(promise) {
     promise.then(resolve).fail(reject);
   });
 }
+
+/**
+ * Migrate your consumer code away from jQuery promises.
+ * 
+ * @param promise ES6 promise
+ */
+export function $promisify(promise) {
+  if (promise.always) {
+    return promise;
+  }
+  return $.Deferred(function(deferred) {
+    promise.then(deferred.resolve, deferred.reject);
+  }).promise();
+}
