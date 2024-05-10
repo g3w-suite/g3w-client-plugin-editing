@@ -44,7 +44,7 @@
 
       <tbody>
         <tr
-          v-for = "(feature, index) in state.ofeatures"
+          v-for = "(feature, index) in state.rows"
           :key  = "feature.__gis3w_feature_uid"
           :id   = "feature.__gis3w_feature_uid"
         >
@@ -287,7 +287,7 @@
                     const layerId = this.state.inputs.layer.getId();
                     this.state.inputs.layer.getEditingSource().removeFeature(feature);
                     session.pushDelete(layerId, feature);
-                    this.state.ofeatures.splice(index, 1);
+                    this.state.rows.splice(index, 1);
                     resolve()
                   } else {
                     reject()
@@ -338,7 +338,7 @@
               .then(outputs => {
                 const feature = outputs.features[outputs.features.length -1];
                 const newFeature = {};
-                Object.entries(this.state.ofeatures[0]).forEach(([key, value]) => {
+                Object.entries(this.state.rows[0]).forEach(([key, value]) => {
                   newFeature[key] = getFeatureTableFieldValue({
                     layerId: this.state.layerId,
                     feature,
@@ -346,7 +346,7 @@
                   });
                 });
                 newFeature.__gis3w_feature_uid = feature.getUid();
-                this.state.ofeatures.push(newFeature);
+                this.state.rows.push(newFeature);
                 resolve(newFeature)
               })
               .fail(reject)
@@ -393,9 +393,9 @@
           .then(outputs => {
             const feature = outputs.features[outputs.features.length -1];
             Object
-              .entries(this.state.ofeatures[index])
+              .entries(this.state.rows[index])
               .forEach(([key, _]) => {
-                this.state.ofeatures[index][key] = getFeatureTableFieldValue({
+                this.state.rows[index][key] = getFeatureTableFieldValue({
                   layerId: this.state.layerId,
                   feature,
                   property: key

@@ -2176,7 +2176,7 @@ export class OpenTableStep extends EditingTask {
       promise: d,
       headers, // column names
       features,
-      ofeatures: features.length > 0
+      rows: features.length > 0
         // ordered properties
         ? (
           excludeFields.length > 0
