@@ -1,12 +1,13 @@
-import { EditingWorkflow }            from '../g3wsdk/workflow/workflow';
-import { ConfirmStep }                from '../workflows';
-import { getProjectLayerFeatureById } from '../utils/getProjectLayerFeatureById';
-import { getEditingLayerById }        from '../utils/getEditingLayerById';
-import { promisify }                  from '../utils/promisify';
+import { EditingWorkflow }                  from '../g3wsdk/workflow/workflow';
+import { ConfirmStep }                      from '../workflows';
+import { getProjectLayerFeatureById }       from '../utils/getProjectLayerFeatureById';
+import { getEditingLayerById }              from '../utils/getEditingLayerById';
+import { promisify }                        from '../utils/promisify';
+import { setAndUnsetSelectedFeaturesStyle } from '../utils/setAndUnsetSelectedFeaturesStyle';
 
 const { Feature }                     = g3wsdk.core.layer.features;
 const { GUI }                         = g3wsdk.gui;
-const t                               = g3wsdk.core.i18n.tPlugin;
+const { t, tPlugin }                  = g3wsdk.core.i18n;
 
 /**
  * @param { Object } commits
@@ -20,7 +21,7 @@ function _list_changes(commits) {
   return Object
     .keys(commits)
     .filter(c => 'relations' !== c)
-    .map(c => `<h4>${t('editing.messages.commit.' + c)} (${ commits[c].length })</h4>`+ `<ul style="padding-left: 1.5em;">${ commits[c].map(item => `<li>#${item.id} ${item.geometry ? item.geometry.type : ''}</li>`).join('')}</ul><hr>`).join('');
+    .map(c => `<h4>${tPlugin('editing.messages.commit.' + c)} (${ commits[c].length })</h4>`+ `<ul style="padding-left: 1.5em;">${ commits[c].map(item => `<li>#${item.id} ${item.geometry ? item.geometry.type : ''}</li>`).join('')}</ul><hr>`).join('');
 }
 
 async function _rollback(relations = {}) {
@@ -81,7 +82,29 @@ export async function showCommitModalWindow({
   /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/commitfeaturesworkflow.js@v3.7.1 */
   const workflow = new EditingWorkflow({
     type: 'commitfeatures',
-    steps: [ new ConfirmStep({ type: 'commit' }) ]
+    steps: [
+      new ConfirmStep({
+        dialog(inputs) {
+          let d = $.Deferred();
+          const dialog = GUI.dialog.dialog({
+            message: inputs.message,
+            title: `${tPlugin("editing.messages.commit_feature")}: "${inputs.layer.getName()}"`,
+            buttons: {
+              SAVE:   { className: "btn-success", callback() { d.resolve(inputs); },    label: t("save"),   },
+              CANCEL: { className: "btn-danger",  callback() { d.reject(); },           label: t(inputs.close ? "exitnosave" : "annul") },
+              ...(inputs.close ? { CLOSEMODAL :
+                      { className: "btn-primary", callback() { dialog.modal('hide'); }, label:  t("annul") }
+              } : {}),
+            }
+          });
+          const promise = d.promise();
+          if (inputs.features) {
+            setAndUnsetSelectedFeaturesStyle({ promise, inputs, style: this.selectStyle });
+          }
+          return promise;
+        }
+      })
+    ]
   })
 
   try {

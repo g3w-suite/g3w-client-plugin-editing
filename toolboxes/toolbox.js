@@ -1,8 +1,9 @@
-import { createEditingDataOptions }  from '../utils/createEditingDataOptions';
-import { setLayerUniqueFieldValues } from '../utils/setLayerUniqueFieldValues';
-import { getRelationsInEditing }     from '../utils/getRelationsInEditing';
-import { getRelationId }             from '../utils/getRelationId';
-import { EditingWorkflow }           from '../g3wsdk/workflow/workflow';
+import { createEditingDataOptions }         from '../utils/createEditingDataOptions';
+import { setLayerUniqueFieldValues }        from '../utils/setLayerUniqueFieldValues';
+import { getRelationsInEditing }            from '../utils/getRelationsInEditing';
+import { getRelationId }                    from '../utils/getRelationId';
+import { setAndUnsetSelectedFeaturesStyle } from '../utils/setAndUnsetSelectedFeaturesStyle';
+import { EditingWorkflow }                  from '../g3wsdk/workflow/workflow';
 
 import {
   OpenFormStep,
@@ -62,12 +63,15 @@ const {
   toRawType
 }                                = g3wsdk.core.utils;
 const { GUI }                    = g3wsdk.gui;
-const { tPlugin:t }              = g3wsdk.core.i18n;
+const { tPlugin }                = g3wsdk.core.i18n;
 const { Layer }                  = g3wsdk.core.layer;
 const { Session }                = g3wsdk.core.editing;
 const { getScaleFromResolution } = g3wsdk.ol.utils;
 const { Geometry }               = g3wsdk.core.geometry;
 const { isSameBaseGeometryType } = g3wsdk.core.geoutils;
+
+
+
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
@@ -720,7 +724,7 @@ proto.canEdit = function() {
 proto._canEdit = function() {
   if (this._constraints.scale) {
     const scale = this._constraints.scale;
-    const message = `${t('editing.messages.constraints.enable_editing')}${scale}`.toUpperCase();
+    const message = `${tPlugin('editing.messages.constraints.enable_editing')}${scale}`.toUpperCase();
     this.state.editing.canEdit = getScaleFromResolution(GUI.getService('map').getMap().getView().getResolution()) <= scale;
     GUI.setModal(!this.state.editing.canEdit, message);
     const fnc = (event) => {
@@ -1318,7 +1322,46 @@ ToolBox.create = function(layer) {
               new PickFeatureStep(),
               new ChooseFeatureStep(),
               new DeleteFeatureStep(),
-              new ConfirmStep({ type: 'delete' }),
+              new ConfirmStep({
+                dialog(inputs) {
+                  let d                   = $.Deferred();
+                  const editingLayer      = inputs.layer.getEditingLayer();
+                  const feature           = inputs.features[0];
+                  const layerId           = inputs.layer.getId();
+                  GUI
+                    .dialog
+                    .confirm(
+                      `<h4>${tPlugin('editing.messages.delete_feature')}</h4>`
+                      + `<div style="font-size:1.2em;">`
+                      + (inputs.layer.getChildren().length && getRelationsInEditing({ layerId, relations: inputs.layer.getRelations().getArray() }).length
+                          ? tPlugin('editing.messages.delete_feature_relations')
+                          : ''
+                        )
+                      + `</div>`,
+                      result => {
+                        if (!result) {
+                          d.reject(inputs);
+                          return;
+                        }
+                        editingLayer.getSource().removeFeature(feature);
+                        // Remove unique values from unique fields of a layer (when deleting a feature)
+                        const fields = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[layerId];
+                        if (fields) {
+                          Object
+                            .keys(feature.getProperties())
+                            .filter(field => undefined !== fields[field])
+                            .forEach(field => fields[field].delete(feature.get(field)));
+                        }
+                        d.resolve(inputs);
+                      }
+                    );
+                  const promise = d.promise();
+                  if (inputs.features) {
+                    setAndUnsetSelectedFeaturesStyle({ promise, inputs, style: this.selectStyle });
+                  }
+                  return promise;
+                }
+              }),
             ],
           });
         },

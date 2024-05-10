@@ -363,107 +363,19 @@ export class ChooseFeatureStep extends EditingTask {
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/confirmtask.js@v3.7.1
- */
-const Dialogs = {
-  delete: {
-    fnc(inputs) {
-      let d                   = $.Deferred();
-      const layer             = inputs.layer;
-      const editingLayer      = layer.getEditingLayer();
-      const feature           = inputs.features[0];
-      const layerId           = layer.getId();
-      const childRelations    = layer.getChildren();
-      const relationinediting = childRelations.length && getRelationsInEditing({
-        layerId,
-        relations: layer.getRelations().getArray()
-      }).length > 0;
-
-      GUI
-        .dialog
-        .confirm(`<h4>${tPlugin('editing.messages.delete_feature')}</h4>
-                  <div style="font-size:1.2em;">${ relationinediting ? tPlugin('editing.messages.delete_feature_relations') : ''}</div>`,
-          (result) => {
-            if (result) {
-              editingLayer.getSource().removeFeature(feature);
-              // Remove unique values from unique fields of a layer (when deleting a feature)
-              const fields = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[layerId];
-              if (fields) {
-                Object
-                  .keys(feature.getProperties())
-                  .filter(field => undefined !== fields[field])
-                  .forEach(field => fields[field].delete(feature.get(field)));
-              }
-              d.resolve(inputs);
-            } else {
-              d.reject(inputs);
-            }
-
-          }
-        );
-      return d.promise();
-    }
-  },
-  commit: {
-    fnc(inputs) {
-      let d         = $.Deferred();
-      let close     = inputs.close;
-      const buttons = {
-        SAVE: {
-          label: t("save"),
-          className: "btn-success",
-          callback() {
-            d.resolve(inputs);
-          }
-        },
-        CANCEL: {
-          label: close ? t("exitnosave") : t("annul"),
-          className: "btn-danger",
-          callback() {
-            d.reject();
-          }
-        }
-      };
-      if (close) {
-        buttons.CLOSEMODAL = {
-          label:  t("annul"),
-          className: "btn-primary",
-          callback() {
-            dialog.modal('hide');
-          }
-        }
-      }
-      // NOW I HAVE TO IMPLEMENT WHAT HAPPEND ID NO ACTION HAPPEND
-      const dialog = GUI.dialog.dialog({
-        message: inputs.message,
-        title: `${tPlugin("editing.messages.commit_feature")}: "${inputs.layer.getName()}"`,
-        buttons
-      });
-      return d.promise()
-    }
-  }
-};
-
-/**
- * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/confirmtask.js@v3.7.1
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/confirmstep.js@v3.7.1
  */
 export class ConfirmStep extends EditingTask {
 
   constructor(options = {}) {
     super(options);
-
-    this._dialog = Dialogs[options.type || "default"];
-
+    this._dialog = options.dialog;
     options.task = this;
     return new EditingStep(options);
   }
 
   run(inputs, context) {
-    const promise = this._dialog.fnc(inputs, context);
-    if (inputs.features) {
-      setAndUnsetSelectedFeaturesStyle({ promise, inputs, style: this.selectStyle });
-    }
-    return promise;
+    return this._dialog(inputs, context);
   }
 
   stop() {
