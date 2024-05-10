@@ -17,12 +17,23 @@ const { t, tPlugin }                  = g3wsdk.core.i18n;
  * 
  * @returns { string } 
  */
-function _list_changes(commits) {
-  console.log(commits);
+function _list_changes(commits, layer) {
+  console.log(commits, layer);
+  const features = layer.readFeatures();
   return Object
     .keys(commits)
     .filter(c => 'relations' !== c)
-    .map(c => `<h4>${tPlugin('editing.messages.commit.' + c)} (${ commits[c].length })</h4>`+ `<ul style="padding-left: 1.5em;">${ commits[c].map(item => `<li>#${item.id || item} ${item.geometry ? item.geometry.type : ''}</li>`).join('')}</ul><hr>`).join('');
+    .map(c =>
+      `<h4>${tPlugin('editing.messages.commit.' + c)} (${ commits[c].length })</h4>`
+      + `<ul style="list-style: none; padding-left: 0;">`
+      + `${ commits[c].map(item => {
+        const id   = item.id || item;
+        const type = item.geometry ? item.geometry.type : '';
+        let attrs  = features.find(f => id === f.getId()) || {};
+        attrs = Object.entries(attrs.getProperties ? attrs.getProperties() : {}).sort((a,b) => a[0]>b[0]).map(([k,v]) => `<b>${k}</b>: ${v}<br>`).join('')
+        return `<li style="margin-bottom: 8px;"><details><summary style="display: list-item;font-weight: bold;padding: 0.5em;cursor: pointer;background-color: rgb(255, 255, 0, 0.25);font-size: medium;user-select: none;">#${id} ${type}</summary>${attrs}</details></li>`
+      }).join('')}`
+      + `</ul><hr>`).join('');
 }
 
 async function _rollback(relations = {}) {
@@ -80,8 +91,6 @@ export async function showCommitModalWindow({
   commitPromise,
 }) {
 
-  console.log(layer);
-
   /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/commitfeaturesworkflow.js@v3.7.1 */
   const workflow = new EditingWorkflow({
     type: 'commitfeatures',
@@ -117,7 +126,7 @@ export async function showCommitModalWindow({
         inputs: {
           close,
           layer,
-          message: _list_changes(commitItems)
+          message: _list_changes(commitItems, layer)
             + (_.isEmpty(commitItems.relations) ? '' : 
               `<h4 style='padding-left: 40%;border-top: #f4f4f4 1px solid;'${ t('editing.relations') }</h4>`
               + Object.entries(commitItems.relations).map(
@@ -133,7 +142,7 @@ export async function showCommitModalWindow({
       closeButton: false
     });
 
-    commitPromise.always(() => dialog.modal('hide')) // hide saving dialog
+    promisify(commitPromise).finally(() => dialog.modal('hide')) // hide saving dialog
 
     // messages set to commit
     return {
