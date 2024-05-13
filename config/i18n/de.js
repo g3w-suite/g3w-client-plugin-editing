@@ -11,6 +11,7 @@ export default {
   editing_data: "Layer bearbeiten",
   editing_attributes: "Attribute bearbeiten",
   relations: "Relationen",
+  relation: "Relation",
   edit_relation: "Relation bearbeiten",
   back_to_relations: "Zurück zu Relationen",
   no_relations_found: "Keine Relationen gefunden",

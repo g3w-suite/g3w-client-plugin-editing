@@ -100,6 +100,8 @@
       />
     </div>
 
+    <a v-if="django_admin_url" :href="django_admin_url" target="_blank">&#x1F512; Locked features</a>
+
   </div>
 
 </template>
@@ -427,6 +429,12 @@
         this.service.fireEvent('canRedo', canRedo);
 
         return canRedo;
+      },
+
+      django_admin_url() {
+        const config = ApplicationService.getConfig();
+        const user = config.user;
+        return user.is_superuser ? new URL('/django-admin/editing/g3weditingfeaturelock/', initConfig.baseurl) : false;
       },
 
     },

@@ -1532,6 +1532,10 @@ function _list_changes(commits, layer) {
               return `<b class="skin-color">"${ layer.getName() }"</b>` + _list_changes(r[1], layer) }
             ).join('')}`
       : '');
+    + ((Object.keys(commits.relations) || []).length ? Object.entries(commits.relations).map(r => {
+      const relation = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').getLayerById(r[0]);
+      return `<h4 style="font-weight: bold; color: var(--skin-color);">${ tPlugin('editing.relation') }: ${relation.getName() }</h4> ${ _list_changes(r[1], relation)} `;
+    }).join('') : '');
 }
 
 async function _rollback(relations = {}) {

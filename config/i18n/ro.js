@@ -11,6 +11,7 @@ export default  {
   editing_data: "Modificare straturi",
   editing_attributes: "Modificare atribute",
   relations: "Relații",
+  relation: "Relation",
   edit_relation: "Modifică relația",
   back_to_relations: "Înapoi la Relații",
   no_relations_found: "Nu am găsit relații",

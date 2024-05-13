@@ -11,6 +11,7 @@ export default {
   editing_data: "Editing Layers",
   editing_attributes: "Editing attributes",
   relations: "Relations",
+  relation: "Relation",
   edit_relation: "Edit relation",
   back_to_relations: "Back to Relations",
   no_relations_found: "No relations found",

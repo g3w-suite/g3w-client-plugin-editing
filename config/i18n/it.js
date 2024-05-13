@@ -11,6 +11,7 @@ export default {
   editing_data: "Edita Dati",
   editing_attributes: "Edita attributi",
   relations: "Relazioni",
+  relation: "Relazione",
   edit_relation: "Edita relazione",
   back_to_relations: "Ritorna alle Relazioni",
   no_relations_found: "Non ci sono relazioni",

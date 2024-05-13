@@ -11,6 +11,7 @@ export default {
   editing_data: "Muokataan tasoja",
   editing_attributes: "Muokataan attribuutteja",
   relations: "Relaatiot",
+  relation: "Relation",
   edit_relation: "Muokkaa relaatiota",
   back_to_relations: "Takaisin relaatioihin",
   no_relations_found: "Relaatioita ei löytynyt",
