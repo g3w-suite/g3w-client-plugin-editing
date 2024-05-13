@@ -223,7 +223,7 @@
 
   import { getRelationFieldsFromRelation }            from '../utils/getRelationFieldsFromRelation';
   import { getRelationId }                            from '../utils/getRelationId';
-    import { getFeatureTableFieldValue }                from '../utils/getFeatureTableFieldValue';
+  import { getFeatureTableFieldValue }                from '../utils/getFeatureTableFieldValue';
   import { getEditingLayerById }                      from '../utils/getEditingLayerById';
 
   const { CatalogLayersStoresRegistry } = g3wsdk.core.catalog;
