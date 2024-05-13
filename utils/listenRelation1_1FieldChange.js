@@ -1,6 +1,8 @@
 import { VM }                               from '../eventbus';
 import { getRelation1_1ChildFeature }       from './getRelation1_1ChildFeature';
 
+const { CatalogLayersStoresRegistry } = g3wsdk.core.catalog;
+
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
  * 
