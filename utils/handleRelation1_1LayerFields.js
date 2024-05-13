@@ -1,7 +1,3 @@
-import { getChildFieldNameFromRelation1_1 }                        from './getChildFieldNameFromRelation1_1';
-import { getRelation1_1ByLayerId }                                 from '../utils/getRelation1_1ByLayerId';
-import { getRelation1_1EditingLayerFieldsReferredToChildRelation } from './getRelation1_1EditingLayerFieldsReferredToChildRelation';
-
 const { CatalogLayersStoresRegistry } = g3wsdk.core.catalog;
 
 /**
@@ -30,7 +26,11 @@ export async function handleRelation1_1LayerFields({
   const service = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing');
 
   // Get layer relation 1:1
-  const promises = getRelation1_1ByLayerId(layerId)
+  const promises = CatalogLayersStoresRegistry
+    .getLayerById(layerId)
+    .getRelations()
+    .getArray()
+    .filter(relation => 'ONE' === relation.getType())
     .map(relation => {
       return new Promise(async (resolve) => {
         // skip when layer is not a father layer (1:1 relation)
@@ -57,7 +57,10 @@ export async function handleRelation1_1LayerFields({
         //check if child feature is already add to
         childFeature = source.readFeatures().find(f => f.get(childField) === value)
 
-        const fieldsUpdated = undefined !== getRelation1_1EditingLayerFieldsReferredToChildRelation(relation)
+        const fieldsUpdated = undefined !== service
+          .getLayerById(relation.getFather())
+          .getEditingFields()
+          .filter(f => f.vectorjoin_id && f.vectorjoin_id === relation.getId())
           .find(({name}) => fields.find(f => f.name == name).update)
 
         const isNewChildFeature = undefined === childFeature;
@@ -92,11 +95,13 @@ export async function handleRelation1_1LayerFields({
           if (childFeature) {
             // Loop editable only field of father layerId when
             // a child relation (1:1) is bind to current feature
-            const editiableRelatedFieldChild = getRelation1_1EditingLayerFieldsReferredToChildRelation(relation)
-              .filter(field => field.editable);
+            const editiableRelatedFieldChild = service
+              .getLayerById(relation.getFather())
+              .getEditingFields()
+              .filter(f => f.vectorjoin_id && f.vectorjoin_id === relation.getId() && f.editable);
 
             editiableRelatedFieldChild
-              .forEach(field => newChild.set(getChildFieldNameFromRelation1_1({ relation, field }), features[0].get(field.name)));
+              .forEach(field => newChild.set(field.name.replace(relation.getPrefix(), ''), features[0].get(field.name)));
 
             // add relation new relation
             if (isNewChildFeature) {

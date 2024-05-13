@@ -18,14 +18,13 @@ export function chooseFeatureFromFeatures({
     /**
      * ORIGINAL SOURCE: g3w-client-plugin-editing/g3w-editing-components/choosefeaturetoedit.js@v3.6
      */
-    const Component    = Vue.extend(ChooseFeatureToEditVueComponent);
-    const vueInstance  = new Component({
+    const comp = new (Vue.extend(ChooseFeatureToEditVueComponent))({
       features:   Array.isArray(features) ? features : [],
       feature,
       attributes: inputs.layer.getEditingFields().map(({ name, label }) => ({ name, label })),
     });
 
-    const message = vueInstance.$mount().$el;
+    const message = comp.$mount().$el;
 
     const dialog = g3wsdk.gui.GUI.showModalDialog({
       title: t('editing.modal.tools.copyfeaturefromprojectlayer.title'),
@@ -50,6 +49,6 @@ export function chooseFeatureFromFeatures({
       }
     });
     dialog.find('button.btn-success').prop('disabled', true);
-    vueInstance.$watch('feature', feature => dialog.find('button.btn-success').prop('disabled', feature === null));
+    comp.$watch('feature', feature => dialog.find('button.btn-success').prop('disabled', feature === null));
   })
 };

@@ -1,8 +1,5 @@
-import { VM }                                                      from '../eventbus';
-import { getRelation1_1ChildFeature }                              from './getRelation1_1ChildFeature';
-import { getChildFieldNameFromRelation1_1 }                        from './getChildFieldNameFromRelation1_1';
-import { getRelation1_1ByLayerId }                                 from '../utils/getRelation1_1ByLayerId';
-import { getRelation1_1EditingLayerFieldsReferredToChildRelation } from './getRelation1_1EditingLayerFieldsReferredToChildRelation';
+import { VM }                               from '../eventbus';
+import { getRelation1_1ChildFeature }       from './getRelation1_1ChildFeature';
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
@@ -24,8 +21,14 @@ export async function listenRelation1_1FieldChange({
 
   const service = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing'); //get editing service
 
+  const ONE = CatalogLayersStoresRegistry
+    .getLayerById(layerId)
+    .getRelations()
+    .getArray()
+    .filter(relation => 'ONE' === relation.getType())
+
   // get all relation 1:1 of current layer
-  for (const relation of getRelation1_1ByLayerId(layerId)) {
+  for (const relation of ONE) {
 
     const childLayerId = relation.getChild();                             // get relation child layer id
     const fatherField  = relation.getFatherField();
@@ -43,7 +46,10 @@ export async function listenRelation1_1FieldChange({
     }
 
     //store original editable property of fields relation to child layer relation
-    const editableRelatedFatherChild = getRelation1_1EditingLayerFieldsReferredToChildRelation(relation)
+    const editableRelatedFatherChild = service
+      .getLayerById(relation.getFather())
+      .getEditingFields()
+      .filter(f => f.vectorjoin_id && f.vectorjoin_id === relation.getId())
       .reduce((accumulator, field) => {
         const formField = fields.find(f => f.name === field.name)
         accumulator[formField.name] = formField.editable;
@@ -111,7 +117,7 @@ export async function listenRelation1_1FieldChange({
                 : editableRelatedFatherChild[fn];
               //need to check if feature is new and not locked ot not present on source
               field.value = feature
-                ? feature.get(getChildFieldNameFromRelation1_1({ relation, field }))
+                ? feature.get(field.name.replace(relation.getPrefix(), ''))
                 : null
             });
 

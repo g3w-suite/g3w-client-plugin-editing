@@ -223,12 +223,12 @@
 
   import { getRelationFieldsFromRelation }            from '../utils/getRelationFieldsFromRelation';
   import { getRelationId }                            from '../utils/getRelationId';
-  import { getProjectLayersWithSameGeometryOfLayer }  from '../utils/getProjectLayersWithSameGeometryOfLayer';
-  import { getExternalLayersWithSameGeometryOfLayer } from '../utils/getExternalLayersWithSameGeometryOfLayer';
-  import { getFeatureTableFieldValue }                from '../utils/getFeatureTableFieldValue';
+    import { getFeatureTableFieldValue }                from '../utils/getFeatureTableFieldValue';
   import { getEditingLayerById }                      from '../utils/getEditingLayerById';
 
   const { CatalogLayersStoresRegistry } = g3wsdk.core.catalog;
+  const { Geometry }                    = g3wsdk.core.geometry;
+  const { isSameBaseGeometryType }      = g3wsdk.core.geoutils;
   const { tPlugin: t }                  = g3wsdk.core.i18n;
   const { toRawType }                   = g3wsdk.core.utils;
   const { Layer }                       = g3wsdk.core.layer;
@@ -607,19 +607,47 @@
 
       // vector relation → get all layers with the same geometry
       if (this.isVectorRelation) {
+        const geometryType = relationLayer.getGeometryType();
         this.copyFeatureLayers = [
-          // project_layers
-          ...(getProjectLayersWithSameGeometryOfLayer(relationLayer, { exclude: [this.relation.father] }) || []).map(layer => ({
-              id:       layer.getId(),
-              name:     layer.getName(),
+
+          // project layers with same geometry of relation ayer
+          ...CatalogLayersStoresRegistry.getLayers()
+            .filter(l => ((
+                l.isGeoLayer() &&
+                l.getGeometryType &&
+                l.getGeometryType() &&
+                this.relation.father !== l.getId()
+              ) && (
+                l.getGeometryType() === geometryType ||
+                (
+                  isSameBaseGeometryType(l.getGeometryType(), geometryType) &&
+                  Geometry.isMultiGeometry(geometryType)
+                )
+              ))
+            )
+            .map(l => ({
+              id:       l.getId(),
+              name:     l.getName(),
               external: false,
             })),
-          // external_layers
-          ...(getExternalLayersWithSameGeometryOfLayer(relationLayer) || []).map(layer => ({
-              id:       layer.get('id'),
-              name:     layer.get('name'),
+
+          // external layers with same geometry of relation layer
+          ...GUI.getService('map').getExternalLayers()
+            .filter(l => {
+              const features = l.getSource().getFeatures();
+              // skip when ..
+              if (!(features && features.length > 0) || (features && features[0] && !features[0].getGeometry())) {
+                return false;
+              }
+              const type = features[0].getGeometry().getType();
+              return geometryType === type || isSameBaseGeometryType(geometryType, type);
+            })
+            .map(l => ({
+              id:       l.get('id'),
+              name:     l.get('name'),
               external: true,
             })),
+
         ].sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));                   // sorted by name
       }
 

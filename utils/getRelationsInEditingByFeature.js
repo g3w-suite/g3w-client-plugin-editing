@@ -1,4 +1,4 @@
-import { getRelationsAttributesByFeature } from '../utils/getRelationsAttributesByFeature';
+import { getRelationFieldsFromRelation } from '../utils/getRelationFieldsFromRelation';
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
@@ -29,13 +29,25 @@ export function getRelationsInEditingByFeature({
     const relationLayerId = (child === layerId) ? father: child; // get relation LayerId
     //check if the layer is editable
     if (service.getLayerById(relationLayerId)) {
+      const layer                       = service.getToolBoxById(relationLayerId).getLayer();
+      const fatherLayer                 = service.getLayerById(relation.getFather ? relation.getFather() : relation.father);
+      const { ownField, relationField } = getRelationFieldsFromRelation({ layerId: relationLayerId, relation });
+      // get features of relation child layers
+      // Loop relation fields
+      // In case of new feature, need to check if field is pk field
+      const values = relationField.map(field => feature.isNew() && fatherLayer.isPkField(field) ? feature.getId() : feature.get(field));
+
       relationinediting = {
         relation: relation.getState(),
-        relations: getRelationsAttributesByFeature({
-          layerId: relationLayerId,
-          relation,
-          feature
-        })
+        // get relations attributes by feature
+        relations: service
+          .getLayerById(layerId)
+          .readEditingFeatures()
+          .filter(feature => ownField.every((field, i) => feature.get(field) == values[i])) // get relations by feature
+          .map(relation => ({
+            fields: layer.getFieldsWithValues(relation, { relation: true }),
+            id:     relation.getId()
+          }))
       };
       relationinediting.validate = {
         valid:true

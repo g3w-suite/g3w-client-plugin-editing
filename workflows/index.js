@@ -6,9 +6,7 @@ import { setFeaturesSelectedStyle }                     from '../utils/setFeatur
 import { setAndUnsetSelectedFeaturesStyle }             from '../utils/setAndUnsetSelectedFeaturesStyle';
 import { getFormFields }                                from '../utils/getFormFields';
 import { convertFeaturesGeometryToGeometryTypeOfLayer } from '../utils/convertFeaturesGeometryToGeometryTypeOfLayer';
-import { setNullMediaFields }                           from '../utils/setNullMediaFields';
 import { getNotEditableFieldsNoPkValues }               from '../utils/getNotEditableFieldsNoPkValues';
-import { getFeaturesFromSelectionFeatures }             from '../utils/getFeaturesFromSelectionFeatures';
 import { chooseFeatureFromFeatures }                    from '../utils/chooseFeatureFromFeatures';
 import { handleRelation1_1LayerFields }                 from '../utils/handleRelation1_1LayerFields';
 import { listenRelation1_1FieldChange }                 from '../utils/listenRelation1_1FieldChange';
@@ -410,7 +408,11 @@ export class CopyFeaturesFromOtherLayerStep extends EditingTask {
     const session          = context.session;
     const editingLayer     = originalLayer.getEditingLayer();
     const source           = editingLayer.getSource();
-    const features         = getFeaturesFromSelectionFeatures({ layerId, geometryType });
+    // get features from selection features
+    const features         = convertFeaturesGeometryToGeometryTypeOfLayer({
+      geometryType,
+      features: GUI.getService('map').defaultsLayers.selectionLayer.getSource().getFeatures().filter(f => f.__layerId !== layerId),
+    });
     const selectedFeatures = [];
 
     /**
@@ -1345,7 +1347,8 @@ export class MoveElementsStep extends EditingTask {
           });
           feature.getGeometry().translate(deltaXY.x, deltaXY.y)
         }
-        setNullMediaFields({ feature, layer });
+        // set media fields to null
+        layer.getEditingMediaFields({}).forEach(f => feature.set(f, null));
         /**
          * evaluated geometry expression
          */
@@ -2782,7 +2785,8 @@ export class SplitFeatureStep extends EditingTask {
         const newFeature = cloneFeature(oriFeature, layer);
         newFeature.setGeometry(splittedGeometry);
 
-        setNullMediaFields({ layer, feature: newFeature });
+        // set media fields to null
+        layer.getEditingMediaFields({}).forEach(f => newFeature.set(f, null));
 
         feature = new Feature({ feature: newFeature });
 
