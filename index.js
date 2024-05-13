@@ -294,6 +294,7 @@ new (class extends Plugin {
 
       });
 
+    let i = 0;
     this
       .getLayers()
       .forEach(editingLayer => {
@@ -331,7 +332,7 @@ new (class extends Plugin {
             "#3B3A73", "#9E5165", "#A51E22", "#261326", "#e4572e",
             "#29335c", "#f3a712", "#669bbc", "#eb6841", "#4f372d",
             "#cc2a36", "#00a0b0", "#00b159", "#f37735", "#ffc425",
-          ][i % 40]);
+          ][i++ % 40]);
         }
       });
 
