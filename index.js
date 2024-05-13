@@ -1,23 +1,27 @@
 import './g3wsdk';
 import pluginConfig                                                from './config';
 import { EditingWorkflow }                                         from './g3wsdk/workflow/workflow';
-import { promisify }                                               from './utils/promisify';
-import { saveOfflineItem }                                         from './utils/saveOfflineItem';
-import { showCommitModalWindow }                                   from './utils/showCommitModalWindow';
+import SessionsRegistry                                            from './g3wsdk/editing/sessionsregistry';
+import { promisify, $promisify }                                   from './utils/promisify';
 import { getRelation1_1ByLayerId }                                 from './utils/getRelation1_1ByLayerId';
 import { getRelation1_1EditingLayerFieldsReferredToChildRelation } from './utils/getRelation1_1EditingLayerFieldsReferredToChildRelation';
 import { createFeature }                                           from './utils/createFeature';
+import { getProjectLayerFeatureById }                              from './utils/getProjectLayerFeatureById';
+import { getEditingLayerById }                                     from './utils/getEditingLayerById';
+import { setAndUnsetSelectedFeaturesStyle }                        from './utils/setAndUnsetSelectedFeaturesStyle';
 import {
   OpenFormStep,
   AddFeatureStep,
   AddPartToMultigeometriesStep,
+  ConfirmStep,
 }                                                                  from './workflows';
 import EditingVueComponent                                         from './components/Editing.vue';
+
 
 const { G3W_FID }                              = g3wsdk.constant;
 const { ApplicationState, ApplicationService } = g3wsdk.core;
 const { CatalogLayersStoresRegistry }          = g3wsdk.core.catalog;
-const { SessionsRegistry }                     = g3wsdk.core.editing;
+const { t, tPlugin }                           = g3wsdk.core.i18n;
 const { Layer, LayersStore }                   = g3wsdk.core.layer;
 const { Feature }                              = g3wsdk.core.layer.features;
 const { MapLayersStoreRegistry }               = g3wsdk.core.map;
@@ -38,7 +42,7 @@ Object
     OpenFormStep,
     AddFeatureStep,
     AddPartToMultigeometriesStep,
-    showCommitModalWindow,
+    ConfirmStep,
   })
   .forEach(([k, v]) => console.assert(undefined !== v, `${k} is undefined`));
 
@@ -902,7 +906,7 @@ new (class extends Plugin {
    * @param { boolean } commit.modal
    * @param { boolean } commit.close
    *
-   * @returns {*}
+   * @returns jQuery promise
    * 
    * @since g3w-client-plugin-editing@v3.8.0
    */
@@ -912,184 +916,228 @@ new (class extends Plugin {
     modal = true,
     close = false,
   } = {}) {
-    const d             = $.Deferred();
-    const commitPromise = d.promise();
-    const {
-      cb = {},
-      messages = {
-        success:{},
-        error:{}
-      },
-    }                   = this.state.saveConfig;
+    const cb            = Object.assign(this.state.saveConfig.cb       || {}, { done() {},  error() {} });
+    const messages      = Object.assign(this.state.saveConfig.messages || {}, { success: {}, error: {} });
     toolbox             = toolbox || this.state.toolboxselected;
-    let session         = toolbox.getSession();
     let layer           = toolbox.getLayer();
-    const layerType     = layer.getType();
     const items         = commitItems;
-    commitItems         = commitItems || session.getCommitItems();
-    const {
-      add = [],
-      delete: cancel = [],
-      update = [],
-      relations = {},
-    } = commitItems;
+    commitItems         = commitItems || toolbox.getSession().getCommitItems();
+    const online        = ApplicationState.online;
+    const has_changes   = [
+      ...(commitItems.add || []),
+      ...(commitItems.delete || []),
+      ...(commitItems.update || []),
+      ...Object.keys(commitItems.relations || {})
+    ].length;
+    let workflow, dialog, serverError;
 
-    //check if there are some changes to commit
-    if (
-      [
-        ...add,
-        ...cancel,
-        ...update,
-        ...Object.keys(relations)
-      ].length === 0
-    ) {
-      GUI.showUserMessage({
-        type: 'info',
-        message: 'Nothing to save',
-        autoclose: true,
-        closable: false
-      });
+    return $promisify(async () => {
 
-      d.resolve(toolbox);
+      // skip when there is nothing to save
+      if (!has_changes) {
+        GUI.showUserMessage({ type: 'info', message: 'Nothing to save', autoclose: true, closable: false });
+        return toolbox;
+      }
 
-      return d.promise();
-    }
+      try {
 
-    const promise = modal ? showCommitModalWindow({
-      layer,
-      commitItems,
-      close,
-      commitPromise // add a commit promise
-    }) : Promise.resolve(messages);
-
-    promise
-      .then(messages => {
-        //check if application is online
-        if (ApplicationState.online) {
-          session.commit({items: items || commitItems})
-            .then((commitItems, response) => {
-              //@TODO need to double check why ApplicationState.online is repeated
-              if (ApplicationState.online) {
-                //if result is true
-                if (response.result) {
-                  const {autoclose=true, message="plugins.editing.messages.saved"} = messages.success;
-                  if (messages && messages.success) {
-                    GUI.showUserMessage({
-                      type: 'success',
-                      message,
-                      duration: 3000,
-                      autoclose
+        // show commit modal window
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8 */
+        if (modal) {
+          workflow = new EditingWorkflow({
+            type: 'commitfeatures',
+            steps: [
+              new ConfirmStep({
+                dialog(inputs) {
+                  return $.Deferred(d => {
+                    const dialog = GUI.dialog.dialog({
+                      message: inputs.message,
+                      title: `${tPlugin("editing.messages.commit_feature")}: "${inputs.layer.getName()}"`,
+                      buttons: {
+                        SAVE:   { className: "btn-success", callback() { d.resolve(inputs); },    label: t("save"),   },
+                        CANCEL: { className: "btn-danger",  callback() { d.reject(); },           label: t(inputs.close ? "exitnosave" : "annul") },
+                        ...(inputs.close ? { CLOSEMODAL :
+                                { className: "btn-primary", callback() { dialog.modal('hide'); }, label:  t("annul") }
+                        } : {}),
+                      }
                     });
-                  }
-
-                  //In case of vector layer need to refresh map commit changes
-                  if (layerType === Layer.LayerTypes.VECTOR) {
-                    GUI.getService('map').refreshMap({force: true});
-                  }
-
-                  if (cb.done && cb.done instanceof Function) {
-                    cb.done(toolbox);
-                  }
-
-                  // add items when close editing to results to show changes
-                  const layerId = toolbox.getId(); 
-
-                  if (undefined === this.state.featuresOnClose[layerId]) {
-                    this.state.featuresOnClose[layerId] = new Set();
-                  }
-
-                  [
-                    ...response.response.new.map(({id}) => id),
-                    ...commitItems.update.map(update => update.id)
-                  ].forEach(fid => this.state.featuresOnClose[layerId].add(fid))
-
-                  //@since 3.7.2
-                  //it is useful when click on save all disk icon in editing forma for relation purpose
-                  this.emit('commit', response.response);
-
-                } else { //result is false. An error occurs
-                  const parser = new serverErrorParser({
-                    error: response.errors
-                  });
-
-                  const errorMessage = parser.parse({
-                    type: 'String'
-                  });
-
-                  const {autoclose=false, message} = messages.error;
-
-                  GUI.showUserMessage({
-                    type: 'alert',
-                    message: message || errorMessage,
-                    textMessage: !message,
-                    autoclose
-                  });
-
-                  if (cb.error && cb.error instanceof Function) {
-                    cb.error(toolbox, message || errorMessage);
-                  }
+                    if (inputs.features) {
+                      setAndUnsetSelectedFeaturesStyle({ promise: d.promise(), inputs, style: this.selectStyle });
+                    }
+                  }).promise();
                 }
+              })
+            ]
+          });
 
-                d.resolve(toolbox);
+          await promisify(
+            workflow.start({
+              inputs: {
+                close,
+                layer,
+                message: _list_changes(commitItems, layer),
               }
             })
-            .fail((error={}) => {
-              //parse error server
-              const parser = new serverErrorParser({
-                error: error.errors ? error.errors : error
-              });
-              //set type string
-              const errorMessage = parser.parse({
-                type: 'String'
-              });
+          );
 
-              const {autoclose = false, message} = messages.error;
+          dialog = GUI.dialog.dialog({
+            message: `<h4 class="text-center"><i style="margin-right: 5px;" class=${GUI.getFontClass('spinner')}></i>${t('editing.messages.saving')}</h4>`,
+            closeButton: false
+          });
 
-              GUI.showUserMessage({
-                type: 'alert',
-                message: message || errorMessage,
-                textMessage: !message,
-                autoclose
-              });
-
-              d.reject(toolbox);
-
-              if (cb.error && cb.error instanceof Function) {
-                cb.error(toolbox, message || errorMessage);
-              }
-            });
-        //case offline
-      } else {
-        saveOfflineItem({
-          data: { [session.getId()]: commitItems },
-          id: 'EDITING_CHANGES'
-        })
-          .then(() => {
-            GUI.showUserMessage({
-              type: 'success',
-              message: "plugins.editing.messages.saved_local",
-              autoclose: true
-            });
-            session.clearHistory();
-            d.resolve(toolbox);
-          })
-          .catch(error => {
-            GUI.showUserMessage({
-              type: 'alert',
-              message: error,
-              textMessage: true,
-            });
-
-            d.reject(toolbox);
-          })
+          // messages set to commit
+          Object.assign(messages, {
+            success: {
+              message: "plugins.editing.messages.saved",
+              autoclose: true,
+            },
+            error: {},
+          });
         }
-      })
-      .catch((e) => {
-        console.warn(e);
-        d.reject(toolbox)
-    });
 
-    return commitPromise;
+        let data = !online && { [toolbox.getSession().getId()]: commitItems };
+        const changes = !online && ApplicationService.getOfflineItem('EDITING_CHANGES');
+
+        // handle offline changes
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8 */
+        Object.keys(changes || {}).forEach(layerId => {
+          const currLayerId = Object.keys(data)[0];
+
+          // check if previous changes are made in the same layer or in relationlayer of current
+          let current = null;
+
+          if (data[layerId]) {
+            current = data;
+          } else if (data[currLayerId].relations[layerId]) {
+            current = data[currLayerId].relations;
+          }
+
+          // check if in the last changes
+          const relationsIds  = !current && Object.keys(changes[layerId].relations || {});
+          const has_relations  = !current && relationsIds.length;
+          const GIVE_ME_A_NAME = !current && has_relations && relationsIds.includes(currLayerId);
+
+          // apply changes
+          if (current || GIVE_ME_A_NAME) {
+            const id   = current ? layerId : currLayerId;
+            const curr = current ? current : data;
+            const prev = current ? changes : changes[layerId].relations;
+            curr[id].add    = [...curr[id].add, ...curr[id].add];
+            curr[id].delete = [...curr[id].delete, ...curr[id].delete];
+            (prev[id].update || [])
+              .filter(update => !curr[id].update.find(u => u.id === update.id))
+              .forEach(update => curr[id].update.unshift(update));
+            (prev[id].lockids || [])
+              .filter(lock => !curr[id].lockids.find(l => l.featureid === lock.featureid))
+              .forEach(lock => curr[id].update.unshift(lock));
+          }
+
+          if (GIVE_ME_A_NAME) {
+            changes[layerId].relations[currLayerId] = data[currLayerId];
+            data = changes;
+          }
+          if (!current && !has_relations) {
+            data[layerId] = changes[layerId]
+          }
+        });
+
+        if (!online) {
+          GUI.showUserMessage({
+            type: 'success',
+            message: "plugins.editing.messages.saved_local",
+            autoclose: true
+          });
+          toolbox.getSession().clearHistory();
+        }
+
+        // check if application is online
+        const { commit, response } = online ? await promisify(
+          toolbox.getSession().commit({ items: items || commitItems, __esPromise: true })
+        ) : {};
+
+        // @TODO need to double check why ApplicationState.online is repeated
+        const online2 = online && commit && ApplicationState.online;
+        const result = online2 && response.result;
+
+        if (result && messages && messages.success) {
+          GUI.showUserMessage({
+            type: 'success',
+            message: messages.success.message || "plugins.editing.messages.saved",
+            duration: 3000,
+            autoclose: undefined !== messages.success.autoclose ? messages.success.autoclose : true,
+          });
+        }
+
+        // In case of vector layer need to refresh map commit changes
+        if (result && layer.getType() === Layer.LayerTypes.VECTOR) {
+          GUI.getService('map').refreshMap({ force: true });
+        }
+
+        if (online) {
+          cb.done(toolbox);
+        }
+
+        // add items when close editing to results to show changes
+        const layerId = result && toolbox.getId(); 
+
+        if (layerId) {
+          this.state.featuresOnClose[layerId] = this.state.featuresOnClose[layerId] || new Set();
+        }
+
+        if (result) {
+          [
+            ...response.response.new.map(n => n.id),
+            ...commit.update.map(u => u.id)
+          ].forEach(fid => this.state.featuresOnClose[layerId].add(fid));
+        }
+
+        // @since 3.7.2 - click on save all disk icon (editing form relation)
+        if (result) {
+          this.emit('commit', response.response);
+        }
+
+        // result is false. An error occurs
+        if (online2 && !result) { 
+          serverError = true;
+          throw response;
+        }
+      } catch (e) {
+        console.warn(e);
+
+        // rollback relations
+        if (modal) {
+          try { await _rollback(commitItems.relations); }
+          catch (e) { console.warn(e); }
+        }
+
+        // parse server error
+        if (serverError || !modal) {
+          const message = online
+            ? (messages.error.message || (new serverErrorParser({ error: e.errors || e || {}})).parse({ type: 'String' }))
+            : e;
+
+          GUI.showUserMessage({
+            type:        'alert',
+            message,
+            textMessage: online ? !messages.error.message : true,
+            autoclose:   online ? (undefined !== messages.error.autoclose ? messages.error.autoclose : false) : false,
+          });
+
+          cb.error(toolbox, message);
+        }
+
+        return Promise.reject(toolbox);
+      } finally {
+        if (modal) {
+          workflow.stop()
+        }
+        // hide saving dialog
+        if (dialog) {
+          dialog.modal('hide');
+        }
+      }
+      return toolbox;
+    });
   }
 
  /**
@@ -1433,3 +1481,75 @@ new (class extends Plugin {
   }
 
 });
+
+/**
+ * @param { Object } commits
+ * @param commits.add
+ * @param commits.update
+ * @param commits.delete
+ * 
+ * @returns { string } 
+ */
+function _list_changes(commits, layer) {
+  const features  = layer.readFeatures();        // original features
+  const efeatures = layer.readEditingFeatures(); // edited features
+  return Object
+    .keys(commits)
+    .filter(c => 'relations' !== c)
+    .map(c =>
+      `<h4>${tPlugin('editing.messages.commit.' + c)} (${ commits[c].length })</h4>`
+      + `<ul style="list-style: none; padding-left: 0;">`
+      + `${ commits[c].map(item => {
+        const id     = item.id || item;
+        const feat   = features.find(f => id === f.getId());
+        const efeat  = efeatures.find(f => id === f.getId());
+        const type   = feat && feat.getGeometry ? feat.getGeometry().getType() : '';
+        const attrs  = Object.entries(feat ? feat.getProperties() : {}).sort((a, b) => a[0] > b[0]);
+        return `<li style="margin-bottom: 8px;"><details><summary style="display: list-item;font-weight: bold;padding: 0.5em;cursor: pointer;background-color: rgb(255, 255, 0, 0.25);font-size: medium;user-select: none;">${type} #${id}</summary>${
+          attrs.map(([k,v]) => {
+            const edited = efeat && v !== efeat.get(k);
+            const ins = edited ? ` ← <ins style="background-color: lime; text-decoration-line: none;">${ efeat.get(k) }</ins>` : '';
+            const del = edited ? `<del style="background-color: tomato;">${v}</del>` : '';
+            return `<b style="padding-left: 1ch;">${k}</b>: ${ (del + ins) || v} <br>`;
+          }).join('')
+        }</details></li>`
+      }).join('')}`
+      + `</ul><hr>`).join('')
+    // edited relations
+    + ((commits.relations || []).length ? `<h4 style='padding-left: 40%;border-top: #f4f4f4 1px solid;'${ t('editing.relations') }</h4> ${Object.entries(commits.relations).map(r => `<b>"${r[0]}</b>` + _list_changes(r[1])).join('')}` : '');
+}
+
+async function _rollback(relations = {}) {
+  return Promise.allSettled(
+    Object
+    .entries(relations)
+    .flatMap(([ layerId, { add, delete: del, update, relations = {}}]) => {
+      const source  = getEditingLayerById(layerId).getEditingSource();
+      const has_features = source.readFeatures().length > 0; // check if the relation layer has some features
+      // get original values
+      return [
+        // add
+        ...(has_features && add || []).map(async ({ id }) => {
+          source.removeFeature(source.getFeatureById(id));
+        }),
+        // update
+        ...(has_features && update || []).map(async ({ id }) => {
+          const f = await getProjectLayerFeatureById({ layerId, fid: id });
+          const feature = source.getFeatureById(id);
+          feature.setProperties(f.properties);
+          feature.setGeometry(f.geometry);
+        }),
+        // delete
+        ...del.map(async id => {
+          const f = await getProjectLayerFeatureById({ layerId, fid: id });
+          const feature = new ol.Feature({ geometry: f.geometry })
+          feature.setProperties(f.properties);
+          feature.setId(id);
+          // need to add again to source because it is for relation layer is locked
+          source.addFeature(new Feature({ feature }));
+        }),
+        _rollback(relations),
+      ];
+    })
+  );
+}

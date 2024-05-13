@@ -8,6 +8,7 @@
 
 import SessionsRegistry from './sessionsregistry';
 import History          from './history';
+import { promisify }    from '../../utils/promisify';
 
 const { base, inherit }          = g3wsdk.core.utils;
 const { G3WObject }              = g3wsdk.core;
@@ -574,7 +575,9 @@ proto.set3DGeometryType = function({
 proto.commit = function({
   ids = null,
   items,
-  relations = true
+  relations = true,
+  /** @since g3w-client-plugin-editing@v3.8.0 */
+  __esPromise = false,
 } = {}) {
 
   const d = $.Deferred();
@@ -621,7 +624,13 @@ proto.commit = function({
 
       this.saveChangesOnServer(commit); // dispatch setter event.
 
-      d.resolve(commit, response);
+      // ES6 promises only accept a single response
+      if (__esPromise) {
+        d.resolve({ commit, response });
+      } else {
+        d.resolve(commit, response);
+      }
+      
 
     })
     .fail(err => d.reject(err));

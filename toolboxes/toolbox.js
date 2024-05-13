@@ -4,6 +4,7 @@ import { getRelationsInEditing }            from '../utils/getRelationsInEditing
 import { getRelationId }                    from '../utils/getRelationId';
 import { setAndUnsetSelectedFeaturesStyle } from '../utils/setAndUnsetSelectedFeaturesStyle';
 import { EditingWorkflow }                  from '../g3wsdk/workflow/workflow';
+import Session                              from '../g3wsdk/editing/session';
 
 import {
   OpenFormStep,
@@ -65,13 +66,9 @@ const {
 const { GUI }                    = g3wsdk.gui;
 const { tPlugin }                = g3wsdk.core.i18n;
 const { Layer }                  = g3wsdk.core.layer;
-const { Session }                = g3wsdk.core.editing;
 const { getScaleFromResolution } = g3wsdk.ol.utils;
 const { Geometry }               = g3wsdk.core.geometry;
 const { isSameBaseGeometryType } = g3wsdk.core.geoutils;
-
-
-
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8

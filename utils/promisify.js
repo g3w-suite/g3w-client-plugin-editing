@@ -15,13 +15,14 @@ export function promisify(promise) {
 /**
  * Migrate your consumer code away from jQuery promises.
  * 
- * @param promise ES6 promise
+ * @param promise async function or ES6 promise 
  */
 export function $promisify(promise) {
   if (promise.always) {
     return promise;
   }
-  return $.Deferred(function(deferred) {
-    promise.then(deferred.resolve, deferred.reject);
+  return $.Deferred(async d => {
+    try { d.resolve(await (promise instanceof Promise ? promise : promise())); }
+    catch (e) { d.reject(e); }
   }).promise();
 }
