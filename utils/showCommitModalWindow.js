@@ -31,14 +31,13 @@ function _list_changes(commits, layer) {
       + `${ commits[c].map(item => {
         const id     = item.id || item;
         const type   = item.geometry ? item.geometry.type : '';
-        const feat   = features.find(f => id === f.getId()) || {};
-        const efeat  = efeatures.find(f => id === f.getId()) || {};
-        const attrs = Object.entries(feat.getProperties ? feat.getProperties() : {}).sort((a,b) => a[0] > b[0]);
+        const feat   = features.find(f => id === f.getId());
+        const efeat  = efeatures.find(f => id === f.getId());
+        const attrs  = Object.entries(feat ? feat.getProperties() : {}).sort((a, b) => a[0] > b[0]);
         return `<li style="margin-bottom: 8px;"><details><summary style="display: list-item;font-weight: bold;padding: 0.5em;cursor: pointer;background-color: rgb(255, 255, 0, 0.25);font-size: medium;user-select: none;">${type} #${id}</summary>${
           attrs.map(([k,v]) => {
-            console.log(k);
-            const edited = feat && v !== feat.get(k);
-            const ins = edited ? ` ← <ins style="background-color: lime; text-decoration-line: none;">${ feat.get(k) }</ins>` : '';
+            const edited = efeat && v !== efeat.get(k);
+            const ins = edited ? ` ← <ins style="background-color: lime; text-decoration-line: none;">${ efeat.get(k) }</ins>` : '';
             const del = edited ? `<del style="background-color: tomato;">${v}</del>` : '';
             return `<b style="padding-left: 1ch;">${k}</b>: ${ (del + ins) || v} <br>`;
           }).join('')
