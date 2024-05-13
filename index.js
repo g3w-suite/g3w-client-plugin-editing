@@ -1497,9 +1497,10 @@ new (class extends Plugin {
 function _list_changes(commits, layer) {
   const features  = layer.readFeatures();        // original features
   const efeatures = layer.readEditingFeatures(); // edited features
+  console.log(commits, layer);
   return Object
     .keys(commits)
-    .filter(c => 'relations' !== c)
+    .filter(c => commits[c].length)
     .map(c =>
       `<h4>${tPlugin('editing.messages.commit.' + c)} (${ commits[c].length })</h4>`
       + `<ul style="list-style: none; padding-left: 0;">`
@@ -1520,7 +1521,10 @@ function _list_changes(commits, layer) {
       }).join('')}`
       + `</ul><hr>`).join('')
     // edited relations
-    + ((commits.relations || []).length ? `<h4 style='padding-left: 40%;border-top: #f4f4f4 1px solid;'${ t('editing.relations') }</h4> ${Object.entries(commits.relations).map(r => `<b>"${r[0]}</b>` + _list_changes(r[1])).join('')}` : '');
+    + ((Object.keys(commits.relations) || []).length ? Object.entries(commits.relations).map(r => {
+      const relation = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').getLayerById(r[0]);
+      return `<h4 style="font-weight: bold; color: var(--skin-color);">${ tPlugin('editing.relation') }: ${relation.getName() }</h4> ${ _list_changes(r[1], relation)} `;
+    }).join('') : '');
 }
 
 async function _rollback(relations = {}) {

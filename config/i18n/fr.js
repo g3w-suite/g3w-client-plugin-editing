@@ -11,6 +11,7 @@ export default {
   editing_data: "Modifier les donnes",
   editing_attributes: "Modifier les attributs",
   relations: "Relations",
+  relation: "Relation",
   edit_relation: "Modifier la relation",
   back_to_relations: "Retour aux relations",
   no_relations_found: "Il n'y a pas de relations",

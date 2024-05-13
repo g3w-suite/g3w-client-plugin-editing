@@ -11,6 +11,7 @@ export default {
   editing_data: "Nivåerna redigeras",
   editing_attributes: "Attributen redigeras",
   relations: "Relationer",
+  relation: "Relation",
   edit_relation: "Redigera relationen",
   back_to_relations: "Tillbaka till relationerna",
   no_relations_found: "Inga relationer hittades",
