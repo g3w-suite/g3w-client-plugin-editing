@@ -21,7 +21,6 @@ import { getRelationsInEditingByFeature }               from '../utils/getRelati
 import { getFeatureTableFieldValue }                    from '../utils/getFeatureTableFieldValue';
 
 import CopyFeatureFromOtherLayersComponent              from '../components/CopyFeaturesFromOtherLayers.vue';
-import CopyFeatureFromOtherProjectLayersComponent       from '../components/CopyFeaturesFromOtherProjectLayer.vue';
 import { PickFeaturesInteraction }                      from '../interactions/pickfeaturesinteraction';
 
 import WorkflowsStack                                   from '../g3wsdk/workflow/stack'
@@ -567,118 +566,15 @@ export class CopyFeaturesFromOtherProjectLayerStep extends EditingTask {
   }
 
   run(inputs, context) {
-    const d                = $.Deferred();
-    const {
-      features,
-      layer:originalLayer
-    }                      = inputs;
-    const layerId          = originalLayer.getId();
-    const attributes       = originalLayer.getEditingFields().filter(attribute => !attribute.pk);
-    const session          = context.session;
-    const editingLayer     = originalLayer.getEditingLayer();
-    const source           = editingLayer.getSource();
-    const selectedFeatures = [];
-
-    /**
-     * ORIGINAL SOURCE: g3w-client-plugin-editing/g3w-editing-components/selectcopyotherprojectlayerfeatures.js.js@v3.6
-     */
-    const Component        = Vue.extend(CopyFeatureFromOtherProjectLayersComponent);
-    const vueInstance      = new Component({
-      fields:           this.external                  ? null: CatalogLayersStoresRegistry.getLayerById(this.copyLayer.getId()).getFields(),
-      features:         undefined !== features         ? features : [],
-      selectedFeatures: undefined !== selectedFeatures ? selectedFeatures : [],
-    })
-
-    const message          = vueInstance.$mount().$el;
-    const dialog           = GUI.showModalDialog({
-      title: tPlugin('editing.modal.tools.copyfeaturefromprojectlayer.title'),
-      className: 'modal-left',
-      closeButton: false,
-      message,
-      buttons: {
-        cancel: {
-          label: 'Cancel',
-          className: 'btn-danger',
-          callback(){d.reject();}
-        },
-        ok: {
-          label: 'Ok',
-          className: 'btn-success',
-          callback: async () => {
-            const features = [];
-            let isThereEmptyFieldRequiredNotDefined = false;
-            if (selectedFeatures.length) {
-              const selectedFeature = selectedFeatures[0];
-              const createFeatureWithPropertiesOfSelectedFeature = properties => {
-                attributes.forEach(({name, validate: {required=false}}) => {
-                  const value = properties[name] || null;
-                  isThereEmptyFieldRequiredNotDefined = isThereEmptyFieldRequiredNotDefined || (value === null && required);
-                  selectedFeature.set(name, value);
-                });
-                const feature = new Feature({
-                  feature: selectedFeature,
-                  properties: attributes.map(attribute => attribute.name)
-                });
-
-                originalLayer
-                  .getEditingNotEditableFields()
-                  .find(field => {
-                    if (originalLayer.isPkField(field)){
-                      feature.set(field, null)
-                    }
-                  });
-                //remove eventually Z Values
-                removeZValueToOLFeatureGeometry({
-                  feature
-                });
-                feature.setTemporaryId();
-                source.addFeature(feature);
-                features.push(feature);
-                session.pushAdd(layerId, feature, false);
-              };
-              // case vector layer
-              if (this.isVector) {
-                if (this.external) {
-                  createFeatureWithPropertiesOfSelectedFeature(selectedFeature.getProperties());
-                } else {
-                  try {
-                    const layerProjectFeature = await getProjectLayerFeatureById({
-                      layerId: this.copyLayer.getId(),
-                      fid: selectedFeature.get(G3W_FID)
-                    });
-                    if (layerProjectFeature) {
-                      createFeatureWithPropertiesOfSelectedFeature(layerProjectFeature.properties);
-                    }
-                  } catch(err) {
-                    console.warn(err);
-                  }
-                }
-              } else {
-                //TODO case alphanumeric layer
-              }
-            }
-            if (features.length && features.length === 1) {
-              inputs.features.push(features[0]);
-            } else {
-              if (isThereEmptyFieldRequiredNotDefined) {
-                GUI.showUserMessage({
-                  type: 'warning',
-                  message: 'plugins.editing.messages.copy_and_paste_from_other_layer_mandatory_fields',
-                  autoclose: true,
-                  duration: 2000
-                });
-              }
-              inputs.features.push(features);
-            }
-            features.forEach(feature => this.fireEvent('addfeature', feature));
-            d.resolve(inputs)
-          }
-        }
-      }
-    });
-    dialog.find('button.btn-success').prop('disabled', true);
-    vueInstance.$watch('selectedFeatures', features => dialog.find('button.btn-success').prop('disabled', features.length === 0));
-    return d.promise();
+    return $.Deferred(d => new (Vue.extend(require('../components/CopyFeaturesFromOtherProjectLayer.vue')))({
+      inputs,
+      context,
+      promise: d,
+      service: this,
+      copyLayer: this.copyLayer,
+      external:  this.external,
+      isVector:  this.isVector,
+    })).promise();
   }
 
   stop() {
