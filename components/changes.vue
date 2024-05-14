@@ -20,14 +20,16 @@
       <ul>
         <li v-for="item in commits[c]">
           <details>
-            <summary>{{ getType(item) }} #{{ item.id || item }}</summary>
+            <summary>{{ getType(item) }} #{{ getId(item) }}</summary>
             <template v-for ="[key, val] in getAttrs(item)">
-              <b>{{ key }}</b>:
-              <template v-if="isEdited({ item, val })">
-                <del>{{ val }}</del> ← <ins>{{ getFeature(item).get(val) }}</ins>
+              <template v-if="hasValue(item, key)">
+                <b>{{ key }}</b>:
+                <template v-if="isEdited(item, key)">
+                  <del>{{ getFeature(item).get(key) }}</del> ← <ins>{{ getEditingFeature(item).get(key) }}</ins>
+                </template>
+                <span v-else>{{ val }}</span>
+                <br>
               </template>
-              <span v-else>{{ val }}</span>
-              <br>
             </template>
           </details>
         </li>
@@ -46,6 +48,7 @@
 </template>
 
 <script>
+
 export default {
 
   name: "changes",
@@ -57,7 +60,7 @@ export default {
     },
     layer: {
       type:    Object,
-      require: true,
+      required: true,
     },
     relation: {
       type:    Boolean,
@@ -68,42 +71,67 @@ export default {
   data() {
     return {
       features:  this.layer.readFeatures(),        // original features
-      efeatures: this.layer.readEditingFeatures(), // edited features
+      efeatures: this.layer.readEditingFeatures(), // edited features,
     };
   },
 
   methods: {
 
+    hasValue(item, key) {
+      const feat  = this.getFeature(item);
+      const efeat = this.getEditingFeature(item); // NB: undefined when deleted
+      console.log(item, feat, efeat, key);
+      if (
+        (feat && efeat && null === feat.get(key) && null === efeat.get(key)) ||
+        (feat && !efeat && null === feat.get(key))
+      ) {
+        return false;
+      }
+      return true;
+    },
+
     /**
-     * @returns edited feature (when deleted fallbacks to original feature)
+     * @returns { string } item id (when deleted is the item itself) 
+     */
+    getId(item) {
+      return item.id || item;
+    },
+
+    /**
+     * @returns edited feature
+     */
+    getEditingFeature(item) {
+      const id = this.getId(item);
+      return this.efeatures.find(f => id === f.getId());
+    },
+
+    /**
+     * @returns original feature
      */
     getFeature(item) {
-      const id    = item.id || item;
-      const feat  = this.features.find(f => id === f.getId());  // original feature
-      const efeat = this.efeatures.find(f => id === f.getId()); // edited feature
-      return efeat || feat; 
+      const id = this.getId(item);
+      return this.features.find(f => id === f.getId());
     },
 
     /**
      * @returns { string } layer type or empty string when geometry is undefined (alphanumerical layer)
      */
     getType(item) {
-      const feat = this.getFeature(item);
+      const feat = this.getEditingFeature(item) || this.getFeature(item); // when deleted fallbacks to original feature
       return feat && feat.getGeometry && feat.getGeometry() ? feat.getGeometry().getType() : ''
     },
 
     /**
      * @returns { boolean } whether feature property has been edited 
      */
-    isEdited({ item, key } = {}) {
-      const id    = item.id || item;
-      const feat  = this.features.find(f => id === f.getId());  // original feature
-      const efeat = this.efeatures.find(f => id === f.getId()); // edited feature (NB: undefined when deleted)
-      return feat && efeat && efeat.get(key) !== feat.get(key);
+    isEdited(item, key) {
+      const feat  = this.getFeature(item);
+      const efeat = this.getEditingFeature(item); // NB: undefined when deleted
+      return efeat && efeat.get(key) !== feat.get(key);
     },
 
     getAttrs(item) {
-      const feat = this.getFeature(item);
+      const feat = this.getEditingFeature(item) || this.getFeature(item); // when deleted fallbacks to original feature
       return Object.entries(feat ? feat.getProperties() : {}).sort((a, b) => a[0] > b[0])
     },
 
