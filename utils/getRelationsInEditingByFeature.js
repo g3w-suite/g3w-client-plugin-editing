@@ -39,9 +39,9 @@ export function getRelationsInEditingByFeature({
 
       relationinediting = {
         relation: relation.getState(),
-        // get relations attributes by feature
+        // get relation attributes by feature
         relations: service
-          .getLayerById(layerId)
+          .getLayerById(relationLayerId)
           .readEditingFeatures()
           .filter(feature => ownField.every((field, i) => feature.get(field) == values[i])) // get relations by feature
           .map(relation => ({
