@@ -8,15 +8,10 @@
       id      ="g3w_editing_show_measure_tool"
       type    = "checkbox"
       class   = "magic-checkbox snap_tools_of_tools"
-      v-model = "checked">
-    <label
-      for                      = "g3w_editing_show_measure_tool"
-      v-t-tooltip:right.create = "'plugins.editing.toolsoftool.measure'"
-    >
-      <span
-        style = "font-weight: bold"
-        :class = "g3wtemplate.font['measure']" >
-      </span>
+      v-model = "checked"
+    />
+    <label for="g3w_editing_show_measure_tool" v-t-tooltip:right.create="'plugins.editing.toolsoftool.measure'">
+      <b :class="g3wtemplate.font['measure']" ></b>
     </label>
   </div>
 </template>
