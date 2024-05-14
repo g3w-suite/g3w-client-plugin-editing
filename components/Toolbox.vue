@@ -75,7 +75,7 @@
             v-t-title:plugin = "edit_layer_tooltip"
           >
             <span
-              style  = "font-size: 1.1em; padding: 5px; !important;"
+              style  = "font-size: 1.1em; padding: 5px !important;"
               :class = "g3wtemplate.font['pencil']">
             </span>
           </div>

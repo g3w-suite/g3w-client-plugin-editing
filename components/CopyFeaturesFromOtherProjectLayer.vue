@@ -26,9 +26,9 @@
           </div>
         </div>
 
-        <div class="col-2" v-for="({ attribute, value }) in getAttributesFeature(feature)" >
-          <span style="font-weight: bold; margin-bottom: 10px;">{{ attribute }}</span>
-          <span style="align-self: start">{{ value }}</span>
+        <div class="feature-attributes" v-for="({ attribute, value }) in getAttributesFeature(feature)" >
+          <span class="f-attr">{{ attribute }}</span>
+          <span class="f-value">{{ value }}</span>
         </div>
 
       </div>
@@ -231,10 +231,17 @@
   border-right: 1px solid #eee;
 }
 
-.copy-features-for-layer-content .col-2 {
+.feature-attributes {
   display: flex;
   flex-direction: column;
   padding: 10px;
+}
+.f-attr {
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+.f-value {
+  align-self: start
 }
 .copy-features-for-layer-content .ztf {
   padding: 0 5px 15px 5px;
@@ -242,5 +249,4 @@
   cursor: pointer;
   margin-right: 5px;
 }
-
 </style>

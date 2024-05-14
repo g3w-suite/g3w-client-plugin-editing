@@ -13,9 +13,6 @@ import {
   AddPartToMultigeometriesStep,
   ConfirmStep,
 }                                                from './workflows';
-import EditingVueComponent                       from './components/Editing.vue';
-import ChangesComponent                          from './components/changes.vue'
-
 
 const { G3W_FID }                              = g3wsdk.constant;
 const { ApplicationState, ApplicationService } = g3wsdk.core;
@@ -980,7 +977,11 @@ new (class extends Plugin {
               inputs: {
                 close,
                 layer,
-                message: (new (Vue.extend(ChangesComponent))({ propsData: {commits: commitItems, layer}})).$mount().$el,
+                message: (new (Vue.extend(require('./components/Changes.vue')))({
+                  propsData: {
+                    commits: commitItems,
+                    layer
+                  }})).$mount().$el,
               }
             })
           );
@@ -1433,7 +1434,7 @@ new (class extends Plugin {
         ...opts,
         id: "editing-panel",
         title: opts.title || "plugins.editing.editing_data",
-        internalPanel: new (Vue.extend(EditingVueComponent))({
+        internalPanel: new (Vue.extend(require('./components/Editing.vue')))({
           service:       this,
           resourcesurl:  opts.resourcesUrl || GUI.getResourcesUrl(),
           showcommitbar: undefined !== opts.showcommitbar ? opts.showcommitbar : true,

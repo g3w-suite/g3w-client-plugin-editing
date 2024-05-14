@@ -1,42 +1,55 @@
+<!--
+  @since g3w-client-plugin-editing@v3.8.0
+  @file
+-->
 <template>
   <div>
-    <h4 v-if = "relation"
-      class = "skin-color g3w-long-text"
-      style = "font-weight: bold; margin: 15px 0"
-      v-t-plugin:pre="'editing.messages.commit.header_relation'">: {{ layer.getName() }}
-    </h4>
-    <template v-for="c in Object.keys(commits).filter(c => !['relations', 'lockids'].includes(c))">
+
+    <h4
+      v-if           = "relation"
+      class          = "skin-color g3w-long-text"
+      style          = "font-weight: bold; margin: 15px 0"
+      v-t-plugin:pre = "'editing.messages.commit.header_relation'"
+    >: {{ layer.getName() }}</h4>
+
+    <template
+      v-for = "c in Object.keys(commits).filter(c => commits[c].length)"
+    >
       <h4 v-t-plugin:pre="`editing.messages.commit.${c}`"> ({{ commits[c].length }}) </h4>
-      <divider/>
-      <ul style="list-style: none; padding-left: 0;">
-        <li v-for="item in commits[c]" style="margin-bottom: 8px;">
+      <divider />
+      <ul>
+        <li v-for="item in commits[c]">
           <details>
-            <summary> {{ getType(getFeature(item)) }} #{{ item.id || item }}
-            </summary>
-            <template v-for ="[k,v] in getAttrs(getFeature(item))">
-              <b style="padding-left: 1ch;">{{ k }}</b>:
-                <template v-if="isEdited({ item, k })">
-                  ← <ins style="background-color: lime; text-decoration-line: none;"> {{  getFeature(item).get(k) }}</ins>
-                  <del style="background-color: tomato;">{{ v }}</del>
-                </template>
-              <span v-else>{{ v }}</span>
+            <summary>{{ getType(item) }} #{{ item.id || item }}</summary>
+            <template v-for ="[key, val] in getAttrs(item)">
+              <b>{{ key }}</b>:
+              <template v-if="isEdited({ item, val })">
+                <del>{{ val }}</del> ← <ins>{{ getFeature(item).get(val) }}</ins>
+              </template>
+              <span v-else>{{ val }}</span>
               <br>
             </template>
           </details>
         </li>
       </ul>
     </template>
-    <changes v-for="([id, commits]) in Object.entries(commits.relations)"
-     :commits  = "commits"
-     :relation = "true"
-     :layer    = "service.getLayerById(id)"/>
+
+    <changes
+      v-for     = "([id, commits]) in Object.entries(commits.relations)"
+      :commits  = "commits"
+      :relation = "true"
+      :layer    = "getLayerById(id)"
+    />
+
   </div>
 
 </template>
 
 <script>
 export default {
+
   name: "changes",
+
   props: {
     commits: {
       type:     Object,
@@ -51,42 +64,56 @@ export default {
       default: false
     }
   },
+
+  data() {
+    return {
+      features:  this.layer.readFeatures(),        // original features
+      efeatures: this.layer.readEditingFeatures(), // edited features
+    };
+  },
+
   methods: {
+
+    /**
+     * @returns edited feature (when deleted fallbacks to original feature)
+     */
     getFeature(item) {
-      const id   = item.id || item;
-      //find feature in starting state of editing
-      const feat = this.features.find(f => id === f.getId());
-      // find feature in the current state of an editing source
-      // In the case of deleted existing feature e feat need to get feat
-      return this.efeatures.find(f => id === f.getId()) || feat;
+      const id    = item.id || item;
+      const feat  = this.features.find(f => id === f.getId());  // original feature
+      const efeat = this.efeatures.find(f => id === f.getId()); // edited feature
+      return efeat || feat; 
     },
-    getType(feat) {
-      //need to check also if geometry is not undefined (alphanumerical layer feature)
+
+    /**
+     * @returns { string } layer type or empty string when geometry is undefined (alphanumerical layer)
+     */
+    getType(item) {
+      const feat = this.getFeature(item);
       return feat && feat.getGeometry && feat.getGeometry() ? feat.getGeometry().getType() : ''
     },
-    isEdited({ item, k } = {}) {
-      const id   = item.id || item;
-      //find feature in starting state of editing
-      const feat  = this.features.find(f => id === f.getId());
-      const efeat = this.efeatures.find(f => id === f.getId());
-      //case new feature or delete feature
-      if (undefined === feat || undefined === efeat) { return false }
-      // find feature in the current state of an editing source
-      // In the case of deleted existing feature e feat need to get feat
-      return efeat.get(k) !== feat.get(k);
+
+    /**
+     * @returns { boolean } whether feature property has been edited 
+     */
+    isEdited({ item, key } = {}) {
+      const id    = item.id || item;
+      const feat  = this.features.find(f => id === f.getId());  // original feature
+      const efeat = this.efeatures.find(f => id === f.getId()); // edited feature (NB: undefined when deleted)
+      return feat && efeat && efeat.get(key) !== feat.get(key);
     },
-    getAttrs(feat) {
+
+    getAttrs(item) {
+      const feat = this.getFeature(item);
       return Object.entries(feat ? feat.getProperties() : {}).sort((a, b) => a[0] > b[0])
     },
+
+    getLayerById(id) {
+      return g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').service.getLayerById(id);
+    },
+
   },
-  created() {
-    this.service   = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').service;
-    this.features  = this.layer.readFeatures();        // original features
-    this.efeatures = this.layer.readEditingFeatures(); // edited features
-  }
 
-
-}
+};
 </script>
 
 <style scoped>
@@ -98,5 +125,22 @@ export default {
     background-color: rgb(255, 255, 0, 0.25);
     font-size: medium;
     user-select: none;
+  }
+  ul {
+    list-style: none;
+    padding-left: 0;
+  }
+  ul > li {
+    margin-bottom: 8px;
+  }
+  ins {
+    background-color: lime;
+    text-decoration-line: none;
+  }
+  del {
+    background-color: tomato;
+  }
+  b {
+    padding-left: 1ch;
   }
 </style>

@@ -3,24 +3,13 @@
 <!-- vue/components/toolsoftool.js@v3.4 -->
 
 <template>
-  <div
-    id    = "toolsoftoolcontainer"
-    style = "
-      display: flex;
-      flex-direction: column;
-      margin: 5px;
-      padding: 5px;
-      border-radius: 5px;
-    "
-  >
-    <template
-      v-for = "tool in tools"
-    >
+  <div id="toolsoftoolcontainer">
+    <template v-for="tool in tools">
       <component
         :is      = "tool.type"
         :options = "tool.options"
       />
-      <divider/>
+      <divider />
     </template>
   </div>
 </template>
