@@ -25,9 +25,9 @@
               <template v-if="hasValue(item, key)">
                 <b>{{ key }}</b>:
                 <template v-if="isEdited(item, key)">
-                  <del>{{ getFeature(item).get(key) }}</del> ← <ins>{{ getEditingFeature(item).get(key) }}</ins>
+                  <del>{{ getValue(getFeature(item), key) }}</del> ← <ins>{{ getValue(getEditingFeature(item), key) }}</ins>
                 </template>
-                <span v-else>{{ val }}</span>
+                <span v-else>{{ getValue(getEditingFeature(item) || getFeature(item), key) }}</span>
                 <br>
               </template>
             </template>
@@ -48,8 +48,8 @@
 </template>
 
 <script>
-import { areCoordinatesEqual } from '../utils/areCoordinatesEqual';
-
+import { areCoordinatesEqual }       from '../utils/areCoordinatesEqual';
+import { getFeatureTableFieldValue } from '../utils/getFeatureTableFieldValue';
 
 export default {
 
@@ -78,11 +78,18 @@ export default {
   },
 
   methods: {
+    getValue(feat, k) {
+      if ('geometry' === k) { return feat.get(k).getCoordinates(); }
+      return getFeatureTableFieldValue({
+        layerId: this.layer.getId(),
+        feature: feat,
+        property: k
+      })
+    },
 
     hasValue(item, key) {
       const feat  = this.getFeature(item);
       const efeat = this.getEditingFeature(item); // NB: undefined when deleted
-      console.log(item, feat, efeat, key);
       if (
         (feat && efeat && null === feat.get(key) && null === efeat.get(key)) ||
         (feat && !efeat && null === feat.get(key))
