@@ -14,6 +14,7 @@ import {
   ConfirmStep,
 }                                                from './workflows';
 import EditingVueComponent                       from './components/Editing.vue';
+import ChangesComponent                          from './components/changes.vue'
 
 
 const { G3W_FID }                              = g3wsdk.constant;
@@ -979,7 +980,7 @@ new (class extends Plugin {
               inputs: {
                 close,
                 layer,
-                message: _list_changes(commitItems, layer),
+                message: (new (Vue.extend(ChangesComponent))({ propsData: {commits: commitItems, layer}})).$mount().$el,
               }
             })
           );
@@ -1485,58 +1486,6 @@ new (class extends Plugin {
   }
 
 });
-
-/**
- * @param { Object } commits
- * @param commits.add
- * @param commits.update
- * @param commits.delete
- * 
- * @returns { string } 
- */
-function _list_changes(commits, layer) {
-  const features  = layer.readFeatures();        // original features
-  const efeatures = layer.readEditingFeatures(); // edited features
-  return Object
-    .keys(commits)
-    .filter(c => !['relations', 'lockids'].includes(c)) // no relations here
-    .map(c =>
-      `<h4>${tPlugin('editing.messages.commit.' + c)} (${ commits[c].length })</h4>`
-      + `<ul style="list-style: none; padding-left: 0;">`
-      + `${ commits[c].map(item => {
-        const id     = item.id || item;
-        //find feature in starting state of editing
-        const feat   = features.find(f => id === f.getId());
-        // find feature in the current state of an editing source
-        // In the case of deleted existing feature e feat need to get feat 
-        const efeat  = efeatures.find(f => id === f.getId()) || feat;
-        //need to check also if geometry is not undefined (alphanumerical layer feature)
-        const type   = efeat && efeat.getGeometry && efeat.getGeometry() ? efeat.getGeometry().getType() : '';
-        const attrs  = Object.entries(efeat ? efeat.getProperties() : {}).sort((a, b) => a[0] > b[0]);
-        return `<li style="margin-bottom: 8px;"><details><summary style="display: list-item;font-weight: bold;padding: 0.5em;cursor: pointer;background-color: rgb(255, 255, 0, 0.25);font-size: medium;user-select: none;">${type} #${id}</summary>${
-          attrs.map(([k,v]) => {
-            const edited = efeat && v !== efeat.get(k);
-            const ins = edited ? ` ← <ins style="background-color: lime; text-decoration-line: none;">${ efeat.get(k) }</ins>` : '';
-            const del = edited ? `<del style="background-color: tomato;">${v}</del>` : '';
-            return `<b style="padding-left: 1ch;">${k}</b>: ${ (del + ins) || v} <br>`;
-          }).join('')
-        }</details></li>`
-      }).join('')}`
-      + `</ul><hr>`).join('')
-    // edited relations
-    + ((Object.keys(commits.relations) || []).length > 0
-      ? `<h4 style='padding-left: 40%;border-top: #f4f4f4 1px solid; font-weight: bold'> ${ tPlugin('editing.relations') }</h4> 
-          ${Object.entries(commits.relations)
-            .map(r => { 
-              const layer = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').service.getLayerById(r[0]); 
-              return `<b class="skin-color">"${ layer.getName() }"</b>` + _list_changes(r[1], layer) }
-            ).join('')}`
-      : '');
-    + ((Object.keys(commits.relations) || []).length ? Object.entries(commits.relations).map(r => {
-      const relation = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').getLayerById(r[0]);
-      return `<h4 style="font-weight: bold; color: var(--skin-color);">${ tPlugin('editing.messages.commit.header_relation') }: ${relation.getName() }</h4> ${ _list_changes(r[1], relation)} `;
-    }).join('') : '');
-}
 
 async function _rollback(relations = {}) {
   return Promise.allSettled(
