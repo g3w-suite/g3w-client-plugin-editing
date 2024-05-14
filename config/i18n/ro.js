@@ -11,7 +11,6 @@ export default  {
   editing_data: "Modificare straturi",
   editing_attributes: "Modificare atribute",
   relations: "Relații",
-  relation: "Relation",
   edit_relation: "Modifică relația",
   back_to_relations: "Înapoi la Relații",
   no_relations_found: "Nu am găsit relații",
@@ -114,6 +113,7 @@ export default  {
     pdf: "Previzualizarea documentului nu este disponibilă. Click aici ",
     commit: {
       header: "Lista cu toate modificările.",
+      header_relation: "Relation",
       header_add: "<b>Adăugate</b> arată nr. de entități adăugate",
       header_update_delete: "<b>Modificate</b> și <b>Șterse</b> arată lista de id-uri de entități",
       add: "Adăugate",

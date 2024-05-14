@@ -11,7 +11,6 @@ export default {
   editing_data: "Editing Layers",
   editing_attributes: "Editing attributes",
   relations: "Relations",
-  relation: "Relation",
   edit_relation: "Edit relation",
   back_to_relations: "Back to Relations",
   no_relations_found: "No relations found",
@@ -114,6 +113,7 @@ export default {
     pdf: "Document preview not available. Please click here ",
     commit: {
       header: "The following list show all changes to commit.",
+      header_relation: "Relation",
       header_add: "<b>Added</b> show the number of features added",
       header_update_delete: "<b>Modified</b> and <b>Deleted</b> show the list of features id",
       add: "Added",

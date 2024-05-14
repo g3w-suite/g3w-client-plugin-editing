@@ -11,7 +11,6 @@ export default {
   editing_data: "Muokataan tasoja",
   editing_attributes: "Muokataan attribuutteja",
   relations: "Relaatiot",
-  relation: "Relation",
   edit_relation: "Muokkaa relaatiota",
   back_to_relations: "Takaisin relaatioihin",
   no_relations_found: "Relaatioita ei löytynyt",
@@ -114,6 +113,7 @@ export default {
     pdf: "Dokumentin esikatselu ei ole saatavilla. Paina tästä ",
     commit: {
       header: "Seuraava luettelo näyttää kaikki muutokset.",
+      header_relation: "Relation",
       header_add: "<b>Lisätty</b> näytä lisättyjen ominaisuuksien lukumäärä",
       header_update_delete: "<b>Muokattu</b> ja <b>Poistettu</b> Näytä listä ominaisuuksien id:stä",
       add: "Lisätty",

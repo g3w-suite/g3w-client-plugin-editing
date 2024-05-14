@@ -1534,7 +1534,7 @@ function _list_changes(commits, layer) {
       : '');
     + ((Object.keys(commits.relations) || []).length ? Object.entries(commits.relations).map(r => {
       const relation = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').getLayerById(r[0]);
-      return `<h4 style="font-weight: bold; color: var(--skin-color);">${ tPlugin('editing.relation') }: ${relation.getName() }</h4> ${ _list_changes(r[1], relation)} `;
+      return `<h4 style="font-weight: bold; color: var(--skin-color);">${ tPlugin('editing.messages.commit.header_relation') }: ${relation.getName() }</h4> ${ _list_changes(r[1], relation)} `;
     }).join('') : '');
 }
 

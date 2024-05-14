@@ -11,7 +11,6 @@ export default {
   editing_data: "Modifier les donnes",
   editing_attributes: "Modifier les attributs",
   relations: "Relations",
-  relation: "Relation",
   edit_relation: "Modifier la relation",
   back_to_relations: "Retour aux relations",
   no_relations_found: "Il n'y a pas de relations",
@@ -114,6 +113,7 @@ export default {
     pdf: "Aperçu du document non disponible. Cliquez ici ",
     commit: {
       header: "La liste ci-dessous montre toutes les modifications qui seront enregistrées.",
+      header_relation: "Relation",
       header_add: "<b>Ajouts</b> indique le nombre de fonctionnalités ajoutées",
       header_update_delete: "<b>Modifié</b> e <b>Supprimé</b> liste les ids",
       add: "Ajouté",

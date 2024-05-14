@@ -11,7 +11,6 @@ export default {
   editing_data: "Nivåerna redigeras",
   editing_attributes: "Attributen redigeras",
   relations: "Relationer",
-  relation: "Relation",
   edit_relation: "Redigera relationen",
   back_to_relations: "Tillbaka till relationerna",
   no_relations_found: "Inga relationer hittades",
@@ -114,6 +113,7 @@ export default {
     pdf: "Förhandsgranskning av dokument är inte tillgänglig. Tryck här",
     commit: {
       header: "Följande lista visar alla ändringar.",
+      header_relation: "Relation",
       header_add: "<b>Tillagda</b> visar antalet egenskaper som lagts till",
       header_update_delete: "<b>Redigerad</b> och <b>Borttagen</b> Visa en lista på egenskapernas id",
       add: "har lagts till",

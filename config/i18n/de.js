@@ -11,7 +11,6 @@ export default {
   editing_data: "Layer bearbeiten",
   editing_attributes: "Attribute bearbeiten",
   relations: "Relationen",
-  relation: "Relation",
   edit_relation: "Relation bearbeiten",
   back_to_relations: "Zurück zu Relationen",
   no_relations_found: "Keine Relationen gefunden",
@@ -114,6 +113,7 @@ export default {
     pdf: "Dokumentenvorschau nicht verfügbar. Bitte hier klicken ",
     commit: {
       header: "Die folgende Liste zeigt alle zu übernehmenden Änderungen.",
+      header_relation: "Relation",
       header_add: "<b>Hinzufgefügt</b> Die Anzahl der hinzugefügten Features anzeigen",
       header_update_delete: "<b>Bearbeitet</b> und <b>Gelöscht</b> Die Liste der Feature-ID anzeigen",
       add: "Hinzugefügt",
