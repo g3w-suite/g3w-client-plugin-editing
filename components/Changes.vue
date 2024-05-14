@@ -48,6 +48,8 @@
 </template>
 
 <script>
+import { areCoordinatesEqual } from '../utils/areCoordinatesEqual';
+
 
 export default {
 
@@ -125,9 +127,13 @@ export default {
      * @returns { boolean } whether feature property has been edited 
      */
     isEdited(item, key) {
-      const feat  = this.getFeature(item);
-      const efeat = this.getEditingFeature(item); // NB: undefined when deleted
-      return efeat && efeat.get(key) !== feat.get(key);
+        const feat  = this.getFeature(item); // NB: undefined when added
+        const efeat = this.getEditingFeature(item); // NB: undefined when deleted
+        if ([feat, efeat].includes(undefined)) { return false }
+        if (this.getType(item) && 'geometry' === key) {
+          return !areCoordinatesEqual({ feature: feat, coordinates: efeat.get(key).getCoordinates() });
+        }
+        return efeat.get(key) !== feat.get(key);
     },
 
     getAttrs(item) {
