@@ -4,6 +4,10 @@
  * @param promise jquery promise
  */
 export function promisify(promise) {
+  console.assert(undefined !== promise, 'promise is undefined');
+  if (undefined === promise) {
+    console.trace();
+  }
   if (promise instanceof Promise) {
     return promise;
   }
@@ -18,6 +22,10 @@ export function promisify(promise) {
  * @param promise async function or ES6 promise 
  */
 export function $promisify(promise) {
+  console.assert(undefined !== promise, 'promise is undefined');
+  if (undefined === promise) {
+    console.trace();
+  }
   if (promise.always) {
     return promise;
   }

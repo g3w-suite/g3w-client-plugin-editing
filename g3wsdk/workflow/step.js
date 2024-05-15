@@ -5,7 +5,8 @@
  * 
  * @since g3w-client-plugin-editing@v3.8.x
  */
-import { EditingTask } from '../../g3wsdk/workflow/task';
+import { EditingTask }           from '../../g3wsdk/workflow/task';
+import { promisify, $promisify } from '../../utils/promisify';
 
 const { G3WObject } = g3wsdk.core;
 
@@ -120,29 +121,28 @@ class Step extends G3WObject {
    * @fires run
    */ 
   run(inputs, context, queques) {
-    const d = $.Deferred();
-
-    this.emit('run', { inputs, context });
-
-    if (this._task) {
+    return $promisify(async () => {
+      this.emit('run', { inputs, context });
+      if (!this._task) {
+        return;
+      }
       try {
         this.state.running = true;                // change state to running
         this._task.setInputs(inputs);
         this._task.setContext(context);
-        this._task
-          .run(inputs, context, queques)
-          .then(outputs => { this.stop(); d.resolve(outputs); })
-          .fail(err     => { this.stop(); d.reject(err); });
-      } catch(err) {
-        console.warn(err)
-        this.state.error = err;
-        this.state.error = 'Problem ..';
+        if(!this._task.run) {
+          console.trace(this);
+        }
+        const outputs = await promisify(this._task.run(inputs, context, queques));
+        return outputs;
+      } catch (e) {
+        console.warn(e);
+        this.state.error = e;
+        return Promise.reject(e);
+      } finally{
         this.stop();
-        d.reject(err);
       }
-    }
-
-    return d.promise();
+    });
   }
 
   /**
@@ -277,6 +277,8 @@ export class EditingStep extends EditingTask {
     super(options);
 
     options.task = this;
+
+    console.assert(undefined !== options.run, options.run)
 
     this.run  = options.run.bind(this);
     this.stop = (options.stop || (() => true)).bind(this);

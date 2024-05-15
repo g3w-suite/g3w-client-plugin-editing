@@ -7,10 +7,11 @@
  * @since g3w-client-plugin-editing@v3.8.x
  */
 
-import Flow             from './flow';
-import WorkflowsStack   from './stack';
-import Step             from './step';
-import UserMessageSteps from '../../components/UserMessageSteps';
+import Flow                      from './flow';
+import WorkflowsStack            from './stack';
+import Step                      from './step';
+import UserMessageSteps          from '../../components/UserMessageSteps';
+import { promisify, $promisify } from '../../utils/promisify';
 
 const { GUI }                 = g3wsdk.gui;
 const { G3WObject }           = g3wsdk.core;
@@ -359,59 +360,63 @@ export default class Workflow extends G3WObject {
    * @fires start
    */
   start(options = {}) {
-    const d       = $.Deferred();
-
-    this._promise = d;
-    this._inputs  = options.inputs;
-    this._context = options.context || {};
-
-    const isChild = this._context.isChild || false;
-    
-    // stop child when a workflow is running 
-    if (
-        !isChild
-        && WorkflowsStack.getLength()
-        && WorkflowsStack.getCurrent() !== this
-    ) {
-      WorkflowsStack.getCurrent().addChild(this)
-    }
-
-    this._stackIndex = WorkflowsStack.push(this);
-    this._flow       = options.flow || this._flow;
-    this._steps      = options.steps || this._steps;
-
-    const showUserMessage = this._isThereUserMessaggeSteps();
-
-    if (showUserMessage) {
-      GUI.showUserMessage({
-        title: 'plugins.editing.workflow.title.steps',
-        type: 'tool',
-        position: 'left',
-        size: 'small',
-        closable: false,
-        hooks: {
-          body: UserMessageSteps({ steps: this._userMessageSteps })
+    return $.Deferred(async d => {
+      this._promise = d;
+      this._inputs  = options.inputs;
+      this._context = options.context || {};
+  
+      const isChild = this._context.isChild || false;
+      
+      // stop child when a workflow is running 
+      if (
+          !isChild
+          && WorkflowsStack.getLength()
+          && WorkflowsStack.getCurrent() !== this
+      ) {
+        WorkflowsStack.getCurrent().addChild(this)
+      }
+  
+      this._stackIndex = WorkflowsStack.push(this);
+      this._flow       = options.flow || this._flow;
+      this._steps      = options.steps || this._steps;
+  
+      const showUserMessage = this._isThereUserMessaggeSteps();
+  
+      if (showUserMessage) {
+        GUI.showUserMessage({
+          title: 'plugins.editing.workflow.title.steps',
+          type: 'tool',
+          position: 'left',
+          size: 'small',
+          closable: false,
+          hooks: {
+            body: UserMessageSteps({ steps: this._userMessageSteps })
+          }
+        });
+      }
+  
+      try {
+        //start flow of worflow
+        const outputs = await promisify(this._flow.start(this));
+        if (showUserMessage) {
+          setTimeout(() => { this.clearUserMessagesSteps(); d.resolve(outputs); }, 500);
+        } else {
+          d.resolve(outputs);
         }
-      });
-    }
-
-    //start flow of worflow
-    this._flow
-      .start(this)
-      .then(outputs => {
-        if (showUserMessage) { setTimeout(() => { this.clearUserMessagesSteps(); d.resolve(outputs); }, 500); }
-        else { d.resolve(outputs); }
-      })
-      .fail(e => {
-        if (showUserMessage) { this.clearUserMessagesSteps(); }
+      } catch (e) {
+        console.warn(e);
+        if (showUserMessage) {
+          this.clearUserMessagesSteps();
+        }
         d.reject(e);
-      })
-      .always(() => {
-        if (this.runOnce) { this.stop(); }
-      });
+      }
 
-    this.emit('start');
-    return d.promise();
+      if (this.runOnce) {
+        this.stop();
+      }
+  
+      this.emit('start');
+    }).promise();
   }
 
   /**
@@ -420,25 +425,29 @@ export default class Workflow extends G3WObject {
    * @fires stop
    */
   stop() {
-    const d = $.Deferred();
+    return $.Deferred(async d => {
+      this._promise = null;
 
-    this._promise = null;
+      try {
+        await promisify(this._stopChild()) // stop child workflow  
+      } catch (e) {
+        console.warn(e);
+      }
+      
+      // ensure that child is always removed
+      this.removeChild();
 
-    this
-      ._stopChild()                                   // stop child workflow
-      .always(() => {                                 // ensure that child is always removed
-        this.removeChild();
-        WorkflowsStack.removeAt(this.getStackIndex());
-        this._flow
-          .stop()
-          .then(d.resolve)
-          .fail(d.reject)
-          .always(() => this.clearMessages())
-    });
-    
-    this.emit('stop');
-    
-    return d.promise();
+      WorkflowsStack.removeAt(this.getStackIndex());
+
+      this._flow
+        .stop()
+        .then(d.resolve)
+        .fail(d.reject)
+        .always(() => this.clearMessages())
+
+      this.emit('stop');
+
+    }).promise();
   }
 
   /**
