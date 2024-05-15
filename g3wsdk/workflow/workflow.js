@@ -7,11 +7,11 @@
  * @since g3w-client-plugin-editing@v3.8.x
  */
 
-import Flow                      from './flow';
-import WorkflowsStack            from './stack';
-import Step                      from './step';
-import UserMessageSteps          from '../../components/UserMessageSteps';
-import { promisify, $promisify } from '../../utils/promisify';
+import Flow             from './flow';
+import WorkflowsStack   from './stack';
+import Step             from './step';
+import UserMessageSteps from '../../components/UserMessageSteps';
+import { promisify }    from '../../utils/promisify';
 
 const { GUI }                 = g3wsdk.gui;
 const { G3WObject }           = g3wsdk.core;

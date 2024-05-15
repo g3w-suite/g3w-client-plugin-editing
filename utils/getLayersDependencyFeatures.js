@@ -17,6 +17,7 @@ const { ApplicationState } = g3wsdk.core;
  * @since g3w-client-plugin-editing@v3.8.0
  */
 export async function getLayersDependencyFeatures(layerId, opts = {}) {
+
   const service   = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing'); //get editing service
 
   const layer     = service.getLayerById(layerId);

@@ -152,8 +152,6 @@
           .always(() => this.saving = false);
       },
 
-      saveAll() {},
-
       /**
        * @param toolboxId
        */

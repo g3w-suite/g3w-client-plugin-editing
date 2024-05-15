@@ -261,6 +261,7 @@
         active:             false,
         value:              null,
         placeholdersearch:  `${t('editing.search')} ...`,
+        resourcesurl:       GUI.getResourcesUrl(),
       };
     },
 
@@ -662,7 +663,12 @@
 
       this.capabilities = this._service.getEditingCapabilities();
 
-      this.formeventbus.$on('changeinput', this.updateExternalKeyValueRelations.bind(this));
+      try {
+        const formservice = g3wsdk.gui.GUI.getCurrentContent().content.getService();
+        formservice.getEventBus().$on('changeinput', this.updateExternalKeyValueRelations.bind(this))
+      } catch (e) {
+        console.warn(e);
+      }
 
     },
 

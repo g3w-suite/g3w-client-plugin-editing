@@ -10,14 +10,16 @@ import WorkflowsStack from '../g3wsdk/workflow/stack'
  * @param form.context.excludeFields
  * @param form.context.get_default_value
  * @param form.isChild                   - whether is child form (ie. belongs to relation)
+ * @param form.multi                     - in case of multi editing set all fields to null
  * 
  * @since g3w-client-plugin-editing@v3.8.0
  */
-export async function getFormFields({
+export function getFormFields({
   inputs,
   context,
   feature,
   isChild = false,
+  multi,
 } = {}) {
 
   let has_unique        = false;                                               // check for unique validation
@@ -85,7 +87,7 @@ export async function getFormFields({
 
   // skip when ..
   if (!has_unique) {
-    return fields;
+    return _handleMulti(fields, multi);
   }
 
   // Listen event method after close/save form
@@ -154,5 +156,19 @@ export async function getFormFields({
     return { once: true };
   });
 
-  return fields;
+  return _handleMulti(fields, multi);
 };
+
+function _handleMulti(fields, multi) {
+  if (multi) {
+    fields = fields.map(field => {
+        const f = JSON.parse(JSON.stringify(field));
+        f.value = null;
+        f.forceNull = true;
+        f.validate.required = false;
+        return f;
+      })
+      .filter(field => !field.pk)
+  }
+  return fields;
+}
