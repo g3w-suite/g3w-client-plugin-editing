@@ -21,7 +21,7 @@ import { getEditingLayerById }                          from '../utils/getEditin
 import { getRelationsInEditingByFeature }               from '../utils/getRelationsInEditingByFeature';
 import { areCoordinatesEqual }                          from '../utils/areCoordinatesEqual';
 import { handleSplitFeature }                           from '../utils/handleSplitFeature';
-import { addPartToMultigeometries }                     from '../utils/AddPartToMultigeometries';
+import { addPartToMultigeometries }                     from '../utils/addPartToMultigeometries';
 
 import {
   OpenFormStep,

@@ -8,7 +8,7 @@ import { createFeature }                         from './utils/createFeature';
 import { getProjectLayerFeatureById }            from './utils/getProjectLayerFeatureById';
 import { getEditingLayerById }                   from './utils/getEditingLayerById';
 import { setAndUnsetSelectedFeaturesStyle }      from './utils/setAndUnsetSelectedFeaturesStyle';
-import { addPartToMultigeometries }              from './utils/AddPartToMultigeometries';
+import { addPartToMultigeometries }              from './utils/addPartToMultigeometries';
 import {
   OpenFormStep,
   AddFeatureStep,
