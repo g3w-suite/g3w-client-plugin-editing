@@ -5,6 +5,7 @@
  * 
  * @since g3w-client-plugin-editing@v3.8.x
  */
+import { EditingTask } from '../../g3wsdk/workflow/task';
 
 const { G3WObject } = g3wsdk.core;
 
@@ -269,3 +270,17 @@ Step.MESSAGES = {
 };
 
 export default Step;
+
+export class EditingStep extends EditingTask {
+
+  constructor(options = {}) {
+    super(options);
+
+    options.task = this;
+
+    this.run  = options.run.bind(this);
+    this.stop = (options.stop || (() => true)).bind(this);
+
+    return new Step(options);
+  }
+}

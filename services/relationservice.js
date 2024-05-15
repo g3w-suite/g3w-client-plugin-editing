@@ -1,29 +1,34 @@
-import { EditingWorkflow }                  from '../g3wsdk/workflow/workflow';
-import WorkflowsStack                       from '../g3wsdk/workflow/stack'
-import { setAndUnsetSelectedFeaturesStyle } from '../utils/setAndUnsetSelectedFeaturesStyle';
-import { promisify }                        from '../utils/promisify';
-import { getRelationFieldsFromRelation }    from '../utils/getRelationFieldsFromRelation';
-import { getLayersDependencyFeatures }      from '../utils/getLayersDependencyFeatures';
-import { getEditingLayerById }              from '../utils/getEditingLayerById';
-import { VM }                               from '../eventbus';
+import { EditingWorkflow }                              from '../g3wsdk/workflow/workflow';
+import { EditingStep }                                  from '../g3wsdk/workflow/step';
+import WorkflowsStack                                   from '../g3wsdk/workflow/stack'
+import { setAndUnsetSelectedFeaturesStyle }             from '../utils/setAndUnsetSelectedFeaturesStyle';
+import { promisify }                                    from '../utils/promisify';
+import { getRelationFieldsFromRelation }                from '../utils/getRelationFieldsFromRelation';
+import { getLayersDependencyFeatures }                  from '../utils/getLayersDependencyFeatures';
+import { getEditingLayerById }                          from '../utils/getEditingLayerById';
+import { convertFeaturesGeometryToGeometryTypeOfLayer } from '../utils/convertFeaturesGeometryToGeometryTypeOfLayer';
+import { addTableFeature }                              from '../utils/addTableFeature';
+import { PickFeaturesInteraction }                      from '../interactions/pickfeaturesinteraction';
+import { VM }                                           from '../eventbus';
 
 import {
   OpenFormStep,
-  LinkRelationStep,
-  PickProjectLayerFeaturesStep,
-  CopyFeaturesFromOtherProjectLayerStep,
-  AddTableFeatureStep,
   OpenTableStep,
   AddFeatureStep,
   ModifyGeometryVertexStep,
   MoveFeatureStep,
 }                                           from '../workflows';
 
-const { GUI }            = g3wsdk.gui;
-const { tPlugin:t }      = g3wsdk.core.i18n;
-const { Layer }          = g3wsdk.core.layer;
-const { Geometry }       = g3wsdk.core.geometry;
-const { FormService }    = g3wsdk.gui.vue.services;
+const { DataRouterService } = g3wsdk.core.data;
+const { GUI }               = g3wsdk.gui;
+const { tPlugin:t }         = g3wsdk.core.i18n;
+const {
+  PickFeatureInteraction,
+  PickCoordinatesInteraction
+}                           = g3wsdk.ol.interactions;
+const { Layer }             = g3wsdk.core.layer;
+const { Geometry }          = g3wsdk.core.geometry;
+const { FormService }       = g3wsdk.gui.vue.services;
 
 
 const color = 'rgb(255,89,0)';
@@ -134,7 +139,7 @@ module.exports = class RelationService {
             ...options,
             type: 'addtablefeature',
             steps: [
-              new AddTableFeatureStep(),
+              new EditingStep({ help: 'editing.steps.help.new', run: addTableFeature }),
               new OpenFormStep(),
             ],
           });
@@ -148,7 +153,62 @@ module.exports = class RelationService {
           return new EditingWorkflow({
             type: 'linkrelation',
             steps: [
-              new LinkRelationStep(options)
+              new EditingStep({
+                ...options,
+                help: "editing.steps.help.select_feature_to_relation",
+                run(inputs, context) {
+                  return $.Deferred(async d => {
+                    GUI.setModal(false);
+                    const editingLayer        = inputs.layer.getEditingLayer();
+                    this._originalLayerStyle  = editingLayer.getStyle();
+
+                    try {
+
+                      if (context.beforeRun && 'function' === typeof context.beforeRun) {
+                        await promisify(context.beforeRun());
+                      }
+
+                      let features = editingLayer.getSource().getFeatures();
+
+                      if (context.excludeFeatures) {
+                        features = features
+                          .filter(feature => Object
+                            .entries(context.excludeFeatures)
+                            .reduce((bool, [field, value]) => bool && feature.get(field) != value, true)
+                          )
+                      }
+                      this._stopPromise = $.Deferred();
+
+                      setAndUnsetSelectedFeaturesStyle({
+                        promise: this._stopPromise.promise(),
+                        inputs: { layer: inputs.layer, features },
+                        style: this.selectStyle
+                      });
+
+                      this.pickFeatureInteraction = new PickFeatureInteraction({ layers: [editingLayer], features });
+                      this.addInteraction(this.pickFeatureInteraction);
+                      this.pickFeatureInteraction.on('picked', e => {
+                        inputs.features.push(e.feature); // push relation
+                        GUI.setModal(true);
+                        d.resolve(inputs);
+                      });
+                    } catch (e) {
+                      console.warn(e);
+                      d.reject(e);
+                    }
+                  }).promise();
+                },
+                stop() {
+                  GUI.setModal(true);
+                  this.removeInteraction(this.pickFeatureInteraction);
+                  this.pickFeatureInteraction = null;
+                  this._originalLayerStyle    = null;
+                  if (this._stopPromise) {
+                    this._stopPromise.resolve(true);
+                  }
+                  return true;
+                },
+              })
             ]
           });
         },
@@ -172,8 +232,98 @@ module.exports = class RelationService {
           return new EditingWorkflow({
             type: 'selectandcopyfeaturesfromotherlayer',
             steps: [
-              new PickProjectLayerFeaturesStep(options),
-              new CopyFeaturesFromOtherProjectLayerStep(options),
+              // pick project layer features
+              new EditingStep({
+                ...options,
+                help: "editing.steps.help.pick_feature",
+                run(inputs, context) {
+                  this.pickInteraction = this.pickInteraction || null;
+                  /** @TODO Create a component that ask which project layer would like to query */
+                  if (!options.copyLayer) {
+                    return $.Deferred(d => d.resolve()).promise();
+                  }
+                  return $.Deferred(async d => {
+                    // get features from copyLayer
+                    let features             = [];
+                    const geometryType       = inputs.layer.getGeometryType();
+                    // interaction promise
+                    await (new Promise(async resolve => {
+                      /** @TODO NO VECTOR LAYER */
+                      if (!options.isVector) {
+                        return resolve();
+                      }
+                      //In case of external layer
+                      if (options.external) {
+                        this.pickInteraction = new PickFeaturesInteraction({ layer: options.copyLayer });
+                        this.addInteraction(this.pickInteraction);
+                        this.pickInteraction.on('picked', e => {
+                          features = convertFeaturesGeometryToGeometryTypeOfLayer({ features: e.features, geometryType });
+                          resolve();
+                        });
+                      } else {   //In case of TOC/PROJECT layer
+                        this.pickInteraction = new PickCoordinatesInteraction();
+                        this.addInteraction(this.pickInteraction);
+                        const project = ProjectsRegistry.getCurrentProject();
+                        this.pickInteraction.once('picked', async evt => {
+                          const coordinates = evt.coordinate;
+                          try {
+                            const {data=[]} = await DataRouterService.getData('query:coordinates', {
+                              inputs: {
+                                coordinates,
+                                query_point_tolerance: project.getQueryPointTolerance(),
+                                layerIds: [options.copyLayer.getId()],
+                                multilayers: false
+                              },
+                              outputs: null
+                            });
+                            if (data.length) {
+                              features = convertFeaturesGeometryToGeometryTypeOfLayer({ features: data[0].features, geometryType });
+                            }
+                          } catch(e) {
+                            console.warn(e);
+                            d.reject(e);
+                          } finally {
+                            resolve();
+                          }
+                        })
+                      }
+                    }));
+                    if (features.length) {
+                      inputs.features = features;
+                      d.resolve(inputs);
+                    } else {
+                      GUI.showUserMessage({
+                        type: 'warning',
+                        message: 'plugins.editing.messages.no_feature_selected',
+                        closable: false,
+                        autoclose: true
+                      });
+                      d.reject();
+                    }
+                  }).promise();
+                },
+                stop() {
+                  this.removeInteraction(this.pickInteraction);
+                  this.pickInteraction = null;
+                  return true;
+                },
+              }),
+              // copy features from other project layer
+              new EditingStep({
+                ...options,
+                help: "editing.steps.help.draw_new_feature",
+                run(inputs, context) {
+                  return $.Deferred(d => new (Vue.extend(require('../components/CopyFeaturesFromOtherProjectLayer.vue')))({
+                    inputs,
+                    context,
+                    promise: d,
+                    service: this,
+                    copyLayer: options.copyLayer,
+                    external:  options.external,
+                    isVector:  options.isVector,
+                  })).promise();
+                }
+              }),
               new OpenFormStep(options),
             ],
             registerEscKeyEvent: true,

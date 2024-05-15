@@ -1,18 +1,19 @@
 import './g3wsdk';
 import pluginConfig                              from './config';
 import { EditingWorkflow }                       from './g3wsdk/workflow/workflow';
+import { EditingStep }                           from './g3wsdk/workflow/step';
 import SessionsRegistry                          from './g3wsdk/editing/sessionsregistry';
 import { promisify, $promisify }                 from './utils/promisify';
 import { createFeature }                         from './utils/createFeature';
 import { getProjectLayerFeatureById }            from './utils/getProjectLayerFeatureById';
 import { getEditingLayerById }                   from './utils/getEditingLayerById';
 import { setAndUnsetSelectedFeaturesStyle }      from './utils/setAndUnsetSelectedFeaturesStyle';
+import { addPartToMultigeometries }              from './utils/AddPartToMultigeometries';
 import {
   OpenFormStep,
   AddFeatureStep,
-  AddPartToMultigeometriesStep,
-  ConfirmStep,
 }                                                from './workflows';
+import { ToolBox }                               from './toolboxes/toolbox';
 
 const { G3W_FID }                              = g3wsdk.constant;
 const { ApplicationState, ApplicationService } = g3wsdk.core;
@@ -37,15 +38,9 @@ Object
     EditingWorkflow,
     OpenFormStep,
     AddFeatureStep,
-    AddPartToMultigeometriesStep,
-    ConfirmStep,
+    ToolBox,
   })
   .forEach(([k, v]) => console.assert(undefined !== v, `${k} is undefined`));
-
-
-const ToolBox      = require('./toolboxes/toolbox');
-
-// addEventListener("unhandledrejection", console.trace);
 
 new (class extends Plugin {
 
@@ -338,7 +333,7 @@ new (class extends Plugin {
     MapLayersStoreRegistry.getLayersStore('editing').addLayers(this.getLayers());
 
     // create toolboxes
-    this.getLayers().forEach(l => this.addToolBox(ToolBox.create(l)));
+    this.getLayers().forEach(l => this.addToolBox(new ToolBox(l)));
 
     // create toolboxes dependencies tree
     this.state._toolboxes.forEach(toolbox => {
@@ -484,7 +479,8 @@ new (class extends Plugin {
                 },
                 onStop: () => w.emit('deactive', ['snap'])
               }),
-              new AddPartToMultigeometriesStep({}),
+              // add part to multi geometries
+              new EditingStep({ run: addPartToMultigeometries })
             ],
             registerEscKeyEvent: true
           })
@@ -949,8 +945,9 @@ new (class extends Plugin {
           workflow = new EditingWorkflow({
             type: 'commitfeatures',
             steps: [
-              new ConfirmStep({
-                dialog(inputs) {
+              // confirm step
+              new EditingStep({
+                run(inputs) {
                   return $.Deferred(d => {
                     const dialog = GUI.dialog.dialog({
                       message: inputs.message,
@@ -967,8 +964,9 @@ new (class extends Plugin {
                       setAndUnsetSelectedFeaturesStyle({ promise: d.promise(), inputs, style: this.selectStyle });
                     }
                   }).promise();
-                }
-              })
+                },
+              }
+              ),
             ]
           });
 

@@ -6,115 +6,107 @@
  * @since g3w-client-plugin-editing@v3.8.x
  */
 
-const { G3WObject }     = g3wsdk.core;
-const { base, inherit } = g3wsdk.core.utils;
-const { GUI }           = g3wsdk.gui;
+const { G3WObject } = g3wsdk.core;
+const { GUI }       = g3wsdk.gui;
 
-function Task(options={}) {
-  base(this, options);
-  this.state = {
-    usermessagesteps: {}
-  };
-}
+class Task extends G3WObject {
 
-inherit(Task, G3WObject);
-
-const proto = Task.prototype;
-
-/**
- * Set and get task usefult properties used to run
- */
-
-proto.setInputs = function(inputs){
-  this.inputs = inputs;
-};
-
-/**
- *
- * @return {*}
- */
-proto.getInputs = function(){
-  return this.inputs;
-};
-
-/**
- *
- * @param context
- * @return {*}
- */
-proto.setContext = function(context){
-  return this.context = context;
-};
-
-/**
- *
- * @return {*}
- */
-proto.getContext = function(){
-  return this.context;
-};
-
-/**
- *
- */
-proto.revert = function() {
-  console.log('Revert to implement ');
-};
-
-/**
- *
- */
-proto.panic = function() {
-  console.log('Panic to implement ..');
-};
-
-/**
- *
- */
-proto.stop = function() {
-  console.log('Task Stop to implement ..');
-};
-
-/**
- *
- */
-proto.run = function() {
-  console.log('Wrong. This method has to be overwrite from task');
-};
-
-/**
- *
- * @param task
- */
-proto.setRoot = function(task) {
-  this.state.root = task;
-};
-
-/**
- *
- * @return {{}}
- */
-proto.getUserMessageSteps = function() {
-  return this.state.usermessagesteps;
-};
-
-/**
- *
- * @param steps
- */
-proto.setUserMessageSteps = function(steps={}) {
-  this.state.usermessagesteps = steps;
-};
-
-/**
- *
- * @param type
- */
-proto.setUserMessageStepDone = function(type) {
-  if (type) {
-    this.state.usermessagesteps[type].done = true;
+  constructor(options={}) {
+    super(options);
+    this.state = {
+      usermessagesteps: {}
+    };
   }
-};
+
+  /**
+   * Set and get task usefult properties used to run
+   */
+  setInputs(inputs) {
+    this.inputs = inputs;
+  }
+
+  /**
+   *
+   * @return {*}
+   */
+  getInputs() {
+    return this.inputs;
+  }
+
+  /**
+   * @param context
+   * 
+   * @returns {*}
+   */
+  setContext(context) {
+    return this.context = context;
+  }
+
+  /**
+   * @returns {*}
+   */
+  getContext() {
+    return this.context;
+  }
+
+  /**
+   *
+   */
+  revert() {
+    console.log('Revert to implement ');
+  }
+
+  /**
+   *
+   */
+  panic() {
+    console.log('Panic to implement ..');
+  }
+
+  /**
+   *
+   */
+  stop() {
+    console.log('Task Stop to implement ..');
+  }
+
+  /**
+   *
+   */
+  run() {
+    console.log('Wrong. This method has to be overwrite from task');
+  }
+
+  /**
+   * @param task
+   */
+  setRoot(task) {
+    this.state.root = task;
+  }
+
+  /**
+   * @returns {{}}
+   */
+  getUserMessageSteps() {
+    return this.state.usermessagesteps;
+  }
+
+  /**
+   * @param steps
+   */
+  setUserMessageSteps(steps={}) {
+    this.state.usermessagesteps = steps;
+  }
+
+  /**
+   * @param type
+   */
+  setUserMessageStepDone(type) {
+    if (type) {
+      this.state.usermessagesteps[type].done = true;
+    }
+  }
+}
 
 export default Task;
 
@@ -130,19 +122,22 @@ export default Task;
 export class EditingTask extends Task {
 
   constructor(options = {}) {
-
     super(options);
 
     this.selectStyle = options.selectStyle; /* @since 3.8.0 */
 
-    this.addInteraction = function(interaction) {
-      GUI.getService('map').addInteraction(interaction);
-    };
+    /** @since g3w-client-plugin-editing@v3.8.0 */
+    if (options.steps) {
+      this.setSteps(options.steps);
+    }
+  }
 
-    this.removeInteraction = function(interaction) {
-      setTimeout(() => GUI.getService('map').removeInteraction(interaction)) // timeout needed to work around an Openlayers issue
-    };
+  addInteraction(interaction) {
+    GUI.getService('map').addInteraction(interaction);
+  }
 
+  removeInteraction(interaction) {
+    setTimeout(() => GUI.getService('map').removeInteraction(interaction)) // timeout needed to work around an Openlayers issue
   }
 
   /**

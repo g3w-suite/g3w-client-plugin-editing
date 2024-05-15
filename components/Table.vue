@@ -143,11 +143,13 @@
 </template>
 
 <script>
+  import { EditingStep }                       from '../g3wsdk/workflow/step';
+  import { EditingWorkflow }                   from '../g3wsdk/workflow/workflow';
+  import { OpenFormStep }                      from '../workflows';
   import { cloneFeature }                      from '../utils/cloneFeature';
   import { getRelationsInEditing }             from '../utils/getRelationsInEditing';
   import { getFeatureTableFieldValue }         from '../utils/getFeatureTableFieldValue';
-  import { EditingWorkflow }                   from '../g3wsdk/workflow/workflow';
-  import { OpenFormStep, AddTableFeatureStep } from '../workflows';
+  import { addTableFeature }                   from '../utils/addTableFeature';
 
   const { tPlugin }     = g3wsdk.core.i18n;
   const { GUI }         = g3wsdk.gui;
@@ -158,7 +160,6 @@
     .entries({
       EditingWorkflow,
       OpenFormStep,
-      AddTableFeatureStep,
     })
     .forEach(([k, v]) => console.assert(undefined !== v, `${k} is undefined`));
 
@@ -326,7 +327,7 @@
             this.state.workflow = new EditingWorkflow({
                 type: 'addtablefeature',
                 steps: [
-                  new AddTableFeatureStep(),
+                  new EditingStep({ help: 'editing.steps.help.new', run: addTableFeature }),
                   new OpenFormStep(),
                 ],
               });

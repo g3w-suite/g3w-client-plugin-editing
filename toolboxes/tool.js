@@ -2,43 +2,45 @@ const { GUI }       = g3wsdk.gui;
 const { G3WObject } = g3wsdk.core;
 const { Layer }     = g3wsdk.core.layer;
 
-module.exports = class Tool extends G3WObject {
+export class Tool extends G3WObject {
 
-  constructor(options = {}) {
-
+  constructor(layer, session, options) {
     super();
 
-    const {
-      name,
-      row,
-      id,
-      icon,
-      session,
-      layer,
-      once = false,
-      type = [],
-      visible = true,
-      conditions = {},
-    }                         = options;
+    /** @type { 'create' | 'update_attributes' | 'update_geometry' | delete' | undefined } undefined means all possible tools base on type */
+    const capabilities = layer.getEditingCapabilities();
+
+    // skip when ..
+    if (!options || (capabilities && !options.type.filter(type => capabilities.includes(type)).length > 0)) {
+      this.INVALID = true;
+      return;
+    }
+
+    // in case of capabilities show all tools on a single row
+    if (capabilities) {
+      options.row = 1;
+    }
+
+    options.visible           = undefined !== options.visible ? options.visible : true;
+
     this._options             = null;
     this._session             = session;
-    this._layer               = layer;
-    this._op                  = new options.op({layer});
-    this._once                = once;
-    this.type                 = type;
-    this.conditions           = conditions;
+    this._layer               = layer,
+    this._op                  = new options.op({ layer });
+    this._once                = undefined !== options.once ? options.once : false;
+    this.type                 = undefined !== options.type ? options.type : [];
+    this.conditions           = undefined !== options.conditions ? options.conditions : {};
     this.disabledtoolsoftools = [];
+    
     this.state                = {
-      id,
-      name,
-      enabled: false,
-      visible: visible instanceof Function ?
-        (() => visible(this))() :
-        visible,
-      active: false,
-      icon,
-      message: null,
-      row: row || 1,
+      id:       options.id,
+      name:     options.name,
+      enabled:  false,
+      visible:  options.visible instanceof Function ? (() => options.visible(this))() : options.visible,
+      active:   false,
+      icon:     options.icon,
+      message:  null,
+      row:      options.row || 1,
       messages: this._op.getMessages()
     };
 
