@@ -82,6 +82,9 @@ export default {
   methods: {
 
     getFormattedValue(feat, key) {
+      if (!feat) {
+        return;
+      }
       if ('geometry' === key) {
         const coords = feat.get(key).getFlatCoordinates().length / 2;
         return `(${coords})`;
