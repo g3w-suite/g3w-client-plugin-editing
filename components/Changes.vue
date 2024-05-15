@@ -22,14 +22,16 @@
           <details>
             <summary>{{ getType(item) }} #{{ getId(item) }}</summary>
             <template v-for ="[key, val] in getAttrs(item)">
-              <template v-if="hasValue(item, key)">
-                <b>{{ key }}</b>:
-                <template v-if="isEdited(item, key)">
-                  <del>{{ getValue(getFeature(item), key) }}</del> ← <ins>{{ getValue(getEditingFeature(item), key) }}</ins>
-                </template>
-                <span v-else>{{ getValue(getEditingFeature(item) || getFeature(item), key) }}</span>
-                <br>
-              </template>
+              <dl v-if="hasValue(item, key)">
+                <dt>{{ key }}:</dt>
+                <dd>
+                  <template v-if="isEdited(item, key)">
+                    <del ref="value">{{ getValue(item, key) }}</del> ← <ins ref="value">{{ getEditingValue(item, key) }}</ins>
+                  </template>
+                  <span v-else ref="value">{{ getEditingValue(item, key) || getValue(item, key) }}</span>
+                  <i v-if="'geometry' === key"><code>&lt;coords&gt;</code></i>
+                </dd>
+              </dl>
             </template>
           </details>
         </li>
@@ -78,13 +80,25 @@ export default {
   },
 
   methods: {
-    getValue(feat, k) {
-      if ('geometry' === k) { return feat.get(k).getCoordinates(); }
+
+    getFormattedValue(feat, key) {
+      if ('geometry' === key) {
+        const coords = feat.get(key).getFlatCoordinates().length / 2;
+        return `(${coords})`;
+      }
       return getFeatureTableFieldValue({
         layerId: this.layer.getId(),
         feature: feat,
-        property: k
-      })
+        property: key
+      });
+    },
+
+    getValue(item, key) {
+      return this.getFormattedValue(this.getFeature(item), key);
+    },
+
+    getEditingValue(item, key) {
+      return this.getFormattedValue(this.getEditingFeature(item), key);
     },
 
     hasValue(item, key) {
@@ -154,6 +168,11 @@ export default {
 
   },
 
+  async mounted() {
+    // insert a visual reference for `<empty>` values 
+    this.$refs.value.filter(d => !d.textContent).forEach(d => d.innerHTML = `<i><code>&lt;empty&gt;</code></i>`);
+  },
+
 };
 </script>
 
@@ -181,7 +200,21 @@ export default {
   del {
     background-color: tomato;
   }
-  b {
-    padding-left: 1ch;
+  dl {
+    display: grid;
+    grid-template: auto / .5fr 1fr;
+    margin-bottom: 0;
+    word-break: break-all;
+  }
+  dt {
+    background: #fee;
+  }
+  dd {
+    background: hsl(220, 10%, 95%);
+  }
+  dt, dd {
+    margin: 0;
+    padding: .3em .5em;
+    border-top: 1px solid #fff;
   }
 </style>
