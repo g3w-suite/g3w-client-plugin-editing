@@ -1,4 +1,4 @@
-import WorkflowsStack from '../g3wsdk/workflow/stack'
+import { Workflow } from '../g3wsdk/workflow/workflow';
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
@@ -25,7 +25,7 @@ export function getFormFields({
   let has_unique        = false;                                               // check for unique validation
 
   const service         = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing');
-  const relationLayerId = WorkflowsStack.getFirst().getInputs().layer.getId(); // root layerId (in case of child edit relation)
+  const relationLayerId = Workflow.Stack.getFirst().getInputs().layer.getId(); // root layerId (in case of child edit relation)
   const layerId         = inputs.layer.getId();                                // current form layerId
   const unique_values   = [];                                                  // unique values by feature field
 

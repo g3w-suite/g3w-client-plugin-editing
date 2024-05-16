@@ -144,7 +144,7 @@
 
 <script>
   import { EditingStep }                       from '../g3wsdk/workflow/step';
-  import { EditingWorkflow }                   from '../g3wsdk/workflow/workflow';
+  import { Workflow }                          from '../g3wsdk/workflow/workflow';
   import { OpenFormStep }                      from '../workflows';
   import { cloneFeature }                      from '../utils/cloneFeature';
   import { getRelationsInEditing }             from '../utils/getRelationsInEditing';
@@ -158,7 +158,7 @@
 
   Object
     .entries({
-      EditingWorkflow,
+      Workflow,
       OpenFormStep,
     })
     .forEach(([k, v]) => console.assert(undefined !== v, `${k} is undefined`));
@@ -324,7 +324,7 @@
               this.state.inputs.layer.getEditingLayer()
             );
             /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addtablefeatureworkflow.js@v3.7.1 */
-            this.state.workflow = new EditingWorkflow({
+            this.state.workflow = new Workflow({
                 type: 'addtablefeature',
                 steps: [
                   new EditingStep({ help: 'editing.steps.help.new', run: addTableFeature }),
@@ -380,7 +380,7 @@
         const feature = this.state.features[index];
     
         /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/edittablefeatureworkflow.js@v3.7.1 */
-        this.state.workflow = new EditingWorkflow({ type: 'edittablefeature', steps: [ new OpenFormStep() ] });
+        this.state.workflow = new Workflow({ type: 'edittablefeature', steps: [ new OpenFormStep() ] });
     
         const inputs = this.state.inputs;
     

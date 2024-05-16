@@ -3,15 +3,14 @@
  * @file
  * 
  * ORIGINAL SOURCE: g3w-client/src/core/workflow/workflow.js@v3.9.1
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editingworkflow.js@v3.7.1
  * 
  * @since g3w-client-plugin-editing@v3.8.x
  */
 
-import Flow             from './flow';
-import WorkflowsStack   from './stack';
-import Step             from './step';
-import UserMessageSteps from '../../components/UserMessageSteps';
-import { promisify }    from '../../utils/promisify';
+import Step                      from './step';
+import { promisify, $promisify } from '../../utils/promisify';
+import UserMessageSteps          from '../../components/UserMessageSteps';
 
 const { GUI }                 = g3wsdk.gui;
 const { G3WObject }           = g3wsdk.core;
@@ -28,26 +27,15 @@ const { Layer }               = g3wsdk.core.layer;
  * @param options.steps
  * @param options.runOnce
  * @param options.backbuttonlabel
- *
- * @constructor
  */
-export default class Workflow extends G3WObject {
+export class Workflow extends G3WObject {
   
   constructor(options = {}) {
 
     super();
 
-    const {
-      type            = null, /** @since g3w-client-plugin-editing@v3.8.0*/
-      inputs          = null,
-      context         = null,
-      flow            = new Flow(),
-      steps           = [],
-      runOnce         = false,
-      backbuttonlabel = null,
-    } = options;
-
-    this._type =  type;
+     /** @since g3w-client-plugin-editing@v3.8.0*/
+    this._type =  undefined !== options.type ? options.type : null;
 
     /**
      * @since g3w-client-plugin-editing@v3.8.0
@@ -62,22 +50,18 @@ export default class Workflow extends G3WObject {
     /**
      * Mandatory inputs to work with editing
      */
-    this._inputs = inputs;
+    this._inputs = undefined !== options.inputs ? options.inputs : null;
 
     /**
      * @FIXME add description
      */
-    this._context = context;
+    this._context = undefined !== options.context ? options.context : null;
 
-    /**
-     * Flow object to control the flow
-     */
-    this._flow = flow;
-
+    
     /**
      * All steps of flow
      */
-    this._steps = steps || [];
+    this._steps = options.steps || [];
 
     /**
      * Whether is child of another workflow
@@ -92,7 +76,7 @@ export default class Workflow extends G3WObject {
     /**
      * Stop when flow stop
      */
-    this.runOnce = runOnce;
+    this.runOnce = options.runOnce || false;
 
     /**
      * @FIXME add description
@@ -109,13 +93,94 @@ export default class Workflow extends G3WObject {
       this.setUserMessagesSteps(this._steps);
     }
 
-
     /**
      * Holds back button label (in case of child workflow)
      * 
      * @since 3.9.0
      */
-    this.backbuttonlabel = backbuttonlabel;
+    this.backbuttonlabel = undefined !== options.backbuttonlabel ? options.backbuttonlabel : null;
+
+    /**
+     * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editingworkflow.js@v3.7.1
+     * 
+     * @since g3w-client-editing@v3.8.0
+     */
+    this.helpMessage  = options.helpMessage ? { help: options.helpMessage } : null;
+
+    /**
+     * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editingworkflow.js@v3.7.1
+     * 
+     * @since g3w-client-editing@v3.8.0
+     */
+    this._toolsoftool = [];
+
+    /**
+     * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editingworkflow.js@v3.7.1
+     * 
+     * @since g3w-client-editing@v3.8.0
+     */
+    if (true === options.registerEscKeyEvent) {
+      this.registerEscKeyEvent();
+    }
+
+    /**
+     * ORIGINAL SOURCE: g3w-client/src/core/workflow/flow.js@v3.9.1
+     * 
+     * Flow object to control the flow
+     */
+    this._flow = options.flow || Object.assign(new G3WObject, {
+      _workflow: undefined,
+      _steps: [],
+      _counter: 0,
+      _promise: undefined,
+      /** @returns jQuery promise resolved when all workflow steps go right */
+      start: workflow => {
+        const flow = this._flow;
+        flow._promise = $.Deferred();
+        if (flow._counter > 0) {
+          console.log("reset workflow before restarting");
+        }
+        flow._steps = workflow.getSteps();
+        // run first step
+        if (flow._steps && flow._steps.length) {
+          flow.runStep(flow._steps[0], workflow.getInputs(), workflow);
+        }
+        return flow._promise.promise();
+      },
+      // run step → task
+      runStep: async(step, inputs, workflow) => {
+        const flow = this._flow;
+        try {
+          workflow.setMessages({ help: step.state.help });
+          const outputs = await promisify(
+            step.run(inputs, workflow.getContext())
+          );
+          // onDone → check if all step are resolved
+          flow._counter++;
+          if (flow._counter === flow._steps.length) {
+            flow._counter = 0;
+            flow._promise.resolve(outputs);
+          } else {
+            flow.runStep(flow._steps[flow._counter], outputs, workflow);
+          }
+        } catch (e) {
+          flow._counter = 0;
+          flow._promise.reject(e);
+        }
+      },
+      // stop flow
+      stop: () => {
+        const flow = this._flow;
+        return $promisify(() => {
+          flow._steps[flow._counter].isRunning() ? flow._steps[flow._counter].stop() : null;
+          // reset counter and reject flow
+          if (flow._counter > 0) {
+            flow._counter = 0;
+            return Promise.reject();
+          }
+        }).promise();
+      },
+    });
 
   }
 
@@ -182,7 +247,7 @@ export default class Workflow extends G3WObject {
    */
   removeChild() {
     if (this._child) {
-      WorkflowsStack.removeAt(this._child.getStackIndex());
+      Workflow.Stack.removeAt(this._child.getStackIndex());
     }
     this._child = null;
   }
@@ -370,13 +435,13 @@ export default class Workflow extends G3WObject {
       // stop child when a workflow is running 
       if (
           !isChild
-          && WorkflowsStack.getLength()
-          && WorkflowsStack.getCurrent() !== this
+          && Workflow.Stack.getLength()
+          && Workflow.Stack.getCurrent() !== this
       ) {
-        WorkflowsStack.getCurrent().addChild(this)
+        Workflow.Stack.getCurrent().addChild(this)
       }
   
-      this._stackIndex = WorkflowsStack.push(this);
+      this._stackIndex = Workflow.Stack.push(this);
       this._flow       = options.flow || this._flow;
       this._steps      = options.steps || this._steps;
   
@@ -437,7 +502,7 @@ export default class Workflow extends G3WObject {
       // ensure that child is always removed
       this.removeChild();
 
-      WorkflowsStack.removeAt(this.getStackIndex());
+      Workflow.Stack.removeAt(this.getStackIndex());
 
       this._flow
         .stop()
@@ -489,29 +554,13 @@ export default class Workflow extends G3WObject {
     return this.backbuttonlabel;
   }
 
-}
-
-/**
- * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editingworkflow.js@v3.7.1
- */
-export class EditingWorkflow extends Workflow {
-  
-  constructor(options = {}) {
-    super(options);
-
-    this.helpMessage  = options.helpMessage ? { help: options.helpMessage } : null;
-
-    this._toolsoftool = [];
-
-    if (true === options.registerEscKeyEvent) {
-      this.registerEscKeyEvent();
-    }
-  }
-
   /**
-   *
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editingworkflow.js@v3.7.1
+   * 
    * @param step
    * @param tools
+   * 
+   * @since g3w-client-editing@v3.8.0
    */
   addToolsOfTools({ step, tools = [] }) {
 
@@ -584,28 +633,36 @@ export class EditingWorkflow extends Workflow {
   }
 
   /**
-   * @FIXME add description
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editingworkflow.js@v3.7.1
+   * 
+   * @since g3w-client-editing@v3.8.0
    */
   setHelpMessage(message) {
     this.helpMessage = { help: message };
   }
 
   /**
-   * @FIXME add description
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editingworkflow.js@v3.7.1
+   * 
+   * @since g3w-client-editing@v3.8.0
    */
   getHelpMessage() {
     return this.helpMessage;
   }
 
   /**
-   * @FIXME add description
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editingworkflow.js@v3.7.1
+   * 
+   * @since g3w-client-editing@v3.8.0
    */
   getFeatures() {
     return this.getInputs().features;
   }
 
   /**
-   * @FIXME add description
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editingworkflow.js@v3.7.1
+   * 
+   * @since g3w-client-editing@v3.8.0
    */
   startFromLastStep(options) {
     this.setSteps([ this.getSteps().pop() ]);
@@ -613,7 +670,9 @@ export class EditingWorkflow extends Workflow {
   }
 
   /**
-   * @FIXME add description
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editingworkflow.js@v3.7.1
+   * 
+   * @since g3w-client-editing@v3.8.0
    */
   getCurrentFeature() {
     const feats = this.getFeatures();
@@ -621,21 +680,29 @@ export class EditingWorkflow extends Workflow {
   }
 
   /**
-   * @FIXME add description
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editingworkflow.js@v3.7.1
+   * 
+   * @since g3w-client-editing@v3.8.0
    */
   getLayer() {
     return this.getInputs().layer;
   }
 
   /**
-   * @FIXME add description
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editingworkflow.js@v3.7.1
+   * 
+   * @since g3w-client-editing@v3.8.0
    */
   getSession() {
     return this.getContext().session;
   }
 
   /**
-   * bind interrupt event
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editingworkflow.js@v3.7.1
+   * 
+   * bind interupt event
+   * 
+   * @since g3w-client-editing@v3.8.0
    */
   escKeyUpHandler(evt) {
     if (evt.keyCode === 27) {
@@ -645,21 +712,27 @@ export class EditingWorkflow extends Workflow {
   }
 
   /**
-   * @FIXME add description
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editingworkflow.js@v3.7.1
+   * 
+   * @since g3w-client-editing@v3.8.0
    */
   unbindEscKeyUp() {
     $(document).unbind('keyup', this.escKeyUpHandler);
   }
 
   /**
-   * @FIXME add description
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editingworkflow.js@v3.7.1
+   * 
+   * @since g3w-client-editing@v3.8.0
    */
   bindEscKeyUp(callback = () => {}) {
     $(document).on('keyup', { workflow: this, callback }, this.escKeyUpHandler);
   }
 
   /**
-   * @FIXME add description
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editingworkflow.js@v3.7.1
+   * 
+   * @since g3w-client-editing@v3.8.0
    */
   registerEscKeyEvent(callback) {
     this.on('start', () => this.bindEscKeyUp(callback));
@@ -667,3 +740,31 @@ export class EditingWorkflow extends Workflow {
   }
 
 }
+
+/**
+ * ORIGINAL SOURCE: g3w-client/src/services/workflow.js@v3.9.1
+ * 
+ * Store all activated workflows
+ * 
+ * @since g3w-client-plugin-editing@v3.8.0
+ */
+Workflow.Stack = {
+  _workflows: [],
+  push(workflow) {
+    if (Workflow.Stack._workflows.indexOf(workflow) === -1) return Workflow.Stack._workflows.push(workflow) - 1;
+    return Workflow.Stack._workflows.indexOf(workflow);
+  },
+  /** @returns {boolean|*} parent */
+  getParent()    { return Workflow.Stack.getLength() > 1 && Workflow.Stack._workflows[Workflow.Stack.getLength() - 2]; },
+  /** @returns {boolean|T[]} list of parents */
+  getParents()   { return Workflow.Stack.getLength() > 1 && Workflow.Stack._workflows.slice(0, Workflow.Stack.getLength() - 1); },
+  pop()          { return Workflow.Stack._workflows.pop() },
+  getLength()    { return Workflow.Stack._workflows.length; },
+  getFirst()     { return Workflow.Stack._workflows[0]; },
+  getCurrent()   { return Workflow.Stack.getLast(); },
+  getLast()      { return Workflow.Stack._workflows.slice(-1)[0]; },
+  removeAt(i)    { Workflow.Stack._workflows.splice(i, 1); },
+  insertAt(i, w) { Workflow.Stack._workflows[i] = w; },
+  getAt(i)       { return Workflow.Stack._workflows[i]; },
+  clear()        { while (Workflow.Stack.getLength()) { (Workflow.Stack.pop()).stop(); } },
+};

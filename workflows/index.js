@@ -15,8 +15,8 @@ import { addRemoveToMultipleSelectFeatures }            from '../utils/addRemove
 import { promisify }                                    from '../utils/promisify';
 import { PickFeaturesInteraction }                      from '../interactions/pickfeaturesinteraction';
 
-import WorkflowsStack                                   from '../g3wsdk/workflow/stack'
-import { EditingTask }                                  from '../g3wsdk/workflow/task';
+import { Workflow }                                     from '../g3wsdk/workflow/workflow';
+import { Task }                                         from '../g3wsdk/workflow/task';
 import Step                                             from '../g3wsdk/workflow/step';
 
 const { G3WObject, ApplicationState }                        = g3wsdk.core;
@@ -38,7 +38,7 @@ const { createMeasureTooltip, removeMeasureTooltip }         = g3wsdk.ol.utils;
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/addfeaturetask.js@v3.7.1
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/addfeaturestep.js@v3.7.1
  */
-export class AddFeatureStep extends EditingTask {
+export class AddFeatureStep extends Task {
 
   constructor(options = {}) {
     options.help = "editing.steps.help.draw_new_feature";
@@ -216,10 +216,10 @@ export class AddFeatureStep extends EditingTask {
 }
 
 /**
- * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/modifygeometryvertexTask.js@v3.7.1
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/modifygeometryvertextask.js@v3.7.1
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/modifygeometryvertexstep.js@v3.7.1
  */
-export class ModifyGeometryVertexStep extends EditingTask {
+export class ModifyGeometryVertexStep extends Task {
 
   constructor(options = {}) {
     options.snap = undefined !== options.snap ? options.snap : true;
@@ -304,7 +304,7 @@ export class ModifyGeometryVertexStep extends EditingTask {
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/movefeaturetask.js@v3.7.1
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/movefeaturestep.js@v3.7.1
  */
-export class MoveFeatureStep extends EditingTask {
+export class MoveFeatureStep extends Task {
 
   constructor(options = {}) {
     options.help = "editing.steps.help.move";
@@ -371,7 +371,7 @@ export class MoveFeatureStep extends EditingTask {
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/openformtask.js@v3.7.1
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/openformstep.js@v3.7.1
  */
-export class OpenFormStep extends EditingTask {
+export class OpenFormStep extends Task {
 
   constructor(options = {}) {
 
@@ -464,7 +464,7 @@ export class OpenFormStep extends EditingTask {
     return $.Deferred(async d => {
 
     this.promise         = d;
-    this._isContentChild = WorkflowsStack.getLength() > 1;
+    this._isContentChild = Workflow.Stack.getLength() > 1;
     this.layerId         = inputs.layer.getId();
 
     GUI.setLoadingContent(false);
@@ -502,7 +502,7 @@ export class OpenFormStep extends EditingTask {
     });
 
     // set fields. Useful getParentFormData
-    WorkflowsStack.getCurrent().setInput({ key: 'fields', value: fields });
+    Workflow.Stack.getCurrent().setInput({ key: 'fields', value: fields });
 
     // relation options
     const edit_relations = !this._multi;
@@ -570,7 +570,7 @@ export class OpenFormStep extends EditingTask {
           data() {
             return {
               loading: false,
-              enabled: WorkflowsStack._workflows.slice(0, WorkflowsStack.getLength() - 1)
+              enabled: Workflow.Stack._workflows.slice(0, Workflow.Stack.getLength() - 1)
                 .every(w => {
                   const valid = ((w.getContext().service instanceof FormService) ? w.getContext().service.getState() : {}).valid;
                   return valid || undefined === valid;
@@ -587,7 +587,7 @@ export class OpenFormStep extends EditingTask {
             async saveAll() {
               this.loading = true;
               await Promise.allSettled(
-                [...WorkflowsStack._workflows]
+                [...Workflow.Stack._workflows]
                   .reverse()
                   .filter(w => "function" === typeof w.getLastStep().getTask()._saveAll) // need to filter only workflow that
                   .map(async w => {
@@ -595,7 +595,7 @@ export class OpenFormStep extends EditingTask {
                     const fields = w.getContext().service.state.fields.filter(f => task._multi ? null !== f.value : true);
                     // skip when ..
                     if (!fields.length) { return; }
-                    await WorkflowsStack.getCurrent().getContextService().saveDefaultExpressionFieldsNotDependencies();
+                    await Workflow.Stack.getCurrent().getContextService().saveDefaultExpressionFieldsNotDependencies();
                     task._features.forEach(f => task._originalLayer.setFieldsWithValues(f, fields));
                     const newFeatures = task._features.map(f => f.clone());
                     if (task._isContentChild) {
@@ -612,7 +612,7 @@ export class OpenFormStep extends EditingTask {
               );
               try {
                 await promisify(g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').commit({ modal: false }));  
-                WorkflowsStack._workflows.forEach(w => w.getContext().service.setUpdate(false, { force: false }));
+                Workflow.Stack._workflows.forEach(w => w.getContext().service.setUpdate(false, { force: false }));
               } catch (e) {
                 console.warn(e);
               }
@@ -624,7 +624,7 @@ export class OpenFormStep extends EditingTask {
         {
           id: 'save',
           title: this._isContentChild
-            ? WorkflowsStack.getParent().getBackButtonLabel() || "plugins.editing.form.buttons.save_and_back" // get custom back label from parent
+            ? Workflow.Stack.getParent().getBackButtonLabel() || "plugins.editing.form.buttons.save_and_back" // get custom back label from parent
             : "plugins.editing.form.buttons.save",
           type: "save",
           class: "btn-success",
@@ -645,7 +645,7 @@ export class OpenFormStep extends EditingTask {
             GUI.setLoadingContent(true);
             GUI.disableContent(true);
 
-            await WorkflowsStack.getCurrent().getContextService().saveDefaultExpressionFieldsNotDependencies();
+            await Workflow.Stack.getCurrent().getContextService().saveDefaultExpressionFieldsNotDependencies();
 
             GUI.setLoadingContent(false);
             GUI.disableContent(false);
@@ -680,7 +680,7 @@ export class OpenFormStep extends EditingTask {
             this.fireEvent(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
             // In case of save of child it means that child is updated so also parent
             if (this._isContentChild) {
-              WorkflowsStack.getParents().forEach(w => w.getContextService().setUpdate(true, {force: true}));
+              Workflow.Stack.getParents().forEach(w => w.getContextService().setUpdate(true, {force: true}));
             }
 
             d.resolve(inputs);
@@ -755,8 +755,8 @@ export class OpenFormStep extends EditingTask {
     );
 
     // set context service to form Service in case of single task (ie. no workflow)
-    if (WorkflowsStack.getCurrent()) {
-      WorkflowsStack.getCurrent().setContextService(formService);
+    if (Workflow.Stack.getCurrent()) {
+      Workflow.Stack.getCurrent().setContextService(formService);
     }
 
     //listen eventually field relation 1:1 changes value
@@ -777,8 +777,8 @@ export class OpenFormStep extends EditingTask {
     const is_parent_table = false === this._isContentChild || // no child workflow
       (
         // case edit feature of a table (edit layer alphanumeric)
-        2 === WorkflowsStack.getLength() && //open features table
-        WorkflowsStack.getParent().isType('edittable')
+        2 === Workflow.Stack.getLength() && //open features table
+        Workflow.Stack.getParent().isType('edittable')
       );
 
     // when the last feature of features is Array
@@ -788,7 +788,7 @@ export class OpenFormStep extends EditingTask {
       GUI.getService('map').disableClickMapControls(false);
     }
 
-    const contextService = is_parent_table && WorkflowsStack.getCurrent().getContextService();
+    const contextService = is_parent_table && Workflow.Stack.getCurrent().getContextService();
 
     // force update parent form update
     if (contextService && false === this._isContentChild) {
@@ -814,7 +814,7 @@ export class OpenFormStep extends EditingTask {
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/opentabletask.js@v3.7.1
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/opentablestep.js@v3.7.1
  */
-export class OpenTableStep extends EditingTask {
+export class OpenTableStep extends Task {
 
   constructor(options = {}) {
     options.help = "editing.steps.help.edit_table";
@@ -839,11 +839,11 @@ export class OpenTableStep extends EditingTask {
     g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').setCurrentLayout();
 
     const d              = $.Deferred();
-    this._isContentChild = WorkflowsStack.getLength() > 1;
+    this._isContentChild = Workflow.Stack.getLength() > 1;
 
     const features = (inputs.layer.readEditingFeatures() || []);
     const headers  = (inputs.layer.getEditingFields() || []).filter(h => features.length ? Object.keys(features[0].getProperties()).includes(h.name) : true);
-    this._isContentChild = WorkflowsStack.getLength() > 1;
+    this._isContentChild = Workflow.Stack.getLength() > 1;
     const excludeFields = this._isContentChild ? (context.excludeFields || []) : [];
     const service = Object.assign(new G3WObject, { state: {
       inputs,
@@ -903,7 +903,7 @@ export class OpenTableStep extends EditingTask {
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/pickfeaturetask.js@v3.7.1
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/pickfeaturestep.js@v3.7.1
  */
-export class PickFeatureStep extends EditingTask {
+export class PickFeatureStep extends Task {
 
   constructor(options = {}) {
     options.help = "editing.steps.help.pick_feature";
@@ -965,7 +965,7 @@ export class PickFeatureStep extends EditingTask {
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/selectelementstask.js@v3.7.1
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/selectelementsstep.js@v3.7.1
  */
-export class SelectElementsStep extends EditingTask {
+export class SelectElementsStep extends Task {
   
   constructor(options = {}, chain) {
     options.help = options.help || "editing.steps.help.select_elements";

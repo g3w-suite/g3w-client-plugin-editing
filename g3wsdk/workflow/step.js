@@ -5,7 +5,7 @@
  * 
  * @since g3w-client-plugin-editing@v3.8.x
  */
-import { EditingTask }           from '../../g3wsdk/workflow/task';
+import { Task }                  from '../../g3wsdk/workflow/task';
 import { promisify, $promisify } from '../../utils/promisify';
 
 const { G3WObject } = g3wsdk.core;
@@ -112,15 +112,14 @@ class Step extends G3WObject {
   /**
    * Start task
    * 
-   * @param inputs 
-   * @param context 
-   * @param queques 
+   * @param inputs
+   * @param context
    * 
    * @returns jQuery promise
    * 
    * @fires run
    */ 
-  run(inputs, context, queques) {
+  run(inputs, context) {
     return $promisify(async () => {
       this.emit('run', { inputs, context });
       if (!this._task) {
@@ -133,7 +132,7 @@ class Step extends G3WObject {
         if(!this._task.run) {
           console.trace(this);
         }
-        const outputs = await promisify(this._task.run(inputs, context, queques));
+        const outputs = await promisify(this._task.run(inputs, context));
         return outputs;
       } catch (e) {
         console.warn(e);
@@ -271,7 +270,7 @@ Step.MESSAGES = {
 
 export default Step;
 
-export class EditingStep extends EditingTask {
+export class EditingStep extends Task {
 
   constructor(options = {}) {
     super(options);

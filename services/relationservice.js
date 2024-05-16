@@ -1,6 +1,5 @@
-import { EditingWorkflow }                              from '../g3wsdk/workflow/workflow';
+import { Workflow }                                     from '../g3wsdk/workflow/workflow';
 import { EditingStep }                                  from '../g3wsdk/workflow/step';
-import WorkflowsStack                                   from '../g3wsdk/workflow/stack'
 import { setAndUnsetSelectedFeaturesStyle }             from '../utils/setAndUnsetSelectedFeaturesStyle';
 import { promisify }                                    from '../utils/promisify';
 import { getRelationFieldsFromRelation }                from '../utils/getRelationFieldsFromRelation';
@@ -46,7 +45,7 @@ module.exports = class RelationService {
 
   constructor(layerId, options = {}) {
 
-    const parentLayer = WorkflowsStack.getCurrent().getLayer();
+    const parentLayer = Workflow.Stack.getCurrent().getLayer();
 
     /**
      * Contain information about relation from parent layer and current relation layer (ex. child, fields, relationid, etc....)
@@ -95,10 +94,10 @@ module.exports = class RelationService {
       values: fatherRelationField
         .reduce((accumulator, fField) => {
           //get feature
-          const feature = WorkflowsStack.getCurrent().getCurrentFeature();
+          const feature = Workflow.Stack.getCurrent().getCurrentFeature();
           //get fields of form because contains values that have temporary changes not yet saved
           // in case of form fields
-          const fields  = WorkflowsStack.getCurrent().getInputs().fields;
+          const fields  = Workflow.Stack.getCurrent().getInputs().fields;
           accumulator[fField] = (fField === pk && feature.isNew()) //check if isPk and parent feature isNew
             ? feature.getId()
               //check if fields are set (parent workflow is a form)
@@ -125,7 +124,7 @@ module.exports = class RelationService {
 
         /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/edittableworkflow.js@v3.7.1 */
         link(options = {}) {
-          return new EditingWorkflow({
+          return new Workflow({
             ...options,
             type: 'edittable',
             backbuttonlabel: 'plugins.editing.form.buttons.save_and_back_table',
@@ -135,7 +134,7 @@ module.exports = class RelationService {
 
         /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addtablefeatureworkflow.js@v3.7.1 */
         add(options = {}) {
-          return new EditingWorkflow({
+          return new Workflow({
             ...options,
             type: 'addtablefeature',
             steps: [
@@ -150,7 +149,7 @@ module.exports = class RelationService {
 
         /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/linkrelationworkflow.js@v3.7.1 */
         link(options = {}) {
-          return new EditingWorkflow({
+          return new Workflow({
             type: 'linkrelation',
             steps: [
               new EditingStep({
@@ -215,7 +214,7 @@ module.exports = class RelationService {
 
         /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addfeatureworkflow.js@v3.7.1 */
         add(options = {}) {
-          const w = new EditingWorkflow({
+          const w = new Workflow({
             ...options,
             type: 'addfeature',
             steps: [
@@ -229,7 +228,7 @@ module.exports = class RelationService {
 
         /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/selectandcopyfeaturesfromotherlayerworkflow.js@v3.7.1 */
         selectandcopy(options = {}) {
-          return new EditingWorkflow({
+          return new Workflow({
             type: 'selectandcopyfeaturesfromotherlayer',
             steps: [
               // pick project layer features
@@ -469,7 +468,7 @@ module.exports = class RelationService {
           res => {
             //confirm to delete
             if (res) {
-              WorkflowsStack.getCurrent().getSession().pushDelete(this._relationLayerId, relationfeature);
+              Workflow.Stack.getCurrent().getSession().pushDelete(this._relationLayerId, relationfeature);
               this.relations.splice(index, 1); // remove feature from relation features
               this.tools.splice(index, 1);     // remove tool from relation tools
               // remove relation layer unique field values from feature
@@ -509,11 +508,11 @@ module.exports = class RelationService {
               // In this case, we need to check if there are temporary changes not related to this current feature
               if (
                   relationfeature.isNew()
-                  && undefined === WorkflowsStack
+                  && undefined === Workflow.Stack
                     ._workflows
                     .find(w => w.getSession()._temporarychanges.filter(({ feature }) => relationfeature.getUid() !== feature.getUid()).length > 0)
               ) {
-                WorkflowsStack._workflows
+                Workflow.Stack._workflows
                   .filter(w => w.getContextService() instanceof FormService)
                   .forEach(w => setTimeout(() => w.getContextService().state.update = false));
               } else {
@@ -534,7 +533,7 @@ module.exports = class RelationService {
     // EDIT ATTRIBUTE FEATURE RELATION
     if ('editattributes' === toolId) {
       /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/edittablefeatureworkflow.js@v3.7.1 */
-      const workflow = new EditingWorkflow({ type: 'edittablefeature', steps: [ new OpenFormStep({ selectStyle }) ] });
+      const workflow = new Workflow({ type: 'edittablefeature', steps: [ new OpenFormStep({ selectStyle }) ] });
 
       try {
         await promisify(workflow.start(options));
@@ -570,7 +569,7 @@ module.exports = class RelationService {
       // disable modal and buttons (saveAll and back)
       GUI.setModal(false);
       this.enableDOMElements(false);
-      const workflow = new EditingWorkflow({
+      const workflow = new Workflow({
         type: relationtool.type,
         steps: [ new {
           'movevertex':  ModifyGeometryVertexStep,
@@ -603,7 +602,7 @@ module.exports = class RelationService {
       try {
         await promisify(workflow.start(options));
 
-        WorkflowsStack
+        Workflow.Stack
           .getParents()
           .filter(w => w.getContextService().setUpdate)
           .forEach(w => w.getContextService().setUpdate(true, { force: true }));
@@ -633,7 +632,7 @@ module.exports = class RelationService {
    * force parent workflow form service to update
    */
   updateParentWorkflows() {
-    (WorkflowsStack.getParents() || [WorkflowsStack.getCurrent()])
+    (Workflow.Stack.getParents() || [Workflow.Stack.getCurrent()])
       .forEach(workflow => {
         //check if workflow has service (form service)
         if (workflow.getContextService()) {
@@ -808,7 +807,7 @@ module.exports = class RelationService {
       GUI.setModal(false);
     }
 
-    const feature = WorkflowsStack.getCurrent().getCurrentFeature();
+    const feature = Workflow.Stack.getCurrent().getCurrentFeature();
 
     const getRelationFeatures = () => getLayersDependencyFeatures(this.parent.layerId, {
       relations:  [this.relation],
@@ -855,7 +854,7 @@ module.exports = class RelationService {
             .forEach(([field, value]) => {
               relation.set(ownField[relationField.findIndex(rF => field === rF)], value);
             })
-            WorkflowsStack.getCurrent().getSession().pushUpdate(this._relationLayerId , relation, originalRelation);
+            Workflow.Stack.getCurrent().getSession().pushUpdate(this._relationLayerId , relation, originalRelation);
           this.relations.push({
             fields: this.getLayer().getFieldsWithValues(relation, { relation: true }),
             id:     relation.getId()
@@ -905,7 +904,7 @@ module.exports = class RelationService {
       //loop on ownField (Array field child relation)
       ownField.forEach(oField => feature.set(oField, null))
 
-      WorkflowsStack.getCurrent().getSession().pushUpdate(this._relationLayerId, feature, originalRelation);
+      Workflow.Stack.getCurrent().getSession().pushUpdate(this._relationLayerId, feature, originalRelation);
       this.relations.splice(index, 1);
       this.updateParentWorkflows();
       d.resolve(true);
@@ -939,9 +938,9 @@ module.exports = class RelationService {
     });
     const parent = Object.entries(this.parent.values);
     return  {
-      parentFeature:   WorkflowsStack.getCurrent().getCurrentFeature(), // get parent feature
+      parentFeature:   Workflow.Stack.getCurrent().getCurrentFeature(), // get parent feature
       context: {
-        session:       WorkflowsStack.getCurrent().getSession(),        // get parent workflow
+        session:       Workflow.Stack.getCurrent().getSession(),        // get parent workflow
         excludeFields: fields.ownField,                                 // array of fields to be excluded
         fatherValue:   parent.map(([_, value]) => value),
         fatherField:   parent.map(([field]) => fields.ownField[fields.relationField.findIndex(rField => field === rField)]),

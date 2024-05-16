@@ -1,4 +1,4 @@
-import WorkflowsStack               from '../g3wsdk/workflow/stack'
+import { Workflow }                 from '../g3wsdk/workflow/workflow';
 import { promisify }                from '../utils/promisify';
 import { setFeaturesSelectedStyle } from '../utils/setFeaturesSelectedStyle';
 
@@ -23,7 +23,7 @@ export function setAndUnsetSelectedFeaturesStyle({ promise, inputs, style } = {}
   } = inputs;
 
   /**
-   * @TODO if coming from relation ( WorkflowsStack.getLength() > 1 )
+   * @TODO if coming from relation ( Workflow.Stack.getLength() > 1 )
    *       no need setTimeout because we already it has selected style
    *       so original is the same selected. In case of current layer
    *       need to wait.
@@ -34,7 +34,7 @@ export function setAndUnsetSelectedFeaturesStyle({ promise, inputs, style } = {}
   };
 
   const is_vector = Layer.LayerTypes.VECTOR === layer.getType();
-  const is_single = WorkflowsStack.getLength();
+  const is_single = Workflow.Stack.getLength();
 
   if (is_vector && is_single) {
     setTimeout(() => { selectOriginalStyleHandle(); });

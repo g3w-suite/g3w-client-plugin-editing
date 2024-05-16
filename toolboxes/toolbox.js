@@ -1,4 +1,4 @@
-import { EditingWorkflow }                              from '../g3wsdk/workflow/workflow';
+import { Workflow }                                     from '../g3wsdk/workflow/workflow';
 import Session                                          from '../g3wsdk/editing/session';
 import { EditingStep }                                  from '../g3wsdk/workflow/step';
 import { createEditingDataOptions }                     from '../utils/createEditingDataOptions';
@@ -37,7 +37,7 @@ import { Tool }            from '../toolboxes/tool';
 
 Object
   .entries({
-    EditingWorkflow,
+    Workflow,
     OpenFormStep,
     SelectElementsStep,
     PickFeatureStep,
@@ -139,7 +139,7 @@ export class ToolBox extends G3WObject {
           row: 1,
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addfeatureworkflow.js@v3.7.1 */
           op(options = {}) {
-            const w = new EditingWorkflow({
+            const w = new Workflow({
               ...options,
               type: 'addfeature',
               steps: [
@@ -160,7 +160,7 @@ export class ToolBox extends G3WObject {
           row: 1,
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editfeatureattributesworkflow.js@v3.7.1 */
           op(options = {}) {
-            const w = new EditingWorkflow({
+            const w = new Workflow({
               ...options,
               helpMessage: 'editing.tools.update_feature',
               type: 'editfeatureattributes',
@@ -182,7 +182,7 @@ export class ToolBox extends G3WObject {
           row: 1,
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/deletefeatureworkflow.js@v3.7.1 */
           op(options = {}) {
-            return new EditingWorkflow({
+            return new Workflow({
               ...options,
               type: 'deletefeature',
               steps: [
@@ -337,7 +337,7 @@ export class ToolBox extends G3WObject {
           row: 1,
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/modifygeometryvertexworkflow.js@v3.7.1 */
           op(options = {}) {
-            const w = new EditingWorkflow({
+            const w = new Workflow({
               ...options,
               type: 'modifygeometryvertex',
               helpMessage: 'editing.tools.update_vertex',
@@ -361,7 +361,7 @@ export class ToolBox extends G3WObject {
           once: true,
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editmultifeatureattributesworkflow.js@v3.7.1 */
           op(options = {}) {
-            return new EditingWorkflow({
+            return new Workflow({
               ...options,
               type: 'editmultiattributes',
               helpMessage: 'editing.tools.update_multi_features',
@@ -397,7 +397,7 @@ export class ToolBox extends G3WObject {
           row: 2,
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/movefeatureworkflow.js@v3.7.1 */
           op(options = {}) {
-            return new EditingWorkflow({
+            return new Workflow({
               ...options,
               type: 'movefeature',
               helpMessage: 'editing.tools.move_feature',
@@ -451,7 +451,7 @@ export class ToolBox extends G3WObject {
           op(options = {}) {
             const openFormStep = new OpenFormStep({ ...options, help: 'editing.steps.help.copy' });
             const openFormTask = openFormStep.getTask();
-            return new EditingWorkflow({
+            return new Workflow({
               ...options,
               type: 'copyfeaturesfromotherlayer',
               steps: [
@@ -620,7 +620,7 @@ export class ToolBox extends G3WObject {
           row: 2,
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/copyfeaturesworkflow.js@v3.7.1 */
           op(options = {}) {
-            return new EditingWorkflow({
+            return new Workflow({
               ...options,
               type: 'copyfeatures',
               steps: [
@@ -806,7 +806,7 @@ export class ToolBox extends G3WObject {
           visible: isMultiGeometry,
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addparttomultigeometriesworkflow.js@v3.7.1 */
           op(options = {}) {
-            const w = new EditingWorkflow({
+            const w = new Workflow({
               ...options,
               type: 'addparttomultigeometries',
               helpMessage: 'editing.tools.addpart',
@@ -873,7 +873,7 @@ export class ToolBox extends G3WObject {
           visible: isMultiGeometry,
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/deletepartfrommultigeometriesworkflow.js@v3.7.1 */
           op(options = {}) {
-            return new EditingWorkflow({
+            return new Workflow({
               ...options,
               type: 'deletepartfrommultigeometries',
               steps: [
@@ -969,7 +969,7 @@ export class ToolBox extends G3WObject {
           once: true,
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/splitfeatureworkflow.js@v3.7.1 */
           op(options = {}) {
-            return new EditingWorkflow({
+            return new Workflow({
               ...options,
               type: 'splitfeature',
               steps: [
@@ -1093,7 +1093,7 @@ export class ToolBox extends G3WObject {
           once: true,
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/mergefeaturesworkflow.js@v3.7.1 */
           op(options = {}) {
-            return new EditingWorkflow({
+            return new Workflow({
               ...options,
               type: 'mergefeatures',
               steps: [
@@ -1211,7 +1211,7 @@ export class ToolBox extends G3WObject {
           },
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addfeaturefrommapvectorlayersworkflow.js@v3.7.1 */
           op(options = {}) {
-            return new EditingWorkflow({
+            return new Workflow({
               ...options,
               type: 'addfeaturefrommapvectorlayers',
               steps: [
@@ -1238,7 +1238,7 @@ export class ToolBox extends G3WObject {
           icon: "addTableRow.png",
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addtablefeatureworkflow.js@v3.7.1 */
           op(options = {}) {
-            return new EditingWorkflow({
+            return new Workflow({
               ...options,
               type: 'addtablefeature',
               steps: [
@@ -1257,7 +1257,7 @@ export class ToolBox extends G3WObject {
           once: true,
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/edittableworkflow.js@v3.7.1 */
           op(options = {}) {
-            return new EditingWorkflow({
+            return new Workflow({
               type: 'edittable',
               ...options,
               backbuttonlabel: 'plugins.editing.form.buttons.save_and_back_table',

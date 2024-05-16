@@ -1,6 +1,6 @@
 import './g3wsdk';
 import pluginConfig                              from './config';
-import { EditingWorkflow }                       from './g3wsdk/workflow/workflow';
+import { Workflow }                              from './g3wsdk/workflow/workflow';
 import { EditingStep }                           from './g3wsdk/workflow/step';
 import SessionsRegistry                          from './g3wsdk/editing/sessionsregistry';
 import { promisify, $promisify }                 from './utils/promisify';
@@ -35,7 +35,7 @@ const {
 
 Object
   .entries({
-    EditingWorkflow,
+    Workflow,
     OpenFormStep,
     AddFeatureStep,
     ToolBox,
@@ -453,7 +453,7 @@ new (class extends Plugin {
         if (addPartTool) {
           //get workflow
           const op = addPartTool.getOperator();
-          const w = new EditingWorkflow({
+          const w = new Workflow({
             type: 'drawgeometry',
             helpMessage: 'editing.workflow.steps.draw_geometry',
             steps: [
@@ -494,7 +494,7 @@ new (class extends Plugin {
         }
 
         /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editnopickmapfeatureattributesworkflow.js@v3.7.1 */
-        const w = (new EditingWorkflow({
+        const w = (new Workflow({
           type: 'editnopickmapfeatureattributes',
           runOnce: true,
           helpMessage: 'editing.tools.update_feature',
@@ -942,7 +942,7 @@ new (class extends Plugin {
         // show commit modal window
         /** ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8 */
         if (modal) {
-          workflow = new EditingWorkflow({
+          workflow = new Workflow({
             type: 'commitfeatures',
             steps: [
               // confirm step
@@ -1324,7 +1324,7 @@ new (class extends Plugin {
 
       /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/easyaddfeatureworkflow.js@v3.7.1 */
       // create workflow
-      const workflow = new EditingWorkflow({
+      const workflow = new Workflow({
       type: 'addfeature',
       steps: [
         new OpenFormStep({

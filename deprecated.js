@@ -1,18 +1,21 @@
 /**
- * @file
+ * Class Flow of workflow step by step
  * 
  * ORIGINAL SOURCE: g3w-client/src/core/workflow/flow.js@v3.9.1
- * 
- * @since g3w-client-plugin-editing@v3.8.x
+ * ORIGINAL SOURCE: g3w-client/src/core/workflow/queque.js@v3.9.1
  */
+export function Flow() {
+  console.warn('[G3W-CLIENT] g3wsdk.core.workflow.Flow is deprecated');
 
-import Queque from './queque';
+  class Queque {
+    constructor() { this.tasks = []; }
+    addTask(task) { this.tasks.push(task); }
+    run(reverse = false) { while (this.tasks.length) { const task = reverse ? this.tasks.pop() : this.tasks.shift(); task(); } }
+    flush() { return this.tasks.splice(0); }
+    getLength() { return this.tasks.length; }
+    clear() { this.run(); this.tasks = []; }
+  }
 
-const { G3WObject }     = g3wsdk.core;
-const { base, inherit } = g3wsdk.core.utils;
-
-//Class Flow of workflow step by step
-function Flow() {
   let steps = [];
   let inputs;
   let counter = 0;
@@ -91,19 +94,13 @@ function Flow() {
     }
     return d.promise();
   };
-  base(this)
+
+  this.clearQueques = function(){
+    this.queques.micro.clear();
+    this.queques.end.clear();
+  }
+
+  g3wsdk.core.utils.base(this)
 }
 
-inherit(Flow, G3WObject);
-
-const proto = Flow.prototype;
-
-/**
- * @FIXME add description
- */
-proto.clearQueques = function(){
-  this.queques.micro.clear();
-  this.queques.end.clear();
-};
-
-export default Flow;
+g3wsdk.core.utils.inherit(Flow, g3wsdk.core.G3WObject);

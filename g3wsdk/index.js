@@ -2,11 +2,10 @@ import Editor           from './editing/editor';
 import ChangesManager   from './editing/changesmanager';
 import SessionsRegistry from './editing/sessionsregistry';
 import Session          from './editing/session';
-import Task             from './workflow/task';
+import { Task }         from './workflow/task';
 import Step             from './workflow/step';
-import Flow             from './workflow/flow';
-import Workflow         from './workflow/workflow';
-import WorkflowsStack   from './workflow/stack';
+import { Flow }         from '../deprecated';
+import { Workflow }     from './workflow/workflow';
 
 /**
  * Editing APIs will be removed from core after g3w-client@v.4.x
@@ -50,5 +49,5 @@ window.g3wsdk.core.workflow = {
   Step,
   Flow,
   Workflow,
-  WorkflowsStack
+  WorkflowsStack: Workflow.Stack
 };
