@@ -7,7 +7,7 @@
       v-disabled  = "loading"
       style       = "margin-bottom: 5px;"
     >
-      <bar-loader :loading="loading"/>
+      <bar-loader :loading="loading" />
 
       <!-- RELATION TITLE -->
       <div
@@ -32,7 +32,7 @@
             class        = "form-control"
             id           = "filterRelation"
             :placeholder = "placeholdersearch"
-          >
+          />
         </div>
 
         <div class="g3w-editing-relations-add-link-tools">
@@ -390,15 +390,15 @@
       _createDataTable() {
         this.relationsTable = $(this.$refs.relationTable)
           .DataTable({
-            scrollX:        true,
-            order:          [ 2, 'asc' ],
-            destroy:        true,
-            scrollResize:   true,
-            scrollCollapse: true,
-            responsive:     true,
-            pageLength:     10,
-            columnDefs:     [ { orderable: false, targets: [0, 1] } ],
             autoWidth:      false,
+            columnDefs:     [ { orderable: false, targets: [0, 1] } ],
+            destroy:        true,
+            order:          [ 2, 'asc' ],
+            pageLength:     10,
+            responsive:     true,
+            scrollCollapse: true,
+            scrollResize:   true,
+            scrollX:        true,
           });
 
         $(".dataTables_filter, .dataTables_length").hide();

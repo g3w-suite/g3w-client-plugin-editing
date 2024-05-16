@@ -426,12 +426,12 @@
 
       setDataTable() {
         this.dataTable = $('#editing_table table').DataTable({
+          columnDefs:     [ { orderable: false, targets: 0 }],
+          order:          [ 1, 'asc' ],
           pageLength:     10,
-          scrollX:        true,
           scrollCollapse: true,
           scrollResize:   true,
-          order:          [ 1, 'asc' ],
-          columnDefs:     [ { orderable: false, targets: 0 }]
+          scrollX:        true,
         });
         this.resize();
       },
