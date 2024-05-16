@@ -256,22 +256,8 @@ export class Workflow extends G3WObject {
    * @param input.key
    * @param input.value
    */
-  setInput({
-    key,
-    value,
-  }) {
+  setInput({ key, value }) {
     this._inputs[key] = value;
-  }
-
-  /**
-   * @TODO check if deprecated (probably unused)
-   * 
-   * @param inputs
-   * 
-   * @private
-   */
-  _setInputs(inputs) {
-  this._inputs = inputs;
   }
 
   /**
@@ -359,7 +345,7 @@ export class Workflow extends G3WObject {
    */
   clearMessages() {
     this._messages.help = null;
-    if (this._isThereUserMessaggeSteps()) {
+    if (Object.keys(this._userMessageSteps).length) {
       this.clearUserMessagesSteps();
     }
   }
@@ -376,24 +362,6 @@ export class Workflow extends G3WObject {
    */
   getRunningStep() {
     return this._steps.find(step => step.isRunning());
-  }
-
-  /**
-   * Stop all workflow children 
-   */
-  _stopChild() {
-    return this._child
-    ? this._child.stop()
-    : resolve();                 // <-- FIXME: undefined function ?
-  }
-
-  /**
-   * @returns { number }
-   * 
-   * @private
-   */
-  _isThereUserMessaggeSteps() {
-    return Object.keys(this._userMessageSteps).length;
   }
 
   /**
@@ -445,7 +413,7 @@ export class Workflow extends G3WObject {
       this._flow       = options.flow || this._flow;
       this._steps      = options.steps || this._steps;
   
-      const showUserMessage = this._isThereUserMessaggeSteps();
+      const showUserMessage = Object.keys(this._userMessageSteps).length;
   
       if (showUserMessage) {
         GUI.showUserMessage({
@@ -494,7 +462,10 @@ export class Workflow extends G3WObject {
       this._promise = null;
 
       try {
-        await promisify(this._stopChild()) // stop child workflow  
+        // stop child workflow
+        if (this._child) {
+          await promisify(this._child.stop());  
+        }
       } catch (e) {
         console.warn(e);
       }
@@ -516,17 +487,9 @@ export class Workflow extends G3WObject {
   }
 
   /**
-   * @FIXME add description
+   * Reset user messagge steps
    */
   clearUserMessagesSteps() {
-    this._resetUserMessaggeStepsDone();
-    GUI.closeUserMessage();
-  }
-
-  /**
-   * @private
-   */
-  _resetUserMessaggeStepsDone() {
     Object
       .keys(this._userMessageSteps)
       .forEach(type => {
@@ -536,6 +499,7 @@ export class Workflow extends G3WObject {
           userMessageSteps.buttonnext.disabled = true;
         }
     })
+    GUI.closeUserMessage();
   }
 
   /**
