@@ -54,10 +54,6 @@ export class AddFeatureStep extends Step {
 
     this._snap = false === options.snap ? false : true;
 
-    this._finishCondition = options.finishCondition || (() => true);
-
-    this._condition = options.condition || (() => true);
-
     /**
      * Handle tasks that stops after `run(inputs, context)` promise (or if ESC key is pressed)
      * 
@@ -98,16 +94,15 @@ export class AddFeatureStep extends Step {
 
     this.geometryType = Geometry.getOLGeometry(originalGeometryType);
 
-    const source = editingLayer.getSource();
+    const source     = editingLayer.getSource();
     const attributes = originalLayer.getEditingFields();
-    const temporarySource = new ol.source.Vector();
 
     this.drawInteraction = new ol.interaction.Draw({
-      type: this.geometryType,
-      source: temporarySource,
-      condition: this._condition,
+      type:              this.geometryType,
+      source:            new ol.source.Vector(),
+      condition:         this._options.condition || (() => true),
       freehandCondition: ol.events.condition.never,
-      finishCondition: this._finishCondition
+      finishCondition:   this._options.finishCondition || (() => true)
     });
 
     this.addInteraction(this.drawInteraction);
@@ -146,20 +141,18 @@ export class AddFeatureStep extends Step {
    * Method to add Measure
    */
   addMeasureInteraction() {
-    const measureOptions = {
+    const is_line = Geometry.isLineGeometryType(this.geometryType);
+    const is_poly = Geometry.isPolygonGeometryType(this.geometryType);
+    if (!is_line && !is_poly) {
+      return;
+    }
+    this.measureInteraction = new (is_line ? LengthInteraction : AreaInteraction)({
       projection: GUI.getService('map').getProjection(),
       drawColor: 'transparent',
       feature: this.drawingFeature
-    };
-    if (Geometry.isLineGeometryType(this.geometryType)) {
-      this.measureInteraction = new LengthInteraction(measureOptions);
-    } else if (Geometry.isPolygonGeometryType(this.geometryType)) {
-      this.measureInteraction = new AreaInteraction(measureOptions);
-    }
-    if (this.measureInteraction) {
-      this.measureInteraction.setActive(true);
-      this.addInteraction(this.measureInteraction);
-    }
+    });
+    this.measureInteraction.setActive(true);
+    this.addInteraction(this.measureInteraction);
   }
 
   /**
