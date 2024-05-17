@@ -420,6 +420,7 @@ export class Step extends G3WObject {
    */ 
   __run(inputs, context) {
     return $promisify(async() => {
+      this.setInputs(inputs);
       this.setContext(context);
       this.emit('run', { inputs, context });
       try {

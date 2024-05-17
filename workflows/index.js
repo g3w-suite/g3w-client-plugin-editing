@@ -1090,7 +1090,7 @@ export class SelectElementsStep extends Step {
       }
 
       Object.values(interactions).forEach(i => this.addInteraction(i));
-      this._selectInteractions = this._selectInteractions.push(...Object.values(interactions));
+      this._selectInteractions.push(...Object.values(interactions));
     }).promise();
   }
 
