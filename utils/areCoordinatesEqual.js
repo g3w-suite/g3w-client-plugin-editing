@@ -15,6 +15,8 @@ export function areCoordinatesEqual({
  const type     = geometry.getType();
  const coords   = (c1, c2) => g3wsdk.core.geoutils.areCoordinatesEqual(c1, c2); // whether element have same coordinates
 
+ console.log(type, feature, coordinates);
+
  switch (type) {
    case 'Polygon':
    case 'MultiLineString':
