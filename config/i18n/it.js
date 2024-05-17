@@ -1,6 +1,6 @@
 export default {
   close_editing_panel: {
-    message: "Uscire dall'editing per chiudere il form"
+    message: "Per terminare clicca su ogni segno di spunta"
   },
   errors: {
     no_layers: "Si è verificato un errore nel caricamento dei layers in editing.",

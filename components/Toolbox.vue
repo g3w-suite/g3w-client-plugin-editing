@@ -76,7 +76,7 @@
           >
             <span
               style  = "font-size: 1.1em; padding: 5px !important;"
-              :class = "g3wtemplate.font['pencil']">
+              :class = "g3wtemplate.font[state.editing.on ? 'checkmark' : 'pencil']">
             </span>
           </div>
 

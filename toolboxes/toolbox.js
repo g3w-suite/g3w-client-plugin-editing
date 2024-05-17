@@ -626,7 +626,7 @@ export class ToolBox extends G3WObject {
                 new SelectElementsStep({
                   ...options,
                   help: 'editing.steps.help.copy',
-                  type: ApplicationState.ismobile ? 'single' :  'multiple',
+                  type: ApplicationState.ismobile ? 'single' : 'multiple',
                   steps: {
                     select: {
                       description: `editing.workflow.steps.${ApplicationState.ismobile ? 'selectPoint' : 'selectPointSHIFT'}`,
@@ -651,35 +651,29 @@ export class ToolBox extends G3WObject {
                     this._snapIteraction = this._snapIteraction;
                     /** @since g3w-client-plugin-editing@v3.8.0 */
                     this._stopPromise = this._stopPromise;
-                    const {features} = inputs;
-                
-                    if (!features.length) {
-                      return;
-                    }
-  
                     return $.Deferred(d => {
+                      console.log(inputs);
+                      if (!inputs.features.length) {
+                        return d.reject('no feature');
+                      }
                       this._stopPromise = $.Deferred();
-                
+
                       /** @since g3w-client-plugin-editing@v3.8.0 */
                       setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise, inputs, style: this.selectStyle });
-                  
-                      this._snapIteraction = new ol.interaction.Snap({
-                        features: new ol.Collection(features),
-                        edge: false
-                      });
-                      this._drawIteraction = new ol.interaction.Draw({
-                        type: 'Point',
-                        condition: evt => {
-                          const coordinates = evt.coordinate;
-                          return !!features.find(feature => areCoordinatesEqual({feature, coordinates}));
-                        }
-                      });
-                      this._drawIteraction.on('drawend', (evt) => {
-                        inputs.coordinates = evt.feature.getGeometry().getCoordinates();
+
+                      this._snapIteraction = new ol.interaction.Snap({ edge: false,   features: new ol.Collection(inputs.features) });
+                      this._drawIteraction = new ol.interaction.Draw({ type: 'Point', condition: e => {
+                        console.log(!!inputs.features.find(f => areCoordinatesEqual({ feature: f, coordinates: e.coordinate})));
+                        return !!inputs.features.find(f => areCoordinatesEqual({ feature: f, coordinates: e.coordinate}));
+                      }});
+                      this._drawIteraction.on('drawend', e => {
+                        console.log(e);
+                        inputs.coordinates = e.feature.getGeometry().getCoordinates();
+                        console.log(inputs.coordinates);
                         this.setUserMessageStepDone('from');
                         d.resolve(inputs);
                       });
-                    
+
                       this.addInteraction(this._drawIteraction);
                       this.addInteraction(this._snapIteraction);
                     }).promise();
