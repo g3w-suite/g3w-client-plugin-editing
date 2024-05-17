@@ -671,6 +671,9 @@ export class Workflow extends G3WObject {
 
 }
 
+/** @type { Workflow[] } */
+const workflows = [];
+
 /**
  * ORIGINAL SOURCE: g3w-client/src/services/workflow.js@v3.9.1
  * 
@@ -679,22 +682,17 @@ export class Workflow extends G3WObject {
  * @since g3w-client-plugin-editing@v3.8.0
  */
 Workflow.Stack = {
-  _workflows: [],
-  push(workflow) {
-    if (Workflow.Stack._workflows.indexOf(workflow) === -1) return Workflow.Stack._workflows.push(workflow) - 1;
-    return Workflow.Stack._workflows.indexOf(workflow);
-  },
-  /** @returns {boolean|*} parent */
-  getParent()    { return Workflow.Stack._workflows.slice(-2)[0]; },
-  /** @returns {boolean|T[]} list of parents */
-  getParents()   { return Workflow.Stack._workflows.slice(0, -1); },
-  pop()          { return Workflow.Stack._workflows.pop() },
-  getLength()    { return Workflow.Stack._workflows.length; },
-  getFirst()     { return Workflow.Stack._workflows[0]; },
+  _workflows: workflows,
+  push(workflow) { return workflows.includes(workflow) ? workflows.indexOf(workflow) : (workflows.push(workflow) - 1); },
+  getParent()    { return workflows.slice(-2)[0]; },
+  getParents()   { return workflows.slice(0, -1); },
+  pop()          { return workflows.pop(); },
+  getLength()    { return workflows.length; },
+  getFirst()     { return workflows[0]; },
   getCurrent()   { return Workflow.Stack.getLast(); },
-  getLast()      { return Workflow.Stack._workflows.slice(-1)[0]; },
-  removeAt(i)    { Workflow.Stack._workflows.splice(i, 1); },
-  insertAt(i, w) { Workflow.Stack._workflows[i] = w; },
-  getAt(i)       { return Workflow.Stack._workflows[i]; },
-  clear()        { while (Workflow.Stack.getLength()) { (Workflow.Stack.pop()).stop(); } },
+  getLast()      { return workflows.slice(-1)[0]; },
+  removeAt(i)    { workflows.splice(i, 1); },
+  insertAt(i, w) { workflows[i] = w; },
+  getAt(i)       { return workflows[i]; },
+  clear()        { while (workflows.length) { (workflows.pop()).stop(); } },
 };
