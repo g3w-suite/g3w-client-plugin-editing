@@ -700,7 +700,7 @@ export class OpenFormStep extends Step {
       // relation components (exlcude ONE relation + layer is the father get relation layers that set in editing on g3w-admin)
       ...getRelationsInEditingByFeature({
           layerId,
-          relations: edit_relations && inputs.layer.getRelations().getArray().filter(r => r.getType() !== 'ONE' && r.getFather() === layerId),
+          relations: edit_relations ? inputs.layer.getRelations().getArray().filter(r => r.getType() !== 'ONE' && r.getFather() === layerId) : [],
           feature:   edit_relations && inputs.features[inputs.features.length - 1],
         }).map(({ relation, relations }) => ({
           title:     "plugins.editing.edit_relation",
