@@ -417,6 +417,16 @@ export class OpenFormStep extends Step {
      * @since g3w-client-plugin-editing@v3.7.0
      */
     this._unwatchs = [];
+
+    /**
+     * @since 3.8.0
+     * Store id of layer that we changed editing capabilities in case
+     * need to disable relation editing
+     *
+     *
+     * */
+    this.change_editing_capabilities_layers = [];
+
   }
 
   /**
@@ -477,10 +487,25 @@ export class OpenFormStep extends Step {
     // set fields. Useful getParentFormData
     Workflow.Stack.getCurrent().setInput({ key: 'fields', value: fields });
 
-    // relation options
+    // relation options (in vase of multi editing feature, set false)
     const edit_relations = !this._multi;
     const feature        = edit_relations && inputs.features && inputs.features[inputs.features.length - 1];
     const layerId        = edit_relations && inputs.layer.getId();
+
+    //In case of edit_relations false and layer has a form structure to edit relation,
+    // need to set temporary relation layer editable to false
+    // remove editing capabilities from layer config
+    if (!edit_relations && this._originalLayer.hasFormStructure()) {
+      this._originalLayer.getRelations().getArray().forEach(r => {
+        const rId = this._originalLayer.getId() !== r.state.child ? r.state.child : r.state.father;
+        const rLayer = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').service.getLayerById(rId);
+        //mead in editing
+        if (rLayer) {
+          this.change_editing_capabilities_layers.push(rId);
+          rLayer.config.capabilities = rLayer.config.capabilities - Layer.CAPABILITIES.EDITABLE;
+        }
+      })
+    }
 
     // @since g3w-client-plugin-editing@v3.7.2
     // skip relations that doesn't have form structure
@@ -687,12 +712,15 @@ export class OpenFormStep extends Step {
     });
 
     // overwrite click on relation
-    formService.handleRelation = async ({ relation }) => {
-      GUI.setLoadingContent(true);
-      await setLayerUniqueFieldValues(this._originalLayer.getRelationById(relation.name).getChild());
-      formService.setCurrentComponentById(relation.name);
-      GUI.setLoadingContent(false);
-    };
+    // in case of edit_relations false, set empty method
+    formService.handleRelation = edit_relations
+      ? async ({ relation }) => {
+        GUI.setLoadingContent(true);
+        await setLayerUniqueFieldValues(this._originalLayer.getRelationById(relation.name).getChild());
+        formService.setCurrentComponentById(relation.name);
+        GUI.setLoadingContent(false);
+      }
+      : () => {} //no need to do nothing
 
     formService.addComponents(feature && feature.isNew() ? [] : [
       // custom form components
@@ -779,6 +807,16 @@ export class OpenFormStep extends Step {
     this.promise = null;
     this._unwatchs.forEach(unwatch => unwatch());
     this._unwatchs = [];
+
+    //reset eventually changed capabilities
+    (
+      this.change_editing_capabilities_layers.splice(0)
+    )
+    .forEach( id => {
+      const config = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').service.getLayerById(id).config;
+      config.capabilities = config.capabilities + Layer.CAPABILITIES.EDITABLE;
+    })
+
   }
 
 }
