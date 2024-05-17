@@ -1,6 +1,6 @@
 import { Workflow }                                     from '../g3wsdk/workflow/workflow';
 import Session                                          from '../g3wsdk/editing/session';
-import { EditingStep }                                  from '../g3wsdk/workflow/step';
+import { Step }                                         from '../g3wsdk/workflow/step';
 import { createEditingDataOptions }                     from '../utils/createEditingDataOptions';
 import { setLayerUniqueFieldValues }                    from '../utils/setLayerUniqueFieldValues';
 import { getRelationsInEditing }                        from '../utils/getRelationsInEditing';
@@ -166,7 +166,7 @@ export class ToolBox extends G3WObject {
               type: 'editfeatureattributes',
               steps: [
                 new PickFeatureStep(),
-                new EditingStep({ run: chooseFeature }),
+                new Step({ run: chooseFeature }),
                 new OpenFormStep(),
               ],
             });
@@ -187,10 +187,10 @@ export class ToolBox extends G3WObject {
               type: 'deletefeature',
               steps: [
                 new PickFeatureStep(),
-                new EditingStep({ run: chooseFeature }),
+                new Step({ run: chooseFeature }),
                 // delete feature
   
-                new EditingStep({
+                new Step({
                   help: "editing.steps.help.double_click_delete",
                   run(inputs, context) {
                     this.drawInteraction    = this.drawInteraction || null;
@@ -285,7 +285,7 @@ export class ToolBox extends G3WObject {
                   },
                 }),
                 // confirm step
-                new EditingStep({
+                new Step({
                   run(inputs) {
                     return $.Deferred(d => {
                       const editingLayer = inputs.layer.getEditingLayer();
@@ -343,7 +343,7 @@ export class ToolBox extends G3WObject {
               helpMessage: 'editing.tools.update_vertex',
               steps: [
                 new PickFeatureStep(options),
-                new EditingStep({ run: chooseFeature }),
+                new Step({ run: chooseFeature }),
                 new ModifyGeometryVertexStep(),
               ],
             })
@@ -403,7 +403,7 @@ export class ToolBox extends G3WObject {
               helpMessage: 'editing.tools.move_feature',
               steps: [
                 new PickFeatureStep(),
-                new EditingStep({ run: chooseFeature }),
+                new Step({ run: chooseFeature }),
                 new MoveFeatureStep(),
               ],
             });
@@ -450,12 +450,11 @@ export class ToolBox extends G3WObject {
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/copyfeaturesfromotherlayerworkflow.js@v3.7.1 */
           op(options = {}) {
             const openFormStep = new OpenFormStep({ ...options, help: 'editing.steps.help.copy' });
-            const openFormTask = openFormStep.getTask();
             return new Workflow({
               ...options,
               type: 'copyfeaturesfromotherlayer',
               steps: [
-                new EditingStep({
+                new Step({
                   ...options,
                   help: 'editing.steps.help.draw_new_feature',
                   run(inputs, context) {
@@ -576,8 +575,8 @@ export class ToolBox extends G3WObject {
                               });
                             //check if features selected are more than one
                             if (features.length > 1) {
-                              if (editAttributes.state && openFormTask) {
-                                openFormTask.updateMulti(true);
+                              if (editAttributes.state && openFormStep) {
+                                openFormStep.updateMulti(true);
                               } else {
                                 if (isThereEmptyFieldRequiredNotDefined) {
                                   GUI.showUserMessage({
@@ -637,7 +636,7 @@ export class ToolBox extends G3WObject {
                   },
                 }, true),
                 // get vertex
-                options.layer.getGeometryType().indexOf('Point') >= 0 ? undefined : new EditingStep({
+                options.layer.getGeometryType().indexOf('Point') >= 0 ? undefined : new Step({
                   ...options,
                   help: 'editing.steps.help.select',
                   steps: {
@@ -695,7 +694,7 @@ export class ToolBox extends G3WObject {
                   },
                 }),
                 // move elements
-                new EditingStep({
+                new Step({
                   ...options,
                   help: "editing.steps.help.select_vertex_to_paste",
                   steps: {
@@ -820,7 +819,7 @@ export class ToolBox extends G3WObject {
                     }
                   },
                 }),
-                new EditingStep({
+                new Step({
                   run: chooseFeature,
                   help: 'editing.steps.help.select_element',
                 }),
@@ -851,7 +850,7 @@ export class ToolBox extends G3WObject {
                   }
                 }),
                 // add part to multi geometries
-                new EditingStep({
+                new Step({
                   ...options,
                   help: 'editing.steps.help.select_element',
                   run: addPartToMultigeometries
@@ -878,9 +877,9 @@ export class ToolBox extends G3WObject {
               type: 'deletepartfrommultigeometries',
               steps: [
                 new PickFeatureStep(),
-                new EditingStep({ run: chooseFeature }),
+                new Step({ run: chooseFeature }),
                 // delete part from multi geometries
-                new EditingStep({
+                new Step({
                   ...options,
                   run(inputs, context) {
                     this.pickFeatureInteraction = this.pickFeatureInteraction || null;
@@ -986,7 +985,7 @@ export class ToolBox extends G3WObject {
                   },
                 }, true),
                 // split feature
-                new EditingStep({
+                new Step({
                   ...options,
                   help: '',
                   steps: {
@@ -1110,7 +1109,7 @@ export class ToolBox extends G3WObject {
                   },
                 }, true),
                 // merge features
-                new EditingStep({
+                new Step({
                   ...options,
                   help: 'editing.steps.help.merge',
                   steps: {
@@ -1242,7 +1241,7 @@ export class ToolBox extends G3WObject {
               ...options,
               type: 'addtablefeature',
               steps: [
-                new EditingStep({ help: 'editing.steps.help.new', run: addTableFeature }),
+                new Step({ help: 'editing.steps.help.new', run: addTableFeature }),
                 new OpenFormStep(),
               ],
             });

@@ -5,9 +5,9 @@
  * 
  * @since g3w-client-plugin-editing@v3.8.x
  */
-import { Task }                  from '../../g3wsdk/workflow/task';
 import { promisify, $promisify } from '../../utils/promisify';
 
+const { GUI }       = g3wsdk.gui;
 const { G3WObject } = g3wsdk.core;
 
 /**
@@ -21,39 +21,31 @@ const { G3WObject } = g3wsdk.core;
  * @param options.help
  * @param options.message
  */
-class Step extends G3WObject {
+export class Step extends G3WObject {
   
   constructor(options = {}) {
 
     super();
 
-    const {
-      inputs  = null,
-      context = null,
-      task    = null,
-      outputs = null,
-      escKeyPressEventHandler,
-    } = options;
+    this._options = options;
+
+    this._run  = (options.run  || this.run  || (async () => true)).bind(this);
+    this._stop = (options.stop || this.stop || (async () => true)).bind(this);
 
     /**
      * @FIXME add description
      */
-    this._inputs = inputs;
+    this._inputs = options.inputs || null;
 
     /**
      * @FIXME add description
      */
-    this._context = context;
+    this._context = options.context || null;
 
     /**
      * @FIXME add description
      */
-    this._task = task;
-
-    /**
-     * @FIXME add description
-     */
-    this._outputs = outputs;
+    this._outputs = options.outputs || null;
 
     /**
      * Dynamic state of step
@@ -64,14 +56,315 @@ class Step extends G3WObject {
       help:    options.help || null,   // help to show what the user has to do
       running: false,                  // running
       error:   null,                   // error
-      message: options.message || null // message
+      message: options.message || null, // message
+      /**
+       * ORIGINAL SOURCE: g3w-client/src/core/workflow/task.js@v3.9.1
+       * 
+       * @since g3w-client-plugin-editing@v3.8.0
+       */
+      usermessagesteps: {}
     };
 
-    if (escKeyPressEventHandler) {
-      this.registerEscKeyEvent(escKeyPressEventHandler)
+    this.registerEscKeyEvent(options.escKeyPressEventHandler)
+
+    /**
+     * ORIGINAL SOURCE: g3w-client/src/core/workflow/task.js@v3.9.1
+     * 
+     * @since g3w-client-plugin-editing@v3.8.0
+     */
+    this.selectStyle = options.selectStyle;
+
+    /**
+     * ORIGINAL SOURCE: g3w-client/src/core/workflow/task.js@v3.9.1
+     * 
+     * @since g3w-client-plugin-editing@v3.8.0
+     */
+    if (options.steps) {
+      this.setSteps(options.steps);
+    }
+
+    /**
+     * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/addfeaturetask.js@v3.7.1
+     * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/addfeaturestep.js@v3.7.1
+     * 
+     * @since g3w-client-plugin-editing@v3.8.0
+     */
+    if (options.onRun) {
+      this.on('run', options.onRun);
+    }
+
+    /**
+     * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/addfeaturetask.js@v3.7.1
+     * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/addfeaturestep.js@v3.7.1
+     * 
+     * @since g3w-client-plugin-editing@v3.8.0
+     */
+    if (options.onStop) {
+      this.on('run', options.onStop);
     }
 
   }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client/src/core/workflow/task.js@v3.9.1
+   * 
+   * Set and get task usefult properties used to run
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  setInputs(inputs) {
+    this._inputs = this.inputs = inputs;
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client/src/core/workflow/task.js@v3.9.1
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  getInputs() {
+    return this._inputs;
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client/src/core/workflow/task.js@v3.9.1
+   * 
+   * @param context
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  setContext(context) {
+    return this._context = this.context = context;
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client/src/core/workflow/task.js@v3.9.1
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  getContext() {
+    return this.context;
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client/src/core/workflow/task.js@v3.9.1
+   * 
+   * Revert task
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  revert() {
+    console.log('Revert to implement ');
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client/src/core/workflow/task.js@v3.9.1
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  panic() {
+    console.log('Panic to implement ..');
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client/src/core/workflow/task.js@v3.9.1
+   * 
+   * @param task
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  setRoot(task) {
+    this.state.root = task;
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client/src/core/workflow/task.js@v3.9.1
+   * 
+   * @returns { Object }
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  getUserMessageSteps() {
+    return this.state.usermessagesteps;
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client/src/core/workflow/task.js@v3.9.1
+   * 
+   * @param steps
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  setUserMessageSteps(steps={}) {
+    this.state.usermessagesteps = steps;
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client/src/core/workflow/task.js@v3.9.1
+   * 
+   * @param type
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  setUserMessageStepDone(type) {
+    if (type) {
+      this.state.usermessagesteps[type].done = true;
+    }
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  addInteraction(interaction) {
+    GUI.getService('map').addInteraction(interaction);
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  removeInteraction(interaction) {
+    setTimeout(() => GUI.getService('map').removeInteraction(interaction)) // timeout needed to work around an Openlayers issue
+  }
+
+  /**
+   * @TODO code implementation
+   *
+   * Get editing type from editing config
+   *
+   * @returns { null }
+   */
+  getEditingType() {
+    return null;
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  registerPointerMoveCursor() {
+    GUI.getService('map').getMap().on("pointermove", this._pointerMoveCursor)
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  unregisterPointerMoveCursor() {
+    GUI.getService('map').getMap().un("pointermove", this._pointerMoveCursor)
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
+   * 
+   * @param evt
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  _pointerMoveCursor(evt) {
+    this.getTargetElement().style.cursor = (this.forEachFeatureAtPixel(evt.pixel, () => true) ? 'pointer' : '');
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
+   * 
+   * @param steps
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  setSteps(steps = {}) {
+    this._steps = steps;
+    this.setUserMessageSteps(steps);
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
+   * 
+   * @returns { Object }
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  getSteps() {
+    return this._steps;
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  getMap() {
+    return GUI.getService('map').getMap();
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
+   *
+   * Disable sidebar
+   *
+   * @param {Boolean} bool
+   *
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  disableSidebar(bool = true) {
+    if (!this._isContentChild) {
+      GUI.disableSideBar(bool);
+    }
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
+   *
+   * @param event
+   * @param options
+   *
+   * @returns {*}
+   *
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  fireEvent(event, options={}) {
+    return g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').fireEvent(event, options);
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
+   * 
+   * Handle single task
+   *
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  saveSingle(input, context) {
+    context.session.save().then(() => g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').saveChange());
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
+   * 
+   * Cancel single task
+   *
+   * @param input
+   * @param context
+   *
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  cancelSingle(input, context) {
+    context.session.rollback();
+  }
+
+  // /**
+  //  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
+  //  * 
+  //  * @param get_default_value to context of task
+  //  * 
+  //  * @since g3w-client-plugin-editing@v3.8.0
+  //  */
+  // setContextGetDefaultValue(get_default_value = false) {
+  //   this.getContext().get_default_value = get_default_value;
+  // }
 
   /**
    * Bind interrupt event on keys escape pressed
@@ -97,7 +390,7 @@ class Step extends G3WObject {
    * @FIXME add description
    */
   bindEscKeyUp(callback = () => {}) {
-    $(document).on('keyup', { callback, task: this.getTask()}, this.escKeyUpHandler);
+    $(document).on('keyup', { callback, task: this }, this.escKeyUpHandler);
   }
 
   /**
@@ -105,11 +398,17 @@ class Step extends G3WObject {
    * @listens stop
    */
   registerEscKeyEvent(callback) {
-    this.on('run', ()  => this.bindEscKeyUp(callback));
-    this.on('stop', () => this.unbindEscKeyUp());
+    if (callback) {
+      this.on('run', ()  => this.bindEscKeyUp(callback));
+      this.on('stop', () => this.unbindEscKeyUp());
+    }
   }
 
   /**
+   * 
+   * ORIGINAL SOURCE: g3w-client/src/core/workflow/task.js@v3.9.1
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
+   * 
    * Start task
    * 
    * @param inputs
@@ -119,60 +418,35 @@ class Step extends G3WObject {
    * 
    * @fires run
    */ 
-  run(inputs, context) {
-    return $promisify(async () => {
+  __run(inputs, context) {
+    return $promisify(async() => {
+      this.setContext(context);
       this.emit('run', { inputs, context });
-      if (!this._task) {
-        return;
-      }
       try {
         this.state.running = true;                // change state to running
-        this._task.setInputs(inputs);
-        this._task.setContext(context);
-        if(!this._task.run) {
-          console.trace(this);
-        }
-        const outputs = await promisify(this._task.run(inputs, context));
-        return outputs;
+        return await promisify(this._run(inputs, context));
       } catch (e) {
         console.warn(e);
         this.state.error = e;
         return Promise.reject(e);
       } finally{
-        this.stop();
+        this.__stop();
       }
     });
   }
 
   /**
+   * ORIGINAL SOURCE: g3w-client/src/core/workflow/task.js@v3.9.1
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
+   *
    * Stop step
-   * 
+   *
    * @fires stop
    */
-  stop() {
-    this._task.stop(this._inputs, this._context);   // stop task
-    this.state.running = false;                     // remove running state 
+  __stop() {
+    this._stop(this._inputs, this._context);   // stop task
+    this.state.running = false;                // remove running state 
     this.emit('stop');
-    this._task.setInputs(null);
-    this._task.setContext(null);
-  }
-
-  /**
-   * Revert task
-   */
-  revert() {
-    if (this._task && this._task.revert) {
-      this._task.revert();
-    }
-  }
-
-  /**
-   * @FIXME add description
-   */
-  panic() {
-    if (this._task && this._task.panic) {
-      this._task.panic();
-    }
   }
 
   /**
@@ -220,29 +494,8 @@ class Step extends G3WObject {
   /**
    * @FIXME add description
    */
-  setInputs(inputs) {
-    this._inputs = inputs;
-  }
-
-  /**
-   * @FIXME add description
-   */
-  getInputs() {
-    return this._inputs;
-  }
-
-  /**
-   * @FIXME add description
-   */
-  setTask(task) {
-    this._task = task;
-  }
-
-  /**
-   * @FIXME add description
-   */
   getTask() {
-    return this._task;
+    return this;
   }
 
   /**
@@ -267,21 +520,3 @@ class Step extends G3WObject {
 Step.MESSAGES = {
   help: null,
 };
-
-export default Step;
-
-export class EditingStep extends Task {
-
-  constructor(options = {}) {
-    super(options);
-
-    options.task = this;
-
-    console.assert(undefined !== options.run, options.run)
-
-    this.run  = options.run.bind(this);
-    this.stop = (options.stop || (() => true)).bind(this);
-
-    return new Step(options);
-  }
-}

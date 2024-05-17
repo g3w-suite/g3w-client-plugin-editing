@@ -143,7 +143,7 @@
 </template>
 
 <script>
-  import { EditingStep }                       from '../g3wsdk/workflow/step';
+  import { Step }                              from '../g3wsdk/workflow/step';
   import { Workflow }                          from '../g3wsdk/workflow/workflow';
   import { OpenFormStep }                      from '../workflows';
   import { cloneFeature }                      from '../utils/cloneFeature';
@@ -327,7 +327,7 @@
             this.state.workflow = new Workflow({
                 type: 'addtablefeature',
                 steps: [
-                  new EditingStep({ help: 'editing.steps.help.new', run: addTableFeature }),
+                  new Step({ help: 'editing.steps.help.new', run: addTableFeature }),
                   new OpenFormStep(),
                 ],
               });

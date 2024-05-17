@@ -16,29 +16,28 @@ import { promisify }                                    from '../utils/promisify
 import { PickFeaturesInteraction }                      from '../interactions/pickfeaturesinteraction';
 
 import { Workflow }                                     from '../g3wsdk/workflow/workflow';
-import { Task }                                         from '../g3wsdk/workflow/task';
-import Step                                             from '../g3wsdk/workflow/step';
+import { Step }                                         from '../g3wsdk/workflow/step';
 
-const { G3WObject, ApplicationState }                        = g3wsdk.core;
-const { Geometry }                                           = g3wsdk.core.geometry;
+const { G3WObject, ApplicationState }                   = g3wsdk.core;
+const { Geometry }                                      = g3wsdk.core.geometry;
 const {
   convertSingleMultiGeometry,
   isSameBaseGeometryType,
-}                                                            = g3wsdk.core.geoutils;
-const { removeZValueToOLFeatureGeometry }                    = g3wsdk.core.geoutils.Geometry;
-const { Layer }                                              = g3wsdk.core.layer;
-const { Feature }                                            = g3wsdk.core.layer.features;
-const { GUI }                                                = g3wsdk.gui;
-const { Component, FormComponent }                           = g3wsdk.gui.vue;
-const { FormService }                                        = g3wsdk.gui.vue.services;
-const { AreaInteraction, LengthInteraction }                 = g3wsdk.ol.interactions.measure;
-const { createMeasureTooltip, removeMeasureTooltip }         = g3wsdk.ol.utils;
+}                                                       = g3wsdk.core.geoutils;
+const { removeZValueToOLFeatureGeometry }               = g3wsdk.core.geoutils.Geometry;
+const { Layer }                                         = g3wsdk.core.layer;
+const { Feature }                                       = g3wsdk.core.layer.features;
+const { GUI }                                           = g3wsdk.gui;
+const { Component }                                     = g3wsdk.gui.vue;
+const { FormService }                                   = g3wsdk.gui.vue.services;
+const { AreaInteraction, LengthInteraction }            = g3wsdk.ol.interactions.measure;
+const { createMeasureTooltip, removeMeasureTooltip }    = g3wsdk.ol.utils;
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/addfeaturetask.js@v3.7.1
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/addfeaturestep.js@v3.7.1
  */
-export class AddFeatureStep extends Task {
+export class AddFeatureStep extends Step {
 
   constructor(options = {}) {
     options.help = "editing.steps.help.draw_new_feature";
@@ -75,22 +74,6 @@ export class AddFeatureStep extends Task {
      */
     this._delKeyRemoveLastPoint  = e => e.keyCode === 46 && this.removeLastPoint();
 
-    options.task = this;
-    const step = new Step(options)
-
-    if (options.steps) {
-      this.setSteps(options.steps);
-    }
-
-    if (options.onRun) {
-      this.on('run', options.onRun);
-    }
-
-    if (options.onStop) {
-      this.on('run', options.onStop);
-    }
-
-    return step;
   }
 
   run(inputs, context) {
@@ -151,7 +134,7 @@ export class AddFeatureStep extends Task {
       feature = Geometry.addZValueToOLFeatureGeometry({ feature, geometryType: originalGeometryType });
 
       inputs.features.push(feature);
-      this.setContextGetDefaultValue(true);
+      this.getContext().get_default_value = true;
       this.fireEvent('addfeature', feature); // emit event to get from subscribers
       d.resolve(inputs);
       
@@ -219,7 +202,7 @@ export class AddFeatureStep extends Task {
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/modifygeometryvertextask.js@v3.7.1
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/modifygeometryvertexstep.js@v3.7.1
  */
-export class ModifyGeometryVertexStep extends Task {
+export class ModifyGeometryVertexStep extends Step {
 
   constructor(options = {}) {
     options.snap = undefined !== options.snap ? options.snap : true;
@@ -236,10 +219,6 @@ export class ModifyGeometryVertexStep extends Task {
     this._deleteCondition = options.deleteCondition;
 
     this.tooltip;
-
-    options.task = this;
-
-    return new Step(options);
   }
 
   run(inputs, context) {
@@ -304,7 +283,7 @@ export class ModifyGeometryVertexStep extends Task {
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/movefeaturetask.js@v3.7.1
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/movefeaturestep.js@v3.7.1
  */
-export class MoveFeatureStep extends Task {
+export class MoveFeatureStep extends Step {
 
   constructor(options = {}) {
     options.help = "editing.steps.help.move";
@@ -313,9 +292,6 @@ export class MoveFeatureStep extends Task {
 
     this.drawInteraction = null;
     this.promise; // need to be set here in case of picked features
-
-    options.task = this;
-    return new Step(options);
   }
 
   run(inputs, context) {
@@ -371,7 +347,7 @@ export class MoveFeatureStep extends Task {
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/openformtask.js@v3.7.1
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/openformstep.js@v3.7.1
  */
-export class OpenFormStep extends Task {
+export class OpenFormStep extends Step {
 
   constructor(options = {}) {
 
@@ -441,9 +417,6 @@ export class OpenFormStep extends Task {
      * @since g3w-client-plugin-editing@v3.7.0
      */
     this._unwatchs = [];
-
-    options.task = this;
-    return new Step(options);
   }
 
   /**
@@ -589,9 +562,9 @@ export class OpenFormStep extends Task {
               await Promise.allSettled(
                 [...Workflow.Stack._workflows]
                   .reverse()
-                  .filter(w => "function" === typeof w.getLastStep().getTask()._saveAll) // need to filter only workflow that
+                  .filter(w => "function" === typeof w.getLastStep()._saveAll) // need to filter only workflow that
                   .map(async w => {
-                    const task   = w.getLastStep().getTask();
+                    const task   = w.getLastStep();
                     const fields = w.getContext().service.state.fields.filter(f => task._multi ? null !== f.value : true);
                     // skip when ..
                     if (!fields.length) { return; }
@@ -814,15 +787,12 @@ export class OpenFormStep extends Task {
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/opentabletask.js@v3.7.1
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/opentablestep.js@v3.7.1
  */
-export class OpenTableStep extends Task {
+export class OpenTableStep extends Step {
 
   constructor(options = {}) {
     options.help = "editing.steps.help.edit_table";
 
     super(options);
-
-    options.task = this;
-    return new Step(options);
   }
 
   /**
@@ -903,31 +873,18 @@ export class OpenTableStep extends Task {
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/pickfeaturetask.js@v3.7.1
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/pickfeaturestep.js@v3.7.1
  */
-export class PickFeatureStep extends Task {
+export class PickFeatureStep extends Step {
 
   constructor(options = {}) {
-    options.help = "editing.steps.help.pick_feature";
+    options.help      = "editing.steps.help.pick_feature";
+    options.highlight = options.highlight || false;
+    options.multi     = options.multi || false;
 
     super(options);
-
-    this._options = {
-      highlight: options.highlight || false,
-      multi: options.multi || false
-    };
 
     this.pickFeatureInteraction = null;
 
     this._tools = options.tools || [];
-
-    options.task = this;
-
-    const step = new Step(options);
-
-    if (options.steps) {
-      this.setSteps(options.steps);
-    }
-
-    return step;
   }
 
   run(inputs) {
@@ -938,8 +895,8 @@ export class PickFeatureStep extends Task {
   
       this.pickFeatureInteraction.on('picked', evt => {
         const {features, coordinate} = evt;
-        if (inputs.features.length === 0) {
-          inputs.features = features;
+        if (0 === inputs.features.length) {
+          inputs.features   = features;
           inputs.coordinate = coordinate;
         }
         setAndUnsetSelectedFeaturesStyle({ promise: d, inputs, style: this.selectStyle });
@@ -965,7 +922,7 @@ export class PickFeatureStep extends Task {
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/selectelementstask.js@v3.7.1
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/selectelementsstep.js@v3.7.1
  */
-export class SelectElementsStep extends Task {
+export class SelectElementsStep extends Step {
   
   constructor(options = {}, chain) {
     options.help = options.help || "editing.steps.help.select_elements";
@@ -978,19 +935,9 @@ export class SelectElementsStep extends Task {
     this._originalStyle;
     this._vectorLayer;
 
-    options.task = this;
-
-    const step = new Step(options);
-
     if (chain) {
-      step.on('run', () => { step.emit('next-step', g3wsdk.core.i18n.tPlugin("editing.steps.help.select_elements")) });
+      this.on('run', () => { this.emit('next-step', g3wsdk.core.i18n.tPlugin("editing.steps.help.select_elements")) });
     }
-
-    if (options.steps) {
-      this.setSteps(options.steps);
-    }
-
-    return step;
   }
 
   /**

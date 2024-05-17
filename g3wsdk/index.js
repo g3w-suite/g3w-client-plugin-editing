@@ -2,8 +2,7 @@ import Editor           from './editing/editor';
 import ChangesManager   from './editing/changesmanager';
 import SessionsRegistry from './editing/sessionsregistry';
 import Session          from './editing/session';
-import { Task }         from './workflow/task';
-import Step             from './workflow/step';
+import { Step }         from './workflow/step';
 import { Flow }         from '../deprecated';
 import { Workflow }     from './workflow/workflow';
 
@@ -45,7 +44,7 @@ window.g3wsdk.constant.DEFAULT_EDITING_CAPABILITIES = [
  * @FIXME add description
  */
 window.g3wsdk.core.workflow = {
-  Task,
+  Task: Step,
   Step,
   Flow,
   Workflow,

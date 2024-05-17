@@ -1,5 +1,5 @@
 /**
- * @TODO remove reference to `this.setContextGetDefaultValue`
+ * @TODO remove reference to `this.getContext`
  * 
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/addfeaturetabletask.js@v3.7.1
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/addtablefeaturestep.js@v3.7.1
@@ -17,7 +17,7 @@ export function addTableFeature(inputs, context) {
 
   inputs.features.push(feature);
 
-  this.setContextGetDefaultValue(true);
+  this.getContext().get_default_value = true;
 
   return $.Deferred(d => d.resolve(inputs, context)).promise();
 };

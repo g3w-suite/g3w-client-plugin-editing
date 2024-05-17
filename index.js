@@ -1,7 +1,7 @@
 import './g3wsdk';
 import pluginConfig                              from './config';
 import { Workflow }                              from './g3wsdk/workflow/workflow';
-import { EditingStep }                           from './g3wsdk/workflow/step';
+import { Step }                                  from './g3wsdk/workflow/step';
 import SessionsRegistry                          from './g3wsdk/editing/sessionsregistry';
 import { promisify, $promisify }                 from './utils/promisify';
 import { createFeature }                         from './utils/createFeature';
@@ -480,7 +480,7 @@ new (class extends Plugin {
                 onStop: () => w.emit('deactive', ['snap'])
               }),
               // add part to multi geometries
-              new EditingStep({ run: addPartToMultigeometries })
+              new Step({ run: addPartToMultigeometries })
             ],
             registerEscKeyEvent: true
           })
@@ -946,7 +946,7 @@ new (class extends Plugin {
             type: 'commitfeatures',
             steps: [
               // confirm step
-              new EditingStep({
+              new Step({
                 run(inputs) {
                   return $.Deferred(d => {
                     const dialog = GUI.dialog.dialog({

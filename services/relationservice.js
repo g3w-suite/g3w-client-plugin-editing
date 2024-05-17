@@ -1,5 +1,5 @@
 import { Workflow }                                     from '../g3wsdk/workflow/workflow';
-import { EditingStep }                                  from '../g3wsdk/workflow/step';
+import { Step }                                         from '../g3wsdk/workflow/step';
 import { setAndUnsetSelectedFeaturesStyle }             from '../utils/setAndUnsetSelectedFeaturesStyle';
 import { promisify }                                    from '../utils/promisify';
 import { getRelationFieldsFromRelation }                from '../utils/getRelationFieldsFromRelation';
@@ -138,7 +138,7 @@ module.exports = class RelationService {
             ...options,
             type: 'addtablefeature',
             steps: [
-              new EditingStep({ help: 'editing.steps.help.new', run: addTableFeature }),
+              new Step({ help: 'editing.steps.help.new', run: addTableFeature }),
               new OpenFormStep(),
             ],
           });
@@ -152,7 +152,7 @@ module.exports = class RelationService {
           return new Workflow({
             type: 'linkrelation',
             steps: [
-              new EditingStep({
+              new Step({
                 ...options,
                 help: "editing.steps.help.select_feature_to_relation",
                 run(inputs, context) {
@@ -232,7 +232,7 @@ module.exports = class RelationService {
             type: 'selectandcopyfeaturesfromotherlayer',
             steps: [
               // pick project layer features
-              new EditingStep({
+              new Step({
                 ...options,
                 help: "editing.steps.help.pick_feature",
                 run(inputs, context) {
@@ -308,7 +308,7 @@ module.exports = class RelationService {
                 },
               }),
               // copy features from other project layer
-              new EditingStep({
+              new Step({
                 ...options,
                 help: "editing.steps.help.draw_new_feature",
                 run(inputs, context) {

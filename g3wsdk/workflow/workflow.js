@@ -8,13 +8,12 @@
  * @since g3w-client-plugin-editing@v3.8.x
  */
 
-import Step                      from './step';
-import { promisify, $promisify } from '../../utils/promisify';
-import UserMessageSteps          from '../../components/UserMessageSteps';
+import { Step }         from './step';
+import { promisify }    from '../../utils/promisify';
+import UserMessageSteps from '../../components/UserMessageSteps';
 
 const { GUI }                 = g3wsdk.gui;
 const { G3WObject }           = g3wsdk.core;
-const { resolve }             = g3wsdk.core.utils;
 const { isPointGeometryType } = g3wsdk.core.geoutils.Geometry;
 const { Layer }               = g3wsdk.core.layer;
 
@@ -57,7 +56,6 @@ export class Workflow extends G3WObject {
      */
     this._context = undefined !== options.context ? options.context : null;
 
-    
     /**
      * All steps of flow
      */
@@ -126,61 +124,11 @@ export class Workflow extends G3WObject {
     /**
      * ORIGINAL SOURCE: g3w-client/src/core/workflow/flow.js@v3.9.1
      * 
-     * Flow object to control the flow
+     * Current flow step
+     * 
+     * @since g3w-client-editing@v3.8.0
      */
-    this._flow = options.flow || Object.assign(new G3WObject, {
-      _workflow: undefined,
-      _steps: [],
-      _counter: 0,
-      _promise: undefined,
-      /** @returns jQuery promise resolved when all workflow steps go right */
-      start: workflow => {
-        const flow = this._flow;
-        flow._promise = $.Deferred();
-        if (flow._counter > 0) {
-          console.log("reset workflow before restarting");
-        }
-        flow._steps = workflow.getSteps();
-        // run first step
-        if (flow._steps && flow._steps.length) {
-          flow.runStep(flow._steps[0], workflow.getInputs(), workflow);
-        }
-        return flow._promise.promise();
-      },
-      // run step → task
-      runStep: async(step, inputs, workflow) => {
-        const flow = this._flow;
-        try {
-          workflow.setMessages({ help: step.state.help });
-          const outputs = await promisify(
-            step.run(inputs, workflow.getContext())
-          );
-          // onDone → check if all step are resolved
-          flow._counter++;
-          if (flow._counter === flow._steps.length) {
-            flow._counter = 0;
-            flow._promise.resolve(outputs);
-          } else {
-            flow.runStep(flow._steps[flow._counter], outputs, workflow);
-          }
-        } catch (e) {
-          flow._counter = 0;
-          flow._promise.reject(e);
-        }
-      },
-      // stop flow
-      stop: () => {
-        const flow = this._flow;
-        return $promisify(() => {
-          flow._steps[flow._counter].isRunning() ? flow._steps[flow._counter].stop() : null;
-          // reset counter and reject flow
-          if (flow._counter > 0) {
-            flow._counter = 0;
-            return Promise.reject();
-          }
-        }).promise();
-      },
-    });
+    this._stepIndex = 0;
 
   }
 
@@ -192,7 +140,7 @@ export class Workflow extends G3WObject {
     this._userMessageSteps = steps
       .reduce((messagesSteps, step) => ({
         ...messagesSteps,
-        ...(step.getTask().getUserMessageSteps() || {})
+        ...(step.getUserMessageSteps() || {})
       }), {});
   }
 
@@ -282,20 +230,6 @@ export class Workflow extends G3WObject {
   }
 
   /**
-   * @returns {*}
-   */
-  getFlow() {
-    return this._flow;
-  }
-
-  /**
-   * @param flow
-   */
-  setFlow(flow) {
-    this._flow = flow;
-  }
-
-  /**
    * @param step
    */
   addStep(step) {
@@ -382,6 +316,24 @@ export class Workflow extends G3WObject {
     }
   }
 
+  async runStep(step, inputs) {
+    try {
+      this.setMessages({ help: step.state.help });
+      const outputs = await promisify(step.__run(inputs, this.getContext()));
+      // onDone → check if all step are resolved
+      this._stepIndex++;
+      if (this._stepIndex === this.getSteps().length) {
+        this._stepIndex = 0;
+        return outputs;
+      } else {
+        return this.runStep(this.getSteps()[this._stepIndex], outputs);
+      }
+    } catch (e) {
+      this._stepIndex = 0;
+      return Promise.reject(e);
+    }
+  }
+
   /**
    * Start workflow
    * 
@@ -410,7 +362,6 @@ export class Workflow extends G3WObject {
       }
   
       this._stackIndex = Workflow.Stack.push(this);
-      this._flow       = options.flow || this._flow;
       this._steps      = options.steps || this._steps;
   
       const showUserMessage = Object.keys(this._userMessageSteps).length;
@@ -429,8 +380,9 @@ export class Workflow extends G3WObject {
       }
   
       try {
+        console.assert(0 === this._stepIndex, `reset workflow before restarting: ${this._stepIndex}`)
         //start flow of worflow
-        const outputs = await promisify(this._flow.start(this));
+        const outputs = await this.runStep(this.getSteps()[this._stepIndex], this.getInputs());
         if (showUserMessage) {
           setTimeout(() => { this.clearUserMessagesSteps(); d.resolve(outputs); }, 500);
         } else {
@@ -475,11 +427,25 @@ export class Workflow extends G3WObject {
 
       Workflow.Stack.removeAt(this.getStackIndex());
 
-      this._flow
-        .stop()
-        .then(d.resolve)
-        .fail(d.reject)
-        .always(() => this.clearMessages())
+      // stop flow
+      try {
+        if (this.getSteps()[this._stepIndex].isRunning()) {
+          this.getSteps()[this._stepIndex].__stop();
+        }
+        // reset counter and reject flow
+        if (this._stepIndex > 0) {
+          this._stepIndex = 0;
+          d.reject();
+          return Promise.reject();
+        } else {
+          d.resolve();
+        }
+      } catch (e) {
+        console.warn(e);
+        d.reject(e);
+      } finally {
+        this.clearMessages();
+      }
 
       this.emit('stop');
 
@@ -558,11 +524,11 @@ export class Workflow extends G3WObject {
             setTimeout(() => { this.onChange(this.checked); })
           },
           stop() {
-            step.getTask().removeMeasureInteraction();
+            step.removeMeasureInteraction();
           },
           onChange(bool) {
             this.checked = bool;
-            step.getTask()[bool ? 'addMeasureInteraction':  'removeMeasureInteraction']();
+            step[bool ? 'addMeasureInteraction':  'removeMeasureInteraction']();
           },
           onBeforeDestroy() {
             this.onChange(false);
@@ -719,9 +685,9 @@ Workflow.Stack = {
     return Workflow.Stack._workflows.indexOf(workflow);
   },
   /** @returns {boolean|*} parent */
-  getParent()    { return Workflow.Stack.getLength() > 1 && Workflow.Stack._workflows[Workflow.Stack.getLength() - 2]; },
+  getParent()    { return Workflow.Stack._workflows.slice(-2)[0]; },
   /** @returns {boolean|T[]} list of parents */
-  getParents()   { return Workflow.Stack.getLength() > 1 && Workflow.Stack._workflows.slice(0, Workflow.Stack.getLength() - 1); },
+  getParents()   { return Workflow.Stack._workflows.slice(0, -1); },
   pop()          { return Workflow.Stack._workflows.pop() },
   getLength()    { return Workflow.Stack._workflows.length; },
   getFirst()     { return Workflow.Stack._workflows[0]; },
