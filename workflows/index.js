@@ -56,7 +56,7 @@ export class AddFeatureStep extends Step {
 
     /**
      * Handle tasks that stops after `run(inputs, context)` promise (or if ESC key is pressed)
-     * 
+     *
      * @since g3w-client-plugin-editing@v3.8.0
      */
     this._stopPromise;
@@ -132,7 +132,7 @@ export class AddFeatureStep extends Step {
       this.getContext().get_default_value = true;
       this.fireEvent('addfeature', feature); // emit event to get from subscribers
       d.resolve(inputs);
-      
+
     });
     return d.promise();
   }
@@ -301,17 +301,17 @@ export class MoveFeatureStep extends Step {
       this.changeKey       = null; //
       let isGeometryChange = false; // changed if geometry is changed
       setAndUnsetSelectedFeaturesStyle({ promise: this.promise, inputs, style: this.selectStyle });
-  
+
       this._translateInteraction = new ol.interaction.Translate({ features, hitTolerance: (isMobile && isMobile.any) ? 10 : 0 });
-  
+
       this.addInteraction(this._translateInteraction);
-  
+
       this._translateInteraction.on('translatestart', e => {
         const feature = e.features.getArray()[0];
         this.changeKey = feature.once('change', () => isGeometryChange = true);
         originalFeature = feature.clone();
       });
-  
+
       this._translateInteraction.on('translateend', e => {
         ol.Observable.unByKey(this.changeKey);
         const feature = e.features.getArray()[0];
@@ -349,24 +349,8 @@ export class OpenFormStep extends Step {
     super(options);
 
     /**
-     * Used to force show back button
-     * 
-     * @type {boolean}
-     * 
-     * @since v3.7
-     */
-    this.showgoback = options.showgoback;
-
-    /**
-     * to force to push content on top without clear previous content
-     * 
-     * @since v3.7
-     */
-    this.push = undefined !== options.push ? options.push : false;
-
-    /**
      * Show saveAll button
-     * 
+     *
      * @since v3.7
      */
     this._saveAll = false === options.saveAll ? options.saveAll : async () => {};
@@ -374,7 +358,7 @@ export class OpenFormStep extends Step {
     /**
      * Whether it can handle multi edit features
      */
-    this._multi = undefined !== options.multi ? options.multi : false;
+    this._multi = options.multi || false;
 
     /**
      * @FIXME set a default value + add description
@@ -382,7 +366,7 @@ export class OpenFormStep extends Step {
     this.layerId;
 
     /**
-     * @FIXME add description
+     * whether form is coming from parent table component
      */
     this._isContentChild = false;
 
@@ -390,11 +374,6 @@ export class OpenFormStep extends Step {
      * @FIXME set a default value + add description
      */
     this._features;
-
-    /**
-     * @FIXME set a default value + add description
-     */
-    this._originalLayer;
 
     /**
      * @FIXME set a default value + add description
@@ -411,15 +390,6 @@ export class OpenFormStep extends Step {
      */
     this._unwatchs = [];
 
-    /**
-     * @since 3.8.0
-     * Store id of layer that we changed editing capabilities in case
-     * need to disable relation editing
-     *
-     *
-     * */
-    this.change_editing_capabilities_layers = [];
-
   }
 
   /**
@@ -433,7 +403,7 @@ export class OpenFormStep extends Step {
   /**
    * @param inputs
    * @param context
-   * 
+   *
    * @returns {*}
    */
   run(inputs, context) {
@@ -455,8 +425,7 @@ export class OpenFormStep extends Step {
 
     g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').setCurrentLayout();
 
-    this._originalLayer    = inputs.layer;
-    const layerName        = this._originalLayer.getName();
+    const layerName        = inputs.layer.getName();
     this._features         = this._multi ? inputs.features : [inputs.features[inputs.features.length - 1]];
     this._originalFeatures = this._features.map(f => f.clone());
 
@@ -480,33 +449,17 @@ export class OpenFormStep extends Step {
     // set fields. Useful getParentFormData
     Workflow.Stack.getCurrent().setInput({ key: 'fields', value: fields });
 
-    // relation options (in vase of multi editing feature, set false)
-    const edit_relations = !this._multi;
-    const feature        = edit_relations && inputs.features && inputs.features[inputs.features.length - 1];
-    const layerId        = edit_relations && inputs.layer.getId();
-
-    //In case of edit_relations false and layer has a form structure to edit relation,
-    // need to set temporary relation layer editable to false
-    // remove editing capabilities from layer config
-    if (!edit_relations && this._originalLayer.hasFormStructure()) {
-      this._originalLayer.getRelations().getArray().forEach(r => {
-        const rId = this._originalLayer.getId() !== r.state.child ? r.state.child : r.state.father;
-        const rLayer = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').service.getLayerById(rId);
-        //mead in editing
-        if (rLayer) {
-          this.change_editing_capabilities_layers.push(rId);
-          rLayer.config.capabilities = rLayer.config.capabilities - Layer.CAPABILITIES.EDITABLE;
-        }
-      })
-    }
+    // whether disable relations editing (ref: "editmultiattributes")
+    const feature = !this._multi && inputs.features && inputs.features[inputs.features.length - 1];
+    const layerId = !this._multi && inputs.layer.getId();
 
     // @since g3w-client-plugin-editing@v3.7.2
     // skip relations that doesn't have form structure
-    if (feature && !feature.isNew() && this._originalLayer.getLayerEditingFormStructure()) {
-      await getLayersDependencyFeatures( this._originalLayer.getId(), {
+    if (feature && !feature.isNew() && inputs.layer.getLayerEditingFormStructure()) {
+      await getLayersDependencyFeatures(inputs.layer.getId(), {
         // @since g3w-client-plugin-editin@v3.7.0
-        relations: this._originalLayer.getRelations().getArray().filter(r =>
-          this._originalLayer.getId() === r.getFather() && // get only child relation features of current editing layer
+        relations: inputs.layer.getRelations().getArray().filter(r =>
+          inputs.layer.getId() === r.getFather() && // get only child relation features of current editing layer
           getEditingLayerById(r.getChild()) &&             // child layer is in editing
           'ONE' !== r.getType()                            // exclude ONE relation (Join 1:1)
         ),
@@ -524,15 +477,15 @@ export class OpenFormStep extends Step {
       crumb:           { title: layerName },
       id:              'form_' + layerName,
       dataid:          layerName,
-      layer:           this._originalLayer,
+      layer:           inputs.layer,
       isnew:           this._originalFeatures.length > 1 ? false : this._originalFeatures[0].isNew(), // specify if is a new feature
       parentData:      getParentFormData(),
       fields,
-      context_inputs:  edit_relations && { context, inputs },
-      formStructure:   this._originalLayer.hasFormStructure() && this._originalLayer.getLayerEditingFormStructure().length ? this._originalLayer.getLayerEditingFormStructure() : undefined,
+      context_inputs:  this._multi ? false: { context, inputs },
+      formStructure:   inputs.layer.hasFormStructure() && inputs.layer.getLayerEditingFormStructure() || undefined,
       modal:           true,
-      push:            this.push || this._isContentChild, //@since v3.7 need to take in account this.push value
-      showgoback:      undefined !== this.showgoback ? this.showgoback : !this._isContentChild,
+      push:            this._options.push || this._isContentChild, /** @since v3.7 force push content on top without clear previous content */
+      showgoback:      undefined !== this._options.showgoback ? this._options.showgoback : !this._isContentChild, /** @since v3.7 force show back button */
       /** @TODO make it straightforward: `headerComponent` vs `buttons` ? */
       headerComponent: this._saveAll && {
         template: /* html */ `
@@ -602,7 +555,7 @@ export class OpenFormStep extends Step {
                   })
               );
               try {
-                await promisify(g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').commit({ modal: false }));  
+                await promisify(g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').commit({ modal: false }));
                 Workflow.Stack._workflows.forEach(w => w.getContext().service.setUpdate(false, { force: false }));
               } catch (e) {
                 console.warn(e);
@@ -642,7 +595,7 @@ export class OpenFormStep extends Step {
             GUI.disableContent(false);
 
             this._features.forEach(feature => {
-              this._originalLayer.setFieldsWithValues(feature, fields);
+              inputs.layer.setFieldsWithValues(feature, fields);
               newFeatures.push(feature.clone());
             });
 
@@ -675,7 +628,7 @@ export class OpenFormStep extends Step {
             }
 
             d.resolve(inputs);
-          } 
+          }
         },
         {
           id: 'cancel',
@@ -705,15 +658,17 @@ export class OpenFormStep extends Step {
     });
 
     // overwrite click on relation
-    // in case of edit_relations false, set empty method
-    formService.handleRelation = edit_relations
-      ? async ({ relation }) => {
-        GUI.setLoadingContent(true);
-        await setLayerUniqueFieldValues(this._originalLayer.getRelationById(relation.name).getChild());
-        formService.setCurrentComponentById(relation.name);
-        GUI.setLoadingContent(false);
+    formService.handleRelation = async e => {
+      // skip when multi editing
+      if (this._multi) {
+        GUI.showUserMessage({ type: 'info', message: 'plugins.editing.errors.editing_multiple_relations', duration: 3000, autoclose: true });
+        return;
       }
-      : () => {} //no need to do nothing
+      GUI.setLoadingContent(true);
+      await setLayerUniqueFieldValues(inputs.layer.getRelationById(e.relation.name).getChild());
+      formService.setCurrentComponentById(e.relation.name);
+      GUI.setLoadingContent(false);
+    }
 
     formService.addComponents(feature && feature.isNew() ? [] : [
       // custom form components
@@ -721,8 +676,8 @@ export class OpenFormStep extends Step {
       // relation components (exlcude ONE relation + layer is the father get relation layers that set in editing on g3w-admin)
       ...getRelationsInEditingByFeature({
           layerId,
-          relations: edit_relations ? inputs.layer.getRelations().getArray().filter(r => r.getType() !== 'ONE' && r.getFather() === layerId) : [],
-          feature:   edit_relations && inputs.features[inputs.features.length - 1],
+          relations: this._multi ? [] : inputs.layer.getRelations().getArray().filter(r => r.getType() !== 'ONE' && r.getFather() === layerId),
+          feature:   this._multi ? false : inputs.features[inputs.features.length - 1],
         }).map(({ relation, relations }) => ({
           title:     "plugins.editing.edit_relation",
           name:      relation.name,
@@ -801,15 +756,6 @@ export class OpenFormStep extends Step {
     this._unwatchs.forEach(unwatch => unwatch());
     this._unwatchs = [];
 
-    //reset eventually changed capabilities
-    (
-      this.change_editing_capabilities_layers.splice(0)
-    )
-    .forEach( id => {
-      const config = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').service.getLayerById(id).config;
-      config.capabilities = config.capabilities + Layer.CAPABILITIES.EDITABLE;
-    })
-
   }
 
 }
@@ -829,10 +775,10 @@ export class OpenTableStep extends Step {
   /**
    * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/opentabletask.js@v3.7.1
    * ORIGINAL SOURCE: g3w-client-plugin-editing/services/tableservice.js@v3.7.8
-   * 
+   *
    * @param inputs
    * @param context
-   * 
+   *
    * @returns {*}
    */
   run(inputs, context) {
@@ -921,9 +867,9 @@ export class PickFeatureStep extends Step {
   run(inputs) {
     return $.Deferred(d => {
       this.pickFeatureInteraction = new PickFeaturesInteraction({ layer: inputs.layer.getEditingLayer() });
-  
+
       this.addInteraction(this.pickFeatureInteraction);
-  
+
       this.pickFeatureInteraction.on('picked', evt => {
         const {features, coordinate} = evt;
         if (0 === inputs.features.length) {
@@ -931,11 +877,11 @@ export class PickFeatureStep extends Step {
           inputs.coordinate = coordinate;
         }
         setAndUnsetSelectedFeaturesStyle({ promise: d, inputs, style: this.selectStyle });
-  
+
         if (this._steps) {
           this.setUserMessageStepDone('select');
         }
-  
+
         d.resolve(inputs);
       });
     });
@@ -954,7 +900,7 @@ export class PickFeatureStep extends Step {
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/selectelementsstep.js@v3.7.1
  */
 export class SelectElementsStep extends Step {
-  
+
   constructor(options = {}, chain) {
     options.help = options.help || "editing.steps.help.select_elements";
 
@@ -1042,16 +988,16 @@ export class SelectElementsStep extends Step {
           }
         });
       }
-  
+
       if (['multiple', 'bbox'].includes(type) && !ApplicationState.ismobile) {
         interactions.dragbox = new ol.interaction.DragBox({ condition: ol.events.condition.shiftKeyOnly });
         interactions.dragbox.on('boxend', () => {
           const features = [];
           const extent = interactions.dragbox.getGeometry().getExtent();
-  
+
           //https://openlayers.org/en/v5.3.0/apidoc/module-ol_source_Cluster-Cluster.html#forEachFeatureIntersectingExtent
           layer.getEditingLayer().getSource().forEachFeatureIntersectingExtent(extent, f => { features.push(f) });
-  
+
           if (buttonnext) {
             addRemoveToMultipleSelectFeatures(features, inputs, this.multipleselectfeatures, this);
           } else {
@@ -1107,7 +1053,7 @@ export class SelectElementsStep extends Step {
               return attr.name
             })
           });
-    
+
           // evaluate Geometry Expression
           evaluateExpressionFields({ inputs, context, feature }).finally(() => {
             removeZValueToOLFeatureGeometry({ feature }); // remove eventually Z Values

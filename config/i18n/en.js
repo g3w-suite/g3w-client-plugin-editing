@@ -4,7 +4,8 @@ export default {
   },
   errors: {
     no_layers: "An error occurs. It's no possible to edit layers",
-    some_layers: "An error occurs: It's no possible to edit some layers"
+    some_layers: "An error occurs: It's no possible to edit some layers",
+    editing_multiple_relations: 'Editing multiple relationships is not currently supported',
   },
   search: "Search",
   editing_changes: "Editing Changes",

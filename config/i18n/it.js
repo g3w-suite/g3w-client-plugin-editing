@@ -4,7 +4,8 @@ export default {
   },
   errors: {
     no_layers: "Si è verificato un errore nel caricamento dei layers in editing.",
-    some_layers: "Si è verificato un errore nel caricamento di alcuni layers in editing"
+    some_layers: "Si è verificato un errore nel caricamento di alcuni layers in editing",
+    editing_multiple_relations: 'Le modifica di relazioni multiple non è attualmente supportata',
   },
   search: "Cerca",
   editing_changes: "Modifiche Editing",
