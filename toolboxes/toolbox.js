@@ -19,7 +19,7 @@ import { getRelationFieldsFromRelation }                from '../utils/getRelati
 import { getLayersDependencyFeatures }                  from '../utils/getLayersDependencyFeatures';
 import { getEditingLayerById }                          from '../utils/getEditingLayerById';
 import { getRelationsInEditingByFeature }               from '../utils/getRelationsInEditingByFeature';
-import { areCoordinatesEqual }                          from '../utils/areCoordinatesEqual';
+import { isPointOnVertex }                              from '../utils/isPointOnVertex';
 import { handleSplitFeature }                           from '../utils/handleSplitFeature';
 import { addPartToMultigeometries }                     from '../utils/addPartToMultigeometries';
 
@@ -652,7 +652,6 @@ export class ToolBox extends G3WObject {
                     /** @since g3w-client-plugin-editing@v3.8.0 */
                     this._stopPromise = this._stopPromise;
                     return $.Deferred(d => {
-                      console.log(inputs);
                       if (!inputs.features.length) {
                         return d.reject('no feature');
                       }
@@ -662,14 +661,9 @@ export class ToolBox extends G3WObject {
                       setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise, inputs, style: this.selectStyle });
 
                       this._snapIteraction = new ol.interaction.Snap({ edge: false,   features: new ol.Collection(inputs.features) });
-                      this._drawIteraction = new ol.interaction.Draw({ type: 'Point', condition: e => {
-                        console.log(!!inputs.features.find(f => areCoordinatesEqual({ feature: f, coordinates: e.coordinate})));
-                        return !!inputs.features.find(f => areCoordinatesEqual({ feature: f, coordinates: e.coordinate}));
-                      }});
+                      this._drawIteraction = new ol.interaction.Draw({ type: 'Point', condition: e => inputs.features.some(f => isPointOnVertex({ feature: f, coordinates: e.coordinate}))});
                       this._drawIteraction.on('drawend', e => {
-                        console.log(e);
                         inputs.coordinates = e.feature.getGeometry().getCoordinates();
-                        console.log(inputs.coordinates);
                         this.setUserMessageStepDone('from');
                         d.resolve(inputs);
                       });
