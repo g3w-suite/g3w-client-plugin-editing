@@ -910,7 +910,12 @@ export class SelectElementsStep extends Step {
       const promise = d;
 
       if (buttonnext) {
-        this._steps.select.buttonnext.done = () => promise.resolve(inputs);
+        //check if it has already done handler function;
+        const { done } = this._steps.select.buttonnext;
+        this._steps.select.buttonnext.done = () => {
+          if (done && done instanceof Function) { done() }
+          promise.resolve(inputs);
+        }
       }
 
       const interactions = {};
