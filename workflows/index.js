@@ -77,25 +77,22 @@ export class AddFeatureStep extends Step {
     this._stopPromise = $.Deferred();
 
     const d = $.Deferred();
-    const originalLayer = inputs.layer;
-    const editingLayer = originalLayer.getEditingLayer();
-    const session = context.session;
-    const layerId = originalLayer.getId();
+    const layerId = inputs.layer.getId();
 
     // Skin when layer type is vector
-    if (Layer.LayerTypes.VECTOR !== originalLayer.getType()) {
+    if (Layer.LayerTypes.VECTOR !== inputs.layer.getType()) {
       return d.promise();
     }
 
     /** @since g3w-client-plugin-editing@v3.8.0 */
     setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise, inputs, style: this.selectStyle });
 
-    const originalGeometryType = originalLayer.getEditingGeometryType();
+    const originalGeometryType = inputs.layer.getEditingGeometryType();
 
     this.geometryType = Geometry.getOLGeometry(originalGeometryType);
 
-    const source     = editingLayer.getSource();
-    const attributes = originalLayer.getEditingFields();
+    const source     = inputs.layer.getEditingLayer().getSource();
+    const attributes = inputs.layer.getEditingFields();
 
     this.drawInteraction = new ol.interaction.Draw({
       type:              this.geometryType,
@@ -117,11 +114,11 @@ export class AddFeatureStep extends Step {
     this.drawInteraction.on('drawend', e => {
       let feature;
       if (this._add) {
-        attributes.forEach(attribute => { e.feature.set(attribute.name, null); });
+        attributes.forEach(attr => e.feature.set(attr.name, null));
         feature = new Feature({ feature: e.feature, });
         feature.setTemporaryId();
         source.addFeature(feature);
-        session.pushAdd(layerId, feature, false);
+        context.session.pushAdd(layerId, feature, false);
       } else {
         feature = e.feature;
       }
@@ -203,13 +200,9 @@ export class ModifyGeometryVertexStep extends Step {
 
     super(options);
 
-    this.drawInteraction  = null;
+    this._originalStyle = null;
 
-    this._originalStyle   = null;
-
-    this._feature         = null;
-
-    this._deleteCondition = options.deleteCondition;
+    this._feature       = null;
 
     this.tooltip;
   }
@@ -220,7 +213,6 @@ export class ModifyGeometryVertexStep extends Step {
     const layerId       = inputs.layer.getId();
     const feature       = this._feature = inputs.features[0];
     this._originalStyle = inputs.layer.getEditingLayer().getStyle();
-    this.deleteVertexKey;
     feature.setStyle(() => [
       new ol.style.Style({
         image:    new ol.style.Circle({ radius: 5, fill: null, stroke: new ol.style.Stroke({color: 'orange', width: 2}) }),
@@ -233,8 +225,10 @@ export class ModifyGeometryVertexStep extends Step {
       }),
       new ol.style.Style({ stroke: new ol.style.Stroke({ color: 'yellow', width: 4 }) })
     ]);
-    const features = new ol.Collection(inputs.features);
-    this._modifyInteraction = new ol.interaction.Modify({ features, deleteCondition: this._deleteCondition });
+    this._modifyInteraction = new ol.interaction.Modify({
+      features: new ol.Collection(inputs.features),
+      deleteCondition: this._options.deleteCondition
+    });
     this._modifyInteraction.on('modifystart', e => { originalFeature = e.features.getArray()[0].clone(); });
     this.addInteraction(this._modifyInteraction);
     this._modifyInteraction.on('modifyend', e => {
@@ -294,11 +288,10 @@ export class MoveFeatureStep extends Step {
      * that call stop task method.*/
     this.promise         = $.Deferred();
     return $.Deferred(d => {
-      const session        = context.session;
       const layerId        = inputs.layer.getId();
       const features       = new ol.Collection(inputs.features);
       let originalFeature  = null;
-      this.changeKey       = null; //
+      this.changeKey       = null;
       let isGeometryChange = false; // changed if geometry is changed
       setAndUnsetSelectedFeaturesStyle({ promise: this.promise, inputs, style: this.selectStyle });
 
@@ -318,7 +311,7 @@ export class MoveFeatureStep extends Step {
         if (isGeometryChange) {
           // evaluated geometry expression
           evaluateExpressionFields({ inputs, context, feature }).finally(() => {
-            session.pushUpdate(layerId, feature.clone(), originalFeature);
+            context.session.pushUpdate(layerId, feature.clone(), originalFeature);
             d.resolve(inputs);
           });
         } else {
@@ -858,23 +851,18 @@ export class PickFeatureStep extends Step {
     options.multi     = options.multi || false;
 
     super(options);
-
-    this.pickFeatureInteraction = null;
-
-    this._tools = options.tools || [];
   }
 
   run(inputs) {
     return $.Deferred(d => {
-      this.pickFeatureInteraction = new PickFeaturesInteraction({ layer: inputs.layer.getEditingLayer() });
+      this.pickFeatureInteraction = this.pickFeatureInteraction || new PickFeaturesInteraction({ layer: inputs.layer.getEditingLayer() });
 
       this.addInteraction(this.pickFeatureInteraction);
 
-      this.pickFeatureInteraction.on('picked', evt => {
-        const {features, coordinate} = evt;
+      this.pickFeatureInteraction.on('picked', e => {
         if (0 === inputs.features.length) {
-          inputs.features   = features;
-          inputs.coordinate = coordinate;
+          inputs.features   = e.features;
+          inputs.coordinate = e.coordinate;
         }
         setAndUnsetSelectedFeaturesStyle({ promise: d, inputs, style: this.selectStyle });
 
@@ -906,7 +894,6 @@ export class SelectElementsStep extends Step {
 
     super(options);
 
-    this._type                  = options.type || 'bbox'; // 'single' 'bbox' 'multiple'
     this._selectInteractions    = [];
     this.multipleselectfeatures = [];
     this._originalStyle;
@@ -924,13 +911,12 @@ export class SelectElementsStep extends Step {
    * @returns {*}
    */
   run(inputs, context) {
-    const layer = inputs.layer;
-    const type = this._type;
+    const layer      = inputs.layer;
+    const type       = this._options.type || 'bbox'; // 'single' 'bbox' 'multiple';
+    const buttonnext = 'multiple' === type && !!this._steps.select.buttonnext;
 
     return $.Deferred(d => {
       const promise = d;
-
-      const buttonnext = 'multiple' === type ? !!this._steps.select.buttonnext : false;
 
       if (buttonnext) {
         this._steps.select.buttonnext.done = () => promise.resolve(inputs);
@@ -966,10 +952,9 @@ export class SelectElementsStep extends Step {
 
       // add multiple select interactions
       if (['multiple', 'bbox'].includes(type) && ApplicationState.ismobile) {
-        const source      = new ol.source.Vector({});
-        this._vectorLayer = new ol.layer.Vector({ source });
+        this._vectorLayer = new ol.layer.Vector({ source: new ol.source.Vector({}) });
         this.getMap().addLayer(this._vectorLayer);
-        interactions.multi = new ol.interaction.Draw({ type: 'Circle', source, geometryFunction: ol.interaction.Draw.createBox() });
+        interactions.multi = new ol.interaction.Draw({ type: 'Circle', source: this._vectorLayer.getSource(), geometryFunction: ol.interaction.Draw.createBox() });
         interactions.multi.on('drawend', e => {
           const features = layer.getEditingLayer().getSource().getFeaturesInExtent(e.feature.getGeometry().getExtent());
           if (buttonnext) {

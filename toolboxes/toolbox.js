@@ -963,7 +963,7 @@ export class ToolBox extends G3WObject {
                 new SelectElementsStep({
                   ...options,
                   help: 'editing.steps.help.split',
-                  type: ApplicationState.ismobile ? 'single' :  'multiple',
+                  type: ApplicationState.ismobile ? 'single' : 'multiple',
                   steps: {
                     select: {
                       description: `editing.workflow.steps.${ApplicationState.ismobile ? 'selectPoint' : 'selectPointSHIFT'}`,
