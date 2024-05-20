@@ -193,9 +193,6 @@ export class ToolBox extends G3WObject {
                 new Step({
                   help: "editing.steps.help.double_click_delete",
                   run(inputs, context) {
-                    this.drawInteraction    = this.drawInteraction || null;
-                    this._selectInteraction = this._selectInteraction || null;
-  
                     const RelationService = require('../services/relationservice');
   
                     const d               = $.Deferred();
@@ -647,8 +644,6 @@ export class ToolBox extends G3WObject {
                     }
                   },
                   run(inputs) {
-                    this._drawInteraction = this._drawInteraction;
-                    this._snapIteraction = this._snapIteraction;
                     /** @since g3w-client-plugin-editing@v3.8.0 */
                     this._stopPromise = this._stopPromise;
                     return $.Deferred(d => {
@@ -660,23 +655,20 @@ export class ToolBox extends G3WObject {
                       /** @since g3w-client-plugin-editing@v3.8.0 */
                       setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise, inputs, style: this.selectStyle });
 
-                      this._snapIteraction = new ol.interaction.Snap({ edge: false,   features: new ol.Collection(inputs.features) });
-                      this._drawIteraction = new ol.interaction.Draw({ type: 'Point', condition: e => inputs.features.some(f => isPointOnVertex({ feature: f, coordinates: e.coordinate}))});
-                      this._drawIteraction.on('drawend', e => {
-                        inputs.coordinates = e.feature.getGeometry().getCoordinates();
-                        this.setUserMessageStepDone('from');
-                        d.resolve(inputs);
+                      this.addInteraction(
+                        new ol.interaction.Draw({ type: 'Point', condition: e => inputs.features.some(f => isPointOnVertex({ feature: f, coordinates: e.coordinate}))}), {
+                        'drawend': e => {
+                          inputs.coordinates = e.feature.getGeometry().getCoordinates();
+                          this.setUserMessageStepDone('from');
+                          d.resolve(inputs);
+                        }
                       });
-
-                      this.addInteraction(this._drawIteraction);
-                      this.addInteraction(this._snapIteraction);
+                      this.addInteraction(
+                        new ol.interaction.Snap({ edge: false, features: new ol.Collection(inputs.features) })
+                      );
                     }).promise();
                   },
                   stop() {
-                    this.removeInteraction(this._drawIteraction);
-                    this.removeInteraction(this._snapIteraction);
-                    this._snapIteraction = null;
-                    this._drawIteraction = null;
                     /** @since g3w-client-plugin-editing@v3.8.0 */
                     this._stopPromise.resolve(true);
                   },
@@ -706,75 +698,68 @@ export class ToolBox extends G3WObject {
                       /** @since g3w-client-plugin-editing@v3.8.0 */
                       setAndUnsetSelectedFeaturesStyle({ promise: d, inputs, style: this.selectStyle });
   
-                      this._snapIteraction = new ol.interaction.Snap({source, edge: false});
-  
-                      this._drawInteraction = new ol.interaction.Draw({type: 'Point', features: new ol.Collection(),});
-  
-                      this._drawInteraction.on('drawend', evt => {
-                        const [x, y]                    = evt.feature.getGeometry().getCoordinates();
-                        const deltaXY                   = coordinates ? getDeltaXY({x, y, coordinates}) : null;
-                        const featuresLength            = features.length;
-                        const promisesDefaultEvaluation = [];
-  
-                        for (let i = 0; i < featuresLength; i++) {
-                          const feature = cloneFeature(features[i], layer);
-                          if (deltaXY) {
-                            feature.getGeometry().translate(deltaXY.x, deltaXY.y);
-                          }
-                          else {
-                            const coordinates = feature.getGeometry().getCoordinates();
-                            const deltaXY = getDeltaXY({ x, y, coordinates });
-                            feature.getGeometry().translate(deltaXY.x, deltaXY.y)
-                          }
-                          // set media fields to null
-                          layer.getEditingMediaFields({}).forEach(f => feature.set(f, null));
-                          /**
-                           * evaluated geometry expression
-                           */
-                          promisesDefaultEvaluation.push(evaluateExpressionFields({ inputs, context, feature }))
-                        }
-                        Promise
-                          .allSettled(promisesDefaultEvaluation)
-                          .then(promises => promises
-                            .forEach(({status, value:feature}) => {
-  
-                              /**
-                               * @todo improve client core to handle this situation on session.pushAdd not copy pk field not editable only
-                               */
-                              const noteditablefieldsvalues = getNotEditableFieldsNoPkValues({ layer, feature });
-                              const newFeature = session.pushAdd(layerId, feature);
-                              // after pushAdd need to set not edit
-                              if (Object.entries(noteditablefieldsvalues).length) {
-                                Object
-                                  .entries(noteditablefieldsvalues)
-                                  .forEach(([field, value]) => newFeature.set(field, value));
-                              }
-  
-                              //need to add to editing layer source newFeature
-                              source.addFeature(newFeature);
-  
-                              inputs.features.push(newFeature);
-                            })
-                          )
-                          .finally(() => {
+                      this.addInteraction(
+                        new ol.interaction.Draw({ type: 'Point', features: new ol.Collection() }), {
+                        'drawend': evt => {
+                          const [x, y]                    = evt.feature.getGeometry().getCoordinates();
+                          const deltaXY                   = coordinates ? getDeltaXY({x, y, coordinates}) : null;
+                          const featuresLength            = features.length;
+                          const promisesDefaultEvaluation = [];
+    
+                          for (let i = 0; i < featuresLength; i++) {
+                            const feature = cloneFeature(features[i], layer);
+                            if (deltaXY) {
+                              feature.getGeometry().translate(deltaXY.x, deltaXY.y);
+                            }
+                            else {
+                              const coordinates = feature.getGeometry().getCoordinates();
+                              const deltaXY = getDeltaXY({ x, y, coordinates });
+                              feature.getGeometry().translate(deltaXY.x, deltaXY.y)
+                            }
+                            // set media fields to null
+                            layer.getEditingMediaFields({}).forEach(f => feature.set(f, null));
                             /**
-                             * @type {boolean}
+                             * evaluated geometry expression
                              */
-                            this._steps.to.done = true;
-                            d.resolve(inputs);
-                          })
+                            promisesDefaultEvaluation.push(evaluateExpressionFields({ inputs, context, feature }))
+                          }
+                          Promise
+                            .allSettled(promisesDefaultEvaluation)
+                            .then(promises => promises
+                              .forEach(({status, value:feature}) => {
+    
+                                /**
+                                 * @todo improve client core to handle this situation on session.pushAdd not copy pk field not editable only
+                                 */
+                                const noteditablefieldsvalues = getNotEditableFieldsNoPkValues({ layer, feature });
+                                const newFeature = session.pushAdd(layerId, feature);
+                                // after pushAdd need to set not edit
+                                if (Object.entries(noteditablefieldsvalues).length) {
+                                  Object
+                                    .entries(noteditablefieldsvalues)
+                                    .forEach(([field, value]) => newFeature.set(field, value));
+                                }
+    
+                                //need to add to editing layer source newFeature
+                                source.addFeature(newFeature);
+    
+                                inputs.features.push(newFeature);
+                              })
+                            )
+                            .finally(() => {
+                              /**
+                               * @type {boolean}
+                               */
+                              this._steps.to.done = true;
+                              d.resolve(inputs);
+                            })
+                        }
                       });
   
-                      this.addInteraction(this._drawInteraction);
-                      this.addInteraction(this._snapIteraction);
+                      this.addInteraction(
+                        new ol.interaction.Snap({ source, edge: false })
+                      );
                     }).promise();
-                  },
-                  stop() {
-                    this.removeInteraction(this._drawInteraction);
-                    this.removeInteraction(this._snapIteraction);
-                    this._drawInteraction = null;
-                    this._snapIteraction = null;
-                    return true;
                   },
                 }),
               ].filter(Boolean),
@@ -870,7 +855,6 @@ export class ToolBox extends G3WObject {
                 new Step({
                   ...options,
                   run(inputs, context) {
-                    this.pickFeatureInteraction = this.pickFeatureInteraction || null;
                     return $.Deferred(d => {
                       const originaLayer    = inputs.layer;
                       const editingLayer    = inputs.layer.getEditingLayer();
@@ -988,79 +972,64 @@ export class ToolBox extends G3WObject {
                     this._stopPromise = this._stopPromise;
   
                     const d               = $.Deferred();
-                    const {
-                      layer,
-                      features
-                    }                     = inputs;
-                    const source          = layer.getEditingLayer().getSource();
-                    const session         = context.session;
-                    this._snapIteraction  = new ol.interaction.Snap({
-                      source,
-                      edge: true
-                    });
+                    const source          = inputs.layer.getEditingLayer().getSource();
   
                     /** @since g3w-client-plugin-editing@v3.8.0 */
                     this._stopPromise     = $.Deferred();
                     setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise, inputs, style: this.selectStyle });
-  
-  
-                    this._drawInteraction = new ol.interaction.Draw({
-                      type: 'LineString',
-                      features: new ol.Collection(),
-                      freehandCondition: ol.events.condition.never
-                    });
-  
-                    this._drawInteraction.on('drawend', async evt => {
-                      const splitfeature = evt.feature;
-                      let isSplitted = false;
-                      const splittedGeometries = splitFeatures({
-                        splitfeature,
-                        features
-                      });
-                      const splittedGeometriesLength = splittedGeometries.length;
-  
-                      for (let i = 0; i < splittedGeometriesLength; i++) {
-                        const {uid, geometries} = splittedGeometries[i];
-                        if (geometries.length > 1) {
-                          isSplitted = true;
-                          const feature = features.find(feature => feature.getUid() === uid);
-                          await handleSplitFeature({
-                            feature,
-                            context,
-                            splittedGeometries: geometries,
-                            inputs,
-                            session
+
+                    this.addInteraction(
+                      new ol.interaction.Draw({
+                        type: 'LineString',
+                        features: new ol.Collection(),
+                        freehandCondition: ol.events.condition.never
+                      }), {
+                      'drawend': async e => {
+                        let isSplitted = false;
+                        const splittedGeometries = splitFeatures({
+                          splitfeature: e.feature,
+                          features: inputs.features
+                        });
+                        const splittedGeometriesLength = splittedGeometries.length;
+
+                        for (let i = 0; i < splittedGeometriesLength; i++) {
+                          if (splittedGeometries[i].geometries.length > 1) {
+                            isSplitted = true;
+                            await handleSplitFeature({
+                              feature: inputs.features.find(f => f.getUid() === splittedGeometries[i].uid),
+                              context,
+                              splittedGeometries: splittedGeometries[i].geometries,
+                              inputs,
+                              session: context.session,
+                            });
+                          }
+                        }
+
+                        if (isSplitted) {
+                          GUI.showUserMessage({
+                            type: 'success',
+                            message: 'plugins.editing.messages.splitted',
+                            autoclose: true
                           });
+                          d.resolve(inputs);
+                        } else {
+                          GUI.showUserMessage({
+                            type: 'warning',
+                            message: 'plugins.editing.messages.nosplittedfeature',
+                            autoclose: true
+                          });
+                          d.reject();
                         }
                       }
-  
-                      if (isSplitted) {
-                        GUI.showUserMessage({
-                          type: 'success',
-                          message: 'plugins.editing.messages.splitted',
-                          autoclose: true
-                        });
-  
-                        d.resolve(inputs);
-  
-                      } else {
-                        GUI.showUserMessage({
-                          type: 'warning',
-                          message: 'plugins.editing.messages.nosplittedfeature',
-                          autoclose: true
-                        });
-                        d.reject();
-                      }
                     });
-                    this.addInteraction(this._drawInteraction);
-                    this.addInteraction(this._snapIteraction);
+
+                    this.addInteraction(
+                      new ol.interaction.Snap({ source, edge: true })
+                    );
+
                     return d.promise();
                   },
                   stop() {
-                    this.removeInteraction(this._drawInteraction);
-                    this.removeInteraction(this._snapIteraction);
-                    this._drawInteraction = null;
-                    this._snapIteraction = null;
                     /** @since g3w-client-plugin-editing@v3.8.0 */
                     this._stopPromise.resolve(true);
                   },
@@ -1161,9 +1130,6 @@ export class ToolBox extends G3WObject {
                           })
                       }
                     }).promise();
-                  },
-                  stop() {
-                    this.removeInteraction(this._pickInteraction);
                   },
                 }),
               ],

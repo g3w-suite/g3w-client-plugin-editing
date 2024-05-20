@@ -94,43 +94,41 @@ export class AddFeatureStep extends Step {
     const source     = inputs.layer.getEditingLayer().getSource();
     const attributes = inputs.layer.getEditingFields();
 
-    this.drawInteraction = new ol.interaction.Draw({
-      type:              this.geometryType,
-      source:            new ol.source.Vector(),
-      condition:         this._options.condition || (() => true),
-      freehandCondition: ol.events.condition.never,
-      finishCondition:   this._options.finishCondition || (() => true)
+    this.drawInteraction = this.addInteraction(
+      new ol.interaction.Draw({
+        type:              this.geometryType,
+        source:            new ol.source.Vector(),
+        condition:         this._options.condition || (() => true),
+        freehandCondition: ol.events.condition.never,
+        finishCondition:   this._options.finishCondition || (() => true),
+      }), {
+      'drawstart': ({feature}) => {
+        this.drawingFeature = feature;
+        document.addEventListener('keydown', this._delKeyRemoveLastPoint);
+      },
+      'drawend': e => {
+        let feature;
+        if (this._add) {
+          attributes.forEach(attr => e.feature.set(attr.name, null));
+          feature = new Feature({ feature: e.feature, });
+          feature.setTemporaryId();
+          source.addFeature(feature);
+          context.session.pushAdd(layerId, feature, false);
+        } else {
+          feature = e.feature;
+        }
+        // set Z values based on layer Geometry
+        feature = Geometry.addZValueToOLFeatureGeometry({ feature, geometryType: originalGeometryType });
+  
+        inputs.features.push(feature);
+        this.getContext().get_default_value = true;
+        this.fireEvent('addfeature', feature); // emit event to get from subscribers
+        d.resolve(inputs);
+      },
     });
-
-    this.addInteraction(this.drawInteraction);
 
     this.drawInteraction.setActive(true);
 
-    this.drawInteraction.on('drawstart', ({feature}) => {
-      this.drawingFeature = feature;
-      document.addEventListener('keydown', this._delKeyRemoveLastPoint);
-    });
-
-    this.drawInteraction.on('drawend', e => {
-      let feature;
-      if (this._add) {
-        attributes.forEach(attr => e.feature.set(attr.name, null));
-        feature = new Feature({ feature: e.feature, });
-        feature.setTemporaryId();
-        source.addFeature(feature);
-        context.session.pushAdd(layerId, feature, false);
-      } else {
-        feature = e.feature;
-      }
-      // set Z values based on layer Geometry
-      feature = Geometry.addZValueToOLFeatureGeometry({ feature, geometryType: originalGeometryType });
-
-      inputs.features.push(feature);
-      this.getContext().get_default_value = true;
-      this.fireEvent('addfeature', feature); // emit event to get from subscribers
-      d.resolve(inputs);
-
-    });
     return d.promise();
   }
 
@@ -143,13 +141,14 @@ export class AddFeatureStep extends Step {
     if (!is_line && !is_poly) {
       return;
     }
-    this.measureInteraction = new (is_line ? LengthInteraction : AreaInteraction)({
-      projection: GUI.getService('map').getProjection(),
-      drawColor: 'transparent',
-      feature: this.drawingFeature
-    });
+    this.measureInteraction = this.addInteraction(
+      new (is_line ? LengthInteraction : AreaInteraction)({
+        projection: GUI.getService('map').getProjection(),
+        drawColor: 'transparent',
+        feature: this.drawingFeature
+      })
+    );
     this.measureInteraction.setActive(true);
-    this.addInteraction(this.measureInteraction);
   }
 
   /**
@@ -225,23 +224,25 @@ export class ModifyGeometryVertexStep extends Step {
       }),
       new ol.style.Style({ stroke: new ol.style.Stroke({ color: 'yellow', width: 4 }) })
     ]);
-    this._modifyInteraction = new ol.interaction.Modify({
-      features: new ol.Collection(inputs.features),
-      deleteCondition: this._options.deleteCondition
-    });
-    this._modifyInteraction.on('modifystart', e => { originalFeature = e.features.getArray()[0].clone(); });
-    this.addInteraction(this._modifyInteraction);
-    this._modifyInteraction.on('modifyend', e => {
-      const feature = e.features.getArray()[0];
-      if (feature.getGeometry().getExtent() !== originalFeature.getGeometry().getExtent()) {
-        evaluateExpressionFields({ inputs, context, feature }).finally(()=>{
-          newFeature = feature.clone();
-          context.session.pushUpdate(layerId, newFeature, originalFeature);
-          inputs.features.push(newFeature);
-          d.resolve(inputs);
-        });
+    this._modifyInteraction = this.addInteraction(
+      new ol.interaction.Modify({
+        features: new ol.Collection(inputs.features),
+        deleteCondition: this._options.deleteCondition
+      }), {
+        'modifystart': e => { originalFeature = e.features.getArray()[0].clone(); },
+        'modifyend': e => {
+          const feature = e.features.getArray()[0];
+          if (feature.getGeometry().getExtent() !== originalFeature.getGeometry().getExtent()) {
+            evaluateExpressionFields({ inputs, context, feature }).finally(()=>{
+              newFeature = feature.clone();
+              context.session.pushUpdate(layerId, newFeature, originalFeature);
+              inputs.features.push(newFeature);
+              d.resolve(inputs);
+            });
+          }
+        }
       }
-    });
+    );
     return d.promise();
   }
 
@@ -260,7 +261,6 @@ export class ModifyGeometryVertexStep extends Step {
 
   stop() {
     this._feature.setStyle(this._originalStyle);
-    this.removeInteraction(this._modifyInteraction);
     return true;
   }
 
@@ -289,42 +289,41 @@ export class MoveFeatureStep extends Step {
     this.promise         = $.Deferred();
     return $.Deferred(d => {
       const layerId        = inputs.layer.getId();
-      const features       = new ol.Collection(inputs.features);
       let originalFeature  = null;
       this.changeKey       = null;
       let isGeometryChange = false; // changed if geometry is changed
       setAndUnsetSelectedFeaturesStyle({ promise: this.promise, inputs, style: this.selectStyle });
 
-      this._translateInteraction = new ol.interaction.Translate({ features, hitTolerance: (isMobile && isMobile.any) ? 10 : 0 });
-
-      this.addInteraction(this._translateInteraction);
-
-      this._translateInteraction.on('translatestart', e => {
-        const feature = e.features.getArray()[0];
-        this.changeKey = feature.once('change', () => isGeometryChange = true);
-        originalFeature = feature.clone();
-      });
-
-      this._translateInteraction.on('translateend', e => {
-        ol.Observable.unByKey(this.changeKey);
-        const feature = e.features.getArray()[0];
-        if (isGeometryChange) {
-          // evaluated geometry expression
-          evaluateExpressionFields({ inputs, context, feature }).finally(() => {
-            context.session.pushUpdate(layerId, feature.clone(), originalFeature);
+      this.addInteraction(
+        new ol.interaction.Translate({
+          features: new ol.Collection(inputs.features),
+          hitTolerance: (isMobile && isMobile.any) ? 10 : 0 },
+        ), {
+        'translatestart': e => {
+          const feature = e.features.getArray()[0];
+          this.changeKey = feature.once('change', () => isGeometryChange = true);
+          originalFeature = feature.clone();
+        },
+        'translateend': e => {
+          ol.Observable.unByKey(this.changeKey);
+          const feature = e.features.getArray()[0];
+          if (isGeometryChange) {
+            // evaluated geometry expression
+            evaluateExpressionFields({ inputs, context, feature }).finally(() => {
+              context.session.pushUpdate(layerId, feature.clone(), originalFeature);
+              d.resolve(inputs);
+            });
+          } else {
             d.resolve(inputs);
-          });
-        } else {
-          d.resolve(inputs);
-        }
+          }
+        },
       });
+
     }).promise();
   }
 
   stop() {
     this.promise.resolve();
-    this.removeInteraction(this._translateInteraction);
-    this._translateInteraction = null;
     this.changeKey = null;
   }
 }
@@ -849,36 +848,28 @@ export class PickFeatureStep extends Step {
     options.help      = "editing.steps.help.pick_feature";
     options.highlight = options.highlight || false;
     options.multi     = options.multi || false;
-
     super(options);
   }
 
   run(inputs) {
     return $.Deferred(d => {
-      this.pickFeatureInteraction = this.pickFeatureInteraction || new PickFeaturesInteraction({ layer: inputs.layer.getEditingLayer() });
-
-      this.addInteraction(this.pickFeatureInteraction);
-
-      this.pickFeatureInteraction.on('picked', e => {
-        if (0 === inputs.features.length) {
-          inputs.features   = e.features;
-          inputs.coordinate = e.coordinate;
-        }
-        setAndUnsetSelectedFeaturesStyle({ promise: d, inputs, style: this.selectStyle });
-
-        if (this._steps) {
-          this.setUserMessageStepDone('select');
-        }
-
-        d.resolve(inputs);
+      this.addInteraction(
+        new PickFeaturesInteraction({ layer: inputs.layer.getEditingLayer() }), {
+        'picked': e => {
+          if (0 === inputs.features.length) {
+            inputs.features   = e.features;
+            inputs.coordinate = e.coordinate;
+          }
+          setAndUnsetSelectedFeaturesStyle({ promise: d, inputs, style: this.selectStyle });
+  
+          if (this._steps) {
+            this.setUserMessageStepDone('select');
+          }
+  
+          d.resolve(inputs);
+        },
       });
     });
-  }
-
-  stop() {
-    this.removeInteraction(this.pickFeatureInteraction);
-    this.pickFeatureInteraction = null;
-    return true;
   }
 
 }

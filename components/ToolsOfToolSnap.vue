@@ -35,9 +35,8 @@
 
 <script>
 
-  const { GUI }             = g3wsdk.gui;
-  const { Layer }           = g3wsdk.core.layer;
-  const mapService          = GUI.getService('map');
+  const { GUI }   = g3wsdk.gui;
+  const { Layer } = g3wsdk.core.layer;
 
   let snapInteraction;
 
@@ -85,8 +84,10 @@
       },
 
       activeSnapInteraction() {
+        const map = GUI.getService('map');
+
         if (snapInteraction) {
-          mapService.removeInteraction(snapInteraction);
+          map.removeInteraction(snapInteraction);
         }
 
         snapInteraction = null;
@@ -97,7 +98,7 @@
             source:   !this.checkedAll && this.checked && this.options.source, // SNAP TO LAYER: get options source as props pass from toolbox
             features: this.checkedAll  && this.features                        // SNAP TO ALL:   get features
           });
-          mapService.addInteraction(snapInteraction);
+          map.addInteraction(snapInteraction);
         }
       },
 
@@ -108,7 +109,7 @@
         if (active) {
           this.activeSnapInteraction();
         } else if (snapInteraction) {
-          mapService.removeInteraction(snapInteraction);
+          GUI.getService('map').removeInteraction(snapInteraction);
         }
       },
 

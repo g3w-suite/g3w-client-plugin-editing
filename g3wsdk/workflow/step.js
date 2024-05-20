@@ -216,8 +216,11 @@ export class Step extends G3WObject {
    * 
    * @since g3w-client-plugin-editing@v3.8.0
    */
-  addInteraction(interaction) {
+  addInteraction(interaction, events = {}) {
     GUI.getService('map').addInteraction(interaction);
+    Object.entries(events).forEach(e => interaction.on(e[0], e[1]));
+    this.on('stop', () => this.removeInteraction(interaction));
+    return interaction;
   }
 
   /**

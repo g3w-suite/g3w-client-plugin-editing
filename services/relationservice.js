@@ -184,12 +184,13 @@ module.exports = class RelationService {
                         style: this.selectStyle
                       });
 
-                      this.pickFeatureInteraction = new PickFeatureInteraction({ layers: [editingLayer], features });
-                      this.addInteraction(this.pickFeatureInteraction);
-                      this.pickFeatureInteraction.on('picked', e => {
-                        inputs.features.push(e.feature); // push relation
-                        GUI.setModal(true);
-                        d.resolve(inputs);
+                      this.addInteraction(
+                        new PickFeatureInteraction({ layers: [editingLayer], features }), {
+                        'picked': e => {
+                          inputs.features.push(e.feature); // push relation
+                          GUI.setModal(true);
+                          d.resolve(inputs);
+                        }
                       });
                     } catch (e) {
                       console.warn(e);
@@ -199,8 +200,6 @@ module.exports = class RelationService {
                 },
                 stop() {
                   GUI.setModal(true);
-                  this.removeInteraction(this.pickFeatureInteraction);
-                  this.pickFeatureInteraction = null;
                   this._originalLayerStyle    = null;
                   if (this._stopPromise) {
                     this._stopPromise.resolve(true);
@@ -236,7 +235,6 @@ module.exports = class RelationService {
                 ...options,
                 help: "editing.steps.help.pick_feature",
                 run(inputs, context) {
-                  this.pickInteraction = this.pickInteraction || null;
                   /** @TODO Create a component that ask which project layer would like to query */
                   if (!options.copyLayer) {
                     return $.Deferred(d => d.resolve()).promise();
@@ -251,41 +249,34 @@ module.exports = class RelationService {
                       if (!options.isVector) {
                         return resolve();
                       }
-                      //In case of external layer
-                      if (options.external) {
-                        this.pickInteraction = new PickFeaturesInteraction({ layer: options.copyLayer });
-                        this.addInteraction(this.pickInteraction);
-                        this.pickInteraction.on('picked', e => {
-                          features = convertFeaturesGeometryToGeometryTypeOfLayer({ features: e.features, geometryType });
-                          resolve();
-                        });
-                      } else {   //In case of TOC/PROJECT layer
-                        this.pickInteraction = new PickCoordinatesInteraction();
-                        this.addInteraction(this.pickInteraction);
-                        const project = ProjectsRegistry.getCurrentProject();
-                        this.pickInteraction.once('picked', async evt => {
-                          const coordinates = evt.coordinate;
+                      this.addInteraction(
+                        options.external
+                          ? new PickFeaturesInteraction({ layer: options.copyLayer })
+                          : new PickCoordinatesInteraction(), {
+                        'picked': async e => {
                           try {
-                            const {data=[]} = await DataRouterService.getData('query:coordinates', {
-                              inputs: {
-                                coordinates,
-                                query_point_tolerance: project.getQueryPointTolerance(),
-                                layerIds: [options.copyLayer.getId()],
-                                multilayers: false
-                              },
-                              outputs: null
+                            features = convertFeaturesGeometryToGeometryTypeOfLayer({
+                              geometryType,
+                              features: (options.external
+                                ? [{ features: e.features }]                             // external layer
+                                : await DataRouterService.getData('query:coordinates', { // TOC/PROJECT layer
+                                  inputs: {
+                                    coordinates: e.coordinate,
+                                    query_point_tolerance: ProjectsRegistry.getCurrentProject().getQueryPointTolerance(),
+                                    layerIds: [options.copyLayer.getId()],
+                                    multilayers: false
+                                  },
+                                  outputs: null
+                                }))[0].features,
                             });
-                            if (data.length) {
-                              features = convertFeaturesGeometryToGeometryTypeOfLayer({ features: data[0].features, geometryType });
-                            }
                           } catch(e) {
                             console.warn(e);
                             d.reject(e);
                           } finally {
                             resolve();
                           }
-                        })
-                      }
+                        }
+                      });
                     }));
                     if (features.length) {
                       inputs.features = features;
@@ -300,11 +291,6 @@ module.exports = class RelationService {
                       d.reject();
                     }
                   }).promise();
-                },
-                stop() {
-                  this.removeInteraction(this.pickInteraction);
-                  this.pickInteraction = null;
-                  return true;
                 },
               }),
               // copy features from other project layer
