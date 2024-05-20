@@ -460,8 +460,8 @@ export class OpenFormStep extends Step {
         // @since g3w-client-plugin-editin@v3.7.0
         relations: inputs.layer.getRelations().getArray().filter(r =>
           inputs.layer.getId() === r.getFather() && // get only child relation features of current editing layer
-          getEditingLayerById(r.getChild()) &&             // child layer is in editing
-          'ONE' !== r.getType()                            // exclude ONE relation (Join 1:1)
+          getEditingLayerById(r.getChild()) &&      // child layer is in editing
+          'ONE' !== r.getType()                     // exclude ONE relation (Join 1:1)
         ),
         feature,
         filterType: 'fid',
