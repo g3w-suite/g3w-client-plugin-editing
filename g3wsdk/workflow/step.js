@@ -53,9 +53,9 @@ export class Step extends G3WObject {
     this.state = {
       id:      options.id || null,
       name:    options.name || null,
-      help:    options.help || null,   // help to show what the user has to do
-      running: false,                  // running
-      error:   null,                   // error
+      help:    options.help || null,    // help to show what the user has to do
+      running: false,                   // running
+      error:   null,                    // error
       message: options.message || null, // message
       /**
        * ORIGINAL SOURCE: g3w-client/src/core/workflow/task.js@v3.9.1
@@ -357,17 +357,6 @@ export class Step extends G3WObject {
   cancelSingle(input, context) {
     context.session.rollback();
   }
-
-  // /**
-  //  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
-  //  * 
-  //  * @param get_default_value to context of task
-  //  * 
-  //  * @since g3w-client-plugin-editing@v3.8.0
-  //  */
-  // setContextGetDefaultValue(get_default_value = false) {
-  //   this.getContext().get_default_value = get_default_value;
-  // }
 
   /**
    * Bind interrupt event on keys escape pressed
