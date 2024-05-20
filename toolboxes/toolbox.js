@@ -361,7 +361,7 @@ export class ToolBox extends G3WObject {
           once: true,
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editmultifeatureattributesworkflow.js@v3.7.1 */
           op(options = {}) {
-            return new Workflow({
+            const w = new Workflow({
               ...options,
               type: 'editmultiattributes',
               helpMessage: 'editing.tools.update_multi_features',
@@ -375,7 +375,7 @@ export class ToolBox extends G3WObject {
                       buttonnext: {
                         disabled: true,
                         condition:({ features=[] }) => features.length < 2,
-                        done: () => {}
+                        done: () => { w.clearUserMessagesSteps() }
                       },
                       directive: 't-plugin',
                       dynamic: 0,
@@ -386,6 +386,7 @@ export class ToolBox extends G3WObject {
                 new OpenFormStep({ multi: true }),
               ],
             });
+            return w;
           },
         },
         //Move Feature
