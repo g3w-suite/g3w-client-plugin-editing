@@ -4,7 +4,7 @@
 export class PickFeaturesInteraction extends ol.interaction.Pointer {
 
   constructor(options={}) {
-    let pickedFeatures = [];
+    let features = []; // picked features
 
     const featuresAtPixel = ({ pixel, map } = {}) => map.getFeaturesAtPixel(pixel, {
       layerFilter: l => l === options.layer,
@@ -13,17 +13,12 @@ export class PickFeaturesInteraction extends ol.interaction.Pointer {
 
     super({
       handleDownEvent(e) {
-        pickedFeatures = featuresAtPixel(e);
-        return pickedFeatures;
+        features = featuresAtPixel(e);
+        return features;
       },
       handleUpEvent(e) {
-        if (pickedFeatures && pickedFeatures.length){
-          this.dispatchEvent({
-            type: 'picked',
-            features: pickedFeatures,
-            coordinate: e.coordinate,
-            layer: options.layer
-          });
+        if (features && features.length){
+          this.dispatchEvent({ type: 'picked', features, coordinate: e.coordinate, layer: options.layer });
         }
         return true;
       },
