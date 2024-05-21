@@ -135,7 +135,7 @@ export class Session extends G3WObject {
      */
     this._history = {
       id:                   this.state.id,
-      state:                new Proxy({}, { get: () => this._constrains }),
+      state:                new Proxy({}, { get: (_, prop) => this._constrains[prop] }),
       add:                  this.__add.bind(this),
       getRelationStates:    this.__getRelationStates.bind(this),
       insertState:          this.__insertState.bind(this),
