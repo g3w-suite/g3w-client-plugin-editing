@@ -547,7 +547,7 @@ export class OpenFormStep extends Step {
                   })
               );
               try {
-                await promisify(g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').commit({ modal: false }));
+                await promisify(g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').service.commit({ modal: false }));
                 Workflow.Stack._workflows.forEach(w => w.getContext().service.setUpdate(false, { force: false }));
               } catch (e) {
                 console.warn(e);
