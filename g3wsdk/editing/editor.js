@@ -6,7 +6,6 @@
  * @since g3w-client-plugin-editing@v3.8.x
  */
 
-import ChangesManager   from './changesmanager';
 import { Session }      from './session';
 
 const { ApplicationState, G3WObject }    = g3wsdk.core;
@@ -37,8 +36,6 @@ export default class Editor extends G3WObject {
       setFeatures:   this._setFeatures,
       getFeatures:   this._getFeatures,
     };
-
-
 
     /**
      * Filter to getFeaturerequest
@@ -125,21 +122,27 @@ export default class Editor extends G3WObject {
   }
 
   /**
-   * Apply changes to source features
+   * ORIGINAL SOURCE: g3w-client/src/services/editing.js@v3.9.1
+   * 
+   * Apply changes to source features (undo/redo)
    * 
    * @param items
-   * @param reverse
+   * @param { boolean } reverse whether change to opposite
    */
-  _applyChanges(items = [], reverse = true) {
-    ChangesManager.execute(this._featuresstore, items, reverse);
-  }
-
-  /**
-   * @param items
-   * @param reverse
-   */
-  setChanges(items, reverse) {
-    this._applyChanges(items, reverse)
+  setChanges(items = [], reverse = true) {
+    /** known actions */
+    const Actions = {
+      'add':    { fnc: 'addFeature',    opposite: 'delete' },
+      'delete': { fnc: 'removeFeature', opposite: 'add'    },
+      'update': { fnc: 'updateFeature', opposite: 'update' },
+    };
+    items.forEach(item => {
+      if (reverse) {
+        item.feature[Actions[item.feature.getState()].opposite]();
+      }
+      // get method from object
+      this._featuresstore[Actions[item.feature.getState()].fnc](item.feature);
+    });
   }
 
   /**
@@ -231,7 +234,7 @@ export default class Editor extends G3WObject {
    */
   rollback(changes = []) {
     const d = $.Deferred();
-    this._applyChanges(changes, true);
+    this.setChanges(changes, true);
     d.resolve();
     return d.promise()
   }

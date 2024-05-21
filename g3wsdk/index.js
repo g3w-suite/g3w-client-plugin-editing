@@ -1,9 +1,8 @@
-import Editor           from './editing/editor';
-import ChangesManager   from './editing/changesmanager';
-import { Session }      from './editing/session';
-import { Step }         from './workflow/step';
-import { Flow }         from '../deprecated';
-import { Workflow }     from './workflow/workflow';
+import Editor                   from './editing/editor';
+import { Session }              from './editing/session';
+import { Step }                 from './workflow/step';
+import { Flow, ChangesManager } from '../deprecated';
+import { Workflow }             from './workflow/workflow';
 
 /**
  * Editing APIs will be removed from core after g3w-client@v.4.x

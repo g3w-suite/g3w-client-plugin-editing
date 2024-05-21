@@ -496,7 +496,7 @@ module.exports = class RelationService {
                   relationfeature.isNew()
                   && undefined === Workflow.Stack
                     ._workflows
-                    .find(w => w.getSession()._temporarychanges.filter(({ feature }) => relationfeature.getUid() !== feature.getUid()).length > 0)
+                    .find(w => w.getSession().state.changes.filter(({ feature }) => relationfeature.getUid() !== feature.getUid()).length > 0)
               ) {
                 Workflow.Stack._workflows
                   .filter(w => w.getContextService() instanceof FormService)

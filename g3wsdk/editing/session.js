@@ -5,8 +5,8 @@
  * 
  * @since g3w-client-plugin-editing@v3.8.x
  */
-
-import History          from './history';
+import { checkSessionItems } from '../../utils/checkSessionItems';
+import { promisify }          from '../../utils/promisify';
 
 const { G3WObject }     = g3wsdk.core;
 const { Layer }         = g3wsdk.core.layer;
@@ -19,24 +19,63 @@ export class Session extends G3WObject {
     super(options);
 
     this.setters = {
+
       /**
-       * @param options
+       * Start session
        */
       start(options={}) {
-        return this._start(options);
+        return $.Deferred(async d => {
+          try {
+            const features = await promisify(this._editor.start(options));
+            this.state.started = true;
+            d.resolve(features);
+          } catch (e) {
+            console.warn(e);
+            d.reject(e);
+          }
+        }).promise();
       },
+
       /**
-       * @param options
-       */
-      getFeatures(options={}) {
-        return this._getFeatures(options);
-      },
-      /**
-       * @returns {void|*}
+       * stop session
        */
       stop() {
-        return this._stop();
+        return $.Deferred(async d => {
+          const canStop = this.state.started || this.state.getfeatures;
+          if (!canStop) {
+            return d.resolve();
+          }
+          try {
+            await promisify(this._editor.stop());
+            this.clear();
+            d.resolve();
+          } catch (e) {
+            console.warn(e);
+            d.reject(e);
+          }
+        }).promise()
       },
+
+      /**
+       * Get features from server (by editor)
+       */
+      getFeatures(options={}) {
+        return $.Deferred(async d => {
+          if (this._allfeatures) {
+            return d.resolve([]);
+          }
+          this._allfeatures = !options.filter;
+          try {
+            const features = await promisify(this._editor.getFeatures(options));
+            this.state.getfeatures = true;
+            d.resolve(features);
+          } catch (e) {
+            console.warn(e);
+            d.reject(e)
+          }
+        }).promise();
+      },
+
       /**
        * Hook to get informed that are saved on server
        * 
@@ -48,19 +87,75 @@ export class Session extends G3WObject {
     this.state = {
       id: options.id,
       started: false,
-      getfeatures: false
+      getfeatures: false,
+      /** maximum "buffer history" lenght for undo/redo */
+      maxSteps: 10,
+      /** current state of history (useful for undo /redo) */
+      current: null,
+      /** temporary change not save on history */
+      changes: [],
     };
+
+    /**
+     * Array of states of a layer in editing
+     * {
+     * _states: [
+     *     {
+     *       id: unique key
+     *       state: [state] // example: history contsins features state
+     *                      // array because a tool can apply changes to more than one features at time (split di una feature)
+     *     },
+     *     {
+     *       id: unique key
+     *       state: [state]
+     *     },
+     *   ]
+     *     ....
+     *
+     *  _current: unique key // usefult to undo redo
+     *
+     *
+     */
+    this._states = [];
+
+    /** reactive state of history */
+    this._constrains = {
+      commit: false,
+      undo:false,
+      redo: false
+    },
 
     // editor
     this._editor = options.editor;
-    this._history = new History({
-      id: this.state.id
-    });
 
     /**
-     * store temporary change not save on history
+     * ORIGINAL SOURCE: g3w-client/src/core/editing/history.js@v3.9.1
+     * 
+     * @since g3w-client-plugin-editing@v3.8.0
      */
-    this._temporarychanges = [];
+    this._history = {
+      id:                   this.state.id,
+      state:                new Proxy({}, { get: () => this._constrains }),
+      add:                  this.__add.bind(this),
+      getRelationStates:    this.__getRelationStates.bind(this),
+      insertState:          this.__insertState.bind(this),
+      removeState:          this.deleteState.bind(this),
+      removeStates:         this.removeChangesFromHistory.bind(this),
+      insertStates:         this.__insertStates.bind(this),
+      undo:                 this.__undo.bind(this),
+      clear:                this.clearHistory.bind(this),
+      redo:                 this.__redo.bind(this),
+      setItemsFeatureIds:   this.__setItemsFeatureIds.bind(this),
+      getState:             this.__getState.bind(this),
+      getFirstState:        this.__getFirstState.bind(this),
+      getLastState:         this.getLastHistoryState.bind(this),
+      getCurrentState:      this.__getCurrentState.bind(this),
+      getCurrentStateIndex: this.__getCurrentStateIndex.bind(this),
+      canCommit:            this.__canCommit.bind(this),
+      canUndo:              this.__canUndo.bind(this),
+      canRedo:              this.__canRedo.bind(this),
+      commit:               this.__commit.bind(this),
+    };
 
     // register this session on session registry
     this.register();
@@ -74,24 +169,33 @@ export class Session extends G3WObject {
   }
 
   /**
+   * ORIGINAL SOURCE: g3w-client/src/core/editing/history.js@v3.9.1
+   * 
    * @returns {*|null}
    */
   getLastHistoryState() {
-    return this._history.getLastState();
+    return this._states.length ? this._states[this._states.length -1] : null;
   }
 
   /**
    * @FIXME add description
    */
   getLastStateId() {
-    return this._history.getLastState().id;
+    return this.getLastHistoryState().id;
   }
 
   /**
+   * ORIGINAL SOURCE: g3w-client/src/core/editing/history.js@v3.9.1
+   * 
    * @param stateId
    */
   deleteState(stateId) {
-    this._history.removeState(stateId);
+    const i = this._states.findIndex(s => s.id === stateId);
+    console.assert(i >= 0, `invalid stateId ${stateId}`);
+    if (this.state.current === stateId) {
+      this.state.current = this._states.length > 1 ? this._states[i-1].id : null;
+    }
+    this._states.splice(i, 1);
   }
 
   /**
@@ -106,41 +210,6 @@ export class Session extends G3WObject {
    */
   unregister() {
     Session.Registry.unregister(this.getId());
-  }
-
-  /**
-   * @param options
-   */
-  _start(options={}) {
-    const d = $.Deferred();
-    this._editor.start(options)
-      .then(features => {
-        this.state.started = true;
-        d.resolve(features);
-      })
-      .fail(err => {
-        d.reject(err);
-      });
-    return d.promise();
-  }
-
-  //method to getFeature from server by editor
-  _getFeatures(options={}) {
-    const d = $.Deferred();
-    if (!this._allfeatures) {
-      this._allfeatures = !options.filter;
-      this._editor.getFeatures(options)
-        .then(promise => {
-          promise
-            .then(features => {
-              this.state.getfeatures = true;
-              d.resolve(features);
-            })
-            .fail(err => d.reject(err));
-        });
-    } else d.resolve([]);
-
-    return d.promise();
   }
 
   /**
@@ -173,12 +242,12 @@ export class Session extends G3WObject {
     //fill history
     const d = $.Deferred();
     // add temporary modify to history
-    if (this._temporarychanges.length) {
+    if (this.state.changes.length) {
       const uniqueId = options.id || Date.now();
-      this._history.add(uniqueId, this._temporarychanges)
+      this._history.add(uniqueId, this.state.changes)
         .then(() => {
           // clear to temporary changes
-          this._temporarychanges = [];
+          this.state.changes = [];
           // resolve if unique id
           d.resolve(uniqueId);
         });
@@ -192,8 +261,7 @@ export class Session extends G3WObject {
    * @param feature
    */
   updateTemporaryChanges(feature) {
-    this._temporarychanges
-      .forEach((change) => change.feature.setProperties(feature.getProperties()));
+    this.state.changes.forEach(c => c.feature.setProperties(feature.getProperties()));
   }
 
   /**
@@ -218,10 +286,7 @@ export class Session extends G3WObject {
 
     const newFeature = feature.clone();
 
-    this.push({
-      layerId,
-      feature: newFeature.add()
-    });
+    this.push({ layerId, feature: newFeature.add() });
 
     return newFeature;
   }
@@ -233,10 +298,7 @@ export class Session extends G3WObject {
    * @param feature 
    */
   pushDelete(layerId, feature) {
-    this.push({
-      layerId,
-      feature: feature.delete()
-    });
+    this.push({ layerId, feature: feature.delete() });
     return feature;
   }
 
@@ -248,67 +310,53 @@ export class Session extends G3WObject {
    * @param oldFeature
    */
   pushUpdate(layerId, newFeature, oldFeature) {
+    // get index of temporary changes
+    const is_new = newFeature.isNew();
+    const i = is_new && this.state.changes.findIndex(c => layerId === c.layerId && c.feature.getId() === newFeature.getId());
+
     // in case of new feature
-    if (newFeature.isNew()) {
-      //get index of temporary changes
-      const tcIndex = this._temporarychanges
-        .findIndex((c) => layerId === c.layerId && c.feature.getId() === newFeature.getId());
-
-      if (tcIndex !== -1) {
-        const feature = newFeature.clone();
-        feature.add();
-        this._temporarychanges[tcIndex].feature = feature;
-        return;
-      }
+    if (is_new && i >=0) {
+      const feature = newFeature.clone();
+      feature.add();
+      this.state.changes[i].feature = feature;
+      return;
     }
-    this.push({
-        layerId,
-        feature: newFeature.update()
-      },
-      {
-        layerId,
-        feature: oldFeature.update()
-      })
+
+    this.push(
+      { layerId, feature: newFeature.update() },
+      { layerId, feature: oldFeature.update() }
+    )
   }
 
   /**
-   * @param changeIds
+   * @param stateIds
    */
-  removeChangesFromHistory(changeIds = []) {
-    this._history.removeStates(changeIds);
+  removeChangesFromHistory(stateIds = []) {
+    (stateIds || []).forEach(s => this.deleteState(s));
   }
 
   /**
-   * @returns { Object }
+   * @returns { Object } state ids
    */
   moveRelationStatesOwnSession() {
-    const statesIds = {};
-    const {relations:relationItems } = this.getCommitItems();
-    for (let relationLayerId in relationItems) {
-      const relationStates = this._history.getRelationStates(relationLayerId);
-      const relationSession = Session.Registry.getSession(relationLayerId);
-      relationSession._history.insertStates(relationStates);
-      statesIds[relationLayerId] = relationStates.map(state => state.id);
+    const ids = {};
+    const { relations } = this.getCommitItems();
+    for (let id in relations) {
+      const states = this._history.getRelationStates(id);
+      Session.Registry.getSession(id)._history.insertStates(states);
+      ids[id] = states.map(s => s.id);
     }
-    return statesIds;
+    return ids;
   }
 
   /**
    * Add temporary features that will be added with save method
    * 
-   * @param New 
-   * @param Old 
+   * @param { { layerId: string, feature: * } } NewFeat 
+   * @param { { layerId: string, feature: * } } OldFeat
    */
-  push(New, Old) {
-    /*
-    New e Old are objects {
-        layerId: xxxx,
-        feature: feature
-      }
-    */
-    // check is set old (edit)
-    const feature = Old ? [Old, New] : New;
-    this._temporarychanges.push(feature);
+  push(newFeat, oldFeat) {
+    this.state.changes.push(oldFeat ? [oldFeat, newFeat] : newFeat); // check is set old (edit)
   }
 
   /**
@@ -319,60 +367,53 @@ export class Session extends G3WObject {
     this._editor
       .revert()
       .then(() => {
-        this._history.clear();
+        this.clearHistory();
         d.resolve();
       });
     return d.promise();
   }
 
   /**
-   * Handle temporary changes of layer
-   */
-  _filterChanges() {
-    const id = this.getId();
-    const changes = {
-      own:[],
-      dependencies: {}
-    };
-    this._temporarychanges
-      .forEach((temporarychange) => {
-        const change = Array.isArray(temporarychange) ? temporarychange[0] : temporarychange;
-        if (change.layerId === id) {
-          changes.own.push(change);
-        } else {
-          if (!changes.dependencies[change.layerId]) {
-            changes.dependencies[change.layerId] = [];
-          }
-          // FILO
-          changes.dependencies[change.layerId].unshift(change);
-        }
-      });
-    return changes;
-  }
-
-  /**
    * @param changes
    */
   rollback(changes) {
+    // skip when..
     if (changes) {
       return this._editor.rollback(changes);
-    } else {
-      const d = $.Deferred();
-      const changes = this._filterChanges();
-      this._editor
-        .rollback(changes.own)
-        .then(() => {
-          const {dependencies} = changes;
-          for (const id in dependencies) {
-            Session.Registry.getSession(id).rollback(dependencies[id]);
-          }
-          d.resolve(dependencies);
-        });
-
-      this._temporarychanges = [];
-
-      return d.promise();
     }
+
+    // Handle temporary changes of layer
+    const d = $.Deferred();
+    const id = this.getId();
+    changes = {
+      own:[],
+      dependencies: {}
+    };
+    this.state.changes.forEach(c => {
+      const change = Array.isArray(c) ? c[0] : c;
+      if (change.layerId === id) {
+        changes.own.push(change);
+      } else {
+        if (!changes.dependencies[change.layerId]) {
+          changes.dependencies[change.layerId] = [];
+        }
+        // FILO
+        changes.dependencies[change.layerId].unshift(change);
+      }
+    });
+
+    this._editor
+      .rollback(changes.own)
+      .then(() => {
+        for (const id in changes.dependencies) {
+          Session.Registry.getSession(id).rollback(changes.dependencies[id]);
+        }
+        d.resolve(changes.dependencies);
+      });
+
+    this.state.changes = [];
+
+    return d.promise();
   }
 
   /**
@@ -383,7 +424,7 @@ export class Session extends G3WObject {
   rollbackDependecies(ids=[]) {
     ids.forEach(id => {
       const changes = [];
-      this._temporarychanges = this._temporarychanges.filter(temporarychange => {
+      this.state.changes = this.state.changes.filter(temporarychange => {
         if (temporarychange.layerId === id) {
           changes.push(temporarychange);
           return false
@@ -418,12 +459,12 @@ export class Session extends G3WObject {
   }
 
   /**
-   * Create Json Object for a commit body send to server
+   * Serialize commit
    * 
-   * @param itemsToCommit
-   * @returns {{add: *[], update: *[], relations: {}, delete: *[]}}
+   * @returns {{ add: *[], update: *[], relations: {}, delete: *[] }} JSON Object for a commit body send to server
    */
-  _serializeCommit(itemsToCommit) {
+  getCommitItems() {
+    const itemsToCommit = this._history.commit();
     const id = this.getId();
     let state;
     let layer;
@@ -525,13 +566,6 @@ export class Session extends G3WObject {
   }
 
   /**
-   * @returns {{add: Array, update: Array, relations: Object, delete: Array}}
-   */
-  getCommitItems() {
-    return this._serializeCommit(this._history.commit());
-  }
-
-  /**
    * Set geometry: {type} of geojson to a 3D type if needed
    * 
    * @param layerId
@@ -584,11 +618,11 @@ export class Session extends G3WObject {
     // skip when ..
     if (ids) {
       commit = this._history.commit(ids);
-      this._history.clear(ids);
+      this.clearHistory(ids);
       return d.promise();
     }
 
-    commit = items || this._serializeCommit(this._history.commit());
+    commit = items || this.getCommitItems(this._history.commit());
 
     if (!relations) {
       commit.relations = {};
@@ -617,7 +651,7 @@ export class Session extends G3WObject {
             });
         }
 
-        this._history.clear();            // clear history
+        this.clearHistory();
 
         this.saveChangesOnServer(commit); // dispatch setter event.
 
@@ -632,31 +666,6 @@ export class Session extends G3WObject {
       })
       .fail(err => d.reject(err));
 
-    return d.promise();
-  }
-
-  /**
-   * @returns {boolean}
-   */
-  _canStop() {
-    return this.state.started || this.state.getfeatures;
-  }
-
-  /**
-   * stop session
-   */
-  _stop() {
-    const d = $.Deferred();
-    if (this._canStop()) {
-      this._editor.stop()
-        .then(() => {
-          this.clear();
-          d.resolve();
-        })
-        .fail(err => d.reject(err));
-    } else {
-      d.resolve();
-    }
     return d.promise();
   }
 
@@ -678,10 +687,365 @@ export class Session extends G3WObject {
   }
 
   /**
-   * clear history
+   * ORIGINAL SOURCE: g3w-client/src/core/editing/history.js@v3.9.1
+   * 
+   * @param ids since g3w-client-plugin-editing@v3.8.0
    */
-  clearHistory() {
-    this._history.clear();
+  clearHistory(ids) {
+    if (ids) {
+      this._states.forEach((state, idx) => {
+        if (ids.indexOf(state.id) !== -1) {
+          if (this.state.current && this.state.current === state.id()) {
+            this._history.undo();
+          }
+          this._states.splice(idx, 1);
+        }
+      });
+    } else {
+      // clear all
+      this._states               = [];
+      this.state.current         = null;
+      this._constrains.commit = false;
+      this._constrains.redo   = false;
+      this._constrains.undo   = false;
+    }
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client/src/core/editing/history.js@v3.9.1
+   *
+   * @param uniqueId
+   * @param items
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  __add(uniqueId, items) {
+    //state object is an array of feature/features changed in a transaction
+    const d = $.Deferred();
+    // before insert an item into the history
+    // check if are at last state step (no redo was done)
+    // If we are in the middle of undo, delete all changes
+    // in the history from the current "state" so if it
+    // can create a new history
+    if (null === this.state.current) {
+      this._states = [{ id: uniqueId, items }]
+    } else {
+      if (this._states.length > 0 && this.state.current < this.getLastStateId()) {
+        this._states = this._states.filter(s => s.id <= this.state.current);
+      }
+      this._states.push({ id: uniqueId, items });
+    }
+
+    this.state.current = uniqueId;
+    // set internal state
+    this._history.canUndo();
+    this._history.canCommit();
+    this._history.canRedo();
+    // return unique id key
+    // it can be used in save relation
+    d.resolve(uniqueId);
+    return d.promise();
+  }
+  
+  /**
+   * ORIGINAL SOURCE: g3w-client/src/core/editing/history.js@v3.9.1
+   *
+   * @param layerId
+   * @param clear
+   * 
+   * @returns { Array }
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  __getRelationStates(layerId, {clear=false}={}) {
+    const relationStates = [];
+    for (let i=0; i < this._states.length; i++) {
+      const state = this._states[i];
+      const items = state.items.filter((item) => (Array.isArray(item) ? item[0].layerId : item.layerId) === layerId);
+      if (items.length > 0) {
+        relationStates.push({ id: state.id, items });
+      }
+    }
+    return relationStates;
+  }
+
+
+  /**
+   * ORIGINAL SOURCE: g3w-client/src/core/editing/history.js@v3.9.1
+   *
+   * @param state
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  __insertState(state) {
+    const stateId = state.id;
+    let index = this._states.length;
+    for (let i=0; i < this._states.length; i++) {
+      const _state = this._states[i];
+      if (_state.id > stateId) {
+        index = i;
+        break;
+      } else if (_state.id === stateId) {
+        index = -1;
+        break;
+      }
+    }
+    if (index > -1) {
+      if (this.state.current < stateId) {
+        this.state.current = stateId;
+      }
+      this._states.splice(index, 0, state)
+    }
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client/src/core/editing/history.js@v3.9.1
+   *
+   * @param states
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  __insertStates(states=[]) {
+    for (let i=0; i< states.length; i++) {
+      this._history.insertState(states[i]);
+    }
+    this._history.canCommit();
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client/src/core/editing/history.js@v3.9.1
+   * 
+   * undo method
+   *
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  __undo() {
+    let items;
+    if (this.state.current === this._history.getFirstState().id) {
+      this.state.current = null;
+      items = this._states[0].items;
+    } else {
+      this._states.find((state, idx) => {
+        if (state.id === this.state.current) {
+          items = this._states[idx].items;
+          this.state.current = this._states[idx-1].id;
+          return true;
+        }
+      })
+    }
+    items = checkSessionItems(this._history.id, items, 0);
+    // set internal state
+    this._history.canUndo();
+    this._history.canCommit();
+    this._history.canRedo();
+    return items;
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client/src/core/editing/history.js@v3.9.1
+   * 
+   * redo method
+   *
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  __redo() {
+    let items;
+    // if not set get first state
+    if (!this.state.current) {
+      items = this._states[0].items;
+      // set current to first
+      this.state.current = this._states[0].id;
+    } else {
+      this._states.find((state, idx) => {
+        if (this.state.current === state.id) {
+          this.state.current = this._states[idx+1].id;
+          items = this._states[idx+1].items;
+          return true;
+        }
+      })
+    }
+    items = checkSessionItems(this._history.id, items, 1);
+    // set internal state
+    this._history.canUndo();
+    this._history.canCommit();
+    this._history.canRedo();
+    return items;
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client/src/core/editing/history.js@v3.9.1
+   * 
+   * @param { Array } unsetnewids
+   *
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  __setItemsFeatureIds(unsetnewids=[]) {
+    unsetnewids.forEach(unsetnewid => {
+      this._states.forEach(state => {
+        state.items.forEach(item => {
+          const feature = item.feature.getId() === unsetnewid.clientid && item.feature;
+          if (feature) {
+            feature.setId(unsetnewid.id);
+          }
+        })
+      });
+    })
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client/src/core/editing/history.js@v3.9.1
+   * 
+   * @param id
+   * 
+   * @returns {T}
+   *
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  __getState(id) {
+    return this._states.find(s => s.id === id);
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client/src/core/editing/history.js@v3.9.1
+   * 
+   * @returns {*|null}
+   *
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  __getFirstState() {
+    return this._states.length ? this._states[0] : null;
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client/src/core/editing/history.js@v3.9.1
+   * 
+   * @returns {null}
+   *
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  __getCurrentState() {
+    let currentState = null;
+    if (this.state.current && this._states.length) {
+      currentState = this._states.find((state) => {
+      return this.state.current === state.id;
+      });
+    }
+    return currentState;
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client/src/core/editing/history.js@v3.9.1
+   *
+   * @returns { number | null } index of current state
+   *
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  __getCurrentStateIndex() {
+    let currentStateIndex = null;
+    if (this.state.current && this._states.length) {
+      this._states.forEach((state, idx) => {
+        if (this.state.current === state.id) {
+          currentStateIndex = idx;
+          return false
+        }
+      });
+    }
+    return currentStateIndex;
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client/src/core/editing/history.js@v3.9.1
+   *
+   * @returns { boolean } true if we can commit
+   *
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  __canCommit() {
+    const checkCommitItems = this._history.commit();
+    let canCommit = false;
+    for (let layerId in checkCommitItems) {
+      const commitItem = checkCommitItems[layerId];
+      canCommit = canCommit || commitItem.length > 0;
+    }
+    this._constrains.commit = canCommit;
+    return this._constrains.commit;
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client/src/core/editing/history.js@v3.9.1
+   *
+   * canUdo method
+   *
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  __canUndo() {
+    const steps = (this._states.length - 1) - this._history.getCurrentStateIndex();
+    this._constrains.undo = (null !== this.state.current) && (this.state.maxSteps > steps);
+    return this._constrains.undo;
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client/src/core/editing/history.js@v3.9.1
+   *
+   * canRedo method
+   *
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  __canRedo() {
+    this._constrains.redo = (
+      (this.getLastHistoryState() && this.getLastStateId() != this.state.current))
+      || (null === this.state.current && this._states.length > 0);
+    return this._constrains.redo;
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client/src/core/editing/history.js@v3.9.1
+   *
+   * get all changes to send to server (mandare al server)
+   *
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  __commit() {
+    const commitItems = {};
+    const statesToCommit = this._states.filter(s => s.id <= this.state.current);
+    statesToCommit
+      .forEach(state => {
+        state.items.forEach((item) => {
+        let add = true;
+        if (Array.isArray(item)) {
+          item = item[1];
+        }
+        if (commitItems[item.layerId]) {
+          commitItems[item.layerId].forEach((commitItem, index) => {
+            // check if already inserted feature
+            if (commitItem.getUid() === item.feature.getUid()) {
+              if (item.feature.isNew() && !commitItem.isDeleted() && item.feature.isUpdated()) {
+                const _item = item.feature.clone();
+                _item.add();
+                commitItems[item.layerId][index] = _item;
+              } else if (item.feature.isNew() && item.feature.isDeleted()) {
+                commitItems[item.layerId].splice(index, 1);
+              } else if (item.feature.isUpdated() || item.feature.isDeleted()) {
+                commitItems[item.layerId][index] = item.feature;
+              }
+              add = false;
+              return false;
+            }
+          });
+        }
+        if (add) {
+          const feature = item.feature;
+          const layerId = item.layerId;
+          if (!(!feature.isNew() && feature.isAdded())) {
+            if (!commitItems[layerId]) {
+              commitItems[layerId] = [];
+            }
+            commitItems[layerId].push(feature);
+          }
+        }
+      });
+    });
+    return commitItems;
   }
 
 }
