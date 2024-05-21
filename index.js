@@ -1115,7 +1115,7 @@ new (class extends Plugin {
         }
 
         // parse server error
-        if (serverError || !modal) {
+        if (serverError || modal) {
           const message = online
             ? (messages.error.message || (new serverErrorParser({ error: e.errors || e || {}})).parse({ type: 'String' }))
             : e;
