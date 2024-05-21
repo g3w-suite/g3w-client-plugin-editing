@@ -526,13 +526,13 @@ export class OpenFormStep extends Step {
                 [...Workflow.Stack._workflows]
                   .reverse()
                   .filter(w => "function" === typeof w.getLastStep()._saveAll) // need to filter only workflow that
-                  .map(async w => {
+                  .map( w => new Promise(async (resolve, reject) => {
                     const task   = w.getLastStep();
                     const fields = w.getContext().service.state.fields.filter(f => task._multi ? null !== f.value : true);
                     // skip when ..
                     if (!fields.length) { return; }
                     await Workflow.Stack.getCurrent().getContextService().saveDefaultExpressionFieldsNotDependencies();
-                    task._features.forEach(f => task._originalLayer.setFieldsWithValues(f, fields));
+                    task._features.forEach(f => task.getInputs().layer.setFieldsWithValues(f, fields));
                     const newFeatures = task._features.map(f => f.clone());
                     if (task._isContentChild) {
                       task.getInputs().relationFeatures = { newFeatures, originalFeatures: task._originalFeatures };
@@ -543,9 +543,9 @@ export class OpenFormStep extends Step {
                     task.fireEvent('savedfeature', newFeatures);                 // called after saved
                     task.fireEvent(`savedfeature_${task.layerId}`, newFeatures); // called after saved using layerId
                     task.getContext().session.save();
-                    return { promise: task.promise };
-                  })
-              );
+                    return resolve();
+                  }))
+              )
               try {
                 await promisify(g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').service.commit({ modal: false }));
                 Workflow.Stack._workflows.forEach(w => w.getContext().service.setUpdate(false, { force: false }));
