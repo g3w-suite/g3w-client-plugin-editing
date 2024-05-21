@@ -1,7 +1,6 @@
 import Editor           from './editing/editor';
 import ChangesManager   from './editing/changesmanager';
-import SessionsRegistry from './editing/sessionsregistry';
-import Session          from './editing/session';
+import { Session }      from './editing/session';
 import { Step }         from './workflow/step';
 import { Flow }         from '../deprecated';
 import { Workflow }     from './workflow/workflow';
@@ -23,7 +22,7 @@ if (
  */
 window.g3wsdk.core.editing = {
   Session,
-  SessionsRegistry,
+  SessionsRegistry: Session.Registry,
   Editor,
   ChangesManager
 };

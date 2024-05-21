@@ -1,5 +1,5 @@
 import { Workflow }                                     from '../g3wsdk/workflow/workflow';
-import Session                                          from '../g3wsdk/editing/session';
+import { Session }                                      from '../g3wsdk/editing/session';
 import { Step }                                         from '../g3wsdk/workflow/step';
 import { createEditingDataOptions }                     from '../utils/createEditingDataOptions';
 import { setLayerUniqueFieldValues }                    from '../utils/setLayerUniqueFieldValues';

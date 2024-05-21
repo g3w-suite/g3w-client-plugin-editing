@@ -7,7 +7,7 @@
  */
 
 import ChangesManager   from './changesmanager';
-import SessionsRegistry from './sessionsregistry';
+import { Session }      from './session';
 
 const { ApplicationState, G3WObject }    = g3wsdk.core;
 const { FeaturesStore, OlFeaturesStore } = g3wsdk.core.layer.features;
@@ -270,7 +270,7 @@ export default class Editor extends G3WObject {
       field,
     } = {}
   ) {
-    const source = SessionsRegistry              // get source of editing layer.
+    const source = Session.Registry              // get source of editing layer.
       .getSession(layerId)
       .getEditor()
       .getEditingSource();

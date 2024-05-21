@@ -6,14 +6,13 @@
  * @since g3w-client-plugin-editing@v3.8.x
  */
 
-import SessionsRegistry from './sessionsregistry';
 import History          from './history';
 
 const { G3WObject }     = g3wsdk.core;
 const { Layer }         = g3wsdk.core.layer;
 const { is3DGeometry }  = g3wsdk.core.geoutils.Geometry;
 
-export default class Session extends G3WObject {
+export class Session extends G3WObject {
 
   constructor(options={}) {
 
@@ -99,14 +98,14 @@ export default class Session extends G3WObject {
    * @FIXME add description
    */
   register() {
-    SessionsRegistry.register(this);
+    Session.Registry.register(this);
   }
 
   /**
    * @FIXME add description
    */
   unregister() {
-    SessionsRegistry.unregister(this.getId());
+    Session.Registry.unregister(this.getId());
   }
 
   /**
@@ -211,7 +210,7 @@ export default class Session extends G3WObject {
      * In case of removeNotEditableProperties true, remove not editable field
      * from feature properties
      */
-    const editor = layerId === this.getId() ? this._editor : SessionsRegistry.getSession(layerId).getEditor();
+    const editor = layerId === this.getId() ? this._editor : Session.Registry.getSession(layerId).getEditor();
 
     if (removeNotEditableProperties) {
       editor.removeNotEditablePropriertiesFromFeature(feature);
@@ -287,7 +286,7 @@ export default class Session extends G3WObject {
     const {relations:relationItems } = this.getCommitItems();
     for (let relationLayerId in relationItems) {
       const relationStates = this._history.getRelationStates(relationLayerId);
-      const relationSession = SessionsRegistry.getSession(relationLayerId);
+      const relationSession = Session.Registry.getSession(relationLayerId);
       relationSession._history.insertStates(relationStates);
       statesIds[relationLayerId] = relationStates.map(state => state.id);
     }
@@ -365,7 +364,7 @@ export default class Session extends G3WObject {
         .then(() => {
           const {dependencies} = changes;
           for (const id in dependencies) {
-            SessionsRegistry.getSession(id).rollback(dependencies[id]);
+            Session.Registry.getSession(id).rollback(dependencies[id]);
           }
           d.resolve(dependencies);
         });
@@ -390,7 +389,7 @@ export default class Session extends G3WObject {
           return false
         }
       });
-      changes.length && SessionsRegistry.getSession(id).rollback(changes);
+      changes.length && Session.Registry.getSession(id).rollback(changes);
     });
   }
 
@@ -441,7 +440,7 @@ export default class Session extends G3WObject {
       // case key (layer id) is not equal to id (current layer id on editing)
       if (key !== id) {
         isRelation = true; //set true because these changes belong to features relation items
-        const sessionRelation = SessionsRegistry.getSession(key);
+        const sessionRelation = Session.Registry.getSession(key);
         //check lock ids of relation layer
         const lockids =  sessionRelation ? sessionRelation.getEditor().getLockIds(): [];
         //create a relations object
@@ -509,7 +508,7 @@ export default class Session extends G3WObject {
       .filter(id => undefined === this._editor.getLayer().getRelations().getArray().find(r => id === r.getChild())) // child relations
       .map(id => {
         commitObj.relations[
-          SessionsRegistry
+          Session.Registry
             .getSession(id)
             .getEditor()
             .getLayer()
@@ -609,7 +608,7 @@ export default class Session extends G3WObject {
 
         // sync server data with local data
         for (const id in new_relations) {
-          SessionsRegistry
+          Session.Registry
             .getSession(id)               // get session of relation by id
             .getEditor()
             .applyCommitResponse({        // apply commit response to current editing relation layer
@@ -686,3 +685,23 @@ export default class Session extends G3WObject {
   }
 
 }
+
+/** @type { Object<string, Session> } */
+const sessions = {};
+
+/**
+ * ORIGINAL SOURCE: g3w-client/src/store/sessions.js@v3.9.1
+ *
+ * Store user session (login / logout)
+ *
+ * @since g3w-client-plugin-editing@v3.8.0
+ */
+Session.Registry = {
+  _sessions: sessions,
+  register(session)       { sessions[session.getId()] = session; },
+  unregister(id)          { delete sessions[id]; },
+  getSession(id)          { return sessions[id]; },
+  setSession(id, session) { sessions[id] = session; },
+  getSessions()           { return sessions; },
+  clear()                 { Object.keys(sessions).forEach(Session.Registry.unregister); }
+};
