@@ -223,7 +223,7 @@ export class ToolBox extends G3WObject {
           /** temporary change not save on history */
           changes:     [],
         },
-        history      : this._history,
+        history      : this._history.state,
         on           : false,
         dependencies : [],
         relations    : [],
