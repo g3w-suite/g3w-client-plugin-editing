@@ -151,8 +151,6 @@ export class ToolBox extends G3WObject {
       commit:               this.__commit.bind(this),
     };
 
-    console.log(this);
-
     /**
      * ORIGINAL SOURCE: g3w-client/src/core/editing/session.js@v3.9.1
      */
@@ -1576,15 +1574,14 @@ export class ToolBox extends G3WObject {
     this.setFeaturesOptions({ filter });
 
     //register lock features to show message
-    const unKeyLock = this.state.layer.getFeaturesStore().onceafter('featuresLockedByOtherUser',
-      () => {                      //handler
-        GUI.showUserMessage({
-          type: 'warning',
-          subtitle: this.state.layer.getName().toUpperCase(),
-          message: 'plugins.editing.messages.featureslockbyotheruser'
-        })
-      }
-    )
+    const unKeyLock = this.state.layer.getFeaturesStore().onceafter('featuresLockedByOtherUser', () => {
+      GUI.showUserMessage({
+        type: 'warning',
+        subtitle: this.state.layer.getName().toUpperCase(),
+        message: 'plugins.editing.messages.featureslockbyotheruser'
+      })
+    });
+
     //add featuresLockedByOtherUser setter
     this.state._unregisterStartSettersEventsKey.push(
       () => this.state.layer.getFeaturesStore().un('featuresLockedByOtherUser', unKeyLock)
@@ -1601,6 +1598,7 @@ export class ToolBox extends G3WObject {
         await g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').runEventHandler({ type: 'get-features-editing', id, options: { features } });
         d.resolve({ features })
       } catch (e) {
+        console.warn(e);
         GUI.notify.error(e.message);
         await g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').runEventHandler({ type: 'error-editing', id, error: e });
         this.stop();
@@ -3262,8 +3260,6 @@ export class ToolBox extends G3WObject {
   }
 
 };
-
-console.log(ToolBox);
 
 /**
  * ORIGINAL SOURCE: g3w-client/src/store/sessions.js@v3.9.1

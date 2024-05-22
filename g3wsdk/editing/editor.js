@@ -61,9 +61,9 @@ export default class Editor extends G3WObject {
             this._filter.bbox = bbox;                                                      // store bbox
             doRequest = true;
           }
-      
+
           // subsequent requests --> check if bbox is contained into an already requested bbox
-          if (is_vector) {
+          else if (is_vector) {
             const is_cached = ol.extent.containsExtent(this._filter.bbox, bbox);
             if (!is_cached) {
               this._filter.bbox = ol.extent.extend(this._filter.bbox, bbox);
@@ -73,7 +73,7 @@ export default class Editor extends G3WObject {
 
           /** @TODO simplfy nested promises */
           if (doRequest) {
-            const features = await promisify(this._layer.getFeatures(options));  
+            const features = await promisify(this._layer.getFeatures(options));
             // add features from server
             this._featuresstore.addFeatures((features || []).map(f => f.clone()));
             this._allfeatures = !options.filter;
@@ -302,7 +302,8 @@ export default class Editor extends G3WObject {
   start(options = {}) {
     /** @TODO simplfy nested promises */
     return $promisify(async () => {
-      const features = await promisify(this.getFeatures(options)); // load layer features based on filter type  
+      const features = await promisify(this.getFeatures(options)); // load layer features based on filter type
+      console.log(features);
       this._started = true;                                 // if all ok set to started
       return features;                                      // features are already inside featuresstore
     });
