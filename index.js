@@ -87,8 +87,8 @@ new (class extends Plugin {
         modal: false,
         messages: undefined,      // object to set custom message
         cb: {
-          done: undefined,        // function executed after commit change done
-          error: undefined        // function executed after commit changes error
+          done:  () => {},       // function executed after commit change done
+          error: () => {}        // function executed after commit changes error
         }
       },
       editableLayers:      {},
@@ -98,7 +98,7 @@ new (class extends Plugin {
         layer: {
           start_editing: {
             before: {},
-            after: {}
+            after:  {}
           }
         }
       },
@@ -718,10 +718,10 @@ new (class extends Plugin {
     this.state.saveConfig = {
       mode: "default", // default, autosave
       modal: false,
-      messages: null, // object to set custom message
+      messages: undefined, // object to set a custom message
       cb: {
-        done: null, // function Called after save
-        error: null, // function called affte commit error
+        done:  () => {}, // function Called after save
+        error: () => {}, // function called affect commit error
       }
     };
     GUI.getService('map').disableClickMapControls(false);
@@ -913,8 +913,7 @@ new (class extends Plugin {
     modal = true,
     close = false,
   } = {}) {
-    const cb            = Object.assign(this.state.saveConfig.cb       || {}, { done() {},  error() {} });
-    const messages      = Object.assign(this.state.saveConfig.messages || {}, { success: {}, error: {} });
+    const messages      = Object.assign({ success: { message: "plugins.editing.messages.saved", autoclose: true }, error: {} }, (this.state.saveConfig.messages || {}));
     toolbox             = toolbox || this.state.toolboxselected;
     let layer           = toolbox.getLayer();
     const items         = commitItems;
@@ -954,9 +953,7 @@ new (class extends Plugin {
                       buttons: {
                         SAVE:   { className: "btn-success", callback() { d.resolve(inputs); },    label: t("save"),   },
                         CANCEL: { className: "btn-danger",  callback() { d.reject(); },           label: t(inputs.close ? "exitnosave" : "annul") },
-                        ...(inputs.close ? { CLOSEMODAL :
-                                { className: "btn-primary", callback() { dialog.modal('hide'); }, label:  t("annul") }
-                        } : {}),
+                        ...(inputs.close ? { CLOSEMODAL : { className: "btn-primary", callback() { dialog.modal('hide'); }, label:  t("annul") }} : {}),
                       }
                     });
                     if (inputs.features) {
@@ -983,68 +980,68 @@ new (class extends Plugin {
             })
           );
 
-          dialog = GUI.dialog.dialog({
-            message: `<h4 class="text-center"><i style="margin-right: 5px;" class=${GUI.getFontClass('spinner')}></i>${t('editing.messages.saving')}</h4>`,
-            closeButton: false
-          });
+          await promisify(workflow.stop());
 
-          // messages set to commit
-          Object.assign(messages, {
-            success: {
-              message: "plugins.editing.messages.saved",
-              autoclose: true,
-            },
-            error: {},
-          });
+          //in case of online application
+          if (online) {
+            dialog = GUI.dialog.dialog({
+              message: `<h4 class="text-center">
+                          <i style="margin-right: 5px;" class=${GUI.getFontClass('spinner')}></i>${tPlugin('editing.messages.saving')}
+                        </h4>`,
+              closeButton: false
+            });
+          }
         }
 
-        let data = !online && { [toolbox.getSession().getId()]: commitItems };
+        let data      = !online && { [toolbox.getSession().getId()]: commitItems };
+        //get current offline editing changes
         const changes = !online && ApplicationService.getOfflineItem('EDITING_CHANGES');
 
         // handle offline changes
         /** ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8 */
-        Object.keys(changes || {}).forEach(layerId => {
-          const currLayerId = Object.keys(data)[0];
+        Object.keys(changes || {})
+          .forEach(layerId => {
+            const currLayerId = Object.keys(data)[0];
 
-          // check if previous changes are made in the same layer or in relationlayer of current
-          let current = null;
+            // check if previous changes are made in the same layer or in relationlayer of current
+            let current = null;
 
-          if (data[layerId]) {
-            current = data;
-          } else if (data[currLayerId].relations[layerId]) {
-            current = data[currLayerId].relations;
-          }
+            if (data[layerId]) { current = data; }
+            else if (data[currLayerId].relations[layerId]) {
+              current = data[currLayerId].relations;
+            }
 
-          // check if in the last changes
-          const relationsIds  = !current && Object.keys(changes[layerId].relations || {});
-          const has_relations  = !current && relationsIds.length;
-          const GIVE_ME_A_NAME = !current && has_relations && relationsIds.includes(currLayerId);
+            // check if in the last changes
+            const relationsIds   = !current && Object.keys(changes[layerId].relations || {});
+            const has_relations  = !current && relationsIds.length > 0;
+            const GIVE_ME_A_NAME = !current && has_relations && relationsIds.includes(currLayerId);
 
-          // apply changes
-          if (current || GIVE_ME_A_NAME) {
-            const id   = current ? layerId : currLayerId;
-            const curr = current ? current : data;
-            const prev = current ? changes : changes[layerId].relations;
-            curr[id].add    = [...curr[id].add, ...curr[id].add];
-            curr[id].delete = [...curr[id].delete, ...curr[id].delete];
-            (prev[id].update || [])
-              .filter(update => !curr[id].update.find(u => u.id === update.id))
-              .forEach(update => curr[id].update.unshift(update));
-            (prev[id].lockids || [])
-              .filter(lock => !curr[id].lockids.find(l => l.featureid === lock.featureid))
-              .forEach(lock => curr[id].update.unshift(lock));
-          }
+            // apply changes
+            if (current || GIVE_ME_A_NAME) {
+              const id   = current ? layerId : currLayerId;
+              const curr = current ? current : data;
+              const prev = current ? changes : changes[layerId].relations;
+              curr[id].add    = [...curr[id].add, ...curr[id].add];
+              curr[id].delete = [...curr[id].delete, ...curr[id].delete];
+              (prev[id].update || [])
+                .filter(update => !curr[id].update.find(u => u.id === update.id))
+                .forEach(update => curr[id].update.unshift(update));
+              (prev[id].lockids || [])
+                .filter(lock => !curr[id].lockids.find(l => l.featureid === lock.featureid))
+                .forEach(lock => curr[id].update.unshift(lock));
+            }
 
-          if (GIVE_ME_A_NAME) {
-            changes[layerId].relations[currLayerId] = data[currLayerId];
-            data = changes;
-          }
-          if (!current && !has_relations) {
-            data[layerId] = changes[layerId]
-          }
-        });
+            if (GIVE_ME_A_NAME) {
+              changes[layerId].relations[currLayerId] = data[currLayerId];
+              data = changes;
+            }
+            if (!current && !has_relations) {
+              data[layerId] = changes[layerId]
+            }
+          });
 
         if (!online) {
+
           GUI.showUserMessage({
             type: 'success',
             message: "plugins.editing.messages.saved_local",
@@ -1053,31 +1050,39 @@ new (class extends Plugin {
           toolbox.getSession().clearHistory();
         }
 
-        // check if application is online
+        // check if the application is online
         const { commit, response } = online ? await promisify(
           toolbox.getSession().commit({ items: items || commitItems, __esPromise: true })
         ) : {};
 
-        // @TODO need to double check why ApplicationState.online is repeated
-        const online2 = online && commit && ApplicationState.online;
+
+
+        //check if is online and there are some commit items
+        const online2 = online && commit;
+
         const result = online2 && response.result;
 
         if (result && messages && messages.success) {
+          // hide saving dialog
+          if (dialog) {
+            dialog.modal('hide');
+          }
+
           GUI.showUserMessage({
             type: 'success',
             message: messages.success.message || "plugins.editing.messages.saved",
-            duration: 3000,
+            duration: 2000,
             autoclose: undefined !== messages.success.autoclose ? messages.success.autoclose : true,
           });
         }
 
-        // In case of vector layer need to refresh map commit changes
-        if (result && layer.getType() === Layer.LayerTypes.VECTOR) {
+        // In the case of vector layer need to refresh map commit changes
+        if (result && Layer.LayerTypes.VECTOR === layer.getType() ) {
           GUI.getService('map').refreshMap({ force: true });
         }
 
         if (online) {
-          cb.done(toolbox);
+          this.state.saveConfig.cb.done(toolbox);
         }
 
         // add items when close editing to results to show changes
@@ -1107,6 +1112,11 @@ new (class extends Plugin {
       } catch (e) {
         console.warn(e);
 
+        // hide saving dialog
+        if (dialog) {
+          dialog.modal('hide');
+        }
+
         // rollback relations
         if (modal) {
           try { await _rollback(commitItems.relations); }
@@ -1126,18 +1136,10 @@ new (class extends Plugin {
             autoclose:   online ? (undefined !== messages.error.autoclose ? messages.error.autoclose : false) : false,
           });
 
-          cb.error(toolbox, message);
+          this.state.saveConfig.cb.error(toolbox, message);
         }
 
         return Promise.reject(toolbox);
-      } finally {
-        if (modal) {
-          workflow.stop()
-        }
-        // hide saving dialog
-        if (dialog) {
-          dialog.modal('hide');
-        }
       }
       return toolbox;
     });

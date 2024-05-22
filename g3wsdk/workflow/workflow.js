@@ -320,7 +320,7 @@ export class Workflow extends G3WObject {
     try {
       this.setMessages({ help: step.state.help });
       const outputs = await promisify(step.__run(inputs, this.getContext()));
-      // onDone → check if all step are resolved
+      // onDone → check if all step is resolved
       this._stepIndex++;
       if (this._stepIndex === this.getSteps().length) {
         this._stepIndex = 0;
@@ -378,10 +378,12 @@ export class Workflow extends G3WObject {
           }
         });
       }
+      //emit start
+      this.emit('start');
   
       try {
         console.assert(0 === this._stepIndex, `reset workflow before restarting: ${this._stepIndex}`)
-        //start flow of worflow
+        //start flow of workflow
         const outputs = await this.runStep(this.getSteps()[this._stepIndex], this.getInputs());
         if (showUserMessage) {
           setTimeout(() => { this.clearUserMessagesSteps(); d.resolve(outputs); }, 500);
@@ -399,8 +401,6 @@ export class Workflow extends G3WObject {
       if (this.runOnce) {
         this.stop();
       }
-  
-      this.emit('start');
     }).promise();
   }
 
@@ -430,6 +430,9 @@ export class Workflow extends G3WObject {
       // stop flow
       try {
         if (this.getSteps()[this._stepIndex].isRunning()) {
+          //clear messages steps
+          this.clearMessages();
+          //stop a current step
           this.getSteps()[this._stepIndex].__stop();
         }
         // reset counter and reject flow
@@ -443,8 +446,6 @@ export class Workflow extends G3WObject {
       } catch (e) {
         console.warn(e);
         d.reject(e);
-      } finally {
-        this.clearMessages();
       }
 
       this.emit('stop');
@@ -453,7 +454,7 @@ export class Workflow extends G3WObject {
   }
 
   /**
-   * Reset user messagge steps
+   * Reset user message steps
    */
   clearUserMessagesSteps() {
     Object
