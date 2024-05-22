@@ -911,20 +911,6 @@ export class ToolBox extends G3WObject {
                       done: false
                     }
                   },
-                  onRun: ({inputs, context}) => {
-                    w.emit('settoolsoftool', [{
-                      type: 'snap',
-                      options: {
-                        layerId: inputs.layer.getId(),
-                        source: inputs.layer.getEditingLayer().getSource(),
-                        active: true
-                      }
-                    }]);
-                    w.emit('active', ['snap']);
-                  },
-                  onStop: () => {
-                    w.emit('deactive', ['snap']);
-                  }
                 }),
                 // add part to multi geometries
                 new Step({
