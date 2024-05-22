@@ -6,7 +6,8 @@
  * @since g3w-client-plugin-editing@v3.8.x
  */
 
-import { Session }      from './session';
+import { Session }               from './session';
+import { promisify, $promisify } from '../../utils/promisify';
 
 const { ApplicationState, G3WObject }    = g3wsdk.core;
 const { FeaturesStore, OlFeaturesStore } = g3wsdk.core.layer.features;
@@ -29,12 +30,58 @@ export default class Editor extends G3WObject {
      * Setter hooks.
      */
     this.setters = {
-      save:          this._save,
-      addFeature:    this._addFeature,
-      updateFeature: this._updateFeature,
-      deleteFeature: this._deleteFeature,
-      setFeatures:   this._setFeatures,
-      getFeatures:   this._getFeatures,
+      save()                     { this._layer.save(); },
+      addFeature(feature)        { this._featuresstore.addFeature(feature); },
+      updateFeature(feature)     { this._featuresstore.updateFeature(feature); },
+      deleteFeature(feature)     { this._featuresstore.deleteFeature(feature); },
+      setFeatures(features = []) { this._featuresstore.setFeatures(features); },
+      /**
+       * Get features from server method.
+       * Used when vector Layer's bbox is contained into an already requested bbox (so no a new request is done).
+       *
+       * @param { number[] } options.filter.bbox bounding box Array [xmin, ymin, xmax, ymax]
+       *
+       * @returns { boolean } whether can perform a server request
+       */
+      getFeatures(options={}) {
+        // skip when ..
+        if (!ApplicationState.online || this._allfeatures) {
+          return $.Deferred(d => d.resolve());
+        }
+
+        return $promisify(async d => {
+
+          let doRequest = true; // default --> perform request
+
+          const { bbox } = options.filter || {};
+          const is_vector = bbox && Layer.LayerTypes.VECTOR === this._layer.getType();
+      
+          // first request --> need to perform request
+          if (is_vector && null === this._filter.bbox) {
+            this._filter.bbox = bbox;                                                      // store bbox
+            doRequest = true;
+          }
+      
+          // subsequent requests --> check if bbox is contained into an already requested bbox
+          if (is_vector) {
+            const is_cached = ol.extent.containsExtent(this._filter.bbox, bbox);
+            if (!is_cached) {
+              this._filter.bbox = ol.extent.extend(this._filter.bbox, bbox);
+            }
+            doRequest = !is_cached;
+          }
+
+          /** @TODO simplfy nested promises */
+          if (doRequest) {
+            const p        = await promisify(this._layer.getFeatures(options));  
+            const features = await promisify(p);
+            // add features from server
+            this._featuresstore.addFeatures((features || []).map(f => f.clone()));
+            this._allfeatures = !options.filter;
+            return features;
+          }
+        });
+      },
     };
 
     /**
@@ -68,41 +115,6 @@ export default class Editor extends G3WObject {
      */
     this._started = false;
 
-    /**
-     * Not editable fields
-     */
-    this._noteditablefileds = this._layer.getEditingNotEditableFields() || [];
-
-  }
-
-  /**
-   * Used when vector Layer's bbox is contained into an already requested bbox (so no a new request is done).
-   *
-   * @param { number[] } options.filter.bbox bounding box Array [xmin, ymin, xmax, ymax]
-   *
-   * @returns { boolean } whether can perform a server request
-   */
-  _canDoGetFeaturesRequest(options = {}) {
-    const { bbox } = options.filter || {};
-    const is_vector = bbox && Layer.LayerTypes.VECTOR === this._layer.getType();
-
-    // first request --> need to perform request
-    if (is_vector && null === this._filter.bbox) {
-      this._filter.bbox = bbox;                                                      // store bbox
-      return true;
-    }
-
-    // subsequent requests --> check if bbox is contained into an already requested bbox
-    if (is_vector) {
-      const is_cached = ol.extent.containsExtent(this._filter.bbox, bbox);
-      if (!is_cached) {
-        this._filter.bbox = ol.extent.extend(this._filter.bbox, bbox);
-      }
-      return !is_cached;
-    }
-
-    // default --> perform request
-    return true;
   }
 
   /**
@@ -159,70 +171,11 @@ export default class Editor extends G3WObject {
     return this._layer = layer;
   }
 
-  removeNotEditablePropriertiesFromFeature(feature) {
-    this._noteditablefileds.forEach(field => feature.unset([field]));
-  }
-
-  /**
-   * @param features features to be cloned
-   */
-  _cloneFeatures(features = []) {
-    return features.map(f => f.clone());
-  }
-
-  /**
-   * @param features
-   */
-  _addFeaturesFromServer(features = []) {
-    this._featuresstore.addFeatures(this._cloneFeatures(features));
-  }
-
-  /**
-   * @param options
-   * 
-   * @returns { boolean }
-   */
-  _doGetFeaturesRequest(options={}) {
-    if (ApplicationState.online && !this._allfeatures) {
-      return this._canDoGetFeaturesRequest(options);
-    }
-    return false;
-  }
-
-  /**
-   * get features from server method
-   */
-  _getFeatures(options={}) {
-    const d         = $.Deferred();
-    const doRequest = this._doGetFeaturesRequest(options);
-    if (!doRequest) {
-      d.resolve();
-    } else {
-      /** @TODO simplfy nested promises */
-      this._layer
-        .getFeatures(options)
-        .then(p => {
-          p
-            .then(features => {
-              this._addFeaturesFromServer(features);
-              this._allfeatures = !options.filter;
-              return d.resolve(features);
-            })
-            .fail(d.reject)
-        })
-        .fail(d.reject);
-    }
-    return d.promise();
-  }
-
   /**
    * revert (cancel) all changes in history and clean session
    */
   revert() {
-    const d = $.Deferred();
-    this._featuresstore.setFeatures(this._cloneFeatures(this._layer.readFeatures()));
-    d.resolve();
-    return d.promise();
+    return $promisify(() => { this._featuresstore.setFeatures((this._layer.readFeatures() || []).map(f => f.clone())); });
   }
 
   /**
@@ -233,63 +186,18 @@ export default class Editor extends G3WObject {
    * @returns {*}
    */
   rollback(changes = []) {
-    const d = $.Deferred();
-    this.setChanges(changes, true);
-    d.resolve();
-    return d.promise()
-  }
-
-  /**
-   * @param relations relations response
-   */
-  applyChangesToNewRelationsAfterCommit(relations) {
-    let layer, source, features;
-    for (const id in relations) {
-      layer    = this.getLayerById(id);
-      source   = this.getEditingLayer(id).getEditingSource();
-      features = source.readFeatures();
-      features.forEach(f => f.clearState());
-      layer.getSource().setFeatures(features);
-      layer.applyCommitResponse({
-        response: relations[id],
-        result: true,
-      });
-      source.setFeatures(layer.getSource().readFeatures());
-    }
-  }
-
-  /**
-   * Handle relation feature saved on server
-   * 
-   * @param opts.layerId     - id of relation layer
-   * @param opts.ids         - Array of changes (new feature id)
-   * @param opts.field.name  - field name
-   * @param opts.field.value - field value
-   */
-  setFieldValueToRelationField(
-    {
-      layerId,
-      ids=[],
-      field,
-    } = {}
-  ) {
-    const source = Session.Registry              // get source of editing layer.
-      .getSession(layerId)
-      .getEditor()
-      .getEditingSource();
-
-    ids.forEach(id => {                          // loop relation ids
-      const feature = source.getFeatureById(id);
-      if (feature) {
-        feature.set(field.name, field.value);    // set father feature `value` and `name`
-      }
-    })
+    return $promisify(() => this.setChanges(changes, true));
   }
 
   /**
    * Apply response data from server in case of new inserted feature
    *
-   * @param response
+   * @param response.response.new            array of new ids
+   * @param response.response.new.clientid   temporary id created by client __new__
+   * @param response.response.new.id         the new id created and stored on server
+   * @param response.response.new.properties properties of the feature saved on server
+   * @param response.response.new_lockids    array of new lockIds
+   * 
    * @param relations
    */
   applyCommitResponse(response = {}, relations = []) {
@@ -299,14 +207,7 @@ export default class Editor extends G3WObject {
       return;
     }
 
-    const ids     = response.response.new;         // get ids from new attribute of response
-    const lockids = response.response.new_lockids; // get new lockId
-
-    ids.forEach(({
-      clientid,                                // temporary id created by client __new__
-      id,                                      // the new id created and stored on server
-      properties                               // properties of the feature saved on server
-    } = {}) => {
+    response.response.new.forEach(({ clientid, id, properties } = {}) => {
 
       const feature = this._featuresstore.getFeatureById(clientid);
 
@@ -318,13 +219,16 @@ export default class Editor extends G3WObject {
           .entries(relation)
           .forEach(([ relationId, options = {}]) => {
             const is_pk = options.fatherField.find(d => this._layer.isPkField(d)); // check if parent field is a Primary Key
+            // handle value to relation field saved on server
             if (is_pk) {
-              this.setFieldValueToRelationField({                                  // for each field
-                layerId: relationId,                                               // relation layer id
-                ids:     options.ids,                                              // ids of features of relation layers to check
-                field:   options.childField[options.fatherField.indexOf(is_pk)],   // relation field to overwrite
-                values:  [clientid, id]                                            // [<old temporary id value>, <new id value>]
-              });
+              const field   = options.childField[options.fatherField.indexOf(is_pk)];                // relation field to overwrite
+              const source = Session.Registry.getSession(relationId).getEditor().getEditingSource(); // get source of editing layer.
+              (options.ids || []).forEach(id => {                          // loop relation ids
+                const feature = source.getFeatureById(id);
+                if (feature) {
+                  feature.set(field.name, field.value);    // set father feature `value` and `name`
+                }
+              })
             }
           });
       });
@@ -333,11 +237,11 @@ export default class Editor extends G3WObject {
 
     const features = this.readEditingFeatures();
 
-    features.forEach(f => f.clearState());       // reset state of the editing features (update, new etc..)
+    features.forEach(f => f.clearState());          // reset state of the editing features (update, new etc..)
 
-    this._layer.setFeatures([...features]);      // substitute layer features with actual editing features ("cloned" to prevent layer actions duplicates, eg. addFeatures)
+    this._layer.setFeatures([...features]);         // substitute layer features with actual editing features ("cloned" to prevent layer actions duplicates, eg. addFeatures)
 
-    this.addLockIds(lockids);                    // add lockIds
+    this.addLockIds(response.response.new_lockids); // add lock ids
   }
 
   /**
@@ -364,15 +268,12 @@ export default class Editor extends G3WObject {
    * @returns jQuery promise
    */
   commit(commit) {
+    return $promisify(async () => {
+      let relations = [];
 
-    const d = $.Deferred();
-
-    let relations = [];
-
-    // check if there are commit relations binded to new feature
-    if (commit.add.length) {
-      relations =
-        Object
+      // check if there are commit relations binded to new feature
+      if (commit.add.length) {
+        relations = Object
           .keys(commit.relations)
           .map(relationId => {
             const relation = this._layer.getRelations().getRelationByFatherChildren(this._layer.getId(), relationId);
@@ -387,70 +288,27 @@ export default class Editor extends G3WObject {
               }
             };
           });
-    }
-
-    /** @TODO simplfy nested promises */
-    this._layer
-      .commit(commit)
-      .then(p => {
-        p
-          .then(r => { this.applyCommitResponse(r, relations); d.resolve(r); })
-          .fail(e => d.reject(e))
-      })
-      .fail(err => d.reject(err));
-
-    return d.promise();
+      }
+  
+      /** @TODO simplfy nested promises */
+      const p = await promisify(this._layer.commit(commit));
+      const r = await promisify(p);
+      this.applyCommitResponse(r, relations);
+      return r;
+    });
   }
 
   /**
    * start editing
    */
   start(options = {}) {
-    const d = $.Deferred();
-
     /** @TODO simplfy nested promises */
-    this
-      .getFeatures(options)       // load layer features based on filter type
-      .then(p => {
-        p
-          .then(features => {
-            d.resolve(features);  // features are already inside featuresstore
-            this._started = true; // if all ok set to started
-          })
-          .fail(d.reject)
-
-      })
-      .fail(d.reject);
-
-    return d.promise()
-  }
-
-  /**
-   * Add feature (action to layer)
-   */
-  _addFeature(feature) {
-    this._featuresstore.addFeature(feature);
-  };
-
-  /**
-   * Delete feature (action to layer)
-   */
-  _deleteFeature(feature) {
-    this._featuresstore.deleteFeature(feature);
-  }
-
-  /**
-   * Update feature (action to layer)
-   */
-  _updateFeature(feature) {
-    this._featuresstore.updateFeature(feature);
-  }
-
-  /**
-   * Set features (action to layer)
-   */
-  _setFeatures(features = []) {
-    this._featuresstore.setFeatures(features);
+    return $promisify(async () => {
+      const p = await promisify(this.getFeatures(options)); // load layer features based on filter type  
+      const features = await promisify(p);
+      this._started = true;                                 // if all ok set to started
+      return features;                                      // features are already inside featuresstore
+    });
   }
 
   /**
@@ -471,19 +329,11 @@ export default class Editor extends G3WObject {
    * stop editor
    */
   stop() {
-    const d = $.Deferred();
-    this._layer
-      .unlock()
-      .then(response => { this.clear(); d.resolve(response); })
-      .fail(d.reject);
-    return d.promise();
-  }
-
-  /**
-   * run save layer
-   */
-  _save() {
-    this._layer.save();
+    return $promisify(async () => {
+      const response = await promisify(this._layer.unlock());
+      this.clear();
+      return response;
+    });
   }
 
   /**

@@ -6,7 +6,7 @@
  * @since g3w-client-plugin-editing@v3.8.x
  */
 import { checkSessionItems } from '../../utils/checkSessionItems';
-import { promisify }          from '../../utils/promisify';
+import { promisify }         from '../../utils/promisify';
 
 const { G3WObject }     = g3wsdk.core;
 const { Layer }         = g3wsdk.core.layer;
@@ -280,8 +280,9 @@ export class Session extends G3WObject {
      */
     const editor = layerId === this.getId() ? this._editor : Session.Registry.getSession(layerId).getEditor();
 
+    // remove not editable proprierties from feature
     if (removeNotEditableProperties) {
-      editor.removeNotEditablePropriertiesFromFeature(feature);
+      (editor.getLayer.getLayer().getEditingNotEditableFields() || []).forEach(f => feature.unset([f]));
     }
 
     const newFeature = feature.clone();
