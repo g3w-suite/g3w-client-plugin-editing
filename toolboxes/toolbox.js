@@ -98,7 +98,7 @@ export class ToolBox extends G3WObject {
     this.constraints  = { filter: null, show: null, tools: [] };
 
     /** reactive state of history */
-    this._constrains  = { commit: false, undo: false, redo: false },
+    this._constrains  = { commit: false, undo: false, redo: false };
 
     /**
      * Array of states of a layer in editing
@@ -150,6 +150,8 @@ export class ToolBox extends G3WObject {
       canRedo:              this.__canRedo.bind(this),
       commit:               this.__commit.bind(this),
     };
+
+    console.log(this);
 
     /**
      * ORIGINAL SOURCE: g3w-client/src/core/editing/session.js@v3.9.1
@@ -1723,8 +1725,7 @@ export class ToolBox extends G3WObject {
       }
 
       try {
-        const promise = await promisify(this._session.stop());
-        await promisify(promise);
+        await promisify(this._session.stop());
         this._start           = false;
         this.state.editing.on = false;
         this.state.enabled    = false;
@@ -2128,7 +2129,11 @@ export class ToolBox extends G3WObject {
           const tool =this.getToolById(id);
           if (tool) {
             const {active=false} = options;
-            tool.setOptions(options);
+            // set tool options
+            tool.state.messages       = options.messages || tool.state.messages;
+            tool.state.visible        = undefined !== options.visible              ? options.visible              : true;
+            tool.state.enabled        = undefined !== options.enabled              ? options.enabled              : false;
+            tool.disabledtoolsoftools = undefined !== options.disabledtoolsoftools ? options.disabledtoolsoftools : [];
             if (tool.isVisible()) {
               toolsId.push(id);
             }
@@ -2900,37 +2905,33 @@ export class ToolBox extends G3WObject {
     }
 
     // Handle temporary changes of layer
-    const d = $.Deferred();
-    const id = this.state.layer.getId();
-    changes = {
-      own:[],
-      dependencies: {}
-    };
-    this.state.editing.session.changes.forEach(c => {
-      const change = Array.isArray(c) ? c[0] : c;
-      if (change.layerId === id) {
-        changes.own.push(change);
-      } else {
-        if (!changes.dependencies[change.layerId]) {
-          changes.dependencies[change.layerId] = [];
+    return $promisify(async () => {
+      const id = this.state.layer.getId();
+      changes = { own:[], dependencies: {} };
+  
+      this.state.editing.session.changes.forEach(c => {
+        const change = Array.isArray(c) ? c[0] : c;
+        if (change.layerId === id) {
+          changes.own.push(change);
+        } else {
+          changes.dependencies[change.layerId] = changes.dependencies[change.layerId] || [];
+          // FILO
+          changes.dependencies[change.layerId].unshift(change);
         }
-        // FILO
-        changes.dependencies[change.layerId].unshift(change);
-      }
-    });
+      });
 
-    this.state.layer.getEditor()
-      .rollback(changes.own)
-      .then(() => {
+      try {
+        await promisify(this.state.layer.getEditor().rollback(changes.own));
         for (const id in changes.dependencies) {
           ToolBox.get(id).getSession().rollback(changes.dependencies[id]);
         }
-        d.resolve(changes.dependencies);
-      });
-
-      this.state.editing.session.changes = [];
-
-    return d.promise();
+        return changes.dependencies;
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        this.state.editing.session.changes = [];
+      }
+    });
   }
 
   /**
@@ -3037,35 +3038,32 @@ export class ToolBox extends G3WObject {
           //check state of feature item
           state = item.getState();
           const GeoJSONFormat = new ol.format.GeoJSON();
-          switch (state) {
-            //item needs to be deleted
-            case 'delete':
-              //check if is new. If is new mean is not present on server
-              //so no need to say to server to delete it
-              if (!item.isNew()) {
-                layer.delete.push(item.getId());
-              }
-              break;
-            default:
-              //convert feature to json ex. {geometry:{tye: 'Point'}, properties:{}.....}
-              const itemObj = GeoJSONFormat.writeFeatureObject(item);
-              //get properties
-              const childs_properties = item.getProperties();
-              for (const p in itemObj.properties) {
-              // in case the value of property is an object
-              if (itemObj.properties[p] && typeof itemObj.properties[p] === 'object' && itemObj.properties[p].constructor === Object) {
-                //need to get value from value attribute object
-                itemObj.properties[p] = itemObj.properties[p].value;
-              }
-              // @TODO explain when this condition happen
-              if (undefined === itemObj.properties[p] && childs_properties[p]) {
-                itemObj.properties[p] = childs_properties[p]
-              }
-              }
-              // in case of add it have to remove not editable properties
-              layer[item.isNew() ? 'add' : item.getState()].push(itemObj);
-              break;
+          // item needs to be deleted
+          if ('delete' === state) {
+            //check if is new. If is new mean is not present on server
+            //so no need to say to server to delete it
+            if (!item.isNew()) {
+              layer.delete.push(item.getId());
+            }
+            return;
           }
+          //convert feature to json ex. {geometry:{tye: 'Point'}, properties:{}.....}
+          const itemObj = GeoJSONFormat.writeFeatureObject(item);
+          //get properties
+          const childs_properties = item.getProperties();
+          for (const p in itemObj.properties) {
+            // in case the value of property is an object
+            if (itemObj.properties[p] && typeof itemObj.properties[p] === 'object' && itemObj.properties[p].constructor === Object) {
+              //need to get value from value attribute object
+              itemObj.properties[p] = itemObj.properties[p].value;
+            }
+            // @TODO explain when this condition happen
+            if (undefined === itemObj.properties[p] && childs_properties[p]) {
+              itemObj.properties[p] = childs_properties[p]
+            }
+          }
+          // in case of add it have to remove not editable properties
+          layer[item.isNew() ? 'add' : item.getState()].push(itemObj);
         });
       // check in case of no edit remove relation key
       if (
@@ -3113,21 +3111,18 @@ export class ToolBox extends G3WObject {
    */
   __set3DGeometryType({
     layerId = this.state.layer.getId(),
-    commitItems}={}
-  ) {
-    const { relations } = commitItems;
-    const editingLayer = MapLayersStoresRegistry.getLayerById(layerId).getEditingLayer();
+    commitItems,
+  } = {}) {
     // check id there is editing layer and if is a vector layer
-    if (editingLayer && Layer.LayerTypes.VECTOR === editingLayer.getType()) {
-      // get Geometry type layer
-      const geometryType = editingLayer.getGeometryType();
-      // if is a 3D layer i set on geoJON before send it to server
-      if (is3DGeometry(geometryType)){
-        ['add', 'update'].forEach(action => commitItems[action].forEach(f => f.geometry.type = geometryType))
-      }
+    const elayer = MapLayersStoresRegistry.getLayerById(layerId).getEditingLayer();
+    const type = elayer && Layer.LayerTypes.VECTOR === elayer.getType() && elayer.getGeometryType();
+    // if is a 3D layer i set on geoJON before send it to server
+    if (type && is3DGeometry(type)) {
+      commitItems.add.forEach(f => f.geometry.type = type);
+      commitItems.update.forEach(f => f.geometry.type = type);
     }
-    // the same control of relations layers
-    Object.keys(relations).forEach(id => this.__set3DGeometryType({ layerId: id, commitItems: relations[id] }));
+    // same check for relation layers
+    Object.keys(commitItems.relations).forEach(id => this.__set3DGeometryType({ layerId: id, commitItems: commitItems.relations[id] }));
   }
 
   /**
@@ -3225,9 +3220,9 @@ export class ToolBox extends G3WObject {
     try {
       if (this.state.editing.session.started || this.state.editing.session.getfeatures) {
         await promisify(this.state.layer.getEditor().stop());
-        this.clear();
+        this.__clearSession();
       }      
-    } catch (error) {
+    } catch (e) {
       console.warn(e);
       return Promise.reject(e);
     } finally {
@@ -3268,8 +3263,7 @@ export class ToolBox extends G3WObject {
 
 };
 
-
-const sessions = {};
+console.log(ToolBox);
 
 /**
  * ORIGINAL SOURCE: g3w-client/src/store/sessions.js@v3.9.1
@@ -3278,5 +3272,6 @@ const sessions = {};
  *
  * @since g3w-client-plugin-editing@v3.8.0
  */
-ToolBox.get   = id => ToolBox._sessions[id];
-ToolBox.clear = () => Object.keys(sessions).forEach(id => delete ToolBox._sessions[id]);
+ToolBox._sessions = {};
+ToolBox.get       = id => ToolBox._sessions[id];
+ToolBox.clear     = () => Object.keys(sessions).forEach(id => delete ToolBox._sessions[id]);

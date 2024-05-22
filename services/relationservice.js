@@ -650,21 +650,14 @@ module.exports = class RelationService {
    * @param external
    */
   addRelationFromOtherLayer({ layer, external }) {
-    let workflow;
-    let isVector = false;
-    if (external || layer.isGeoLayer() ) {
-      isVector = true;
-      workflow = new this._add_link_workflow.selectandcopy({
+    this.runAddRelationWorkflow({
+      workflow: !!(external || layer.isGeoLayer()) ? new this._add_link_workflow.selectandcopy({
         copyLayer: layer,
-        isVector,
+        isVector: true,
         external,
         help: 'editing.steps.help.copy',
-      });
-    }
-
-    this.runAddRelationWorkflow({
-      workflow,
-      isVector
+      }) : undefined,
+      isVector: !!(external || layer.isGeoLayer())
     })
   }
 
