@@ -1,8 +1,7 @@
-import Editor                   from './editing/editor';
-import { Session }              from './editing/session';
-import { Step }                 from './workflow/step';
-import { Flow, ChangesManager } from '../deprecated';
-import { Workflow }             from './workflow/workflow';
+import Editor                            from './editing/editor';
+import { Step }                          from './workflow/step';
+import { Flow, ChangesManager, Session } from '../deprecated';
+import { Workflow }                      from './workflow/workflow';
 
 /**
  * Editing APIs will be removed from core after g3w-client@v.4.x
@@ -16,6 +15,8 @@ if (
   console.warn('Editing APIs will be removed from g3wsdk after v4.x');
 }
 
+
+
 /**
  * @FIXME add description
  */
@@ -23,7 +24,7 @@ window.g3wsdk.core.editing = {
   Session,
   SessionsRegistry: Session.Registry,
   Editor,
-  ChangesManager
+  ChangesManager,
 };
 
 /**

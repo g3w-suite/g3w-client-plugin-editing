@@ -6,7 +6,7 @@
  * @since g3w-client-plugin-editing@v3.8.x
  */
 
-import { Session }               from './session';
+import { ToolBox }               from '../../toolboxes/toolbox';
 import { promisify, $promisify } from '../../utils/promisify';
 
 const { ApplicationState, G3WObject }    = g3wsdk.core;
@@ -73,8 +73,7 @@ export default class Editor extends G3WObject {
 
           /** @TODO simplfy nested promises */
           if (doRequest) {
-            const p        = await promisify(this._layer.getFeatures(options));  
-            const features = await promisify(p);
+            const features = await promisify(this._layer.getFeatures(options));  
             // add features from server
             this._featuresstore.addFeatures((features || []).map(f => f.clone()));
             this._allfeatures = !options.filter;
@@ -221,8 +220,8 @@ export default class Editor extends G3WObject {
             const is_pk = options.fatherField.find(d => this._layer.isPkField(d)); // check if parent field is a Primary Key
             // handle value to relation field saved on server
             if (is_pk) {
-              const field   = options.childField[options.fatherField.indexOf(is_pk)];                // relation field to overwrite
-              const source = Session.Registry.getSession(relationId).getEditor().getEditingSource(); // get source of editing layer.
+              const field   = options.childField[options.fatherField.indexOf(is_pk)];             // relation field to overwrite
+              const source = ToolBox.get(relationId).getSession().getEditor().getEditingSource(); // get source of editing layer.
               (options.ids || []).forEach(id => {                          // loop relation ids
                 const feature = source.getFeatureById(id);
                 if (feature) {
@@ -291,8 +290,7 @@ export default class Editor extends G3WObject {
       }
   
       /** @TODO simplfy nested promises */
-      const p = await promisify(this._layer.commit(commit));
-      const r = await promisify(p);
+      const r = await promisify(this._layer.commit(commit));
       this.applyCommitResponse(r, relations);
       return r;
     });
@@ -304,8 +302,7 @@ export default class Editor extends G3WObject {
   start(options = {}) {
     /** @TODO simplfy nested promises */
     return $promisify(async () => {
-      const p = await promisify(this.getFeatures(options)); // load layer features based on filter type  
-      const features = await promisify(p);
+      const features = await promisify(this.getFeatures(options)); // load layer features based on filter type  
       this._started = true;                                 // if all ok set to started
       return features;                                      // features are already inside featuresstore
     });

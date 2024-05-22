@@ -50,16 +50,10 @@ export class Tool extends G3WObject {
    * @param options
    */
   setOptions(options={}) {
-    const {
-      messages,
-      enabled = false,
-      visible = true,
-      disabledtoolsoftools = []
-    }                         = options;
-    this.state.messages       = messages || this.state.messages;
-    this.state.visible        = visible;
-    this.state.enabled        = enabled;
-    this.disabledtoolsoftools = disabledtoolsoftools;
+    this.state.messages       = options.messages || this.state.messages;
+    this.state.visible        = undefined !== options.visible              ? options.visible              : true;
+    this.state.enabled        = undefined !== options.enabled              ? options.enabled              : false;
+    this.disabledtoolsoftools = undefined !== options.disabledtoolsoftools ? options.disabledtoolsoftools : [];
   }
 
   /**
@@ -88,12 +82,11 @@ export class Tool extends G3WObject {
    * 
    * @returns {{inputs: {features: *[], layer}, context: {session: *}}}
    */
-  createOperatorOptions(options={features:[]}){
-    const { features = [] } = options;
+  createOperatorOptions(options = {}) {
     return {
       inputs : {
         layer: this._layer,
-        features
+        features: undefined !== options.features ? options.features : []
       },
       context : {
         session: this._session

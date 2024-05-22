@@ -2,7 +2,6 @@ import './g3wsdk';
 import pluginConfig                              from './config';
 import { Workflow }                              from './g3wsdk/workflow/workflow';
 import { Step }                                  from './g3wsdk/workflow/step';
-import { Session }                               from './g3wsdk/editing/session';
 import { promisify, $promisify }                 from './utils/promisify';
 import { createFeature }                         from './utils/createFeature';
 import { getProjectLayerFeatureById }            from './utils/getProjectLayerFeatureById';
@@ -1463,7 +1462,7 @@ new (class extends Plugin {
     }
     this.state.unwatchLayout();
     MapLayersStoreRegistry.removeLayersStore(MapLayersStoreRegistry.getLayersStore('editing'));
-    Session.Registry.clear();
+    ToolBox.clear();
     // turn off events
     GUI.getService('map').off('mapcontrol:toggled', this.state.onMapControlToggled);
     // unregister query result action
