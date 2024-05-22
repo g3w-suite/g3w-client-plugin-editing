@@ -45,7 +45,7 @@
 </script>
 
 <style scoped>
-  label span {
+  label b {
     color: #222d32 !important;
   }
 </style>
