@@ -2831,7 +2831,7 @@ export class ToolBox extends G3WObject {
 
     // remove not editable proprierties from feature
     if (removeNotEditableProperties) {
-      (editor.getLayer.getLayer().getEditingNotEditableFields() || []).forEach(f => feature.unset([f]));
+      (editor.getLayer().getEditingNotEditableFields() || []).forEach(f => feature.unset([f]));
     }
 
     const newFeature = feature.clone();
