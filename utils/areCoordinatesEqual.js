@@ -28,10 +28,12 @@ export function areCoordinatesEqual({
        return geometry.getCoordinates().every((c, i) => coords(c, coordinates[i]));
 
    case 'MultiPolygon':
-       return geometry.getPolygons().some((poly, i) => {
-        const _coords =  _.flatMap(coordinates[i]);
-        return _.flatMap(poly.getCoordinates()).every((c, i) => coords(c, _coords[i]))
-       });
+     // in case of add part or remove part
+     if (coordinates.length !== geometry.getPolygons().length) { return false }
+     return geometry.getPolygons().some((poly, i) => {
+       const _coords =  _.flatMap(coordinates[i]);
+       return _.flatMap(poly.getCoordinates()).every((c, i) => coords(c, _coords[i]))
+     });
 
    case 'Point':
      return coords(coordinates, geometry.getCoordinates());
