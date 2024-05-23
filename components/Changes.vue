@@ -82,12 +82,10 @@ export default {
   methods: {
 
     getFormattedValue(feat, key) {
-      if (!feat) {
-        return;
-      }
-      if ('geometry' === key) {
-        const coords = feat.get(key).getFlatCoordinates().length / 2;
-        return `(${coords})`;
+      if (!feat) { return }
+      //need to check if the current attribute is geometry and if it has value (mean not feat of alphanumeical layer)
+      if ('geometry' === key && feat.get(key)) {
+        return `(${ feat.get(key).getFlatCoordinates().length / 2 })`;
       }
       return getFeatureTableFieldValue({
         layerId: this.layer.getId(),
@@ -96,10 +94,22 @@ export default {
       });
     },
 
+    /**
+     * Get value from origina feature
+     * @param item
+     * @param key
+     * @return {string|*}
+     */
     getValue(item, key) {
       return this.getFormattedValue(this.getFeature(item), key);
     },
 
+    /**
+     * Get value from edited feature
+     * @param item
+     * @param key
+     * @return {string|*}
+     */
     getEditingValue(item, key) {
       return this.getFormattedValue(this.getEditingFeature(item), key);
     },
@@ -107,13 +117,8 @@ export default {
     hasValue(item, key) {
       const feat  = this.getFeature(item);
       const efeat = this.getEditingFeature(item); // NB: undefined when deleted
-      if (
-        (feat && efeat && null === feat.get(key) && null === efeat.get(key)) ||
-        (feat && !efeat && null === feat.get(key))
-      ) {
-        return false;
-      }
-      return true;
+      return !((feat && efeat && null === feat.get(key) && null === efeat.get(key)) ||
+        (feat && !efeat && null === feat.get(key)));
     },
 
     /**
@@ -144,20 +149,20 @@ export default {
      */
     getType(item) {
       const feat = this.getEditingFeature(item) || this.getFeature(item); // when deleted fallbacks to original feature
-      return feat && feat.getGeometry && feat.getGeometry() ? feat.getGeometry().getType() : ''
+      return (feat && feat.getGeometry && feat.getGeometry()) ? feat.getGeometry().getType() : ''
     },
 
     /**
      * @returns { boolean } whether feature property has been edited 
      */
     isEdited(item, key) {
-        const feat  = this.getFeature(item); // NB: undefined when added
-        const efeat = this.getEditingFeature(item); // NB: undefined when deleted
-        if ([feat, efeat].includes(undefined)) { return false }
-        if (this.getType(item) && 'geometry' === key) {
-          return !areCoordinatesEqual({ feature: feat, coordinates: efeat.get(key).getCoordinates() });
-        }
-        return efeat.get(key) !== feat.get(key);
+      const feat  = this.getFeature(item); // NB: undefined when added
+      const efeat = this.getEditingFeature(item); // NB: undefined when deleted
+      if ([feat, efeat].includes(undefined)) { return false }
+      if (this.getType(item) && 'geometry' === key) {
+        return !areCoordinatesEqual({ feature: feat, coordinates: efeat.get(key).getCoordinates() });
+      }
+      return efeat.get(key) !== feat.get(key);
     },
 
     getAttrs(item) {
