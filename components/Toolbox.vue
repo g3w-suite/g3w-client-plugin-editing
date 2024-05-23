@@ -18,7 +18,8 @@
         style       = "margin-bottom: 8px;"
         :class      = "{
           'mobile': isMobile(),
-          'toolboxselected': state.selected
+          'toolboxselected': state.selected,
+          'toolboxactive': state.editing.on,
         }"
       >
 
@@ -35,32 +36,31 @@
         >
 
           <!-- CHILD DEPENDENCIES -->
-          <div
+          <span
             v-if  = "father"
             style = "margin-right:5px; cursor:pointer;"
-            class = "pull-left enabled dropdown"
+            class = "enabled dropdown"
           >
             <span :class="g3wtemplate.font['relation']"></span>
-            <div
+            <span
               class = "dropdown-content skin-background-color"
               style = "padding: 5px; border-radius: 3px;"
             >
-              <div
+              <b
                 v-for = "dependency in state.editing.dependencies"
-                style = "font-weight: bold"
-              >{{ dependency }}</div>
-            </div>
-          </div>
+                style = "display: block;"
+              >{{ dependency }}</b>
+            </span>
+          </span>
 
           <!-- PANEL TITLE -->
-          <div
+          <span
             class          = "panel-title"
-            :class         = "[father ? 'col-md-6' : 'col-md-8']"
-            v-t-plugin:pre = "'editing.toolbox.title'"
-          >{{ state.title }}</div>
+
+          >{{ state.title }}</span>
 
           <!-- TOGGLE BUTTON -->
-          <div
+          <span
             v-disabled       = "editDisabled"
             data-placement   = "left"
             data-toggle      = "tooltip"
@@ -78,14 +78,14 @@
               style  = "font-size: 1.1em; padding: 5px !important;"
               :class = "g3wtemplate.font[state.editing.on ? 'checkmark' : 'pencil']">
             </span>
-          </div>
+          </span>
 
         </div>
 
         <bar-loader :loading="loading" />
 
         <div
-          v-show = "!state.changingtools"
+          v-show = "!state.changingtools && state.editing.on"
           class  = "panel-body"
         >
           <!-- HAS RELATION -->
@@ -119,8 +119,8 @@
 
           <!-- TOOLS CONTENT (1) -->
           <div
-            class = "tools-content row1"
-            style = "display: flex; flex-wrap: wrap;"
+            class  = "tools-content row1"
+            style  = "display: flex; flex-wrap: wrap;"
           >
             <tool
               v-for           = "toolstate in toolsrow1"
@@ -382,5 +382,16 @@
   }
   .panel:not(.toolboxselected) .has-relations {
     opacity: .4;
+  }
+  .panel:not(.toolboxactive) .panel-heading {
+    border-radius: 3px;
+  }
+  .editbtn.start-editing {
+    padding: 8px;
+    margin: 0;
+  }
+  .panel-title {
+    padding: 8px 0;
+    display: inline-block;
   }
 </style>

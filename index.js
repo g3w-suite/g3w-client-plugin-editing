@@ -1,5 +1,5 @@
 import './g3wsdk';
-import pluginConfig                              from './config';
+import i18n                                      from './i18n';
 import { Workflow }                              from './g3wsdk/workflow/workflow';
 import { Step }                                  from './g3wsdk/workflow/step';
 import { promisify, $promisify }                 from './utils/promisify';
@@ -47,7 +47,7 @@ new (class extends Plugin {
 
     super({
       name: 'editing',
-      i18n: pluginConfig.i18n,
+      i18n,
       fontClasses: [
         { name: 'measure',   className: "fas fa-ruler-combined" },
         { name: 'magnete',   className: "fas fa-magnet" },
