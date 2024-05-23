@@ -392,6 +392,8 @@ new (class extends Plugin {
       const toolBox   = this.getToolBoxById(layer.id);
       const { scale } = toolBox.getEditingConstraints(); // get scale constraint from setting layer
 
+      const session = toolBox.getSession();
+
       // start toolbox (filtered by feature id)
       try {
         await promisify(toolBox.start({ filter: { fids: fid } }));
@@ -436,8 +438,6 @@ new (class extends Plugin {
             toolBox.setSelected(true);
           });
         }
-
-        const session = toolBox.getSession();
 
         this.state.toolboxselected = toolBox;
 
