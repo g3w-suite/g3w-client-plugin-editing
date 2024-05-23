@@ -390,7 +390,10 @@ new (class extends Plugin {
       this.subscribe('closeeditingpanel', () => { this.state.showselectlayers = true; return { once: true } });
 
       const toolBox   = this.getToolBoxById(layer.id);
+      const session   = toolBox.getSession();
       const { scale } = toolBox.getEditingConstraints(); // get scale constraint from setting layer
+
+      let w;
 
       // start toolbox (filtered by feature id)
       try {
@@ -437,7 +440,7 @@ new (class extends Plugin {
           });
         }
 
-        const session = toolBox.getSession();
+
 
         this.state.toolboxselected = toolBox;
 
@@ -493,7 +496,7 @@ new (class extends Plugin {
         }
 
         /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editnopickmapfeatureattributesworkflow.js@v3.7.1 */
-        const w = (new Workflow({
+        w = (new Workflow({
           type: 'editnopickmapfeatureattributes',
           runOnce: true,
           helpMessage: 'editing.tools.update_feature',
@@ -514,6 +517,8 @@ new (class extends Plugin {
       } catch (e) {
         console.warn(e);
         session.rollback()
+      } finally {
+        w.stop();
       }
     });
 
