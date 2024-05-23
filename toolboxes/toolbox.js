@@ -23,6 +23,7 @@ import { handleSplitFeature }                           from '../utils/handleSpl
 import { addPartToMultigeometries }                     from '../utils/addPartToMultigeometries';
 import { checkSessionItems }                            from '../utils/checkSessionItems';
 import { promisify, $promisify }                        from '../utils/promisify';
+import { unlinkRelation }                               from '../utils/unlinkRelation';
 
 import {
   OpenFormStep,
@@ -299,89 +300,44 @@ export class ToolBox extends G3WObject {
                 new Step({
                   help: "editing.steps.help.double_click_delete",
                   run(inputs, context) {
-                    const RelationService = require('../services/relationservice');
-  
-                    const d               = $.Deferred();
-                    const originaLayer    = inputs.layer;
-                    const layerId         = originaLayer.getId();
-                    const session         = context.session;
-                    const feature         = inputs.features[0];
-  
-                    //get all relations of the current editing layer that are in editing
-                    const relations       = getRelationsInEditing({
-                      layerId,
-                      relations: originaLayer.getRelations() ?
-                        originaLayer.getRelations().getArray() :
-                        []
-                    })
-                      //and filter relations
-                      .filter(relation => {
-                        //get relation layer id that are in relation with layerId (current layer in editing)
-                        const relationLayerId = getRelationId({ layerId, relation });
-  
-                        //get relation layer
-                        const relationLayer = getEditingLayerById(relationLayerId);
-  
-                        //get fields of relation layer that are in relation with layerId
-                        const { ownField } = getRelationFieldsFromRelation({
-                          layerId: relationLayerId,
-                          relation
-                        });
-  
-                        // Exclude relation child layer that has at least one
-                        // editing field required because when unlink relation feature from
-                        // delete father, when try to commit update relation, we receive an error
-                        // due missing value /null to required field.
-                        return relationLayer
-                          .getEditingFields() //get editing field of relation layer
-                          .filter(f => ownField.includes(f.name)) //filter only relation fields
-                          .every(f => !f.validate.required) //check required
-  
-                      });
-  
-                    const promise = relations.length > 0 ?
-                      getLayersDependencyFeatures(layerId, {feature, relations}) :
-                      Promise.resolve();
-  
-                    //promise return features relations and add to relation layer child
-                    promise.then(() => {
-  
-                      //get data features
-                      const relationsInEditing = getRelationsInEditingByFeature({
+                    return $promisify(async() => {
+                      const layerId = inputs.layer.getId();
+                      const feature = inputs.features[0];
+    
+                      // get all relations of the current editing layer that are in editing
+                      // and filter relations
+                      // get relation layer id that are in relation with layerId (current layer in editing)
+                      // get fields of relation layer that are in relation with layerId
+                      // Exclude relation child layer that has at least one
+                      // editing field required because when unlink relation feature from
+                      // delete father, when try to commit update relation, we receive an error
+                      // due missing value /null to required field.
+                      const relations = getRelationsInEditing({
                         layerId,
-                        relations,
-                        feature,
+                        relations: inputs.layer.getRelations() ? inputs.layer.getRelations().getArray() : []
+                      }).filter(
+                        relation => getEditingLayerById(getRelationId({ layerId, relation }))
+                          .getEditingFields() //get editing field of relation layer
+                          .filter(f => getRelationFieldsFromRelation({ relation, layerId: getRelationId({ layerId, relation }) }).ownField.includes(f.name)) //filter only relation fields
+                          .every(f => !f.validate.required) // check required
+                      );
+
+                      // promise return features relations and add to relation layer child
+                      if (relations.length > 0) {
+                        await getLayersDependencyFeatures(layerId, { feature, relations});
+                      }
+
+                      inputs.features = [feature];
+
+                      // Unlink relation features related to layer id
+                      getRelationsInEditingByFeature({ layerId, relations, feature }).forEach(({ relation, relations }) => {
+                        relations.forEach(r => unlinkRelation({ layerId, relation, relations, index: 0, dialog: false }));
                       });
   
-                      inputs.features = [feature];
+                      context.session.pushDelete(layerId, feature);
   
-                      relationsInEditing
-                        .forEach(relationInEditing => {
-                          //relation is an instance of Relation.
-                          //relations are relations features
-                          const {relation, relations} = relationInEditing;
-  
-                          const relationService = new RelationService(layerId, { relation, relations });
-  
-                          const relationsLength = relations.length;
-  
-                          //Unlink relation features related to layer id
-                          for (let index = 0; index < relationsLength ; index++) {
-                            //unlink
-                            relationService.unlinkRelation(0, false)
-                          }
-                        });
-  
-                      session.pushDelete(layerId, feature);
-  
-                      d.resolve(inputs);
-  
+                      return inputs;
                     });
-  
-                    return d.promise();
-                  },
-                  stop() {
-                    return Promise.resolve(true);
                   },
                 }),
                 // confirm step
