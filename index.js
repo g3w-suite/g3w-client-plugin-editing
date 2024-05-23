@@ -440,8 +440,6 @@ new (class extends Plugin {
           });
         }
 
-
-
         this.state.toolboxselected = toolBox;
 
         const addPartTool = is_vector && !geom && toolBox.getTools().find(t => 'addPart' === t.getId());
