@@ -303,7 +303,6 @@ export default class Editor extends G3WObject {
     /** @TODO simplfy nested promises */
     return $promisify(async () => {
       const features = await promisify(this.getFeatures(options)); // load layer features based on filter type
-      console.log(features);
       this._started = true;                                 // if all ok set to started
       return features;                                      // features are already inside featuresstore
     });
