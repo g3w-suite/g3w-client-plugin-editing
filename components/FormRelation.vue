@@ -297,6 +297,9 @@
 
     data() {
       return {
+        // relation,        // ← setted by `Vue.extend` - Relation instance: information about relation from parent layer and current relation layer (ex. child, fields, relationid, etc....) main relation between layerId (current in editing)
+        // relations,       // ← setted by `Vue.extend` - array of relations object id and fields linked to current parent feature (that is in editing)
+        // layerId,         // ← setted by `Vue.extend`
         loading :           false,
         show_vector_tools:  false, // whether show vector relation tools
         disabled:           false, //disable relatins rows
@@ -1070,7 +1073,7 @@
        */
       unlinkRelation(index, dialog = true) {
         return unlinkRelation({
-          layerId:   this._layerId,
+          layerId:   this.layerId,
           relation:  this.relation,
           relations: this.relations,
           index,
@@ -1238,20 +1241,6 @@
       this.loadEventuallyRelationValuesForInputs = false;
 
       const parentLayer = Workflow.Stack.getCurrent().getLayer();
-      
-      const layerId = this.layerId;
-      this._layerId = layerId;
-
-      // main relation between layerId (current in editing)
-      /**
-       * Relation instance: contain information about relation from parent layer and current relation layer (ex. child, fields, relationid, etc....)
-       */
-      // this.relation = options.relation;
-
-      /**
-       * @type { Array } of a relations object id and fields linked to current parent feature (that is in editing)
-       */
-      // this.relations = options.relations;
 
       // relation related to current feature of current layer in editing
       /**
@@ -1264,42 +1253,43 @@
       /**
        * layer id of relation layer
        */
-      this._relationLayerId = this.relation.child === layerId ? this.relation.father : this.relation.child;
+      this._relationLayerId = this.relation.child === this.layerId ? this.relation.father : this.relation.child;
 
       /**
        * layer in relation type
        */ 
       this._layerType = this.getLayer().getType();
 
-      const { ownField: fatherRelationField } = getRelationFieldsFromRelation({ layerId, relation: this.relation });
+      const fatherFields = getRelationFieldsFromRelation({ layerId: this.layerId, relation: this.relation }).ownField;
 
-      const pk = fatherRelationField.find(fRField => parentLayer.isPkField(fRField))
+      const pk = fatherFields.find(f => parentLayer.isPkField(f))
 
       /**
        * Father relation fields (editable and pk)
        */
       this.parent    = {
         // layerId is id of the parent of relation
-        layerId,
+        layerId: this.layerId,
         // get editable fields
-        editable: fatherRelationField.filter(fRField => parentLayer.isEditingFieldEditable(fRField)),
+        editable: fatherFields.filter(f => parentLayer.isEditingFieldEditable(f)),
         // check if father field is a pk and is not editable
         pk,
         // Check if the parent field is editable.
         // If not, get the id of parent feature so the server can generate the right value
         // to fill the field with the relation layer feature when commit
-        values: fatherRelationField.reduce((accumulator, fField) => {
+        values: fatherFields.reduce((father, field) => {
           //get feature
           const feature = Workflow.Stack.getCurrent().getCurrentFeature();
           //get fields of form because contains values that have temporary changes not yet saved
           // in case of form fields
           const fields  = Workflow.Stack.getCurrent().getInputs().fields;
-          accumulator[fField] = (fField === pk && feature.isNew()) //check if isPk and parent feature isNew
+          return Object.assign(father, {
+            [field]: (field === pk && feature.isNew()) //check if isPk and parent feature isNew
             ? feature.getId()
               //check if fields are set (parent workflow is a form)
               // or for example, for feature property field value
-            : fields ? fields.find(f => fField === f.name).value: feature.get(fField);
-          return accumulator;
+            : fields ? fields.find(f => field === f.name).value: feature.get(field)
+          });
         }, {}),
       };
 
@@ -1515,7 +1505,6 @@
       // add tools for each relation
       this.relations.forEach((r) => this.addTools(r.id) );
 
-
       try {
         const formservice = g3wsdk.gui.GUI.getCurrentContent().content.getService();
         formservice.getEventBus().$on('changeinput', this.onInputChange.bind(this))
@@ -1572,7 +1561,7 @@
     beforeDestroy() {
       this.loadEventuallyRelationValuesForInputs = true;
       // unlisten
-      g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').off('commit',this.onCommit);
+      g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').off('commit', this.onCommit);
       // In the case of vector relation, restore the beginning extent of the map;
       // in the case we zoomed to relation feature
       if (this.isVectorRelation && (null !== this.currentRelationFeatureId)) {
