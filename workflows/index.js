@@ -446,7 +446,7 @@ export class OpenFormStep extends Step {
     const layerId = !this._multi && inputs.layer.getId();
 
     // @since g3w-client-plugin-editing@v3.7.2
-    // skip relations that doesn't have form structure
+    // skip relations that don't have a form structure
     if (feature && !feature.isNew() && inputs.layer.getLayerEditingFormStructure()) {
       await getLayersDependencyFeatures(inputs.layer.getId(), {
         // @since g3w-client-plugin-editin@v3.7.0
@@ -616,7 +616,7 @@ export class OpenFormStep extends Step {
             this.fireEvent(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
             // In case of save of child it means that child is updated so also parent
             if (this._isContentChild) {
-              Workflow.Stack.getParents().forEach(w => w.getContextService().setUpdate(true, {force: true}));
+              Workflow.Stack.getParents().forEach(w => w.getContextService().setUpdate(true, { force: true }));
             }
 
             d.resolve(inputs);
@@ -662,7 +662,7 @@ export class OpenFormStep extends Step {
       GUI.setLoadingContent(false);
     }
 
-    formService.addComponents(feature && feature.isNew() ? [] : [
+    formService.addComponents([
       // custom form components
       ...(g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.formComponents[layerId] || []),
       // relation components (exlcude ONE relation + layer is the father get relation layers that set in editing on g3w-admin)
