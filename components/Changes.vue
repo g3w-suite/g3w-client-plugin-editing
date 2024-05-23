@@ -40,7 +40,7 @@
 
     <changes
       v-for     = "([id, commits]) in Object.entries(commits.relations)"
-      :commits  = "commits"
+      :commits  = "{ add: commits.add, update: commits.update, delete: commits.delete, relations: commits.relations }"
       :relation = "true"
       :layer    = "getLayerById(id)"
     />
@@ -172,7 +172,7 @@ export default {
   },
 
   async mounted() {
-    // insert a visual reference for `<empty>` values 
+    // insert a visual reference for `<empty>` values
     this.$refs.value.filter(d => !d.textContent).forEach(d => d.innerHTML = `<i><code>&lt;empty&gt;</code></i>`);
   },
 
