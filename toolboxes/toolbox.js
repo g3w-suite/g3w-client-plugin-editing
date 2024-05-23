@@ -1034,7 +1034,7 @@ export class ToolBox extends G3WObject {
                         let isSplitted = false;
                         const splittedGeometries = splitFeatures({
                           splitfeature: e.feature,
-                          features: inputs.features
+                          features:     inputs.features
                         });
                         const splittedGeometriesLength = splittedGeometries.length;
 
@@ -1057,15 +1057,22 @@ export class ToolBox extends G3WObject {
                             message: 'plugins.editing.messages.splitted',
                             autoclose: true
                           });
-                          d.resolve(inputs);
                         } else {
                           GUI.showUserMessage({
                             type: 'warning',
                             message: 'plugins.editing.messages.nosplittedfeature',
                             autoclose: true
                           });
-                          d.reject();
                         }
+
+                        /** @since g3w-client-plugin-editing@v3.8.0 */
+                        //resolve select style feature
+                        this._stopPromise.resolve(true);
+
+                        //need to set timeout promise, because at the end of the workflow all user messages are cleared
+                        await new Promise((r) => setTimeout(r, 1000));
+
+                        d[isSplitted ? 'resolve' : 'reject'](inputs);
                       }
                     });
 
@@ -1075,10 +1082,7 @@ export class ToolBox extends G3WObject {
 
                     return d.promise();
                   },
-                  stop() {
-                    /** @since g3w-client-plugin-editing@v3.8.0 */
-                    this._stopPromise.resolve(true);
-                  },
+                  stop() {},
                 }),
               ],
               registerEscKeyEvent: true,
