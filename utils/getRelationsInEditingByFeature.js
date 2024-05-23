@@ -49,9 +49,7 @@ export function getRelationsInEditingByFeature({
             id:     relation.getId()
           }))
       };
-      relationinediting.validate = {
-        valid:true
-      };
+      relationinediting.validate = { valid:true };
       relationsinediting.push(relationinediting);
     }
   });
