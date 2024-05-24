@@ -16,17 +16,17 @@
       }"
     >
 
-      <i :class="{
-        [g3wtemplate.getFontClass('arrow-right')]:  !step.done && i === this.currentStep, // current step
-        [g3wtemplate.getFontClass('empty-circle')]: !step.done && i !== this.currentStep, // todo step
-        [g3wtemplate.getFontClass('success')]:      step.done,                            // done step
-      }"></i>
+      <i :class="g3wtemplate.getFontClass(step.done ? 'success' : (i === this.currentStep ? 'arrow-right' : 'empty-circle'))"></i>
 
       <span v-if="step.buttonnext" class="button-step">
         <span
           :style     = "{ fontWeight: step.done && 'bold' }"
           v-t-plugin = "step.description"
         ></span>
+        <span
+          v-if  = "step.dynamic"
+          class = "dynamic-step"
+        >{{ step.dynamic }}</span>
         <button
           @click     = "completeStep(step)"
           :class     = "'btn btn-success' + (step.buttonnext.disabled ? ' g3w-disabled' : '' )"
@@ -47,32 +47,25 @@
     data() {
       return {
         steps: {},
-        currentStep: 0,
       };
     },
 
-    watch: {
-      steps: {
-        handler(steps) {
-          Object.values(steps).find((step, i) => {
-            if (!step.done) {
-              this.currentStep = i;
-              return true;
-            }
-          });
-        },
-        deep: false,
+    computed: {
+      currentStep() {
+        return Object.values(this.steps).findLastIndex(s => s.done) || 0;
       }
     },
 
     methods: {
-
       completeStep(step) {
         step.done = true;
         step.buttonnext.done();
       },
+    },
 
-    }
+    created() {
+      console.log(this);
+    },
   };
 </script>
 
@@ -85,7 +78,6 @@
   }
   .button-step {
     display: inline-flex;
-    flex-direction: row-reverse;
   }
   button.btn-success {
     font-weight: bold;

@@ -377,7 +377,6 @@ export class Workflow extends G3WObject {
               ...require('../../components/UserMessage.vue'),
               data: () => ({
                 steps: this._userMessageSteps,
-                currentStep: 0,
               })
             }
           }
@@ -465,10 +464,10 @@ export class Workflow extends G3WObject {
     Object
       .keys(this._userMessageSteps)
       .forEach(type => {
-        const userMessageSteps = this._userMessageSteps[type];
-        userMessageSteps.done = false;
-        if (userMessageSteps.buttonnext) {
-          userMessageSteps.buttonnext.disabled = true;
+        const step = this._userMessageSteps[type];
+        step.done = false;
+        if (step.buttonnext) {
+          step.buttonnext.disabled = true;
         }
     })
     GUI.closeUserMessage();
