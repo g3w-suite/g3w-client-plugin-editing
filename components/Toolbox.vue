@@ -151,6 +151,7 @@
       return {
         active: false,
         currenttoolhelpmessage: null,
+        toggled: false,
       };
     },
 
@@ -273,8 +274,8 @@
        * @since g3w-client-plugin-editing@v3.8.0
        */
       toggleFilterByRelation() {
-        const select2 = $('#g3w-select-editable-layers-to-show');
-        select2.val(select2.val() ? null : ([this.state.id].concat(this.state.editing.dependencies))).trigger('change');
+        this.toggled = !this.toggled;
+        this.$emit('update-filter-layers', this.toggled ? [this.state.id, ...this.state.editing.dependencies]: []);
       },
 
     },
