@@ -355,6 +355,7 @@
   }
   .panel:not(.toolboxactive) .panel-heading {
     border-radius: 3px;
+    filter: grayscale(.8);
   }
   .editbtn.start-editing {
     padding: 13px;
