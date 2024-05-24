@@ -89,57 +89,21 @@
             <divider/>
 
           </div>
+
           <!-- MESSAGE -->
-          <div
-            v-if  = "state.message"
-            style = "color: #000"
-          >
-            <div
-              class      = "text-justify"
-              v-t-plugin = "state.message">
-            </div>
-
+          <div v-if="state.message" style="color: #000">
+            <div class="text-justify" v-t-plugin="state.message"></div>
             <divider/>
-
           </div>
 
-          <!-- TOOLS CONTENT (1) -->
+          <!-- TOOLS -->
           <div
-            class  = "tools-content row1"
+            v-for  = "(row, i) in rows"
+            :class = "'tools-content row' + i"
             style  = "display: flex; flex-wrap: wrap;"
           >
             <tool
-              v-for           = "toolstate in toolsrow1"
-              :key            = "toolstate.id"
-              :state          = "toolstate"
-              :resourcesurl   = "resourcesurl"
-              @stopactivetool = "stopActiveTool"
-              @setactivetool  = "setActiveTool"
-            />
-          </div>
-
-          <!-- TOOLS CONTENT (2) -->
-          <div
-            class = "tools-content row2"
-            style = "display: flex; flex-wrap: wrap;"
-          >
-            <tool
-              v-for           = "toolstate in toolsrow2"
-              :key            = "toolstate.id"
-              :state          = "toolstate"
-              :resourcesurl   = "resourcesurl"
-              @stopactivetool = "stopActiveTool"
-              @setactivetool  = "setActiveTool"
-            />
-          </div>
-
-          <!-- TOOLS CONTENT (3) -->
-          <div
-            class = "tools-content row3"
-            style = "display: flex; flex-wrap: wrap;"
-          >
-            <tool
-              v-for           = "toolstate in toolsrow3"
+              v-for           = "toolstate in row"
               :key            = "toolstate.id"
               :state          = "toolstate"
               :resourcesurl   = "resourcesurl"
@@ -239,27 +203,14 @@
       },
 
       /**
-       * @FIXME add description
-       * @return {*}
+       * Tools grouped by `tool.row`
        */
-      toolsrow1() {
-        return this.state.tools.filter(t => t.row === 1);
-      },
-
-      /**
-       * @FIXME add description
-       * @return {*}
-       */
-      toolsrow2() {
-        return this.state.tools.filter(t => t.row === 2);
-      },
-
-      /**
-       * @FIXME add description
-       * @return {*}
-       */
-      toolsrow3() {
-        return this.state.tools.filter(t => t.row === 3);
+      rows() {
+        return this.state.tools.reduce((rows, tool) => {
+          rows[tool.row] = rows[tool.row] || [];
+          rows[tool.row].push(tool);
+          return rows;
+        }, {});
       },
 
       /**
