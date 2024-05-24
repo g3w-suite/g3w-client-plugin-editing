@@ -6,22 +6,18 @@
   <ul class="steps-list">
 
     <li
-      v-for  = "(step, i) in steps"
-      :key   = "i"
-      :style = "{
-        fontWeight:   (step.done || i === this.currentStep) && 'bold',
-        marginBottom: '5px',
-        color:        step.done && 'green',
-        display:      step.buttonnext && 'inline-flex'
-      }"
+      v-for  = "(step, id) in steps"
+      :key   = "id"
+      :style = "{ display: step.buttonnext && 'inline-flex' }"
+      :class = "{ 'done': step.done }"
     >
 
-      <i :class="g3wtemplate.getFontClass(step.done ? 'success' : (i === this.currentStep ? 'arrow-right' : 'empty-circle'))"></i>
+      <i :class="g3wtemplate.getFontClass(step.done ? 'success' : 'empty-circle')"></i>
 
       <span v-if="step.buttonnext" class="button-step">
         <span
-          :style     = "{ fontWeight: step.done && 'bold' }"
           v-t-plugin = "step.description"
+          class      = "description"
         ></span>
         <span
           v-if  = "step.dynamic"
@@ -44,17 +40,7 @@
 <script>
   export default {
 
-    data() {
-      return {
-        steps: {},
-      };
-    },
-
-    computed: {
-      currentStep() {
-        return Object.values(this.steps).findLastIndex(s => s.done) || 0;
-      }
-    },
+    data: () => ({ steps: {} }),
 
     methods: {
       completeStep(step) {
@@ -65,7 +51,8 @@
 
     created() {
       console.log(this);
-    },
+    }
+
   };
 </script>
 
@@ -75,6 +62,20 @@
     list-style: none;
     padding: 10px;
     margin-bottom: 0;
+  }
+  li {
+    margin-bottom: 5px;
+  }
+  li.done {
+    font-weight: bold;
+    color: green;
+  }
+  li.done > .description {
+    font-weight: bold;
+  }
+  .dynamic-step {
+    align-self: center;
+    padding: 3px;
   }
   .button-step {
     display: inline-flex;
