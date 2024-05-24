@@ -531,14 +531,12 @@ export class Workflow extends G3WObject {
           },
           stop() {
             step.removeMeasureInteraction();
+            this.onChange(false);
           },
           onChange(bool) {
             this.checked = bool;
             step[bool ? 'addMeasureInteraction':  'removeMeasureInteraction']();
           },
-          onBeforeDestroy() {
-            this.onChange(false);
-          }
         }
       },
 

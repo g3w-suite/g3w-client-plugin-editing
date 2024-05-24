@@ -111,7 +111,28 @@
                 id   = "toolsoftoolcontainer"
               >
                 <template v-for="tool in state.toolsoftool">
+
+                  <!-- MEASURE TOOL -->
+                  <!-- ORIGINAL SOURCE: components\ToolsOfToolMeasure.vue@v3.7.1 -->
+                  <div
+                    v-if  = "'measure' === tool.type"
+                    class = "snap-tool"
+                  >
+                    <input
+                      id      ="g3w_editing_show_measure_tool"
+                      type    = "checkbox"
+                      class   = "magic-checkbox snap_tools_of_tools"
+                      v-model = "tool.options.checked"
+                      @change = "() => tool.options.onChange(tool.options.checked)"
+                    />
+                    <label for="g3w_editing_show_measure_tool" v-t-tooltip:right.create="'plugins.editing.toolsoftool.measure'">
+                      <b :class="g3wtemplate.font['measure']"></b>
+                    </label>
+                  </div>
+
+                  <!-- SNAP TOOL -->
                   <component
+                    v-else
                     :is      = "tool.type"
                     :options = "tool.options"
                   />
@@ -135,8 +156,7 @@
 </template>
 
 <script>
-  import SnapComponent    from './ToolsOfToolSnap.vue';
-  import MeasureComponent from './ToolsOfToolMeasure.vue';
+  import SnapComponent from './ToolsOfToolSnap.vue';
 
   export default {
 
@@ -157,7 +177,6 @@
 
     components: {
       snap:    SnapComponent,
-      measure: MeasureComponent,
     },
 
     computed: {
@@ -296,6 +315,13 @@
         this.$emit('on-editing', bool);
       },
 
+      'state.toolsoftool'(newTools, oldTools) {
+        console.log(newTools, oldTools,newTools.length, oldTools.length);
+        if (!newTools.length) {
+          oldTools.filter(t => 'measure' === t.type).forEach(t => t.options.onChange(false));
+        }
+      },
+
     },
 
     /**
@@ -365,5 +391,11 @@
   }
   .message {
     margin-top: 5px;
+  }
+  .snap-tool {
+    display: flex;
+  }
+  .snap-tool label > b {
+    color: #222d32 !important;
   }
 </style>
