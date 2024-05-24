@@ -35,23 +35,12 @@
           :style = "{ background: state.color}"
         >
 
-          <!-- CHILD DEPENDENCIES -->
+          <!-- TOGGLE RELATION LAYERS (LAYERS FILTER) -->
           <span
             v-if  = "father"
             style = "margin-right:5px; cursor:pointer;"
-            class = "enabled dropdown"
-          >
-            <span :class="g3wtemplate.font['relation']"></span>
-            <span
-              class = "dropdown-content skin-background-color"
-              style = "padding: 5px; border-radius: 3px;"
-            >
-              <b
-                v-for = "dependency in state.editing.dependencies"
-                style = "display: block;"
-              >{{ dependency }}</b>
-            </span>
-          </span>
+            @click ="toggleFilterByRelation"
+          ><i :class="g3wtemplate.font['relation']"></i></span>
 
           <!-- PANEL TITLE -->
           <span
@@ -352,6 +341,14 @@
         this.$emit('setactivetool', toolId, this.state.id);
         this.select();
       },
+
+      /**
+       * @since g3w-client-plugin-editing@v3.8.0
+       */
+      toggleFilterByRelation() {
+        const select2 = $('#g3w-select-editable-layers-to-show');
+        select2.val(select2.val() ? null : (this.state.editing.dependencies || [])).trigger('change');
+      }
 
     },
 
