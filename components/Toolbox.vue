@@ -35,23 +35,12 @@
           :style = "{ background: state.color}"
         >
 
-          <!-- CHILD DEPENDENCIES -->
+          <!-- TOGGLE RELATION LAYERS (LAYERS FILTER) -->
           <span
             v-if  = "father"
             style = "margin-right:5px; cursor:pointer;"
-            class = "enabled dropdown"
-          >
-            <span :class="g3wtemplate.font['relation']"></span>
-            <span
-              class = "dropdown-content skin-background-color"
-              style = "padding: 5px; border-radius: 3px;"
-            >
-              <b
-                v-for = "dependency in state.editing.dependencies"
-                style = "display: block;"
-              >{{ dependency }}</b>
-            </span>
-          </span>
+            @click ="toggleFilterByRelation"
+          ><i :class="g3wtemplate.font['relation']"></i></span>
 
           <!-- PANEL TITLE -->
           <span
@@ -169,10 +158,19 @@
             style = "margin-top: 5px;"
           >
             <transition name="fade">
-              <toolsoftool
-                v-if   = "showtoolsoftool"
-                :tools = "state.toolsoftool"
-              />
+              <!-- ORIGINAL SOURCE: components/ToolsOfTool.vue@v3.7.1 -->
+              <div
+                v-if = "showtoolsoftool"
+                id   = "toolsoftoolcontainer"
+              >
+                <template v-for="tool in state.toolsoftool">
+                  <component
+                    :is      = "tool.type"
+                    :options = "tool.options"
+                  />
+                  <divider />
+                </template>
+              </div>
             </transition>
             <div
               v-if       = "currenttoolhelpmessage"
@@ -190,8 +188,9 @@
 </template>
 
 <script>
-  import ToolComponent        from './Tool.vue';
-  import ToolsOfToolComponent from './ToolsOfTool.vue';
+  import ToolComponent    from './Tool.vue';
+  import SnapComponent    from './ToolsOfToolSnap.vue';
+  import MeasureComponent from './ToolsOfToolMeasure.vue';
 
   export default {
 
@@ -210,8 +209,9 @@
     },
 
     components: {
-      'tool':        ToolComponent,
-      'toolsoftool': ToolsOfToolComponent
+      tool:    ToolComponent,
+      snap:    SnapComponent,
+      measure: MeasureComponent,
     },
 
     computed: {
@@ -342,6 +342,14 @@
         this.select();
       },
 
+      /**
+       * @since g3w-client-plugin-editing@v3.8.0
+       */
+      toggleFilterByRelation() {
+        const select2 = $('#g3w-select-editable-layers-to-show');
+        select2.val(select2.val() ? null : (this.state.editing.dependencies || [])).trigger('change');
+      }
+
     },
 
     watch: {
@@ -393,5 +401,12 @@
   .panel-title {
     padding: 8px 0;
     display: inline-block;
+  }
+  #toolsoftoolcontainer {
+    display: flex;
+    flex-direction: column;
+    margin: 5px;
+    padding: 5px;
+    border-radius: 5px;
   }
 </style>

@@ -47,7 +47,26 @@
     ></div>
 
     <!-- LAYERS SELECT -->
-    <selectlayers v-if="state.showselectlayers && state.toolboxes.length > 1" />
+    <!-- ORIGINAL SOURCE: componentsSelectEditingLayers.vue@v3.7.1 -->
+    <div
+      v-if  = "state.showselectlayers && state.toolboxes.length > 1"
+      id    = "g3w-select-editable-layers-content"
+      class = "skin-color"
+    >
+      <label for="g3w-select-editable-layers-to-show" v-t="'Layers'"></label>
+      <select
+        id        = "g3w-select-editable-layers-to-show"
+        multiple  = "multiple"
+        clear     = "true"
+        v-select2 = "'selectedlayers'"
+      >
+        <option
+          v-for  = "editinglayer in editinglayers"
+          :value = "editinglayer.id"
+          :key   = "editinglayer.id"
+        >{{ editinglayer.name }}</option>
+      </select>
+    </div>
 
     <!-- TOOLBOXES -->
     <div id="toolboxes">
@@ -74,7 +93,6 @@
 
 <script>
   import ToolboxComponent             from './Toolbox.vue';
-  import SelectEditingLayersComponent from './SelectEditingLayers.vue';
   import { promisify }                from '../utils/promisify';
 
   const { GUI }                         = g3wsdk.gui;
@@ -98,12 +116,17 @@
         saving:          false, // whether to show loading bar while committing to server (click on save disk icon)
         layersInEditing: 0, //@since 3.8.0 Number of layers in editing
         editingButtonsEnabled: true,
+        /** @since g3w-client-plugin-editing@v3.8.0 */
+        selectedlayers: [],
+        /** @since g3w-client-plugin-editing@v3.8.0 */
+        editinglayers: Object
+          .entries(g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').getEditableLayers())
+          .map(([id, layer]) => ({ id, name: layer.getName(), title: layer.getTitle() })),
       };
     },
 
     components: {
-      toolbox:      ToolboxComponent,
-      selectlayers: SelectEditingLayersComponent,
+      toolbox: ToolboxComponent,
     },
 
     transitions: {
@@ -424,7 +447,35 @@
        */
       layersInEditing(n) {
         document.getElementsByClassName('close-pane-button')[0].classList[0 === n ? 'remove' : 'add']('g3w-disabled');
-      }
+      },
+
+      /**
+       * ORIGINAL SOURCE: componentsSelectEditingLayers.vue@v3.7.1
+       * 
+       * @since g3w-client-plugin-editing@v3.8.0
+       */
+      selectedlayers(layers) {
+        const has_layers = layers.length > 0;
+
+        const service = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing');
+
+        this.editinglayers.forEach(({ id }) => {
+          const toolbox     = service.getToolBoxById(id);
+          const is_commit   = has_layers && toolbox.state.editing.history.commit;
+          const is_selected = (-1 !== layers.indexOf(id));
+
+          toolbox.setShow(has_layers ? is_selected : true);
+
+          if (has_layers && !is_selected && is_commit) {
+            service.commit({ toolbox }).always(() => toolbox.stop());
+          }
+
+          if (has_layers && !is_selected && !is_commit) {
+            toolbox.stop();
+          }
+
+        });
+      },
 
     },
 
@@ -522,8 +573,17 @@
   justify-content: flex-end;
   margin-bottom: 5px;
 }
-
 .commitbar > div:first-of-type {
   margin-right: auto;
+}
+#g3w-select-editable-layers-content {
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+#g3w-select-editable-layers-content label {
+  color: #fff !important;
+}
+#g3w-select-editable-layers-to-show {
+  cursor: pointer;
 }
 </style>
