@@ -347,7 +347,7 @@
        */
       toggleFilterByRelation() {
         const select2 = $('#g3w-select-editable-layers-to-show');
-        select2.val(select2.val() ? null : (this.state.editing.dependencies || [])).trigger('change');
+        select2.val(select2.val() ? null : ([this.state.id].concat(this.state.editing.dependencies))).trigger('change');
       }
 
     },
