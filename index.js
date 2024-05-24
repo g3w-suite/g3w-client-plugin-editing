@@ -462,8 +462,6 @@ new (class extends Plugin {
                 steps: {
                   addfeature: {
                     description: 'editing.workflow.steps.draw_geometry',
-                    directive:   't-plugin',
-                    done: false
                   }
                 },
                 onRun: ({inputs, context}) => {

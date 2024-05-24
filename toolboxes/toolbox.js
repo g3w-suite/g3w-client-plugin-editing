@@ -433,9 +433,7 @@ export class ToolBox extends G3WObject {
                         condition:({ features=[] }) => features.length < 2,
                         done: () => { w.clearUserMessagesSteps() }
                       },
-                      directive: 't-plugin',
                       dynamic: 0,
-                      done: false
                     }
                   }
                 }),
@@ -687,8 +685,6 @@ export class ToolBox extends G3WObject {
                   steps: {
                     select: {
                       description: `editing.workflow.steps.${ApplicationState.ismobile ? 'selectPoint' : 'selectPointSHIFT'}`,
-                      directive: 't-plugin',
-                      done: false
                     }
                   },
                 }, true),
@@ -699,8 +695,6 @@ export class ToolBox extends G3WObject {
                   steps: {
                     from: {
                       description: 'editing.workflow.steps.selectStartVertex',
-                      directive: 't-plugin',
-                      done: false
                     }
                   },
                   run(inputs) {
@@ -740,8 +734,6 @@ export class ToolBox extends G3WObject {
                   steps: {
                     to: {
                       description: 'editing.workflow.steps.selectToPaste',
-                      directive: 't-plugin',
-                      done: false
                     }
                   },
                   run(inputs, context) {
@@ -847,8 +839,6 @@ export class ToolBox extends G3WObject {
                   steps: {
                     select: {
                       description: 'editing.workflow.steps.select',
-                      directive: 't-plugin',
-                      done: false
                     }
                   },
                 }),
@@ -863,8 +853,6 @@ export class ToolBox extends G3WObject {
                   steps: {
                     addfeature: {
                       description: 'editing.workflow.steps.draw_part',
-                      directive: 't-plugin',
-                      done: false
                     }
                   },
                 }),
@@ -997,8 +985,6 @@ export class ToolBox extends G3WObject {
                   steps: {
                     select: {
                       description: `editing.workflow.steps.${ApplicationState.ismobile ? 'selectPoint' : 'selectPointSHIFT'}`,
-                      directive: 't-plugin',
-                      done: false,
                     }
                   },
                 }, true),
@@ -1009,8 +995,6 @@ export class ToolBox extends G3WObject {
                   steps: {
                     draw_line: {
                       description: 'editing.workflow.steps.draw_split_line',
-                      directive: 't-plugin',
-                      done: false,
                     }
                   },
                   run(inputs, context) {
@@ -1082,7 +1066,6 @@ export class ToolBox extends G3WObject {
 
                     return d.promise();
                   },
-                  stop() {},
                 }),
               ],
               registerEscKeyEvent: true,
@@ -1110,8 +1093,6 @@ export class ToolBox extends G3WObject {
                   steps: {
                     select: {
                       description: `editing.workflow.steps.${ApplicationState.ismobile ? 'selectDrawBox' : 'selectSHIFT'}`,
-                      directive: 't-plugin',
-                      done: false,
                     }
                   },
                 }, true),
@@ -1122,8 +1103,6 @@ export class ToolBox extends G3WObject {
                   steps: {
                     choose: {
                       description: 'editing.workflow.steps.merge',
-                      directive: 't-plugin',
-                      done: false,
                     }
                   },
                   run(inputs, context) {

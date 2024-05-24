@@ -10,7 +10,6 @@
 
 import { Step }         from './step';
 import { promisify }    from '../../utils/promisify';
-import UserMessageSteps from '../../components/UserMessageSteps';
 
 const { GUI }                 = g3wsdk.gui;
 const { G3WObject }           = g3wsdk.core;
@@ -367,6 +366,12 @@ export class Workflow extends G3WObject {
       const showUserMessage = Object.keys(this._userMessageSteps).length;
   
       if (showUserMessage) {
+        const comp = new (Vue.extend(require('../../components/UserMessage.vue')))({
+          propsData: {
+            steps: this._userMessageSteps,
+          }
+        });
+        console.log(comp);
         GUI.showUserMessage({
           title: 'plugins.editing.workflow.title.steps',
           type: 'tool',
@@ -374,7 +379,7 @@ export class Workflow extends G3WObject {
           size: 'small',
           closable: false,
           hooks: {
-            body: UserMessageSteps({ steps: this._userMessageSteps })
+            body: (comp).$mount().$el
           }
         });
       }
