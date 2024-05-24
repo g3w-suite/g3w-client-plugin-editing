@@ -304,6 +304,7 @@ export class Workflow extends G3WObject {
     if (this._promise) {
       this._promise.reject();
     }
+    this.emit('reject');
   }
 
   /**
