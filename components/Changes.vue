@@ -40,7 +40,12 @@
 
     <changes
       v-for     = "([id, commits]) in Object.entries(commits.relations)"
-      :commits  = "{ add: commits.add, update: commits.update, delete: commits.delete, relations: commits.relations }"
+      :commits  = "{
+        add:       commits.add,
+        update:    commits.update,
+        delete:    commits.delete,
+        relations: commits.relations
+      }"
       :relation = "true"
       :layer    = "getLayerById(id)"
     />
