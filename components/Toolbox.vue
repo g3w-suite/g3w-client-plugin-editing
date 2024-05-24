@@ -87,7 +87,7 @@
               v-for               = "tool in row"
               :key                = "tool.id"
               v-if                = "tool.visible"
-              @click.prevent.stop = "tool.enabled && toggleTool(tool.state.active ? undefined : tool.state.id)"
+              @click.prevent.stop = "tool.enabled && toggleTool(tool.active ? undefined : tool.id)"
               :class              = "{ editbtn: true, 'enabled' : tool.enabled, 'toggled' : tool.active }"
             >
               <img
