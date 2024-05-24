@@ -23,18 +23,15 @@
       }"></i>
 
       <span v-if="step.buttonnext" class="button-step">
-        <span :style="{ fontWeight: step.done && 'bold' }">
-          <span v-t-plugin="step.description"></span>
-          <span
-            v-if  = "step.dynamic"
-            class = "dynamic-step"
-          >{{ step.dynamic }}</span>
-          <button
-            @click     = "completeStep(step)"
-            :class      = "'btn btn-success' + (step.buttonnext.disabled ? ' g3w-disabled' : '' )"
-            v-t-plugin = "'editing.workflow.next'"
-          ></button>
-        </span>
+        <span
+          :style     = "{ fontWeight: step.done && 'bold' }"
+          v-t-plugin = "step.description"
+        ></span>
+        <button
+          @click     = "completeStep(step)"
+          :class     = "'btn btn-success' + (step.buttonnext.disabled ? ' g3w-disabled' : '' )"
+          v-t-plugin = "'editing.workflow.next'"
+        ></button>
       </span>
 
       <span v-else v-t-plugin="step.description"></span>
@@ -47,15 +44,9 @@
 <script>
   export default {
 
-    props: {
-      steps: {
-        type: Object,
-        default: () => ({})
-      }
-    },
-
     data() {
       return {
+        steps: {},
         currentStep: 0,
       };
     },
@@ -95,10 +86,6 @@
   .button-step {
     display: inline-flex;
     flex-direction: row-reverse;
-  }
-  .dynamic-step {
-    align-self: center;
-    padding: 3px;
   }
   button.btn-success {
     font-weight: bold;

@@ -433,7 +433,6 @@ export class ToolBox extends G3WObject {
                         condition:({ features=[] }) => features.length < 2,
                         done: () => { w.clearUserMessagesSteps() }
                       },
-                      dynamic: 0,
                     }
                   }
                 }),

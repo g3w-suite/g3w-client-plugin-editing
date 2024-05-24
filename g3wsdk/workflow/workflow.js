@@ -366,12 +366,6 @@ export class Workflow extends G3WObject {
       const showUserMessage = Object.keys(this._userMessageSteps).length;
   
       if (showUserMessage) {
-        const comp = new (Vue.extend(require('../../components/UserMessage.vue')))({
-          propsData: {
-            steps: this._userMessageSteps,
-          }
-        });
-        console.log(comp);
         GUI.showUserMessage({
           title: 'plugins.editing.workflow.title.steps',
           type: 'tool',
@@ -379,7 +373,13 @@ export class Workflow extends G3WObject {
           size: 'small',
           closable: false,
           hooks: {
-            body: (comp).$mount().$el
+            body: {
+              ...require('../../components/UserMessage.vue'),
+              data: () => ({
+                steps: this._userMessageSteps,
+                currentStep: 0,
+              })
+            }
           }
         });
       }
