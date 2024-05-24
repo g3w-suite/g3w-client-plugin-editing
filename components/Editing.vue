@@ -53,10 +53,7 @@
       id    = "g3w-select-editable-layers-content"
       class = "skin-color"
     >
-      <label
-        for = "g3w-select-editable-layers-to-show"
-        v-t = "'Layers'"
-      ></label>
+      <label for="g3w-select-editable-layers-to-show" v-t="'Layers'"></label>
       <select
         id        = "g3w-select-editable-layers-to-show"
         multiple  = "multiple"
