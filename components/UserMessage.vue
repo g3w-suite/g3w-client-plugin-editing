@@ -75,15 +75,17 @@
     font-weight: bold;
   }
   .dynamic-step {
-    align-self: center;
-    padding: 3px;
+    padding: 10px;
+    font-size: 1.2em;
   }
   .button-step {
     display: inline-flex;
+    align-items: center;
   }
   .button-step,
   button.btn-success {
     font-weight: bold;
+    align-self: normal;
   }
 </style>
   
