@@ -19,7 +19,8 @@ export default {
   relation_already_added : "Relazione già presente",
   list_of_relations_feature: "Elenco Relazioni della feature ",
   tooltip:{
-    edit_layer: "Modifica Layer"
+    edit_layer: "Modifica Layer",
+    filter_by_relation: "Filtra i livelli per relazione",
   },
   toolbox: {
     title: 'Edita'

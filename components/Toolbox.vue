@@ -36,32 +36,29 @@
         >
 
           <!-- TOGGLE RELATION LAYERS (LAYERS FILTER) -->
-          <span
-            v-if  = "father"
-            style = "margin-right:5px; cursor:pointer;"
-            @click ="toggleFilterByRelation"
-          ><i :class="g3wtemplate.font['relation']"></i></span>
+          <i
+            v-if                     = "father"
+            :class                   = "g3wtemplate.font['relation']"
+            style                    = "margin-right:5px; cursor:pointer; color: currentColor !important;"
+            @click                   = "toggleFilterByRelation"
+            v-t-tooltip:right.create = "'plugins.editing.tooltip.filter_by_relation'"
+          ></i>
 
           <!-- PANEL TITLE -->
-          <span
-            class          = "panel-title"
-
-          >{{ state.title }}</span>
+          <span class="panel-title">{{ state.title }}</span>
 
           <!-- TOGGLE BUTTON -->
           <span
-            v-disabled       = "editDisabled"
-            data-placement   = "left"
-            data-toggle      = "tooltip"
-            ref              = "editingbutton"
-            @click.stop      = "toggleEditing"
-            class            = "start-editing editbtn skin-tooltip-left"
-            :class           = "{
-              'pull-right': !isMobile(),
-              'enabled': isLayerReady,
+            v-disabled              = "editDisabled"
+            @click.stop             = "toggleEditing"
+            class                   = "start-editing editbtn skin-tooltip-left"
+            :class                  = "{
+              'pull-right':       !isMobile(),
+              'enabled':          isLayerReady,
               'g3w-icon-toggled': state.editing.on,
             }"
-            v-t-title:plugin = "edit_layer_tooltip"
+            style                   = "color: currentColor !important;"
+            v-t-tooltip:left.create = "'plugins.editing.tooltip.edit_layer'"
           >
             <span
               style  = "font-size: 1.1em; padding: 5px !important;"
@@ -369,7 +366,6 @@
     },
 
     created() {
-      this.edit_layer_tooltip = 'editing.tooltip.edit_layer';
       this.$emit('canEdit', { id: this.state.id });
     },
 
@@ -377,8 +373,6 @@
       // wait a little bit so others plugin can change things in toolbox
       // (ex. tools visibility which differs from default behaviour)
       await this.$nextTick();
-
-      $(this.$refs.editingbutton).tooltip();
     },
 
   };

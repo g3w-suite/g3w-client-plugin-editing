@@ -19,7 +19,8 @@ export default {
   relation_already_added: "Relation already added",
   list_of_relations_feature: "List of relations feature ",
   tooltip: {
-    edit_layer: "Edit Layer"
+    edit_layer: "Edit Layer",
+    filter_by_relation: "Filter layers by relation",
   },
   toolbox: {
     title: 'Edit'
