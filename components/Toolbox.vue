@@ -169,10 +169,19 @@
             style = "margin-top: 5px;"
           >
             <transition name="fade">
-              <toolsoftool
-                v-if   = "showtoolsoftool"
-                :tools = "state.toolsoftool"
-              />
+              <!-- ORIGINAL SOURCE: components/ToolsOfTool.vue@v3.7.1 -->
+              <div
+                v-if = "showtoolsoftool"
+                id   = "toolsoftoolcontainer"
+              >
+                <template v-for="tool in state.toolsoftool">
+                  <component
+                    :is      = "tool.type"
+                    :options = "tool.options"
+                  />
+                  <divider />
+                </template>
+              </div>
             </transition>
             <div
               v-if       = "currenttoolhelpmessage"
@@ -190,8 +199,9 @@
 </template>
 
 <script>
-  import ToolComponent        from './Tool.vue';
-  import ToolsOfToolComponent from './ToolsOfTool.vue';
+  import ToolComponent    from './Tool.vue';
+  import SnapComponent    from './ToolsOfToolSnap.vue';
+  import MeasureComponent from './ToolsOfToolMeasure.vue';
 
   export default {
 
@@ -210,8 +220,9 @@
     },
 
     components: {
-      'tool':        ToolComponent,
-      'toolsoftool': ToolsOfToolComponent
+      tool:    ToolComponent,
+      snap:    SnapComponent,
+      measure: MeasureComponent,
     },
 
     computed: {
@@ -393,5 +404,12 @@
   .panel-title {
     padding: 8px 0;
     display: inline-block;
+  }
+  #toolsoftoolcontainer {
+    display: flex;
+    flex-direction: column;
+    margin: 5px;
+    padding: 5px;
+    border-radius: 5px;
   }
 </style>
