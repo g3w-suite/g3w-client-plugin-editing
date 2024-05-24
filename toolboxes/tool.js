@@ -70,8 +70,10 @@ export class Tool extends G3WObject {
         this.emit('settoolsoftool', tools)
       }
     });
-    this._op.once('active',   index => this.emit('active', index));
-    this._op.once('deactive', index => this.emit('deactive', index));
+    this._op.once('start',   index => this.emit('active', index));
+    this._op.once('stop', index => this.emit('deactive', index));
+    //add also in case of reject event
+    this._op.once('reject', index => this.emit('deactive', index));
     //reset features
     options.inputs.features = [];
     if (hideSidebar) {

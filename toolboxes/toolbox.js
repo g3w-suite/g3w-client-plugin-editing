@@ -2125,7 +2125,14 @@ export class ToolBox extends G3WObject {
         this.clearToolsOfTool();
         this.state.activetool = tool;
         tool.once('settoolsoftool', tools => tools.forEach(tool => this.state.toolsoftool.push(tool)));
-        const _activedeactivetooloftools = (activetools, active) => {
+        const _activedeactivetooloftools = (tool, activetools, active) => {
+          // in case of deactivate tool and current active tool, it was clicked
+          if (!active && tool === this.state.activetool) {
+            //set active tool null
+            this.state.activetool = null;
+            //clear the eventually tools of tools
+            this.clearToolsOfTool();
+          }
           this.state.toolsoftool.forEach(tooloftool => {
             if (activetools.indexOf(tooloftool.type) !== -1) {
               tooloftool.options.active = active;
@@ -2133,8 +2140,8 @@ export class ToolBox extends G3WObject {
           });
         };
 
-        tool.on('active', (activetools=[]) => _activedeactivetooloftools(activetools, true));
-        tool.on('deactive', (activetools=[]) => _activedeactivetooloftools(activetools, false));
+        tool.on('active', (activetools=[]) => _activedeactivetooloftools(tool, activetools, true));
+        tool.on('deactive', (activetools=[]) => _activedeactivetooloftools(tool, activetools, false));
         tool.start(GUI.getService('map').isMapHidden());
 
         this.setToolMessage(this.getToolMessage());
