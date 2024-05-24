@@ -58,6 +58,7 @@
         id        = "g3w-select-editable-layers-to-show"
         multiple  = "multiple"
         clear     = "true"
+        ref       = "selectlayers"
         v-select2 = "'selectedlayers'"
       >
         <option
@@ -82,6 +83,7 @@
         @setactivetool      = "startActiveTool"
         @stopactivetool     = "stopActiveTool"
         @on-editing         = "updateLayersInEditing"
+        @update-filter-layers  = "updateFilterLayers"
       />
     </div>
 
@@ -134,6 +136,22 @@
     },
 
     methods: {
+
+      /**
+       *
+        * @param layers
+       */
+      updateFilterLayers(layers = []) {
+        if (layers.length > 0) {
+          this._selectedlayers = this.selectedlayers;
+          this.selectedlayers = layers;
+        } else {
+          this.selectedlayers = this._selectedlayers;
+          this._selectedlayers = layers;
+        }
+
+        $(this.$refs.selectlayers).val(this.selectedlayers).trigger('change');
+      },
 
       /**
        * Handle editing state of toolbox layer
@@ -455,6 +473,7 @@
        * @since g3w-client-plugin-editing@v3.8.0
        */
       selectedlayers(layers) {
+        console.log(layers)
         const has_layers = layers.length > 0;
 
         const service = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing');
@@ -480,6 +499,9 @@
     },
 
     created() {
+
+      this._selectedlayers = []; //store previous selected layers
+
       this.appState = ApplicationState;
 
       this.registerOnLineOffLineEvent();
