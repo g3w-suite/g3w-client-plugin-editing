@@ -15,31 +15,26 @@
       <div
         @click.stop = "select"
         class       = "panel"
-        style       = "margin-bottom: 8px;"
         :class      = "{
-          'mobile': isMobile(),
+          'mobile':          isMobile(),
           'toolboxselected': state.selected,
-          'toolboxactive': state.editing.on,
+          'toolboxactive':   state.editing.on,
         }"
       >
 
-        <div
-          v-show = "!isLayerReady"
-          class  = "bar-loader"
-        ></div>
+        <!-- LOADING BAR -->
+        <div class="bar-loader" v-show="!isLayerReady"></div>
 
         <div
           v-if   = "state.toolboxheader"
           class  = "panel-heading container"
-          style  = "width:100%;"
           :style = "{ background: state.color}"
         >
 
           <!-- TOGGLE RELATION LAYERS (LAYERS FILTER) -->
           <i
             v-if                     = "father"
-            :class                   = "g3wtemplate.font['relation']"
-            style                    = "margin-right:5px; cursor:pointer; color: currentColor !important;"
+            :class                   = "'filter-by-relation ' + g3wtemplate.font['relation']"
             @click                   = "toggleFilterByRelation"
             v-t-tooltip:right.create = "'plugins.editing.tooltip.filter_by_relation'"
           ></i>
@@ -47,8 +42,8 @@
           <!-- PANEL TITLE -->
           <span class="panel-title">{{ state.title }}</span>
 
-          <!-- TOGGLE BUTTON -->
-          <span
+          <!-- TOGGLE EDITING -->
+          <i
             v-disabled              = "editDisabled"
             @click.stop             = "toggleEditing"
             class                   = "start-editing editbtn skin-tooltip-left"
@@ -56,15 +51,10 @@
               'pull-right':       !isMobile(),
               'enabled':          isLayerReady,
               'g3w-icon-toggled': state.editing.on,
+              [g3wtemplate.font[state.editing.on ? 'checkmark' : 'pencil']]: true
             }"
-            style                   = "color: currentColor !important;"
             v-t-tooltip:left.create = "'plugins.editing.tooltip.edit_layer'"
-          >
-            <span
-              style  = "font-size: 1.1em; padding: 5px !important;"
-              :class = "g3wtemplate.font[state.editing.on ? 'checkmark' : 'pencil']">
-            </span>
-          </span>
+          ></i>
 
         </div>
 
@@ -75,19 +65,10 @@
           class  = "panel-body"
         >
           <!-- HAS RELATION -->
-          <div
-            v-if  = "hasRelations"
-            class = "has-relations"
-            style = "color: #000000"
-          >
-            <span
-              :class = "g3wtemplate.font['info']"
-              style  = "color: #007bff; padding-right: 2px">
-            </span>
-            <span v-t-plugin = "'editing.messages.toolbox_has_relation'"></span>
-
+          <div v-if="hasRelations" class="has-relations">
+            <i :class="g3wtemplate.font['info']"></i>
+            <span v-t-plugin="'editing.messages.toolbox_has_relation'"></span>
             <divider/>
-
           </div>
 
           <!-- MESSAGE -->
@@ -97,26 +78,31 @@
           </div>
 
           <!-- TOOLS -->
+          <!-- ORIGINAL SOURCE: components/Tool.vue@v3.7.1 -->
           <div
             v-for  = "(row, i) in rows"
-            :class = "'tools-content row' + i"
-            style  = "display: flex; flex-wrap: wrap;"
+            :class = "`tools-content row${i}`"
           >
-            <tool
-              v-for           = "toolstate in row"
-              :key            = "toolstate.id"
-              :state          = "toolstate"
-              :resourcesurl   = "resourcesurl"
-              @stopactivetool = "stopActiveTool"
-              @setactivetool  = "setActiveTool"
-            />
+            <div
+              v-for               = "tool in row"
+              :key                = "tool.id"
+              v-if                = "tool.visible"
+              @click.prevent.stop = "tool.enabled && toggleTool(tool.state.active ? undefined : tool.state.id)"
+              :class              = "{ editbtn: true, 'enabled' : tool.enabled, 'toggled' : tool.active }"
+            >
+              <img
+                height           = "25"
+                width            = "25"
+                :src             = "resourcesurl + 'images/' + tool.icon"
+                v-t-title:plugin = "`${tool.name}`"
+              />
+            </div>
           </div>
 
           <!-- MESSAGES -->
           <div
             :id   = "`id_toolbox_messages_${state.id}`"
             class = "message"
-            style = "margin-top: 5px;"
           >
             <transition name="fade">
               <!-- ORIGINAL SOURCE: components/ToolsOfTool.vue@v3.7.1 -->
@@ -149,7 +135,6 @@
 </template>
 
 <script>
-  import ToolComponent    from './Tool.vue';
   import SnapComponent    from './ToolsOfToolSnap.vue';
   import MeasureComponent from './ToolsOfToolMeasure.vue';
 
@@ -170,7 +155,6 @@
     },
 
     components: {
-      tool:    ToolComponent,
       snap:    SnapComponent,
       measure: MeasureComponent,
     },
@@ -178,14 +162,13 @@
     computed: {
 
       /**
-       * @FIXME add description
        * @since g3w-client-plugin-editing@v3.7.0
        */
       editDisabled() {
         return this.state.loading && !this.state.startstopediting;
       },
+
       /**
-       * @FIXME add description
        * @returns { boolean } whether current has related layer(s) (aka. layer relations / joins)
        *
        * @since g3w-client-plugin-editing@v3.7.0
@@ -195,15 +178,14 @@
       },
 
       /**
-       * @FIXME add description
-       * @return {boolean|*}
+       * @returns { boolean|* }
        */
       loading() {
         return this.state.loading || this.state.changingtools;
       },
 
       /**
-       * Tools grouped by `tool.row`
+       * @returns Tools grouped by `tool.row`
        */
       rows() {
         return this.state.tools.reduce((rows, tool) => {
@@ -214,30 +196,28 @@
       },
 
       /**
-       * @FIXME add description
-       * @return {boolean}
+       * @returns { boolean }
        */
       canEdit() {
         return this.state.editing.canEdit;
       },
 
       /**
-       * @FIXME add description
-       * @return {boolean}
+       * @returns { boolean }
        */
       father() {
         return this.state.editing.father && !!this.state.editing.dependencies.length;
       },
+
       /**
-       * @FIXME add description
-       * @return {boolean}
+       * @returns { boolean }
        */
       showtoolsoftool() {
         return !!this.state.toolsoftool.length;
       },
+
       /**
-       * @FIXME add description
-       * @return {Promise<Animation> | Promise<ServiceWorkerRegistration> | Promise<FontFaceSet> | Promise<undefined>}
+       * @returns { Promise }
        */
       isLayerReady() {
         return this.state.layerstate.editing.ready;
@@ -248,7 +228,7 @@
     methods: {
 
       /**
-       * @FIXME add description
+       * @fires setselectedtoolbox
        */
       select() {
         if (this.isLayerReady && !this.state.selected) {
@@ -257,7 +237,8 @@
       },
 
       /**
-       * @FIXME add description
+       * @fires stoptoolbox
+       * @fires starttoolbox
        */
       toggleEditing() {
         this.select();
@@ -267,26 +248,24 @@
       },
 
       /**
-       * @FIXME add description
+       * @fires savetoolbox
        */
       saveEdits() {
         this.$emit('savetoolbox', this.state.id);
       },
 
       /**
-       * @FIXME add description
+       * @fires setactivetool
+       * @fires stopactivetool
+       * 
+       * @since g3w-client-plugin-editing@v3.8.0
        */
-      stopActiveTool() {
-        this.$emit('stopactivetool', this.state.id);
-        this.select();
-      },
-
-      /**
-       * @FIXME add description
-       * @param toolId
-       */
-      setActiveTool(toolId) {
-        this.$emit('setactivetool', toolId, this.state.id);
+      toggleTool(toolId) {
+        if (undefined !== toolId) {
+          this.$emit('setactivetool', toolId, this.state.id);
+        } else {
+          this.$emit('stopactivetool', this.state.id);
+        }
         this.select();
       },
 
@@ -296,26 +275,31 @@
       toggleFilterByRelation() {
         const select2 = $('#g3w-select-editable-layers-to-show');
         select2.val(select2.val() ? null : ([this.state.id].concat(this.state.editing.dependencies))).trigger('change');
-      }
+      },
 
     },
 
     watch: {
 
-      async 'state.activetool'(activetool) {
+      async 'state.activetool'(tool) {
         await this.$nextTick();
-        this.currenttoolhelpmessage = activetool && activetool.getHelpMessage();
+        this.currenttoolhelpmessage = tool && tool.getHelpMessage();
       },
+
       /**
-       * Method to watch toolbox in editing state
-       * @param bool
+       * Watch toolbox in editing state
+       * 
+       * @fires on-editing
        */
       'state.editing.on'(bool) {
         this.$emit('on-editing', bool);
-      }
+      },
 
     },
 
+    /**
+     * @fires canEdit
+     */
     created() {
       this.$emit('canEdit', { id: this.state.id });
     },
@@ -333,6 +317,12 @@
   .toolbox {
     padding-bottom: 5px;
   }
+  .panel {
+    margin-bottom: 8px;
+  }
+  .panel-heading {
+    width:100%;
+  }
   .panel:not(.toolboxselected) .has-relations {
     opacity: .4;
   }
@@ -340,8 +330,10 @@
     border-radius: 3px;
   }
   .editbtn.start-editing {
-    padding: 8px;
-    margin: 0;
+    padding: 13px;
+    color: currentColor !important;
+    font-size: 1.1em;
+    margin: 0px;
   }
   .panel-title {
     padding: 8px 0;
@@ -353,5 +345,24 @@
     margin: 5px;
     padding: 5px;
     border-radius: 5px;
+  }
+  .has-relations {
+    color: #000;
+  }
+  .has-relations > i {
+    color: #007bff;
+    padding-right: 2px
+  }
+  .filter-by-relation {
+    margin-right:5px;
+    cursor:pointer;
+    color: currentColor !important;
+  }
+  .tools-content {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .message {
+    margin-top: 5px;
   }
 </style>
