@@ -61,7 +61,7 @@
         <bar-loader :loading="loading" />
 
         <div
-          v-show = "!state.changingtools && state.editing.on"
+          v-if = "!state.changingtools && state.editing.on"
           class  = "panel-body"
         >
           <!-- HAS RELATION -->
