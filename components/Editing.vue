@@ -473,7 +473,6 @@
        * @since g3w-client-plugin-editing@v3.8.0
        */
       selectedlayers(layers) {
-        console.log(layers)
         const has_layers = layers.length > 0;
 
         const service = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing');
