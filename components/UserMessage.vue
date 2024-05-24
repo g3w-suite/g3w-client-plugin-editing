@@ -12,8 +12,6 @@
       :class = "{ 'done': step.done }"
     >
 
-      <i :class="g3wtemplate.getFontClass(step.done ? 'success' : 'empty-circle')"></i>
-
       <span v-if="step.buttonnext" class="button-step">
         <span
           v-t-plugin = "step.description"
@@ -30,7 +28,10 @@
         ></button>
       </span>
 
-      <span v-else v-t-plugin="step.description"></span>
+      <template v-else>
+        <i :class="g3wtemplate.getFontClass(step.done ? 'success' : 'empty-circle')"></i>
+        <span v-t-plugin="step.description"></span>
+      </template>
 
     </li>
 
@@ -80,6 +81,7 @@
   .button-step {
     display: inline-flex;
   }
+  .button-step,
   button.btn-success {
     font-weight: bold;
   }
