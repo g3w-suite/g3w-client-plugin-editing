@@ -390,6 +390,8 @@ new (class extends Plugin {
       this.subscribe('closeeditingpanel', () => { this.state.showselectlayers = true; return { once: true } });
 
       const toolBox   = this.getToolBoxById(layer.id);
+      //set selected
+      toolBox.setSelected(true);
       const session   = toolBox.getSession();
       const { scale } = toolBox.getEditingConstraints(); // get scale constraint from setting layer
 
@@ -397,48 +399,36 @@ new (class extends Plugin {
 
       // start toolbox (filtered by feature id)
       try {
+        // check map scale after zoom to feature
+        // if currentScale is more that scale constraint set by layer editing
+        // needs to go to scale setting by layer editing constraint
+        if (scale) {
+          const units        = GUI.getService('map').getMapUnits();
+          const map          = GUI.getService('map').getMap();
+          const currentScale = parseInt(getScaleFromResolution(map.getView().getResolution(), GUI.getService('map').getMapUnits()));
+          if (currentScale > scale) {
+            map.getView().setResolution(getResolutionFromScale(scale, units));
+          }
+
+        }
+
         await promisify(toolBox.start({ filter: { fids: fid } }));
 
         const _layer    = toolBox.getLayer();
         const source    = _layer.getEditingLayer().getSource();
         const is_vector = _layer.getType() === Layer.LayerTypes.VECTOR;
 
-        // get feature from Editing layer source (with styles)
+        // get feature from an Editing layer source (with styles)
         const features = is_vector ? source.getFeatures() : source.readFeatures();
-        const feature  = features.find(f => f.getId() == fid);
+        const feature  = features.find(f => fid == f.getId());
 
         // skip when not feature is get from server
-        if (!feature) {
-          return;
-        }
+        if (!feature) { return  }
 
         const geom = feature.getGeometry();
 
-        // feature has no geometry → select toolbox
-        if (!geom || undefined === scale) {
-          toolBox.setSelected(true);
-        }
-
         // feature has geometry → zoom to geometry
-        if (geom) {
-          GUI.getService('map').zoomToGeometry(geom);
-        }
-
-        // check map scale after zoom to feature
-        // if currentScale is more that scale constraint set by layer editing
-        // needs to go to scale setting by layer editing constraint
-        if (geom && undefined !== scale) {
-          GUI.getService('map').getMap().once('moveend', () => {
-            const units        = GUI.getService('map').getMapUnits();
-            const map          = GUI.getService('map').getMap();
-            const currentScale = parseInt(getScaleFromResolution(map.getView().getResolution(), units));
-            if (currentScale > scale) {
-              map.getView().setResolution(getResolutionFromScale(scale, units));
-            }
-            //set select only here otherwise is show editing constraint
-            toolBox.setSelected(true);
-          });
-        }
+        if (geom) { GUI.getService('map').zoomToGeometry(geom) }
 
         this.state.toolboxselected = toolBox;
 
@@ -512,7 +502,10 @@ new (class extends Plugin {
 
       } catch (e) {
         console.warn(e);
-        session.rollback()
+        session.rollback();
+        //set select only here otherwise is show editing constraint
+        toolBox.setSelected(false);
+        this.state.toolboxselected = null;
       } finally {
         w.stop();
       }
