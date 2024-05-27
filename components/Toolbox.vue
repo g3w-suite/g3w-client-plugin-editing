@@ -4,159 +4,190 @@
 
 <template>
   <div
+    :id    = "'id_toolbox_' + state.id"
     v-show = "state.show"
     class  = "toolbox"
   >
+
     <div
-      :id    = "'id_toolbox_' + state.id"
+      @click.stop = "select"
+      class       = "panel"
+      :class      = "{
+        'mobile':          isMobile(),
+        'toolboxselected': state.selected,
+        'toolboxactive':   state.editing.on,
+      }"
     >
 
+      <!-- LOADING BAR -->
+      <div class="bar-loader" v-show="!isLayerReady"></div>
+
       <div
-        @click.stop = "select"
-        class       = "panel"
-        :class      = "{
-          'mobile':          isMobile(),
-          'toolboxselected': state.selected,
-          'toolboxactive':   state.editing.on,
-        }"
+        v-if   = "state.toolboxheader"
+        class  = "panel-heading container"
+        :style = "{ background: state.color}"
       >
 
-        <!-- LOADING BAR -->
-        <div class="bar-loader" v-show="!isLayerReady"></div>
+        <!-- TOGGLE RELATION LAYERS (LAYERS FILTER) -->
+        <i
+          v-if                     = "father"
+          :class                   = "'filter-by-relation ' + g3wtemplate.font['relation']"
+          @click                   = "toggleFilterByRelation"
+          v-t-tooltip:right.create = "'plugins.editing.tooltip.filter_by_relation'"
+        ></i>
 
-        <div
-          v-if   = "state.toolboxheader"
-          class  = "panel-heading container"
-          :style = "{ background: state.color}"
-        >
+        <!-- PANEL TITLE -->
+        <span class="panel-title">{{ state.title }}</span>
 
-          <!-- TOGGLE RELATION LAYERS (LAYERS FILTER) -->
-          <i
-            v-if                     = "father"
-            :class                   = "'filter-by-relation ' + g3wtemplate.font['relation']"
-            @click                   = "toggleFilterByRelation"
-            v-t-tooltip:right.create = "'plugins.editing.tooltip.filter_by_relation'"
-          ></i>
+        <!-- TOGGLE EDITING -->
+        <i
+          v-disabled              = "editDisabled"
+          @click.stop             = "toggleEditing"
+          class                   = "start-editing editbtn skin-tooltip-left"
+          :class                  = "{
+            'pull-right':       !isMobile(),
+            'enabled':          isLayerReady,
+            'g3w-icon-toggled': state.editing.on,
+            [g3wtemplate.font[state.editing.on ? 'checkmark' : 'pencil']]: true
+          }"
+          v-t-tooltip:left.create = "'plugins.editing.tooltip.edit_layer'"
+        ></i>
 
-          <!-- PANEL TITLE -->
-          <span class="panel-title">{{ state.title }}</span>
+      </div>
 
-          <!-- TOGGLE EDITING -->
-          <i
-            v-disabled              = "editDisabled"
-            @click.stop             = "toggleEditing"
-            class                   = "start-editing editbtn skin-tooltip-left"
-            :class                  = "{
-              'pull-right':       !isMobile(),
-              'enabled':          isLayerReady,
-              'g3w-icon-toggled': state.editing.on,
-              [g3wtemplate.font[state.editing.on ? 'checkmark' : 'pencil']]: true
-            }"
-            v-t-tooltip:left.create = "'plugins.editing.tooltip.edit_layer'"
-          ></i>
+      <bar-loader :loading="loading" />
 
+      <div
+        v-if = "!state.changingtools && state.editing.on"
+        class  = "panel-body"
+        v-disabled = "(!isLayerReady || !canEdit) "
+      >
+        <!-- HAS RELATION -->
+        <div v-if="hasRelations" class="has-relations">
+          <i :class="g3wtemplate.font['info']"></i>
+          <span v-t-plugin="'editing.messages.toolbox_has_relation'"></span>
+          <divider/>
         </div>
 
-        <bar-loader :loading="loading" />
+        <!-- MESSAGE -->
+        <div v-if="state.message" style="color: #000">
+          <div class="text-justify" v-t-plugin="state.message"></div>
+          <divider/>
+        </div>
 
+        <!-- TOOLS -->
+        <!-- ORIGINAL SOURCE: components/Tool.vue@v3.7.1 -->
         <div
-          v-if = "!state.changingtools && state.editing.on"
-          class  = "panel-body"
-          v-disabled = "(!isLayerReady || !canEdit) "
+          v-for  = "(row, i) in rows"
+          :class = "`tools-content row${i}`"
         >
-          <!-- HAS RELATION -->
-          <div v-if="hasRelations" class="has-relations">
-            <i :class="g3wtemplate.font['info']"></i>
-            <span v-t-plugin="'editing.messages.toolbox_has_relation'"></span>
-            <divider/>
-          </div>
-
-          <!-- MESSAGE -->
-          <div v-if="state.message" style="color: #000">
-            <div class="text-justify" v-t-plugin="state.message"></div>
-            <divider/>
-          </div>
-
-          <!-- TOOLS -->
-          <!-- ORIGINAL SOURCE: components/Tool.vue@v3.7.1 -->
           <div
-            v-for  = "(row, i) in rows"
-            :class = "`tools-content row${i}`"
+            v-for               = "tool in row"
+            :key                = "tool.id"
+            v-if                = "tool.visible"
+            @click.prevent.stop = "tool.enabled && toggleTool(tool.active ? undefined : tool.id)"
+            :class              = "{ editbtn: true, 'enabled' : tool.enabled, 'toggled' : tool.active }"
           >
+            <img
+              height           = "25"
+              width            = "25"
+              :src             = "resourcesurl + 'images/' + tool.icon"
+              v-t-title:plugin = "`${tool.name}`"
+            />
+          </div>
+        </div>
+
+        <!-- MESSAGES -->
+        <div
+          :id   = "`id_toolbox_messages_${state.id}`"
+          class = "message"
+        >
+          <transition name="fade">
+            <!-- ORIGINAL SOURCE: components/ToolsOfTool.vue@v3.7.1 -->
             <div
-              v-for               = "tool in row"
-              :key                = "tool.id"
-              v-if                = "tool.visible"
-              @click.prevent.stop = "tool.enabled && toggleTool(tool.active ? undefined : tool.id)"
-              :class              = "{ editbtn: true, 'enabled' : tool.enabled, 'toggled' : tool.active }"
+              v-if = "showtoolsoftool"
+              id   = "toolsoftoolcontainer"
             >
-              <img
-                height           = "25"
-                width            = "25"
-                :src             = "resourcesurl + 'images/' + tool.icon"
-                v-t-title:plugin = "`${tool.name}`"
-              />
-            </div>
-          </div>
+              <!-- ORIGINAL SOURCE: components\ToolsOfToolMeasure.vue@v3.7.1 -->
+              <!-- ORIGINAL SOURCE: components\ToolsOfToolSnap.vue@v3.7.1 -->
+              <template v-for="tool in state.toolsoftool">
 
-          <!-- MESSAGES -->
-          <div
-            :id   = "`id_toolbox_messages_${state.id}`"
-            class = "message"
-          >
-            <transition name="fade">
-              <!-- ORIGINAL SOURCE: components/ToolsOfTool.vue@v3.7.1 -->
-              <div
-                v-if = "showtoolsoftool"
-                id   = "toolsoftoolcontainer"
-              >
-                <template v-for="tool in state.toolsoftool">
-
-                  <!-- MEASURE TOOL -->
-                  <!-- ORIGINAL SOURCE: components\ToolsOfToolMeasure.vue@v3.7.1 -->
-                  <div
-                    v-if  = "'measure' === tool.type"
-                    class = "snap-tool"
-                  >
-                    <input
-                      id      ="g3w_editing_show_measure_tool"
-                      type    = "checkbox"
-                      class   = "magic-checkbox snap_tools_of_tools"
-                      v-model = "tool.options.checked"
-                      @change = "() => tool.options.onChange(tool.options.checked)"
-                    />
-                    <label for="g3w_editing_show_measure_tool" v-t-tooltip:right.create="'plugins.editing.toolsoftool.measure'">
-                      <b :class="g3wtemplate.font['measure']"></b>
-                    </label>
-                  </div>
-
-                  <!-- SNAP TOOL -->
-                  <component
-                    v-else
-                    :is      = "tool.type"
-                    :options = "tool.options"
+                <!-- MEASURE TOOL -->
+                <div
+                  v-if  = "'measure' === tool.type"
+                  class = "snap-tool"
+                >
+                  <input
+                    id      ="g3w_editing_show_measure_tool"
+                    type    = "checkbox"
+                    class   = "magic-checkbox snap_tools_of_tools"
+                    v-model = "tool.options.checked"
+                    @change = "() => tool.options.onChange(tool.options.checked)"
                   />
-                  <divider />
-                </template>
-              </div>
-            </transition>
-            <div
-              v-if       = "currenttoolhelpmessage"
-              class      = "toolbox_help_message"
-              v-t-plugin = "currenttoolhelpmessage"
-            ></div>
-          </div>
+                  <label for="g3w_editing_show_measure_tool" v-t-tooltip:right.create="'plugins.editing.toolsoftool.measure'">
+                    <b :class="g3wtemplate.font['measure']"></b>
+                  </label>
+                </div>
+
+                <div
+                  v-else-if = "'snap' === tool.type"
+                  class     = "tools-of-tool-snap"
+                >
+
+                  <!-- SNAP TO LAYER -->
+                  <input
+                    type    = "checkbox"
+                    class   = "magic-checkbox snap_tools_of_tools"
+                    :id     = "`snap_${state.id}`"
+                    v-model ="tool.options.checked"
+                  />
+                  <label :for="`snap_${state.id}`" v-t-tooltip:right.create="'plugins.editing.toolsoftool.snap'">
+                    <span :class="g3wtemplate.font['magnete']"></span>
+                  </label>
+
+                  <!-- SNAP TO ALL LAYERS -->
+                  <input
+                    v-if    = "snapAll"
+                    type    = "checkbox"
+                    class   = "magic-checkbox snap_tools_of_tools"
+                    :id     = "`snap_all_${state.id}`"
+                    v-model = "tool.options.checkedAll"
+                  />
+                  <label v-if="snapAll" :for="`snap_all_${state.id}`" v-t-tooltip:left.create="'plugins.editing.toolsoftool.snapall'">
+                    <span :class="g3wtemplate.font['magnete']"></span>
+                    <b    :class="g3wtemplate.font['layers']"></b>
+                  </label>
+
+                </div>
+
+                <divider />
+
+              </template>
+
+            </div>
+          </transition>
+
+          <!-- HELP MESSAGE (ENABLED TOOL) -->
+          <div
+            v-if       = "helpmessage"
+            class      = "toolbox_help_message"
+            v-t-plugin = "helpmessage"
+          ></div>
 
         </div>
 
       </div>
 
     </div>
+
   </div>
 </template>
 
 <script>
-  import SnapComponent from './ToolsOfToolSnap.vue';
+  const { GUI }   = g3wsdk.gui;
+  const { Layer } = g3wsdk.core.layer;
+
+  let snapInteraction;
 
   export default {
 
@@ -169,14 +200,11 @@
 
     data() {
       return {
-        active: false,
-        currenttoolhelpmessage: null,
-        toggled: false,
+        active:      false,
+        helpmessage: null,
+        toggled:     false,
+        snapAll:     false,
       };
-    },
-
-    components: {
-      snap:    SnapComponent,
     },
 
     computed: {
@@ -268,13 +296,6 @@
       },
 
       /**
-       * @fires savetoolbox
-       */
-      saveEdits() {
-        this.$emit('savetoolbox', this.state.id);
-      },
-
-      /**
        * @fires setactivetool
        * @fires stopactivetool
        * 
@@ -297,13 +318,164 @@
         this.$emit('update-filter-layers', this.toggled ? [this.state.id, ...this.state.editing.dependencies]: []);
       },
 
+      /**
+       * ORIGINAL SOURCE: g3w-client-plugin-editing/components/ToolsOfToolSnap.vue@v3.7.1
+       * 
+       * @since g3w-client-plugin-editing@v3.8.0
+       */
+      _initSnap() {
+        const tool = (this.state.toolsoftool || []).find(tool => 'snap' === tool.type);
+
+        if (!tool) {
+          return;
+        }
+
+        /**
+         * @FIXME add description
+         */
+        this.snapFeatures = new ol.Collection();
+
+        /**
+         * @FIXME add description
+         */
+        this.snapEvents = [];
+
+        /**
+         * editing toolboxes dependencies
+         */
+        this.snapToolboxes = [];
+
+        /**
+         * unwatched function
+         */
+        this.snapUnwatches = [];
+
+        this.$watch(() => tool.options.checked, () => this.activeSnapInteraction());
+        this.$watch(() => tool.options.checkedAll, () => this.activeSnapInteraction());
+        // Toggle snap interaction
+        this.$watch(() => tool.options.active, () => {
+          if (tool.options.active) {
+            this.activeSnapInteraction();
+          } else if (snapInteraction) {
+            GUI.getService('map').removeInteraction(snapInteraction);
+          }
+        });
+
+        g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing')
+          .getLayers()
+          .filter(layer => Layer.LayerTypes.VECTOR === layer.getType()) // skip raster, alphanumerical..
+          .forEach(layer => {
+            const toolbox = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').getToolBoxById(layer.getId());
+            const source  = toolbox.getLayer().getEditingSource();
+
+            this.snapFeatures.extend(source.readFeatures());
+
+            this.snapEvents.push({
+              source,
+              olKey:           source.getFeaturesCollection().on('add', evt => this.addSnapFeatures([evt.element])),
+              settersAndKeys: {
+                'addFeatures': source.onbefore('addFeatures', this.addSnapFeatures),
+                'addFeature':  source.onbefore('addFeature', this.addSnapFeatures),
+                'clear':       source.onbefore('clear', () => { source.readFeatures().forEach(f => this.snapFeatures.remove(f)); })
+              },
+            });
+
+            // SNAP TO ALL: check if current editing layer is not equal to `layerId`
+            if (tool.options.layerId !== layer.getId()) {
+              const editing = toolbox.getState().editing;
+              this.snapUnwatches.push(this.$watch(() => editing.on, this.setShowSnapAll));
+              this.snapToolboxes.push(editing);
+            }
+        });
+
+        this.setShowSnapAll();
+
+      },
+
+      /**
+       * ORIGINAL SOURCE: g3w-client-plugin-editing/components/ToolsOfToolSnap.vue@v3.7.1
+       * 
+       * @since g3w-client-plugin-editing@v3.8.0
+       */
+      _unloadSnap() {
+        if (!snapInteraction) {
+          return;
+        }
+
+        try {
+          // stops event listeners
+          this
+            .snapEvents
+            .forEach(d => {
+              Object
+                .keys(d.settersAndKeys)
+                .forEach(event => { d.source.un(event, d.settersAndKeys[event]) });
+              ol.Observable.unByKey(d.olKey)
+            });
+          this.snapUnwatches.forEach(unwatch => unwatch());
+
+          snapInteraction    = null;
+
+          this.snapUnwatches = null;
+          this.snapToolboxes = null;
+          this.snapEvents    = null;
+        } catch (e) {
+          console.warn(e);
+        }
+      },
+
+      /**
+       * ORIGINAL SOURCE: g3w-client-plugin-editing/components/ToolsOfToolSnap.vue@v3.7.1
+       * 
+       * @since g3w-client-plugin-editing@v3.8.0
+       */
+      addSnapFeatures(features) {
+        this.snapFeatures.extend(features)
+      },
+
+      /**
+       * ORIGINAL SOURCE: g3w-client-plugin-editing/components/ToolsOfToolSnap.vue@v3.7.1
+       * 
+       * @since g3w-client-plugin-editing@v3.8.0
+       */
+      setShowSnapAll() {
+        const tool = (this.state.toolsoftool || []).find(tool => 'snap' === tool.type);
+        this.snapAll            = !!this.snapToolboxes.find(editing => editing.on);
+        tool.options.checkedAll = tool.options.showSnapAll ? tool.options.checkedAll : false;
+      },
+
+      /**
+       * ORIGINAL SOURCE: g3w-client-plugin-editing/components/ToolsOfToolSnap.vue@v3.7.1
+       * 
+       * @since g3w-client-plugin-editing@v3.8.0
+       */
+      activeSnapInteraction() {
+        const map = GUI.getService('map');
+        const tool = (this.state.toolsoftool || []).find(tool => 'snap' === tool.type);
+
+        if (snapInteraction) {
+          map.removeInteraction(snapInteraction);
+        }
+
+        snapInteraction = null;
+
+        // snap = true
+        if ((tool.options.checked || tool.options.checkedAll) && tool.options.active) {
+          snapInteraction = new ol.interaction.Snap({
+            source:   !tool.options.checkedAll && tool.options.checked && tool.options.source, // SNAP TO LAYER: get options source as props pass from toolbox
+            features: tool.options.checkedAll  && this.snapFeatures                        // SNAP TO ALL:   get features
+          });
+          map.addInteraction(snapInteraction);
+        }
+      },
+
     },
 
     watch: {
 
       async 'state.activetool'(tool) {
         await this.$nextTick();
-        this.currenttoolhelpmessage = tool && tool.getHelpMessage();
+        this.helpmessage = tool && tool.getHelpMessage();
       },
 
       /**
@@ -316,9 +488,12 @@
       },
 
       'state.toolsoftool'(newTools, oldTools) {
-        console.log(newTools, oldTools,newTools.length, oldTools.length);
+        // console.log(newTools, oldTools,newTools.length, oldTools.length);
         if (!newTools.length) {
           oldTools.filter(t => 'measure' === t.type).forEach(t => t.options.onChange(false));
+          this._unloadSnap();
+        } else {
+          this._initSnap();
         }
       },
 
@@ -329,12 +504,17 @@
      */
     created() {
       this.$emit('canEdit', { id: this.state.id });
+      // this._initSnap();
     },
 
     async mounted() {
       // wait a little bit so others plugin can change things in toolbox
       // (ex. tools visibility which differs from default behaviour)
       await this.$nextTick();
+    },
+
+    beforeDestroy() {
+      this._unloadSnap();
     },
 
   };
@@ -397,6 +577,14 @@
     display: flex;
   }
   .snap-tool label > b {
+    color: #222d32 !important;
+  }
+  .tools-of-tool-snap {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+  }
+  .tools-of-tool-snap label span {
     color: #222d32 !important;
   }
 </style>
