@@ -1,3 +1,4 @@
+import { VM }                                           from "../eventbus";
 import { Workflow }                                     from '../g3wsdk/workflow/workflow';
 import { Step }                                         from '../g3wsdk/workflow/step';
 import { createEditingDataOptions }                     from '../utils/createEditingDataOptions';
@@ -1276,6 +1277,9 @@ export class ToolBox extends G3WObject {
       this.getFieldUniqueValuesFromServer();
       this._resetOnSaveChangesOnServer = true;
     }
+
+    //event features
+    this._getFeaturesEvent = { event: null, fnc: null };
   }
 
   /**
@@ -1502,10 +1506,8 @@ export class ToolBox extends G3WObject {
     this.state.startstopediting = startstopediting;
 
     filter = applicationConstraint && applicationConstraint.filter || this.constraints.filter || filter;
-    // set filterOptions
-    this.setFeaturesOptions({ filter });
 
-    //register lock features to show message
+    //register lock features to show a message
     const unKeyLock = this.state.layer.getFeaturesStore().onceafter('featuresLockedByOtherUser', () => {
       GUI.showUserMessage({
         type: 'warning',
@@ -1519,66 +1521,117 @@ export class ToolBox extends G3WObject {
       () => this.state.layer.getFeaturesStore().un('featuresLockedByOtherUser', unKeyLock)
     );
 
-    const handlerAfterSessionGetFeatures = async promise => {
-      this.emit('start-editing');
-      await setLayerUniqueFieldValues(this.getId());
-      await g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').runEventHandler({ type: 'start-editing', id });
-      try {
-        const features = await promisify(promise);
-        this.stopLoading();
-        this.setEditing(true);
-        await g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').runEventHandler({ type: 'get-features-editing', id, options: { features } });
-        d.resolve({ features })
-      } catch (e) {
-        console.warn(e);
-        GUI.notify.error(e.message);
-        await g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').runEventHandler({ type: 'error-editing', id, error: e });
-        this.stop();
-        this.stopLoading();
-        d.reject(e);
+    //need to check if constraint is set
+    (async() => {
+      // check if can we edit based on scale contraint (vector layer)
+      if (this.state._constraints.scale) {
+        //unwatch selected
+        const map = GUI.getService('map').getMap();
+        //set message of scale constraint
+        const message = `${tPlugin('editing.messages.constraints.enable_editing')}${this.state._constraints.scale}`.toUpperCase();
+        //check if you can edit
+        this.state.editing.canEdit = getScaleFromResolution(map.getView().getResolution()) <= this.state._constraints.scale;
+
+        GUI.setModal(!this.state.editing.canEdit, message);
+        await new Promise((resolve) => {
+          //listen to change resolution
+          const key = map.getView().on('change:resolution', evt => {
+            this.state.editing.canEdit = getScaleFromResolution(evt.target.getResolution()) <= this.state._constraints.scale;
+            if (this.state.editing.canEdit) { resolve() }
+            GUI.setModal(this.state.selected && !this.state.editing.canEdit, message);
+          })
+
+          const unwatch = VM.$watch(() => this.state.selected,
+            {
+              immediate: true,
+              handler: bool => GUI.setModal(bool && !this.state.editing.canEdit, message)
+            })
+
+          this.state._unregisterStartSettersEventsKey.push(() => {
+            //remove modal resolution
+            GUI.setModal(false);
+            //remove event listener on change resolution
+            ol.Observable.unByKey(key);
+            //set can edit true
+            this.state.editing.canEdit = true;
+            //unwatch select state
+            unwatch();
+          })
+
+
+          //if click on start toolbox can edit and is selected
+          if (this.state.editing.canEdit && this.state.selected) { resolve() }
+
+        })
+
       }
-    }
 
-    const is_started = !!this.__isStarted();
+      // set filterOptions
+      this.setFeaturesOptions({ filter });
 
-    const GIVE_ME_A_NAME = !!(
-      !is_started
-      && ApplicationState.ismobile
-      && GUI.getService('map').isMapHidden()
-      && Layer.LayerTypes.VECTOR === this.state._layerType
-    );
+      const handlerAfterSessionGetFeatures = async promise => {
+        this.emit('start-editing');
+        await setLayerUniqueFieldValues(this.getId());
+        await g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').runEventHandler({ type: 'start-editing', id });
+        try {
+          const features = await promisify(promise);
+          this.stopLoading();
+          this.setEditing(true);
+          await g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').runEventHandler({ type: 'get-features-editing', id, options: { features } });
+          d.resolve({ features })
+        } catch (e) {
+          console.warn(e);
+          GUI.notify.error(e.message);
+          await g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').runEventHandler({ type: 'error-editing', id, error: e });
+          this.stop();
+          this.stopLoading();
+          d.reject(e);
+        }
+      }
 
-    if (!is_started && GIVE_ME_A_NAME) {
-      this.setEditing(true);
-      GUI
-        .getService('map')
-        .onceafter('setHidden', () => {
-          setTimeout(() => {
-            this._start = true;
-            this.startLoading();
-            this.setFeaturesOptions({ filter });
-            this._session.start(this.state._getFeaturesOption).then(handlerAfterSessionGetFeatures).fail(() => this.setEditing(false));
-          }, 300);
-      })
-    }
+      const is_started = !!this.__isStarted();
 
-    /** @TODO merge the following condtions? */
+      //@TODO need to explain better
+      const GIVE_ME_A_NAME = (
+        ApplicationState.ismobile
+        && GUI.getService('map').isMapHidden()
+        && Layer.LayerTypes.VECTOR === this.state._layerType
+      );
 
-    if (!is_started && !GIVE_ME_A_NAME) {
-      this._start = true;
-      this.startLoading();
-      this._session.start(this.state._getFeaturesOption).then(handlerAfterSessionGetFeatures)
-    }
+      if (!is_started && GIVE_ME_A_NAME) {
+        this.setEditing(true);
+        GUI
+          .getService('map')
+          .onceafter('setHidden', () => {
+            setTimeout(() => {
+              this._start = true;
+              this.startLoading();
+              this.setFeaturesOptions({ filter });
+              this._session.start(this.state._getFeaturesOption).then(handlerAfterSessionGetFeatures).fail(() => this.setEditing(false));
+            }, 300);
+          })
+      }
 
-    if (is_started && !this._start) {
-      this.startLoading();
-      this._session.getFeatures(this.state._getFeaturesOption).then(handlerAfterSessionGetFeatures);
-      this._start = true;
-    }
+      /** @TODO merge the following condtions? */
 
-    if (is_started) {
-      this.setEditing(true);
-    }
+      if (!is_started && !GIVE_ME_A_NAME) {
+        this._start = true;
+        this.startLoading();
+        this._session.start(this.state._getFeaturesOption).then(handlerAfterSessionGetFeatures)
+      }
+
+      if (is_started && !this._start) {
+        this.startLoading();
+        this._session.getFeatures(this.state._getFeaturesOption).then(handlerAfterSessionGetFeatures);
+        this._start = true;
+      }
+
+      if (is_started) {
+        this.setEditing(true);
+      }
+
+    })()
+
 
     return d.promise();
   };
@@ -1609,9 +1662,7 @@ export class ToolBox extends G3WObject {
    */
   stop() {
     return $promisify(async() => {
-      if (this.disableCanEditEvent) {
-        this.disableCanEditEvent();
-      }
+      if (this.disableCanEditEvent) { this.disableCanEditEvent() }
 
       this.state._unregisterStartSettersEventsKey.forEach(fnc => fnc());
       this.state._unregisterStartSettersEventsKey = [];
@@ -1634,7 +1685,7 @@ export class ToolBox extends G3WObject {
       const fathersInEditing = service.getLayerById(layerId).getFathers().filter(id => {
         const toolbox = service.getToolBoxById(id);
         if (toolbox && toolbox.inEditing() && toolbox.isDirty()) {
-          //get temporary relations object and check if layerId has some changes
+          //get a temporary relations object and check if layerId has some changes
           return Object.keys(toolbox.getSession().getCommitItems() || {}).find(id => layerId === id);
         }
       });
@@ -1911,34 +1962,8 @@ export class ToolBox extends G3WObject {
   /**
    * @param bool
    */
-  setSelected(bool=false) {
+  setSelected(bool = false) {
     this.state.selected = bool;
-    const selected = !!this.state.selected;
-
-    // can edit
-    if (selected && this.state._constraints.scale) {
-      const scale = this.state._constraints.scale;
-      const message = `${tPlugin('editing.messages.constraints.enable_editing')}${scale}`.toUpperCase();
-      this.state.editing.canEdit = getScaleFromResolution(GUI.getService('map').getMap().getView().getResolution()) <= scale;
-      GUI.setModal(!this.state.editing.canEdit, message);
-      const fnc = (event) => {
-        this.state.editing.canEdit = getScaleFromResolution(event.target.getResolution()) <= scale;
-        GUI.setModal(!this.state.editing.canEdit, message);
-      };
-      GUI.getService('map').getMap().getView().on('change:resolution', fnc);
-      this.disableCanEditEvent = () => {
-        GUI.setModal(false);
-        GUI.getService('map').getMap().getView().un('change:resolution', fnc);
-      }
-    }
-
-    // disable can edit
-    if (!selected) {
-      this.state.editing.canEdit = true;
-    }
-    if (!selected && this.disableCanEditEvent) {
-      this.disableCanEditEvent();
-    }
   }
 
   /**
@@ -3115,25 +3140,22 @@ export class ToolBox extends G3WObject {
       console.warn(e);
       return Promise.reject(e);
     } finally {
-      if (!options.registerEvents) {
-        return;
-      }
-      this._getFeaturesEvent = { event: null, fnc: null };
+      if (!options.registerEvents) { return }
       this.state._getFeaturesOption = options;
       // register get features event (only in case filter bbox)
       if (Layer.LayerTypes.VECTOR === this.state._layerType && this.state._getFeaturesOption.filter.bbox) {
         const fnc = () => {
-          const canEdit = this.state.editing.canEdit;
-          this.state.layer.getEditingLayer().setVisible(canEdit);
           //added ApplicationState.online
-          if (ApplicationState.online && canEdit && GUI.getContentLength() === 0) {
+          if (
+              ApplicationState.online
+              && this.state.editing.canEdit
+              && 0 === GUI.getContentLength()
+          ) {
             this.state._getFeaturesOption.filter.bbox = GUI.getService('map').getMapBBOX();
             this.state.loading = true;
             this._session
               .getFeatures(this.state._getFeaturesOption)
-              .then(promise => {
-                promise.then(() => this.state.loading = false);
-              })
+              .then(promise => promise.then(() => this.state.loading = false) )
           }
         };
         this._getFeaturesEvent.event = 'moveend';
@@ -3142,9 +3164,7 @@ export class ToolBox extends G3WObject {
       }
       if (Layer.LayerTypes.VECTOR === options.type && GUI.getContentLength()) {
         GUI.once('closecontent', () => {
-          setTimeout(() => {
-            GUI.getService('map').getMap().dispatchEvent(this._getFeaturesEvent.event)
-          })
+          setTimeout(() => { GUI.getService('map').getMap().dispatchEvent(this._getFeaturesEvent.event) })
         });
       }
     }
@@ -3163,9 +3183,7 @@ export class ToolBox extends G3WObject {
       console.warn(e);
       return Promise.reject(e);
     } finally {
-      if (!this.inEditing()) {
-        return;
-      }
+      if (!this.inEditing()) { return; }
       if (ApplicationState.online) {
         this._stopSessionChildren(this.state.id);
       }

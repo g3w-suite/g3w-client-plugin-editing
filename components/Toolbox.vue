@@ -9,7 +9,6 @@
   >
     <div
       :id    = "'id_toolbox_' + state.id"
-      :class = "{ 'disableddiv' : (!isLayerReady || !canEdit) }"
     >
 
       <div
@@ -63,6 +62,7 @@
         <div
           v-if = "!state.changingtools && state.editing.on"
           class  = "panel-body"
+          v-disabled = "(!isLayerReady || !canEdit) "
         >
           <!-- HAS RELATION -->
           <div v-if="hasRelations" class="has-relations">
