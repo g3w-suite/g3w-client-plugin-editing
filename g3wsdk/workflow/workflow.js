@@ -13,8 +13,6 @@ import { promisify }    from '../../utils/promisify';
 
 const { GUI }                 = g3wsdk.gui;
 const { G3WObject }           = g3wsdk.core;
-const { isPointGeometryType } = g3wsdk.core.geoutils.Geometry;
-const { Layer }               = g3wsdk.core.layer;
 
 /**
  * Workflow Class (manage flow of steps)
@@ -363,6 +361,8 @@ export class Workflow extends G3WObject {
   
       this._stackIndex = Workflow.Stack.push(this);
       this._steps      = options.steps || this._steps;
+
+      (this._steps || []).forEach(s => s._workflow = this);
   
       const showUserMessage = Object.keys(this._userMessageSteps).length;
   
@@ -499,71 +499,7 @@ export class Workflow extends G3WObject {
    * @since g3w-client-editing@v3.8.0
    */
   addToolsOfTools({ step, tools = [] }) {
-
-    /**
-     * @FIXME add description
-     */
-    const toolsOfTools = {
-
-      snap: {
-        type: 'snap',
-        options: {
-          checkedAll: false,
-          checked: false,
-          active: true,
-          run({ layer }) {
-            this.active  = true;
-            this.layerId = layer.getId();
-            this.source  = layer.getEditingLayer().getSource();
-          },
-          stop() {
-            this.active = false;
-          }
-        }
-      },
-
-      measure: {
-        type: 'measure',
-        options: {
-          checked: false,
-          run() {
-            setTimeout(() => { this.onChange(this.checked); })
-          },
-          stop() {
-            step.removeMeasureInteraction();
-            this.onChange(false);
-          },
-          onChange(bool) {
-            this.checked = bool;
-            step[bool ? 'addMeasureInteraction':  'removeMeasureInteraction']();
-          },
-        }
-      },
-
-    }
-
-    step.on('run', ({ inputs, context }) => {
-      if (0 === this._toolsoftool.length) {
-        tools
-          .forEach(tool => {
-            if (
-              'measure' !== tool
-              || (
-                Layer.LayerTypes.VECTOR === inputs.layer.getType()
-                && !isPointGeometryType(inputs.layer.getGeometryType())
-              )
-            ) {
-              this._toolsoftool.push(toolsOfTools[tool]);
-            }
-          });
-      }
-      this._toolsoftool.forEach(t => t.options.run({ layer: inputs.layer }));
-      this.emit('settoolsoftool', this._toolsoftool);
-    });
-
-    step.on('stop', () => {
-      this._toolsoftool.forEach(t => t.options.stop());
-    });
+    step.setToolsOfTools(this, tools);
   }
 
   /**

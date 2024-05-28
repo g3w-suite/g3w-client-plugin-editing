@@ -545,7 +545,7 @@ new (class extends Plugin {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   getFeature({ layerId } = {}) {
-    return this.getToolBoxById(layerId).getActiveTool().getFeature();
+    return this.getToolBoxById(layerId).getActiveTool().getLayer().features[0];
   }
 
   /**

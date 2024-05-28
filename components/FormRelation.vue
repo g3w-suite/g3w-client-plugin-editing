@@ -162,16 +162,16 @@
                   <!-- RELATION TOOLS -->
                   <div
                     v-for                    = "tool in (tools[index] || addTools(relations[index].id))"
-                    :key                     = "tool.state.id"
+                    :key                     = "tool.id"
                     class                    = "editbtn enabled"
-                    :class                   = "{ 'toggled': tool.state.active }"
+                    :class                   = "{ 'toggled': tool.active }"
                     @click.stop              = "startTool(tool, index)"
-                    v-t-tooltip:top.create   = "`plugins.${tool.state.name}`"
+                    v-t-tooltip:top.create   = "`plugins.${tool.name}`"
                   >
                     <img
                       height = "20px"
                       width  = "20px"
-                      :src   = "`${resourcesurl}images/${tool.state.icon}`"
+                      :src   = "`${resourcesurl}images/${tool.icon}`"
                     />
                   </div>
                 </div>
@@ -482,9 +482,8 @@
           if (newrelation) {
             newrelation.id = id;
             //replace tools with new id
-            (this.tools.find(ts => ts.find(t => t.state.id.split(`${clientid}_`).length > 1)) || [])
-              .forEach(t => t.state.id = t.state.id.replace(`${clientid}_`, `${id}_`));
-
+            (this.tools.find(ts => ts.find(t => t.id.split(`${clientid}_`).length > 1)) || [])
+              .forEach(t => t.id = t.id.replace(`${clientid}_`, `${id}_`));
           }
         })
 
@@ -624,7 +623,7 @@
                   : ['movefeature', 'movevertex'].includes(t.getId()) // Line or Polygon
               )
               .map(tool => ({
-                state: Vue.observable({ ...tool.state, id: `${id}_${tool.state.id}` }),
+                state: Vue.observable({ ...tool, id: `${id}_${tool.id}` }),
                 type: tool.getOperator().type,
               }))
           )
@@ -648,15 +647,15 @@
        */
       async startTool(relationtool, index) {
         try {
-          relationtool.state.active = !relationtool.state.active;
+          relationtool.active = !relationtool.active;
 
           // skip when ..
-          if (!relationtool.state.active) {
+          if (!relationtool.active) {
             return Promise.resolve();
           }
 
           this.tools.forEach(tools => {
-            tools.forEach(t => { if (relationtool.state.id !== t.state.id) { t.state.active = false; } })
+            tools.forEach(t => { if (relationtool.id !== t.id) { t.active = false; } })
           });
 
           await VM.$nextTick();
@@ -668,7 +667,7 @@
 
           const is_vector       = Layer.LayerTypes.VECTOR === this._layerType;
           const relation        = this.relations[index];
-          const toolId          = relationtool.state.id.split(`${relation.id}_`)[1];
+          const toolId          = relationtool.id.split(`${relation.id}_`)[1];
           const relationfeature = this.getLayer().getEditingSource().getFeatureById(relation.id);
           const featurestore    = this.getLayer().getEditingSource();
           const selectStyle     = is_vector && SELECTED_STYLES[this.getLayer().getGeometryType()]; // get selected vector style
@@ -795,7 +794,7 @@
 
             // watch eventually deactive when another tool is activated
             const unwatch = VM.$watch(
-              () => relationtool.state.active,
+              () => relationtool.active,
               bool => {
                 if (!bool) {
                   //need to enable saveAll and back
@@ -840,7 +839,7 @@
             console.trace('START TOOL FAILED', e);
             return Promise.reject(e);
           } finally {
-            relationtool.state.active = false;
+            relationtool.active = false;
           }
         } catch (e) {
           console.warn(e);
@@ -1396,18 +1395,14 @@
           },
 
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addfeatureworkflow.js@v3.7.1 */
-          add(options = {}) {
-            const w = new Workflow({
-              ...options,
-              type: 'addfeature',
-              steps: [
-                new AddFeatureStep(options),
-                new OpenFormStep(options),
-              ],
-            });
-            w.addToolsOfTools({ step: w.getStep(0), tools: ['snap', 'measure'] });
-            return w;
-          },
+          add: (options = {}) => new Workflow({
+            ...options,
+            type: 'addfeature',
+            steps: [
+              new AddFeatureStep({ ...options, tools: ['snap', 'measure'] }),
+              new OpenFormStep(options),
+            ],
+          }),
 
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/selectandcopyfeaturesfromotherlayerworkflow.js@v3.7.1 */
           selectandcopy(options = {}) {

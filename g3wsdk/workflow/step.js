@@ -7,8 +7,10 @@
  */
 import { promisify, $promisify } from '../../utils/promisify';
 
-const { GUI }       = g3wsdk.gui;
-const { G3WObject } = g3wsdk.core;
+const { G3WObject }           = g3wsdk.core;
+const { isPointGeometryType } = g3wsdk.core.geoutils.Geometry;
+const { Layer }               = g3wsdk.core.layer;
+const { GUI }                 = g3wsdk.gui;
 
 /**
  * @param options.input
@@ -101,6 +103,13 @@ export class Step extends G3WObject {
      */
     if (options.onStop) {
       this.on('run', options.onStop);
+    }
+
+    /**
+     * @since g3w-client-plugin-editing@v3.8.0
+     */
+    if (options.tools) {
+      this._tools = options.tools;
     }
 
   }
@@ -414,7 +423,62 @@ export class Step extends G3WObject {
     return $promisify(async() => {
       this.setInputs(inputs);
       this.setContext(context);
+
+      const step = this;
+      const toolsOfTools = {
+
+        snap: {
+          type: 'snap',
+          options: {
+            checkedAll: false,
+            checked: false,
+            active: true,
+            run({ layer }) {
+              this.active  = true;
+              this.layerId = layer.getId();
+              this.source  = layer.getEditingLayer().getSource();
+            },
+            stop() {
+              this.active = false;
+            }
+          }
+        },
+  
+        measure: {
+          type: 'measure',
+          options: {
+            checked: false,
+            run() {
+              setTimeout(() => { this.onChange(this.checked); })
+            },
+            stop() {
+              step.removeMeasureInteraction();
+              this.onChange(false);
+            },
+            onChange(bool) {
+              this.checked = bool;
+              step[bool ? 'addMeasureInteraction':  'removeMeasureInteraction']();
+            },
+          }
+        },
+  
+      };
+
+      if (this._tools && 0 === this._workflow._toolsoftool.length) {
+        this._workflow._toolsoftool.push(...(
+          this._tools
+            .filter(tool => ('measure' !== tool || (Layer.LayerTypes.VECTOR === inputs.layer.getType() && !isPointGeometryType(inputs.layer.getGeometryType()))))
+            .map(tool => toolsOfTools[tool])
+        ));
+      }
+
+      if (this._tools) {
+        this._workflow._toolsoftool.forEach(t => t.options.run({ layer: inputs.layer }));
+        this._workflow.emit('settoolsoftool', this._workflow._toolsoftool);
+      }
+
       this.emit('run', { inputs, context });
+
       try {
         this.state.running = true;                // change state to running
         return await promisify(this._run(inputs, context));
@@ -438,7 +502,10 @@ export class Step extends G3WObject {
    */
   __stop() {
     this._stop(this._inputs, this._context);   // stop task
-    this.state.running = false;                // remove running state 
+    this.state.running = false;                // remove running state
+    if (this._workflow) {
+      this._workflow._toolsoftool.forEach(t => t.options.stop());
+    }
     this.emit('stop');
   }
 
@@ -503,6 +570,19 @@ export class Step extends G3WObject {
    */
   getOutputs() {
     return this._outputs;
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editingworkflow.js@v3.7.1
+   * 
+   * @param step
+   * @param tools
+   * 
+   * @since g3w-client-editing@v3.8.0
+   */
+  setToolsOfTools(workflow, tools = [] ) {
+    this._workflow = workflow;
+    this._tools = tools;
   }
 
 }

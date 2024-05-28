@@ -77,12 +77,9 @@
 
         <!-- TOOLS -->
         <!-- ORIGINAL SOURCE: components/Tool.vue@v3.7.1 -->
-        <div
-          v-for  = "(row, i) in rows"
-          :class = "`tools-content row${i}`"
-        >
+        <div class="tools-content">
           <div
-            v-for               = "tool in row"
+            v-for               = "tool in state.tools"
             :key                = "tool.id"
             v-if                = "tool.visible"
             @click.prevent.stop = "tool.enabled && toggleTool(tool.active ? undefined : tool.id)"
@@ -230,17 +227,6 @@
        */
       loading() {
         return this.state.loading || this.state.changingtools;
-      },
-
-      /**
-       * @returns Tools grouped by `tool.row`
-       */
-      rows() {
-        return this.state.tools.reduce((rows, tool) => {
-          rows[tool.row] = rows[tool.row] || [];
-          rows[tool.row].push(tool);
-          return rows;
-        }, {});
       },
 
       /**
@@ -440,8 +426,10 @@
        */
       setShowSnapAll() {
         const tool = (this.state.toolsoftool || []).find(tool => 'snap' === tool.type);
-        this.snapAll            = !!this.snapToolboxes.find(editing => editing.on);
-        tool.options.checkedAll = tool.options.showSnapAll ? tool.options.checkedAll : false;
+        if (tool) {
+          this.snapAll            = !!this.snapToolboxes.find(editing => editing.on);
+          tool.options.checkedAll = tool.options.showSnapAll ? tool.options.checkedAll : false;
+        }
       },
 
       /**
@@ -475,7 +463,7 @@
 
       async 'state.activetool'(tool) {
         await this.$nextTick();
-        this.helpmessage = tool && tool.getHelpMessage();
+        this.helpmessage = tool && (tool.messages.help || tool.name);
       },
 
       /**
