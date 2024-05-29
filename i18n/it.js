@@ -53,21 +53,21 @@ export default {
   steps: {
     help: {
       select_elements: "Seleziona le geometrie",
-      select_element: "Seleziona la feature",
-      copy: "Crea una copia delle feature selezionate",
-      merge: "Dissolvi features",
-      split: "Taglia Feature",
-      new: "Creo una nuova feature",
-      edit_table: "Edita le features della tabella",
-      draw_new_feature: "Disegna sulla mappa la feature",
+      select_element: "Seleziona l'elemento",
+      copy: "Crea una copia degli elementi selezionati",
+      merge: "Dissolvi elementi",
+      split: "Dvidi elemento",
+      new: "Crea un nuovo elemento",
+      edit_table: "Modifica gli elementi della tabella",
+      draw_new_feature: "Disegna la nuova geometria",
       action_confirm: "Conferma azione",
-      double_click_delete: "Seleziona la feature sulla mappa da cancellare",
-      edit_feature_vertex: "Modifica o aggiungi un vertice alla feature selezionata",
-      move: "Muovi la feature selezionata",
-      select_feature_to_relation: "Seleziona la feature che vuoi mettere in relazione",
-      show_edit_feature_form:  "Mostra il form della feature per poter editare gli attributi",
-      pick_feature: "Seleziona la feature sulla mappa da modificare",
-      insert_attributes_feature: "Inserisci gli attributi della feature"
+      double_click_delete: "Seleziona la geometria sulla mappa da cancellare",
+      edit_feature_vertex: "Modifica o aggiungi un vertice alla geometria selezionata",
+      move: "Muovi la geometria selezionata",
+      select_feature_to_relation: "Seleziona la geometria che vuoi mettere in relazione",
+      show_edit_feature_form:  "Mostra il modulo per modificare gli attributi del'elemento",
+      pick_feature: "Seleziona la geometria da modificare dalla mappa",
+      insert_attributes_feature: "Inserisci gli attributi dell'elemento"
     }
   },
 
