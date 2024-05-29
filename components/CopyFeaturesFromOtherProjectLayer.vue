@@ -110,7 +110,6 @@
      * ORIGINAL SOURCE: g3w-client-plugin-editing/g3w-editing-components/selectcopyotherprojectlayerfeatures.js.js@v3.6
      */
     async mounted() {
-      console.log(this);
       const inputs           = this.$options.inputs;
       const context          = this.$options.context;
       const d                = this.$options.promise;

@@ -485,7 +485,6 @@
       },
 
       'state.toolsoftool'(newTools, oldTools) {
-        // console.log(newTools, oldTools,newTools.length, oldTools.length);
         if (!newTools.length) {
           oldTools.filter(t => 'measure' === t.type).forEach(t => t.options.onChange(false));
           this._unloadSnap();

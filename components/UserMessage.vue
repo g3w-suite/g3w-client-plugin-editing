@@ -50,10 +50,6 @@
       },
     },
 
-    created() {
-      console.log(this);
-    }
-
   };
 </script>
 

@@ -2823,7 +2823,6 @@ export class ToolBox extends G3WObject {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   _startTool(tool) {
-    console.log(tool);
     if (tool.getOperator()) {
       tool.active = true;
       setTimeout(async() => await this._startOp(

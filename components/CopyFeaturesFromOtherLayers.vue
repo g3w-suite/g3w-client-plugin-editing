@@ -101,7 +101,6 @@
        */
       showEditAttributes() {
         return Object.values(this.$options.layers).reduce((sum, {features}) => {
-          console.log(features)
           sum = sum + features.length;
           return sum;
         }, 0) > 1;
