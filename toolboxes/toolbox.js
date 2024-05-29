@@ -400,7 +400,7 @@ export class ToolBox extends G3WObject {
                     buttonnext: {
                       disabled: true,
                       condition:({ features=[] }) => features.length < 2,
-                      done: () => { w.clearUserMessagesSteps() }
+                      done: () => { Workflow.Stack.getCurrent().clearUserMessagesSteps(); }
                     },
                     dynamic: 0,
                     done: false
