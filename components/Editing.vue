@@ -580,7 +580,52 @@
   };
 </script>
 
+<style>
+.g3w-editing-panel .editing-button .editing-icon {
+  background-color: #3a4448;
+  color: #222d32; /*@sidebar-dark-bg;*/
+  font-size: 1.8em;
+  padding: 10px;
+  margin: 5px;
+  width: 45px;
+  height: 45px;
+  border-radius: 30%;
+  text-align: center;
+}
+.g3w-editing-panel .editing-button.enabled .editing-icon {
+  background-color: #fff;
+  box-shadow: 0 0 5px rgba(0,0,0,0.7);
+}
+.g3w-editing-panel .editing-button {
+  cursor: not-allowed;
+}
+.g3w-editing-panel .editing-button.enabled {
+  cursor: pointer;
+}
+.g3w-editing-panel .editbtn {
+  border-radius: 30%;
+  padding: 10px;
+  display: inline-block;
+  opacity: 0.4;
+  box-shadow:
+    0 1px 1px 0 rgba(0, 0, 0, 0.1),
+    0 1px 4px 0 rgba(0, 0, 0, 0.3);
+}
+.g3w-editing-panel .editbtn.enabled {
+  opacity: 1;
+  cursor: pointer;
+}
+.g3w-editing-panel .editbtn.enabled.toggled {
+  box-shadow: 0 0;
+  background-color: #ddd;
+}
+</style>
+
 <style scoped>
+.g3w-editing-panel {
+  margin-bottom: 50px;
+}
+
 #onlineofflinemessage {
   margin-bottom: 5px;
   padding: 5px;

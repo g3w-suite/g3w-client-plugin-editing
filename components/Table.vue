@@ -476,6 +476,12 @@
 </script>
 
 <style scoped>
+  .editing_table_title {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: var(--skin-color);
+  }
+
   #table-editing-tools {
     display:flex;
     justify-content: space-between;
@@ -500,6 +506,11 @@
   }
 
   .editing_table_relation_messagge {
+    margin-bottom: 10px;
+    font-size: 1.3em;
+    background-color: #f5f5f5;
+    padding: 3px;
+    border-radius: 3px;
     font-weight: bold
   }
 </style>

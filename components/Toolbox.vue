@@ -83,7 +83,7 @@
             :key                = "tool.id"
             v-if                = "tool.visible"
             @click.prevent.stop = "tool.enabled && toggleTool(tool.active ? undefined : tool.id)"
-            :class              = "{ editbtn: true, 'enabled' : tool.enabled, 'toggled' : tool.active }"
+            :class              = "{ 'enabled' : tool.enabled, 'toggled' : tool.active, [`editbtn ${tool.id}`]: true }"
           >
             <img
               height           = "25"
@@ -254,7 +254,7 @@
        * @returns { Promise }
        */
       isLayerReady() {
-        return this.state.layerstate.editing.ready;
+        return this.state.layer.state.editing.ready;
       },
 
     },
@@ -276,7 +276,7 @@
        */
       toggleEditing() {
         this.select();
-        if (this.state.layerstate.editing.ready && !this.state.loading) {
+        if (this.state.layer.state.editing.ready && !this.state.loading) {
           this.$emit(this.state.editing.on ? 'stoptoolbox' : 'starttoolbox', this.state.id);
         }
       },
@@ -509,14 +509,44 @@
 </script>
 
 <style scoped>
+  .panel.mobile {
+    margin-bottom: 5px;
+  }
+  .panel.mobile .panel-heading {
+    display: flex;
+    justify-content: space-between;
+  }
+  .panel.mobile .panel-heading .panel-title {
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+  .panel.mobile .panel-heading .start-editing {
+    margin: auto;
+    margin-right: 0;
+    padding: 6px;
+  }
+  .panel.mobile .tools-content .editbtn {
+    padding: 9px;
+  }
+  .panel.mobile .toolbox .panel-body {
+    padding: 5px !important;
+  }
+  .toolbox_help_message {
+    font-weight: lighter;
+  }
   .toolbox {
     padding-bottom: 5px;
   }
   .panel {
+    border: 0 !important;
     margin-bottom: 8px;
   }
   .panel-heading {
+    padding: 5px 10px 5px 10px;
     width:100%;
+  }
+  .toolboxselected {
+    box-shadow: 0px 0px 0px 3px var(--skin-color);
   }
   .panel:not(.toolboxselected) .has-relations {
     opacity: .4;
@@ -532,6 +562,8 @@
     margin: 0px;
   }
   .panel-title {
+    font-weight: bold;
+    word-break: break-word;
     padding: 8px 0;
     display: inline-block;
   }
@@ -544,6 +576,7 @@
   }
   .has-relations {
     color: #000;
+    margin-bottom: 1em;
   }
   .has-relations > i {
     color: #007bff;
@@ -557,8 +590,13 @@
   .tools-content {
     display: flex;
     flex-wrap: wrap;
+    gap: 10px;
   }
   .message {
+    margin-top: 5px;
+    margin-bottom: 5px;
+    font-size: 1.1em;
+    color: #000;
     margin-top: 5px;
   }
   .snap-tool {

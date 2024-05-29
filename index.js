@@ -436,7 +436,7 @@ new (class extends Plugin {
 
         // check if layer is single geometry. Need to show and change behaviour
         if (addPartTool && !Geometry.isMultiGeometry(_layer.getGeometryType())) {
-          addPartTool.setVisible(true);
+          addPartTool.visible = true;
         }
 
         // add geometry when vector layer feature has no geometry
@@ -477,7 +477,7 @@ new (class extends Plugin {
 
           this.subscribe('closeeditingpanel', () => {
             addPartTool.setOperator(op);
-            addPartTool.setVisible(Geometry.isMultiGeometry(_layer.getGeometryType()));
+            addPartTool.visible = Geometry.isMultiGeometry(_layer.getGeometryType());
           })
         }
 

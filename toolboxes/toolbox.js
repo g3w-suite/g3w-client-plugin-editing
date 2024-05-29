@@ -63,10 +63,7 @@ const {
   singleGeometriesToMultiGeometry,
   splitFeatures,
 }                                         = g3wsdk.core.geoutils;
-const {
-  removeZValueToOLFeatureGeometry,
-  is3DGeometry,
-}                                         = g3wsdk.core.geoutils.Geometry;
+const { removeZValueToOLFeatureGeometry } = g3wsdk.core.geoutils.Geometry;
 const { tPlugin }                         = g3wsdk.core.i18n;
 const { Layer }                           = g3wsdk.core.layer;
 const { Feature }                         = g3wsdk.core.layer.features;
@@ -92,7 +89,15 @@ export class ToolBox extends G3WObject {
     const iconGeometry    = is_vector && (is_point ? 'Point' : is_line ? 'Line' : 'Polygon');
 
     this._start       = false;
-    this.uniqueFields = this.getUniqueFieldsType(layer.getEditingFields());
+
+    const uniqueFields = layer.getEditingFields()
+      .filter(f => f.input && 'unique' === f.input.type)
+      .reduce((fields, f) => { fields[f.name] = f; return fields; }, {});
+
+    /**
+     * unique fields type
+     */
+    this.uniqueFields = Object.keys(uniqueFields).length ? uniqueFields : null;
 
     /** constraint loading features to a filter set */
     this.constraints  = { filter: null, show: null, tools: [] };
@@ -131,23 +136,11 @@ export class ToolBox extends G3WObject {
       id:                   layer.getId(),
       state:                new Proxy({}, { get: (_, prop) => this._constrains[prop] }),
       add:                  this.__add.bind(this),
-      getRelationStates:    this.__getRelationStates.bind(this),
-      insertState:          this.__insertState.bind(this),
-      removeState:          this.__deleteState.bind(this),
-      removeStates:         this.__removeChangesFromHistory.bind(this),
-      insertStates:         this.__insertStates.bind(this),
       undo:                 this.__undo.bind(this),
       clear:                this.__clearHistory.bind(this),
       redo:                 this.__redo.bind(this),
-      setItemsFeatureIds:   this.__setItemsFeatureIds.bind(this),
       getState:             this.__getState.bind(this),
-      getFirstState:        this.__getFirstState.bind(this),
       getLastState:         this.__getLastHistoryState.bind(this),
-      getCurrentState:      this.__getCurrentState.bind(this),
-      getCurrentStateIndex: this.__getCurrentStateIndex.bind(this),
-      canCommit:            this.__canCommit.bind(this),
-      canUndo:              this.__canUndo.bind(this),
-      canRedo:              this.__canRedo.bind(this),
       commit:               this.__commit.bind(this),
     };
 
@@ -164,26 +157,20 @@ export class ToolBox extends G3WObject {
       state:                        new Proxy({}, { get: (_, prop) => this.state.editing.session[prop] }),
       getId:                        () => layer.getId(),
       getLastHistoryState:          this.__getLastHistoryState.bind(this),
-      getLastStateId:               this.__getLastStateId.bind(this),
       isStarted:                    this.__isStarted.bind(this),
       getHistory:                   this.__getHistory.bind(this),
       getEditor:                    this.__getEditor.bind(this),
-      updateTemporaryChanges:       this.__updateTemporaryChanges.bind(this),
-      removeChangesFromHistory:     this.__removeChangesFromHistory.bind(this),
       push:                         this.__push.bind(this),
       pushDelete:                   this.__pushDelete.bind(this),
-      deleteState:                  this.__deleteState.bind(this),
       save:                         this.__save.bind(this),
       pushAdd:                      this.__pushAdd.bind(this),
       pushUpdate:                   this.__pushUpdate.bind(this),
-      moveRelationStatesOwnSession: this.__moveRelationStatesOwnSession.bind(this),
       revert:                       this.revert.bind(this),
       rollback:                     this.__rollback.bind(this),
       rollbackDependecies:          this.__rollbackDependecies.bind(this),
       undo:                         this.__undoSession.bind(this),
       redo:                         this.__redoSession.bind(this),
       getCommitItems:               this.__getCommitItems.bind(this),
-      set3DGeometryType:            this.__set3DGeometryType.bind(this),
       commit:                       this.save.bind(this),
       clear:                        this.__clearSession.bind(this),
       clearHistory:                 this.__clearHistory.bind(this),
@@ -231,7 +218,6 @@ export class ToolBox extends G3WObject {
         father       : false,
         canEdit      : true
       },
-      layerstate       : layer.state,
       /** @since g3w-client-plugin-editing@v3.7.0 store key events setters */
       _unregisterStartSettersEventsKey: [],
       _getFeaturesOption: {},
@@ -1147,11 +1133,11 @@ export class ToolBox extends G3WObject {
               const features = 'VECTOR' === layer.getType() && layer.getSource().getFeatures();
               return features && features.length ? isSameBaseGeometryType(features[0].getGeometry().getType(), type) : true;
             };
-            map.onbefore('loadExternalLayer',  layer => !tool.isVisible() && tool.setVisible(has_same_geom(layer)));
+            map.onbefore('loadExternalLayer',  layer => !tool.visible && (tool.visible = has_same_geom(layer)));
             map.onafter('unloadExternalLayer', layer => {
-              const features = tool.isVisible() && 'VECTOR' === layer.getType() && layer.getSource().getFeatures();
+              const features = tool.visible && 'VECTOR' === layer.getType() && layer.getSource().getFeatures();
               if (features && features.length && isSameBaseGeometryType(features[0].getGeometry().getType(), type)) {
-                tool.setVisible(map.getExternalLayers().find(l => undefined !== has_same_geom(l)));
+                tool.visible = map.getExternalLayers().find(l => undefined !== has_same_geom(l));
               }
             });
             return false;
@@ -1223,10 +1209,8 @@ export class ToolBox extends G3WObject {
         start:                this._startTool.bind(this, tool),
         stop:                 this._stopTool.bind(this, tool),
         getId:                () => tool.id,
-        isVisible:            () => tool.visible,
         getOperator:          () => tool.op,
         setOperator:          op => tool.op = op,
-        setVisible:           (bool=true) => tool.visible = bool,
       })
     });
 
@@ -1276,7 +1260,7 @@ export class ToolBox extends G3WObject {
   }
 
   /**
-   * @returns {*|{toolboxheader: boolean, layerstate, color: string, toolsoftool: *[], show: boolean, customTitle: boolean, startstopediting: boolean, title: string, loading: boolean, message: null, tools: *[], enabled: boolean, editing: {session, father: boolean, canEdit: boolean, history, relations: *[], on: boolean, dependencies: *[]}, toolmessages: {help: null}, changingtools: boolean, id, activetool: null, selected: boolean}}
+   * @returns toolbox state
    */
   getState() {
     return this.state;
@@ -1308,13 +1292,6 @@ export class ToolBox extends G3WObject {
    */
   isFather() {
     return this.state.editing.father;
-  }
-
-  /**
-   * @param relations
-   */
-  addRelations(relations = []) {
-    relations.forEach(relation => this.addRelation(relation));
   }
 
   /**
@@ -1353,20 +1330,6 @@ export class ToolBox extends G3WObject {
   }
 
   /**
-   * @param dependencies
-   */
-  addDependencies(dependencies) {
-    dependencies.forEach(dependency => this.addDependency(dependency));
-  }
-
-  /**
-   * @param dependency
-   */
-  addDependency(dependency) {
-    this.state.editing.dependencies.push(dependency);
-  }
-
-  /**
    * @param reset
    */
   getFieldUniqueValuesFromServer({
@@ -1390,30 +1353,6 @@ export class ToolBox extends G3WObject {
   }
 
   /**
-   * @param fields
-   * 
-   * @returns {{}|null}
-   */
-  getUniqueFieldsType(fields) {
-    const uniqueFields = {};
-    let find = false;
-    fields.forEach(f => {
-      if (f.input && 'unique' === f.input.type) {
-        uniqueFields[f.name] = f;
-        find = true;
-      }
-    });
-    return find && uniqueFields || null;
-  }
-
-  /**
-   * check if vectorLayer
-   */
-  isVectorLayer() {
-    return Layer.LayerTypes.VECTOR === this.state._layerType;
-  }
-
-  /**
    * Create getFeatures options
    * 
    * @param filter
@@ -1433,7 +1372,7 @@ export class ToolBox extends G3WObject {
       };
       // in case of constraint attribute set the filter as constraint
       if (filter.constraint) {
-        this.setConstraintFeaturesFilter(filter);
+        this.constraintFeatureFilter = filter;
       }
     } else {
       this.state._getFeaturesOption = createEditingDataOptions(Layer.LayerTypes.TABLE === this.state._layerType ? 'all': 'bbox', { layerId: this.getId() });
@@ -1445,13 +1384,6 @@ export class ToolBox extends G3WObject {
    */
   setEditingConstraints(constraints={}) {
     Object.keys(constraints).forEach(c => this.constraints[c] = constraints[c]);
-  }
-
-  /**
-   * Clear single layer unique field values (when stopping toolbox editing).
-   */
-  clearLayerUniqueFieldsValues() {
-    g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[this.getId()] = {};
   }
 
   //added option object to start method to have a control by other plugin how
@@ -1617,13 +1549,6 @@ export class ToolBox extends G3WObject {
   /**
    * @returns {*}
    */
-  getFeaturesOption() {
-    return this.state._getFeaturesOption;
-  };
-
-  /**
-   * @returns {*}
-   */
   stop() {
     return $promisify(async() => {
       if (this.disableCanEditEvent) { this.disableCanEditEvent() }
@@ -1665,7 +1590,8 @@ export class ToolBox extends G3WObject {
         }
         this._stopSessionChildren(this.state.id);
         this.setSelected(false);
-        this.clearLayerUniqueFieldsValues();
+        // clear layer unique field values
+        g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[this.getId()] = {};
         return;
       }
 
@@ -1682,7 +1608,9 @@ export class ToolBox extends G3WObject {
         this.clearToolboxMessages();
         this.setSelected(false);
         this.emit('stop-editing');
-        this.clearLayerUniqueFieldsValues();
+
+        // clear layer unique field values
+        g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[this.getId()] = {};
 
         return true;
       } catch (e) {
@@ -1773,26 +1701,10 @@ export class ToolBox extends G3WObject {
   }
 
   /**
-   * @param filter
-   */
-  setConstraintFeaturesFilter(filter){
-    this.constraintFeatureFilter = filter;
-  }
-
-  /**
    * @returns {*|{}}
    */
   getEditingConstraints() {
     return this.state._constraints;
-  }
-
-  /**
-   * @param type
-   * 
-   * @returns {*}
-   */
-  getEditingConstraint(type) {
-    return this.getEditingConstraints()[type];
   }
 
   /**
@@ -1827,7 +1739,7 @@ export class ToolBox extends G3WObject {
    *
    */
   clearToolboxMessages() {
-    this.clearToolMessage();
+    this.state.toolmessages.help = null;
     this.clearMessage();
   }
 
@@ -1949,6 +1861,8 @@ export class ToolBox extends G3WObject {
   /**
    * Set tools bases on add
    * editing_constraints : true // follow the tools related toi editing conttraints configuration
+   * 
+   * @see g3w-client-plugin-sispi-worksite
    */
   setAddEnableTools({
     tools={},
@@ -1971,6 +1885,8 @@ export class ToolBox extends G3WObject {
 
   /**
    * Set tools bases on update
+   * 
+   * @see g3w-client-plugin-sispi-worksite
    */
   setUpdateEnableTools({
     tools={},
@@ -2003,13 +1919,6 @@ export class ToolBox extends G3WObject {
   }
 
   /**
-   * Set tools bases on delete
-   */
-  setDeleteEnableTools(options={}){
-    //TODO
-  }
-
-  /**
    * Set enable tools
    *
    * @param tools
@@ -2036,7 +1945,7 @@ export class ToolBox extends G3WObject {
             tool.visible        = undefined !== options.visible              ? options.visible              : true;
             tool.enabled        = undefined !== options.enabled              ? options.enabled              : false;
             tool.disabledtoolsoftools = undefined !== options.disabledtoolsoftools ? options.disabledtoolsoftools : [];
-            if (tool.isVisible()) {
+            if (tool.visible) {
               toolsId.push(id);
             }
             if (active) {
@@ -2062,7 +1971,7 @@ export class ToolBox extends G3WObject {
           }
         });
       //set not visible all remain
-      this.state._tools.forEach(tool => !toolsId.includes(tool.getId()) && tool.setVisible(false));
+      this.state._tools.forEach(tool => !toolsId.includes(tool.getId()) && (tool.visible = false));
       this.state.changingtools = false;
     }
   };
@@ -2095,8 +2004,7 @@ export class ToolBox extends G3WObject {
       try {
         await promisify(this.stopActiveTool(tool));
 
-        this.clearToolsOfTool();
-
+        this.state.toolsoftool.splice(0);
         this.state.activetool = tool;
 
         const workflow = tool.getOperator();
@@ -2111,7 +2019,10 @@ export class ToolBox extends G3WObject {
 
         tool.start();
 
-        this.setToolMessage(this.getToolMessage());
+        // set tool messages
+        const messages = this.state.activetool.getOperator().getHelpMessage() || this.state.activetool.getOperator().getRunningStep() ? this.state.activetool.messages : null;
+        this.state.toolmessages.help = messages && messages.help || null
+
       } catch (e) {
         console.warn(e);
       }
@@ -2125,32 +2036,16 @@ export class ToolBox extends G3WObject {
     // in case of deactivate tool and current active tool, it was clicked
     if (tool === this.state.activetool) {
       this.state.activetool = null;
-      this.clearToolsOfTool();
+      this.state.toolsoftool.splice(0);
     }
     this.state.toolsoftool.forEach(t => tools.includes(t.type) && (t.options.active = false));
   }
-
-  /**
-   *
-   */
-  clearToolsOfTool() {
-    this.state.toolsoftool.splice(0);
-  };
 
   /**
    * @returns {null}
    */
   getActiveTool() {
     return this.state.activetool;
-  }
-
-  /**
-   *
-   */
-  restartActiveTool() {
-    const activeTool = this.getActiveTool();
-    this.stopActiveTool();
-    this.setActiveTool(activeTool);
   }
 
   /**
@@ -2168,35 +2063,13 @@ export class ToolBox extends G3WObject {
       activeTool.removeAllListeners();
       try {
         await promisify(activeTool.stop(true));
-        this.clearToolsOfTool();
-        this.clearToolMessage();
-        this.state.activetool = null;
+        this.state.toolsoftool.splice(0);
+        this.state.toolmessages.help = null;
+        this.state.activetool        = null;
       } catch (e) {
         console.warn(e);
       }
     });
-  }
-
-  /**
-   *
-   */
-  clearToolMessage() {
-    this.state.toolmessages.help = null;
-  }
-
-  /**
-   * @returns {*}
-   */
-  getToolMessage() {
-    const tool = this.getActiveTool();
-    return tool.getOperator().getHelpMessage() || tool.getOperator().getRunningStep() ? tool.messages : null;
-  }
-
-  /**
-   * @param messages
-   */
-  setToolMessage(messages = {}) {
-    this.state.toolmessages.help = messages && messages.help || null;
   }
 
   /**
@@ -2211,27 +2084,6 @@ export class ToolBox extends G3WObject {
    */
   getEditor() {
     return this.state.layer.getEditor();
-  }
-
-  /**
-   * @returns {*}
-   */
-  hasChildren() {
-    return this.state.layer.hasChildren();
-  }
-
-  /**
-   * @returns {*}
-   */
-  hasFathers() {
-    return this.state.layer.hasFathers();
-  }
-
-  /**
-   * @returns {*}
-   */
-  hasRelations() {
-    return this.state.layer.hasRelations();
   }
 
   /**
@@ -2280,7 +2132,7 @@ export class ToolBox extends G3WObject {
     if (null === this.state.editing.session.current) {
       this._states = [{ id: uniqueId, items }]
     } else {
-      if (this._states.length > 0 && this.state.editing.session.current < this.__getLastStateId()) {
+      if (this._states.length > 0 && this.state.editing.session.current < this._states.at(-1).id) {
         this._states = this._states.filter(s => s.id <= this.state.editing.session.current);
       }
       this._states.push({ id: uniqueId, items });
@@ -2296,71 +2148,6 @@ export class ToolBox extends G3WObject {
     d.resolve(uniqueId);
     return d.promise();
   }
-  
-  /**
-   * ORIGINAL SOURCE: g3w-client/src/core/editing/history.js@v3.9.1
-   *
-   * @param layerId
-   * @param clear
-   * 
-   * @returns { Array }
-   * 
-   * @since g3w-client-plugin-editing@v3.8.0
-   */
-  __getRelationStates(layerId, {clear=false}={}) {
-    const relationStates = [];
-    for (let i=0; i < this._states.length; i++) {
-      const state = this._states[i];
-      const items = state.items.filter((item) => (Array.isArray(item) ? item[0].layerId : item.layerId) === layerId);
-      if (items.length > 0) {
-        relationStates.push({ id: state.id, items });
-      }
-    }
-    return relationStates;
-  }
-
-
-  /**
-   * ORIGINAL SOURCE: g3w-client/src/core/editing/history.js@v3.9.1
-   *
-   * @param state
-   * 
-   * @since g3w-client-plugin-editing@v3.8.0
-   */
-  __insertState(state) {
-    const stateId = state.id;
-    let index = this._states.length;
-    for (let i=0; i < this._states.length; i++) {
-      const _state = this._states[i];
-      if (_state.id > stateId) {
-        index = i;
-        break;
-      } else if (_state.id === stateId) {
-        index = -1;
-        break;
-      }
-    }
-    if (index > -1) {
-      if (this.state.editing.session.current < stateId) {
-        this.state.editing.session.current = stateId;
-      }
-      this._states.splice(index, 0, state)
-    }
-  }
-
-  /**
-   * ORIGINAL SOURCE: g3w-client/src/core/editing/history.js@v3.9.1
-   *
-   * @param states
-   * 
-   * @since g3w-client-plugin-editing@v3.8.0
-   */
-  __insertStates(states=[]) {
-    for (let i=0; i< states.length; i++) {
-      this.__insertState(states[i]);
-    }
-    this.__canCommit();
-  }
 
   /**
    * ORIGINAL SOURCE: g3w-client/src/core/editing/history.js@v3.9.1
@@ -2371,7 +2158,7 @@ export class ToolBox extends G3WObject {
    */
   __undo() {
     let items;
-    if (this.state.editing.session.current === this.__getFirstState().id) {
+    if (this.state.editing.session.current === this._states[0].id) {
       this.state.editing.session.current = null;
       items = this._states[0].items;
     } else {
@@ -2425,26 +2212,6 @@ export class ToolBox extends G3WObject {
   /**
    * ORIGINAL SOURCE: g3w-client/src/core/editing/history.js@v3.9.1
    * 
-   * @param { Array } unsetnewids
-   *
-   * @since g3w-client-plugin-editing@v3.8.0
-   */
-  __setItemsFeatureIds(unsetnewids=[]) {
-    unsetnewids.forEach(unsetnewid => {
-      this._states.forEach(state => {
-        state.items.forEach(item => {
-          const feature = item.feature.getId() === unsetnewid.clientid && item.feature;
-          if (feature) {
-            feature.setId(unsetnewid.id);
-          }
-        })
-      });
-    })
-  }
-
-  /**
-   * ORIGINAL SOURCE: g3w-client/src/core/editing/history.js@v3.9.1
-   * 
    * @param id
    * 
    * @returns {T}
@@ -2453,52 +2220,6 @@ export class ToolBox extends G3WObject {
    */
   __getState(id) {
     return this._states.find(s => s.id === id);
-  }
-
-  /**
-   * ORIGINAL SOURCE: g3w-client/src/core/editing/history.js@v3.9.1
-   * 
-   * @returns {*|null}
-   *
-   * @since g3w-client-plugin-editing@v3.8.0
-   */
-  __getFirstState() {
-    return this._states.length ? this._states[0] : null;
-  }
-
-  /**
-   * ORIGINAL SOURCE: g3w-client/src/core/editing/history.js@v3.9.1
-   * 
-   * @returns {null}
-   *
-   * @since g3w-client-plugin-editing@v3.8.0
-   */
-  __getCurrentState() {
-    let currentState = null;
-    if (this.state.editing.session.current && this._states.length) {
-      currentState = this._states.find(s => this.state.editing.session.current === s.id);
-    }
-    return currentState;
-  }
-
-  /**
-   * ORIGINAL SOURCE: g3w-client/src/core/editing/history.js@v3.9.1
-   *
-   * @returns { number | null } index of current state
-   *
-   * @since g3w-client-plugin-editing@v3.8.0
-   */
-  __getCurrentStateIndex() {
-    let currentStateIndex = null;
-    if (this.state.editing.session.current && this._states.length) {
-      this._states.forEach((state, idx) => {
-        if (this.state.editing.session.current === state.id) {
-          currentStateIndex = idx;
-          return false
-        }
-      });
-    }
-    return currentStateIndex;
   }
 
   /**
@@ -2527,7 +2248,16 @@ export class ToolBox extends G3WObject {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   __canUndo() {
-    const steps = (this._states.length - 1) - this.__getCurrentStateIndex();
+    let currentStateIndex = null;
+    if (this.state.editing.session.current && this._states.length) {
+      this._states.forEach((state, idx) => {
+        if (this.state.editing.session.current === state.id) {
+          currentStateIndex = idx;
+          return false
+        }
+      });
+    };
+    const steps = (this._states.length - 1) - currentStateIndex;
     this._constrains.undo = (null !== this.state.editing.session.current) && (this.state.editing.session.maxSteps > steps);
     return this._constrains.undo;
   }
@@ -2541,7 +2271,7 @@ export class ToolBox extends G3WObject {
    */
   __canRedo() {
     this._constrains.redo = (
-      (this.__getLastHistoryState() && this.__getLastStateId() != this.state.editing.session.current))
+      (this._states.at(-1) && this._states.at(-1).id != this.state.editing.session.current))
       || (null === this.state.editing.session.current && this._states.length > 0);
     return this._constrains.redo;
   }
@@ -2604,16 +2334,7 @@ export class ToolBox extends G3WObject {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   __getLastHistoryState() {
-    return this._states.length ? this._states[this._states.length -1] : null;
-  }
-
-  /**
-   * ORIGINAL SOURCE: g3w-client/src/core/editing/session.js@v3.9.1
-   * 
-   * @since g3w-client-plugin-editing@v3.8.0
-   */
-  __getLastStateId() {
-    return this.__getLastHistoryState().id;
+    return this._states.at(-1) || null;
   }
 
   /**
@@ -2646,24 +2367,6 @@ export class ToolBox extends G3WObject {
   /**
    * ORIGINAL SOURCE: g3w-client/src/core/editing/session.js@v3.9.1
    * 
-   * @since g3w-client-plugin-editing@v3.8.0
-   */
-  __updateTemporaryChanges(feature) {
-    this.state.editing.session.changes.forEach(c => c.feature.setProperties(feature.getProperties()));
-  }
-
-  /**
-   * ORIGINAL SOURCE: g3w-client/src/core/editing/session.js@v3.9.1
-   * 
-   * @since g3w-client-plugin-editing@v3.8.0
-   */
-  __removeChangesFromHistory(stateIds = []) {
-    (stateIds || []).forEach(s => this.__deleteState(s));
-  }
-
-  /**
-   * ORIGINAL SOURCE: g3w-client/src/core/editing/session.js@v3.9.1
-   * 
    * Add temporary features that will be added with save method
    * 
    * @param { { layerId: string, feature: * } } NewFeat 
@@ -2688,22 +2391,6 @@ export class ToolBox extends G3WObject {
   __pushDelete(layerId, feature) {
     this.__push({ layerId, feature: feature.delete() });
     return feature;
-  }
-
-  /**
-   * ORIGINAL SOURCE: g3w-client/src/core/editing/history.js@v3.9.1
-   * 
-   * @param stateId
-   * 
-   * @since g3w-client-plugin-editing@v3.8.0
-   */
-  __deleteState(stateId) {
-    const i = this._states.findIndex(s => s.id === stateId);
-    console.assert(i >= 0, `invalid stateId ${stateId}`);
-    if (this.state.editing.session.current === stateId) {
-      this.state.editing.session.current = this._states.length > 1 ? this._states[i-1].id : null;
-    }
-    this._states.splice(i, 1);
   }
 
   /**
@@ -2791,24 +2478,6 @@ export class ToolBox extends G3WObject {
       { layerId, feature: newFeature.update() },
       { layerId, feature: oldFeature.update() }
     )
-  }
-
-  /**
-   * ORIGINAL SOURCE: g3w-client/src/core/editing/session.js@v3.9.1
-   * 
-   * @returns { Object } state ids
-   * 
-   * @since g3w-client-plugin-editing@v3.8.0
-   */
-  __moveRelationStatesOwnSession() {
-    const ids = {};
-    const { relations } = this.__getCommitItems();
-    for (let id in relations) {
-      const states = this.__getRelationStates(id);
-      ToolBox.get(id)._history.insertStates(states);
-      ids[id] = states.map(s => s.id);
-    }
-    return ids;
   }
 
   /**
@@ -3017,32 +2686,6 @@ export class ToolBox extends G3WObject {
       .forEach(id => delete commitObj.relations[id]);
 
     return commitObj;
-  }
-
-  /**
-   * ORIGINAL SOURCE: g3w-client/src/core/editing/session.js@v3.9.1
-   * 
-   * Set geometry: {type} of geojson to a 3D type if needed
-   * 
-   * @param layerId
-   * @param commitItems
-   * 
-   * @since g3w-client-plugin-editing@v3.8.0
-   */
-  __set3DGeometryType({
-    layerId = this.state.layer.getId(),
-    commitItems,
-  } = {}) {
-    // check id there is editing layer and if is a vector layer
-    const elayer = MapLayersStoresRegistry.getLayerById(layerId).getEditingLayer();
-    const type = elayer && Layer.LayerTypes.VECTOR === elayer.getType() && elayer.getGeometryType();
-    // if is a 3D layer i set on geoJON before send it to server
-    if (type && is3DGeometry(type)) {
-      commitItems.add.forEach(f => f.geometry.type = type);
-      commitItems.update.forEach(f => f.geometry.type = type);
-    }
-    // same check for relation layers
-    Object.keys(commitItems.relations).forEach(id => this.__set3DGeometryType({ layerId: id, commitItems: commitItems.relations[id] }));
   }
 
   /**

@@ -163,8 +163,7 @@
                   <div
                     v-for                    = "tool in (tools[index] || addTools(relations[index].id))"
                     :key                     = "tool.id"
-                    class                    = "editbtn enabled"
-                    :class                   = "{ 'toggled': tool.active }"
+                    :class                   = "{ enabled: true, 'toggled': tool.active, [`editbtn ${tool.id}`]: true }"
                     @click.stop              = "startTool(tool, index)"
                     v-t-tooltip:top.create   = "`plugins.${tool.name}`"
                   >
