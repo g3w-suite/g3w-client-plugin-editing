@@ -16,6 +16,7 @@
         'mobile':          isMobile(),
         'toolboxselected': state.selected,
         'toolboxactive':   state.editing.on,
+        'geolayer': state.layer.isGeoLayer(),
       }"
     >
 
@@ -62,8 +63,17 @@
         class  = "panel-body"
         v-disabled = "(!isLayerReady || !canEdit) "
       >
+
+        <!-- HAS GEOMETRY -->
+        <div v-if="!state.layer.isGeoLayer()" class="info">
+          <i :class="g3wtemplate.font['info']"></i>
+          questo livello non ha geometria
+          <!-- <span v-t-plugin="'editing.messages.toolbox_has_relation'"></span> -->
+          <divider/>
+        </div>
+
         <!-- HAS RELATION -->
-        <div v-if="hasRelations" class="has-relations">
+        <div v-if="hasRelations" class="info">
           <i :class="g3wtemplate.font['info']"></i>
           <span v-t-plugin="'editing.messages.toolbox_has_relation'"></span>
           <divider/>
@@ -548,12 +558,21 @@
   .toolboxselected {
     box-shadow: 0px 0px 0px 3px var(--skin-color);
   }
-  .panel:not(.toolboxselected) .has-relations {
+  .panel:not(.toolboxselected) .info {
     opacity: .4;
   }
   .panel:not(.toolboxactive) .panel-heading {
     border-radius: 3px;
     filter: grayscale(.8);
+  }
+  .panel:not(.geolayer) .panel-body {
+    padding-top: 0;
+  }
+  .panel.toolboxactive:not(.geolayer) .editbtn.start-editing {
+    color: #fff !important;
+  }
+  .panel:not(.geolayer) .panel-heading {
+    color: #3a4448;
   }
   .editbtn.start-editing {
     padding: 13px;
@@ -574,13 +593,15 @@
     padding: 5px;
     border-radius: 5px;
   }
-  .has-relations {
+  .info {
     color: #000;
-    margin-bottom: 1em;
   }
-  .has-relations > i {
+  .info > i {
     color: #007bff;
     padding-right: 2px
+  }
+  .info + .tools-content {
+    margin-top: 1em;
   }
   .filter-by-relation {
     margin-right:5px;

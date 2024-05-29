@@ -105,6 +105,7 @@ export default {
     delete_feature_relations: "Cancellando una feature con relazioni associate, tale relazioni rimarranno orfane. Si consiglia di gestire tali relazioni prima di cancellare la feature",
     unlink_relation: "Vuoi staccare la relazione?",
     commit_feature: "Riepilogo modifiche",
+    toolbox_has_no_geometry: "questo livello non ha geometria",
     toolbox_has_relation: "questo livello fa parte di una relazione",
     saved: "I dati sono stati salvati correttamente",
     saved_local: "I dati sono stati salvati correttamente in locale",

@@ -315,7 +315,7 @@ new (class extends Plugin {
           });
         // Set editing layer color and toolbox style
         if (!editingLayer.getColor()) {
-          editingLayer.setColor([
+          editingLayer.setColor(editingLayer.isGeoLayer() ? [
             "#C43C39", "#d95f02", "#91522D", "#7F9801", "#0B2637",
             "#8D5A99", "#85B66F", "#8D2307", "#2B83BA", "#7D8B8F",
             "#E8718D", "#1E434C", "#9B4F07", '#1b9e77', "#FF9E17",
@@ -324,7 +324,7 @@ new (class extends Plugin {
             "#3B3A73", "#9E5165", "#A51E22", "#261326", "#e4572e",
             "#29335c", "#f3a712", "#669bbc", "#eb6841", "#4f372d",
             "#cc2a36", "#00a0b0", "#00b159", "#f37735", "#ffc425",
-          ][i++ % 40]);
+          ][i++ % 40] : '#fff');
         }
       });
 

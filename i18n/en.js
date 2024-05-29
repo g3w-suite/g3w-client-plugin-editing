@@ -104,6 +104,7 @@ export default {
     delete_feature_relations: "If feature has bindings relations, these relations become orphans. We suggest to handle these relations before detele this feature",
     unlink_relation: "Do you want unlink relation?",
     commit_feature: "Summary of changes",
+    toolbox_has_no_geometry: "this layer has no geometry",
     toolbox_has_relation: "this layer is part of a relation",
     saved: "Data saved successfully",
     saved_local:"Data saved locally successfully",
