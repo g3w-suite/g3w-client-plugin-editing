@@ -31,19 +31,19 @@ export default {
     delete: "Cancella feature"
   },
   tools: {
-    copy: "Copia features",
-    pastefeaturesfromotherlayers: "Incolla features da altro layer",
+    copy: "Copia elemento",
+    pastefeaturesfromotherlayers: "Incolla elemento da altro livello",
     addpart: "Aggiungi parte alla geometria",
     deletepart: "Cancella parte dalla geometria",
-    merge: "Dissolvi features",
-    split: "Taglia Feature",
-    add_feature: "Aggiungi feature",
-    delete_feature: "Elimina feature",
-    move_feature: "Muovi feature",
-    update_vertex: "Aggiorna vertici feature",
-    update_feature: "Modifica attributi feature",
-    update_multi_features: "Modifica gli attributi delle features selezionate",
-    copyfeaturefromexternallayer: "Crea feature dal layer aggiunto"
+    merge: "Dissolvi elementi",
+    split: "Dividi elemento",
+    add_feature: "Aggiungi elemento",
+    delete_feature: "Elimina elemento",
+    move_feature: "Muovi elemento",
+    update_vertex: "Aggiorna vertici elemento",
+    update_feature: "Modifica attributi elemento",
+    update_multi_features: "Modifica gli attributi degli elementi selezionati",
+    copyfeaturefromexternallayer: "Crea elemento da un livello esterno"
   },
   toolsoftool: {
     measure: "Visualizza misura",
