@@ -9,7 +9,7 @@ export default {
   },
   search: "Cerca",
   editing_changes: "Modifiche Editing",
-  editing_data: "Edita Dati",
+  editing_data: "Modifica dati",
   editing_attributes: "Edita attributi",
   relations: "Relazioni",
   edit_relation: "Edita relazione",
