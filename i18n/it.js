@@ -19,7 +19,7 @@ export default {
   relation_already_added : "Relazione già presente",
   list_of_relations_feature: "Elenco Relazioni della feature ",
   tooltip:{
-    edit_layer: "Modifica Layer",
+    edit_layer: "Modifica livello",
     filter_by_relation: "Filtra i livelli per relazione",
   },
   toolbox: {
@@ -31,12 +31,12 @@ export default {
     delete: "Cancella feature"
   },
   tools: {
-    copy: "Copia elemento",
+    copy: "Copia elementi",
     pastefeaturesfromotherlayers: "Incolla elemento da altro livello",
     addpart: "Aggiungi parte alla geometria",
     deletepart: "Cancella parte dalla geometria",
     merge: "Dissolvi elementi",
-    split: "Dividi elemento",
+    split: "Dividi elementi",
     add_feature: "Aggiungi elemento",
     delete_feature: "Elimina elemento",
     move_feature: "Muovi elemento",
@@ -52,7 +52,7 @@ export default {
   },
   steps: {
     help: {
-      select_elements: "Seleziona le features",
+      select_elements: "Seleziona le geometrie",
       select_element: "Seleziona la feature",
       copy: "Crea una copia delle feature selezionate",
       merge: "Dissolvi features",
@@ -73,21 +73,21 @@ export default {
 
   workflow: {
     steps: {
-      select: 'Clicca sulla feature da selezionare',
-      draw_part: "Disegna la nuova parte",
+      select: 'Seleziona una geometria',
+      draw_part: "Disegna il nuovo elemento da aggiungere alla geometria",
       draw_geometry : "Disegna la geometria",
-      merge: 'Seleziona la feature su cui dissolvere',
-      selectPoint: "Clicca sulla feature per selezionarla",
-      selectSHIFT: 'Seleziona le features tenedo premuto il tasto SHIFT',
-      selectDrawBox: "Seleziona le features disegnando un rettangolo mediante la creazione dei due punti della diagonale",
-      selectDrawBoxAtLeast2Feature: "Seleziona almeno 2 features disegnando un rettangolo mediante la creazione dei due punti della diagonale",
-      selectPointSHIFT: 'Seleziona le features tenedo premuto il tasto SHIFT (multiselezione) oppure cliccando sulla singola feature',
-      selectMultiPointSHIFT: 'Seleziona le features tenedo premuto il tasto SHIFT oppure cliccando sulla singola feature',
-      selectMultiPointSHIFTAtLeast2Feature: 'Seleziona almeno 2 features tenedo premuto il tasto SHIFT oppure cliccando sulla singola feature',
-      copyCTRL: 'Copia le features selezionate con CTRL+C',
-      selectStartVertex: 'Seleziona il vertice di partenza delle feature selezionate',
-      selectToPaste: 'Seleziona il punto dove verranno incollate le features selezionate',
-      draw_split_line: "Disegna una linea per tagliare la feature selezionata"
+      merge: 'Seleziona la geometria su cui dissolvere',
+      selectPoint: "Clicca sulla geometria per selezionarla",
+      selectSHIFT: 'Seleziona le geometrie tenedo premuto il tasto SHIFT',
+      selectDrawBox: "Seleziona le geometrie disegnando un rettangolo mediante la creazione dei due punti della diagonale",
+      selectDrawBoxAtLeast2Feature: "Seleziona almeno 2 geometrie disegnando un rettangolo mediante la creazione dei due punti della diagonale",
+      selectPointSHIFT: 'Seleziona le geometrie <br><sub><code>MAIUSC+DRAG</code> seleziona più elementi in un area</sub>',
+      selectMultiPointSHIFT: 'Seleziona le geometrie <br><sub><code>SHIFT+DRAG</code> seleziona più elementi in un area</sub>',
+      selectMultiPointSHIFTAtLeast2Feature: 'Seleziona almeno 2 geometrie <br><sub><code>SHIFT+DRAG</code> seleziona più elementi in un area</sub>',
+      copyCTRL: 'Copia le geometrie selezionate con CTRL+C',
+      selectStartVertex: 'Seleziona il vertice di partenza',
+      selectToPaste: 'Seleziona il punto dove verranno incollate le geometrie',
+      draw_split_line: "Disegna una linea per dividere la geometria selezionata"
     },
     title: {
       steps: 'Passi',

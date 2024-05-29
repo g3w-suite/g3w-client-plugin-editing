@@ -64,11 +64,10 @@
         v-disabled = "(!isLayerReady || !canEdit) "
       >
 
-        <!-- HAS GEOMETRY -->
+        <!-- HAS NO GEOMETRY -->
         <div v-if="!state.layer.isGeoLayer()" class="info">
           <i :class="g3wtemplate.font['info']"></i>
-          questo livello non ha geometria
-          <!-- <span v-t-plugin="'editing.messages.toolbox_has_relation'"></span> -->
+          <span v-t-plugin="'editing.messages.toolbox_has_no_geometry'"></span>
           <divider/>
         </div>
 
