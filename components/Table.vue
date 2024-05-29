@@ -475,8 +475,16 @@
   };
 </script>
 
+<style>
+.g3w-editing-table table.dataTable tbody td {
+  padding: 3px 5px;
+}
+</style>
+
 <style scoped>
   .editing_table_title {
+    margin-top:0;
+    margin-bottom: 2px;
     font-size: 1.5em;
     font-weight: bold;
     color: var(--skin-color);
@@ -489,6 +497,11 @@
 
   #table-editing-tools i {
       margin: 5px;
+  }
+
+  #buttons button.btn {
+    font-weight: bold !important;
+    min-width: 80px;
   }
 
   .table_editing_footer_buttons {
