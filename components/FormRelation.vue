@@ -629,7 +629,6 @@
         ].flat().filter(Boolean);
 
         this.tools.push(tools);
-        console.log(tools)
         return tools;
       },
 
@@ -645,15 +644,15 @@
        */
       async startTool(relationtool, index) {
         try {
-          relationtool.active = !relationtool.active;
+          relationtool.state.active = !relationtool.state.active;
 
           // skip when ..
-          if (!relationtool.active) {
+          if (!relationtool.state.active) {
             return Promise.resolve();
           }
 
           this.tools.forEach(tools => {
-            tools.forEach(t => { if (relationtool.id !== t.id) { t.active = false; } })
+            tools.forEach(t => { if (relationtool.state.id !== t.state.id) { t.state.active = false; } })
           });
 
           await VM.$nextTick();
@@ -665,7 +664,7 @@
 
           const is_vector       = Layer.LayerTypes.VECTOR === this._layerType;
           const relation        = this.relations[index];
-          const toolId          = relationtool.id.split(`${relation.id}_`)[1];
+          const toolId          = relationtool.state.id.split(`${relation.id}_`)[1];
           const relationfeature = this.getLayer().getEditingSource().getFeatureById(relation.id);
           const featurestore    = this.getLayer().getEditingSource();
           const selectStyle     = is_vector && SELECTED_STYLES[this.getLayer().getGeometryType()]; // get selected vector style
@@ -792,7 +791,7 @@
 
             // watch eventually deactive when another tool is activated
             const unwatch = VM.$watch(
-              () => relationtool.active,
+              () => relationtool.state.active,
               bool => {
                 if (!bool) {
                   //need to enable saveAll and back
@@ -837,7 +836,7 @@
             console.trace('START TOOL FAILED', e);
             return Promise.reject(e);
           } finally {
-            relationtool.active = false;
+            relationtool.state.active = false;
           }
         } catch (e) {
           console.warn(e);
