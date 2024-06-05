@@ -162,15 +162,15 @@
                   <!-- RELATION TOOLS -->
                   <div
                     v-for                    = "tool in (tools[index] || addTools(relations[index].id))"
-                    :key                     = "tool.id"
-                    :class                   = "{ enabled: true, 'toggled': tool.active, [`editbtn ${tool.id}`]: true }"
+                    :key                     = "tool.state.id"
+                    :class                   = "{ enabled: true, 'toggled': tool.state.active, [`editbtn ${tool.state.id}`]: true }"
                     @click.stop              = "startTool(tool, index)"
-                    v-t-tooltip:top.create   = "`plugins.${tool.name}`"
+                    v-t-tooltip:top.create   = "`plugins.${tool.state.name}`"
                   >
                     <img
                       height = "20px"
                       width  = "20px"
-                      :src   = "`${resourcesurl}images/${tool.icon}`"
+                      :src   = "`${resourcesurl}images/${tool.state.icon}`"
                     />
                   </div>
                 </div>
@@ -585,7 +585,6 @@
        * @since g3w-client-plugin-editing@v3.8.0
        */
       addTools(id) {
-
         const tools = [
 
           // edit attributes
@@ -630,7 +629,7 @@
         ].flat().filter(Boolean);
 
         this.tools.push(tools);
-
+        console.log(tools)
         return tools;
       },
 
