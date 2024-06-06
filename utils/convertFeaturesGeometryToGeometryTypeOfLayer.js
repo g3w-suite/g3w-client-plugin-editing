@@ -12,6 +12,7 @@ export function convertFeaturesGeometryToGeometryTypeOfLayer({
 }) {
  const converted = [];
  const is3DGeometry = g3wsdk.core.geoutils.Geometry.is3DGeometry(geometryType);
+ console.log(is3DGeometry)
 
  features.forEach(f => {
    const type = f.getGeometry() && f.getGeometry().getType();
@@ -20,7 +21,7 @@ export function convertFeaturesGeometryToGeometryTypeOfLayer({
     g3wsdk.core.geoutils.Geometry.removeZValueToOLFeatureGeometry({ feature: f });
    }
    //in the case of geometry type and layer is not 3dGeometry, add 3d coordinate
-    if (type && !is3DGeometry) {
+   if (type && is3DGeometry) {
      g3wsdk.core.geoutils.Geometry.addZValueToOLFeatureGeometry({ feature: f, geometryType });
    }
    if (geometryType === type) { converted.push(f) }
