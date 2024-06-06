@@ -227,7 +227,7 @@ export class Step extends G3WObject {
    */
   addInteraction(interaction, events = {}) {
     GUI.getService('map').addInteraction(interaction);
-    Object.entries(events).forEach(e => interaction.on(e[0], e[1]));
+    Object.entries(events).forEach(([type, handler]) => interaction.on(type, handler));
     this.on('stop', () => this.removeInteraction(interaction));
     return interaction;
   }
@@ -486,7 +486,7 @@ export class Step extends G3WObject {
         console.warn(e);
         this.state.error = e;
         return Promise.reject(e);
-      } finally{
+      } finally {
         this.__stop();
       }
     });
