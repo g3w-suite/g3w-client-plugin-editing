@@ -232,6 +232,7 @@
   import { updateParentWorkflows }                        from '../utils/updateParentWorkflows';
   import { getRelationId }                                from '../utils/getRelationId';
   import { getFeatureTableFieldValue }                    from '../utils/getFeatureTableFieldValue';
+  import { chooseFeatureFromFeatures }                    from "../utils/chooseFeatureFromFeatures";
   import { PickFeaturesInteraction }                      from '../interactions/pickfeaturesinteraction';
   import { VM }                                           from '../eventbus';
   import {
@@ -242,12 +243,14 @@
     MoveFeatureStep,
   }                                                       from '../workflows';
 
+  const { ProjectsRegistry }            = g3wsdk.core.project;
   const { CatalogLayersStoresRegistry } = g3wsdk.core.catalog;
   const { DataRouterService }           = g3wsdk.core.data;
   const { Geometry }                    = g3wsdk.core.geometry;
   const { isSameBaseGeometryType }      = g3wsdk.core.geoutils;
   const { tPlugin:t }                   = g3wsdk.core.i18n;
   const { Layer }                       = g3wsdk.core.layer;
+  const { Feature }                     = g3wsdk.core.layer.features;
   const { toRawType }                   = g3wsdk.core.utils;
   const { GUI }                         = g3wsdk.gui;
   const { FormService }                 = g3wsdk.gui.vue.services;
@@ -352,15 +355,17 @@
         const copyLayer = this.copyFeatureLayers.find(layer => layer.id === this.copylayerid);
         let external    = copyLayer.external;
         let layer       = external ? GUI.getService('map').getLayerById(this.copylayerid) : CatalogLayersStoresRegistry.getLayerById(this.copylayerid);
-
+        const is_vector =  (external || layer.isGeoLayer())
         this.runAddRelationWorkflow({
-          workflow: !!(external || layer.isGeoLayer()) ? new this._add_link_workflow.selectandcopy({
-            copyLayer: layer,
-            isVector: true,
-            external,
-            help: 'editing.steps.help.copy',
-          }) : undefined,
-          isVector: !!(external || layer.isGeoLayer())
+          workflow: is_vector
+            ? new this._add_link_workflow.selectandcopy({
+                copyLayer: layer,
+                isVector:  true,
+                help:      'editing.steps.help.copy',
+                external,
+              })
+            : undefined,
+          isVector: is_vector
         })
       },
 
@@ -481,8 +486,8 @@
           if (newrelation) {
             newrelation.id = id;
             //replace tools with new id
-            (this.tools.find(ts => ts.find(t => t.id.split(`${clientid}_`).length > 1)) || [])
-              .forEach(t => t.id = t.id.replace(`${clientid}_`, `${id}_`));
+            (this.tools.find(ts => ts.find(t => t.state.id.split(`${clientid}_`).length > 1)) || [])
+              .forEach(t => t.state.id = t.state.id.replace(`${clientid}_`, `${id}_`));
           }
         })
 
@@ -939,6 +944,8 @@
           workflow.unbindEscKeyUp();
           GUI.hideContent(false);
           GUI.setModal(true);
+          //need to resize to adjust table
+          setTimeout(() => this.resize())
         }
       },
 
@@ -1392,14 +1399,33 @@
           },
 
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addfeatureworkflow.js@v3.7.1 */
-          add: (options = {}) => new Workflow({
-            ...options,
-            type: 'addfeature',
-            steps: [
-              new AddFeatureStep({ ...options, tools: ['snap', 'measure'] }),
-              new OpenFormStep(options),
-            ],
-          }),
+          add: (options = {}) => {
+            const addStep = new AddFeatureStep({
+              ...options,
+              steps: {
+                draw: {
+                  description: `editing.steps.help.draw_new_feature`,
+                  done: false,
+                }
+              },
+              tools: ['snap', 'measure']
+            })
+
+            addStep.on('stop', () => {
+              addStep.setUserMessageStepDone('draw');
+              GUI.closeUserMessage();
+            })
+
+            return new Workflow({
+              ...options,
+              type: 'addfeature',
+              steps: [
+                addStep,
+                new OpenFormStep(options),
+              ],
+              registerEscKeyEvent: true,
+            })
+          },
 
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/selectandcopyfeaturesfromotherlayerworkflow.js@v3.7.1 */
           selectandcopy(options = {}) {
@@ -1410,6 +1436,12 @@
                 new Step({
                   ...options,
                   help: "editing.steps.help.pick_feature",
+                  steps: {
+                    select: {
+                      description: `editing.workflow.steps.selectPoint`,
+                      done: false,
+                    }
+                  },
                   run(inputs, context) {
                     /** @TODO Create a component that ask which project layer would like to query */
                     if (!options.copyLayer) {
@@ -1422,40 +1454,60 @@
                       // interaction promise
                       await (new Promise(async resolve => {
                         /** @TODO NO VECTOR LAYER */
-                        if (!options.isVector) {
-                          return resolve();
-                        }
+                        if (!options.isVector) { return resolve(); }
                         this.addInteraction(
                           options.external
                             ? new PickFeaturesInteraction({ layer: options.copyLayer })
                             : new PickCoordinatesInteraction(), {
-                          'picked': async e => {
+                              'picked': async e => {
+                                try {
+                                  features = convertFeaturesGeometryToGeometryTypeOfLayer({
+                                    geometryType,
+                                    features: (
+                                      options.external
+                                        ? [{ features: e.features }]                             // external layer
+                                        : (await DataRouterService.getData('query:coordinates', { // TOC/PROJECT layer
+                                          inputs: {
+                                            coordinates: e.coordinate,
+                                            query_point_tolerance: ProjectsRegistry.getCurrentProject().getQueryPointTolerance(),
+                                            layerIds: [options.copyLayer.getId()],
+                                            multilayers: false
+                                          },
+                                          outputs: null
+                                        })).data
+                                    )[0].features,
+                                  })
+                                } catch(e) {
+                                  console.warn(e);
+                                }
+                                finally {
+                                  resolve()
+                                }
+                              }
+                          }
+                        );
+                      }));
+                      const _feature = features.length > 0 && (
+                        await new Promise(async (resolve) => {
+                          if (features.length > 1) {
                             try {
-                              features = convertFeaturesGeometryToGeometryTypeOfLayer({
-                                geometryType,
-                                features: (options.external
-                                  ? [{ features: e.features }]                             // external layer
-                                  : await DataRouterService.getData('query:coordinates', { // TOC/PROJECT layer
-                                    inputs: {
-                                      coordinates: e.coordinate,
-                                      query_point_tolerance: ProjectsRegistry.getCurrentProject().getQueryPointTolerance(),
-                                      layerIds: [options.copyLayer.getId()],
-                                      multilayers: false
-                                    },
-                                    outputs: null
-                                  }))[0].features,
-                              });
+                              resolve(await promisify(chooseFeatureFromFeatures({ features, inputs })))
                             } catch(e) {
                               console.warn(e);
-                              d.reject(e);
-                            } finally {
                               resolve();
                             }
-                          }
+                          } else { resolve(features[0]) }
+                        })
+                      )
+                      if (_feature) {
+                          const feature = new Feature({
+                          feature: _feature,
+                          properties: inputs.layer.getEditingFields().filter(attribute => !attribute.pk).map(attribute => attribute.name)
                         });
-                      }));
-                      if (features.length) {
-                        inputs.features = features;
+                        feature.setTemporaryId();
+                        inputs.features = [feature];
+                        inputs.layer.getEditingLayer().getSource().addFeature(feature);
+                        context.session.pushAdd(inputs.layer.getId(), feature, false);
                         d.resolve(inputs);
                       } else {
                         GUI.showUserMessage({
@@ -1468,21 +1520,9 @@
                       }
                     }).promise();
                   },
-                }),
-                // copy features from other project layer
-                new Step({
-                  ...options,
-                  help: "editing.steps.help.draw_new_feature",
-                  run(inputs, context) {
-                    return $.Deferred(d => new (Vue.extend(require('../components/CopyFeaturesFromOtherProjectLayer.vue')))({
-                      inputs,
-                      context,
-                      promise: d,
-                      service: this,
-                      copyLayer: options.copyLayer,
-                      external:  options.external,
-                      isVector:  options.isVector,
-                    })).promise();
+                  stop() {
+                    this.setUserMessageStepDone('select');
+                    GUI.closeUserMessage();
                   }
                 }),
                 new OpenFormStep(options),
