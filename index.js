@@ -1099,17 +1099,17 @@ new (class extends Plugin {
         }
 
         // result is false. An error occurs
-        if (online2 && !result) { 
+        if (online2 && !result) {
           serverError = true;
           throw response;
         }
       } catch (e) {
+        //need to be set server Error
+        serverError = true;
         console.warn(e);
 
         // hide saving dialog
-        if (dialog) {
-          dialog.modal('hide');
-        }
+        if (dialog) { dialog.modal('hide') }
 
         // rollback relations
         if (modal) {
