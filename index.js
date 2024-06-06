@@ -455,17 +455,25 @@ new (class extends Plugin {
                   }
                 },
                 onRun: ({inputs, context}) => {
-                  w.emit('settoolsoftool', [{
-                    type: 'snap',
-                    options: {
-                      layerId: inputs.layer.getId(),
-                      source:  inputs.layer.getEditingLayer().getSource(),
-                      active:  true
+                  w.emit('settoolsoftool', [
+                    {
+                      type: 'snap',
+                      options: {
+                        layerId: inputs.layer.getId(),
+                        source:  inputs.layer.getEditingLayer().getSource(),
+                        active:  true
+                      }
+                    },
+                    {
+                      type: 'measure',
+                      options: {
+                        active: false
+                      }
                     }
-                  }]);
+                  ]);
                   w.emit('active', ['snap']);
                 },
-                onStop: () => w.emit('deactive', ['snap'])
+                onStop: () => w.emit('deactive', ['snap', 'measure'])
               }),
               // add part to multi geometries
               new Step({ run: addPartToMultigeometries })
