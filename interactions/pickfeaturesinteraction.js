@@ -17,7 +17,7 @@ export class PickFeaturesInteraction extends ol.interaction.Pointer {
         return features;
       },
       handleUpEvent(e) {
-        if (features && features.length){
+        if (features && features.length) {
           this.dispatchEvent({ type: 'picked', features, coordinate: e.coordinate, layer: options.layer });
         }
         return true;
