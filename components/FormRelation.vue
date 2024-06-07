@@ -1429,6 +1429,7 @@
 
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/selectandcopyfeaturesfromotherlayerworkflow.js@v3.7.1 */
           selectandcopy(options = {}) {
+            const self = this;
             return new Workflow({
               type: 'selectandcopyfeaturesfromotherlayer',
               steps: [
@@ -1462,19 +1463,17 @@
                                 'picked': async e => {
                                   try {
                                     features = convertToGeometry(
-                                      (
-                                        options.external
-                                          ? [{ features: e.features }]                             // external layer
-                                          : (await DataRouterService.getData('query:coordinates', { // TOC/PROJECT layer
-                                            inputs: {
-                                              coordinates: e.coordinate,
-                                              query_point_tolerance: ProjectsRegistry.getCurrentProject().getQueryPointTolerance(),
-                                              layerIds: [options.copyLayer.getId()],
-                                              multilayers: false
-                                            },
-                                            outputs: null
-                                          })).data
-                                      )[0].features,
+                                      options.external
+                                        ? e.features                             // external layer
+                                        : (await DataRouterService.getData('query:coordinates', { // TOC/PROJECT layer
+                                          inputs: {
+                                            coordinates: e.coordinate,
+                                            query_point_tolerance: ProjectsRegistry.getCurrentProject().getQueryPointTolerance(),
+                                            layerIds: [options.copyLayer.getId()],
+                                            multilayers: false
+                                          },
+                                          outputs: null
+                                        })).data[0].features,
                                       geometryType,
                                     )
                                   } catch(e) {
@@ -1521,6 +1520,7 @@
                     });
                   },
                   stop() {
+                    self.show_vector_tools = false;
                     this.setUserMessageStepDone('select');
                     GUI.closeUserMessage();
                   }
