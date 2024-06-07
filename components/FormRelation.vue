@@ -1306,6 +1306,8 @@
        */
       this.tools = [];
 
+      const self = this;
+
       this._add_link_workflow = ({
         [Layer.LayerTypes.TABLE]: {
 
@@ -1429,7 +1431,6 @@
 
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/selectandcopyfeaturesfromotherlayerworkflow.js@v3.7.1 */
           selectandcopy(options = {}) {
-            const self = this;
             return new Workflow({
               type: 'selectandcopyfeaturesfromotherlayer',
               steps: [
