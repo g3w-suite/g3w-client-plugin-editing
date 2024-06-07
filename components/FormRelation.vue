@@ -223,11 +223,11 @@
   import { Workflow }                                     from '../g3wsdk/workflow/workflow';
   import { Step }                                         from '../g3wsdk/workflow/step';
   import { setAndUnsetSelectedFeaturesStyle }             from '../utils/setAndUnsetSelectedFeaturesStyle';
-  import { promisify }                                    from '../utils/promisify';
+  import { promisify, $promisify }                        from '../utils/promisify';
   import { getRelationFieldsFromRelation }                from '../utils/getRelationFieldsFromRelation';
   import { getLayersDependencyFeatures }                  from '../utils/getLayersDependencyFeatures';
   import { getEditingLayerById }                          from '../utils/getEditingLayerById';
-  import { convertFeaturesGeometryToGeometryTypeOfLayer } from '../utils/convertFeaturesGeometryToGeometryTypeOfLayer';
+  import { convertToGeometry }                            from '../utils/convertToGeometry';
   import { addTableFeature }                              from '../utils/addTableFeature';
   import { updateParentWorkflows }                        from '../utils/updateParentWorkflows';
   import { getRelationId }                                from '../utils/getRelationId';
@@ -1222,13 +1222,13 @@
           // external layers with same geometry of relation layer
           ...GUI.getService('map').getExternalLayers()
             .filter(l => {
-              const features = l.getSource().getFeatures();
+              const features = l.getSource().getFeatures() || [];
               // skip when ..
-              if (!(features && features.length > 0) || (features && features[0] && !features[0].getGeometry())) {
+              if (!features[0] || !features[0].getGeometry()) {
                 return false;
               }
               const type = features[0].getGeometry().getType();
-              return geometryType === type || isSameBaseGeometryType(geometryType, type);
+              return geometryType === type || (isSameBaseGeometryType(geometryType, type) && (Geometry.isMultiGeometry(geometryType) || !Geometry.isMultiGeometry(type)));
             })
             .map(l => ({
               id:       l.get('id'),
@@ -1447,78 +1447,78 @@
                     if (!options.copyLayer) {
                       return $.Deferred(d => d.resolve()).promise();
                     }
-                    return $.Deferred(async d => {
+                    return $promisify(async () => {
                       // get features from copyLayer
-                      let features             = [];
-                      const geometryType       = inputs.layer.getGeometryType();
-                      // interaction promise
-                      await (new Promise(async resolve => {
-                        /** @TODO NO VECTOR LAYER */
-                        if (!options.isVector) { return resolve(); }
-                        this.addInteraction(
-                          options.external
-                            ? new PickFeaturesInteraction({ layer: options.copyLayer })
-                            : new PickCoordinatesInteraction(), {
-                              'picked': async e => {
-                                try {
-                                  features = convertFeaturesGeometryToGeometryTypeOfLayer({
-                                    geometryType,
-                                    features: (
-                                      options.external
-                                        ? [{ features: e.features }]                             // external layer
-                                        : (await DataRouterService.getData('query:coordinates', { // TOC/PROJECT layer
-                                          inputs: {
-                                            coordinates: e.coordinate,
-                                            query_point_tolerance: ProjectsRegistry.getCurrentProject().getQueryPointTolerance(),
-                                            layerIds: [options.copyLayer.getId()],
-                                            multilayers: false
-                                          },
-                                          outputs: null
-                                        })).data
-                                    )[0].features,
-                                  })
-                                } catch(e) {
-                                  console.warn(e);
+                      let features       = [];
+                      const geometryType = inputs.layer.getGeometryType();
+
+                      /** @TODO NO VECTOR LAYER */
+                      if (options.isVector) {
+                        await (new Promise(async resolve => {
+                          this.addInteraction(
+                            options.external
+                              ? new PickFeaturesInteraction({ layer: options.copyLayer })
+                              : new PickCoordinatesInteraction(), {
+                                'picked': async e => {
+                                  try {
+                                    features = convertToGeometry(
+                                      (
+                                        options.external
+                                          ? [{ features: e.features }]                             // external layer
+                                          : (await DataRouterService.getData('query:coordinates', { // TOC/PROJECT layer
+                                            inputs: {
+                                              coordinates: e.coordinate,
+                                              query_point_tolerance: ProjectsRegistry.getCurrentProject().getQueryPointTolerance(),
+                                              layerIds: [options.copyLayer.getId()],
+                                              multilayers: false
+                                            },
+                                            outputs: null
+                                          })).data
+                                      )[0].features,
+                                      geometryType,
+                                    )
+                                  } catch(e) {
+                                    console.warn(e);
+                                  } finally {
+                                    resolve()
+                                  }
                                 }
-                                finally {
-                                  resolve()
-                                }
-                              }
-                          }
-                        );
-                      }));
-                      const _feature = features.length > 0 && (
-                        await new Promise(async (resolve) => {
-                          if (features.length > 1) {
-                            try {
-                              resolve(await promisify(chooseFeatureFromFeatures({ features, inputs })))
-                            } catch(e) {
-                              console.warn(e);
-                              resolve();
                             }
-                          } else { resolve(features[0]) }
-                        })
-                      )
+                          );
+                        }));
+                      }
+
+                      let _feature;
+
+                      try {
+                        _feature = features.length > 1
+                          ? await promisify(chooseFeatureFromFeatures({ features, inputs }))
+                          : features[0];
+                      } catch (e) {
+                        console.warn(e);
+                      }
+
                       if (_feature) {
-                          const feature = new Feature({
+                        const feature = new Feature({
                           feature: _feature,
-                          properties: inputs.layer.getEditingFields().filter(attribute => !attribute.pk).map(attribute => attribute.name)
+                          properties: inputs.layer.getEditingFields().filter(attr => !attr.pk).map(attr => attr.name)
                         });
                         feature.setTemporaryId();
                         inputs.features = [feature];
                         inputs.layer.getEditingLayer().getSource().addFeature(feature);
                         context.session.pushAdd(inputs.layer.getId(), feature, false);
-                        d.resolve(inputs);
-                      } else {
-                        GUI.showUserMessage({
-                          type: 'warning',
-                          message: 'plugins.editing.messages.no_feature_selected',
-                          closable: false,
-                          autoclose: true
-                        });
-                        d.reject();
+                        return inputs;
                       }
-                    }).promise();
+
+                      GUI.showUserMessage({
+                        type: 'warning',
+                        message: 'plugins.editing.messages.no_feature_selected',
+                        closable: false,
+                        autoclose: true
+                      });
+
+                      return Promise.reject();
+                    });
                   },
                   stop() {
                     this.setUserMessageStepDone('select');

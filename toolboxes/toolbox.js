@@ -12,7 +12,7 @@ import { evaluateExpressionFields }                     from '../utils/evaluateE
 import { getNotEditableFieldsNoPkValues }               from '../utils/getNotEditableFieldsNoPkValues';
 import { getDeltaXY }                                   from '../utils/getDeltaXY';
 import { chooseFeatureFromFeatures }                    from '../utils/chooseFeatureFromFeatures';
-import { convertFeaturesGeometryToGeometryTypeOfLayer } from '../utils/convertFeaturesGeometryToGeometryTypeOfLayer';
+import { convertToGeometry }                            from '../utils/convertToGeometry';
 import { getProjectLayerFeatureById }                   from '../utils/getProjectLayerFeatureById';
 import { addTableFeature }                              from '../utils/addTableFeature';
 import { getRelationFieldsFromRelation }                from '../utils/getRelationFieldsFromRelation';
@@ -485,10 +485,10 @@ export class ToolBox extends G3WObject {
                     const editingLayer     = originalLayer.getEditingLayer();
                     const source           = editingLayer.getSource();
                     // get features from selection features
-                    const features         = convertFeaturesGeometryToGeometryTypeOfLayer({
+                    const features         = convertToGeometry(
+                      GUI.getService('map').defaultsLayers.selectionLayer.getSource().getFeatures().filter(f => f.__layerId !== layerId),
                       geometryType,
-                      features: GUI.getService('map').defaultsLayers.selectionLayer.getSource().getFeatures().filter(f => f.__layerId !== layerId),
-                    });
+                    );
                     const selectedFeatures = [];
                 
                     /**
