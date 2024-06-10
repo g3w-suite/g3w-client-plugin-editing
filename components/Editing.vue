@@ -215,12 +215,15 @@
       /**
        * @param toolboxId
        */
-      stopToolBox(toolboxId) {
+      async stopToolBox(toolboxId) {
         const toolbox = this.service.getToolBoxById(toolboxId);
         if (toolbox.state.editing.history.commit) {
-          this.service.commit().always(() => toolbox.stop());
+          await this.service.commit().always(async () => await toolbox.stop());
         } else {
-          toolbox.stop()
+          await toolbox.stop()
+        }
+        if (undefined === this.service.getToolBoxes().find(t => t.state.editing.on )) {
+          this._enableQueryMapControl();
         }
       },
 
@@ -403,6 +406,17 @@
         });
       },
 
+      /**
+       * @since 3.8.0
+       * @private
+       */
+      _enableQueryMapControl() {
+        const queryControl = GUI.getService('map').getMapControlByType({ type: 'query' });
+        if (queryControl && !queryControl.isToggled()) {
+          queryControl.toggle();
+        }
+      }
+
     },
 
     computed: {
@@ -575,6 +589,7 @@
 
       // clear all unique values fields related to layer (after closing editing panel).
       this.state.uniqueFieldsValues = {};
+      this._enableQueryMapControl();
     },
 
   };
