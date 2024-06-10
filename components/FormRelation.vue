@@ -101,7 +101,7 @@
 
           <span class="divider"></span>
 
-          <div id="g3w-select-editable-layers-content">
+          <div id="g3w-select-editable-layers-content" v-disabled="0 === copyFeatureLayers.length">
 
             <div
               class      = "g3w-editing-new-relation-vector-type"
@@ -1204,7 +1204,7 @@
                 l.isGeoLayer() &&
                 l.getGeometryType &&
                 l.getGeometryType() &&
-                this.relation.father !== l.getId()
+                ![this.relation.child, this.relation.father].includes(l.getId())
               ) && (
                 l.getGeometryType() === geometryType ||
                 (
