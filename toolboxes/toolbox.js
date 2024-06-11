@@ -1408,7 +1408,7 @@ export class ToolBox extends G3WObject {
       this.state.startstopediting = startstopediting;
   
       filter = applicationConstraint && applicationConstraint.filter || this.constraints.filter || filter;
-  
+
       //register lock features to show a message
       const unKeyLock = this.state.layer.getFeaturesStore().onceafter('featuresLockedByOtherUser', () => {
         GUI.showUserMessage({
@@ -1422,7 +1422,7 @@ export class ToolBox extends G3WObject {
       this.state._unregisterStartSettersEventsKey.push(
         () => this.state.layer.getFeaturesStore().un('featuresLockedByOtherUser', unKeyLock)
       );
-  
+
       // check if can we edit based on scale contraint (vector layer)
       if (this.state._constraints.scale) {
         //unwatch selected
@@ -1431,20 +1431,20 @@ export class ToolBox extends G3WObject {
         const message = `${tPlugin('editing.messages.constraints.enable_editing')}${this.state._constraints.scale}`.toUpperCase();
         //check if you can edit
         this.state.editing.canEdit = getScaleFromResolution(map.getView().getResolution()) <= this.state._constraints.scale;
-
-        GUI.setModal(!this.state.editing.canEdit, message);
         await new Promise((resolve) => {
           //listen to change resolution
           const key = map.getView().on('change:resolution', evt => {
             this.state.editing.canEdit = getScaleFromResolution(evt.target.getResolution()) <= this.state._constraints.scale;
             if (this.state.editing.canEdit) { resolve() }
-            GUI.setModal(this.state.selected && !this.state.editing.canEdit, message);
+            //only check if selected
+            if (this.state.selected) { GUI.setModal(!this.state.editing.canEdit, message) }
           })
 
           const unwatch = VM.$watch(() => this.state.selected,
             {
               immediate: true,
-              handler: bool => GUI.setModal(bool && !this.state.editing.canEdit, message)
+              //only when switch to selected true
+              handler: bool => { if (bool) { GUI.setModal(!this.state.editing.canEdit, message) } }
             })
 
           this.state._unregisterStartSettersEventsKey.push(() => {
