@@ -384,7 +384,7 @@ export class ToolBox extends G3WObject {
           type: ['change_attr_feature'],
           name: "editing.tools.update_multi_features",
           icon: "multiEditAttributes.png",
-          once: true,
+          runOnce: true,
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editmultifeatureattributesworkflow.js@v3.7.1 */
           op: new Workflow({
             layer,
@@ -435,7 +435,7 @@ export class ToolBox extends G3WObject {
           type: ['add_feature'],
           name: "editing.tools.pastefeaturesfromotherlayers",
           icon: "pasteFeaturesFromOtherLayers.png",
-          once: true,
+          runOnce: true,
           enable: (function() {
             const map          = GUI.getService('map');
             const layerId      = layer.getId();
@@ -632,7 +632,7 @@ export class ToolBox extends G3WObject {
           type: ['add_feature'],
           name: "editing.tools.copy",
           icon: `copy${iconGeometry}.png`,
-          once: true,
+          runOnce: true,
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/copyfeaturesworkflow.js@v3.7.1 */
           op: new Workflow({
             layer,
@@ -784,7 +784,7 @@ export class ToolBox extends G3WObject {
           type: ['add_feature', 'change_feature'],
           name: "editing.tools.addpart",
           icon: "addPart.png",
-          once: true,
+          runOnce: true,
           visible: isMultiGeometry,
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addparttomultigeometriesworkflow.js@v3.7.1 */
           op: new Workflow({
@@ -924,7 +924,7 @@ export class ToolBox extends G3WObject {
           type:  ['change_feature'],
           name: "editing.tools.split",
           icon: "splitFeatures.png",
-          once: true,
+          runOnce: true,
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/splitfeatureworkflow.js@v3.7.1 */
           op: new Workflow({
             layer,
@@ -1031,7 +1031,7 @@ export class ToolBox extends G3WObject {
           type: ['change_feature'],
           name: "editing.tools.merge",
           icon: "mergeFeatures.png",
-          once: true,
+          runOnce: true,
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/mergefeaturesworkflow.js@v3.7.1 */
           op: new Workflow({
             layer,
@@ -1124,7 +1124,7 @@ export class ToolBox extends G3WObject {
           type: ['add_feature'],
           name: "editing.tools.copyfeaturefromexternallayer",
           icon: "copyPolygonFromFeature.png",
-          once: true,
+          runOnce: true,
           visible: tool => {
             const map  = GUI.getService('map');
             const type = this.getLayer().getGeometryType();
@@ -1182,7 +1182,7 @@ export class ToolBox extends G3WObject {
           type: ['delete_feature', 'change_attr_feature'],
           name: "editing.tools.update_feature",
           icon: "editAttributes.png",
-          once: true,
+          runOnce: true,
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/edittableworkflow.js@v3.7.1 */
           op: new Workflow({
             layer,
@@ -1213,6 +1213,8 @@ export class ToolBox extends G3WObject {
         setOperator:          op => tool.op = op,
       })
     });
+
+    console.log(this);
 
     Object.assign(this.state, {
       tools: this.state._tools,
@@ -2860,7 +2862,7 @@ export class ToolBox extends G3WObject {
       }
       this._session.rollback();
     } finally {
-      if (!tool.once && Layer.LayerTypes.TABLE !== this.getLayer().getType() ) {
+      if (!tool.runOnce && Layer.LayerTypes.TABLE !== this.getLayer().getType() ) {
         await this._startOp(tool, options, hideSidebar);
       } else {
         tool.stop();
