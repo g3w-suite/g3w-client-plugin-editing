@@ -1237,6 +1237,25 @@
             })),
 
         ].sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));                   // sorted by name
+
+        //Listen add external Layer
+        this.addExternalLayerKey = GUI.getService('catalog').onafter('addExternalLayer', ({ layer, type }) => {
+          if ('vector' === type) {
+            const externalLayer = GUI.getService('map').getExternalLayers().find(l => layer.id === l.get('id'));
+            if (externalLayer) {
+              const features = externalLayer.getSource().getFeatures() || [];
+              if (!features[0] || !features[0].getGeometry()) { return }
+              const type = features[0].getGeometry().getType();
+              if (geometryType === type || (isSameBaseGeometryType(geometryType, type) && (Geometry.isMultiGeometry(geometryType) || !Geometry.isMultiGeometry(type)))) {
+                this.copyFeatureLayers.push({
+                  id:       externalLayer.get('id'),
+                  name:     externalLayer.get('name'),
+                  external: true,
+                })
+              }
+            }
+          }
+        })
       }
 
       this.copylayerid = this.copyFeatureLayers.length ? this.copyFeatureLayers[0].id : null; // current layer = first layer found
@@ -1600,6 +1619,11 @@
       if (this.isVectorRelation && (null !== this.currentRelationFeatureId)) {
         GUI.getService('map').zoomToExtent(this.mapExtent);
         this.mapExtent = null;
+      }
+      //remove event
+      if (this.addExternalLayerKey) {
+        GUI.getService('catalog').un('addExternalLayer', this.addExternalLayerKey);
+        this.addExternalLayerKey = null;
       }
     },
 
