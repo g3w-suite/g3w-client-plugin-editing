@@ -199,7 +199,7 @@
        */
       async startToolBox(toolboxId) {
         const toolbox = this.service.getToolBoxById(toolboxId);
-        if (ApplicationState.online && toolbox.canEdit()) {
+        if (ApplicationState.online) {
           //check if a dependency layer (in relation) has some changes not committed
           const dirtyId = toolbox.getDependencies().find(id => this.service.getToolBoxById(id).isDirty());
           if (dirtyId) {
@@ -209,8 +209,8 @@
             try      { await this.commitDirtyToolBoxes(dirtyId); }
             catch(e) { console.warn(e); }
           }
-          toolbox.start()
         }
+        toolbox.start();
       },
 
       /**
@@ -220,9 +220,7 @@
         const toolbox = this.service.getToolBoxById(toolboxId);
         if (toolbox.state.editing.history.commit) {
           await this.service.commit().always(async () => await toolbox.stop());
-        } else {
-          await toolbox.stop()
-        }
+        } else { await toolbox.stop() }
         if (undefined === this.service.getToolBoxes().find(t => t.state.editing.on )) {
           this._enableQueryMapControl();
         }
@@ -244,9 +242,7 @@
       async startActiveTool(toolId, toolboxId) {
         if (this.state.toolboxidactivetool && toolboxId !== this.state.toolboxidactivetool) {
           const toolbox = await this.commitDirtyToolBoxes(this.state.toolboxidactivetool);
-          if (toolbox) {
-            toolbox.stopActiveTool();
-          }
+          if (toolbox) { toolbox.stopActiveTool() }
         }
         const toolbox                  = this.service.getToolBoxById(toolboxId);
         this.state.toolboxidactivetool = toolboxId;

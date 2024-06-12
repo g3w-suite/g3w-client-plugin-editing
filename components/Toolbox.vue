@@ -49,7 +49,7 @@
             'pull-right':       !isMobile(),
             'enabled':          isLayerReady,
             'g3w-icon-toggled': state.editing.on,
-            [g3wtemplate.font[state.editing.on ? 'checkmark' : 'pencil']]: true
+            [g3wtemplate.font[toggled.layer ? 'checkmark' : 'pencil']]: true
           }"
           v-t-tooltip:left.create = "'plugins.editing.tooltip.edit_layer'"
         ></i>
@@ -59,7 +59,7 @@
       <bar-loader :loading="loading" />
 
       <div
-        v-if = "!state.changingtools && state.editing.on"
+        v-if = "!state.changingtools && toggled.layer"
         class  = "panel-body"
         v-disabled = "(!isLayerReady || !canEdit) "
       >
@@ -208,7 +208,11 @@
       return {
         active:      false,
         helpmessage: null,
-        toggled:     false,
+        //@since 3.8.0
+        toggled:     {
+          relation: false, //click on relation icon
+          layer:    false, //click on pencil icon
+        },
         snapAll:     false,
       };
     },
@@ -285,9 +289,16 @@
        */
       toggleEditing() {
         this.select();
-        if (this.state.layer.state.editing.ready && !this.state.loading) {
-          this.$emit(this.state.editing.on ? 'stoptoolbox' : 'starttoolbox', this.state.id);
+        this.toggled.layer = !this.toggled.layer;
+        if (this.toggled.layer) {
+          if (this.state.layer.state.editing.ready && !this.state.loading) {
+            this.$emit(this.state.editing.on ? 'stoptoolbox' : 'starttoolbox', this.state.id);
+          }
         }
+        if (!this.toggled.layer) {
+          this.$emit('stoptoolbox', this.state.id);
+        }
+
       },
 
       /**
@@ -309,8 +320,8 @@
        * @since g3w-client-plugin-editing@v3.8.0
        */
       toggleFilterByRelation() {
-        this.toggled = !this.toggled;
-        this.$emit('update-filter-layers', this.toggled ? [this.state.id, ...this.state.editing.dependencies]: []);
+        this.toggled.relation = !this.toggled.relation;
+        this.$emit('update-filter-layers', this.toggled.relation ? [this.state.id, ...this.state.editing.dependencies]: []);
       },
 
       /**

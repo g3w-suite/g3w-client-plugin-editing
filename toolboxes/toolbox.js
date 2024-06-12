@@ -1,4 +1,3 @@
-import { VM }                                           from "../eventbus";
 import { Workflow }                                     from '../g3wsdk/workflow/workflow';
 import { Step }                                         from '../g3wsdk/workflow/step';
 import { createEditingDataOptions }                     from '../utils/createEditingDataOptions';
@@ -70,6 +69,7 @@ const { Feature }                         = g3wsdk.core.layer.features;
 const { debounce, toRawType }             = g3wsdk.core.utils;
 const { GUI }                             = g3wsdk.gui;
 const { getScaleFromResolution }          = g3wsdk.ol.utils;
+
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin/toolboxes/toolsfactory.js@v3.7.1
@@ -1234,6 +1234,23 @@ export class ToolBox extends G3WObject {
 
     //event features
     this._getFeaturesEvent = { event: null, fnc: null };
+
+    // @since v3.8.0 constraint messages to show
+    this.messages = {
+      //set message of scale constraint
+      constraint: {
+        scale: `${tPlugin('editing.messages.constraints.enable_editing')}${this.state._constraints.scale}`.toUpperCase()
+      }
+    }
+
+    //@since 3.8.0 Need to store Promise resolve when start toolbox but non editing is enabled (scale constraint, etc..)
+    this.startResolve = null;
+
+    //scale constraint
+    if (this.state._constraints.scale) {
+      //listen to change resolution
+      GUI.getService('map').getMap().getView().on('change:resolution', () => { if (this.state.selected) { this._handleScaleConstraint() }})
+    }
   }
 
   /**
@@ -1386,6 +1403,23 @@ export class ToolBox extends G3WObject {
     Object.keys(constraints).forEach(c => this.constraints[c] = constraints[c]);
   }
 
+  /**
+   * @since 3.8.0 Handle scale constraint
+   * @private
+   */
+  _handleScaleConstraint() {
+    if (this.state.selected) {
+      const map = GUI.getService('map').getMap();
+      this.state.editing.canEdit = getScaleFromResolution(map.getView().getResolution()) <= this.state._constraints.scale;
+      if (this.state.editing.canEdit) {
+        //in the case of already start editing, need to dispatch event to get current data features
+        if (this._start) { map.dispatchEvent({ type: this._getFeaturesEvent.event, target: map }) }
+        else { this.startResolve && this.startResolve() }
+      }
+    }
+    GUI.setModal(!this.state.editing.canEdit, this.messages.constraint.scale)
+  }
+
   //added option object to start method to have a control by other plugin how
   start(options={}) {
     return $.Deferred(async d => {
@@ -1401,9 +1435,7 @@ export class ToolBox extends G3WObject {
       }                           = options;
   
       this.state.changingtools    = changingtools;
-      if (tools) {
-        this.setEnablesDisablesTools(tools);
-      }
+      if (tools) { this.setEnablesDisablesTools(tools) }
       this.state.toolboxheader    = toolboxheader;
       this.state.startstopediting = startstopediting;
   
@@ -1423,47 +1455,20 @@ export class ToolBox extends G3WObject {
         () => this.state.layer.getFeaturesStore().un('featuresLockedByOtherUser', unKeyLock)
       );
 
+
       // check if can we edit based on scale contraint (vector layer)
       if (this.state._constraints.scale) {
         //unwatch selected
         const map = GUI.getService('map').getMap();
-        //set message of scale constraint
-        const message = `${tPlugin('editing.messages.constraints.enable_editing')}${this.state._constraints.scale}`.toUpperCase();
+
         //check if you can edit
         this.state.editing.canEdit = getScaleFromResolution(map.getView().getResolution()) <= this.state._constraints.scale;
         await new Promise((resolve) => {
-          //listen to change resolution
-          const key = map.getView().on('change:resolution', evt => {
-            this.state.editing.canEdit = getScaleFromResolution(evt.target.getResolution()) <= this.state._constraints.scale;
-            if (this.state.editing.canEdit) { resolve() }
-            //only check if selected
-            if (this.state.selected) { GUI.setModal(!this.state.editing.canEdit, message) }
-          })
-
-          const unwatch = VM.$watch(() => this.state.selected,
-            {
-              immediate: true,
-              //only when switch to selected true
-              handler: bool => { if (bool) { GUI.setModal(!this.state.editing.canEdit, message) } }
-            })
-
-          this.state._unregisterStartSettersEventsKey.push(() => {
-            //remove modal resolution
-            GUI.setModal(false);
-            //remove event listener on change resolution
-            ol.Observable.unByKey(key);
-            //set can edit true
-            this.state.editing.canEdit = true;
-            //unwatch select state
-            unwatch();
-          })
-
-
+          this.startResolve = resolve;
           //if click on start toolbox can edit and is selected
-          if (this.state.editing.canEdit && this.state.selected) { resolve() }
+          if (this.state.selected && this.state.editing.canEdit) { resolve() }
 
         })
-
       }
 
       // set filterOptions
@@ -1559,7 +1564,8 @@ export class ToolBox extends G3WObject {
       const is_started = !!this.__isStarted();
   
       if (!is_started) {
-        this.setSelected(false);
+        //@TODO remove if not used
+        //this.setSelected(false);
         return true;
       }
   
@@ -1589,7 +1595,8 @@ export class ToolBox extends G3WObject {
           GUI.getService('map').getMap().un(this._getFeaturesEvent.event, this._getFeaturesEvent.fnc);
         }
         this._stopSessionChildren(this.state.id);
-        this.setSelected(false);
+        //@TODO remove if not used
+        //this.setSelected(false);
         // clear layer unique field values
         g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[this.getId()] = {};
         return;
@@ -1606,7 +1613,8 @@ export class ToolBox extends G3WObject {
         this.stopActiveTool();
         this.enableTools(false);
         this.clearToolboxMessages();
-        this.setSelected(false);
+        //@TODO remove if not used
+        //this.setSelected(false);
         this.emit('stop-editing');
 
         // clear layer unique field values
@@ -1617,7 +1625,8 @@ export class ToolBox extends G3WObject {
         console.warn(e);
         return Promise.reject(e);
       } finally {
-        this.setSelected(false)
+        //@TODO remove if not used
+        //this.setSelected(false)
       }
     });
   }
@@ -1833,6 +1842,7 @@ export class ToolBox extends G3WObject {
    */
   setSelected(bool = false) {
     this.state.selected = bool;
+    if (this.state._constraints.scale) { this._handleScaleConstraint() }
   }
 
   /**
@@ -2744,12 +2754,13 @@ export class ToolBox extends G3WObject {
       if (!options.registerEvents) { return }
       this.state._getFeaturesOption = options;
       // register get features event (only in case filter bbox)
-      if (Layer.LayerTypes.VECTOR === this.state._layerType && this.state._getFeaturesOption.filter.bbox) {
+      if ((Layer.LayerTypes.VECTOR === this.state._layerType) && this.state._getFeaturesOption.filter.bbox) {
         const fnc = () => {
-          //added ApplicationState.online
           if (
+              //added ApplicationState.online
               ApplicationState.online
               && this.state.editing.canEdit
+              && this.state.selected //need to be selected
               && 0 === GUI.getContentLength()
           ) {
             this.state._getFeaturesOption.filter.bbox = GUI.getService('map').getMapBBOX();
@@ -2765,7 +2776,8 @@ export class ToolBox extends G3WObject {
       }
       if (Layer.LayerTypes.VECTOR === options.type && GUI.getContentLength()) {
         GUI.once('closecontent', () => {
-          setTimeout(() => { GUI.getService('map').getMap().dispatchEvent(this._getFeaturesEvent.event) })
+          const map = GUI.getService('map').getMap();
+          setTimeout(() => { map.dispatchEvent({ type: this._getFeaturesEvent.event, target: map } ) })
         });
       }
     }
