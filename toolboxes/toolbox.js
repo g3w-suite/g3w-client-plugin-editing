@@ -1842,7 +1842,10 @@ export class ToolBox extends G3WObject {
    */
   setSelected(bool = false) {
     this.state.selected = bool;
+    //in the case of scale constraint
     if (this.state._constraints.scale) { this._handleScaleConstraint() }
+    //otherwise remove modal
+    else { GUI.setModal(false) }
   }
 
   /**
