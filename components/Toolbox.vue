@@ -15,7 +15,7 @@
       :class      = "{
         'mobile':          isMobile(),
         'toolboxselected': state.selected,
-        'toolboxactive':   state.editing.on,
+        'toolboxactive':   state.editing.on && canEdit,
         'geolayer': state.layer.isGeoLayer(),
       }"
     >
