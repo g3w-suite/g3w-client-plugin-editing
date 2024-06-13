@@ -90,7 +90,7 @@
         </div>
 
         <!-- COPY FEATURE FROM OTHER LAYER -->
-        <section v-if="copyFeatureLayers.length > 0">
+        <section>
 
           <span class="divider"></span>
 
@@ -101,7 +101,7 @@
 
           <span class="divider"></span>
 
-          <div id="g3w-select-editable-layers-content" v-disabled="0 === copyFeatureLayers.length">
+          <div id="g3w-select-editable-layers-content">
 
             <div
               class      = "g3w-editing-new-relation-vector-type"
@@ -121,6 +121,7 @@
 
             <!-- COPY FEATURE FROM OTHER LAYER -->
             <button
+              v-disabled  = "0 === copyFeatureLayers.length"
               class       = "btn skin-button"
               @click.stop = "copyFeatureFromOtherLayer"
             >
@@ -1197,13 +1198,15 @@
       if (this.isVectorRelation) {
         const geometryType = relationLayer.getGeometryType();
         this.copyFeatureLayers = [
-
           // project layers with same geometry of relation ayer
-          ...CatalogLayersStoresRegistry.getLayers()
+          ...CatalogLayersStoresRegistry.getLayers({
+            QUERABLE: true,
+            GEOLAYER: true,
+          })
             .filter(l => ((
-                l.isGeoLayer() &&
                 l.getGeometryType &&
                 l.getGeometryType() &&
+                //exclude father layer and current relation layer
                 ![this.relation.child, this.relation.father].includes(l.getId())
               ) && (
                 l.getGeometryType() === geometryType ||
@@ -1237,7 +1240,6 @@
             })),
 
         ].sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));                   // sorted by name
-
         //Listen add external Layer
         this.addExternalLayerKey = GUI.getService('catalog').onafter('addExternalLayer', ({ layer, type }) => {
           if ('vector' === type) {
