@@ -446,6 +446,7 @@ new (class extends Plugin {
           const w = new Workflow({
             type: 'drawgeometry',
             helpMessage: 'editing.workflow.steps.draw_geometry',
+            runOnce: true, // need to run once time
             steps: [
               new AddFeatureStep({
                 add: false,
@@ -953,8 +954,8 @@ new (class extends Plugin {
                       message: inputs.message,
                       title: `${tPlugin("editing.messages.commit_feature")}: "${inputs.layer.getName()}"`,
                       buttons: {
-                        SAVE:   { className: "btn-success", callback() { d.resolve(inputs); },    label: t("save"),   },
-                        CANCEL: { className: "btn-danger",  callback() { d.reject(); },           label: t(inputs.close ? "exitnosave" : "annul") },
+                        SAVE:   { className: "btn-success", callback() { d.resolve(inputs); }, label: t("save"),   },
+                        CANCEL: { className: "btn-danger",  callback() { d.reject({cancel : true });        }, label: t(inputs.close ? "exitnosave" : "annul") },
                         ...(inputs.close ? { CLOSEMODAL : { className: "btn-primary", callback() { dialog.modal('hide'); }, label:  t("annul") }} : {}),
                       }
                     });
@@ -967,22 +968,29 @@ new (class extends Plugin {
               ),
             ]
           });
-
-          await promisify(
-            workflow.start({
-              inputs: {
-                close,
-                layer,
-                message: (new (Vue.extend(require('./components/Changes.vue')))({
-                  propsData: {
-                    commits: commitItems,
-                    layer
-                  }})).$mount().$el,
-              }
-            })
-          );
-
-          await promisify(workflow.stop());
+          //need to get to confirm or cancel choose from modal
+          try {
+            await promisify(
+              workflow.start({
+                inputs: {
+                  close,
+                  layer,
+                  message: (new (Vue.extend(require('./components/Changes.vue')))({
+                    propsData: {
+                      commits: commitItems,
+                      layer
+                    }})).$mount().$el,
+                }
+              })
+            );
+            await promisify(workflow.stop());
+          } catch(e) {
+            console.warn(e);
+            // In the case of pressed cancel button to commit features modal
+            if (e && e.cancel) { return }
+            //need to be set server Error
+            serverError = true;
+          }
 
           //in case of online application
           if (online) {
@@ -1049,14 +1057,15 @@ new (class extends Plugin {
             message: "plugins.editing.messages.saved_local",
             autoclose: true
           });
+          //clear history because it saved on browser
           toolbox.getSession().clearHistory();
+
         }
 
         // check if the application is online
         const { commit, response } = online ? await promisify(
           toolbox.getSession().commit({ items: items || commitItems, __esPromise: true })
         ) : {};
-
 
 
         //check if is online and there are some commit items
@@ -1066,14 +1075,13 @@ new (class extends Plugin {
 
         if (result && messages && messages.success) {
           // hide saving dialog
-          if (dialog) {
-            dialog.modal('hide');
-          }
+          if (dialog) { dialog.modal('hide') }
 
+          //Show save user message
           GUI.showUserMessage({
-            type: 'success',
-            message: messages.success.message || "plugins.editing.messages.saved",
-            duration: 2000,
+            type:     'success',
+            message:   messages.success.message || "plugins.editing.messages.saved",
+            duration:  2000,
             autoclose: undefined !== messages.success.autoclose ? messages.success.autoclose : true,
           });
         }
@@ -1092,9 +1100,6 @@ new (class extends Plugin {
 
         if (layerId) {
           this.state.featuresOnClose[layerId] = this.state.featuresOnClose[layerId] || new Set();
-        }
-
-        if (result) {
           [
             ...response.response.new.map(n => n.id),
             ...commit.update.map(u => u.id)
@@ -1102,18 +1107,14 @@ new (class extends Plugin {
         }
 
         // @since 3.7.2 - click on save all disk icon (editing form relation)
-        if (result) {
-          this.emit('commit', response.response);
-        }
+        if (result) { this.emit('commit', response.response) }
 
-        // result is false. An error occurs
+        // result is false. It was done a commit, but a error occurs
         if (online2 && !result) {
           serverError = true;
           throw response;
         }
       } catch (e) {
-        //need to be set server Error
-        serverError = true;
         console.warn(e);
 
         // hide saving dialog
