@@ -59,7 +59,7 @@
       <bar-loader :loading="loading" />
 
       <div
-        v-if = "!state.changingtools && toggled.layer"
+        v-if = "!state.changingtools && (state.editing.on || toggled.layer)"
         class  = "panel-body"
         v-disabled = "(!isLayerReady || !canEdit) "
       >
