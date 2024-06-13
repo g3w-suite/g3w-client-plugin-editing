@@ -1200,7 +1200,7 @@
         this.copyFeatureLayers = [
           // project layers with same geometry of relation ayer
           ...CatalogLayersStoresRegistry.getLayers({
-            QUERABLE: true,
+            QUERYABLE: true,
             GEOLAYER: true,
           })
             .filter(l => ((
