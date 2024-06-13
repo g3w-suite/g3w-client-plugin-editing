@@ -430,6 +430,8 @@ new (class extends Plugin {
         // feature has geometry → zoom to geometry
         if (geom) { GUI.getService('map').zoomToGeometry(geom) }
 
+        toolBox.setSelected(true);
+
         this.state.toolboxselected = toolBox;
 
         const addPartTool = is_vector && !geom && toolBox.getTools().find(t => 'addPart' === t.getId());
@@ -512,9 +514,6 @@ new (class extends Plugin {
       } catch (e) {
         console.warn(e);
         session.rollback();
-        //set select only here otherwise is show editing constraint
-        toolBox.setSelected(false);
-        this.state.toolboxselected = null;
       } finally {
         w.stop();
       }

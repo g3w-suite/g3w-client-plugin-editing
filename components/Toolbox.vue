@@ -49,7 +49,7 @@
             'pull-right':       !isMobile(),
             'enabled':          isLayerReady,
             'g3w-icon-toggled': state.editing.on,
-            [g3wtemplate.font[toggled.layer ? 'checkmark' : 'pencil']]: true
+            [g3wtemplate.font[(state.editing.on || toggled.layer) ? 'checkmark' : 'pencil']]: true
           }"
           v-t-tooltip:left.create = "'plugins.editing.tooltip.edit_layer'"
         ></i>
@@ -218,7 +218,6 @@
     },
 
     computed: {
-
       /**
        * @since g3w-client-plugin-editing@v3.7.0
        */
@@ -289,7 +288,7 @@
        */
       toggleEditing() {
         this.select();
-        this.toggled.layer = !this.toggled.layer;
+        this.toggled.layer = !(this.state.editing.on || this.toggled.layer);
         if (this.toggled.layer) {
           if (this.state.layer.state.editing.ready && !this.state.loading) {
             this.$emit(this.state.editing.on ? 'stoptoolbox' : 'starttoolbox', this.state.id);
