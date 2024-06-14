@@ -6,8 +6,8 @@
     >
 
       <section class="choose-and-zoom-to-feature">
-        
-        <!-- SELECT FEATURE -->
+
+        <!-- CHOOSE FEATURE -->
         <div>
           <input
             :id         = "`choose_feature_${index}`"
@@ -16,40 +16,23 @@
             type        = "radio"
             class       = "magic-radio"
           >
-          <label
-            :for        = "`choose_feature_${index}`"
-            style       = "color: transparent">id
-          </label>
+          <label :for="`choose_feature_${index}`">id</label>
         </div>
 
         <!-- ZOOM TO FEATURE -->
         <div
           @click.stop = "zoomToFeature(feature)"
           :class      = "g3wtemplate.font['marker']"
-          class       = "skin-color"
-          style       = "
-            padding-left: 3px;
-            font-size: 1.3em;
-            cursor: pointer;
-            margin-top: 10px;
-          "
+          class       = "ztf skin-color"
         ></div>
 
       </section>
 
       <!-- FEATURE ATTRIBUTES -->
-      <section style="overflow-x: auto; display: flex">
-        <div
-          v-for = "({ attribute, value }) in getAttributesFeature(feature)"
-          style = "
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 5px;
-          "
-        >
-          <span style="font-weight: bold; margin-bottom: 10px;">{{ attribute }}</span>
-          <span style="align-self: start; white-space: nowrap;">{{ value }}</span>
+      <section class="feature-attributes">
+        <div v-for="({ attribute, value }) in getAttributesFeature(feature)">
+          <span class="f-attr">{{ attribute }}</span>
+          <span class="f-val">{{ value }}</span>
         </div>
       </section>
 
@@ -109,5 +92,38 @@
     display: flex;
     justify-content: space-between;
     border-bottom: 1px solid #eeeeee;
+  }
+  
+  .ztf {
+    padding-left: 3px;
+    font-size: 1.3em;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+
+  .magic-radio + label {
+    color: transparent;
+  }
+
+  .feature-attributes {
+    overflow-x: auto;
+    display: flex
+  }
+
+  .feature-attributes > div {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 5px;
+  }
+
+  .f-attr {
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+
+  .f-val {
+    align-self: start;
+    white-space: nowrap;
   }
 </style>

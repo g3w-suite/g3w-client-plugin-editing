@@ -1,7 +1,7 @@
 import { getParentFormData } from './getParentFormData';
 
 /**
- * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@3.7.1
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
  * 
  * @param expression.inputs.layer
  * @param expression.context.excludeFields

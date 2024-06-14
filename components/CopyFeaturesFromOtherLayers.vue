@@ -1,87 +1,67 @@
 <template>
   <div class="editing-layers-features" >
+
     <!-- EDIT MULTI FEATURE ATTRIBUTES  -->
     <div
-      v-if="showEditAttributes"
+      v-if        = "showEditAttributes"
       v-disabled  = "disabled"
-      style       ="display: flex; justify-content: flex-end">
+      class       = "edit-multi-features"
+    >
       <input
         id          = "g3w_edit_attributes_of_select_feature_from_layer"
         type        = "checkbox"
         class       = "magic-checkbox"
         v-model     = "$options.editAttributes.state"
-      >
+      />
       <label
-        for  = "g3w_edit_attributes_of_select_feature_from_layer"
-        style = "color: #000000" v-t-plugin="'editing.modal.tools.copyfeaturefromotherlayer.edit_attributes'">
+        for        = "g3w_edit_attributes_of_select_feature_from_layer"
+        v-t-plugin = "'editing.modal.tools.copyfeaturefromotherlayer.edit_attributes'">
       </label>
     </div>
-    <section class="g3w-editing-other-layers-features" :style="{height: `${$data._height}px`}">
-      <div
-        v-for = "(layerId) in Object.keys($options.layers)"
-        >
 
-          <div class="skin-color" style="font-weight: bold; font-size: 1.2em;">{{ getLayerTitle(layerId) }}</div>
+    <section
+      class  = "g3w-editing-other-layers-features"
+      :style = "{height: `${$data._height}px`}"
+    >
+      <div v-for="(layerId) in Object.keys($options.layers)">
 
-          <divider />
+        <div class="layer-title skin-color">{{ getLayerTitle(layerId) }}</div>
 
-          <div
-            class = "copy-features-for-layer-content"
-            style = "overflow-x: auto"
-          >
+        <divider />
+
+          <div class="copy-features-for-layer-content">
               <div
                 v-for = "(feature, index) in $options.layers[layerId].features"
-                style = "
-    padding: 5px;
-    position: relative;
-    display: flex;
-    align-items: baseline;
-    border-bottom: 1px solid #eee;
-  "
+                class = "GIVE_ME_A_NAME_1"
               >
 
-                <div
-                  style = "
-          display: flex;
-          flex-direction: column;
-          border-right: 1px solid #eee;
-        "
-                >
+                <div class="GIVE_ME_A_NAME_2">
+
+                  <!-- ZOOM TO FEATURE -->
                   <div
                     @click.stop = "zoomToFeature(feature)"
-                    :class      = "g3wtemplate.font['marker']"
-                    class       = "skin-color"
-                    style       = "
-    padding: 0 5px 15px 5px;
-    font-size: 1.1em;
-    cursor: pointer;
-    margin-right: 5px;
-  "
+                    :class      = "['ztf', 'skin-color', g3wtemplate.font['marker']]"
                   ></div>
+
+                  <!-- SELECT FEATURE -->
                   <div v-t-tooltip:right.create="'plugins.editing.steps.help.select_elements'">
                     <input
                       @click.stop = "selectFeature(feature)"
                       :id         = "`${layerId}_${index}_select_feature_from_layer`"
                       type        = "checkbox"
                       class       = "magic-checkbox"
-                    >
-                    <label
-                      :for  = "`${layerId}_${index}_select_feature_from_layer`"
-                      style = "color: #FFF"> {{ feature.getId() || 0 }}
-                    </label>
+                    />
+                    <label :for="`${layerId}_${index}_select_feature_from_layer`"> {{ feature.getId() || 0 }}</label>
                   </div>
+
                 </div>
 
                 <div
                   v-for = "({ attribute, value }) in getAttributesFeature(feature, layerId)"
-                  style = "
-    display: flex;
-    flex-direction: column;
-    padding: 10px;
-  "
+                  class = "feature-attributes"
                 >
-                  <span style="font-weight: bold; margin-bottom: 10px;">{{ attribute }}</span>
-                  <span style="align-self: start">{{ value }}</span>
+                  <span class="f-attr">{{ attribute }}</span>
+                  <span class="f-value">{{ value }}</span>
                 </div>
 
               </div>
@@ -121,7 +101,6 @@
        */
       showEditAttributes() {
         return Object.values(this.$options.layers).reduce((sum, {features}) => {
-          console.log(features)
           sum = sum + features.length;
           return sum;
         }, 0) > 1;
@@ -179,5 +158,52 @@
 <style scoped>
   .g3w-editing-other-layers-features {
     overflow: auto;
+  }
+  .edit-multi-features {
+    display: flex;
+    justify-content: flex-end
+  }
+  .edit-multi-features > label {
+    color: #000;
+  }
+  .layer-title {
+    font-weight: bold;
+    font-size: 1.2em;
+  }
+  .copy-features-for-layer-content {
+    overflow-x: auto;
+  }
+  .ztf {
+    padding: 0 5px 15px 5px;
+    font-size: 1.1em;
+    cursor: pointer;
+    margin-right: 5px;
+  }
+  .GIVE_ME_A_NAME_1 {
+    padding: 5px;
+    position: relative;
+    display: flex;
+    align-items: baseline;
+    border-bottom: 1px solid #eee;
+  }
+  .GIVE_ME_A_NAME_2 {
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #eee;
+  }
+  .GIVE_ME_A_NAME_2 .magic-checkbox + label {
+    color: #FFF;
+  }
+  .feature-attributes {
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+  }
+  .f-attr {
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+  .f-value {
+    align-self: start;
   }
 </style>

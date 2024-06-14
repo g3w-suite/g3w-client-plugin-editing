@@ -1,5 +1,10 @@
+import { getLayersDependencyFeatures } from '../utils/getLayersDependencyFeatures';
+
+const { CatalogLayersStoresRegistry } = g3wsdk.core.catalog;
+const { DataRouterService }           = g3wsdk.core.data;
+
 /**
- * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@3.7.1
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
  * 
  * @param { Object } opts
  * @param opts.relation
@@ -8,14 +13,12 @@
  * @returns {Promise<{feature: *, locked: boolean}>}
  * 
  * @since g3w-client-plugin-editing@v3.7.0
- * 
- * @private
  */
 export async function getRelation1_1ChildFeature({
   relation,
   fatherFormRelationField,
 }) {
-  const service       = require('../services/editingservice'); //get editing service
+  const service       = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing'); //get editing service
   const fatherLayerId = relation.getFather();
   const childLayerId  = relation.getChild();                             // get relation child layer id
   const childField    = relation.getChildField()[0];
@@ -38,7 +41,7 @@ export async function getRelation1_1ChildFeature({
         feature = features[0]
       })
 
-    await service.getLayersDependencyFeatures(fatherLayerId, {
+    await getLayersDependencyFeatures(fatherLayerId, {
       feature: new ol.Feature({
         [fatherFormRelationField.name]: fatherFormRelationField.value
       }),
@@ -63,9 +66,9 @@ export async function getRelation1_1ChildFeature({
   if (undefined === feature) {
 
     try {
-      const layer = service.getProjectLayerById(childLayerId);
+      const layer = CatalogLayersStoresRegistry.getLayerById(childLayerId);
 
-      const { data } = await g3wsdk.core.data.DataRouterService.getData('search:features', {  // get feature of relation layer based on value of relation field
+      const { data } = await DataRouterService.getData('search:features', {  // get feature of relation layer based on value of relation field
         inputs: {
           layer,
           formatter: 0,
