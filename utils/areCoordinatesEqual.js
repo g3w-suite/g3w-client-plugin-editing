@@ -1,5 +1,5 @@
 /**
- * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@3.7.1
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
  * 
  * @param feature
  * @param coordinates
@@ -10,24 +10,31 @@ export function areCoordinatesEqual({
  feature,
  coordinates,
 }) {
+ //get geometry from feature
  const geometry = feature.getGeometry();
  const type     = geometry.getType();
- const coords   = c => g3wsdk.core.geoutils.areCoordinatesEqual(coordinates, c); // whether element have same coordinates
+ const coords   = (c1, c2) => g3wsdk.core.geoutils.areCoordinatesEqual(c1, c2); // whether element have same coordinates
 
  switch (type) {
    case 'Polygon':
    case 'MultiLineString':
-     return _.flatMap(geometry.getCoordinates()).some(coords);
+     coordinates = _.flatMap(coordinates);
+     return _.flatMap(geometry.getCoordinates()).every((c, i) => coords(c, coordinates[i]));
 
    case 'LineString':
    case 'MultiPoint':
-       return geometry.getCoordinates().some(coords);
+       return geometry.getCoordinates().every((c, i) => coords(c, coordinates[i]));
 
    case 'MultiPolygon':
-       return geometry.getPolygons().some(poly => _.flatMap(poly.getCoordinates()).some(coords));
+     // in case of add part or remove part
+     if (coordinates.length !== geometry.getPolygons().length) { return false }
+     return geometry.getPolygons().some((poly, i) => {
+       const _coords =  _.flatMap(coordinates[i]);
+       return _.flatMap(poly.getCoordinates()).every((c, i) => coords(c, _coords[i]))
+     });
 
    case 'Point':
-     return g3wsdk.core.geoutils.areCoordinatesEqual(coordinates, geometry.getCoordinates());
+     return coords(coordinates, geometry.getCoordinates());
 
    default:
      return false;

@@ -1,66 +1,31 @@
-const PickFeaturesEventType = {
-  PICKED: 'picked'
-};
+/**
+ * @see https://openlayers.org/en/v5.3.0/apidoc/module-ol_interaction_Pointer.html
+ */
+export class PickFeaturesInteraction extends ol.interaction.Pointer {
 
-const PickFeaturesEvent = function(type, coordinate, layer, features) {
-  this.type = type;
-  this.features = features;
-  this.coordinate = coordinate;
-  this.layer = layer;
-};
+  constructor(options={}) {
+    let features = []; // picked features
 
-export const PickFeaturesInteraction = function(options={}) {
-  ol.interaction.Pointer.call(this, {
-    handleDownEvent: PickFeaturesInteraction.handleDownEvent_,
-    handleUpEvent: PickFeaturesInteraction.handleUpEvent_,
-    handleMoveEvent: PickFeaturesInteraction.handleMoveEvent_
-  });
-  this.layer = options.layer;
-  this.pickedFeatures = [];
-};
+    const featuresAtPixel = ({ pixel, map } = {}) => map.getFeaturesAtPixel(pixel, {
+      layerFilter: l => l === options.layer,
+      hitTolerance: (isMobile && isMobile.any) ? 10 : 0
+    });
 
-ol.inherits(PickFeaturesInteraction, ol.interaction.Pointer);
-
-PickFeaturesInteraction.handleDownEvent_ = function(event) {
-  this.pickedFeatures = this.featuresAtPixel(event);
-  return this.pickedFeatures;
-};
-
-PickFeaturesInteraction.handleUpEvent_ = function(event) {
-  if (this.pickedFeatures && this.pickedFeatures.length){
-    this.dispatchEvent(
-      new PickFeaturesEvent(
-        PickFeaturesEventType.PICKED,
-        event.coordinate,
-        this.layer,
-        this.pickedFeatures)
-    );
+    super({
+      handleDownEvent(e) {
+        features = featuresAtPixel(e);
+        return features;
+      },
+      handleUpEvent(e) {
+        if (features && features.length) {
+          this.dispatchEvent({ type: 'picked', features, coordinate: e.coordinate, layer: options.layer });
+        }
+        return true;
+      },
+      handleMoveEvent(e) {
+        e.map.getTargetElement().style.cursor = featuresAtPixel(e) ? 'pointer': '';
+      }
+    });
   }
-  return true;
-};
 
-PickFeaturesInteraction.prototype.featuresAtPixel = function({pixel, map}={}) {
-  return map.getFeaturesAtPixel(pixel, {
-    layerFilter: layer => layer === this.layer,
-    hitTolerance: (isMobile && isMobile.any) ? 10 : 0
-  });
-};
-
-PickFeaturesInteraction.handleMoveEvent_ = function(event) {
-  const elem = event.map.getTargetElement();
-  const intersectingFeatures = this.featuresAtPixel(event);
-  elem.style.cursor = intersectingFeatures ?  'pointer': '';
-};
-
-PickFeaturesInteraction.prototype.shouldStopEvent = function(){
-  return false;
-};
-
-PickFeaturesInteraction.prototype.setMap = function(map){
-  if (!map) {
-    const elem = this.getMap().getTargetElement();
-    elem.style.cursor = '';
-  }
-  ol.interaction.Pointer.prototype.setMap.call(this, map);
-};
-
+}

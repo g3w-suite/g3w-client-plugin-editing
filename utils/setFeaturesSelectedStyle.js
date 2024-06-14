@@ -1,5 +1,5 @@
 /**
- * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@3.7.1
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
  * 
  * Get selected style from "extracted" original feature style  
  * 
@@ -10,12 +10,14 @@
 function getSelectedStyle(feature) {
   return {
     originalStyle: feature.getStyle(),
-    selectedStyle: g3wsdk.core.geoutils.createSelectedStyle({ geometryType: feature.getGeometry().getType() })
+    selectedStyle: feature.getGeometry()
+    ? g3wsdk.core.geoutils.createSelectedStyle({ geometryType: feature.getGeometry().getType() })
+    : feature.getStyle()
   }
 }
 
 /**
- * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@3.7.1
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
  * 
  * Set selected style to feature and return original feature style
  * 
