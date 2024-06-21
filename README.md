@@ -13,8 +13,8 @@ A javascript plugin that includes map editing tools for those G3W-SUITE projects
 ---
 
 **Compatibile with:**
-[![g3w-admin version](https://img.shields.io/badge/g3w--admin-3.5-1EB300.svg?style=flat)](https://github.com/g3w-suite/g3w-admin/tree/v.3.5.x)
-[![g3w-client version](https://img.shields.io/badge/g3w--client-3.7-1EB300.svg?style=flat)](https://github.com/g3w-suite/g3w-client/tree/v.3.7.x)
+[![g3w-admin version](https://img.shields.io/badge/g3w--admin-3.8-1EB300.svg?style=flat)](https://github.com/g3w-suite/g3w-admin/tree/v.3.8.x)
+[![g3w-client version](https://img.shields.io/badge/g3w--client-3.10-1EB300.svg?style=flat)](https://github.com/g3w-suite/g3w-client/tree/v.3.10.x)
 
 ---
 
