@@ -43,8 +43,8 @@ export default class Editor extends G3WObject {
        *
        * @returns { boolean } whether can perform a server request
        */
-      getFeatures(options={}) {
-        // skip when ..
+      getFeatures(options = {}) {
+        // skip is not onlien or all features of layers are already got
         if (!ApplicationState.online || this._allfeatures) {
           return $.Deferred(d => d.resolve());
         }
@@ -54,16 +54,18 @@ export default class Editor extends G3WObject {
           let doRequest = true; // default --> perform request
 
           const { bbox } = options.filter || {};
+          //check if bbox options filter (bbox of a current map) is passed and is a vector layer
           const is_vector = bbox && Layer.LayerTypes.VECTOR === this._layer.getType();
       
           // first request --> need to perform request
           if (is_vector && null === this._filter.bbox) {
             this._filter.bbox = bbox;                                                      // store bbox
-            doRequest = true;
+            doRequest         = true;
           }
 
           // subsequent requests --> check if bbox is contained into an already requested bbox
           else if (is_vector) {
+            //Boolean - Check if features are already got inside bbox
             const is_cached = ol.extent.containsExtent(this._filter.bbox, bbox);
             if (!is_cached) {
               this._filter.bbox = ol.extent.extend(this._filter.bbox, bbox);
@@ -202,9 +204,7 @@ export default class Editor extends G3WObject {
   applyCommitResponse(response = {}, relations = []) {
 
     // skip when no response and response.result is false
-    if (!(response && response.result)) {
-      return;
-    }
+    if (!(response && response.result)) { return }
 
     response.response.new.forEach(({ clientid, id, properties } = {}) => {
 
@@ -220,13 +220,11 @@ export default class Editor extends G3WObject {
             const is_pk = options.fatherField.find(d => this._layer.isPkField(d)); // check if parent field is a Primary Key
             // handle value to relation field saved on server
             if (is_pk) {
-              const field   = options.childField[options.fatherField.indexOf(is_pk)];             // relation field to overwrite
+              const field  = options.childField[options.fatherField.indexOf(is_pk)];             // relation field to overwrite
               const source = ToolBox.get(relationId).getSession().getEditor().getEditingSource(); // get source of editing layer.
               (options.ids || []).forEach(id => {                          // loop relation ids
                 const feature = source.getFeatureById(id);
-                if (feature) {
-                  feature.set(field.name, field.value);    // set father feature `value` and `name`
-                }
+                if (feature) { feature.set(field.name, field.value) }   // set father feature `value` and `name`
               })
             }
           });
