@@ -102,12 +102,12 @@ new (class extends Plugin {
           }
         }
       },
-      show_errors: false,
+      show_errors:    false,
       editFeatureKey: undefined,
-      panel: null, // editing panel
-      currentLayout: ApplicationService.getCurrentLayoutName(),
-      unwatchLayout: (new Vue()).$watch(
-        ()=> ApplicationState.gui.layout.__current,
+      panel:          null, // editing panel
+      currentLayout:  ApplicationService.getCurrentLayoutName(),
+      unwatchLayout:  (new Vue()).$watch(
+        () => ApplicationState.gui.layout.__current,
         layoutName => this.state.currentLayout = layoutName !== this.getName() ? layoutName : this.state.currentLayout
       ),
       onMapControlToggled: ({ target }) => {
@@ -161,9 +161,7 @@ new (class extends Plugin {
    */
   async _init() {
     // skip when no editable layer
-    if (!CatalogLayersStoresRegistry.getLayers({ EDITABLE: true }).length) {
-      return;
-    }
+    if (!CatalogLayersStoresRegistry.getLayers({ EDITABLE: true }).length) { return }
 
     this.setHookLoading({ loading: true });
 
@@ -204,7 +202,7 @@ new (class extends Plugin {
       CatalogLayersStoresRegistry
         .getLayers({ EDITABLE: true })
         .map(l => l.getLayerForEditing({
-          vectorurl: this.config.vectorurl,
+          vectorurl:    this.config.vectorurl,
           project_type: this.config.project_type
         }))
     )).forEach(response => {
@@ -228,8 +226,9 @@ new (class extends Plugin {
         .filter(field => field.input && 'select_autocomplete' === field.input.type && !field.input.options.filter_expression && !field.input.options.usecompleter)
         /** @TODO need to avoid to call the same fnc to same event many times to avoid waste server request time */
         .forEach(field => ['start-editing', 'show-relation-editing'].forEach(type => {
-            const id = layer.getId();
+            const id                    = layer.getId();
             this.state.events[type][id] = this.state.events[type][id] || [];
+
             this.state.events[type][id].push(async () => {
               const options = field.input.options;
   
@@ -259,9 +258,10 @@ new (class extends Plugin {
                   const response = await promisify(relationLayer.getDataTable({ ordering: options.key }));
                   if (response && response.features) {
                     options.values.push(...(response.features || []).map(feature => ({
-                      key: feature.properties[options.key],
+                      key:   feature.properties[options.key],
                       value: feature.properties[options.value]
                     })));
+
                     options.loading.state = 'ready';
                     this.fireEvent('autocomplete', { field, features: response.features })
                     return options.values;
@@ -269,7 +269,7 @@ new (class extends Plugin {
                 }
   
                 /** @TODO check if deprecated */
-                const features = [];
+                const features        = [];
                 options.loading.state = 'ready';
                 this.fireEvent('autocomplete', { field, features });
                 return features;
@@ -291,15 +291,15 @@ new (class extends Plugin {
       .getLayers()
       .forEach(editingLayer => {
         /**
-         * set 1:1 relations fields editable
+         * set 1:1 relation fields editable
          * 
          * Check if layer has relation 1:1 (type ONE) and if fields
          *
-         * belong to relation where child layer is editable
+         * belongs to relation where child layer is editable
          *
          * @since g3w-client-plugin-editing@v3.7.0
          */
-        const fatherId = editingLayer.getId();                                              // father layer
+        const fatherId = editingLayer.getId(); // father layer
         CatalogLayersStoresRegistry
           .getLayerById(fatherId)
           .getRelations()
@@ -311,7 +311,7 @@ new (class extends Plugin {
               .getLayerById(relation.getFather())
               .getEditingFields()
               .filter(f => f.vectorjoin_id && f.vectorjoin_id === relation.getId())              // father layer fields (in editing)
-              .forEach(field => { field.editable = (field.editable && isChildEditable); });      // current editable boolean value + child editable layer
+              .forEach(f => { f.editable = (f.editable && isChildEditable); });      // current editable boolean value + child editable layer
           });
         // Set editing layer color and toolbox style
         if (!editingLayer.getColor()) {
@@ -343,6 +343,7 @@ new (class extends Plugin {
         ...layer.getChildren(),
         ...layer.getFathers()
       ].filter((layerName) => undefined !== this.getLayerById(layerName));
+
       if (layer.isFather() && toolbox.hasDependencies() ) {
         const layerRelations = layer.getRelations().getRelations();
         for (const relationName in layerRelations) {
@@ -378,9 +379,8 @@ new (class extends Plugin {
     } = {}) => {
       const fid = feature.attributes[G3W_FID] || feature.id;
 
-      if (undefined === fid) {
-        return
-      }
+      //In case of not unique id, skip
+      if (undefined === fid) { return }
 
       this.getToolBoxes().forEach(tb => tb.setShow(layer.id === tb.getId()));
       this.showEditingPanel();
@@ -392,6 +392,7 @@ new (class extends Plugin {
       const toolBox   = this.getToolBoxById(layer.id);
       //set selected
       toolBox.setSelected(true);
+
       const session   = toolBox.getSession();
       const { scale } = toolBox.getEditingConstraints(); // get scale constraint from setting layer
 
@@ -416,14 +417,14 @@ new (class extends Plugin {
 
         const _layer    = toolBox.getLayer();
         const source    = _layer.getEditingLayer().getSource();
-        const is_vector = _layer.getType() === Layer.LayerTypes.VECTOR;
+        const is_vector = Layer.LayerTypes.VECTOR === _layer.getType();
 
         // get feature from an Editing layer source (with styles)
         const features = is_vector ? source.getFeatures() : source.readFeatures();
         const feature  = features.find(f => fid == f.getId());
 
         // skip when not feature is get from server
-        if (!feature) { return  }
+        if (!feature) { return }
 
         const geom = feature.getGeometry();
 
@@ -494,10 +495,10 @@ new (class extends Plugin {
 
         /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editnopickmapfeatureattributesworkflow.js@v3.7.1 */
         w = (new Workflow({
-          type: 'editnopickmapfeatureattributes',
-          runOnce: true,
+          type:        'editnopickmapfeatureattributes',
+          runOnce:     true,
           helpMessage: 'editing.tools.update_feature',
-          steps: [ new OpenFormStep() ]
+          steps:       [ new OpenFormStep() ]
         }));
 
         await promisify(
@@ -520,11 +521,12 @@ new (class extends Plugin {
     });
 
     this.config.name = this.config.name || "plugins.editing.editing_data";
+
     this.addToolGroup({ position: 0, title: 'EDITING' });
     this.addTools({
-      action: this.showEditingPanel,
+      action:  this.showEditingPanel,
       offline: false,
-      icon: 'pencil'
+      icon:    'pencil'
     }, { position: 0, title: 'EDITING' });
   }
 
@@ -569,8 +571,8 @@ new (class extends Plugin {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   subscribe(event, fnc) {
-    if (!this.state.subscribers[event]) this.state.subscribers[event] = [];
-    if (!this.state.subscribers[event].find(subscribe => subscribe === fnc)) this.state.subscribers[event].push(fnc);
+    if (!this.state.subscribers[event]) { this.state.subscribers[event] = [] }
+    if (!this.state.subscribers[event].find(subscribe => fnc === subscribe)) { this.state.subscribers[event].push(fnc)}
     return fnc;
   }
 
@@ -585,7 +587,7 @@ new (class extends Plugin {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   unsubscribe(event, fnc) {
-    this.state.subscribers[event] = this.state.subscribers[event].filter(subscribe => subscribe !== fnc);
+    this.state.subscribers[event] = this.state.subscribers[event].filter(sub => fnc !== sub);
   }
 
   /**
@@ -598,7 +600,7 @@ new (class extends Plugin {
    * 
    * @since g3w-client-plugin-editing@v3.8.0
    */
-  async fireEvent(event, options={}) {
+  async fireEvent(event, options = {}) {
     if (this.state.subscribers[event]) {
       this.state.subscribers[event].forEach(fnc => {
         const response = fnc(options);
@@ -617,8 +619,8 @@ new (class extends Plugin {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   undo() {
-    const session = this.state.toolboxselected.getSession();
-    const layerId = session.getId();
+    const session      = this.state.toolboxselected.getSession();
+    const layerId      = session.getId();
     const sessionItems = session.getLastHistoryState().items;
 
     this.undoRedoLayerUniqueFieldValues({
@@ -631,7 +633,7 @@ new (class extends Plugin {
 
     this.undoRedoRelationUniqueFieldValues({
       relationSessionItems: undoItems,
-      action: 'undo'
+      action:               'undo'
     });
 
     // undo relations
@@ -644,8 +646,8 @@ new (class extends Plugin {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   redo() {
-    const session = this.state.toolboxselected.getSession();
-    const layerId = session.getId();
+    const session      = this.state.toolboxselected.getSession();
+    const layerId      = session.getId();
     const sessionItems = session.getLastHistoryState().items;
     this.undoRedoLayerUniqueFieldValues({
       layerId,
@@ -718,8 +720,8 @@ new (class extends Plugin {
    */
   resetDefault() {
     this.state.saveConfig = {
-      mode: "default", // default, autosave
-      modal: false,
+      mode:     "default", // default, autosave
+      modal:    false,
       messages: undefined, // object to set a custom message
       cb: {
         done:  () => {}, // function Called after save
@@ -737,15 +739,11 @@ new (class extends Plugin {
    * @since g3w-client-plugin-editing@v3.7.2
    */
   resetAPIDefault({
-    plugin=true,
-    toolboxes=true,
+    plugin    = true,
+    toolboxes = true,
   } = {}) {
-    if (toolboxes) {
-      this.getToolBoxes().forEach(tb => { tb.resetDefault(); });
-    }
-    if (plugin) {
-      this.resetDefault();
-    }
+    if (toolboxes) { this.getToolBoxes().forEach(tb => tb.resetDefault()) }
+    if (plugin) { this.resetDefault() }
   }
 
   /**
@@ -782,7 +780,7 @@ new (class extends Plugin {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   getToolBoxById(toolboxId) {
-    return this.state._toolboxes.find(tb => tb.getId() === toolboxId);
+    return this.state._toolboxes.find(tb => toolboxId === tb.getId());
   }
 
   /**
@@ -810,7 +808,7 @@ new (class extends Plugin {
    * 
    * @since g3w-client-plugin-editing@v3.8.0
    */
-  setApplicationEditingConstraints(constraints={showToolboxesExcluded: true, toolboxes:{}}) {
+  setApplicationEditingConstraints(constraints = { showToolboxesExcluded: true, toolboxes : {} }) {
     this.state.constraints = {
       ...this.state.constraints,
       ...constraints
@@ -819,7 +817,7 @@ new (class extends Plugin {
     const { toolboxes, showToolboxesExcluded } = constraints;
     const toolboxIds = Object.keys(toolboxes);
     if (false === showToolboxesExcluded) {
-      this.state.toolboxes.forEach(toolbox => toolbox.show =  toolboxIds.indexOf(toolbox.id) !== -1);
+      this.state.toolboxes.forEach(toolbox => toolbox.show = -1 !== toolboxIds.indexOf(toolbox.id));
     }
     toolboxIds.forEach(toolboxId => this
       .getToolBoxById(toolboxId)
@@ -864,7 +862,7 @@ new (class extends Plugin {
         // check if temp changes are waiting to save on server
         if (toolbox.getSession().getHistory().state.commit) {
           // ask to commit before exit
-          commitpromises.push(this.commit({toolbox, modal:true}));
+          commitpromises.push(this.commit({ toolbox, modal : true }));
         }
       });
     try {
@@ -872,10 +870,13 @@ new (class extends Plugin {
     } catch (e) {
       console.warn(e);
     }
-    this.state._toolboxes.forEach(toolbox => toolbox.stop());
-    this.state.toolboxselected = null;
+
+    this.state._toolboxes.forEach(t => t.stop());
+
+    this.state.toolboxselected     = null;
     this.state.toolboxidactivetool =  null;
-    this.state.message =  null;
+    this.state.message             =  null;
+
     GUI.getService('map').refreshMap();
   }
 
@@ -888,7 +889,7 @@ new (class extends Plugin {
   */
   async saveChange() {
     if ('autosave' === this.state.saveConfig.mode) {
-      return this.commit({ modal: false }); // set to not show modal ask window
+      return this.commit({ modal: false }); // set to not show a modal ask window
     }
   }
 
@@ -951,7 +952,7 @@ new (class extends Plugin {
                   return $.Deferred(d => {
                     const dialog = GUI.dialog.dialog({
                       message: inputs.message,
-                      title: `${tPlugin("editing.messages.commit_feature")}: "${inputs.layer.getName()}"`,
+                      title:   `${tPlugin("editing.messages.commit_feature")}: "${inputs.layer.getName()}"`,
                       buttons: {
                         SAVE:   { className: "btn-success", callback() { d.resolve(inputs); }, label: t("save"),   },
                         CANCEL: { className: "btn-danger",  callback() { d.reject({cancel : true });        }, label: t(inputs.close ? "exitnosave" : "annul") },
@@ -1032,9 +1033,11 @@ new (class extends Plugin {
               const prev = current ? changes : changes[layerId].relations;
               curr[id].add    = [...curr[id].add, ...curr[id].add];
               curr[id].delete = [...curr[id].delete, ...curr[id].delete];
+
               (prev[id].update || [])
                 .filter(update => !curr[id].update.find(u => u.id === update.id))
                 .forEach(update => curr[id].update.unshift(update));
+
               (prev[id].lockids || [])
                 .filter(lock => !curr[id].lockids.find(l => l.featureid === lock.featureid))
                 .forEach(lock => curr[id].update.unshift(lock));
@@ -1052,8 +1055,8 @@ new (class extends Plugin {
         if (!online) {
 
           GUI.showUserMessage({
-            type: 'success',
-            message: "plugins.editing.messages.saved_local",
+            type:      'success',
+            message:   "plugins.editing.messages.saved_local",
             autoclose: true
           });
           //clear history because it saved on browser
@@ -1094,7 +1097,7 @@ new (class extends Plugin {
           this.state.saveConfig.cb.done(toolbox);
         }
 
-        // add items when close editing to results to show changes
+        // add items when close editing to result to show changes
         const layerId = result && toolbox.getId(); 
 
         if (layerId) {
@@ -1108,7 +1111,7 @@ new (class extends Plugin {
         // @since 3.7.2 - click on save all disk icon (editing form relation)
         if (result) { this.emit('commit', response.response) }
 
-        // result is false. It was done a commit, but a error occurs
+        // the result is false. It was done a commit, but a error occurs
         if (online2 && !result) {
           serverError = true;
           throw response;
@@ -1212,11 +1215,13 @@ new (class extends Plugin {
     Object
       .entries(relationSessionItems)
       .forEach(([layerId, {own:sessionItems, dependencies:relationSessionItems}]) => {
+
         this.undoRedoLayerUniqueFieldValues({
           layerId,
           sessionItems,
           action
         });
+
         this.undoRedoRelationUniqueFieldValues({
           relationSessionItems,
           action
@@ -1237,9 +1242,7 @@ new (class extends Plugin {
    * @since g3w-client-plugin-editing@v3.7.2
    */
   async stopEditing(layerId, options = {}) {
-    return promisify(
-      this.getToolBoxById(layerId).stop(options)
-    );
+    return promisify(this.getToolBoxById(layerId).stop(options));
   }
 
   /**
@@ -1252,7 +1255,9 @@ new (class extends Plugin {
    * @param { boolean } [options.selected=true]
    * @param { boolean } [options.disablemapcontrols=false]
    * @param { boolean } [options.showselectlayers=true]
-   * @param options.title
+   * @param { string }  [options.title]
+   * @param data
+   *
    *
    * @returns { Promise<unknown> }
    *
@@ -1266,20 +1271,19 @@ new (class extends Plugin {
     const toolbox = this.getToolBoxById(layerId);
     // set show select layers input visibility
     this.state.showselectlayers = options.showselectlayers;
-    // skip when ..
+    // skip if toolbox doesn't exist
     if (!toolbox) {
       return Promise.reject();
     }
     // set selected
     toolbox.setSelected(options.selected);
     // set seletcted toolbox
-    if (options.selected) {
-      this.state.toolboxselected = toolbox;
-    }
-    if (options.title) {
-      toolbox.setTitle(options.title);
-    }
-    // start editing toolbox (options contain also filter type)
+    if (options.selected) { this.state.toolboxselected = toolbox }
+
+    //set toolbox title if provide
+    if (options.title) { toolbox.setTitle(options.title) }
+
+    // start editing toolbox (options contain also a filter type)
     data = await promisify(toolbox.start(options))
     // disablemapcontrols in conflict
     if (options.disablemapcontrols) {
@@ -1312,14 +1316,14 @@ new (class extends Plugin {
       const layer = this.getLayerById(layerId);
       // get session
       const session = this.getSessionById(layerId);
-      // exclude an eventually attribute pk (primary key) not editable (mean autoincrement)
+      // exclude an eventual attribute pk (primary key) not editable (mean autoincrement)
       const attributes = layer
         .getEditingFields()
         .filter(attr => !(attr.pk && !attr.editable));
       // start session (get no features but set layer in editing)
       session.start({
         filter: {
-          nofeatures: true,                    // no feature
+          nofeatures:       true,                    // no feature
           nofeatures_field: attributes[0].name // get first field in editing form
         },
         editing: true,
@@ -1331,9 +1335,9 @@ new (class extends Plugin {
       type: 'addfeature',
       steps: [
         new OpenFormStep({
-          push: true,
+          push:       true,
           showgoback: false,
-          saveAll: false,
+          saveAll:    false,
         })
       ],
     });
@@ -1403,7 +1407,7 @@ new (class extends Plugin {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   addFormComponents({ layerId, components = [] } = {}) {
-    this.state.formComponents[layerId] = (this.state.formComponents[layerId] || []).concat(components)
+    this.state.formComponents[layerId] = (this.state.formComponents[layerId] || []).concat(components);
   }
 
   /**
@@ -1429,12 +1433,12 @@ new (class extends Plugin {
    * ORIGINAL SOURCE: g3w-client-plugin-editing/g3w-editing-components/editing.js.js@v3.6
    * ORIGINAL SOURCE: g3w-client-plugin-editing/g3w-editing-components/panel.js.js@v3.6
    */
-  showEditingPanel(opts={}) {
+  showEditingPanel(opts = {}) {
     if (this.getLayers().length > 0) {
       this.state.panel = new Panel({
         ...opts,
-        id: "editing-panel",
-        title: opts.title || "plugins.editing.editing_data",
+        id:            "editing-panel",
+        title:         opts.title || "plugins.editing.editing_data",
         internalPanel: new (Vue.extend(require('./components/Editing.vue')))({
           service:       this,
           resourcesurl:  opts.resourcesUrl || GUI.getResourcesUrl(),
@@ -1442,6 +1446,7 @@ new (class extends Plugin {
         }),
       });
       GUI.showPanel(this.state.panel);
+
       if (!this.state.show_errors && this.state.layers_in_error) {
         GUI.showUserMessage({ type: 'warning', message: 'plugins.editing.errors.some_layers', closable: true });
         this.state.show_errors = true;
@@ -1461,9 +1466,9 @@ new (class extends Plugin {
 
   unload() {
     this.hideEditingPanel();
-    if (this.config.visible) {
-      this.removeTools();
-    }
+
+    if (this.config.visible) { this.removeTools() }
+
     this.state.unwatchLayout();
     MapLayersStoreRegistry.removeLayersStore(MapLayersStoreRegistry.getLayersStore('editing'));
     ToolBox.clear();
@@ -1494,7 +1499,7 @@ async function _rollback(relations = {}) {
     Object
     .entries(relations)
     .flatMap(([ layerId, { add, delete: del, update, relations = {}}]) => {
-      const source  = getEditingLayerById(layerId).getEditingSource();
+      const source       = getEditingLayerById(layerId).getEditingSource();
       const has_features = source.readFeatures().length > 0; // check if the relation layer has some features
       // get original values
       return [
@@ -1504,15 +1509,17 @@ async function _rollback(relations = {}) {
         }),
         // update
         ...(has_features && update || []).map(async ({ id }) => {
-          const f = await getProjectLayerFeatureById({ layerId, fid: id });
+          const f       = await getProjectLayerFeatureById({ layerId, fid: id });
           const feature = source.getFeatureById(id);
+
           feature.setProperties(f.properties);
           feature.setGeometry(f.geometry);
         }),
         // delete
         ...del.map(async id => {
-          const f = await getProjectLayerFeatureById({ layerId, fid: id });
+          const f       = await getProjectLayerFeatureById({ layerId, fid: id });
           const feature = new ol.Feature({ geometry: f.geometry })
+
           feature.setProperties(f.properties);
           feature.setId(id);
           // need to add again to source because it is for relation layer is locked
