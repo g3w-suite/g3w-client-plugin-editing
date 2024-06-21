@@ -7,18 +7,16 @@ import { Workflow }                      from './workflow/workflow';
  * Editing APIs will be removed from core after g3w-client@v.4.x
  */
 if (
-  window.g3wsdk.core.editing ||
-  window.g3wsdk.core.workflow ||
-  window.g3wsdk.constant.DEFAULT_EDITING_CAPABILITIES ||
-  g3wsdk.version < '4'
+  window.g3wsdk.core.editing
+  || window.g3wsdk.core.workflow
+  || window.g3wsdk.constant.DEFAULT_EDITING_CAPABILITIES
+  || g3wsdk.version < '4'
 ) {
   console.warn('Editing APIs will be removed from g3wsdk after v4.x');
 }
 
-
-
 /**
- * @FIXME add description
+ * Object to provide external plugin to use editing objects
  */
 window.g3wsdk.core.editing = {
   Session,
@@ -40,7 +38,7 @@ window.g3wsdk.constant.DEFAULT_EDITING_CAPABILITIES = [
 ];
 
 /**
- * @FIXME add description
+ * Object to provide to external plugins to use workflow objects
  */
 window.g3wsdk.core.workflow = {
   Task: Step,
