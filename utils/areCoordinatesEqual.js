@@ -23,7 +23,7 @@ export function areCoordinatesEqual({
 
    case 'LineString':
    case 'MultiPoint':
-       return geometry.getCoordinates().every((c, i) => coords(c, coordinates[i]));
+     return geometry.getCoordinates().every((c, i) => coords(c, coordinates[i]));
 
    case 'MultiPolygon':
      // in case of add part or remove part

@@ -41,8 +41,8 @@ export async function handleSplitFeature({
       feature.setGeometry(splittedGeometry);
       try {
         await evaluateExpressionFields({ inputs, context, feature });
-      } catch(err) {
-        console.warn(err);
+      } catch(e) {
+        console.warn(e);
       }
 
       session.pushUpdate(layerId, feature, oriFeature);

@@ -16,5 +16,5 @@ export function getRelationId({
   const fatherId = relation.getFather ? relation.getFather() : relation.father;
   const childId  = relation.getChild  ? relation.getChild()  : relation.child;
 
-  return fatherId === layerId ? childId : fatherId;
+  return layerId === fatherId ? childId : fatherId;
 }

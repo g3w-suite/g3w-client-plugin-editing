@@ -37,7 +37,7 @@ export function setAndUnsetSelectedFeaturesStyle({ promise, inputs, style } = {}
   const is_single = Workflow.Stack.getLength();
 
   if (is_vector && is_single) {
-    setTimeout(() => { selectOriginalStyleHandle(); });
+    setTimeout(() => selectOriginalStyleHandle());
   } else if (is_vector) {
     selectOriginalStyleHandle();
   }

@@ -20,13 +20,11 @@ export async function getProjectLayerFeatureById({
   let feature;
   try {
     const response = await XHR.get({
-      url: CatalogLayersStoresRegistry.getLayerById(layerId).getUrl('data'),
-      params: {fids: fid},
+      url:    CatalogLayersStoresRegistry.getLayerById(layerId).getUrl('data'),
+      params: { fids: fid },
     });
     const features = getFeaturesFromResponseVectorApi(response);
-    if (features.length > 0) {
-      feature = features[0];
-    }
+    if (features.length > 0) { feature = features[0] }
   } catch(e) {
     console.warn(e);
   }

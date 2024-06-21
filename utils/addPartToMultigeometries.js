@@ -35,4 +35,4 @@ export function addPartToMultigeometries(inputs, context) {
     inputs.features = [feature];
     return inputs;
   });
-};
+}

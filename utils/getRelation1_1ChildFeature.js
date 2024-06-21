@@ -24,40 +24,34 @@ export async function getRelation1_1ChildFeature({
   const childField    = relation.getChildField()[0];
 
   // lock feature false
-  let locked = false;
+  let locked  = false;
   let feature = service.getLayerById(childLayerId)
     .getEditingSource()
     .readFeatures()
-    .find(f => f.get(childField) === fatherFormRelationField.value)
+    .find(f => fatherFormRelationField.value === f.get(childField))
 
     //get feature from server and lock
   if (undefined === feature) {
 
     const childFeatureStore = service.getLayerById(childLayerId).getFeaturesStore();
 
-    const unByKey = childFeatureStore.oncebefore(
-      'featuresLockedByOtherUser',
-      (features) => {
-        feature = features[0]
-      })
+    const unByKey = childFeatureStore.oncebefore('featuresLockedByOtherUser', features => feature = features[0])
 
     await getLayersDependencyFeatures(fatherLayerId, {
-      feature: new ol.Feature({
-        [fatherFormRelationField.name]: fatherFormRelationField.value
-      }),
+      feature:   new ol.Feature({ [fatherFormRelationField.name]: fatherFormRelationField.value }),
       relations: [relation]
     });
 
     //remove listener
     childFeatureStore.un('featuresLockedByOtherUser', unByKey);
 
-    //in case of no locked check feature on source
+    //in case of no locked check feature on a source
     if (undefined === feature) {
 
       feature = service.getLayerById(childLayerId)
         .getEditingSource()
         .readFeatures()
-        .find(f => f.get(childField) === fatherFormRelationField.value)
+        .find(f => fatherFormRelationField.value === f.get(childField))
     }
 
   }
@@ -72,13 +66,10 @@ export async function getRelation1_1ChildFeature({
         inputs: {
           layer,
           formatter: 0,
-          filter: g3wsdk.core.utils.createFilterFormInputs({
+          filter:    g3wsdk.core.utils.createFilterFormInputs({
             layer,
             search_endpoint: 'api',
-            inputs: [{
-              attribute: childField,
-              value: fatherFormRelationField.value,
-            }]
+            inputs:          [{ attribute: childField, value: fatherFormRelationField.value, }]
           }),
           search_endpoint: 'api',
         },
