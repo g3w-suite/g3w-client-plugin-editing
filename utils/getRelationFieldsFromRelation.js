@@ -18,16 +18,16 @@ export function getRelationFieldsFromRelation({
   relation,
 } = {}) {
   /** @type { string } */
-  const childId = relation.getChild ? relation.getChild() : relation.child;
+  const childId      = relation.getChild ? relation.getChild() : relation.child;
   /** @type { Boolean } whether is a child */
-  const isChild = childId !== layerId;
+  const isChild      = childId !== layerId;
   /** @type { Array } of fields */
   const _fatherField = relation.getFatherField ? relation.getFatherField() : relation.fatherField;
   /** @type { Array } of fields */
-  const _childField = relation.getChildField ? relation.getChildField() : relation.childField;
+  const _childField  = relation.getChildField ? relation.getChildField() : relation.childField;
 
   return {
-    ownField: isChild ? _fatherField : _childField,
+    ownField:      isChild ? _fatherField : _childField,
     relationField: isChild ? _childField : _fatherField
   }
 }
