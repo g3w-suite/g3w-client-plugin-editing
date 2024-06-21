@@ -7,15 +7,15 @@
       v-disabled  = "loading"
       style       = "margin-bottom: 5px;"
     >
-      <bar-loader :loading="loading" />
+      <bar-loader :loading = "loading" />
 
       <!-- RELATION TITLE -->
       <div
         ref   = "relation_header_title"
         class = "relation_header_title box-header with-border skin-color"
       >
-        <span v-t-plugin="'editing.edit_relation'"></span>
-        <span style="margin-left: 2px;">: {{ relation.name.toUpperCase() }}</span>
+        <span v-t-plugin = "'editing.edit_relation'"></span>
+        <span style = "margin-left: 2px;">: {{ relation.name.toUpperCase() }}</span>
       </div>
 
       <!-- RELATION TOOLS -->
@@ -25,7 +25,7 @@
       >
 
         <!-- SEARCH BOX -->
-        <div id="search-box">
+        <div id = "search-box">
           <input
             v-if         = "relationsLength"
             type         = "text"
@@ -35,7 +35,7 @@
           />
         </div>
 
-        <div class="g3w-editing-relations-add-link-tools">
+        <div class = "g3w-editing-relations-add-link-tools">
 
           <!-- CHANGE ATTRIBUTE -->
           <span
@@ -71,7 +71,7 @@
           @click.stop = "closeVectorTools"
           class       = "close_vector_relation_tool"
         >
-          <i class="g3w-icon skin-color" :class="g3wtemplate.font['close']"></i>
+          <i class = "g3w-icon skin-color" :class = "g3wtemplate.font['close']"></i>
         </span>
 
         <!-- ADD VECTOR RELATION -->
@@ -85,23 +85,23 @@
             style       = "width: 100%"
             @click.stop = "addVectorRelation"
           >
-            <i :class="g3wtemplate.font['pencil']"></i>
+            <i :class = "g3wtemplate.font['pencil']"></i>
           </button>
         </div>
 
         <!-- COPY FEATURE FROM OTHER LAYER -->
         <section>
 
-          <span class="divider"></span>
+          <span class = "divider"></span>
 
           <div
             style      = "align-self: center"
             v-t-plugin = "'editing.relation.draw_or_copy'"
           ></div>
 
-          <span class="divider"></span>
+          <span class = "divider"></span>
 
-          <div id="g3w-select-editable-layers-content">
+          <div id = "g3w-select-editable-layers-content">
 
             <div
               class      = "g3w-editing-new-relation-vector-type"
@@ -125,7 +125,7 @@
               class       = "btn skin-button"
               @click.stop = "copyFeatureFromOtherLayer"
             >
-              <i :class="g3wtemplate.font['clipboard']"></i>
+              <i :class = "g3wtemplate.font['clipboard']"></i>
             </button>
 
           </div>
@@ -147,9 +147,9 @@
         >
           <thead>
             <tr>
-              <th v-t="'tools'"></th>
+              <th v-t = "'tools'"></th>
               <th></th>
-              <th v-for="attribute in relationAttributesSubset(relations[0])">{{ attribute.label }}</th>
+              <th v-for = "attribute in relationAttributesSubset(relations[0])">{{ attribute.label }}</th>
             </tr>
           </thead>
           <tbody>
@@ -159,7 +159,7 @@
               class = "featurebox-header"
             >
               <td>
-                <div style="display: flex">
+                <div style = "display: flex">
                   <!-- RELATION TOOLS -->
                   <div
                     v-for                    = "tool in (tools[index] || addTools(relations[index].id))"
@@ -176,7 +176,7 @@
                   </div>
                 </div>
               </td>
-              <td class="action-cell">
+              <td class = "action-cell">
                 <div
                   v-if                     = "!fieldrequired && capabilities.includes('change_attr_feature')"
                   class                    = "g3w-mini-relation-icon g3w-icon"
@@ -186,21 +186,21 @@
                   aria-hidden              = "true"
                 ></div>
               </td>
-              <td v-for  = "attribute in relationAttributesSubset(relation)">
+              <td v-for = "attribute in relationAttributesSubset(relation)">
                 <!-- MEDIA ATTRIBUTE-->
                 <div
                   v-if = "isMedia(attribute.value) && getValue(attribute.value)"
                   class = "preview"
                 >
-                  <a :href="getValue(attribute.value)" target="_blank">
+                  <a :href = "getValue(attribute.value)" target = "_blank">
                     <div
                       class  = "previewtype"
                       :class = "getMediaType(attribute.value.mime_type).type"
                     >
-                      <i class="fa-2x" :class="g3wtemplate.font[getMediaType(attribute.value.mime_type).type]"></i>
+                      <i class = "fa-2x" :class="g3wtemplate.font[getMediaType(attribute.value.mime_type).type]"></i>
                     </div>
                   </a>
-                  <div class="filename">{{ getValue(attribute.value).split('/').pop() }}</div>
+                  <div class = "filename">{{ getValue(attribute.value).split('/').pop() }}</div>
                 </div>
                 <!-- LINK ATTRIBUTE -->
                 <a

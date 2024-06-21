@@ -15,21 +15,21 @@
     <template
       v-for = "c in Object.keys(commits).filter(c => commits[c].length)"
     >
-      <h4 v-t-plugin:pre="`editing.messages.commit.${c}`"> ({{ commits[c].length }}) </h4>
+      <h4 v-t-plugin:pre = "`editing.messages.commit.${c}`"> ({{ commits[c].length }}) </h4>
       <divider />
       <ul>
-        <li v-for="item in commits[c]">
+        <li v-for = "item in commits[c]">
           <details>
             <summary>{{ getType(item) }} #{{ getId(item) }}</summary>
-            <template v-for ="[key, val] in getAttrs(item)">
-              <dl v-if="hasValue(item, key)">
+            <template v-for = "[key, val] in getAttrs(item)">
+              <dl v-if = "hasValue(item, key)">
                 <dt>{{ key }}:</dt>
                 <dd>
                   <template v-if="isEdited(item, key)">
-                    <del ref="value">{{ getValue(item, key) }}</del> ← <ins ref="value">{{ getEditingValue(item, key) }}</ins>
+                    <del ref = "value">{{ getValue(item, key) }}</del> ← <ins ref = "value">{{ getEditingValue(item, key) }}</ins>
                   </template>
-                  <span v-else ref="value">{{ getEditingValue(item, key) || getValue(item, key) }}</span>
-                  <i v-if="'geometry' === key"><code>&lt;coords&gt;</code></i>
+                  <span v-else ref = "value">{{ getEditingValue(item, key) || getValue(item, key) }}</span>
+                  <i v-if = "'geometry' === key"><code>&lt;coords&gt;</code></i>
                 </dd>
               </dl>
             </template>
@@ -55,138 +55,138 @@
 </template>
 
 <script>
-import { areCoordinatesEqual }       from '../utils/areCoordinatesEqual';
-import { getFeatureTableFieldValue } from '../utils/getFeatureTableFieldValue';
+  import { areCoordinatesEqual }       from '../utils/areCoordinatesEqual';
+  import { getFeatureTableFieldValue } from '../utils/getFeatureTableFieldValue';
 
-export default {
+  export default {
 
-  name: "changes",
+    name: "changes",
 
-  props: {
-    commits: {
-      type:     Object,
-      required: true,
-    },
-    layer: {
-      type:    Object,
-      required: true,
-    },
-    relation: {
-      type:    Boolean,
-      default: false
-    }
-  },
-
-  data() {
-    return {
-      features:  this.layer.readFeatures(),        // original features
-      efeatures: this.layer.readEditingFeatures(), // edited features,
-    };
-  },
-
-  methods: {
-
-    getFormattedValue(feat, key) {
-      if (!feat) { return }
-      //need to check if the current attribute is geometry and if it has value (mean not feat of alphanumeical layer)
-      if ('geometry' === key && feat.get(key)) {
-        return `(${ feat.get(key).getFlatCoordinates().length / 2 })`;
+    props: {
+      commits: {
+        type:     Object,
+        required: true,
+      },
+      layer: {
+        type:    Object,
+        required: true,
+      },
+      relation: {
+        type:    Boolean,
+        default: false
       }
-      return getFeatureTableFieldValue({
-        layerId: this.layer.getId(),
-        feature: feat,
-        property: key
-      });
     },
 
-    /**
-     * Get value from origina feature
-     * @param item
-     * @param key
-     * @return {string|*}
-     */
-    getValue(item, key) {
-      return this.getFormattedValue(this.getFeature(item), key);
+    data() {
+      return {
+        features:  this.layer.readFeatures(),        // original features
+        efeatures: this.layer.readEditingFeatures(), // edited features,
+      };
     },
 
-    /**
-     * Get value from edited feature
-     * @param item
-     * @param key
-     * @return {string|*}
-     */
-    getEditingValue(item, key) {
-      return this.getFormattedValue(this.getEditingFeature(item), key);
+    methods: {
+
+      getFormattedValue(feat, key) {
+        if (!feat) { return }
+        //need to check if the current attribute is geometry and if it has value (mean not feat of alphanumeical layer)
+        if ('geometry' === key && feat.get(key)) {
+          return `(${ feat.get(key).getFlatCoordinates().length / 2 })`;
+        }
+        return getFeatureTableFieldValue({
+          layerId: this.layer.getId(),
+          feature: feat,
+          property: key
+        });
+      },
+
+      /**
+       * Get value from origina feature
+       * @param item
+       * @param key
+       * @return {string|*}
+       */
+      getValue(item, key) {
+        return this.getFormattedValue(this.getFeature(item), key);
+      },
+
+      /**
+       * Get value from edited feature
+       * @param item
+       * @param key
+       * @return {string|*}
+       */
+      getEditingValue(item, key) {
+        return this.getFormattedValue(this.getEditingFeature(item), key);
+      },
+
+      hasValue(item, key) {
+        const feat  = this.getFeature(item);
+        const efeat = this.getEditingFeature(item); // NB: undefined when deleted
+        return !((feat && efeat && null === feat.get(key) && null === efeat.get(key)) ||
+          (feat && !efeat && null === feat.get(key)));
+      },
+
+      /**
+       * @returns { string } item id (when deleted is the item itself)
+       */
+      getId(item) {
+        return item.id || item;
+      },
+
+      /**
+       * @returns edited feature
+       */
+      getEditingFeature(item) {
+        const id = this.getId(item);
+        return this.efeatures.find(f => id === f.getId());
+      },
+
+      /**
+       * @returns original feature
+       */
+      getFeature(item) {
+        const id = this.getId(item);
+        return this.features.find(f => id === f.getId());
+      },
+
+      /**
+       * @returns { string } layer type or empty string when geometry is undefined (alphanumerical layer)
+       */
+      getType(item) {
+        const feat = this.getEditingFeature(item) || this.getFeature(item); // when deleted fallbacks to original feature
+        return (feat && feat.getGeometry && feat.getGeometry()) ? feat.getGeometry().getType() : ''
+      },
+
+      /**
+       * @returns { boolean } whether feature property has been edited
+       */
+      isEdited(item, key) {
+        const feat  = this.getFeature(item); // NB: undefined when added
+        const efeat = this.getEditingFeature(item); // NB: undefined when deleted
+        if ([feat, efeat].includes(undefined)) { return false }
+        if (this.getType(item) && 'geometry' === key) {
+          return !areCoordinatesEqual({ feature: feat, coordinates: efeat.get(key).getCoordinates() });
+        }
+        return efeat.get(key) !== feat.get(key);
+      },
+
+      getAttrs(item) {
+        const feat = this.getEditingFeature(item) || this.getFeature(item); // when deleted fallbacks to original feature
+        return Object.entries(feat ? feat.getProperties() : {}).sort((a, b) => a[0] > b[0])
+      },
+
+      getLayerById(id) {
+        return g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').service.getLayerById(id);
+      },
+
     },
 
-    hasValue(item, key) {
-      const feat  = this.getFeature(item);
-      const efeat = this.getEditingFeature(item); // NB: undefined when deleted
-      return !((feat && efeat && null === feat.get(key) && null === efeat.get(key)) ||
-        (feat && !efeat && null === feat.get(key)));
+    async mounted() {
+      // insert a visual reference for `<empty>` values
+      this.$refs.value.filter(d => !d.textContent).forEach(d => d.innerHTML = `<i><code>&lt;empty&gt;</code></i>`);
     },
 
-    /**
-     * @returns { string } item id (when deleted is the item itself) 
-     */
-    getId(item) {
-      return item.id || item;
-    },
-
-    /**
-     * @returns edited feature
-     */
-    getEditingFeature(item) {
-      const id = this.getId(item);
-      return this.efeatures.find(f => id === f.getId());
-    },
-
-    /**
-     * @returns original feature
-     */
-    getFeature(item) {
-      const id = this.getId(item);
-      return this.features.find(f => id === f.getId());
-    },
-
-    /**
-     * @returns { string } layer type or empty string when geometry is undefined (alphanumerical layer)
-     */
-    getType(item) {
-      const feat = this.getEditingFeature(item) || this.getFeature(item); // when deleted fallbacks to original feature
-      return (feat && feat.getGeometry && feat.getGeometry()) ? feat.getGeometry().getType() : ''
-    },
-
-    /**
-     * @returns { boolean } whether feature property has been edited 
-     */
-    isEdited(item, key) {
-      const feat  = this.getFeature(item); // NB: undefined when added
-      const efeat = this.getEditingFeature(item); // NB: undefined when deleted
-      if ([feat, efeat].includes(undefined)) { return false }
-      if (this.getType(item) && 'geometry' === key) {
-        return !areCoordinatesEqual({ feature: feat, coordinates: efeat.get(key).getCoordinates() });
-      }
-      return efeat.get(key) !== feat.get(key);
-    },
-
-    getAttrs(item) {
-      const feat = this.getEditingFeature(item) || this.getFeature(item); // when deleted fallbacks to original feature
-      return Object.entries(feat ? feat.getProperties() : {}).sort((a, b) => a[0] > b[0])
-    },
-
-    getLayerById(id) {
-      return g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').service.getLayerById(id);
-    },
-
-  },
-
-  async mounted() {
-    // insert a visual reference for `<empty>` values
-    this.$refs.value.filter(d => !d.textContent).forEach(d => d.innerHTML = `<i><code>&lt;empty&gt;</code></i>`);
-  },
-
-};
+  };
 </script>
 
 <style scoped>

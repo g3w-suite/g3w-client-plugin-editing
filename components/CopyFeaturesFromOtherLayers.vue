@@ -1,5 +1,5 @@
 <template>
-  <div class="editing-layers-features" >
+  <div class = "editing-layers-features" >
 
     <!-- EDIT MULTI FEATURE ATTRIBUTES  -->
     <div
@@ -23,48 +23,48 @@
       class  = "g3w-editing-other-layers-features"
       :style = "{height: `${$data._height}px`}"
     >
-      <div v-for="(layerId) in Object.keys($options.layers)">
+      <div v-for =" (layerId) in Object.keys($options.layers)">
 
-        <div class="layer-title skin-color">{{ getLayerTitle(layerId) }}</div>
+        <div class = "layer-title skin-color">{{ getLayerTitle(layerId) }}</div>
 
         <divider />
 
-          <div class="copy-features-for-layer-content">
-              <div
-                v-for = "(feature, index) in $options.layers[layerId].features"
-                class = "GIVE_ME_A_NAME_1"
-              >
+          <div class = "copy-features-for-layer-content">
+            <div
+              v-for = "(feature, index) in $options.layers[layerId].features"
+              class = "GIVE_ME_A_NAME_1"
+            >
 
-                <div class="GIVE_ME_A_NAME_2">
+              <div class = "GIVE_ME_A_NAME_2">
 
-                  <!-- ZOOM TO FEATURE -->
-                  <div
-                    @click.stop = "zoomToFeature(feature)"
-                    :class      = "['ztf', 'skin-color', g3wtemplate.font['marker']]"
-                  ></div>
-
-                  <!-- SELECT FEATURE -->
-                  <div v-t-tooltip:right.create="'plugins.editing.steps.help.select_elements'">
-                    <input
-                      @click.stop = "selectFeature(feature)"
-                      :id         = "`${layerId}_${index}_select_feature_from_layer`"
-                      type        = "checkbox"
-                      class       = "magic-checkbox"
-                    />
-                    <label :for="`${layerId}_${index}_select_feature_from_layer`"> {{ feature.getId() || 0 }}</label>
-                  </div>
-
-                </div>
-
+                <!-- ZOOM TO FEATURE -->
                 <div
-                  v-for = "({ attribute, value }) in getAttributesFeature(feature, layerId)"
-                  class = "feature-attributes"
-                >
-                  <span class="f-attr">{{ attribute }}</span>
-                  <span class="f-value">{{ value }}</span>
+                  @click.stop = "zoomToFeature(feature)"
+                  :class      = "['ztf', 'skin-color', g3wtemplate.font['marker']]"
+                ></div>
+
+                <!-- SELECT FEATURE -->
+                <div v-t-tooltip:right.create = "'plugins.editing.steps.help.select_elements'">
+                  <input
+                    @click.stop = "selectFeature(feature)"
+                    :id         = "`${layerId}_${index}_select_feature_from_layer`"
+                    type        = "checkbox"
+                    class       = "magic-checkbox"
+                  />
+                  <label :for = "`${layerId}_${index}_select_feature_from_layer`"> {{ feature.getId() || 0 }}</label>
                 </div>
 
               </div>
+
+              <div
+                v-for = "({ attribute, value }) in getAttributesFeature(feature, layerId)"
+                class = "feature-attributes"
+              >
+                <span class = "f-attr">{{ attribute }}</span>
+                <span class = "f-value">{{ value }}</span>
+              </div>
+
+            </div>
           </div>
 
         </div>
@@ -89,8 +89,8 @@
     data() {
       return {
         selectedFeatures: this.$options.selectedFeatures,
-        disabled        : true, //@since v3.7 check if we want to edit multi selected feature attributes
-        _height          : 0,
+        disabled:         true, //@since v3.7 check if we want to edit multi selected feature attributes
+        _height:          0,
       };
     },
 
@@ -108,23 +108,23 @@
     },
 
     methods: {
-      resize() {
-        this.$nextTick(() => this.$data._height = window.innerHeight - 200);
+      async resize() {
+        await this.$nextTick();
+        this.$data._height = window.innerHeight - 200;
       },
       getAttributesFeature(feature, layerId) {
         const { external, fields } = this.$options.layers[layerId];
         const props                = getAlphanumericPropertiesFromFeature(feature.getProperties());
         return props
-          .filter(prop => prop !== G3W_FID)
+          .filter(prop => G3W_FID !== prop)
           .map(attr => ({
             attribute: (external ? attr : fields.find(f => f.name === attr).label),
-            value: feature.get(attr),
+            value:     feature.get(attr),
           }));
       },
 
       selectFeature(feature) {
-        const selected = this.selectedFeatures.find(f => f === feature);
-        if (selected) {
+        if (this.selectedFeatures.find(f => f === feature)) {
           this.selectedFeatures = this.selectedFeatures.filter(f => f !== feature);
         } else {
           this.selectedFeatures.push(feature);

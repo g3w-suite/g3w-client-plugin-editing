@@ -1,16 +1,16 @@
 <template>
-  <div class="editing-layers-features">
-    <div class="copy-features-for-layer-content">
+  <div class = "editing-layers-features">
+    <div class = "copy-features-for-layer-content">
 
-      <div v-for="(feature, index) in features">
+      <div v-for = "(feature, index) in features">
 
-        <div class="col-1">
+        <div class = "col-1">
           <div
             @click.stop = "zoomToFeature(feature)"
             :class      = "g3wtemplate.font['marker']"
             class       = "ztf skin-color"
           ></div>
-          <div v-t-tooltip:right.create="'plugins.editing.steps.help.select_elements'">
+          <div v-t-tooltip:right.create = "'plugins.editing.steps.help.select_elements'">
             <input
               :id     = "`${layerId}_${index}_select_feature_from_layer`"
               :value  = "feature"
@@ -26,9 +26,12 @@
           </div>
         </div>
 
-        <div class="feature-attributes" v-for="({ attribute, value }) in getAttributesFeature(feature)" >
-          <span class="f-attr">{{ attribute }}</span>
-          <span class="f-value">{{ value }}</span>
+        <div
+          v-for = "({ attribute, value }) in getAttributesFeature(feature)"
+          class="feature-attributes"
+        >
+          <span class = "f-attr">{{ attribute }}</span>
+          <span class = "f-value">{{ value }}</span>
         </div>
 
       </div>
@@ -76,7 +79,7 @@
 
         const props      = getAlphanumericPropertiesFromFeature(feature.getProperties());
         return props
-          .filter(prop => prop !== G3W_FID)
+          .filter(prop => G3W_FID !== prop)
           .map(attr => ({
             attribute: fields ? fields.find(f => f.name === attr).label : attr,
             value:     feature.get(attr),
@@ -88,8 +91,7 @@
       },
 
       zoomToFeature(feature) {
-        const map =  GUI.getService('map');
-        map.zoomToFeatures([feature] , { highlight: true, duration: 1000 });
+        GUI.getService('map').zoomToFeatures([feature] , { highlight: true, duration: 1000 });
       },
 
     },
@@ -214,38 +216,38 @@
 
 
 <style scoped>
-.copy-features-for-layer-content {
-  overflow-x: auto;
-}
-.copy-features-for-layer-content > div {
-  padding: 5px;
-  position: relative;
-  display: flex;
-  align-items: baseline;
-  border-bottom: 1px solid #eee;
-}
-.copy-features-for-layer-content .col-1 {
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid #eee;
-}
+  .copy-features-for-layer-content {
+    overflow-x: auto;
+  }
+  .copy-features-for-layer-content > div {
+    padding: 5px;
+    position: relative;
+    display: flex;
+    align-items: baseline;
+    border-bottom: 1px solid #eee;
+  }
+  .copy-features-for-layer-content .col-1 {
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #eee;
+  }
 
-.feature-attributes {
-  display: flex;
-  flex-direction: column;
-  padding: 10px;
-}
-.f-attr {
-  font-weight: bold;
-  margin-bottom: 10px;
-}
-.f-value {
-  align-self: start
-}
-.copy-features-for-layer-content .ztf {
-  padding: 0 5px 15px 5px;
-  font-size: 1.1em;
-  cursor: pointer;
-  margin-right: 5px;
-}
+  .feature-attributes {
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+  }
+  .f-attr {
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+  .f-value {
+    align-self: start
+  }
+  .copy-features-for-layer-content .ztf {
+    padding: 0 5px 15px 5px;
+    font-size: 1.1em;
+    cursor: pointer;
+    margin-right: 5px;
+  }
 </style>
