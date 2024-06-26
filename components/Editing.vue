@@ -239,9 +239,16 @@
        * @param toolboxId
        */
       async startActiveTool(toolId, toolboxId) {
+
         if (this.state.toolboxidactivetool && toolboxId !== this.state.toolboxidactivetool) {
-          const toolbox = await this.commitDirtyToolBoxes(this.state.toolboxidactivetool);
-          if (toolbox) { toolbox.stopActiveTool() }
+          if (this.service.getToolBoxById(this.service.getToolBoxById(toolboxId).getDependencies().find(id => id === this.state.toolboxidactivetool))) {
+            try {
+              await this.commitDirtyToolBoxes(this.state.toolboxidactivetool);
+            } catch(e) {
+              console.warn(e);
+            }
+          }
+          this.service.getToolBoxById(this.state.toolboxidactivetool).stopActiveTool();
         }
         const toolbox                  = this.service.getToolBoxById(toolboxId);
         this.state.toolboxidactivetool = toolboxId;
@@ -296,6 +303,7 @@
           await promisify(service.commit({ toolbox }));
           return toolbox;
         } catch (e) {
+          console.warn(e);
           await promisify(toolbox.revert());
           toolbox
             .getDependencies()
