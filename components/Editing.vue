@@ -288,6 +288,7 @@
        * out-of-sync database state on remote QGIS server.
        * 
        * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+       * ORIGINAL SOURCE: g3w-client/src/core/editing/session.js@v3.9.1
        * 
        * @param { string } layerId
        *
@@ -298,26 +299,28 @@
       async commit_dirty(layerId) {
         const toolbox = this.service.getToolBoxById(layerId);
 
-        // commit
+        // commit changes
         try {
           if (toolbox.isDirty() && toolbox.hasDependencies()) {
             await promisify(this.service.commit({ toolbox }));
             console.info('[EDITING] committed dirty')
           }
         } catch (e) {
-          // revert
+          // revert changes (clear history and session)
           try {
-            await toolbox.revert();
-            toolbox
-              .getDependencies()
-              .forEach((layerId) => {
-                if (-1 !== this.service.getLayerById(layerId).getChildren().indexOf(layerId)) {
-                  this.service.getToolBoxById(layerId).revert();
+            [layerId]
+              .concat(toolbox.getDependencies())
+              .forEach((layerId, i) => {
+                const toolbox = this.service.getToolBoxById(layerId);
+                const layer   = toolbox.getLayer();
+                const editor  = layer.getEditor();
+                if (i === 0 || -1 !== layer.getChildren().indexOf(layerId)) {
+                  editor.getEditingSource().setFeatures((editor.readFeatures() || []).map(f => f.clone()));
+                  toolbox.getSession().getHistory().clear();
+                  toolbox.getSession().stop();
+                  toolbox.stopActiveTool();
                 }
               });
-            /** @TODO use "toolbox.stop()" instead ? */
-            toolbox.stopActiveTool();
-            toolbox.getSession().stop();
             console.info('[EDITING] reverted dirty');
           } catch (e) {
             console.warn(e);

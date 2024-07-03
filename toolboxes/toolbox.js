@@ -165,7 +165,6 @@ export class ToolBox extends G3WObject {
       save:                         this.__save.bind(this),
       pushAdd:                      this.__pushAdd.bind(this),
       pushUpdate:                   this.__pushUpdate.bind(this),
-      revert:                       this.revert.bind(this),
       rollback:                     this.__rollback.bind(this),
       rollbackDependecies:          this.__rollbackDependecies.bind(this),
       undo:                         this.__undoSession.bind(this),
@@ -1307,20 +1306,6 @@ export class ToolBox extends G3WObject {
    */
   isFather() {
     return this.state.editing.father;
-  }
-
-  /**
-   * ORIGINAL SOURCE: g3w-client/src/core/editing/session.js@v3.9.1
-   *
-   * Revert (cancel) all changes in history and clean session
-   *
-   * @since g3w-client-plugin-editing@v3.8.0
-   */
-  async revert() {
-    console.warn('BEFORE REVERT');
-    await promisify(this.state.layer.getEditor().revert());
-    this.__clearHistory();
-    console.warn('AFTER REVERT');
   }
 
   /**

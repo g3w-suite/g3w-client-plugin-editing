@@ -173,13 +173,6 @@ export default class Editor extends G3WObject {
   }
 
   /**
-   * revert (cancel) all changes in history and clean session
-   */
-  revert() {
-    return $promisify(() => { this._featuresstore.setFeatures((this._layer.readFeatures() || []).map(f => f.clone())); });
-  }
-
-  /**
    * Rollback changes
    * 
    * @param changes
