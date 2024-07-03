@@ -1316,11 +1316,9 @@ export class ToolBox extends G3WObject {
    *
    * @since g3w-client-plugin-editing@v3.8.0
    */
-  revert() {
-    return $promisify(async () => {
-      await promisify(this.state.layer.getEditor().revert());
-      this.__clearHistory();
-    });
+  async revert() {
+    await promisify(this.state.layer.getEditor().revert());
+    this.__clearHistory();
   }
 
   /**
@@ -1406,15 +1404,23 @@ export class ToolBox extends G3WObject {
    * @private
    */
   _handleScaleConstraint() {
-    //check if selected
-    if (this.state.selected && (this._start || this.startResolve)) {
-      //if editing started (get features from server) or waiting to start
-      const map = GUI.getService('map').getMap();
-      this.state.editing.canEdit = getScaleFromResolution(map.getView().getResolution()) <= this.state._constraints.scale;
-      if (this.state.editing.canEdit && this.startResolve) { this.startResolve();}
-      //need to be async eventual show a message because another toolbox can be unselected before
-      setTimeout(() => GUI.setModal(!this.state.editing.canEdit, this.messages.constraint.scale));
-    } else { GUI.setModal(false) } // reset show modal
+    // check if selected → hide modal
+    if (!this.state.selected || !(this._start || this.startResolve)) {
+      GUI.setModal(false);
+      return;
+    }
+
+    // get features from server or wait to start
+    const map = GUI.getService('map').getMap();
+
+    this.state.editing.canEdit = getScaleFromResolution(map.getView().getResolution()) <= this.state._constraints.scale;
+
+    if (this.state.editing.canEdit && this.startResolve) {
+      this.startResolve();
+    }
+
+    // async show message because another toolbox can be unselected before
+    setTimeout(() => GUI.setModal(!this.state.editing.canEdit, this.messages.constraint.scale));
   }
 
   /**
