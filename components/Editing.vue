@@ -79,12 +79,12 @@
         :key                = "toolbox.id"
         :state              = "toolbox"
         :resourcesurl       = "resourcesurl"
-        @setselectedtoolbox = "setSelectedToolbox"
+        @setselectedtoolbox = "selectToolBox"
         @starttoolbox       = "startToolBox"
         @stoptoolbox        = "stopToolBox"
         @savetoolbox        = "saveToolBox"
-        @setactivetool      = "startActiveTool"
-        @stopactivetool     = "stopActiveTool"
+        @setactivetool      = "startTool"
+        @stopactivetool     = "stopTool"
         @on-editing         = "updateLayersInEditing"
         @update-filter-layers  = "updateFilterLayers"
       />
@@ -128,6 +128,8 @@
         editinglayers: Object
           .entries(g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').getEditableLayers())
           .map(([id, layer]) => ({ id, name: layer.getName(), title: layer.getTitle() })),
+        /** @since g3w-client-plugin-editing@v3.8.0 */
+        activetool: null,
       };
     },
 
@@ -204,8 +206,7 @@
             //if there is a layer with not saved/committed changes ask before get start toolbox,
             //otherwise changes made on relation layers are not sync with current database state
             //example Joins 1:1 fields
-            try      { await this.commitDirtyToolBoxes(dirtyId); }
-            catch(e) { console.warn(e); }
+            await this.commitDirtyToolBoxes(dirtyId);
           }
         }
         toolbox.start();
@@ -238,34 +239,37 @@
        * @param toolId
        * @param toolboxId
        */
-      async startActiveTool(toolId, toolboxId) {
+      async startTool(toolId, toolboxId) {
 
-        if (this.state.toolboxidactivetool && toolboxId !== this.state.toolboxidactivetool) {
-          if (this.service.getToolBoxById(this.service.getToolBoxById(toolboxId).getDependencies().find(id => id === this.state.toolboxidactivetool))) {
-            try {
-              await this.commitDirtyToolBoxes(this.state.toolboxidactivetool);
-            } catch(e) {
-              console.warn(e);
-            }
-          }
-          this.service.getToolBoxById(this.state.toolboxidactivetool).stopActiveTool();
+        console.log(this);
+
+        const toolbox          = this.service.getToolBoxById(toolboxId);
+        const GIVE_ME_A_NAME_1 = !!(this.activetool && toolboxId !== this.activetool);
+        const GIVE_ME_A_NAME_2 = GIVE_ME_A_NAME_1 && this.service.getToolBoxById(toolbox.getDependencies().find(id => id === this.activetool))
+
+        if (GIVE_ME_A_NAME_2) {
+          await this.commitDirtyToolBoxes(this.activetool);
         }
-        const toolbox                  = this.service.getToolBoxById(toolboxId);
-        this.state.toolboxidactivetool = toolboxId;
+
+        if (GIVE_ME_A_NAME_1) {
+          this.stopTool(this.activetool);
+        }
+
+        this.activetool = toolboxId;
         toolbox.setActiveTool(toolbox.getToolById(toolId));
       },
 
       /**
        * @param toolboxId
        */
-      stopActiveTool(toolboxId) {
+      stopTool(toolboxId) {
         this.service.getToolBoxById(toolboxId).stopActiveTool();
       },
 
       /**
        * @param toolboxId
        */
-      async setSelectedToolbox(toolboxId) {
+      async selectToolBox(toolboxId) {
         const toolbox   = this.service.getToolBoxById(toolboxId);      // get toolbox by id
         const toolboxes = this.service.getToolBoxes(); // get all toolboxes
         const selected  = toolboxes.find(t => t.isSelected());  // check if exist already toolbox selected (first time)
@@ -299,20 +303,25 @@
           return toolbox;
         }
 
+        // commit
         try {
           await promisify(service.commit({ toolbox }));
           return toolbox;
         } catch (e) {
-          console.warn(e);
-          await promisify(toolbox.revert());
-          toolbox
-            .getDependencies()
-            .forEach((layerId) => {
-              if (service.getLayerById(layerId).getChildren().indexOf(layerId) !== -1) {
-                service.getToolBoxById(layerId).revert();
-              }
-            });
-          return Promise.reject(toolbox);
+          // revert
+          try {
+            console.warn(e);
+            await promisify(toolbox.revert());
+            toolbox
+              .getDependencies()
+              .forEach((layerId) => {
+                if (-1 !== service.getLayerById(layerId).getChildren().indexOf(layerId)) {
+                  service.getToolBoxById(layerId).revert();
+                }
+              });
+          } catch (e) {
+            console.warn(e);
+          }
         }
 
       },

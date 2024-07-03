@@ -55,6 +55,8 @@ new (class extends Plugin {
       ],
     });
 
+    console.log(this);
+
     /**
      * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
      * 
@@ -67,7 +69,6 @@ new (class extends Plugin {
       toolboxes:           [],
       _toolboxes:          [],    // TODO: `state._toolboxes` vs `state.toolboxes` ?
       toolboxselected:     null,
-      toolboxidactivetool: null,
       /** @since g3w-client-plugin-editing@v3.6.2 */
       showselectlayers:    true,  // whether to show selected layers on editing panel
       message:             null,
@@ -874,7 +875,6 @@ new (class extends Plugin {
     this.state._toolboxes.forEach(t => t.stop());
 
     this.state.toolboxselected     = null;
-    this.state.toolboxidactivetool =  null;
     this.state.message             =  null;
 
     GUI.getService('map').refreshMap();
