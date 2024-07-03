@@ -1317,8 +1317,10 @@ export class ToolBox extends G3WObject {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   async revert() {
+    console.warn('BEFORE REVERT');
     await promisify(this.state.layer.getEditor().revert());
     this.__clearHistory();
+    console.warn('AFTER REVERT');
   }
 
   /**

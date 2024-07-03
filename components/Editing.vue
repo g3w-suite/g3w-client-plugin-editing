@@ -219,7 +219,7 @@
           console.warn(e);
         }
 
-        await toolbox.stop()
+        await toolbox.stop();
 
         // re-enable query map control
         const control = undefined === this.service.getToolBoxes().find(t => t.state.editing.on) && GUI.getService('map').getMapControlByType({ type: 'query' });
@@ -302,12 +302,12 @@
         try {
           if (toolbox.isDirty() && toolbox.hasDependencies()) {
             await promisify(this.service.commit({ toolbox }));
+            console.info('[EDITING] committed dirty')
           }
         } catch (e) {
           // revert
           try {
-            console.warn(e);
-            await promisify(toolbox.revert());
+            await toolbox.revert();
             toolbox
               .getDependencies()
               .forEach((layerId) => {
@@ -315,6 +315,10 @@
                   this.service.getToolBoxById(layerId).revert();
                 }
               });
+            /** @TODO use "toolbox.stop()" instead ? */
+            toolbox.stopActiveTool();
+            toolbox.getSession().stop();
+            console.info('[EDITING] reverted dirty');
           } catch (e) {
             console.warn(e);
           }
