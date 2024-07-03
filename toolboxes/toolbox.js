@@ -76,7 +76,7 @@ const { getScaleFromResolution }          = g3wsdk.ol.utils;
  */
 export class ToolBox extends G3WObject {
 
-  constructor(layer) {
+  constructor(layer, dependencies = []) {
     super();
 
     const is_vector       = [undefined, Layer.LayerTypes.VECTOR].includes(layer.getType());
@@ -203,8 +203,6 @@ export class ToolBox extends G3WObject {
           id:          new Proxy({}, { get: () => this.state.id }),
           started:     false,
           getfeatures: false,
-          /** maximum "buffer history" lenght for undo/redo */
-          maxSteps:    10,
           /** current state of history (useful for undo /redo) */
           current:     null,
           /** temporary change not save on history */
@@ -212,9 +210,9 @@ export class ToolBox extends G3WObject {
         },
         history      : this._history.state,
         on           : false,
-        dependencies : [],
-        relations    : [],
-        father       : false,
+        dependencies,
+        relations    : Object.values(layer.isFather() && dependencies.length ? layer.getRelations().getRelations() : {}),
+        father       : layer.isFather(),
         canEdit      : true
       },
       /** @since g3w-client-plugin-editing@v3.7.0 store key events setters */
@@ -1247,7 +1245,6 @@ export class ToolBox extends G3WObject {
 
     //@since 3.8.0 Store ol keys event start when we are in editing
     this._olStartKeysEvent = [];
-
   }
 
   /**
@@ -1295,13 +1292,6 @@ export class ToolBox extends G3WObject {
   }
 
   /**
-   * @param bool
-   */
-  setFather(bool) {
-    this.state.editing.father = bool;
-  }
-
-  /**
    * @returns {boolean}
    */
   isFather() {
@@ -1309,14 +1299,7 @@ export class ToolBox extends G3WObject {
   }
 
   /**
-   * @param relation
-   */
-  addRelation(relation) {
-    this.state.editing.relations.push(relation);
-  }
-
-  /**
-   * @returns {[]}
+   * @returns { Array } parent and child layers
    */
   getDependencies() {
     return this.state.editing.dependencies;
@@ -2275,7 +2258,7 @@ export class ToolBox extends G3WObject {
       });
     };
     const steps = (this._states.length - 1) - currentStateIndex;
-    this._constrains.undo = (null !== this.state.editing.session.current) && (this.state.editing.session.maxSteps > steps);
+    this._constrains.undo = (null !== this.state.editing.session.current) && (steps < 10); // 10 = maximum "buffer history" lenght for undo/redo
     return this._constrains.undo;
   }
 

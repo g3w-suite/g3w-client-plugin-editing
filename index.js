@@ -333,25 +333,7 @@ new (class extends Plugin {
     MapLayersStoreRegistry.getLayersStore('editing').addLayers(this.getLayers());
 
     // create toolboxes
-    this.getLayers().forEach(l => this.addToolBox(new ToolBox(l)));
-
-    // create toolboxes dependencies tree
-    this.state._toolboxes.forEach(toolbox => {
-      const layer = toolbox.getLayer();
-      toolbox.setFather(layer.isFather());
-      // get toolbox editing dependencies
-      toolbox.state.editing.dependencies = [
-        ...layer.getChildren(),
-        ...layer.getFathers()
-      ].filter((layerName) => undefined !== this.getLayerById(layerName));
-
-      if (layer.isFather() && toolbox.hasDependencies() ) {
-        const layerRelations = layer.getRelations().getRelations();
-        for (const relationName in layerRelations) {
-          toolbox.addRelation(layerRelations[relationName]);
-        }
-      }
-    })
+    this.getLayers().forEach(l => this.addToolBox(new ToolBox(l, [...l.getChildren(), ...l.getFathers()].filter(id => this.getLayerById(id)))));
 
     await GUI.isReady();
     this._setupGUI();
