@@ -314,7 +314,7 @@
                 const toolbox = this.service.getToolBoxById(layerId);
                 const layer   = toolbox.getLayer();
                 const editor  = layer.getEditor();
-                if (i === 0 || -1 !== layer.getChildren().indexOf(layerId)) {
+                if (i === 0 || layer.getChildren().includes(layerId)) {
                   editor.getEditingSource().setFeatures((editor.readFeatures() || []).map(f => f.clone()));
                   toolbox.getSession().getHistory().clear();
                   toolbox.getSession().stop();
