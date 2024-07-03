@@ -16,7 +16,7 @@
         'mobile':          isMobile(),
         'toolboxselected': state.selected,
         'toolboxactive':   state.editing.on && canEdit,
-        'geolayer': state.layer.isGeoLayer(),
+        'geolayer':        state.layer.isGeoLayer(),
       }"
     >
 
