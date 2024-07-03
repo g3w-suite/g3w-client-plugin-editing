@@ -18,7 +18,7 @@ const { isMultiGeometry } = g3wsdk.core.geometry.Geometry;
  *
  * @returns { Array } converted features
  */
-export function convertToGeometry(features, geometryType) {
+export function convertToGeometry(features = [], geometryType) {
   return (features || []).flatMap(f => {
     const type = f.getGeometry() && f.getGeometry().getType();
 
