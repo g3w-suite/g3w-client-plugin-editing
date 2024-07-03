@@ -987,7 +987,9 @@ new (class extends Plugin {
           } catch(e) {
             console.warn(e);
             // In the case of pressed cancel button to commit features modal
-            if (e && e.cancel) { return Promise.reject(e) }
+            if (e && e.cancel) {
+              return Promise.reject(e);
+            }
             //need to be set server Error
             serverError = true;
           }
