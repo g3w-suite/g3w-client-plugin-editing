@@ -3,7 +3,6 @@
   <section>
 
     <div id = "g3w-select-editable-layers-content">
-      <helpdiv message = "plugins.editing.close_editing_panel.message" />
       <select
         id        = "g3w-select-editable-layers-to-copy"
         v-select2 = "'id'"
