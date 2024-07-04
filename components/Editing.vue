@@ -236,8 +236,6 @@
        */
       async startTool(toolId, toolboxId) {
 
-        console.log(this);
-
         const toolbox = this.service.getToolBoxById(toolboxId);
         const enabled = this.activetool && toolboxId === this.activetool;
 
@@ -310,16 +308,15 @@
           try {
             [layerId]
               .concat(toolbox.getDependencies())
-              .forEach((layerId, i) => {
+              .forEach(layerId => {
                 const toolbox = this.service.getToolBoxById(layerId);
-                const layer   = toolbox.getLayer();
-                const editor  = layer.getEditor();
-                if (i === 0 || layer.getChildren().includes(layerId)) {
-                  editor.getEditingSource().setFeatures((editor.readFeatures() || []).map(f => f.clone()));
-                  toolbox.getSession().getHistory().clear();
-                  toolbox.getSession().stop();
-                  toolbox.stopActiveTool();
-                }
+                const editor  = toolbox.getEditor();
+                //set original features get from server without changes
+                editor.getEditingSource().setFeatures((editor.readFeatures() || []).map(f => f.clone()));
+                //clear history of a layer - no changes
+                toolbox.getSession().getHistory().clear();
+                //stop eventually active tool
+                toolbox.stopActiveTool();
               });
             console.info('[EDITING] reverted dirty');
           } catch (e) {
