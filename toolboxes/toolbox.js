@@ -35,6 +35,9 @@ import {
   OpenTableStep,
 }                          from '../workflows';
 
+import { VM }                                           from '../eventbus';
+
+
 Object
   .entries({
     Workflow,
@@ -68,7 +71,10 @@ const { Layer }                           = g3wsdk.core.layer;
 const { Feature }                         = g3wsdk.core.layer.features;
 const { debounce, toRawType }             = g3wsdk.core.utils;
 const { GUI }                             = g3wsdk.gui;
-const { getScaleFromResolution }          = g3wsdk.ol.utils;
+const {
+  getScaleFromResolution,
+  getResolutionFromScale,
+}                                         = g3wsdk.ol.utils;
 
 
 /**
@@ -1245,6 +1251,9 @@ export class ToolBox extends G3WObject {
 
     //@since 3.8.0 Store ol keys event start when we are in editing
     this._olStartKeysEvent = [];
+
+    //@since 3.8.1 store all unwatches
+    this.unwatches = [];
   }
 
   /**
@@ -1437,14 +1446,43 @@ export class ToolBox extends G3WObject {
 
       // check if can we edit based on scale contraint (vector layer)
       if (this.state._constraints.scale) {
+
         await new Promise((resolve) => {
           //set as resolve handler to resolve waiting get features from server
           this.startResolve = resolve;
           //call scale constraint handler
           this._handleScaleConstraint();
+          let interaction;
+
+          //watch active map control
+          this.unwatches.push(VM.$watch(
+            () => GUI.getService('map').getCurrentToggledMapControl(),
+            c => {
+              //check if interaction and set active based on edit state
+              interaction = c._interaction;
+              //
+              if (interaction) { interaction.setActive(this.state.editing.canEdit) }
+              //check if you can edit
+              const map = GUI.getService('map').getMap();
+              this._olStartKeysEvent.push(map.on('click', () => {
+                //if it can't edit
+                if (!this.state.editing.canEdit && this.isSelected()) {
+                  map.getView().setResolution(getResolutionFromScale(this.state._constraints.scale, GUI.getService('map').getMapUnits()));
+                }
+              }))
+            },
+            { immediate: true }
+          ))
+
+          //watch can edit map control
+          this.unwatches.push(VM.$watch(
+            () =>  this.state.editing.canEdit,
+            bool => interaction && interaction.setActive(bool)
+          ))
           //if click on start toolbox can edit
           if (this.state.editing.canEdit) { resolve() }
         })
+
       }
 
       //reset start startResolve promise reolve function
@@ -1535,8 +1573,12 @@ export class ToolBox extends G3WObject {
 
       this.state._unregisterStartSettersEventsKey.forEach(fnc => fnc());
       this.state._unregisterStartSettersEventsKey = [];
+
       this._olStartKeysEvent.forEach(k => ol.Observable.unByKey(k));
-      this._olStartKeysEvent = [];
+      this._olStartKeysEvent.splice(0);
+
+      this.unwatches.forEach(uw => uw());
+      this.unwatches.splice(0);
       //eventually reset start resolve feature waiting promise
       this.startResolve                           = null;
       //set start to false
