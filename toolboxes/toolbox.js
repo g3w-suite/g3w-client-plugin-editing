@@ -1452,36 +1452,43 @@ export class ToolBox extends G3WObject {
           this.startResolve = resolve;
           //call scale constraint handler
           this._handleScaleConstraint();
-          let interaction;
 
-          //watch active map control
+          // click to fit scale constraint
+
+          // watch active map control
           this.unwatches.push(VM.$watch(
             () => GUI.getService('map').getCurrentToggledMapControl(),
-            c => {
-              //check if interaction and set active based on edit state
-              interaction = c._interaction;
-              //
-              if (interaction) { interaction.setActive(this.state.editing.canEdit) }
-              //check if you can edit
-              const map = GUI.getService('map').getMap();
-              this._olStartKeysEvent.push(map.on('click', () => {
-                //if it can't edit
-                if (!this.state.editing.canEdit && this.isSelected()) {
-                  map.getView().setResolution(getResolutionFromScale(this.state._constraints.scale, GUI.getService('map').getMapUnits()));
-                }
-              }))
+            control => {
+              if (control) {
+                this._olStartKeysEvent.push(GUI.getService('map').getMap().on('click', e => {
+                  // if it can't edit
+                  if (!this.state.editing.canEdit && this.isSelected()) {
+                    GUI.getService('map').getViewport().classList.remove('ol-zoom-in');
+                    GUI.getService('map').goToRes(e.coordinate, getResolutionFromScale(this.state._constraints.scale, GUI.getService('map').getMapUnits()));
+                  }
+                }))
+              }
             },
             { immediate: true }
-          ))
+          ));
 
-          //watch can edit map control
+          // watch can edit map
           this.unwatches.push(VM.$watch(
             () =>  this.state.editing.canEdit,
-            bool => interaction && interaction.setActive(bool)
-          ))
-          //if click on start toolbox can edit
-          if (this.state.editing.canEdit) { resolve() }
-        })
+            canEdit => {
+              const control = GUI.getService('map').getCurrentToggledMapControl();
+              if (control && control._interaction) { control._interaction.setActive(canEdit); }
+              GUI.getService('map').getViewport().classList.toggle('ol-zoom-in', !canEdit);
+            },
+            { immediate: true }
+          ));
+
+          // if click on start toolbox can edit
+          if (this.state.editing.canEdit) {
+            resolve();
+          }
+
+        });
 
       }
 
