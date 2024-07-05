@@ -1476,6 +1476,13 @@ new (class extends Plugin {
     ApplicationService.setCurrentLayout(this.state.currentLayout);
   }
 
+  /**
+   * @since g3w-client-plugin-editing@v3.8.1
+   */
+  getActiveTool() {
+    return this.getToolBoxes().filter(t => t.getActiveTool())[0];
+  }
+
 });
 
 async function _rollback(relations = {}) {
