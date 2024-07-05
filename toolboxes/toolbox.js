@@ -1468,7 +1468,9 @@ export class ToolBox extends G3WObject {
             () => [GUI.getService('map').getCurrentToggledMapControl(), this.state.editing.canEdit, this.state.selected],
             ([control, canEdit, selected]) => {
               const active = selected ? canEdit : true;
-              if (control && control._interaction) { control._interaction.setActive(active); }
+              if (control && control.getInteraction()) {
+                control.getInteraction().setActive(active);
+              }
               GUI.getService('map').getViewport().classList.toggle('ol-zoom-in', !active);
             },
             { immediate : true }
