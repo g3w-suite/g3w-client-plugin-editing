@@ -1462,8 +1462,7 @@ export class ToolBox extends G3WObject {
               if (control) {
                 this._olStartKeysEvent.push(GUI.getService('map').getMap().on('click', e => {
                   // if it can't edit
-                  if (!this.state.editing.canEdit && this.isSelected()) {
-                    GUI.getService('map').getViewport().classList.remove('ol-zoom-in');
+                  if (this.state.selected && !this.state.editing.canEdit) {
                     GUI.getService('map').goToRes(e.coordinate, getResolutionFromScale(this.state._constraints.scale, GUI.getService('map').getMapUnits()));
                   }
                 }))
@@ -1472,15 +1471,16 @@ export class ToolBox extends G3WObject {
             { immediate: true }
           ));
 
-          // watch can edit map
+          // watch can an edit map
           this.unwatches.push(VM.$watch(
-            () =>  this.state.editing.canEdit,
-            canEdit => {
+            () => [this.state.editing.canEdit, this.state.selected],
+            ([canEdit, selected]) => {
+              const active = selected ? canEdit : true;
               const control = GUI.getService('map').getCurrentToggledMapControl();
-              if (control && control._interaction) { control._interaction.setActive(canEdit); }
-              GUI.getService('map').getViewport().classList.toggle('ol-zoom-in', !canEdit);
+              if (control && control._interaction) { control._interaction.setActive(active); }
+              GUI.getService('map').getViewport().classList.toggle('ol-zoom-in', !active);
             },
-            { immediate: true }
+            { immediate : true }
           ));
 
           // if click on start toolbox can edit
