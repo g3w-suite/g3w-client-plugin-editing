@@ -225,19 +225,19 @@
        * @param toolId
        * @param toolboxId
        */
-      startActiveTool(toolId, toolboxId) {
+      async startActiveTool(toolId, toolboxId) {
         if (this.state.toolboxidactivetool && toolboxId !== this.state.toolboxidactivetool) {
-          this
-            ._checkDirtyToolBoxes(this.state.toolboxidactivetool)
-            .then(toolbox => {
-              if (toolbox) {
-                toolbox.stopActiveTool();
-              }
-              this._setActiveToolOfToolbooxSelected(toolId, toolboxId);
-            });
-        } else {
-          this._setActiveToolOfToolbooxSelected(toolId, toolboxId);
+          if (this._getToolBoxById(this._getToolBoxById(toolboxId).getDependencies().find(id => id === this.state.toolboxidactivetool))) {
+            try {
+              await this.$options.service.commitDirtyToolBoxes(this.state.toolboxidactivetool);
+            } catch(e) {
+              console.warn(e);
+            }
+          }
+          this._getToolBoxById(this.state.toolboxidactivetool).stopActiveTool();
         }
+        this._setActiveToolOfToolbooxSelected(toolId, toolboxId);
+
       },
 
       /**
@@ -267,16 +267,6 @@
         this.state.toolboxselected = toolbox;
       },
 
-      /**
-       * @param toolboxId
-       * 
-       * @returns {*}
-       * 
-       * @private
-       */
-      _checkDirtyToolBoxes(toolboxId) {
-        return this.$options.service.commitDirtyToolBoxes(toolboxId);
-      },
 
       /**
        * @param toolboxId
