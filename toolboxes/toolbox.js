@@ -1454,29 +1454,21 @@ export class ToolBox extends G3WObject {
           this._handleScaleConstraint();
 
           // click to fit scale constraint
-
-          // watch active map control
-          this.unwatches.push(VM.$watch(
-            () => GUI.getService('map').getCurrentToggledMapControl(),
-            control => {
-              if (control) {
-                this._olStartKeysEvent.push(GUI.getService('map').getMap().on('click', e => {
-                  // if it can't edit
-                  if (this.state.selected && !this.state.editing.canEdit) {
-                    GUI.getService('map').goToRes(e.coordinate, getResolutionFromScale(this.state._constraints.scale, GUI.getService('map').getMapUnits()));
-                  }
-                }))
+          this._olStartKeysEvent.push(
+            GUI.getService('map').getMap().on('click', e => {
+              // if it can't edit
+              if (this.state.selected && !this.state.editing.canEdit) {
+                GUI.getService('map').goToRes(e.coordinate, getResolutionFromScale(this.state._constraints.scale, GUI.getService('map').getMapUnits()));
               }
-            },
-            { immediate: true }
-          ));
+            })
+          )
 
           // watch can an edit map
           this.unwatches.push(VM.$watch(
-            () => [this.state.editing.canEdit, this.state.selected],
-            ([canEdit, selected]) => {
+            () => [GUI.getService('map').getCurrentToggledMapControl(), this.state.editing.canEdit, this.state.selected],
+            ([control, canEdit, selected]) => {
+              console.log(control)
               const active = selected ? canEdit : true;
-              const control = GUI.getService('map').getCurrentToggledMapControl();
               if (control && control._interaction) { control._interaction.setActive(active); }
               GUI.getService('map').getViewport().classList.toggle('ol-zoom-in', !active);
             },
