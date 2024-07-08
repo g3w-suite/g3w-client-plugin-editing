@@ -17,6 +17,7 @@
         'toolboxselected': state.selected,
         'toolboxactive':   state.editing.on && canEdit,
         'geolayer':        state.layer.isGeoLayer(),
+        'clicktozoom':     state.selected && !canEdit
       }"
     >
 
@@ -194,8 +195,9 @@
 </template>
 
 <script>
-  const { GUI }   = g3wsdk.gui;
-  const { Layer } = g3wsdk.core.layer;
+  const { GUI }                    = g3wsdk.gui;
+  const { Layer }                  = g3wsdk.core.layer;
+  const { getResolutionFromScale } = g3wsdk.ol.utils;
 
   let snapInteraction;
 
@@ -281,7 +283,10 @@
        * @fires setselectedtoolbox
        */
       select() {
-        if (this.isLayerReady && !this.state.selected) {
+        if (this.state.selected && !this.canEdit) {
+          const map = GUI.getService('map')
+          map.goToRes(map.getCenter(), getResolutionFromScale(this.state._constraints.scale, GUI.getService('map').getMapUnits()));
+        } else if (this.isLayerReady && !this.state.selected) {
           this.$emit('setselectedtoolbox', this.state.id);
         }
       },
@@ -641,5 +646,8 @@
   }
   .tools-of-tool-snap label span {
     color: #222d32 !important;
+  }
+  .clicktozoom {
+    cursor: zoom-in;
   }
 </style>

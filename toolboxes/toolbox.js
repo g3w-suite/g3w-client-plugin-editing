@@ -1453,7 +1453,7 @@ export class ToolBox extends G3WObject {
           //call scale constraint handler
           this._handleScaleConstraint();
 
-          // click to fit scale constraint
+          // click to fit zoom scale constraint
           this._olStartKeysEvent.push(
             GUI.getService('map').getMap().on('click', e => {
               // if it can't edit
