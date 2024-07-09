@@ -17,7 +17,6 @@
         'toolboxselected': state.selected,
         'toolboxactive':   state.editing.on && canEdit,
         'geolayer':        state.layer.isGeoLayer(),
-        'clicktozoom':     state.selected && !canEdit
       }"
     >
 
@@ -61,8 +60,8 @@
 
       <div
         v-if       = "!state.changingtools && (state.editing.on || toggled.layer)"
-        class      = "panel-body"
-        v-disabled = "(!isLayerReady || !canEdit) "
+        :class      = "{ 'panel-body':true, disabled: (!isLayerReady || !canEdit) }"
+        @click     = "fitZoomToScale"
       >
 
         <!-- HAS NO GEOMETRY -->
@@ -283,11 +282,20 @@
        * @fires setselectedtoolbox
        */
       select() {
+        if (this.isLayerReady && !this.state.selected) {
+          this.$emit('setselectedtoolbox', this.state.id);
+        }
+      },
+
+      /**
+       * Handle click to fit zoom scale
+       * 
+       * @since g3w-client-plugin-editing@v3.9.0 
+       */
+      fitZoomToScale(e) {
         if (this.state.selected && !this.canEdit) {
           const map = GUI.getService('map')
           map.goToRes(map.getCenter(), getResolutionFromScale(this.state._constraints.scale, GUI.getService('map').getMapUnits()));
-        } else if (this.isLayerReady && !this.state.selected) {
-          this.$emit('setselectedtoolbox', this.state.id);
         }
       },
 
@@ -647,7 +655,11 @@
   .tools-of-tool-snap label span {
     color: #222d32 !important;
   }
-  .clicktozoom {
+  .panel-body.disabled {
+    opacity: .7;
     cursor: zoom-in;
+  }
+  .panel-body.disabled > * {
+    pointer-events: none;
   }
 </style>
