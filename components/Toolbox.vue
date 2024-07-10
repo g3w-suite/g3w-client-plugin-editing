@@ -657,7 +657,7 @@
   }
   .panel-body.disabled {
     opacity: .7;
-    cursor: zoom-in;
+    cursor: url('../../../static/client/cursors/mZoomIn.svg'), zoom-in;
   }
   .panel-body.disabled > * {
     pointer-events: none;
