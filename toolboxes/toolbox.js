@@ -1326,7 +1326,7 @@ export class ToolBox extends G3WObject {
    */
   getFieldUniqueValuesFromServer({
     reset=false
-  }={}) {
+  } = {}) {
     this.state.layer.getWidgetData({
       type: 'unique',
       fields: Object.values(this.uniqueFields).map(field => field.name).join()
@@ -1380,19 +1380,28 @@ export class ToolBox extends G3WObject {
 
   /**
    * @since 3.8.0 Handle scale constraint
+   * @sto <Boolean> stop true when called from stop method
    * @private
    */
-  _handleScaleConstraint() {
-    // check if selected → hide modal
-    if (!this.state.selected || !(this._start || this.startResolve)) {
-      GUI.setModal(false);
-      return;
-    }
-
+  _handleScaleConstraint(stop = false) {
     // get features from server or wait to start
     const map = GUI.getService('map').getMap();
 
     this.state.editing.canEdit = getScaleFromResolution(map.getView().getResolution()) <= this.state._constraints.scale;
+
+    const showZoomCursor = !stop && this.state.selected && !this.state.editing.canEdit;
+
+    if (GUI.getService('map').getCurrentToggledMapControl() && GUI.getService('map').getCurrentToggledMapControl().cursorClass) {
+      map.getViewport().classList.toggle(GUI.getService('map').getCurrentToggledMapControl().cursorClass, !showZoomCursor)
+    }
+
+    map.getViewport().classList.toggle('ol-zoom-in', showZoomCursor);
+
+    // check if selected → hide modal
+    if (stop || !this.state.selected || !(this._start || this.startResolve)) {
+      GUI.setModal(false);
+      return;
+    }
 
     if (this.state.editing.canEdit && this.startResolve) {
       this.startResolve();
@@ -1467,19 +1476,10 @@ export class ToolBox extends G3WObject {
             })
           );
 
-          // set mouse cursor (zoom-in)
-          this.unwatches.push(VM.$watch(
-            () => this.state.selected && !this.state.editing.canEdit,
-            clickToZoom => map.getViewport().classList.toggle('ol-zoom-in', clickToZoom),
-            { immediate : true }
-          ));
-
           // if click on start toolbox can edit
-          if (this.state.editing.canEdit) {
-            resolve();
-          }
+          if (this.state.editing.canEdit) { resolve() }
 
-        });
+        })
 
       }
 
@@ -1577,13 +1577,16 @@ export class ToolBox extends G3WObject {
 
       this.unwatches.forEach(uw => uw());
       this.unwatches.splice(0);
+
       //eventually reset start resolve feature waiting promise
       this.startResolve                           = null;
       //set start to false
       this._start                                 = false
       this.state.editing.on                       = false;
 
-      if (this.state._constraints.scale) { this._handleScaleConstraint(); }
+      if (this.state._constraints.scale) {
+        this._handleScaleConstraint(true);
+      }
 
       const is_started = !!this.__isStarted();
   
