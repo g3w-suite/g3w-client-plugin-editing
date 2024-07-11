@@ -55,8 +55,6 @@ new (class extends Plugin {
       ],
     });
 
-    console.log(this);
-
     /**
      * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
      * 
