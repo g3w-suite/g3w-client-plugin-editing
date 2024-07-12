@@ -1392,11 +1392,11 @@ export class ToolBox extends G3WObject {
     //check if start method is called
     const in_editing = (this._start || this.startResolve);
 
-    const showZoomCursor = !stop && in_editing && this.state.selected && !this.state.editing.canEdit;
+    const showZoomCursor = !stop && this.state.selected && !this.state.editing.canEdit;
 
     const control = GUI.getService('map').getCurrentToggledMapControl();
 
-    if (control && control.cursorClass) { control.setMouseCursor(!showZoomCursor) }
+    if (control && control.cursorClass && (stop || in_editing)) { control.setMouseCursor(!showZoomCursor) }
 
     map.getViewport().classList.toggle('ol-zoom-in', showZoomCursor);
 
