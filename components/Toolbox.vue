@@ -60,7 +60,8 @@
 
       <div
         v-if       = "!state.changingtools && (state.editing.on || toggled.layer)"
-        :class      = "{ 'panel-body':true, disabled: (!isLayerReady || !canEdit) }"
+        :class     = "{ 'panel-body':true, disabled: (!isLayerReady || !canEdit) }"
+        :style     = "{ cursor: toolboxCursor }"
         @click     = "fitZoomToScale"
       >
 
@@ -223,6 +224,7 @@
     },
 
     computed: {
+
       /**
        * @since g3w-client-plugin-editing@v3.7.0
        */
@@ -272,6 +274,10 @@
        */
       isLayerReady() {
         return this.state.layer.state.editing.ready;
+      },
+
+      toolboxCursor() {
+        return (!this.isLayerReady || !this.canEdit) ? `url(${this.resourcesurl}cursors/mZoomIn.svg), zoom-in` : undefined;
       },
 
     },
@@ -657,7 +663,6 @@
   }
   .panel-body.disabled {
     opacity: .7;
-    cursor: url('../../../static/client/cursors/mZoomIn.svg'), zoom-in;
   }
   .panel-body.disabled > * {
     pointer-events: none;
