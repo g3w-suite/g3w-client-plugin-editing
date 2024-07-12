@@ -1391,8 +1391,10 @@ export class ToolBox extends G3WObject {
 
     const showZoomCursor = !stop && this.state.selected && !this.state.editing.canEdit;
 
-    if (GUI.getService('map').getCurrentToggledMapControl() && GUI.getService('map').getCurrentToggledMapControl().cursorClass) {
-      GUI.getService('map').getCurrentToggledMapControl().setMouseCursor(!showZoomCursor)
+    const control = GUI.getService('map').getCurrentToggledMapControl();
+
+    if (control && control.cursorClass) {
+      control.setMouseCursor(!showZoomCursor)
     }
 
     map.getViewport().classList.toggle('ol-zoom-in', showZoomCursor);
