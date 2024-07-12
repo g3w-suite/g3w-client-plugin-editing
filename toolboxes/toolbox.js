@@ -1389,18 +1389,19 @@ export class ToolBox extends G3WObject {
 
     this.state.editing.canEdit = getScaleFromResolution(map.getView().getResolution()) <= this.state._constraints.scale;
 
-    const showZoomCursor = !stop && this.state.selected && !this.state.editing.canEdit;
+    //check if start method is called
+    const in_editing = (this._start || this.startResolve);
+
+    const showZoomCursor = !stop && in_editing && this.state.selected && !this.state.editing.canEdit;
 
     const control = GUI.getService('map').getCurrentToggledMapControl();
 
-    if (control && control.cursorClass) {
-      control.setMouseCursor(!showZoomCursor)
-    }
+    if (control && control.cursorClass) { control.setMouseCursor(!showZoomCursor) }
 
     map.getViewport().classList.toggle('ol-zoom-in', showZoomCursor);
 
     // check if selected → hide modal
-    if (stop || !this.state.selected || !(this._start || this.startResolve)) {
+    if (stop || !this.state.selected || !in_editing) {
       GUI.setModal(false);
       return;
     }
@@ -1587,8 +1588,6 @@ export class ToolBox extends G3WObject {
       this.state.editing.on                       = false;
 
       if (this.state._constraints.scale) {
-        //remove change resolution event key
-        if (this.keyChangeResolution) { ol.Observable.unByKey(this.keyChangeResolution) }
         this._handleScaleConstraint(true);
       }
 
