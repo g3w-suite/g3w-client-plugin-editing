@@ -1585,6 +1585,8 @@ export class ToolBox extends G3WObject {
       this.state.editing.on                       = false;
 
       if (this.state._constraints.scale) {
+        //remove change resolution event key
+        if (this.keyChangeResolution) { ol.Observable.unByKey(this.keyChangeResolution) }
         this._handleScaleConstraint(true);
       }
 
