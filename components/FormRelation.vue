@@ -1487,7 +1487,7 @@
                                     features = convertToGeometry(
                                       options.external
                                         ? e.features                             // external layer
-                                        : (await DataRouterService.getData('query:coordinates', { // TOC/PROJECT layer
+                                        : ((await DataRouterService.getData('query:coordinates', { // TOC/PROJECT layer
                                           inputs: {
                                             coordinates: e.coordinate,
                                             query_point_tolerance: ProjectsRegistry.getCurrentProject().getQueryPointTolerance(),
@@ -1495,7 +1495,7 @@
                                             multilayers: false
                                           },
                                           outputs: null
-                                        })).data[0].features,
+                                        })).data[0] || { features: [] }).features,
                                       geometryType,
                                     )
                                   } catch(e) {

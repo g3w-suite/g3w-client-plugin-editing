@@ -157,17 +157,6 @@ export class Step extends G3WObject {
   /**
    * ORIGINAL SOURCE: g3w-client/src/core/workflow/task.js@v3.9.1
    * 
-   * Revert task
-   * 
-   * @since g3w-client-plugin-editing@v3.8.0
-   */
-  revert() {
-    console.log('Revert to implement ');
-  }
-
-  /**
-   * ORIGINAL SOURCE: g3w-client/src/core/workflow/task.js@v3.9.1
-   * 
    * @since g3w-client-plugin-editing@v3.8.0
    */
   panic() {

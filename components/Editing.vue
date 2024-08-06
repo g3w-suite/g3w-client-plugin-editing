@@ -75,23 +75,22 @@
     <!-- TOOLBOXES -->
     <div id="toolboxes">
       <toolbox
-        v-for               = "toolbox in state.toolboxes"
-        :key                = "toolbox.id"
-        :state              = "toolbox"
-        :resourcesurl       = "resourcesurl"
-        @setselectedtoolbox = "setSelectedToolbox"
-        @starttoolbox       = "startToolBox"
-        @stoptoolbox        = "stopToolBox"
-        @savetoolbox        = "saveToolBox"
-        @setactivetool      = "startActiveTool"
-        @stopactivetool     = "stopActiveTool"
-        @on-editing         = "updateLayersInEditing"
-        @update-filter-layers  = "updateFilterLayers"
+        v-for                 = "toolbox in state.toolboxes"
+        :key                  = "toolbox.id"
+        :state                = "toolbox"
+        :resourcesurl         = "resourcesurl"
+        @setselectedtoolbox   = "selectToolBox"
+        @starttoolbox         = "startToolBox"
+        @stoptoolbox          = "stopToolBox"
+        @setactivetool        = "startTool"
+        @stopactivetool       = "stopTool"
+        @on-editing           = "updateLayersInEditing"
+        @update-filter-layers = "updateFilterLayers"
       />
     </div>
 
     <p v-if = "django_admin_url"><a :href = "django_admin_url" target = "_blank">&#x1F512; Locked features</a></p>
-    <p v-if = "filemanager_url"><a :href = "filemanager_url" target = "_blank">&#x1F4C2; File manager</a></p>
+    <p v-if = "filemanager_url"><a  :href = "filemanager_url"  target = "_blank">&#x1F4C2; File manager</a></p>
 
   </div>
 
@@ -128,6 +127,8 @@
         editinglayers: Object
           .entries(g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').getEditableLayers())
           .map(([id, layer]) => ({ id, name: layer.getName(), title: layer.getTitle() })),
+        /** @since g3w-client-plugin-editing@v3.8.0 */
+        activetool: null,
       };
     },
 
@@ -148,9 +149,9 @@
       updateFilterLayers(layers = []) {
         if (layers.length > 0) {
           this._selectedlayers = this.selectedlayers;
-          this.selectedlayers = layers;
+          this.selectedlayers  = layers;
         } else {
-          this.selectedlayers = this._selectedlayers;
+          this.selectedlayers  = this._selectedlayers;
           this._selectedlayers = layers;
         }
 
@@ -180,16 +181,15 @@
        * @param toolboxId
        */
       commit(toolboxId) {
-        if (!this.canCommit) { return }
-
-        this.saving = true;
-
-        this.service
-          .commit({
-            toolbox: this.service.getToolBoxById(toolboxId),
-            modal:   false,
-          })
-          .always(() => this.saving = false);
+        if (this.canCommit) {
+          this.saving = true;
+          this.service
+            .commit({
+              toolbox: this.service.getToolBoxById(toolboxId),
+              modal:   false,
+            })
+            .always(() => this.saving = false);
+        }
       },
 
       /**
@@ -197,16 +197,10 @@
        */
       async startToolBox(toolboxId) {
         const toolbox = this.service.getToolBoxById(toolboxId);
-        if (ApplicationState.online) {
-          //check if a dependency layer (in relation) has some changes not committed
-          const dirtyId = toolbox.getDependencies().find(id => this.service.getToolBoxById(id).isDirty());
-          if (dirtyId) {
-            //if there is a layer with not saved/committed changes ask before get start toolbox,
-            //otherwise changes made on relation layers are not sync with current database state
-            //example Joins 1:1 fields
-            try      { await this.commitDirtyToolBoxes(dirtyId); }
-            catch(e) { console.warn(e); }
-          }
+        // check if a dependency layer (in relation) has some changes not committed
+        const layerId = ApplicationState.online && toolbox.getDependencies().find(id => this.service.getToolBoxById(id).isDirty());
+        if (layerId) {
+          await this.commit_dirty(layerId);
         }
         toolbox.start();
       },
@@ -217,19 +211,21 @@
       async stopToolBox(toolboxId) {
         const toolbox = this.service.getToolBoxById(toolboxId);
 
-        if (toolbox.state.editing.history.commit) { await this.service.commit().always(async () => await toolbox.stop()) }
-        else { await toolbox.stop() }
-
-        if (undefined === this.service.getToolBoxes().find(t => t.state.editing.on )) {
-          this._enableQueryMapControl();
+        try {
+          if (toolbox.state.editing.history.commit) {
+            await promisify(this.service.commit());
+          }
+        } catch (e) {
+          console.warn(e);
         }
-      },
 
-      /**
-       * @param toolboxId
-       */
-      saveToolBox(toolboxId) {
-        this.service.getToolBoxById(toolboxId).save();
+        await toolbox.stop();
+
+        // re-enable query map control
+        const control = undefined === this.service.getToolBoxes().find(t => t.state.editing.on) && GUI.getService('map').getMapControlByType({ type: 'query' });
+        if (control && !control.isToggled()) {
+          control.toggle();
+        }
       },
 
       /**
@@ -238,30 +234,39 @@
        * @param toolId
        * @param toolboxId
        */
-      async startActiveTool(toolId, toolboxId) {
-        if (this.state.toolboxidactivetool && toolboxId !== this.state.toolboxidactivetool) {
-          const toolbox = await this.commitDirtyToolBoxes(this.state.toolboxidactivetool);
-          if (toolbox) { toolbox.stopActiveTool() }
+      async startTool(toolId, toolboxId) {
+
+        const toolbox = this.service.getToolBoxById(toolboxId);
+        const enabled = this.activetool && toolboxId === this.activetool;
+
+        if (!enabled && this.service.getToolBoxById(toolbox.getDependencies().find(id => id === this.activetool))) {
+          await this.commit_dirty(this.activetool);
         }
-        const toolbox                  = this.service.getToolBoxById(toolboxId);
-        this.state.toolboxidactivetool = toolboxId;
+
+        if (!enabled) {
+          this.stopTool(this.activetool);
+        }
+
+        this.activetool = toolboxId;
         toolbox.setActiveTool(toolbox.getToolById(toolId));
       },
 
       /**
        * @param toolboxId
        */
-      stopActiveTool(toolboxId) {
-        this.service.getToolBoxById(toolboxId).stopActiveTool();
+      stopTool(toolboxId) {
+        if (toolboxId) {
+          this.service.getToolBoxById(toolboxId).stopActiveTool();
+        }
       },
 
       /**
        * @param toolboxId
        */
-      async setSelectedToolbox(toolboxId) {
-        const toolbox   = this.service.getToolBoxById(toolboxId);      // get toolbox by id
-        const toolboxes = this.service.getToolBoxes(); // get all toolboxes
-        const selected  = toolboxes.find(t => t.isSelected());  // check if exist already toolbox selected (first time)
+      async selectToolBox(toolboxId) {
+        const toolbox   = this.service.getToolBoxById(toolboxId); // get toolbox by id
+        const toolboxes = this.service.getToolBoxes();            // get all toolboxes
+        const selected  = toolboxes.find(t => t.isSelected());    // check if exist already toolbox selected (first time)
 
         // set already selected false
         if (selected) {
@@ -276,7 +281,12 @@
       },
 
       /**
+       * Ensure pending (un-saved) changes are committed before start to edit another layer,
+       * which could be in relation with current level (eg. Join 1:1) in order to prevent an
+       * out-of-sync database state on remote QGIS server.
+       * 
        * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+       * ORIGINAL SOURCE: g3w-client/src/core/editing/session.js@v3.9.1
        * 
        * @param { string } layerId
        *
@@ -284,27 +294,34 @@
        * 
        * @since g3w-client-plugin-editing@v3.8.0
        */
-      async commitDirtyToolBoxes(layerId) {
-        const service = this.service;
-        const toolbox = service.getToolBoxById(layerId);
+      async commit_dirty(layerId) {
+        const toolbox = this.service.getToolBoxById(layerId);
 
-        if (!toolbox.isDirty() || !toolbox.hasDependencies()) {
-          return toolbox;
-        }
-
+        // commit changes
         try {
-          await promisify(service.commit({ toolbox }));
-          return toolbox;
+          if (toolbox.isDirty() && toolbox.hasDependencies()) {
+            await promisify(this.service.commit({ toolbox }));
+            console.info('[EDITING] committed dirty')
+          }
         } catch (e) {
-          await promisify(toolbox.revert());
-          toolbox
-            .getDependencies()
-            .forEach((layerId) => {
-              if (service.getLayerById(layerId).getChildren().indexOf(layerId) !== -1) {
-                service.getToolBoxById(layerId).revert();
-              }
-            });
-          return Promise.reject(toolbox);
+          // revert changes (clear history and session)
+          try {
+            [layerId]
+              .concat(toolbox.getDependencies())
+              .forEach(layerId => {
+                const toolbox = this.service.getToolBoxById(layerId);
+                const editor  = toolbox.getEditor();
+                //set original features get from server without changes
+                editor.getEditingSource().setFeatures((editor.readFeatures() || []).map(f => f.clone()));
+                //clear history of a layer - no changes
+                toolbox.getSession().getHistory().clear();
+                //stop eventually active tool
+                toolbox.stopActiveTool();
+              });
+            console.info('[EDITING] reverted dirty');
+          } catch (e) {
+            console.warn(e);
+          }
         }
 
       },
@@ -316,37 +333,6 @@
        */
       _enableEditingButtons(bool) {
         this.editingButtonsEnabled = !bool;
-      },
-
-      /**
-       * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
-       * 
-       * Called by Editing Panel on creation time
-       * 
-       * @since g3w-client-plugin-editing@v3.8.0
-       */
-      registerOnLineOffLineEvent() {
-        // Array of object setter(as key), key to unby (as value)
-        this.unByKeys = this.unByKeys || [];
-
-        // in case of starting panel editing check if there arae some chenging pending
-        // if true it have to commit chanhes on server and ulock all layers features temporary locked
-        if (ApplicationState.online) {
-          this.checkOfflineChanges({ unlock: true });
-        }
-
-        this.unByKeys.push({
-          owner : ApplicationService,
-          setter: 'offline',
-          key:    ApplicationService.onafter('offline', () => {})
-        });
-
-        this.unByKeys.push({
-          owner :  ApplicationService,
-          setter: 'online',
-          key:     ApplicationService.onafter('online', () => this.checkOfflineChanges({ modal:false }).catch(e => GUI.notify.error(e)))
-        });
-
       },
 
       /**
@@ -397,23 +383,9 @@
         });
       },
 
-      /**
-       * @since 3.8.0
-       * @private
-       */
-      _enableQueryMapControl() {
-        const queryControl = GUI.getService('map').getMapControlByType({ type: 'query' });
-
-        if (queryControl && !queryControl.isToggled()) { queryControl.toggle() }
-      }
-
     },
 
     computed: {
-
-      message() {
-        return "";
-      },
 
       canCommit() {
         return (
@@ -511,9 +483,30 @@
 
       this._selectedlayers = []; //store previous selected layers
 
-      this.appState        = ApplicationState;
+      this.appState = ApplicationState;
 
-      this.registerOnLineOffLineEvent();
+      // Array of object setter(as key), key to unby (as value)
+      this.unByKeys = this.unByKeys || [];
+
+      // in case of starting panel editing check if there arae some chenging pending
+      // if true it have to commit chanhes on server and ulock all layers features temporary locked
+      if (ApplicationState.online) {
+        this.checkOfflineChanges({ unlock: true });
+      }
+
+      // register "offline" event
+      this.unByKeys.push({
+        owner : ApplicationService,
+        setter: 'offline',
+        key:    ApplicationService.onafter('offline', () => {})
+      });
+
+      // register "online" event
+      this.unByKeys.push({
+        owner :  ApplicationService,
+        setter: 'online',
+        key:     ApplicationService.onafter('online', () => this.checkOfflineChanges({ modal: false }).catch(e => GUI.notify.error(e)))
+      });
 
       GUI.closeContent();
 
@@ -586,7 +579,11 @@
       // clear all unique values fields related to layer (after a closing editing panel).
       this.state.uniqueFieldsValues = {};
 
-      this._enableQueryMapControl();
+      // re-enable query map control
+      const control = GUI.getService('map').getMapControlByType({ type: 'query' });
+      if (control && !control.isToggled()) {
+        control.toggle();
+      }
     },
 
   };
