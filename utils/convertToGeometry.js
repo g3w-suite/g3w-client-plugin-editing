@@ -13,7 +13,7 @@ const { isMultiGeometry } = g3wsdk.core.geometry.Geometry;
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
  * 
- * @param { Array }  features     to be converted      (eg. Polygon)
+ * @param { Array }  features     to be converted (eg. Polygon)
  * @param { string } geometryType target geometry type (eg. MultiPolygon)
  *
  * @returns { Array } converted features
@@ -30,9 +30,7 @@ export function convertToGeometry(features, geometryType) {
     }
 
     // same geometry
-    if (geometryType === type) {
-      return f;
-    }
+    if (geometryType === type) { return f }
 
     // convert single → multi
     if (isSameBaseGeometryType(type, geometryType) && (isMultiGeometry(geometryType) || !isMultiGeometry(type))) {

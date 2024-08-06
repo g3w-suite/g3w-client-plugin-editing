@@ -14,8 +14,8 @@
       class = "editing_table_header"
     >
 
-      <div class="editing_table_header_content">
-        <h3 class="editing_table_title">{{ state.title }}</h3>
+      <div class = "editing_table_header_content">
+        <h3 class = "editing_table_title">{{ state.title }}</h3>
       </div>
 
       <div
@@ -49,11 +49,11 @@
           :id   = "feature.__gis3w_feature_uid"
         >
 
-          <td v-if="!state.isrelation">
-            <div id="table-editing-tools">
+          <td v-if = "!state.isrelation">
+            <div id = "table-editing-tools">
 
               <!-- EDIT FEATURE -->
-              <span v-t-tooltip:right.create ="'plugins.editing.table.edit'">
+              <span v-t-tooltip:right.create = "'plugins.editing.table.edit'">
                <i
                  v-if             = "showTool('change_attr_feature')"
                  :class           = "g3wtemplate.font['pencil']"
@@ -66,7 +66,7 @@
 
 
               <!-- COPY FEATURE -->
-              <span v-t-tooltip:right.create ="'plugins.editing.table.copy'">
+              <span v-t-tooltip:right.create = "'plugins.editing.table.copy'">
                 <i
                   v-if             = "showTool('add_feature')"
                   :class           = "g3wtemplate.font['copy-paste']"
@@ -78,7 +78,7 @@
               </span>
 
               <!-- DELETE FEATURE -->
-              <span v-t-tooltip:right.create ="'plugins.editing.table.delete'">
+              <span v-t-tooltip:right.create = "'plugins.editing.table.delete'">
                 <i
                   v-if             = "showTool('delete_feature')"
                   :class           = "g3wtemplate.font['trash-o']"
@@ -92,7 +92,7 @@
             </div>
           </td>
 
-          <td v-if="state.isrelation">
+          <td v-if = "state.isrelation">
             <input
               :id     = "`relation__${index}`"
               @change = "linkFeature(index, $event)"
@@ -176,8 +176,8 @@
     data() {
       return {
         dataTable: null,
-        show: true,
-        state: this.$options.service.state,
+        show:      true,
+        state:     this.$options.service.state,
       };
 
     },
@@ -224,7 +224,7 @@
         let isMedia = false;
         for (let i=0; i < this.state.headers.length; i++) {
           const header = this.state.headers[i];
-          if (header.name === name && header.input.type === 'media' ) {
+          if (name === header.name && 'media' === header.input.type) {
             isMedia = true;
             break;
           }
@@ -264,11 +264,10 @@
        * @returns {Promise<unknown>}
        */
       async deleteFeature(uid) {
-        const element = $(`#editing_table table tr#${uid}`);
-
-        const layer = this.state.inputs.layer;
-        const layerId = layer.getId();
-        const childRelations = layer.getChildren();
+        const element           = $(`#editing_table table tr#${uid}`);
+        const layer             = this.state.inputs.layer;
+        const layerId           = layer.getId();
+        const childRelations    = layer.getChildren();
         const relationinediting = childRelations.length && getRelationsInEditing({
           layerId,
           relations: layer.getRelations().getArray()
@@ -303,7 +302,6 @@
         } catch (e) {
           console.warn(e);
         }
-        
 
       },
 
@@ -320,7 +318,7 @@
         await (
           new Promise((resolve, reject) => {
             const feature = cloneFeature(
-              this.state.features.find(f => f.getUid() === uid),
+              this.state.features.find(f => uid === f.getUid()),
               this.state.inputs.layer.getEditingLayer()
             );
             /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addtablefeatureworkflow.js@v3.7.1 */
@@ -334,10 +332,10 @@
             this.state.inputs.features.push(feature);
             this.state.workflow.start({
               context: this.state.context,
-              inputs: this.state.inputs
+              inputs:  this.state.inputs
             })
               .then(outputs => {
-                const feature = outputs.features[outputs.features.length -1];
+                const feature    = outputs.features[outputs.features.length -1];
                 const newFeature = {};
                 Object.entries(this.state.rows[0]).forEach(([key, value]) => {
                   newFeature[key] = getFeatureTableFieldValue({
@@ -375,8 +373,7 @@
        * ORIGINAL SOURCE: g3w-client-plugin-editing/services/tableservice.js@v3.7.8
        */
       editFeature(uid) {
-        const index = this.state.features.findIndex(f => f.getUid() === uid);
-    
+        const index   = this.state.features.findIndex(f => uid === f.getUid());
         const feature = this.state.features[index];
     
         /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/edittablefeatureworkflow.js@v3.7.1 */
@@ -408,11 +405,8 @@
       },
 
       linkFeature(index, evt) {
-        if (evt.target.checked) {
-          this._linkFeatures.push(index);
-        } else {
-          this._linkFeatures = this._linkFeatures.filter(addindex => addindex !== index);
-        }
+        if (evt.target.checked) { this._linkFeatures.push(index) }
+        else { this._linkFeatures = this._linkFeatures.filter(addindex => addindex !== index) }
       },
 
       getValue(value) {
@@ -444,10 +438,10 @@
       GUI.disableSideBar(true);
 
       GUI.showUserMessage({
-        type: 'loading',
-        message: 'plugins.editing.messages.loading_table_data',
+        type:      'loading',
+        message:   'plugins.editing.messages.loading_table_data',
         autoclose: false,
-        closable: false
+        closable:  false
       });
     },
 
@@ -455,9 +449,7 @@
 
       await this.$nextTick();
 
-      if (this.state.isrelation) {
-        this._linkFeatures = [];
-      }
+      if (this.state.isrelation) { this._linkFeatures = [] }
 
       this.setDataTable();
 
@@ -476,9 +468,9 @@
 </script>
 
 <style>
-.g3w-editing-table table.dataTable tbody td {
-  padding: 3px 5px;
-}
+  .g3w-editing-table table.dataTable tbody td {
+    padding: 3px 5px;
+  }
 </style>
 
 <style scoped>

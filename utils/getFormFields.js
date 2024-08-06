@@ -55,9 +55,9 @@ export function getFormFields({
       service.state.uniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations
     );
     const has_values = relations && (
-      undefined !== relations &&
-      undefined !== relations[layerId] &&
-      undefined !== relations[layerId][field.name]
+      undefined !== relations
+      && undefined !== relations[layerId]
+      && undefined !== relations[layerId][field.name]
     );
 
     // child form --> belongs to relation (get child layer unique field values)
@@ -94,9 +94,8 @@ export function getFormFields({
   const savedfeatureFnc = () => {
     unique_values.forEach(({ _value, field }) => {
       // skip when ...
-      if (_value === field.value) {
-        return;
-      }
+      if (_value === field.value) { return }
+
       const layer = isChild && service.state.uniqueFieldsValues[relationLayerId];
 
       // relation form
@@ -157,7 +156,7 @@ export function getFormFields({
   });
 
   return _handleMulti(fields, multi);
-};
+}
 
 function _handleMulti(fields, multi) {
   if (multi) {

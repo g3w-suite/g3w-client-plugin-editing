@@ -35,4 +35,4 @@ export function chooseFeatureFromFeatures({
 
     comp.$watch('feature', feature => dialog.find('button.btn-success').prop('disabled', null === feature));
   })
-};
+}

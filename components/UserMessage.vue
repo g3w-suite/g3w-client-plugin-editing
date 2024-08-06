@@ -3,7 +3,7 @@
   @file
 -->
 <template>
-  <ul class="steps-list">
+  <ul class = "steps-list">
 
     <li
       v-for  = "(step, id) in steps"
@@ -12,7 +12,7 @@
       :class = "{ 'done': step.done }"
     >
 
-      <span v-if="step.buttonnext" class="button-step">
+      <span v-if = "step.buttonnext" class="button-step">
         <span
           v-t-plugin = "step.description"
           class      = "description"
@@ -29,8 +29,8 @@
       </span>
 
       <template v-else>
-        <i :class="g3wtemplate.getFontClass(step.done ? 'success' : 'empty-circle')"></i>
-        <span v-t-plugin="step.description"></span>
+        <i :class = "g3wtemplate.getFontClass(step.done ? 'success' : 'empty-circle')"></i>
+        <span v-t-plugin = "step.description"></span>
       </template>
 
     </li>

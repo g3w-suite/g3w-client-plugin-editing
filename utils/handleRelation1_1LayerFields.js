@@ -19,9 +19,7 @@ export async function handleRelation1_1LayerFields({
 } = {}) {
 
   // skip when no features
-  if (features.length === 0) {
-    return;
-  }
+  if (features.length === 0) { return }
 
   const service = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing');
 
@@ -39,7 +37,7 @@ export async function handleRelation1_1LayerFields({
           return;
         }
         const fatherField = relation.getFatherField()[0];
-        const value = features[0].get(fatherField);
+        const value       = features[0].get(fatherField);
 
         //no set father field value. No set
         if (null === value) {
@@ -54,20 +52,20 @@ export async function handleRelation1_1LayerFields({
         let childFeature; // original child feature
         let newChild; //eventually child feature cloned with changes
 
-        //check if child feature is already add to
+        //check if child feature is already added to
         childFeature = source.readFeatures().find(f => f.get(childField) === value)
 
         const fieldsUpdated = undefined !== service
           .getLayerById(relation.getFather())
           .getEditingFields()
           .filter(f => f.vectorjoin_id && f.vectorjoin_id === relation.getId())
-          .find(({name}) => fields.find(f => f.name == name).update)
+          .find(({name}) => fields.find(f => name == f.name).update)
 
         const isNewChildFeature = undefined === childFeature;
 
         //check if fields related to child are changed
         if (fieldsUpdated) {
-          //Check if we need to create new child feature
+          //Check if we need to create a new child feature
           if (isNewChildFeature) {
             //create feature for child layer
             childFeature = new g3wsdk.core.layer.features.Feature();
@@ -79,14 +77,14 @@ export async function handleRelation1_1LayerFields({
               .forEach(field => childFeature.set(field.name, null));
             //set father field value
             childFeature.set(childField, fields.find(f => fatherField === f.name).value);
-            //add feature to child source
+            //add feature to a child source
             source.addFeature(childFeature);
             //new feature and child feature are the same
             newChild = childFeature;
           } else {
             //is update
             if (childFeature) {
-              //clone child Feature so all changes apply by father are set to clone new feature
+              //clone child Feature so all changes apply by father is set to clone new feature
               newChild = childFeature.clone();
             }
           }
@@ -94,7 +92,7 @@ export async function handleRelation1_1LayerFields({
           //check if there is a childFeature to save
           if (childFeature) {
             // Loop editable only field of father layerId when
-            // a child relation (1:1) is bind to current feature
+            // a child relation (1:1) is bind to the current feature
             const editiableRelatedFieldChild = service
               .getLayerById(relation.getFather())
               .getEditingFields()

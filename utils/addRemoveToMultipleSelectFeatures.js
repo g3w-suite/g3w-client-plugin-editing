@@ -19,7 +19,7 @@ export function addRemoveToMultipleSelectFeatures(features, inputs, selected, ta
     inputs.features = selected;
   });
 
-  const steps = task.getSteps();
+  const steps      = task.getSteps();
   const buttonnext = steps.select.buttonnext;
 
   buttonnext.disabled = buttonnext.condition ? buttonnext.condition({ features: selected }) : 0 === selected.length;

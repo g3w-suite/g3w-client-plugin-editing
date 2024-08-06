@@ -2080,9 +2080,13 @@ export class ToolBox extends G3WObject {
         tool.removeAllListeners();
         return;
       }
-      activeTool.removeAllListeners();
+
       try {
-        await promisify(activeTool.stop(true));
+        //Need to check if is there active tool
+        if (activeTool) {
+          activeTool.removeAllListeners();
+          await promisify(activeTool.stop(true));
+        }
         this.state.toolsoftool.splice(0);
         this.state.toolmessages.help = null;
         this.state.activetool        = null;

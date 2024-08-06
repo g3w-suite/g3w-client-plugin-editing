@@ -3,18 +3,21 @@
 <!-- vue/editing.js@v3.4 -->
 
 <template>
-  <div class="g3w-editing-panel">
+  <div class = "g3w-editing-panel">
 
-    <bar-loader :loading="saving"/>
+    <bar-loader :loading = "saving"/>
 
-    <helpdiv v-if ="layersInEditing > 0" style="font-weight: bold" message="plugins.editing.close_editing_panel.message" />
+    <helpdiv
+      v-if = "layersInEditing > 0"
+      style = "font-weight: bold"
+      message = "plugins.editing.close_editing_panel.message" />
 
     <!-- OFFLINE MESSAGE -->
     <div
       v-if  = "!appState.online"
       id    = "onlineofflinemessage"
     >
-      <div v-t-plugin="'editing.messages.offline'"></div>
+      <div v-t-plugin = "'editing.messages.offline'"></div>
     </div>
 
     <!-- COMMIT BAR -->
@@ -25,18 +28,18 @@
     >
 
       <!-- SAVE BUTTON -->
-      <div @click.stop="commit" :class="['editing-button', (canCommit ? 'enabled' : '')]">
-        <span :class="['editing-icon', g3wtemplate.font['save']]"></span>
+      <div @click.stop = "commit" :class = "['editing-button', (canCommit ? 'enabled' : '')]">
+        <span :class = "['editing-icon', g3wtemplate.font['save']]"></span>
       </div>
 
       <!-- UNDO BUTTON -->
-      <div @click.stop="undo" :class="['editing-button', (canUndo ? 'enabled': '')]">
-        <span :class="['editing-icon', g3wtemplate.font['arrow-left']]"></span>
+      <div @click.stop = "undo" :class = "['editing-button', (canUndo ? 'enabled': '')]">
+        <span :class = "['editing-icon', g3wtemplate.font['arrow-left']]"></span>
       </div>
 
       <!-- REDO BUTTON -->
-      <div @click.stop="redo" :class="['editing-button', (canRedo ? 'enabled' : '')]">
-        <span :class="['editing-icon', g3wtemplate.font['arrow-right']]"></span>
+      <div @click.stop = "redo" :class = "['editing-button', (canRedo ? 'enabled' : '')]">
+        <span :class = "['editing-icon', g3wtemplate.font['arrow-right']]"></span>
       </div>
 
     </div>
@@ -53,7 +56,7 @@
       id    = "g3w-select-editable-layers-content"
       class = "skin-color"
     >
-      <label for="g3w-select-editable-layers-to-show" v-t="'Layers'"></label>
+      <label for = "g3w-select-editable-layers-to-show" v-t="'Layers'"></label>
       <select
         id        = "g3w-select-editable-layers-to-show"
         multiple  = "multiple"
@@ -87,8 +90,8 @@
       />
     </div>
 
-    <p v-if="django_admin_url"><a :href="django_admin_url" target="_blank">&#x1F512; Locked features</a></p>
-    <p v-if="filemanager_url"><a :href="filemanager_url" target="_blank">&#x1F4C2; File manager</a></p>
+    <p v-if = "django_admin_url"><a :href = "django_admin_url" target = "_blank">&#x1F512; Locked features</a></p>
+    <p v-if = "filemanager_url"><a :href = "filemanager_url" target = "_blank">&#x1F4C2; File manager</a></p>
 
   </div>
 
@@ -166,30 +169,25 @@
       },
 
       undo() {
-        if (this.canUndo) {
-          this.service.undo();
-        }
+        if (this.canUndo) { this.service.undo() }
       },
 
       redo() {
-        if (this.canRedo) {
-          this.service.redo();
-        }
+        if (this.canRedo) { this.service.redo() }
       },
 
       /**
        * @param toolboxId
        */
       commit(toolboxId) {
-        if (!this.canCommit) {
-          return;
-        }
+        if (!this.canCommit) { return }
 
         this.saving = true;
+
         this.service
           .commit({
             toolbox: this.service.getToolBoxById(toolboxId),
-            modal: false,
+            modal:   false,
           })
           .always(() => this.saving = false);
       },
@@ -218,9 +216,10 @@
        */
       async stopToolBox(toolboxId) {
         const toolbox = this.service.getToolBoxById(toolboxId);
-        if (toolbox.state.editing.history.commit) {
-          await this.service.commit().always(async () => await toolbox.stop());
-        } else { await toolbox.stop() }
+
+        if (toolbox.state.editing.history.commit) { await this.service.commit().always(async () => await toolbox.stop()) }
+        else { await toolbox.stop() }
+
         if (undefined === this.service.getToolBoxes().find(t => t.state.editing.on )) {
           this._enableQueryMapControl();
         }
@@ -240,9 +239,16 @@
        * @param toolboxId
        */
       async startActiveTool(toolId, toolboxId) {
+
         if (this.state.toolboxidactivetool && toolboxId !== this.state.toolboxidactivetool) {
-          const toolbox = await this.commitDirtyToolBoxes(this.state.toolboxidactivetool);
-          if (toolbox) { toolbox.stopActiveTool() }
+          if (this.service.getToolBoxById(this.service.getToolBoxById(toolboxId).getDependencies().find(id => id === this.state.toolboxidactivetool))) {
+            try {
+              await this.commitDirtyToolBoxes(this.state.toolboxidactivetool);
+            } catch(e) {
+              console.warn(e);
+            }
+          }
+          this.service.getToolBoxById(this.state.toolboxidactivetool).stopActiveTool();
         }
         const toolbox                  = this.service.getToolBoxById(toolboxId);
         this.state.toolboxidactivetool = toolboxId;
@@ -297,6 +303,7 @@
           await promisify(service.commit({ toolbox }));
           return toolbox;
         } catch (e) {
+          console.warn(e);
           await promisify(toolbox.revert());
           toolbox
             .getDependencies()
@@ -339,13 +346,13 @@
         this.unByKeys.push({
           owner : ApplicationService,
           setter: 'offline',
-          key: ApplicationService.onafter('offline', () => {})
+          key:    ApplicationService.onafter('offline', () => {})
         });
 
         this.unByKeys.push({
-          owner : ApplicationService,
+          owner :  ApplicationService,
           setter: 'online',
-          key: ApplicationService.onafter('online', () => this.checkOfflineChanges({ modal:false }).catch(e => GUI.notify.error(e)))
+          key:     ApplicationService.onafter('online', () => this.checkOfflineChanges({ modal:false }).catch(e => GUI.notify.error(e)))
         });
 
       },
@@ -364,15 +371,14 @@
        * @since g3w-client-plugin-editing@v3.8.0
        */
       checkOfflineChanges({
-        modal = true,
+        modal  = true,
         unlock = false,
       } = {}) {
         return new Promise((resolve, reject) => {
           const changes = ApplicationService.getOfflineItem('EDITING_CHANGES');
           // if find changes offline previously
-          if (!changes) {
-            return;
-          }
+          if (!changes) { return }
+
           const promises = [];
           const layerIds = [];
           //FORCE TO WAIT OTHERWISE STILL OFF LINE
@@ -381,21 +387,17 @@
               layerIds.push(layerId);
               const toolbox = this.service.getToolBoxById(layerId);
               const commitItems = changes[layerId];
-              promises.push(this.service.commit({
-                toolbox,
-                commitItems,
-                modal
-              }))
+              promises.push(this.service.commit({ toolbox, commitItems, modal }))
             }
 
             $.when
               .apply(this.service, promises)
-              .then(() =>resolve())
-              .fail(error=>reject(error))
-              .always(() =>{
-                unlock && layerIds.forEach(layerId => {
-                  this.service.getLayerById(layerId).unlock()
-                });
+              .then(resolve)
+              .fail(e => { console.warn(e); reject(e) })
+              .always(() => {
+                if (unlock) {
+                  layerIds.forEach(layerId => this.service.getLayerById(layerId).unlock());
+                }
                 // always reset items to null
                 ApplicationService.setOfflineItem('EDITING_CHANGES');
               })
@@ -409,9 +411,8 @@
        */
       _enableQueryMapControl() {
         const queryControl = GUI.getService('map').getMapControlByType({ type: 'query' });
-        if (queryControl && !queryControl.isToggled()) {
-          queryControl.toggle();
-        }
+
+        if (queryControl && !queryControl.isToggled()) { queryControl.toggle() }
       }
 
     },
@@ -424,18 +425,18 @@
 
       canCommit() {
         return (
-          'default' === this.state.saveConfig.mode &&
-          this.state.toolboxselected &&
-          this.state.toolboxselected.state.editing.history.commit &&
-          this.editingButtonsEnabled
+          'default' === this.state.saveConfig.mode
+          && this.state.toolboxselected
+          && this.state.toolboxselected.state.editing.history.commit
+          && this.editingButtonsEnabled
         );
       },
 
       canUndo() {
         const canUndo = (
-          this.state.toolboxselected &&
-          this.state.toolboxselected.state.editing.history.undo &&
-          this.editingButtonsEnabled
+          this.state.toolboxselected
+          && this.state.toolboxselected.state.editing.history.undo
+          && this.editingButtonsEnabled
         );
 
         this.service.fireEvent('canUndo', canUndo);
@@ -445,9 +446,9 @@
 
       canRedo() {
         const canRedo = (
-          this.state.toolboxselected &&
-          this.state.toolboxselected.state.editing.history.redo &&
-          this.editingButtonsEnabled
+          this.state.toolboxselected
+          && this.state.toolboxselected.state.editing.history.redo
+          && this.editingButtonsEnabled
         );
 
         this.service.fireEvent('canRedo', canRedo);
@@ -457,13 +458,13 @@
 
       django_admin_url() {
         const config = ApplicationService.getConfig();
-        const user = config.user;
+        const user   = config.user;
         return user.is_superuser ? new URL('/django-admin/editing/g3weditingfeaturelock/', initConfig.baseurl) : false;
       },
 
       filemanager_url() {
         const config = ApplicationService.getConfig();
-        const user = config.user;
+        const user   = config.user;
         return user.is_superuser ? new URL('/filemanager/', initConfig.baseurl) : false;
       },
 
@@ -489,7 +490,7 @@
        * 
        * @since g3w-client-plugin-editing@v3.8.0
        */
-      selectedlayers(layers) {
+      selectedlayers(layers = []) {
         const has_layers = layers.length > 0;
 
         const service = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing');
@@ -518,7 +519,7 @@
 
       this._selectedlayers = []; //store previous selected layers
 
-      this.appState = ApplicationState;
+      this.appState        = ApplicationState;
 
       this.registerOnLineOffLineEvent();
 
@@ -536,7 +537,7 @@
     /**
      * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
      * 
-     * Called on close editingpanel panel
+     * Called on a close editing panel panel
      */
     async beforeDestroy() {
       this.service.stop();
@@ -558,8 +559,8 @@
       const layerIdChanges = Object.keys(this.state.featuresOnClose);
       if (layerIdChanges.length) {
         const inputs = {
-          layers: [],
-          fids: [],
+          layers:    [],
+          fids:      [],
           formatter: 1
         };
         layerIdChanges
@@ -577,21 +578,22 @@
             inputs,
             outputs: {
               title: 'plugins.editing.editing_changes',
-              show: {loading: false}
+              show:  { loading: false }
             }
           }) :
           Promise.resolve();
         try {
           await promise;
-        } catch(err) {}
+        } catch(e) { console.warn(e) }
       }
 
       this.state.featuresOnClose = {};
 
       this.service.getToolBoxes().forEach(toolbox => toolbox.resetDefault());
 
-      // clear all unique values fields related to layer (after closing editing panel).
+      // clear all unique values fields related to layer (after a closing editing panel).
       this.state.uniqueFieldsValues = {};
+
       this._enableQueryMapControl();
     },
 
@@ -599,75 +601,75 @@
 </script>
 
 <style>
-.g3w-editing-panel .editing-button .editing-icon {
-  background-color: #3a4448;
-  color: #222d32; /*@sidebar-dark-bg;*/
-  font-size: 1.8em;
-  padding: 10px;
-  margin: 5px;
-  width: 45px;
-  height: 45px;
-  border-radius: 30%;
-  text-align: center;
-}
-.g3w-editing-panel .editing-button.enabled .editing-icon {
-  background-color: #fff;
-  box-shadow: 0 0 5px rgba(0,0,0,0.7);
-}
-.g3w-editing-panel .editing-button {
-  cursor: not-allowed;
-}
-.g3w-editing-panel .editing-button.enabled {
-  cursor: pointer;
-}
-.g3w-editing-panel .editbtn {
-  border-radius: 30%;
-  padding: 10px;
-  display: inline-block;
-  opacity: 0.4;
-  box-shadow:
-    0 1px 1px 0 rgba(0, 0, 0, 0.1),
-    0 1px 4px 0 rgba(0, 0, 0, 0.3);
-}
-.g3w-editing-panel .editbtn.enabled {
-  opacity: 1;
-  cursor: pointer;
-}
-.g3w-editing-panel .editbtn.enabled.toggled {
-  box-shadow: 0 0;
-  background-color: #ddd;
-}
-</style>
+  .g3w-editing-panel .editing-button .editing-icon {
+    background-color: #3a4448;
+    color: #222d32; /*@sidebar-dark-bg;*/
+    font-size: 1.8em;
+    padding: 10px;
+    margin: 5px;
+    width: 45px;
+    height: 45px;
+    border-radius: 30%;
+    text-align: center;
+  }
+  .g3w-editing-panel .editing-button.enabled .editing-icon {
+    background-color: #fff;
+    box-shadow: 0 0 5px rgba(0,0,0,0.7);
+  }
+  .g3w-editing-panel .editing-button {
+    cursor: not-allowed;
+  }
+  .g3w-editing-panel .editing-button.enabled {
+    cursor: pointer;
+  }
+  .g3w-editing-panel .editbtn {
+    border-radius: 30%;
+    padding: 10px;
+    display: inline-block;
+    opacity: 0.4;
+    box-shadow:
+      0 1px 1px 0 rgba(0, 0, 0, 0.1),
+      0 1px 4px 0 rgba(0, 0, 0, 0.3);
+  }
+  .g3w-editing-panel .editbtn.enabled {
+    opacity: 1;
+    cursor: pointer;
+  }
+  .g3w-editing-panel .editbtn.enabled.toggled {
+    box-shadow: 0 0;
+    background-color: #ddd;
+  }
+  </style>
 
-<style scoped>
-.g3w-editing-panel {
-  margin-bottom: 50px;
-}
+  <style scoped>
+  .g3w-editing-panel {
+    margin-bottom: 50px;
+  }
 
-#onlineofflinemessage {
-  margin-bottom: 5px;
-  padding: 5px;
-  border-radius: 3px;
-  background-color: orange;
-  color:white;
-  font-weight: bold
-}
-.commitbar {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 5px;
-}
-.commitbar > div:first-of-type {
-  margin-right: auto;
-}
-#g3w-select-editable-layers-content {
-  margin-bottom: 10px;
-  font-weight: bold;
-}
-#g3w-select-editable-layers-content label {
-  color: #fff !important;
-}
-#g3w-select-editable-layers-to-show {
-  cursor: pointer;
-}
+  #onlineofflinemessage {
+    margin-bottom: 5px;
+    padding: 5px;
+    border-radius: 3px;
+    background-color: orange;
+    color:white;
+    font-weight: bold
+  }
+  .commitbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 5px;
+  }
+  .commitbar > div:first-of-type {
+    margin-right: auto;
+  }
+  #g3w-select-editable-layers-content {
+    margin-bottom: 10px;
+    font-weight: bold;
+  }
+  #g3w-select-editable-layers-content label {
+    color: #fff !important;
+  }
+  #g3w-select-editable-layers-to-show {
+    cursor: pointer;
+  }
 </style>

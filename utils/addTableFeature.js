@@ -20,4 +20,4 @@ export function addTableFeature(inputs, context) {
   this.getContext().get_default_value = true;
 
   return $.Deferred(d => d.resolve(inputs, context)).promise();
-};
+}

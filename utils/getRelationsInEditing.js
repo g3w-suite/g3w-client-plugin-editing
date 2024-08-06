@@ -15,6 +15,5 @@ export function getRelationsInEditing({
   layerId,
   relations = [],
 }) {
-  const service = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing'); //get editing service
-  return relations.filter(r => service.getToolBoxById(getRelationId({ layerId, relation: r })));
+  return relations.filter(r => g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').getToolBoxById(getRelationId({ layerId, relation: r })));
 }

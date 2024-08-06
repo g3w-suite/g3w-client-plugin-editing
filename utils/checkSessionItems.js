@@ -7,26 +7,23 @@
    */
 export function checkSessionItems(historyId, items, action) {
   /**
-   * action: <reffererd to array index>
+   * action: <referred to array index>
    *  0: undo;
    *  1: redo;
    **/
   const newItems = {
-    own: [], //array of changes of layer of the current session
+    own:          [], //array of changes of layer of the current session
     dependencies: {} // dependencies
   };
 
   items
     .forEach((item) => {
-      if (Array.isArray(item)) {
-        item = item[action];
-      }
+      if (Array.isArray(item)) { item = item[action] }
       // check if belong to session
-      if (historyId === item.layerId) {
-        newItems.own.push(item)
-      } else {
+      if (historyId === item.layerId) { newItems.own.push(item) }
+      else {
         newItems.dependencies[item.layerId] = newItems.dependencies[item.layerId] || {
-          own: [],
+          own:          [],
           dependencies: {}
         };
         newItems.dependencies[item.layerId].own.push(item);

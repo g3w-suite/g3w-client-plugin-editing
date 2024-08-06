@@ -21,7 +21,7 @@
     >
 
       <!-- LOADING BAR -->
-      <div class="bar-loader" v-show="!isLayerReady"></div>
+      <div v-show = "!isLayerReady" class = "bar-loader" ></div>
 
       <div
         v-if   = "state.toolboxheader"
@@ -56,18 +56,18 @@
 
       </div>
 
-      <bar-loader :loading="loading" />
+      <bar-loader :loading = "loading" />
 
       <div
-        v-if = "!state.changingtools && (state.editing.on || toggled.layer)"
-        class  = "panel-body"
+        v-if       = "!state.changingtools && (state.editing.on || toggled.layer)"
+        class      = "panel-body"
         v-disabled = "(!isLayerReady || !canEdit) "
       >
 
         <!-- HAS NO GEOMETRY -->
-        <div v-if="!state.layer.isGeoLayer()" class="info">
-          <i :class="g3wtemplate.font['info']"></i>
-          <span v-t-plugin="'editing.messages.toolbox_has_no_geometry'"></span>
+        <div v-if = "!state.layer.isGeoLayer()" class = "info">
+          <i :class = "g3wtemplate.font['info']"></i>
+          <span v-t-plugin = "'editing.messages.toolbox_has_no_geometry'"></span>
           <divider/>
         </div>
 
@@ -79,14 +79,14 @@
         </div>
 
         <!-- MESSAGE -->
-        <div v-if="state.message" style="color: #000">
-          <div class="text-justify" v-t-plugin="state.message"></div>
+        <div v-if = "state.message" style = "color: #000">
+          <div class = "text-justify" v-t-plugin = "state.message"></div>
           <divider/>
         </div>
 
         <!-- TOOLS -->
         <!-- ORIGINAL SOURCE: components/Tool.vue@v3.7.1 -->
-        <div class="tools-content">
+        <div class = "tools-content">
           <div
             v-for               = "tool in state.tools"
             :key                = "tool.id"
@@ -108,7 +108,7 @@
           :id   = "`id_toolbox_messages_${state.id}`"
           class = "message"
         >
-          <transition name="fade">
+          <transition name = "fade">
             <!-- ORIGINAL SOURCE: components/ToolsOfTool.vue@v3.7.1 -->
             <div
               v-if = "showtoolsoftool"
@@ -116,7 +116,7 @@
             >
               <!-- ORIGINAL SOURCE: components\ToolsOfToolMeasure.vue@v3.7.1 -->
               <!-- ORIGINAL SOURCE: components\ToolsOfToolSnap.vue@v3.7.1 -->
-              <template v-for="tool in state.toolsoftool">
+              <template v-for = "tool in state.toolsoftool">
 
                 <!-- MEASURE TOOL -->
                 <div
@@ -130,8 +130,8 @@
                     v-model = "tool.options.checked"
                     @change = "() => tool.options.onChange(tool.options.checked)"
                   />
-                  <label for="g3w_editing_show_measure_tool" v-t-tooltip:right.create="'plugins.editing.toolsoftool.measure'">
-                    <b :class="g3wtemplate.font['measure']"></b>
+                  <label for = "g3w_editing_show_measure_tool" v-t-tooltip:right.create = "'plugins.editing.toolsoftool.measure'">
+                    <b :class = "g3wtemplate.font['measure']"></b>
                   </label>
                 </div>
 
@@ -145,10 +145,10 @@
                     type    = "checkbox"
                     class   = "magic-checkbox snap_tools_of_tools"
                     :id     = "`snap_${state.id}`"
-                    v-model ="tool.options.checked"
+                    v-model = "tool.options.checked"
                   />
-                  <label :for="`snap_${state.id}`" v-t-tooltip:right.create="'plugins.editing.toolsoftool.snap'">
-                    <span :class="g3wtemplate.font['magnete']"></span>
+                  <label :for = "`snap_${state.id}`" v-t-tooltip:right.create= " 'plugins.editing.toolsoftool.snap'">
+                    <span :class = "g3wtemplate.font['magnete']"></span>
                   </label>
 
                   <!-- SNAP TO ALL LAYERS -->
@@ -159,9 +159,13 @@
                     :id     = "`snap_all_${state.id}`"
                     v-model = "tool.options.checkedAll"
                   />
-                  <label v-if="snapAll" :for="`snap_all_${state.id}`" v-t-tooltip:left.create="'plugins.editing.toolsoftool.snapall'">
-                    <span :class="g3wtemplate.font['magnete']"></span>
-                    <b    :class="g3wtemplate.font['layers']"></b>
+                  <label
+                    v-if                    = "snapAll"
+                    :for                    = "`snap_all_${state.id}`"
+                    v-t-tooltip:left.create = "'plugins.editing.toolsoftool.snapall'"
+                  >
+                    <span :class = "g3wtemplate.font['magnete']"></span>
+                    <b    :class = "g3wtemplate.font['layers']"></b>
                   </label>
 
                 </div>
@@ -259,7 +263,7 @@
        * @returns { boolean }
        */
       showtoolsoftool() {
-        return !!this.state.toolsoftool.length;
+        return this.state.toolsoftool.length > 0;
       },
 
       /**
@@ -289,10 +293,8 @@
       toggleEditing() {
         this.select();
         this.toggled.layer = !(this.state.editing.on || this.toggled.layer);
-        if (this.toggled.layer) {
-          if (this.state.layer.state.editing.ready && !this.state.loading) {
-            this.$emit(this.state.editing.on ? 'stoptoolbox' : 'starttoolbox', this.state.id);
-          }
+        if (this.toggled.layer && this.state.layer.state.editing.ready && !this.state.loading) {
+          this.$emit(this.state.editing.on ? 'stoptoolbox' : 'starttoolbox', this.state.id);
         }
         if (!this.toggled.layer) {
           this.$emit('stoptoolbox', this.state.id);
@@ -307,10 +309,10 @@
        * @since g3w-client-plugin-editing@v3.8.0
        */
       toggleTool(toolId) {
-        if (undefined !== toolId) {
-          this.$emit('setactivetool', toolId, this.state.id);
-        } else {
+        if (undefined === toolId) {
           this.$emit('stopactivetool', this.state.id);
+        } else {
+          this.$emit('setactivetool', toolId, this.state.id);
         }
         this.select();
       },
@@ -403,9 +405,7 @@
        * @since g3w-client-plugin-editing@v3.8.0
        */
       _unloadSnap() {
-        if (!snapInteraction) {
-          return;
-        }
+        if (!snapInteraction) { return }
 
         try {
           // stops event listeners
@@ -457,7 +457,7 @@
        * @since g3w-client-plugin-editing@v3.8.0
        */
       activeSnapInteraction() {
-        const map = GUI.getService('map');
+        const map  = GUI.getService('map');
         const tool = (this.state.toolsoftool || []).find(tool => 'snap' === tool.type);
 
         if (snapInteraction) {

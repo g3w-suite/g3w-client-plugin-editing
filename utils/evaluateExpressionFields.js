@@ -23,7 +23,7 @@ export async function evaluateExpressionFields({
     .getFieldsWithValues(
       feature,
       {
-        exclude: context.excludeFields,
+        exclude:           context.excludeFields,
         get_default_value: undefined !== context.get_default_value ? context.get_default_value : false,
       }
     )
@@ -43,6 +43,7 @@ export async function evaluateExpressionFields({
               feature.set(field.name, field.value);
               resolve(feature)
             } catch(e) {
+              console.warn(e);
               reject(e);
             }
           })
@@ -63,6 +64,7 @@ export async function evaluateExpressionFields({
               feature.set(field.name, field.value);
               resolve(feature)
             } catch(e) {
+              console.warn(e);
               reject(e);
             }
           })
@@ -74,4 +76,4 @@ export async function evaluateExpressionFields({
   await Promise.allSettled(promises);
 
   return feature;
-};
+}

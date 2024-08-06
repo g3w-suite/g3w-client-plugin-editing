@@ -30,11 +30,8 @@ export async function getLayersDependencyFeatures(layerId, opts = {}) {
   try {
     response = await Promise.all(relations.map(async relation => {
 
-      if (relation.setLoading) {
-        relation.setLoading(true);
-      } else {
-        relation.loading = true;
-      }
+      if (relation.setLoading) { relation.setLoading(true) }
+      else { relation.loading = true }
 
       const id = getRelationId({ layerId, relation });
 
@@ -55,11 +52,11 @@ export async function getLayersDependencyFeatures(layerId, opts = {}) {
       const features                    = service.getLayerById(layerId).readEditingFeatures();
       const featureValues               = relationField.map(field => opts.feature.get(field));
 
-      // try to get feature from source without server request
+      // try to get feature from source without a server request
       const find = (
         (!ApplicationState.online || !session || session.isStarted())
         && 'eq' === opts.operator
-        && ownField.every((field, i) => features.find(f => f.get(field) == featureValues[i]))
+        && ownField.every((field, i) => features.find(f => featureValues[i] == f.get(field)))
       );
 
       toolbox.startLoading();
@@ -84,11 +81,8 @@ export async function getLayersDependencyFeatures(layerId, opts = {}) {
 
   // at the end se loading false
   relations.forEach(relation => {
-    if (relation.setLoading) {
-      relation.setLoading(false);
-    } else {
-      relation.loading = false;
-    }
+    if (relation.setLoading) { relation.setLoading(false) }
+    else { relation.loading = false }
   });
 
   return response;

@@ -16,8 +16,6 @@ export function cloneFeature(feature, layer) {
    * In case of layer has a primary key field and is not editabe,
    *  clone feature need to set pk value to null to avoid conflict
    *  with already pk field value store on server*/
-  if (pk && false === pk.editable) {
-    clone.set(pk.name, null);
-  }
+  if (pk && false === pk.editable) { clone.set(pk.name, null) }
   return clone;
-};
+}

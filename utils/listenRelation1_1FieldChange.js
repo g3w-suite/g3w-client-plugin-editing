@@ -53,14 +53,14 @@ export async function listenRelation1_1FieldChange({
       .getEditingFields()
       .filter(f => f.vectorjoin_id && f.vectorjoin_id === relation.getId())
       .reduce((accumulator, field) => {
-        const formField = fields.find(f => f.name === field.name)
+        const formField             = fields.find(f => f.name === field.name)
         accumulator[formField.name] = formField.editable;
         return accumulator;
       }, {});
 
     fatherFormRelationField.input.options.loading.state = 'loading'; // show input bar loader
 
-    //get feature from child layer source
+    //get feature from a child layer source
     relationLockFeatures[fatherFormRelationField.value] = await getRelation1_1ChildFeature({
       relation,
       fatherFormRelationField,
@@ -72,10 +72,10 @@ export async function listenRelation1_1FieldChange({
     //can update child
     if (relationLockFeatures[fatherFormRelationField.value].locked) {
       Object.keys(editableRelatedFatherChild)
-        .forEach(fn => fields.find(f => f.name === fn).editable = false);
+        .forEach(fn => fields.find(f => fn === f.name).editable = false);
     }
 
-    //if not feature is on source child layer it mean it locked or not exist on server
+    //if not feature is on source child layer it means it locked or not exist on server
     //need to check
 
     // listen for relation field changes (vue watcher)
@@ -103,8 +103,8 @@ export async function listenRelation1_1FieldChange({
                 fatherFormRelationField,
               })
 
-            } catch (err) {
-              console.warn(err);
+            } catch (e) {
+              console.warn(e);
             }
           }
 
@@ -112,12 +112,12 @@ export async function listenRelation1_1FieldChange({
 
           Object.keys(editableRelatedFatherChild)
             .forEach(fn => {
-              const field = fields.find(f => f.name === fn);
+              const field = fields.find(f => fn === f.name);
               //set editable property
               field.editable = locked
                 ? false
                 : editableRelatedFatherChild[fn];
-              //need to check if feature is new and not locked ot not present on source
+              //need to check if feature is new and not locked ot not present on a source
               field.value = feature
                 ? feature.get(field.name.replace(relation.getPrefix(), ''))
                 : null

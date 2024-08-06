@@ -26,12 +26,14 @@ function getSelectedStyle(feature) {
  * 
  * @returns { ol.style.Style }
  */
-export function setFeaturesSelectedStyle(features=[], style) {
+export function setFeaturesSelectedStyle(features = [], style) {
   if (features.length > 0) {
     // copy feature from other layers when selecting multiple features
-    const arr = features.flat();                                   // flat nested features
+    const arr                              = features.flat(); // flat nested features
     const { originalStyle, selectedStyle } = getSelectedStyle(arr[0]);
-    arr.forEach(feature => feature.setStyle(style || selectedStyle));
+
+    arr.forEach(f => f.setStyle(style || selectedStyle));
+
     return originalStyle;
   }
 }

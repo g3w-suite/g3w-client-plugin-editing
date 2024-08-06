@@ -10,6 +10,9 @@ const { tPlugin } = g3wsdk.core.i18n;
  * ORIGINAL SOURCE: g3w-client-plugin-editing/services/relationservice.js@v3.7.1
  * 
  * Unlink relation
+ * @param layerId
+ * @param relation
+ * @param relations
  * @param index
  * @param dialog
  * 
@@ -26,7 +29,7 @@ export function unlinkRelation({
 }) {
   return $.Deferred(d => {
     const unlink = () => {
-      const id               = relation.child === layerId ? relation.father : relation.child; // relation layer id
+      const id               = layerId === relation.child ? relation.father : relation.child; // relation layer id
       const feature          = getEditingLayerById(id).getEditingSource().getFeatureById(relations[index].id);
       const originalRelation = feature.clone();
       // loop on ownField (Array field child relation)

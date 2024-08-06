@@ -23,17 +23,12 @@ export function createEditingDataOptions(filterType = 'all', options = {}) {
      break;
 
    case 'bbox':
-     filter = {
-       bbox: GUI.getService('map').getMapBBOX(),
-     };
+     filter = { bbox: GUI.getService('map').getMapBBOX(), };
      break;
 
    case 'field':
      filter = {
-       field: {
-         field: options.field,
-         type: 'editing'
-       }
+       field: { field: options.field, type: 'editing' }
      };
      break;
 
@@ -63,8 +58,8 @@ export function createEditingDataOptions(filterType = 'all', options = {}) {
 
  return {
    registerEvents: true, // usefult to get register vent on toolbox example mapmoveend
-   editing: true,
+   editing:        true,
    filter
  };
 
-};
+}

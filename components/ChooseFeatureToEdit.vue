@@ -1,11 +1,11 @@
 <template>
-  <div id="editing-layers-choose-feature">
+  <div id = "editing-layers-choose-feature">
     <div
       v-for = "(feature, index) in $options.features"
       class = "editing-choose-feature-radio-input"
     >
 
-      <section class="choose-and-zoom-to-feature">
+      <section class = "choose-and-zoom-to-feature">
 
         <!-- CHOOSE FEATURE -->
         <div>
@@ -16,7 +16,7 @@
             type        = "radio"
             class       = "magic-radio"
           >
-          <label :for="`choose_feature_${index}`">id</label>
+          <label :for = "`choose_feature_${index}`">id</label>
         </div>
 
         <!-- ZOOM TO FEATURE -->
@@ -29,10 +29,10 @@
       </section>
 
       <!-- FEATURE ATTRIBUTES -->
-      <section class="feature-attributes">
-        <div v-for="({ attribute, value }) in getAttributesFeature(feature)">
-          <span class="f-attr">{{ attribute }}</span>
-          <span class="f-val">{{ value }}</span>
+      <section class = "feature-attributes">
+        <div v-for = "({ attribute, value }) in getAttributesFeature(feature)">
+          <span class = "f-attr">{{ attribute }}</span>
+          <span class = "f-val">{{ value }}</span>
         </div>
       </section>
 
@@ -66,8 +66,7 @@
       },
 
       zoomToFeature(feature) {
-        const map = GUI.getService('map');
-        map.zoomToFeatures([feature] , { highlight: true, duration: 1000 });
+          GUI.getService('map').zoomToFeatures([feature] , { highlight: true, duration: 1000 });
       },
 
     },
