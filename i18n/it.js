@@ -112,7 +112,7 @@ export default {
     loading_data: "Caricamento dati",
     saving: "Salvataggio dati in corso. Attendere ...",
     constraints: {
-      enable_editing: "Aumentare il livello di zoom per abilitare l'editing \nScala di attivazione 1:"
+      enable_editing: "Ingrandisci per modificare \nScala di attivazione 1:"
     },
     pdf: "Anteprima del documento non disponibile. Clicca qui ",
     commit: {

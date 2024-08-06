@@ -38,6 +38,9 @@ import {
   OpenTableStep,
 }                          from '../workflows';
 
+import { VM }                                           from '../eventbus';
+
+
 Object
   .entries({
     Workflow,
@@ -73,11 +76,10 @@ const { Layer }                           = g3wsdk.core.layer;
 const { Feature }                         = g3wsdk.core.layer.features;
 const { debounce, toRawType }             = g3wsdk.core.utils;
 const { GUI }                             = g3wsdk.gui;
-const { getScaleFromResolution }          = g3wsdk.ol.utils;
 const {
-  PickCoordinatesInteraction
-}                                         = g3wsdk.ol.interactions;
-
+  getScaleFromResolution,
+  getResolutionFromScale,
+}                                         = g3wsdk.ol.utils;
 
 
 /**
@@ -85,7 +87,7 @@ const {
  */
 export class ToolBox extends G3WObject {
 
-  constructor(layer) {
+  constructor(layer, dependencies = []) {
     super();
 
     const is_vector       = [undefined, Layer.LayerTypes.VECTOR].includes(layer.getType());
@@ -174,7 +176,6 @@ export class ToolBox extends G3WObject {
       save:                         this.__save.bind(this),
       pushAdd:                      this.__pushAdd.bind(this),
       pushUpdate:                   this.__pushUpdate.bind(this),
-      revert:                       this.revert.bind(this),
       rollback:                     this.__rollback.bind(this),
       rollbackDependecies:          this.__rollbackDependecies.bind(this),
       undo:                         this.__undoSession.bind(this),
@@ -213,8 +214,6 @@ export class ToolBox extends G3WObject {
           id:          new Proxy({}, { get: () => this.state.id }),
           started:     false,
           getfeatures: false,
-          /** maximum "buffer history" lenght for undo/redo */
-          maxSteps:    10,
           /** current state of history (useful for undo /redo) */
           current:     null,
           /** temporary change not save on history */
@@ -222,9 +221,9 @@ export class ToolBox extends G3WObject {
         },
         history      : this._history.state,
         on           : false,
-        dependencies : [],
-        relations    : [],
-        father       : false,
+        dependencies,
+        relations    : Object.values(layer.isFather() && dependencies.length ? layer.getRelations().getRelations() : {}),
+        father       : layer.isFather(),
         canEdit      : true
       },
       /** @since g3w-client-plugin-editing@v3.7.0 store key events setters */
@@ -1256,6 +1255,8 @@ export class ToolBox extends G3WObject {
     //@since 3.8.0 Store ol keys event start when we are in editing
     this._olStartKeysEvent = [];
 
+    //@since 3.8.1 store all unwatches
+    this.unwatches = [];
   }
 
   /**
@@ -1303,13 +1304,6 @@ export class ToolBox extends G3WObject {
   }
 
   /**
-   * @param bool
-   */
-  setFather(bool) {
-    this.state.editing.father = bool;
-  }
-
-  /**
    * @returns {boolean}
    */
   isFather() {
@@ -1317,28 +1311,7 @@ export class ToolBox extends G3WObject {
   }
 
   /**
-   * ORIGINAL SOURCE: g3w-client/src/core/editing/session.js@v3.9.1
-   *
-   * Revert (cancel) all changes in history and clean session
-   *
-   * @since g3w-client-plugin-editing@v3.8.0
-   */
-  revert() {
-    return $promisify(async () => {
-      await promisify(this.state.layer.getEditor().revert());
-      this.__clearHistory();
-    });
-  }
-
-  /**
-   * @param relation
-   */
-  addRelation(relation) {
-    this.state.editing.relations.push(relation);
-  }
-
-  /**
-   * @returns {[]}
+   * @returns { Array } parent and child layers
    */
   getDependencies() {
     return this.state.editing.dependencies;
@@ -1356,7 +1329,7 @@ export class ToolBox extends G3WObject {
    */
   getFieldUniqueValuesFromServer({
     reset=false
-  }={}) {
+  } = {}) {
     this.state.layer.getWidgetData({
       type: 'unique',
       fields: Object.values(this.uniqueFields).map(field => field.name).join()
@@ -1410,18 +1383,38 @@ export class ToolBox extends G3WObject {
 
   /**
    * @since 3.8.0 Handle scale constraint
+   * @sto <Boolean> stop true when called from stop method
    * @private
    */
-  _handleScaleConstraint() {
-    //check if selected
-    if (this.state.selected && (this._start || this.startResolve)) {
-      //if editing started (get features from server) or waiting to start
-      const map = GUI.getService('map').getMap();
-      this.state.editing.canEdit = getScaleFromResolution(map.getView().getResolution()) <= this.state._constraints.scale;
-      if (this.state.editing.canEdit && this.startResolve) { this.startResolve();}
-      //need to be async eventual show a message because another toolbox can be unselected before
-      setTimeout(() => GUI.setModal(!this.state.editing.canEdit, this.messages.constraint.scale));
-    } else { GUI.setModal(false) } // reset show modal
+  _handleScaleConstraint(stop = false) {
+    // get features from server or wait to start
+    const map = GUI.getService('map').getMap();
+
+    this.state.editing.canEdit = getScaleFromResolution(map.getView().getResolution()) <= this.state._constraints.scale;
+
+    //check if start method is called
+    const in_editing = (this._start || this.startResolve);
+
+    const showZoomCursor = !stop && this.state.selected && !this.state.editing.canEdit;
+
+    const control = GUI.getService('map').getCurrentToggledMapControl();
+
+    if (control && control.cursorClass && (stop || in_editing)) { control.setMouseCursor(!showZoomCursor) }
+
+    map.getViewport().classList.toggle('ol-zoom-in', showZoomCursor);
+
+    // check if selected → hide modal
+    if (stop || !this.state.selected || !in_editing) {
+      GUI.setModal(false);
+      return;
+    }
+
+    if (this.state.editing.canEdit && this.startResolve) {
+      this.startResolve();
+    }
+
+    // async show message because another toolbox can be unselected before
+    setTimeout(() => GUI.setModal(!this.state.editing.canEdit, this.messages.constraint.scale));
   }
 
   /**
@@ -1438,14 +1431,17 @@ export class ToolBox extends G3WObject {
       let {
         toolboxheader    = true,
         startstopediting = true,
-        showtools        = true,
         changingtools    = false,
         tools,
         filter,
       }                           = options;
   
       this.state.changingtools    = changingtools;
-      if (tools) { this.setEnablesDisablesTools(tools) }
+
+      if (tools) {
+        this.setEnablesDisablesTools(tools);
+      }
+
       this.state.toolboxheader    = toolboxheader;
       this.state.startstopediting = startstopediting;
   
@@ -1468,14 +1464,29 @@ export class ToolBox extends G3WObject {
 
       // check if can we edit based on scale contraint (vector layer)
       if (this.state._constraints.scale) {
-        await new Promise((resolve) => {
+
+        await new Promise(resolve => {
           //set as resolve handler to resolve waiting get features from server
           this.startResolve = resolve;
           //call scale constraint handler
           this._handleScaleConstraint();
-          //if click on start toolbox can edit
+
+          const map = GUI.getService('map');
+
+          // click to fit zoom scale constraint
+          this._olStartKeysEvent.push(
+            map.getMap().on('click', e => {
+              if (this.state.selected && !this.state.editing.canEdit) {
+                map.goToRes(e.coordinate, getResolutionFromScale(this.state._constraints.scale, GUI.getService('map').getMapUnits()));
+              }
+            })
+          );
+
+          // if click on start toolbox can edit
           if (this.state.editing.canEdit) { resolve() }
+
         })
+
       }
 
       //reset start startResolve promise reolve function
@@ -1566,15 +1577,22 @@ export class ToolBox extends G3WObject {
 
       this.state._unregisterStartSettersEventsKey.forEach(fnc => fnc());
       this.state._unregisterStartSettersEventsKey = [];
+
       this._olStartKeysEvent.forEach(k => ol.Observable.unByKey(k));
-      this._olStartKeysEvent = [];
+      this._olStartKeysEvent.splice(0);
+
+      this.unwatches.forEach(uw => uw());
+      this.unwatches.splice(0);
+
       //eventually reset start resolve feature waiting promise
       this.startResolve                           = null;
       //set start to false
       this._start                                 = false
       this.state.editing.on                       = false;
 
-      if (this.state._constraints.scale) { this._handleScaleConstraint(); }
+      if (this.state._constraints.scale) {
+        this._handleScaleConstraint(true);
+      }
 
       const is_started = !!this.__isStarted();
   
@@ -2289,7 +2307,7 @@ export class ToolBox extends G3WObject {
       });
     };
     const steps = (this._states.length - 1) - currentStateIndex;
-    this._constrains.undo = (null !== this.state.editing.session.current) && (this.state.editing.session.maxSteps > steps);
+    this._constrains.undo = (null !== this.state.editing.session.current) && (steps < 10); // 10 = maximum "buffer history" lenght for undo/redo
     return this._constrains.undo;
   }
 
