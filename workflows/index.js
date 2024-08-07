@@ -410,7 +410,7 @@ export class OpenFormStep extends Step {
 
       setAndUnsetSelectedFeaturesStyle({ promise: d, inputs, style: this.selectStyle });
 
-      if (!this._multi && Array.isArray(inputs.features[inputs.features.length -1])) {
+      if (!this._multi && Array.isArray(inputs.features[inputs.features.length - 1])) {
         d.resolve();
         return;
       }
