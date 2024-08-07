@@ -36,7 +36,20 @@
         </div>
 
         <div class = "g3w-editing-relations-add-link-tools">
-
+          <!-- EDIT ATTRIBUTES @since 3.9.0 -->
+          <span
+            v-if                      = "relationsLength > 0 && capabilities.includes('change_attr_feature')"
+            v-t-tooltip:bottom.create = "'plugins.editing.tools.update_multi_features_relations'"
+            class                     = "g3w-icon"
+            @click.stop               = "editAttributesRelations()"
+          >
+            <img
+             height           = "25"
+             width            = "25"
+             :src             = "`${resourcesurl}images/multiEditAttributes.png`"
+             v-t-title:plugin = "'editing.tools.update_multi_features'"
+            />
+        </span>
           <!-- CHANGE ATTRIBUTE -->
           <span
             v-if                      = "capabilities.includes('change_attr_feature')"
@@ -51,7 +64,7 @@
           <span
             v-if                      = "capabilities.includes('add_feature')"
             v-t-tooltip:bottom.create = "'plugins.editing.form.relations.tooltips.add_relation'"
-            @click                    = "show_add_link ? addRelationAndLink() : null"
+            @click.stop               = "show_add_link ? addRelationAndLink() : null"
             class                     = "g3w-icon add-link pull-right"
             :class                    = "[{ 'disabled' : !show_add_link }, g3wtemplate.font['plus']]"
           ></span>
@@ -388,6 +401,30 @@
           isVector: Layer.LayerTypes.VECTOR === this._layerType,
         });
         this.show_vector_tools = false;
+      },
+
+      /**
+      * @since 3.9.0
+      * Edit attributes of all relations
+      */
+      async editAttributesRelations() {
+        const workflow = new Workflow({
+          type: 'editmultiattributes',
+          steps: [
+            new OpenFormStep({ multi: true }),
+          ],
+        });
+        const options = this._createWorkflowOptions({
+          features: this.relations.map(({ id }) => this.getLayer().getEditingSource().getFeatureById(id) )
+        });
+        try {
+          await promisify(workflow.start(options));
+        } catch(e) {
+          console.warn(e);
+        }
+
+        workflow.stop();
+
       },
 
       /**

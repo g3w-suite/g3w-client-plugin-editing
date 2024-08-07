@@ -41,6 +41,7 @@ export default  {
     update_vertex: "Actualizează vertecșii entității",
     update_feature: "Actualizează atributul entității",
     update_multi_features: "Actualizează atributele entităților selectate",
+    update_multi_features_relations: "Update attributes of all relations",
     copyfeaturefromexternallayer: "Create Feature from added layer"
   },
   toolsoftool: {

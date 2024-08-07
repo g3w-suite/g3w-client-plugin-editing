@@ -43,6 +43,7 @@ export default {
     update_vertex: "Aggiorna vertici elemento",
     update_feature: "Modifica attributi elemento",
     update_multi_features: "Modifica gli attributi degli elementi selezionati",
+    update_multi_features_relations: "Modifica gli attributi di tutte le relazioni",
     copyfeaturefromexternallayer: "Crea elemento da un livello esterno"
   },
   toolsoftool: {
