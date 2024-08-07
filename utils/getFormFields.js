@@ -161,10 +161,11 @@ export function getFormFields({
 function _handleMulti(fields, multi) {
   if (multi) {
     fields = fields.map(field => {
-        const f = JSON.parse(JSON.stringify(field));
-        f.value = null;
+        const f     = JSON.parse(JSON.stringify(field));
+        f.value     = null;
+        f._value    = null; // @since v3.9.0 Fix update form field: Set the same value of value
         f.forceNull = true;
-        f.validate.required = false;
+        f.validate.required = false; //set false because all features have already required field filled
         return f;
       })
       .filter(field => !field.pk)
