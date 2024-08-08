@@ -34,14 +34,15 @@
             :placeholder = "placeholdersearch"
           />
         </div>
-
         <div class = "g3w-editing-relations-add-link-tools">
+
           <!-- EDIT ATTRIBUTES @since 3.9.0 -->
           <span
             v-if                      = "relationsLength > 0 && capabilities.includes('change_attr_feature')"
             v-t-tooltip:bottom.create = "'plugins.editing.tools.update_multi_features_relations'"
             class                     = "g3w-icon"
             @click.stop               = "editAttributesRelations()"
+            v-disabled                = "relations.every(r => !r.select)"
           >
             <img
              height           = "25"
@@ -160,6 +161,15 @@
         >
           <thead>
             <tr>
+              <th style="padding: 10px">
+                <input
+                  :id     = "`select_all_relations`"
+                  @change = "updateSelectRelations()"
+                  class   = "magic-checkbox"
+                  :checked = "selectall"
+                  type    = "checkbox">
+                <label :for="`select_all_relations`">&nbsp;</label>
+              </th>
               <th v-t = "'tools'"></th>
               <th></th>
               <th v-for = "attribute in relationAttributesSubset(relations[0])">{{ attribute.label }}</th>
@@ -171,6 +181,13 @@
               :key  = "relation.id"
               class = "featurebox-header"
             >
+              <td>
+                <input
+                  :id     = "`select_relation__${index}`"
+                  v-model = "relation.select"
+                  class   = "magic-checkbox"
+                  type    = "checkbox">
+                  <label :for="`select_relation__${index}`"></label>
               <td>
                 <div style = "display: flex">
                   <!-- RELATION TOOLS -->
@@ -330,6 +347,7 @@
 
     methods: {
 
+
       /**
        * Adapt table when a window is resized
        */
@@ -404,6 +422,16 @@
       },
 
       /**
+       * @since 3.9.0
+       * update select relation attibute
+       */
+      updateSelectRelations() {
+       //need to declare a variable bool, otherwise this.selectall ia a compued attribute that can change during loop
+       const bool = !this.selectall || !this.relations.some(r => r.select);
+       this.relations.forEach(r => r.select = bool);
+      },
+
+      /**
       * @since 3.9.0
       * Edit attributes of all relations
       */
@@ -415,7 +443,9 @@
           ],
         });
         const options = this._createWorkflowOptions({
-          features: this.relations.map(({ id }) => this.getLayer().getEditingSource().getFeatureById(id) )
+          features: this.relations
+            .filter(r => r.select)
+            .map(({ id }) => this.getLayer().getEditingSource().getFeatureById(id) )
         });
         try {
           await promisify(workflow.start(options));
@@ -1155,6 +1185,13 @@
     },
 
     computed: {
+      /**
+       * @since v3.9.0
+       * @return {Boolen} Tru in case all relations are selected
+      */
+      selectall() {
+        return this.relations.every(r => r.select);
+      },
 
       /**
        * @TODO find out where `this.relations` is setted
