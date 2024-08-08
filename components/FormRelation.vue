@@ -38,19 +38,22 @@
 
           <!-- EDIT ATTRIBUTES @since 3.9.0 -->
           <span
-            v-if                      = "relationsLength > 0 && capabilities.includes('change_attr_feature')"
             v-t-tooltip:bottom.create = "'plugins.editing.tools.update_multi_features_relations'"
             class                     = "g3w-icon"
-            @click.stop               = "editAttributesRelations()"
-            v-disabled                = "relations.every(r => !r.select)"
           >
-            <img
-             height           = "25"
-             width            = "25"
-             :src             = "`${resourcesurl}images/multiEditAttributes.png`"
-             v-t-title:plugin = "'editing.tools.update_multi_features'"
-            />
-        </span>
+             <span
+               v-if                      = "relationsLength > 0 && capabilities.includes('change_attr_feature')"
+               @click.stop               = "editAttributesRelations()"
+               v-disabled                = "relations.every(r => !r.select)"
+             >
+              <img
+                height           = "25"
+                width            = "25"
+                :src             = "`${resourcesurl}images/multiEditAttributes.png`"
+              />
+            </span>
+          </span>
+
           <!-- CHANGE ATTRIBUTE -->
           <span
             v-if                      = "capabilities.includes('change_attr_feature')"
@@ -1678,16 +1681,21 @@
         this._createDataTable();
       }
 
+
       this.resize();
     },
 
     deactivated() {
       this.destroyTable();
       this.active = false;
+      //need to unselect relaion when click on back control form
+      this.relations.forEach(r => r.select = false);
+
     },
 
     beforeDestroy() {
       this.loadEventuallyRelationValuesForInputs = true;
+      console.log('destroy')
       // unlisten
       g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').off('commit', this.onCommit);
       // In the case of vector relation, restore the beginning extent of the map;
