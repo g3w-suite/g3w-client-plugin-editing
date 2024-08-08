@@ -16,7 +16,7 @@
         'mobile':          isMobile(),
         'toolboxselected': state.selected,
         'toolboxactive':   state.editing.on && canEdit,
-        'geolayer':        state.layer.isGeoLayer(),
+        'geolayer': state.layer.isGeoLayer(),
       }"
     >
 
@@ -60,9 +60,8 @@
 
       <div
         v-if       = "!state.changingtools && (state.editing.on || toggled.layer)"
-        :class     = "{ 'panel-body':true, disabled: (!isLayerReady || !canEdit) }"
-        :style     = "{ cursor: toolboxCursor }"
-        @click     = "fitZoomToScale"
+        class      = "panel-body"
+        v-disabled = "(!isLayerReady || !canEdit) "
       >
 
         <!-- HAS NO GEOMETRY -->
@@ -195,9 +194,8 @@
 </template>
 
 <script>
-  const { GUI }                    = g3wsdk.gui;
-  const { Layer }                  = g3wsdk.core.layer;
-  const { getResolutionFromScale } = g3wsdk.ol.utils;
+  const { GUI }   = g3wsdk.gui;
+  const { Layer } = g3wsdk.core.layer;
 
   let snapInteraction;
 
@@ -224,7 +222,6 @@
     },
 
     computed: {
-
       /**
        * @since g3w-client-plugin-editing@v3.7.0
        */
@@ -276,10 +273,6 @@
         return this.state.layer.state.editing.ready;
       },
 
-      toolboxCursor() {
-        return (!this.isLayerReady || !this.canEdit) ? `url(${this.resourcesurl}cursors/mZoomIn.svg), zoom-in` : undefined;
-      },
-
     },
 
     methods: {
@@ -290,18 +283,6 @@
       select() {
         if (this.isLayerReady && !this.state.selected) {
           this.$emit('setselectedtoolbox', this.state.id);
-        }
-      },
-
-      /**
-       * Handle click to fit zoom scale
-       * 
-       * @since g3w-client-plugin-editing@v3.9.0 
-       */
-      fitZoomToScale(e) {
-        if (this.state.selected && !this.canEdit) {
-          const map = GUI.getService('map')
-          map.goToRes(map.getCenter(), getResolutionFromScale(this.state._constraints.scale, GUI.getService('map').getMapUnits()));
         }
       },
 
@@ -660,11 +641,5 @@
   }
   .tools-of-tool-snap label span {
     color: #222d32 !important;
-  }
-  .panel-body.disabled {
-    opacity: .7;
-  }
-  .panel-body.disabled > * {
-    pointer-events: none;
   }
 </style>
