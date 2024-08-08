@@ -41,7 +41,7 @@ export default {
     update_vertex: "Uppdatera punktens egenskap",
     update_feature: "Uppdatera egenskap",
     update_multi_features: "Ändra attributen för de valda funktionerna",
-    update_multi_features_relations: "Update attributes of all relations",
+    update_multi_features_relations: "Update attributes of all selected relations",
     copyfeaturefromexternallayer: "Create Feature from added layer"
   },
   toolsoftool: {

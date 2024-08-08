@@ -41,7 +41,7 @@ export default {
     update_vertex: "Päivitä pisteen ominaisuutta",
     update_feature: "Päivitä ominaisuus",
     update_multi_features: "Muokkaa valittujen ominaisuuksien attribuutteja",
-    update_multi_features_relations: "Update attributes of all relations",
+    update_multi_features_relations: "Update attributes of all selected relations",
     copyfeaturefromexternallayer: "Create Feature from added layer"
   },
   toolsoftool: {
