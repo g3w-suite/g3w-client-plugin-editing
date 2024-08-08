@@ -447,7 +447,7 @@
 
         $(".dataTables_filter, .dataTables_length").hide();
         // set data table search
-        $('#filterRelation').on('keyup', (e) => this.relationsTable.search(e.target.value).draw())
+        $('#filterRelation').on('keyup', () => { this.relationsTable.search($(this).val()).draw(); });
       },
 
       /**

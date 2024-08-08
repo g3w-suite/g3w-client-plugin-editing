@@ -67,7 +67,6 @@ new (class extends Plugin {
       toolboxes:           [],
       _toolboxes:          [],    // TODO: `state._toolboxes` vs `state.toolboxes` ?
       toolboxselected:     null,
-      toolboxidactivetool: null,
       /** @since g3w-client-plugin-editing@v3.6.2 */
       showselectlayers:    true,  // whether to show selected layers on editing panel
       message:             null,
@@ -332,25 +331,7 @@ new (class extends Plugin {
     MapLayersStoreRegistry.getLayersStore('editing').addLayers(this.getLayers());
 
     // create toolboxes
-    this.getLayers().forEach(l => this.addToolBox(new ToolBox(l)));
-
-    // create toolboxes dependencies tree
-    this.state._toolboxes.forEach(toolbox => {
-      const layer = toolbox.getLayer();
-      toolbox.setFather(layer.isFather());
-      // get toolbox editing dependencies
-      toolbox.state.editing.dependencies = [
-        ...layer.getChildren(),
-        ...layer.getFathers()
-      ].filter((layerName) => undefined !== this.getLayerById(layerName));
-
-      if (layer.isFather() && toolbox.hasDependencies() ) {
-        const layerRelations = layer.getRelations().getRelations();
-        for (const relationName in layerRelations) {
-          toolbox.addRelation(layerRelations[relationName]);
-        }
-      }
-    })
+    this.getLayers().forEach(l => this.addToolBox(new ToolBox(l, [...l.getChildren(), ...l.getFathers()].filter(id => this.getLayerById(id)))));
 
     await GUI.isReady();
     this._setupGUI();
@@ -874,7 +855,6 @@ new (class extends Plugin {
     this.state._toolboxes.forEach(t => t.stop());
 
     this.state.toolboxselected     = null;
-    this.state.toolboxidactivetool =  null;
     this.state.message             =  null;
 
     GUI.getService('map').refreshMap();
@@ -987,7 +967,9 @@ new (class extends Plugin {
           } catch(e) {
             console.warn(e);
             // In the case of pressed cancel button to commit features modal
-            if (e && e.cancel) { return Promise.reject(e) }
+            if (e && e.cancel) {
+              return Promise.reject(e);
+            }
             //need to be set server Error
             serverError = true;
           }
@@ -1490,6 +1472,13 @@ new (class extends Plugin {
    */
   resetCurrentLayout() {
     ApplicationService.setCurrentLayout(this.state.currentLayout);
+  }
+
+  /**
+   * @since g3w-client-plugin-editing@v3.8.1
+   */
+  getActiveTool() {
+    return this.getToolBoxes().filter(t => t.getActiveTool())[0];
   }
 
 });
