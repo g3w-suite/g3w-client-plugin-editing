@@ -171,7 +171,7 @@
                   class   = "magic-checkbox"
                   :checked = "selectall"
                   type    = "checkbox">
-                <label :for="`select_all_relations`">&nbsp;</label>
+                <label :for="`select_all_relations`" style = "margin:0;">&nbsp;</label>
               </th>
               <th v-t = "'tools'"></th>
               <th></th>
@@ -184,7 +184,7 @@
               :key  = "relation.id"
               class = "featurebox-header"
             >
-              <td>
+              <td style="padding-top: 0">
                 <input
                   :id     = "`select_relation__${index}`"
                   v-model = "relation.select"
