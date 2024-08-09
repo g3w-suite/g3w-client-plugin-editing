@@ -1,7 +1,7 @@
 const {
   isSameBaseGeometryType,
   convertSingleMultiGeometry,
-} = g3wsdk.core.geoutils;
+}                         = g3wsdk.core.geoutils;
 const {
   is3DGeometry,
   removeZValueToOLFeatureGeometry,
