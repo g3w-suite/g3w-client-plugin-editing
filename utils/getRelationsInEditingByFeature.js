@@ -47,12 +47,10 @@ export function getRelationsInEditingByFeature({
           .map(relation => ({
             fields: layer.getFieldsWithValues(relation, { relation: true }),
             id:     relation.getId(),
-            select: false, /** @since v3.9.0  Used to set relation select or not **/
+            select: false, /** @since v3.9.0 Used to set relation select or not **/
           }))
       };
-      relationinediting.validate = {
-        valid:true
-      };
+      relationinediting.validate = { valid: true };
       relationsinediting.push(relationinediting);
     }
   });
