@@ -27,20 +27,20 @@ export async function listenRelation1_1FieldChange({
     .getLayerById(layerId)
     .getRelations()
     .getArray()
-    .filter(relation => 'ONE' === relation.getType())
+    .filter(r => 'ONE' === r.getType())
 
-  // get all relation 1:1 of current layer
+  // get all relations 1:1 of current layer
   for (const relation of ONE) {
 
-    const childLayerId = relation.getChild();                             // get relation child layer id
-    const fatherField  = relation.getFatherField();
+    const childLayerId         = relation.getChild();                             // get relation child layer id
+    const fatherField          = relation.getFatherField();
     const relationLockFeatures = {} //store value
 
     // NB:
     // need to check if editable when opening form task
     // Not set this condition because maybe i ca be used this method
-    // on move task or other when current fatherFormRelationField, related to 1:1 relation
-    // it can be changed by default expression or in other way not only with form
+    // on a move task or other when current fatherFormRelationField, related to 1:1 relation
+    // it can be changed by default expression or in another way not only with form
     const fatherFormRelationField = fields.find(f => fatherField.includes(f.name)); // get father layer field (for each relation)
     // skip when not relation field and not layer child is in editing
     if (!(fatherFormRelationField && service.getLayerById(childLayerId))) {
@@ -108,7 +108,7 @@ export async function listenRelation1_1FieldChange({
             }
           }
 
-          const {feature, locked} = relationLockFeatures[fatherFormRelationField.value];
+          const { feature, locked } = relationLockFeatures[fatherFormRelationField.value];
 
           Object.keys(editableRelatedFatherChild)
             .forEach(fn => {
