@@ -147,6 +147,7 @@
                     class   = "magic-checkbox snap_tools_of_tools"
                     :id     = "`snap_${state.id}`"
                     v-model = "tool.options.checked"
+                    @change = "snapAll && tool.options.checked ? tool.options.checkedAll = false : null "
                   />
                   <label :for = "`snap_${state.id}`" v-t-tooltip:right.create= " 'plugins.editing.toolsoftool.snap'">
                     <span :class = "g3wtemplate.font['magnete']"></span>
@@ -159,6 +160,7 @@
                     class   = "magic-checkbox snap_tools_of_tools"
                     :id     = "`snap_all_${state.id}`"
                     v-model = "tool.options.checkedAll"
+                    @change = "tool.options.checkedAll ? tool.options.checked = false : null"
                   />
                   <label
                     v-if                    = "snapAll"
@@ -259,7 +261,7 @@
        * @returns { boolean }
        */
       father() {
-        return this.state.editing.father && !!this.state.editing.dependencies.length;
+        return this.state.editing.father && this.hasRelations;
       },
 
       /**
@@ -389,9 +391,9 @@
 
         g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing')
           .getLayers()
-          .filter(layer => Layer.LayerTypes.VECTOR === layer.getType()) // skip raster, alphanumerical..
-          .forEach(layer => {
-            const toolbox = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').getToolBoxById(layer.getId());
+          .filter(l => Layer.LayerTypes.VECTOR === l.getType()) // skip raster, alphanumerical..
+          .forEach(l => {
+            const toolbox = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').getToolBoxById(l.getId());
             const source  = toolbox.getLayer().getEditingSource();
 
             this.snapFeatures.extend(source.readFeatures());
@@ -406,8 +408,8 @@
               },
             });
 
-            // SNAP TO ALL: check if current editing layer is not equal to `layerId`
-            if (tool.options.layerId !== layer.getId()) {
+            // SNAP TO ALL: check if the current editing layer is not equal to `layerId`
+            if (tool.options.layerId !== l.getId()) {
               const editing = toolbox.getState().editing;
               this.snapUnwatches.push(this.$watch(() => editing.on, this.setShowSnapAll));
               this.snapToolboxes.push(editing);
