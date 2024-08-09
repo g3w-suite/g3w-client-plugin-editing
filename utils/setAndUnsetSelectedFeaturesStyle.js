@@ -30,7 +30,7 @@ export function setAndUnsetSelectedFeaturesStyle({ promise, inputs, style } = {}
    */
   const selectOriginalStyleHandle = () => {
     const originalStyle = setFeaturesSelectedStyle(features, style);
-    promisify(promise).finally(() => { features.flat().forEach((feature => feature.setStyle(originalStyle))) });
+    promisify(promise).finally(() => { features.flat().forEach((f => f.setStyle(originalStyle))) });
   };
 
   const is_vector = Layer.LayerTypes.VECTOR === layer.getType();
