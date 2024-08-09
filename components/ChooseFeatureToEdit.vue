@@ -66,7 +66,7 @@
       },
 
       zoomToFeature(feature) {
-          GUI.getService('map').zoomToFeatures([feature] , { highlight: true, duration: 1000 });
+        GUI.getService('map').zoomToFeatures([feature] , { highlight: true, duration: 1000 });
       },
 
     },

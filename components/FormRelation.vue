@@ -334,7 +334,7 @@
     data() {
       return {
         // relation,        // ← setted by `Vue.extend` - Relation instance: information about relation from parent layer and current relation layer (ex. child, fields, relationid, etc....) main relation between layerId (current in editing)
-        // relations,       // ← setted by `Vue.extend` - array of relations object id and fields linked to current parent feature (that is in editing)
+        // relations,       // ← setted by `Vue.extend` - array of relations object id,fields and select linked to current parent feature (that is in editing)
         // layerId,         // ← setted by `Vue.extend`
         loading :           false,
         show_vector_tools:  false, // whether show vector relation tools
@@ -387,7 +387,7 @@
        * Add Relation from project layer
        */
       copyFeatureFromOtherLayer() {
-        const copyLayer = this.copyFeatureLayers.find(layer => layer.id === this.copylayerid);
+        const copyLayer = this.copyFeatureLayers.find(l => l.id === this.copylayerid);
         let external    = copyLayer.external;
         let layer       = external ? GUI.getService('map').getLayerById(this.copylayerid) : CatalogLayersStoresRegistry.getLayerById(this.copylayerid);
         const is_vector =  (external || layer.isGeoLayer())
