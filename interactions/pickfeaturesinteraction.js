@@ -3,7 +3,7 @@
  */
 export class PickFeaturesInteraction extends ol.interaction.Pointer {
 
-  constructor(options={}) {
+  constructor(options = {}) {
     let features = []; // picked features
 
     const featuresAtPixel = ({ pixel, map } = {}) => map.getFeaturesAtPixel(pixel, {
