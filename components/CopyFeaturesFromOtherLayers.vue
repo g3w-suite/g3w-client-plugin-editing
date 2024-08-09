@@ -100,7 +100,7 @@
        * @since v3.7
        */
       showEditAttributes() {
-        return Object.values(this.$options.layers).reduce((sum, {features}) => {
+        return Object.values(this.$options.layers).reduce((sum, { features }) => {
           sum = sum + features.length;
           return sum;
         }, 0) > 1;
@@ -124,8 +124,8 @@
       },
 
       selectFeature(feature) {
-        if (this.selectedFeatures.find(f => f === feature)) {
-          this.selectedFeatures = this.selectedFeatures.filter(f => f !== feature);
+        if (this.selectedFeatures.find(f => feature === f)) {
+          this.selectedFeatures = this.selectedFeatures.filter(f => feature !== f);
         } else {
           this.selectedFeatures.push(feature);
         }

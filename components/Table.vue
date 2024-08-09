@@ -346,9 +346,9 @@
                 });
                 newFeature.__gis3w_feature_uid = feature.getUid();
                 this.state.rows.push(newFeature);
-                resolve(newFeature)
+                resolve(newFeature);
               })
-              .fail(reject)
+              .fail(e => { console.warn(e); reject(e); })
               .always(() => {
                 this.state.workflow.stop();
                 /** @TODO check input.features that grow in number */

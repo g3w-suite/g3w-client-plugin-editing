@@ -387,7 +387,7 @@
        * Add Relation from project layer
        */
       copyFeatureFromOtherLayer() {
-        const copyLayer = this.copyFeatureLayers.find(l => l.id === this.copylayerid);
+        const copyLayer = this.copyFeatureLayers.find(l => this.copylayerid === l.id);
         let external    = copyLayer.external;
         let layer       = external ? GUI.getService('map').getLayerById(this.copylayerid) : CatalogLayersStoresRegistry.getLayerById(this.copylayerid);
         const is_vector =  (external || layer.isGeoLayer())
