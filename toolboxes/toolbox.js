@@ -33,11 +33,7 @@ import {
   MoveFeatureStep,
   ModifyGeometryVertexStep,
   OpenTableStep,
-}                          from '../workflows';
-
-import { VM }                                           from '../eventbus';
-
-
+}                                                       from '../workflows';
 Object
   .entries({
     Workflow,
