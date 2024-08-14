@@ -1,6 +1,6 @@
 export default {
   close_editing_panel: {
-    message: "Per terminare clicca su ogni segno di spunta"
+    message: "Terminare l'editing dei singoli layer per chiudere la sessione"
   },
   errors: {
     no_layers: "Si è verificato un errore nel caricamento dei layers in editing.",
