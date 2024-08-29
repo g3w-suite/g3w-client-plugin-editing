@@ -2163,30 +2163,30 @@ export class ToolBox extends G3WObject {
    */
   __add(uniqueId, items) {
     //state object is an array of feature/features changed in a transaction
-    const d = $.Deferred();
-    // before insert an item into the history
-    // check if are at last state step (no redo was done)
-    // If we are in the middle of undo, delete all changes
-    // in the history from the current "state" so if it
-    // can create a new history
-    if (null === this.state.editing.session.current) {
-      this._states = [{ id: uniqueId, items }]
-    } else {
-      if (this._states.length > 0 && this.state.editing.session.current < this._states.at(-1).id) {
-        this._states = this._states.filter(s => s.id <= this.state.editing.session.current);
+    return $promisify(new Promise((resolve) => {
+      // before insert an item into the history
+      // check if are at last state step (no redo was done)
+      // If we are in the middle of undo, delete all changes
+      // in the history from the current "state" so if it
+      // can create a new history
+      if (null === this.state.editing.session.current) {
+        this._states = [{ id: uniqueId, items }]
+      } else {
+        if (this._states.length > 0 && this.state.editing.session.current < this._states.at(-1).id) {
+          this._states = this._states.filter(s => s.id <= this.state.editing.session.current);
+        }
+        this._states.push({ id: uniqueId, items });
       }
-      this._states.push({ id: uniqueId, items });
-    }
 
-    this.state.editing.session.current = uniqueId;
-    // set internal state
-    this.__canUndo();
-    this.__canCommit();
-    this.__canRedo();
-    // return unique id key
-    // it can be used in save relation
-    d.resolve(uniqueId);
-    return d.promise();
+      this.state.editing.session.current = uniqueId;
+      // set internal state
+      this.__canUndo();
+      this.__canCommit();
+      this.__canRedo();
+      // return unique id key
+      // it can be used in save relation
+      resolve(uniqueId);
+    }))
   }
 
   /**
