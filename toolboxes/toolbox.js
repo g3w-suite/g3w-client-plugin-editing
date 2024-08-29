@@ -1659,63 +1659,60 @@ export class ToolBox extends G3WObject {
     __esPromise = false,
   } = {}) {
 
-    const d = $.Deferred();
+    return $promisify(new Promise((resolve, reject) => {
+      let commit; // committed items
 
-    let commit; // committed items
+      // skip when ..
+      //@TODO Check if deprecated
+      if (ids) {
+        commit = this.__commit(ids);
+        this.__clearHistory(ids);
+        return resolve(commit);
+      }
 
-    // skip when ..
-    if (ids) {
-      commit = this.__commit(ids);
-      this.__clearHistory(ids);
-      return d.promise();
-    }
+      commit = items || this.__getCommitItems(this.__commit());
 
-    commit = items || this.__getCommitItems(this.__commit());
+      if (!relations) {
+        commit.relations = {};
+      }
 
-    if (!relations) {
-      commit.relations = {};
-    }
+      this.state.layer.getEditor()
+        .commit(commit)
+        .then(response => {
 
-    this.state.layer.getEditor()
-      .commit(commit)
-      .then(response => {
+          // skip when response is null or undefined and response.result is false
+          if (!(response && response.result)) {
+            reject(response);
+            return;
+          }
 
-        // skip when response is null or undefined and response.result is false
-        if (!(response && response.result)) {
-          d.reject(response);
-          return;
-        }
-        
-        const { new_relations = {} } = response.response; // check if new relations are saved on server
+          const { new_relations = {} } = response.response; // check if new relations are saved on server
 
-        // sync server data with local data
-        for (const id in new_relations) {
-          ToolBox
-            .get(id)               // get session of relation by id
-            .getSession()
-            .getEditor()
-            .applyCommitResponse({        // apply commit response to current editing relation layer
-              response: new_relations[id],
-              result: true
-            });
-        }
+          // sync server data with local data
+          for (const id in new_relations) {
+            ToolBox
+              .get(id)               // get session of relation by id
+              .getSession()
+              .getEditor()
+              .applyCommitResponse({        // apply commit response to current editing relation layer
+                response: new_relations[id],
+                result:   true
+              });
+          }
 
-        this.__clearHistory();
+          this.__clearHistory();
 
-        this._session.saveChangesOnServer(commit); // dispatch setter event.
+          this._session.saveChangesOnServer(commit); // dispatch setter event.
 
-        // ES6 promises only accept a single response
-        if (__esPromise) {
-          d.resolve({ commit, response });
-        } else {
-          d.resolve(commit, response);
-        }
-        
-
-      })
-      .fail(err => d.reject(err));
-
-    return d.promise();
+          // ES6 promises only accept a single response
+          if (__esPromise) {
+            resolve({ commit, response });
+          } else {
+            resolve(commit, response);
+          }
+        })
+        .fail(e => { console.warn(e); reject(e); })
+    }))
   }
 
   /**
