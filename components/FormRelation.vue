@@ -1714,7 +1714,6 @@
 
     beforeDestroy() {
       this.loadEventuallyRelationValuesForInputs = true;
-      console.log('destroy')
       // unlisten
       g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').off('commit', this.onCommit);
       // In the case of vector relation, restore the beginning extent of the map;
