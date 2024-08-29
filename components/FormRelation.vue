@@ -587,10 +587,12 @@
        * 
        * Changes the relation field value when and if the parent changes the value of relation field
        * 
-       * @param input
+       * @param input is the input object of parent of relation that changes
        */
       onInputChange(input) {
+
         //ownField is the field of relation feature link to parent feature layer
+        // relationFiled are fields belong to parent layer
         const { ownField, relationField } = getRelationFieldsFromRelation({
           layerId:  this._relationLayerId,
           relation: this.relation
@@ -1380,7 +1382,7 @@
       /**
        * layer in relation type
        */ 
-      this._layerType = this.getLayer().getType();
+      this._layerType    = this.getLayer().getType();
 
       const fatherFields = getRelationFieldsFromRelation({ layerId: this.layerId, relation: this.relation }).ownField;
 
@@ -1392,7 +1394,7 @@
       this.parent    = {
         // layerId is id of the parent of relation
         layerId: this.layerId,
-        // get editable fields
+        // get editable fields from parent layer editing fields
         editable: fatherFields.filter(f => parentLayer.isEditingFieldEditable(f)),
         // check if father field is a pk and is not editable
         pk,
@@ -1406,7 +1408,7 @@
           // in case of form fields
           const fields  = Workflow.Stack.getCurrent().getInputs().fields;
           return Object.assign(father, {
-            [field]: (field === pk && feature.isNew()) //check if isPk and parent feature isNew
+            [field]: (pk === field && feature.isNew()) //check if isPk and parent feature isNew
             ? feature.getId()
               //check if fields are set (parent workflow is a form)
               // or for example, for feature property field value
@@ -1434,9 +1436,9 @@
           link(options = {}) {
             return new Workflow({
               ...options,
-              type: 'edittable',
+              type:            'edittable',
               backbuttonlabel: 'plugins.editing.form.buttons.save_and_back_table',
-              steps: [ new OpenTableStep() ],
+              steps:           [ new OpenTableStep() ],
             });
           },
 
@@ -1444,7 +1446,7 @@
           add(options = {}) {
             return new Workflow({
               ...options,
-              type: 'addtablefeature',
+              type:  'addtablefeature',
               steps: [
                 new Step({ help: 'editing.steps.help.new', run: addTableFeature }),
                 new OpenFormStep(),
@@ -1458,7 +1460,7 @@
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/linkrelationworkflow.js@v3.7.1 */
           link(options = {}) {
             return new Workflow({
-              type: 'linkrelation',
+              type:  'linkrelation',
               steps: [
                 new Step({
                   ...options,
@@ -1479,17 +1481,14 @@
 
                         if (context.excludeFeatures) {
                           features = features
-                            .filter(feature => Object
-                              .entries(context.excludeFeatures)
-                              .reduce((bool, [field, value]) => bool && feature.get(field) != value, true)
-                            )
+                            .filter(f => Object.entries(context.excludeFeatures).reduce((bool, [field, value]) => bool && value != f.get(field), true))
                         }
                         this._stopPromise = $.Deferred();
 
                         setAndUnsetSelectedFeaturesStyle({
                           promise: this._stopPromise.promise(),
-                          inputs: { layer: inputs.layer, features },
-                          style: this.selectStyle
+                          inputs:  { layer: inputs.layer, features },
+                          style:   this.selectStyle
                         });
 
                         this.addInteraction(
@@ -1508,7 +1507,7 @@
                   },
                   stop() {
                     GUI.setModal(true);
-                    this._originalLayerStyle    = null;
+                    this._originalLayerStyle = null;
                     if (this._stopPromise) {
                       this._stopPromise.resolve(true);
                     }
@@ -1526,7 +1525,7 @@
               steps: {
                 draw: {
                   description: `editing.steps.help.draw_new_feature`,
-                  done: false,
+                  done:        false,
                 }
               },
               tools: ['snap', 'measure']
@@ -1539,7 +1538,7 @@
 
             return new Workflow({
               ...options,
-              type: 'addfeature',
+              type:  'addfeature',
               steps: [
                 addStep,
                 new OpenFormStep(options),
@@ -1551,16 +1550,16 @@
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/selectandcopyfeaturesfromotherlayerworkflow.js@v3.7.1 */
           selectandcopy(options = {}) {
             return new Workflow({
-              type: 'selectandcopyfeaturesfromotherlayer',
+              type:  'selectandcopyfeaturesfromotherlayer',
               steps: [
                 // pick project layer features
                 new Step({
                   ...options,
-                  help: "editing.steps.help.pick_feature",
+                  help:  "editing.steps.help.pick_feature",
                   steps: {
                     select: {
                       description: `editing.workflow.steps.selectPoint`,
-                      done: false,
+                      done:        false,
                     }
                   },
                   run(inputs, context) {
@@ -1587,10 +1586,10 @@
                                         ? e.features                             // external layer
                                         : ((await DataRouterService.getData('query:coordinates', { // TOC/PROJECT layer
                                           inputs: {
-                                            coordinates: e.coordinate,
+                                            coordinates:           e.coordinate,
                                             query_point_tolerance: ProjectsRegistry.getCurrentProject().getQueryPointTolerance(),
-                                            layerIds: [options.copyLayer.getId()],
-                                            multilayers: false
+                                            layerIds:              [ options.copyLayer.getId() ],
+                                            multilayers:           false
                                           },
                                           outputs: null
                                         })).data[0] || { features: [] }).features,
