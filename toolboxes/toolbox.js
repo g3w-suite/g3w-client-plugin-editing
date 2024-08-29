@@ -1106,7 +1106,8 @@ export class ToolBox extends G3WObject {
                             d.reject();
                           }
                         })
-                        .catch(() => {
+                        .catch((e) => {
+                          console.warn(e);
                           d.reject();
                         })
                     }
@@ -1418,7 +1419,7 @@ export class ToolBox extends G3WObject {
    */
   //added option object to start method to have a control by other plugin how
   start(options = {}) {
-    return $.Deferred(async d => {
+    return $promisify(new Promise(async (resolve, reject) => {
       const id                    = this.getId();
       const applicationConstraint = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.constraints.toolboxes[id];
       let {
@@ -1496,14 +1497,14 @@ export class ToolBox extends G3WObject {
           this.stopLoading();
           this.setEditing(true);
           await g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').runEventHandler({ type: 'get-features-editing', id, options: { features } });
-          d.resolve({ features })
+          resolve({ features })
         } catch (e) {
           console.warn(e);
           GUI.notify.error(e.message);
           await g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').runEventHandler({ type: 'error-editing', id, error: e });
           this.stop();
           this.stopLoading();
-          d.reject(e);
+          reject(e);
         }
       }
 
@@ -1544,7 +1545,7 @@ export class ToolBox extends G3WObject {
       }
 
       if (is_started) { this.setEditing(true); }
-    }).promise();
+    }));
   };
 
   /**
