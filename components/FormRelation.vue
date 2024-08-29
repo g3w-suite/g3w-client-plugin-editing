@@ -610,11 +610,11 @@
 
         // loop relation fields of current feature
         this.relations
-          .map(r => r.fields.find(f => -1 !== ownField.indexOf(f.name)))
+          .map(r => r.fields.find(f => ownField.includes(f.name)))
           .filter(Boolean)
           .forEach(field => {
             field.value     = this.parent.values[field.name];
-            const relation        = this.getLayer().getEditingSource().getFeatureById(relation.id);
+            const relation  = this.getLayer().getEditingSource().getFeatureById(relation.id);
             const oRelation = relation.clone();
             relation.set(field.name, input.value);
             if (!relation.isNew()) {

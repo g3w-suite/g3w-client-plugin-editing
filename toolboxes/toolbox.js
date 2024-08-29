@@ -1940,12 +1940,12 @@ export class ToolBox extends G3WObject {
     const update_tools = this.state._tools
       .filter(tool => {
         // exclude
-        if (-1 !== excludetools.indexOf(tool.getId()) ) {
+        if (excludetools.includes(tool.getId()) ) {
           return false;
         }
         return editing_constraints
           ? tool.type.find(type => type === 'change_feature' || type ==='change_attr_feature')
-          : -1 !== UPDATEONEFEATUREONLYTOOLSID.indexOf(tool.getId()) ;
+          : UPDATEONEFEATUREONLYTOOLSID.includes(tool.getId()) ;
       })
       .map(tool => {
         const id = tool.getId();
@@ -2720,7 +2720,7 @@ export class ToolBox extends G3WObject {
             .getLayer()
             .getRelations()
             .getArray()
-            .find(r => -1 !== relations.indexOf(r.getFather())) // parent relation layer
+            .find(r => relations.includes(r.getFather())) // parent relation layer
             .getFather()
           ].relations[id] = commitObj.relations[id];
         return id;

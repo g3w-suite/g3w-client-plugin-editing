@@ -462,7 +462,7 @@
         this.editinglayers.forEach(({ id }) => {
           const toolbox     = service.getToolBoxById(id);
           const is_commit   = has_layers && toolbox.state.editing.history.commit;
-          const is_selected = (-1 !== layers.indexOf(id));
+          const is_selected = layers.includes(id);
 
           toolbox.setShow(has_layers ? is_selected : true);
 
