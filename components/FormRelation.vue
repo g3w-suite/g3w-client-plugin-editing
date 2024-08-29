@@ -38,11 +38,12 @@
 
           <!-- EDIT ATTRIBUTES @since 3.9.0 -->
           <span
+            v-if                      = "relationsLength > 0 && capabilities.includes('change_attr_feature')"
             v-t-tooltip:bottom.create = "'plugins.editing.tools.update_multi_features_relations'"
             class                     = "g3w-icon"
           >
              <span
-               v-if                      = "relationsLength > 0 && capabilities.includes('change_attr_feature')"
+
                @click.stop               = "editAttributesRelations()"
                v-disabled                = "relations.every(r => !r.select)"
              >
