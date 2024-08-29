@@ -590,8 +590,7 @@
        * @param input
        */
       onInputChange(input) {
-
-        //ownFiled is the field of relation feature link to parent feature layer
+        //ownField is the field of relation feature link to parent feature layer
         const { ownField, relationField } = getRelationFieldsFromRelation({
           layerId:  this._relationLayerId,
           relation: this.relation
@@ -624,6 +623,27 @@
                 .pushUpdate(this._relationLayerId, relation, oRelation);
             }
           });
+
+       /* // loop relation fields of current feature
+          //@TODO Refactor it
+        this.relations
+          .forEach(r => {
+            r.fields
+              .filter(f => ownField.includes(f.name))
+              .forEach(field => {
+                field.value     = this.parent.values[field.name];
+                const relation  = this.getLayer().getEditingSource().getFeatureById(r.id);
+                const oRelation = relation.clone();
+                relation.set(field.name, input.value);
+                if (!relation.isNew()) {
+                  g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing')
+                    .getToolBoxById(this._relationLayerId)
+                    .getSession()
+                    .pushUpdate(this._relationLayerId, relation, oRelation);
+                }
+            })
+          })*/
+
       },
 
       /**
@@ -1610,9 +1630,9 @@
                       }
 
                       GUI.showUserMessage({
-                        type: 'warning',
-                        message: 'plugins.editing.messages.no_feature_selected',
-                        closable: false,
+                        type:      'warning',
+                        message:   'plugins.editing.messages.no_feature_selected',
+                        closable:  false,
                         autoclose: true
                       });
 
@@ -1635,11 +1655,10 @@
       })[this._layerType];
 
       // add tools for each relation
-      this.relations.forEach((r) => this.addTools(r.id) );
+      this.relations.forEach(r => this.addTools(r.id) );
 
       try {
-        const formservice = g3wsdk.gui.GUI.getCurrentContent().content.getService();
-        formservice.getEventBus().$on('changeinput', this.onInputChange.bind(this))
+        g3wsdk.gui.GUI.getCurrentContent().content.getService().getEventBus().$on('changeinput', this.onInputChange.bind(this))
       } catch (e) {
         console.warn(e);
       }
