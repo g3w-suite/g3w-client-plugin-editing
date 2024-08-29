@@ -661,9 +661,9 @@ export class ToolBox extends G3WObject {
                 run(inputs) {
                   /** @since g3w-client-plugin-editing@v3.8.0 */
                   this._stopPromise = this._stopPromise;
-                  return $.Deferred(d => {
-                    if (!inputs.features.length) {
-                      return d.reject('no feature');
+                  return $promisify(new Promise((resolve, reject) => {
+                    if (0 === inputs.features.length) {
+                      return reject('no feature');
                     }
                     this._stopPromise = $.Deferred();
 
@@ -675,13 +675,13 @@ export class ToolBox extends G3WObject {
                       'drawend': e => {
                         inputs.coordinates = e.feature.getGeometry().getCoordinates();
                         this.setUserMessageStepDone('from');
-                        d.resolve(inputs);
+                        resolve(inputs);
                       }
                     });
                     this.addInteraction(
                       new ol.interaction.Snap({ edge: false, features: new ol.Collection(inputs.features) })
                     );
-                  }).promise();
+                  }))
                 },
                 stop() {
                   /** @since g3w-client-plugin-editing@v3.8.0 */
@@ -740,7 +740,7 @@ export class ToolBox extends G3WObject {
                         Promise
                           .allSettled(promisesDefaultEvaluation)
                           .then(promises => promises
-                            .forEach(({status, value:feature}) => {
+                            .forEach(({ status, value:feature }) => {
   
                               /**
                                * @todo improve client core to handle this situation on session.pushAdd not copy pk field not editable only
