@@ -303,7 +303,7 @@
       fitZoomToScale(e) {
         if (this.state.selected && !this.canEdit) {
           const map = GUI.getService('map')
-          map.goToRes(map.getCenter(), getResolutionFromScale(this.state._constraints.scale, GUI.getService('map').getMapUnits()));
+          map.goToRes(map.getCenter(), getResolutionFromScale(this.state._constraints.scale, map.getMapUnits()));
         }
       },
 
