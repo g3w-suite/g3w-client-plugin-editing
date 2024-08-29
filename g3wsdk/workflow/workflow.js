@@ -391,7 +391,7 @@ export class Workflow extends G3WObject {
         //start flow of workflow
         const outputs = await this.runStep(this.getSteps()[this._stepIndex], this.getInputs());
         if (showUserMessage) {
-          setTimeout(() => { this.clearUserMessagesSteps(); d.resolve(outputs); }, 500);
+          setTimeout(() => { this.clearUserMessagesSteps(); resolve(outputs); }, 500);
         } else {
           resolve(outputs);
         }
