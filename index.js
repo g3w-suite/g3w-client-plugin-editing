@@ -929,20 +929,20 @@ new (class extends Plugin {
               // confirm step
               new Step({
                 run(inputs) {
-                  return $.Deferred(d => {
+                  return $promisify(new Promise((resolve, reject) => {
                     const dialog = GUI.dialog.dialog({
                       message: inputs.message,
                       title:   `${tPlugin("editing.messages.commit_feature")}: "${inputs.layer.getName()}"`,
                       buttons: {
-                        SAVE:   { className: "btn-success", callback() { d.resolve(inputs); }, label: t("save"),   },
-                        CANCEL: { className: "btn-danger",  callback() { d.reject({cancel : true });        }, label: t(inputs.close ? "exitnosave" : "annul") },
+                        SAVE:   { className: "btn-success", callback() { resolve(inputs); }, label: t("save"),   },
+                        CANCEL: { className: "btn-danger",  callback() { reject({cancel : true });        }, label: t(inputs.close ? "exitnosave" : "annul") },
                         ...(inputs.close ? { CLOSEMODAL : { className: "btn-primary", callback() { dialog.modal('hide'); }, label:  t("annul") }} : {}),
                       }
                     });
                     if (inputs.features) {
-                      setAndUnsetSelectedFeaturesStyle({ promise: d.promise(), inputs, style: this.selectStyle });
+                      setAndUnsetSelectedFeaturesStyle({ promise: promise(), inputs, style: this.selectStyle });
                     }
-                  }).promise();
+                  }))
                 },
               }
               ),

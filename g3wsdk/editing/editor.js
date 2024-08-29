@@ -46,7 +46,7 @@ export default class Editor extends G3WObject {
       getFeatures(options = {}) {
         // skip is not onlien or all features of layers are already got
         if (!ApplicationState.online || this._allfeatures) {
-          return $.Deferred(d => d.resolve());
+          return $promisify(Promise.resolve());
         }
 
         return $promisify(async d => {

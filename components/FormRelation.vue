@@ -1444,7 +1444,7 @@
                   ...options,
                   help: "editing.steps.help.select_feature_to_relation",
                   run(inputs, context) {
-                    return $.Deferred(async d => {
+                    return $promisify(new Promise(async (resolve, reject) => {
                       GUI.setModal(false);
                       const editingLayer        = inputs.layer.getEditingLayer();
                       this._originalLayerStyle  = editingLayer.getStyle();
@@ -1477,14 +1477,14 @@
                           'picked': e => {
                             inputs.features.push(e.feature); // push relation
                             GUI.setModal(true);
-                            d.resolve(inputs);
+                            resolve(inputs);
                           }
                         });
                       } catch (e) {
                         console.warn(e);
-                        d.reject(e);
+                        reject(e);
                       }
-                    }).promise();
+                    }))
                   },
                   stop() {
                     GUI.setModal(true);
@@ -1546,7 +1546,7 @@
                   run(inputs, context) {
                     /** @TODO Create a component that ask which project layer would like to query */
                     if (!options.copyLayer) {
-                      return $.Deferred(d => d.resolve()).promise();
+                      return $promisify(Promise.resolve());
                     }
                     return $promisify(async () => {
                       // get features from copyLayer
