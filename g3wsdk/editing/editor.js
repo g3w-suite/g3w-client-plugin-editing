@@ -76,8 +76,9 @@ export default class Editor extends G3WObject {
           /** @TODO simplfy nested promises */
           if (doRequest) {
             const features = await promisify(this._layer.getFeatures(options));
-            // add features from server
+            // add features from server to editing features store (cloned from original)
             this._featuresstore.addFeatures((features || []).map(f => f.clone()));
+            //set all features to true if no filter is set (e.g., Table layer)
             this._allfeatures = !options.filter;
             return features;
           }
@@ -93,7 +94,7 @@ export default class Editor extends G3WObject {
     };
 
     /**
-     * @FIXME add description
+     * { Boolean } true, mean all features of layer are get (e.g. Table layer)
      */
     this._allfeatures = false;
 
