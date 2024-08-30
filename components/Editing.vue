@@ -56,13 +56,13 @@
       id    = "g3w-select-editable-layers-content"
       class = "skin-color"
     >
-      <label for = "g3w-select-editable-layers-to-show" v-t="'Layers'"></label>
+      <label for = "g3w-select-editable-layers-to-show" v-t = "'Layers'"></label>
       <select
-        id        = "g3w-select-editable-layers-to-show"
-        multiple  = "multiple"
-        clear     = "true"
-        ref       = "selectlayers"
-        v-select2 = "'selectedlayers'"
+        id         = "g3w-select-editable-layers-to-show"
+        :multiple  = "true"
+        :clear     = "true"
+        ref        = "selectlayers"
+        v-select2  = "'selectedlayers'"
       >
         <option
           v-for  = "editinglayer in editinglayers"
@@ -485,7 +485,7 @@
 
       this.appState        = ApplicationState;
 
-      // Array of object setter(as key), key to unby (as value)
+      // Array of object setter(as a key), key to unby (as value)
       this.unByKeys        = this.unByKeys || [];
 
       // in case of starting panel editing check if there are some chenging pending
