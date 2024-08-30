@@ -1055,7 +1055,7 @@ export class ToolBox extends G3WObject {
                   }
                 },
                 run(inputs, context) {
-                  return $.Deferred(d => {
+                  return $promisify(new Promise((resolve, reject) => {
                     const {
                       layer,
                       features
@@ -1071,7 +1071,7 @@ export class ToolBox extends G3WObject {
                         message: 'plugins.editing.messages.select_min_2_features',
                         autoclose: true
                       });
-                      d.reject();
+                      reject();
                     } else {
                       chooseFeatureFromFeatures({ features, inputs })
                         .then(async (feature) => {
@@ -1093,22 +1093,22 @@ export class ToolBox extends G3WObject {
                                 source.removeFeature(deleteFeature);
                               });
                             inputs.features = [feature];
-                            d.resolve(inputs);
+                            resolve(inputs);
                           } else {
                             GUI.showUserMessage({
                               type: 'warning',
                               message: 'plugins.editing.messages.no_feature_selected',
                               autoclose: true
                             });
-                            d.reject();
+                            reject();
                           }
                         })
                         .catch((e) => {
                           console.warn(e);
-                          d.reject();
+                          reject();
                         })
                     }
-                  }).promise();
+                  }));
                 },
               }),
             ],
