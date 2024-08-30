@@ -907,7 +907,6 @@ export class SelectElementsStep extends Step {
     const buttonnext = 'multiple' === type && !!this._steps.select.buttonnext;
 
     return $promisify(new Promise((resolve, reject) => {
-      console.log('qui')
 
       if (buttonnext) {
         //check if it has already done handler function;
