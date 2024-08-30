@@ -352,7 +352,7 @@
        * @since g3w-client-plugin-editing@v3.8.0
        */
       _initSnap() {
-        const tool = (this.state.toolsoftool || []).find(tool => 'snap' === tool.type);
+        const tool = (this.state.toolsoftool || []).find(t => 'snap' === t.type);
 
         if (!tool) {
           return;
@@ -378,7 +378,7 @@
          */
         this.snapUnwatches = [];
 
-        this.$watch(() => tool.options.checked, () => this.activeSnapInteraction());
+        this.$watch(() => tool.options.checked,    () => this.activeSnapInteraction());
         this.$watch(() => tool.options.checkedAll, () => this.activeSnapInteraction());
         // Toggle snap interaction
         this.$watch(() => tool.options.active, () => {
@@ -465,7 +465,7 @@
        * @since g3w-client-plugin-editing@v3.8.0
        */
       setShowSnapAll() {
-        const tool = (this.state.toolsoftool || []).find(tool => 'snap' === tool.type);
+        const tool = (this.state.toolsoftool || []).find(t => 'snap' === t.type);
         if (tool) {
           this.snapAll            = !!this.snapToolboxes.find(editing => editing.on);
           tool.options.checkedAll = tool.options.showSnapAll ? tool.options.checkedAll : false;
@@ -479,7 +479,7 @@
        */
       activeSnapInteraction() {
         const map  = GUI.getService('map');
-        const tool = (this.state.toolsoftool || []).find(tool => 'snap' === tool.type);
+        const tool = (this.state.toolsoftool || []).find(t => 'snap' === t.type);
 
         if (snapInteraction) {
           map.removeInteraction(snapInteraction);
@@ -490,8 +490,8 @@
         // snap = true
         if ((tool.options.checked || tool.options.checkedAll) && tool.options.active) {
           snapInteraction = new ol.interaction.Snap({
-            source:   !tool.options.checkedAll && tool.options.checked && tool.options.source, // SNAP TO LAYER: get options source as props pass from toolbox
-            features: tool.options.checkedAll  && this.snapFeatures                        // SNAP TO ALL:   get features
+            source:   !tool.options.checkedAll && tool.options.checked && tool.options.source, // SNAP TO LAYER: get option source as props pass from toolbox
+            features: tool.options.checkedAll  && this.snapFeatures                        // SNAP TO ALL: get features
           });
           map.addInteraction(snapInteraction);
         }
