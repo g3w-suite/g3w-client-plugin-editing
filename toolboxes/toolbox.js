@@ -660,7 +660,6 @@ export class ToolBox extends G3WObject {
                 },
                 run(inputs) {
                   /** @since g3w-client-plugin-editing@v3.8.0 */
-                  this._stopPromise = this._stopPromise;
                   return $promisify(new Promise((resolve, reject) => {
                     if (0 === inputs.features.length) {
                       return reject('no feature');
@@ -952,8 +951,6 @@ export class ToolBox extends G3WObject {
                 },
                 run(inputs, context) {
                   /** @since g3w-client-plugin-editing@v3.8.0 */
-                  this._stopPromise = this._stopPromise;
-
                   const d               = $.Deferred();
                   const source          = inputs.layer.getEditingLayer().getSource();
 
