@@ -976,37 +976,26 @@ export class ToolBox extends G3WObject {
                         if (splittedGeometries[i].geometries.length > 1) {
                           isSplitted = true;
                           await handleSplitFeature({
-                            feature: inputs.features.find(f => f.getUid() === splittedGeometries[i].uid),
                             context,
-                            splittedGeometries: splittedGeometries[i].geometries,
                             inputs,
-                            session: context.session,
+                            feature:            inputs.features.find(f => f.getUid() === splittedGeometries[i].uid),
+                            splittedGeometries: splittedGeometries[i].geometries,
+                            session:            context.session,
                           });
                         }
-                      }
-
-                      if (isSplitted) {
-                        GUI.showUserMessage({
-                          type: 'success',
-                          message: 'plugins.editing.messages.splitted',
-                          autoclose: true
-                        });
-                      } else {
-                        GUI.showUserMessage({
-                          type: 'warning',
-                          message: 'plugins.editing.messages.nosplittedfeature',
-                          autoclose: true
-                        });
                       }
 
                       /** @since g3w-client-plugin-editing@v3.8.0 */
                       //resolve select style feature
                       this._stopPromise.resolve(true);
-
-                      //need to set timeout promise, because at the end of the workflow all user messages are cleared
-                      await new Promise((r) => setTimeout(r, 1000));
-
                       d[isSplitted ? 'resolve' : 'reject'](inputs);
+                      //need to set timeout promise, because at the end of the workflow all user messages are cleared
+                      await new Promise((r) => setTimeout(r, 600));
+                      GUI.showUserMessage({
+                        type:      isSplitted ? 'success': 'warning',
+                        message:   isSplitted ? 'plugins.editing.messages.splitted' : 'plugins.editing.messages.nosplittedfeature',
+                        autoclose: true
+                      })
                     }
                   });
 
@@ -1016,6 +1005,10 @@ export class ToolBox extends G3WObject {
 
                   return d.promise();
                 },
+                //@since 3.9.0
+                async stop() {
+                  this._stopPromise = null;
+                }
               }),
             ],
             registerEscKeyEvent: true,
