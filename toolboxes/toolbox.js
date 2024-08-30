@@ -532,9 +532,9 @@ export class ToolBox extends G3WObject {
                           label: 'Ok',
                           className: 'btn-success',
                           callback: async () => {
-                            const features = [];
+                            const features                          = [];
                             let isThereEmptyFieldRequiredNotDefined = false;
-                            const promisesFeatures = [];
+                            const promisesFeatures                  = [];
                             selectedFeatures.forEach(selectedFeature => {
                               /**
                                * check if the layer belongs to project or not
@@ -557,7 +557,7 @@ export class ToolBox extends G3WObject {
                                   const selectedFeature = selectedFeatures[index];
                                   // Check if there is an empty filed required not defined
                                   isThereEmptyFieldRequiredNotDefined = undefined !== attributes
-                                    .find(({name, validate: {required=false}}) => (undefined === layerFeature.properties[name] && required));
+                                    .find(({ name, validate: { required = false } }) => (undefined === layerFeature.properties[name] && required));
                 
                                 const feature = new Feature({
                                   feature: selectedFeature,
@@ -1082,8 +1082,8 @@ export class ToolBox extends G3WObject {
                           if (newFeature) {
                             try {
                               await evaluateExpressionFields({ inputs, context, feature: newFeature });
-                            } catch (err) {
-                              console.warn(err);
+                            } catch (e) {
+                              console.warn(e);
                             }
                             session.pushUpdate(layerId, newFeature, originalFeature);
                             features
