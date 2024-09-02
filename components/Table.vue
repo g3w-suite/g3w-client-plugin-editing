@@ -150,6 +150,7 @@
   import { getRelationsInEditing }             from '../utils/getRelationsInEditing';
   import { getFeatureTableFieldValue }         from '../utils/getFeatureTableFieldValue';
   import { addTableFeature }                   from '../utils/addTableFeature';
+  import { promisify }                         from '../utils/promisify';
 
   const { tPlugin }     = g3wsdk.core.i18n;
   const { GUI }         = g3wsdk.gui;
@@ -316,44 +317,44 @@
       */
       async copyFeature(uid) {
         await (
-          new Promise((resolve, reject) => {
+          new Promise(async (resolve, reject) => {
             const feature = cloneFeature(
               this.state.features.find(f => uid === f.getUid()),
               this.state.inputs.layer.getEditingLayer()
             );
             /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addtablefeatureworkflow.js@v3.7.1 */
             this.state.workflow = new Workflow({
-                type: 'addtablefeature',
-                steps: [
-                  new Step({ help: 'editing.steps.help.new', run: addTableFeature }),
-                  new OpenFormStep(),
-                ],
-              });
+              type: 'addtablefeature',
+              steps: [
+                new Step({ help: 'editing.steps.help.new', run: addTableFeature }),
+                new OpenFormStep(),
+              ],
+            });
             this.state.inputs.features.push(feature);
-            this.state.workflow.start({
-              context: this.state.context,
-              inputs:  this.state.inputs
-            })
-              .then(outputs => {
-                const feature    = outputs.features[outputs.features.length -1];
-                const newFeature = {};
-                Object.entries(this.state.rows[0]).forEach(([key, value]) => {
-                  newFeature[key] = getFeatureTableFieldValue({
-                    layerId: this.state.layerId,
-                    feature,
-                    property: key
-                  });
+            try {
+              const outputs = await promisify(this.state.workflow.start({
+                context: this.state.context,
+                inputs:  this.state.inputs
+              }));
+              const feature    = outputs.features[outputs.features.length -1];
+              const newFeature = {};
+              Object.entries(this.state.rows[0]).forEach(([ key, _ ]) => {
+                newFeature[key] = getFeatureTableFieldValue({
+                  layerId: this.state.layerId,
+                  feature,
+                  property: key
                 });
-                newFeature.__gis3w_feature_uid = feature.getUid();
-                this.state.rows.push(newFeature);
-                resolve(newFeature);
-              })
-              .fail(e => { console.warn(e); reject(e); })
-              .always(() => {
-                this.state.workflow.stop();
-                /** @TODO check input.features that grow in number */
-                console.log('here we are')
-              })
+              });
+              newFeature.__gis3w_feature_uid = feature.getUid();
+              this.state.rows.push(newFeature);
+              resolve(newFeature);
+            } catch(e) {
+              console.warn(e); reject(e);
+            } finally {
+              this.state.workflow.stop();
+              /** @TODO check input.features that grow in number */
+              console.log('here we are')
+            }
           })
         );
 
@@ -372,7 +373,7 @@
       /**
        * ORIGINAL SOURCE: g3w-client-plugin-editing/services/tableservice.js@v3.7.8
        */
-      editFeature(uid) {
+      async editFeature(uid) {
         const index   = this.state.features.findIndex(f => uid === f.getUid());
         const feature = this.state.features[index];
     
@@ -382,26 +383,30 @@
         const inputs = this.state.inputs;
     
         inputs.features.push(feature);
-    
-        this.state.workflow
-          .start({
-            context: this.state.context,
-            inputs
-          })
-          .then(outputs => {
-            const feature = outputs.features[outputs.features.length -1];
-            Object
-              .entries(this.state.rows[index])
-              .forEach(([key, _]) => {
-                this.state.rows[index][key] = getFeatureTableFieldValue({
-                  layerId: this.state.layerId,
-                  feature,
-                  property: key
-                });
+
+        try {
+          const outputs = await promisify(
+            this.state.workflow
+            .start({
+              context: this.state.context,
+              inputs
+            })
+          );
+          const feature = outputs.features[outputs.features.length -1];
+          Object
+            .entries(this.state.rows[index])
+            .forEach(([key, _]) => {
+              this.state.rows[index][key] = getFeatureTableFieldValue({
+                layerId: this.state.layerId,
+                feature,
+                property: key
+              });
             });
-          })
-          .fail(console.warn)
-          .always(() =>  this.state.workflow.stop())
+        } catch(e) {
+          console.warn(e);
+        } finally {
+          this.state.workflow.stop()
+        }
       },
 
       linkFeature(index, evt) {
