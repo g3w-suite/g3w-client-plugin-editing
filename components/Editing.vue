@@ -360,7 +360,7 @@
           const promises = [];
           const layerIds = [];
           //FORCE TO WAIT OTHERWISE STILL OFF LINE
-          setTimeout(() => {
+          setTimeout(async () => {
             for (const layerId in changes) {
               layerIds.push(layerId);
               const toolbox     = this.service.getToolBoxById(layerId);
@@ -368,19 +368,21 @@
               promises.push(this.service.commit({ toolbox, commitItems, modal }))
             }
 
-            $.when
-              .apply(this.service, promises)
-              .then(resolve)
-              .fail(e => { console.warn(e); reject(e) })
-              .always(() => {
-                if (unlock) {
-                  layerIds.forEach(layerId => this.service.getLayerById(layerId).unlock());
-                }
-                // always reset items to null
-                ApplicationService.setOfflineItem('EDITING_CHANGES');
-              })
+            try {
+              await promisify($.when.apply(this.service, promises));
+              resolve();
+            } catch(e) {
+              console.warn(e);
+              reject(e);
+            } finally {
+              if (unlock) {
+                layerIds.forEach(layerId => this.service.getLayerById(layerId).unlock());
+              }
+              // always reset items to null
+              ApplicationService.setOfflineItem('EDITING_CHANGES');
+            }
           }, 1000)
-        });
+        })
       },
 
     },
