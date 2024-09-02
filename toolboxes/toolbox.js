@@ -1313,24 +1313,25 @@ export class ToolBox extends G3WObject {
   /**
    * @param reset
    */
-  getFieldUniqueValuesFromServer({
-    reset=false
+  async getFieldUniqueValuesFromServer({
+    reset = false
   } = {}) {
-    this.state.layer.getWidgetData({
-      type: 'unique',
-      fields: Object.values(this.uniqueFields).map(field => field.name).join()
-    })
-    .then((response) => {
+    try {
+      const response = await promisify(this.state.layer.getWidgetData({
+        type:   'unique',
+        fields: Object.values(this.uniqueFields).map(f => f.name).join(),
+      }));
       Object
         .entries(response.data)
         .forEach(([fieldName, values]) => {
           if (reset) {
             this.uniqueFields[fieldName].input.options.values.splice(0);
           }
-          values.forEach(value => this.uniqueFields[fieldName].input.options.values.push(value));
+          values.forEach(v => this.uniqueFields[fieldName].input.options.values.push(v));
         })
-    })
-    .fail(console.warn)
+    } catch(e) {
+      console.warn(e);
+    }
   }
 
   /**
@@ -1514,11 +1515,16 @@ export class ToolBox extends G3WObject {
         GUI
           .getService('map')
           .onceafter('setHidden', () => {
-            setTimeout(() => {
+            setTimeout(async () => {
               this._start = true;
               this.startLoading();
               this.setFeaturesOptions({ filter });
-              this._session.start(this.state._getFeaturesOption).then(handlerAfterSessionGetFeatures).fail(() => this.setEditing(false));
+              try {
+                handlerAfterSessionGetFeatures(await promisify(this._session.start(this.state._getFeaturesOption)))
+              } catch(e) {
+                console.warn(e);
+                this.setEditing(false);
+              }
             }, 300);
           })
       }
@@ -1651,7 +1657,7 @@ export class ToolBox extends G3WObject {
     __esPromise = false,
   } = {}) {
 
-    return $promisify(new Promise((resolve, reject) => {
+    return $promisify(new Promise(async (resolve, reject) => {
       let commit; // committed items
 
       // skip when ..
@@ -1668,42 +1674,42 @@ export class ToolBox extends G3WObject {
         commit.relations = {};
       }
 
-      this.state.layer.getEditor()
-        .commit(commit)
-        .then(response => {
+      try {
+        const response = await this.state.layer.getEditor().commit(commit);
+        // skip when response is null or undefined and response.result is false
+        if (!(response && response.result)) {
+          reject(response);
+          return;
+        }
 
-          // skip when response is null or undefined and response.result is false
-          if (!(response && response.result)) {
-            reject(response);
-            return;
-          }
+        const { new_relations = {} } = response.response; // check if new relations are saved on server
 
-          const { new_relations = {} } = response.response; // check if new relations are saved on server
+        // sync server data with local data
+        for (const id in new_relations) {
+          ToolBox
+            .get(id)               // get session of relation by id
+            .getSession()
+            .getEditor()
+            .applyCommitResponse({        // apply commit response to current editing relation layer
+              response: new_relations[id],
+              result:   true
+            });
+        }
 
-          // sync server data with local data
-          for (const id in new_relations) {
-            ToolBox
-              .get(id)               // get session of relation by id
-              .getSession()
-              .getEditor()
-              .applyCommitResponse({        // apply commit response to current editing relation layer
-                response: new_relations[id],
-                result:   true
-              });
-          }
+        this.__clearHistory();
 
-          this.__clearHistory();
+        this._session.saveChangesOnServer(commit); // dispatch setter event.
 
-          this._session.saveChangesOnServer(commit); // dispatch setter event.
-
-          // ES6 promises only accept a single response
-          if (__esPromise) {
-            resolve({ commit, response });
-          } else {
-            resolve(commit, response);
-          }
-        })
-        .fail(e => { console.warn(e); reject(e); })
+        // ES6 promises only accept a single response
+        if (__esPromise) {
+          resolve({ commit, response });
+        } else {
+          resolve(commit, response);
+        }
+      } catch(e) {
+        console.warn(e);
+        reject(e);
+      }
     }))
   }
 
