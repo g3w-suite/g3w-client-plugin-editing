@@ -23,11 +23,11 @@ export function getFeatureTableFieldValue({
   let value        = feature.get(property);
 
   // get key-value fields implicated into: https://github.com/g3w-suite/g3w-client-plugin-editing/pull/64
-  const values = (null !== value) && (fields
-    .filter(field => ['select_autocomplete', 'select'].includes(field.input.type)) || [] )
-    .reduce((kv, field) => { kv[field.name] = field.input.options.values; return kv; }, {});
+  const values = (null !== value) &&
+    (fields.filter(f => ['select_autocomplete', 'select'].includes(f.input.type)) || [])
+      .reduce((kv, field) => { kv[field.name] = field.input.options.values; return kv; }, {});
 
-  // get last key-value feature add to
+  // get the last key-value feature add to
   const kv_field = values && values[property] && values[property].find(kv => value == kv.value);
 
   // return key for key-values fields (raw field value otherwise)

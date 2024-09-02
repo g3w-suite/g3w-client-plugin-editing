@@ -56,13 +56,13 @@
       id    = "g3w-select-editable-layers-content"
       class = "skin-color"
     >
-      <label for = "g3w-select-editable-layers-to-show" v-t="'Layers'"></label>
+      <label for = "g3w-select-editable-layers-to-show" v-t = "'Layers'"></label>
       <select
-        id        = "g3w-select-editable-layers-to-show"
-        multiple  = "multiple"
-        clear     = "true"
-        ref       = "selectlayers"
-        v-select2 = "'selectedlayers'"
+        id         = "g3w-select-editable-layers-to-show"
+        :multiple  = "true"
+        :clear     = "true"
+        ref        = "selectlayers"
+        v-select2  = "'selectedlayers'"
       >
         <option
           v-for  = "editinglayer in editinglayers"
@@ -114,21 +114,21 @@
 
     data() {
       return {
-        state:         this.$options.service.state,
-        service:       this.$options.service,
-        resourcesurl:  this.$options.resourcesurl,
-        showcommitbar: this.$options.showcommitbar,
-        saving:          false, // whether to show loading bar while committing to server (click on save disk icon)
-        layersInEditing: 0, //@since 3.8.0 Number of layers in editing
+        state:                 this.$options.service.state,
+        service:               this.$options.service,
+        resourcesurl:          this.$options.resourcesurl,
+        showcommitbar:         this.$options.showcommitbar,
+        saving:                false, // whether to show loading bar while committing to server (click on save disk icon)
+        layersInEditing:       0, //@since 3.8.0 Number of layers in editing
         editingButtonsEnabled: true,
         /** @since g3w-client-plugin-editing@v3.8.0 */
-        selectedlayers: [],
+        selectedlayers:        [],
         /** @since g3w-client-plugin-editing@v3.8.0 */
-        editinglayers: Object
-          .entries(g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').getEditableLayers())
-          .map(([id, layer]) => ({ id, name: layer.getName(), title: layer.getTitle() })),
+        editinglayers:         Object.entries(g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing')
+                                .getEditableLayers())
+                                .map(([id, layer]) => ({ id, name: layer.getName(), title: layer.getTitle() })),
         /** @since g3w-client-plugin-editing@v3.8.0 */
-        activetool: null,
+        activetool:            null,
       };
     },
 
@@ -193,10 +193,10 @@
       },
 
       /**
-       * @param toolboxId
+       * @param id
        */
-      async startToolBox(toolboxId) {
-        const toolbox = this.service.getToolBoxById(toolboxId);
+      async startToolBox(id) {
+        const toolbox = this.service.getToolBoxById(id);
         // check if a dependency layer (in relation) has some changes not committed
         const layerId = ApplicationState.online && toolbox.getDependencies().find(id => this.service.getToolBoxById(id).isDirty());
         if (layerId) {
@@ -206,10 +206,10 @@
       },
 
       /**
-       * @param toolboxId
+       * @param id
        */
-      async stopToolBox(toolboxId) {
-        const toolbox = this.service.getToolBoxById(toolboxId);
+      async stopToolBox(id) {
+        const toolbox = this.service.getToolBoxById(id);
 
         try {
           if (toolbox.state.editing.history.commit) {
@@ -252,19 +252,19 @@
       },
 
       /**
-       * @param toolboxId
+       * @param id
        */
-      stopTool(toolboxId) {
-        if (toolboxId) {
-          this.service.getToolBoxById(toolboxId).stopActiveTool();
+      stopTool(id) {
+        if (id) {
+          this.service.getToolBoxById(id).stopActiveTool();
         }
       },
 
       /**
-       * @param toolboxId
+       * @param id
        */
-      async selectToolBox(toolboxId) {
-        const toolbox   = this.service.getToolBoxById(toolboxId); // get toolbox by id
+      async selectToolBox(id) {
+        const toolbox   = this.service.getToolBoxById(id); // get toolbox by id
         const toolboxes = this.service.getToolBoxes();            // get all toolboxes
         const selected  = toolboxes.find(t => t.isSelected());    // check if exist already toolbox selected (first time)
 
@@ -288,14 +288,14 @@
        * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
        * ORIGINAL SOURCE: g3w-client/src/core/editing/session.js@v3.9.1
        * 
-       * @param { string } layerId
+       * @param { string } id
        *
        * @returns { Promise<unknown> }
        * 
        * @since g3w-client-plugin-editing@v3.8.0
        */
-      async commit_dirty(layerId) {
-        const toolbox = this.service.getToolBoxById(layerId);
+      async commit_dirty(id) {
+        const toolbox = this.service.getToolBoxById(id);
 
         // commit changes
         try {
@@ -308,8 +308,8 @@
           try {
             [layerId]
               .concat(toolbox.getDependencies())
-              .forEach(layerId => {
-                const toolbox = this.service.getToolBoxById(layerId);
+              .forEach(id => {
+                const toolbox = this.service.getToolBoxById(id);
                 const editor  = toolbox.getEditor();
                 //set original features get from server without changes
                 editor.getEditingSource().setFeatures((editor.readFeatures() || []).map(f => f.clone()));
@@ -338,7 +338,7 @@
       /**
        * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
        * 
-       * Check if alread have off lines changes
+       * Check if already have off lines changes
        *
        * @param { Object }  opts
        * @param { boolean } [opts.modal=true]
@@ -354,7 +354,7 @@
       } = {}) {
         return new Promise((resolve, reject) => {
           const changes = ApplicationService.getOfflineItem('EDITING_CHANGES');
-          // if find changes offline previously
+          // if you find changes offline previously
           if (!changes) { return }
 
           const promises = [];
@@ -363,7 +363,7 @@
           setTimeout(() => {
             for (const layerId in changes) {
               layerIds.push(layerId);
-              const toolbox = this.service.getToolBoxById(layerId);
+              const toolbox     = this.service.getToolBoxById(layerId);
               const commitItems = changes[layerId];
               promises.push(this.service.commit({ toolbox, commitItems, modal }))
             }
@@ -462,7 +462,7 @@
         this.editinglayers.forEach(({ id }) => {
           const toolbox     = service.getToolBoxById(id);
           const is_commit   = has_layers && toolbox.state.editing.history.commit;
-          const is_selected = (-1 !== layers.indexOf(id));
+          const is_selected = layers.includes(id);
 
           toolbox.setShow(has_layers ? is_selected : true);
 
@@ -483,13 +483,13 @@
 
       this._selectedlayers = []; //store previous selected layers
 
-      this.appState = ApplicationState;
+      this.appState        = ApplicationState;
 
-      // Array of object setter(as key), key to unby (as value)
-      this.unByKeys = this.unByKeys || [];
+      // Array of object setter(as a key), key to unby (as value)
+      this.unByKeys        = this.unByKeys || [];
 
-      // in case of starting panel editing check if there arae some chenging pending
-      // if true it have to commit chanhes on server and ulock all layers features temporary locked
+      // in case of starting panel editing check if there are some chenging pending
+      // if true, it has to commit changes on server and unlock all layers features temporarily locked
       if (ApplicationState.online) {
         this.checkOfflineChanges({ unlock: true });
       }
@@ -512,7 +512,7 @@
 
       // open editing panel state
       this.state.open = false;
-      CatalogLayersStoresRegistry.getLayers({ EDITABLE: true }).forEach(layer => layer.setInEditing(true));
+      CatalogLayersStoresRegistry.getLayers({ EDITABLE: true }).forEach(l => l.setInEditing(true));
 
       GUI.on('opencontent',  this._enableEditingButtons);
       GUI.on('closeform',    this._enableEditingButtons);
@@ -529,7 +529,7 @@
 
       // reset editing panel state
       this.state.open = false;
-      CatalogLayersStoresRegistry.getLayers({ EDITABLE: true }).forEach(layer => layer.setInEditing(false));
+      CatalogLayersStoresRegistry.getLayers({ EDITABLE: true }).forEach(l => l.setInEditing(false));
 
       GUI.off('opencontent',  this._enableEditingButtons);
       GUI.off('closeform',    this._enableEditingButtons);
@@ -540,7 +540,7 @@
 
       this.service.fireEvent('closeeditingpanel');
 
-      // Show feature that are updated or created with editing on result content
+      // Show feature that is updated or created with editing on result content
       const layerIdChanges = Object.keys(this.state.featuresOnClose);
       if (layerIdChanges.length) {
         const inputs = {
@@ -549,10 +549,10 @@
           formatter: 1
         };
         layerIdChanges
-          .forEach(layerId => {
-            const fids = [...this.state.featuresOnClose[layerId]];
-            if (fids.length) {
-              const layer = CatalogLayersStoresRegistry.getLayerById(layerId);
+          .forEach(id => {
+            const fids = [...this.state.featuresOnClose[id]];
+            if (fids.length > 0) {
+              const layer = CatalogLayersStoresRegistry.getLayerById(id);
               inputs.layers.push(layer);
               inputs.fids.push(fids);
             }
@@ -574,7 +574,7 @@
 
       this.state.featuresOnClose = {};
 
-      this.service.getToolBoxes().forEach(toolbox => toolbox.resetDefault());
+      this.service.getToolBoxes().forEach(t => t.resetDefault());
 
       // clear all unique values fields related to layer (after a closing editing panel).
       this.state.uniqueFieldsValues = {};

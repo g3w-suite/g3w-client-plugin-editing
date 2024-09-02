@@ -2,6 +2,7 @@ import { Workflow }                      from '../g3wsdk/workflow/workflow';
 import { getRelationFieldsFromRelation } from '../utils/getRelationFieldsFromRelation';
 import { updateParentWorkflows }         from '../utils/updateParentWorkflows';
 import { getEditingLayerById }           from '../utils/getEditingLayerById';
+import { $promisify }                    from "../utils/promisify";
 
 const { GUI }     = g3wsdk.gui;
 const { tPlugin } = g3wsdk.core.i18n;
@@ -27,7 +28,7 @@ export function unlinkRelation({
   index,
   dialog = true,
 }) {
-  return $.Deferred(d => {
+  return $promisify(new Promise((resolve) => {
     const unlink = () => {
       const id               = layerId === relation.child ? relation.father : relation.child; // relation layer id
       const feature          = getEditingLayerById(id).getEditingSource().getFeatureById(relations[index].id);
@@ -37,12 +38,12 @@ export function unlinkRelation({
       Workflow.Stack.getCurrent().getSession().pushUpdate(id, feature, originalRelation);
       relations.splice(index, 1);
       updateParentWorkflows();
-      d.resolve(true);
+      resolve(true);
     };
     if (dialog) {
       GUI.dialog.confirm(tPlugin("editing.messages.unlink_relation"), result => result ? unlink() : d.reject(false));
     } else {
       unlink();
     }
-  }).promise();
+  }));
 }

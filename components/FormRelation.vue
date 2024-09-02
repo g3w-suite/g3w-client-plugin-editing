@@ -34,8 +34,26 @@
             :placeholder = "placeholdersearch"
           />
         </div>
-
         <div class = "g3w-editing-relations-add-link-tools">
+
+          <!-- EDIT ATTRIBUTES @since 3.9.0 -->
+          <span
+            v-if                      = "relationsLength > 0 && capabilities.includes('change_attr_feature')"
+            v-t-tooltip:bottom.create = "'plugins.editing.tools.update_multi_features_relations'"
+            class                     = "g3w-icon"
+          >
+             <span
+
+               @click.stop               = "editAttributesRelations()"
+               v-disabled                = "relations.every(r => !r.select)"
+             >
+              <img
+                height           = "25"
+                width            = "25"
+                :src             = "`${resourcesurl}images/multiEditAttributes.png`"
+              />
+            </span>
+          </span>
 
           <!-- CHANGE ATTRIBUTE -->
           <span
@@ -51,7 +69,7 @@
           <span
             v-if                      = "capabilities.includes('add_feature')"
             v-t-tooltip:bottom.create = "'plugins.editing.form.relations.tooltips.add_relation'"
-            @click                    = "show_add_link ? addRelationAndLink() : null"
+            @click.stop               = "show_add_link ? addRelationAndLink() : null"
             class                     = "g3w-icon add-link pull-right"
             :class                    = "[{ 'disabled' : !show_add_link }, g3wtemplate.font['plus']]"
           ></span>
@@ -147,6 +165,15 @@
         >
           <thead>
             <tr>
+              <th style="padding: 10px">
+                <input
+                  :id     = "`select_all_relations`"
+                  @change = "updateSelectRelations()"
+                  class   = "magic-checkbox"
+                  :checked = "selectall"
+                  type    = "checkbox">
+                <label :for="`select_all_relations`" style = "margin:0;">&nbsp;</label>
+              </th>
               <th v-t = "'tools'"></th>
               <th></th>
               <th v-for = "attribute in relationAttributesSubset(relations[0])">{{ attribute.label }}</th>
@@ -158,6 +185,13 @@
               :key  = "relation.id"
               class = "featurebox-header"
             >
+              <td style="padding-top: 0">
+                <input
+                  :id     = "`select_relation__${index}`"
+                  v-model = "relation.select"
+                  class   = "magic-checkbox"
+                  type    = "checkbox">
+                  <label :for="`select_relation__${index}`"></label>
               <td>
                 <div style = "display: flex">
                   <!-- RELATION TOOLS -->
@@ -301,7 +335,7 @@
     data() {
       return {
         // relation,        // ← setted by `Vue.extend` - Relation instance: information about relation from parent layer and current relation layer (ex. child, fields, relationid, etc....) main relation between layerId (current in editing)
-        // relations,       // ← setted by `Vue.extend` - array of relations object id and fields linked to current parent feature (that is in editing)
+        // relations,       // ← setted by `Vue.extend` - array of relations object id,fields and select linked to current parent feature (that is in editing)
         // layerId,         // ← setted by `Vue.extend`
         loading :           false,
         show_vector_tools:  false, // whether show vector relation tools
@@ -316,6 +350,7 @@
     },
 
     methods: {
+
 
       /**
        * Adapt table when a window is resized
@@ -353,7 +388,7 @@
        * Add Relation from project layer
        */
       copyFeatureFromOtherLayer() {
-        const copyLayer = this.copyFeatureLayers.find(layer => layer.id === this.copylayerid);
+        const copyLayer = this.copyFeatureLayers.find(l => this.copylayerid === l.id);
         let external    = copyLayer.external;
         let layer       = external ? GUI.getService('map').getLayerById(this.copylayerid) : CatalogLayersStoresRegistry.getLayerById(this.copylayerid);
         const is_vector =  (external || layer.isGeoLayer())
@@ -388,6 +423,42 @@
           isVector: Layer.LayerTypes.VECTOR === this._layerType,
         });
         this.show_vector_tools = false;
+      },
+
+      /**
+       * @since 3.9.0
+       * update select relation attibute
+       */
+      updateSelectRelations() {
+       //need to declare a variable bool, otherwise this.selectall ia a compued attribute that can change during loop
+       const bool = !this.selectall || !this.relations.some(r => r.select);
+       this.relations.forEach(r => r.select = bool);
+      },
+
+      /**
+      * @since 3.9.0
+      * Edit attributes of all relations
+      */
+      async editAttributesRelations() {
+        const workflow = new Workflow({
+          type: 'editmultiattributes',
+          steps: [
+            new OpenFormStep({ multi: true }),
+          ],
+        });
+        const options = this._createWorkflowOptions({
+          features: this.relations
+            .filter(r => r.select)
+            .map(({ id }) => this.getLayer().getEditingSource().getFeatureById(id) )
+        });
+        try {
+          await promisify(workflow.start(options));
+        } catch(e) {
+          console.warn(e);
+        }
+
+        workflow.stop();
+
       },
 
       /**
@@ -447,7 +518,7 @@
 
         $(".dataTables_filter, .dataTables_length").hide();
         // set data table search
-        $('#filterRelation').on('keyup', () => { this.relationsTable.search($(this).val()).draw(); });
+        $('#filterRelation').on('keyup', (e) => this.relationsTable.search(e.target.value).draw())
       },
 
       /**
@@ -509,50 +580,6 @@
             ...new_relations[relationLayer.getId()].new.map(({ clientid, id }) => ({ clientid, id }))
           ]
         }
-      },
-
-      /**
-       * Update external (key-value relations)
-       * 
-       * Changes the relation field value when and if the parent changes the value of relation field
-       * 
-       * @param input
-       */
-      onInputChange(input) {
-
-        //ownFiled is the field of relation feature link to parent feature layer
-        const { ownField, relationField } = getRelationFieldsFromRelation({
-          layerId:  this._relationLayerId,
-          relation: this.relation
-        });
-
-        // get if parent form input that is changing
-        // is the field in relation of the current feature relation Layer
-
-        // skip when ..
-        if (false === (this.parent.editable.length > 0 && relationField.find(rField => rField === input.name))) {
-          return;
-        }
-
-        // change currentParent Feature relation value
-        this.parent.values[input.name] = input.value;
-
-        // loop relation fields of current feature
-        this.relations
-          .map(r => r.fields.find(f => -1 !== ownField.indexOf(f.name)))
-          .filter(Boolean)
-          .forEach(field => {
-            field.value     = this.parent.values[field.name];
-            const relation        = this.getLayer().getEditingSource().getFeatureById(relation.id);
-            const oRelation = relation.clone();
-            relation.set(field.name, input.value);
-            if (!relation.isNew()) {
-              g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing')
-                .getToolBoxById(this._relationLayerId)
-                .getSession()
-                .pushUpdate(this._relationLayerId, relation, oRelation);
-            }
-          });
       },
 
       /**
@@ -1118,6 +1145,13 @@
     },
 
     computed: {
+      /**
+       * @since v3.9.0
+       * @return {Boolen} Tru in case all relations are selected
+      */
+      selectall() {
+        return this.relations.every(r => r.select);
+      },
 
       /**
        * @TODO find out where `this.relations` is setted
@@ -1282,7 +1316,7 @@
       /**
        * layer in relation type
        */ 
-      this._layerType = this.getLayer().getType();
+      this._layerType    = this.getLayer().getType();
 
       const fatherFields = getRelationFieldsFromRelation({ layerId: this.layerId, relation: this.relation }).ownField;
 
@@ -1294,7 +1328,7 @@
       this.parent    = {
         // layerId is id of the parent of relation
         layerId: this.layerId,
-        // get editable fields
+        // get editable fields from parent layer editing fields
         editable: fatherFields.filter(f => parentLayer.isEditingFieldEditable(f)),
         // check if father field is a pk and is not editable
         pk,
@@ -1308,7 +1342,7 @@
           // in case of form fields
           const fields  = Workflow.Stack.getCurrent().getInputs().fields;
           return Object.assign(father, {
-            [field]: (field === pk && feature.isNew()) //check if isPk and parent feature isNew
+            [field]: (pk === field && feature.isNew()) //check if isPk and parent feature isNew
             ? feature.getId()
               //check if fields are set (parent workflow is a form)
               // or for example, for feature property field value
@@ -1336,9 +1370,9 @@
           link(options = {}) {
             return new Workflow({
               ...options,
-              type: 'edittable',
+              type:            'edittable',
               backbuttonlabel: 'plugins.editing.form.buttons.save_and_back_table',
-              steps: [ new OpenTableStep() ],
+              steps:           [ new OpenTableStep() ],
             });
           },
 
@@ -1346,7 +1380,7 @@
           add(options = {}) {
             return new Workflow({
               ...options,
-              type: 'addtablefeature',
+              type:  'addtablefeature',
               steps: [
                 new Step({ help: 'editing.steps.help.new', run: addTableFeature }),
                 new OpenFormStep(),
@@ -1360,13 +1394,13 @@
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/linkrelationworkflow.js@v3.7.1 */
           link(options = {}) {
             return new Workflow({
-              type: 'linkrelation',
+              type:  'linkrelation',
               steps: [
                 new Step({
                   ...options,
                   help: "editing.steps.help.select_feature_to_relation",
                   run(inputs, context) {
-                    return $.Deferred(async d => {
+                    return $promisify(new Promise(async (resolve, reject) => {
                       GUI.setModal(false);
                       const editingLayer        = inputs.layer.getEditingLayer();
                       this._originalLayerStyle  = editingLayer.getStyle();
@@ -1381,17 +1415,14 @@
 
                         if (context.excludeFeatures) {
                           features = features
-                            .filter(feature => Object
-                              .entries(context.excludeFeatures)
-                              .reduce((bool, [field, value]) => bool && feature.get(field) != value, true)
-                            )
+                            .filter(f => Object.entries(context.excludeFeatures).reduce((bool, [field, value]) => bool && value != f.get(field), true))
                         }
                         this._stopPromise = $.Deferred();
 
                         setAndUnsetSelectedFeaturesStyle({
                           promise: this._stopPromise.promise(),
-                          inputs: { layer: inputs.layer, features },
-                          style: this.selectStyle
+                          inputs:  { layer: inputs.layer, features },
+                          style:   this.selectStyle
                         });
 
                         this.addInteraction(
@@ -1399,18 +1430,18 @@
                           'picked': e => {
                             inputs.features.push(e.feature); // push relation
                             GUI.setModal(true);
-                            d.resolve(inputs);
+                            resolve(inputs);
                           }
                         });
                       } catch (e) {
                         console.warn(e);
-                        d.reject(e);
+                        reject(e);
                       }
-                    }).promise();
+                    }))
                   },
                   stop() {
                     GUI.setModal(true);
-                    this._originalLayerStyle    = null;
+                    this._originalLayerStyle = null;
                     if (this._stopPromise) {
                       this._stopPromise.resolve(true);
                     }
@@ -1428,7 +1459,7 @@
               steps: {
                 draw: {
                   description: `editing.steps.help.draw_new_feature`,
-                  done: false,
+                  done:        false,
                 }
               },
               tools: ['snap', 'measure']
@@ -1441,7 +1472,7 @@
 
             return new Workflow({
               ...options,
-              type: 'addfeature',
+              type:  'addfeature',
               steps: [
                 addStep,
                 new OpenFormStep(options),
@@ -1453,22 +1484,22 @@
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/selectandcopyfeaturesfromotherlayerworkflow.js@v3.7.1 */
           selectandcopy(options = {}) {
             return new Workflow({
-              type: 'selectandcopyfeaturesfromotherlayer',
+              type:  'selectandcopyfeaturesfromotherlayer',
               steps: [
                 // pick project layer features
                 new Step({
                   ...options,
-                  help: "editing.steps.help.pick_feature",
+                  help:  "editing.steps.help.pick_feature",
                   steps: {
                     select: {
                       description: `editing.workflow.steps.selectPoint`,
-                      done: false,
+                      done:        false,
                     }
                   },
                   run(inputs, context) {
                     /** @TODO Create a component that ask which project layer would like to query */
                     if (!options.copyLayer) {
-                      return $.Deferred(d => d.resolve()).promise();
+                      return $promisify(Promise.resolve());
                     }
                     return $promisify(async () => {
                       // get features from copyLayer
@@ -1489,10 +1520,10 @@
                                         ? e.features                             // external layer
                                         : ((await DataRouterService.getData('query:coordinates', { // TOC/PROJECT layer
                                           inputs: {
-                                            coordinates: e.coordinate,
+                                            coordinates:           e.coordinate,
                                             query_point_tolerance: ProjectsRegistry.getCurrentProject().getQueryPointTolerance(),
-                                            layerIds: [options.copyLayer.getId()],
-                                            multilayers: false
+                                            layerIds:              [ options.copyLayer.getId() ],
+                                            multilayers:           false
                                           },
                                           outputs: null
                                         })).data[0] || { features: [] }).features,
@@ -1532,9 +1563,9 @@
                       }
 
                       GUI.showUserMessage({
-                        type: 'warning',
-                        message: 'plugins.editing.messages.no_feature_selected',
-                        closable: false,
+                        type:      'warning',
+                        message:   'plugins.editing.messages.no_feature_selected',
+                        closable:  false,
                         autoclose: true
                       });
 
@@ -1557,15 +1588,7 @@
       })[this._layerType];
 
       // add tools for each relation
-      this.relations.forEach((r) => this.addTools(r.id) );
-
-      try {
-        const formservice = g3wsdk.gui.GUI.getCurrentContent().content.getService();
-        formservice.getEventBus().$on('changeinput', this.onInputChange.bind(this))
-      } catch (e) {
-        console.warn(e);
-      }
-
+      this.relations.forEach(r => this.addTools(r.id) );
     },
 
     async activated() {
@@ -1604,12 +1627,16 @@
         this._createDataTable();
       }
 
+
       this.resize();
     },
 
     deactivated() {
       this.destroyTable();
       this.active = false;
+      //need to unselect relaion when click on back control form
+      this.relations.forEach(r => r.select = false);
+
     },
 
     beforeDestroy() {

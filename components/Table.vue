@@ -190,7 +190,7 @@
 
       async resize() {
         // skip when an element is hidden
-        if (this.$el.style.display === 'none') {
+        if ('none' === this.$el.style.display) {
           return;
         }
 
@@ -217,12 +217,12 @@
       },
 
       showValue(key) {
-        return !!this.state.headers.find(h => h.name === key);
+        return !!this.state.headers.find(h => key === h.name);
       },
 
       isMediaField(name) {
         let isMedia = false;
-        for (let i=0; i < this.state.headers.length; i++) {
+        for (let i = 0; i < this.state.headers.length; i++) {
           const header = this.state.headers[i];
           if (name === header.name && 'media' === header.input.type) {
             isMedia = true;
@@ -275,7 +275,7 @@
     
         try {
           await (
-            new Promise((resolve, reject) =>{
+            new Promise((resolve, reject) => {
               GUI.dialog.confirm(
                 `<h4>${tPlugin('editing.messages.delete_feature')}</h4>
                 <div style="font-size:1.2em;">${ relationinediting ? tPlugin('editing.messages.delete_feature_relations') : ''}</div>`,
@@ -346,9 +346,9 @@
                 });
                 newFeature.__gis3w_feature_uid = feature.getUid();
                 this.state.rows.push(newFeature);
-                resolve(newFeature)
+                resolve(newFeature);
               })
-              .fail(reject)
+              .fail(e => { console.warn(e); reject(e); })
               .always(() => {
                 this.state.workflow.stop();
                 /** @TODO check input.features that grow in number */

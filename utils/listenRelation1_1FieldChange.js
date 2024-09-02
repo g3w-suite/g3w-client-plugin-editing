@@ -27,20 +27,20 @@ export async function listenRelation1_1FieldChange({
     .getLayerById(layerId)
     .getRelations()
     .getArray()
-    .filter(relation => 'ONE' === relation.getType())
+    .filter(r => 'ONE' === r.getType())
 
-  // get all relation 1:1 of current layer
+  // get all relations 1:1 of current layer
   for (const relation of ONE) {
 
-    const childLayerId = relation.getChild();                             // get relation child layer id
-    const fatherField  = relation.getFatherField();
-    const relationLockFeatures = {} //store value
+    const childLayerId         = relation.getChild(); // get relation child layer id
+    const fatherField          = relation.getFatherField();
+    const relationLockFeatures = {}; //store value
 
     // NB:
     // need to check if editable when opening form task
     // Not set this condition because maybe i ca be used this method
-    // on move task or other when current fatherFormRelationField, related to 1:1 relation
-    // it can be changed by default expression or in other way not only with form
+    // on a move task or other when current fatherFormRelationField, related to 1:1 relation
+    // it can be changed by default expression or in another way not only with form
     const fatherFormRelationField = fields.find(f => fatherField.includes(f.name)); // get father layer field (for each relation)
     // skip when not relation field and not layer child is in editing
     if (!(fatherFormRelationField && service.getLayerById(childLayerId))) {
@@ -75,8 +75,7 @@ export async function listenRelation1_1FieldChange({
         .forEach(fn => fields.find(f => fn === f.name).editable = false);
     }
 
-    //if not feature is on source child layer it means it locked or not exist on server
-    //need to check
+    //if not feature is on source child layer, it means it locked or not exist on a server need to check
 
     // listen for relation field changes (vue watcher)
     unwatches.push(
@@ -95,7 +94,7 @@ export async function listenRelation1_1FieldChange({
           fatherFormRelationField.input.options.loading.state = 'loading'; // show input bar loader
 
           if (undefined === relationLockFeatures[fatherFormRelationField.value]) {
-            //get feature from child layer source
+            //get feature from a child layer source
             try {
 
               relationLockFeatures[fatherFormRelationField.value] = await getRelation1_1ChildFeature({
@@ -108,7 +107,7 @@ export async function listenRelation1_1FieldChange({
             }
           }
 
-          const {feature, locked} = relationLockFeatures[fatherFormRelationField.value];
+          const { feature, locked } = relationLockFeatures[fatherFormRelationField.value];
 
           Object.keys(editableRelatedFatherChild)
             .forEach(fn => {

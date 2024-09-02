@@ -92,7 +92,7 @@ new (class extends Plugin {
       },
       editableLayers:      {},
       events:              {
-        'start-editing': {},
+        'start-editing':         {},
         'show-relation-editing': {},
         layer: {
           start_editing: {
@@ -229,14 +229,14 @@ new (class extends Plugin {
             this.state.events[type][id] = this.state.events[type][id] || [];
 
             this.state.events[type][id].push(async () => {
-              const options = field.input.options;
+              const options         = field.input.options;
   
               // remove all values
               options.loading.state = 'loading';
-              options.values = [];
+              options.values        = [];
   
               const relationLayer = options.layer_id && CatalogLayersStoresRegistry.getLayerById(options.layer_id);
-              const has_filter    = ([undefined, null].indexOf(options.filter_fields || []) > -1 || 0 === (options.filter_fields || []).length);
+              const has_filter    = ([undefined, null].includes(options.filter_fields || []) || 0 === (options.filter_fields || []).length);
   
               try {
   
@@ -741,27 +741,27 @@ new (class extends Plugin {
   /**
    * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
    * 
-   * @param { string } layerId
+   * @param { string } id
    *
    * @returns {*}
    * 
    * @since g3w-client-plugin-editing@v3.8.0
    */
-  getLayerById(layerId) {
-    return this.state.editableLayers[layerId];
+  getLayerById(id) {
+    return this.state.editableLayers[id];
   }
 
   /**
    * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
    * 
-   * @param { string } toolboxId
+   * @param { string } id
    *
    * @returns {*}
    * 
    * @since g3w-client-plugin-editing@v3.8.0
    */
-  getToolBoxById(toolboxId) {
-    return this.state._toolboxes.find(tb => toolboxId === tb.getId());
+  getToolBoxById(id) {
+    return this.state._toolboxes.find(tb => id === tb.getId());
   }
 
   /**
@@ -798,11 +798,9 @@ new (class extends Plugin {
     const { toolboxes, showToolboxesExcluded } = constraints;
     const toolboxIds = Object.keys(toolboxes);
     if (false === showToolboxesExcluded) {
-      this.state.toolboxes.forEach(toolbox => toolbox.show = -1 !== toolboxIds.indexOf(toolbox.id));
+      this.state.toolboxes.forEach(t => t.show = toolboxIds.includes(t.id));
     }
-    toolboxIds.forEach(toolboxId => this
-      .getToolBoxById(toolboxId)
-      .setEditingConstraints(toolboxes[toolboxId]))
+    toolboxIds.forEach(id => this.getToolBoxById(id).setEditingConstraints(toolboxes[id]))
   }
 
   /**
@@ -837,15 +835,9 @@ new (class extends Plugin {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   async stop() {
-    const commitpromises = [];
-    this.state._toolboxes
-      .forEach(toolbox => {
-        // check if temp changes are waiting to save on server
-        if (toolbox.getSession().getHistory().state.commit) {
-          // ask to commit before exit
-          commitpromises.push(this.commit({ toolbox, modal : true }));
-        }
-      });
+    const commitpromises = this.state._toolboxes
+      .filter(t => t.getSession().getHistory().state.commit) // check if temp changes are waiting to save on server
+      .map( toolbox => this.commit({ toolbox, modal : true }))
     try {
       await promisify($.when.apply(this, commitpromises));    
     } catch (e) {
@@ -929,20 +921,20 @@ new (class extends Plugin {
               // confirm step
               new Step({
                 run(inputs) {
-                  return $.Deferred(d => {
+                  return $promisify(new Promise((resolve, reject) => {
                     const dialog = GUI.dialog.dialog({
                       message: inputs.message,
                       title:   `${tPlugin("editing.messages.commit_feature")}: "${inputs.layer.getName()}"`,
                       buttons: {
-                        SAVE:   { className: "btn-success", callback() { d.resolve(inputs); }, label: t("save"),   },
-                        CANCEL: { className: "btn-danger",  callback() { d.reject({cancel : true });        }, label: t(inputs.close ? "exitnosave" : "annul") },
+                        SAVE:   { className: "btn-success", callback() { resolve(inputs); }, label: t("save"),   },
+                        CANCEL: { className: "btn-danger",  callback() { reject({cancel : true });        }, label: t(inputs.close ? "exitnosave" : "annul") },
                         ...(inputs.close ? { CLOSEMODAL : { className: "btn-primary", callback() { dialog.modal('hide'); }, label:  t("annul") }} : {}),
                       }
                     });
                     if (inputs.features) {
-                      setAndUnsetSelectedFeaturesStyle({ promise: d.promise(), inputs, style: this.selectStyle });
+                      setAndUnsetSelectedFeaturesStyle({ promise: promise(), inputs, style: this.selectStyle });
                     }
-                  }).promise();
+                  }))
                 },
               }
               ),
@@ -1066,7 +1058,7 @@ new (class extends Plugin {
             type:     'success',
             message:   messages.success.message || "plugins.editing.messages.saved",
             duration:  2000,
-            autoclose: undefined !== messages.success.autoclose ? messages.success.autoclose : true,
+            autoclose: undefined === messages.success.autoclose ? true : messages.success.autoclose,
           });
         }
 
@@ -1093,7 +1085,7 @@ new (class extends Plugin {
         // @since 3.7.2 - click on save all disk icon (editing form relation)
         if (result) { this.emit('commit', response.response) }
 
-        // the result is false. It was done a commit, but a error occurs
+        // the result is false. It was done a commit, but an error occurs
         if (online2 && !result) {
           serverError = true;
           throw response;
@@ -1196,7 +1188,7 @@ new (class extends Plugin {
   }) {
     Object
       .entries(relationSessionItems)
-      .forEach(([layerId, {own:sessionItems, dependencies:relationSessionItems}]) => {
+      .forEach(([layerId, { own: sessionItems, dependencies: relationSessionItems }]) => {
 
         this.undoRedoLayerUniqueFieldValues({
           layerId,
@@ -1306,7 +1298,7 @@ new (class extends Plugin {
       session.start({
         filter: {
           nofeatures:       true,                    // no feature
-          nofeatures_field: attributes[0].name // get first field in editing form
+          nofeatures_field: attributes[0].name // get the first field in editing form
         },
         editing: true,
       })
@@ -1404,7 +1396,7 @@ new (class extends Plugin {
    */
   showPanel(options = {}) {
     if (options.toolboxes && Array.isArray(options.toolboxes)) {
-      this.getToolBoxes().forEach(tb => tb.setShow(-1 !== options.toolboxes.indexOf(tb.getId())));
+      this.getToolBoxes().forEach(tb => tb.setShow(options.toolboxes.includes(tb.getId())));
     }
     this.showEditingPanel(options);
   }

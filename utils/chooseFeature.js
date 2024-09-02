@@ -16,8 +16,9 @@ export function chooseFeature(inputs) {
         const feature = await chooseFeatureFromFeatures({ features: inputs.features, inputs });
         inputs.features = [feature];
       }
-      return inputs
+      return inputs;
     } catch (e) {
+      console.warn(e);
       return Promise.reject(e);
     }
   });
