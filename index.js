@@ -1286,7 +1286,7 @@ new (class extends Plugin {
     if (undefined === feature || undefined === layerId) {
       return Promise.reject();
     }
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       const layer = this.getLayerById(layerId);
       // get session
       const session = this.getSessionById(layerId);
@@ -1306,15 +1306,15 @@ new (class extends Plugin {
       /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/easyaddfeatureworkflow.js@v3.7.1 */
       // create workflow
       const workflow = new Workflow({
-      type: 'addfeature',
-      steps: [
-        new OpenFormStep({
-          push:       true,
-          showgoback: false,
-          saveAll:    false,
-        })
-      ],
-    });
+        type: 'addfeature',
+        steps: [
+          new OpenFormStep({
+            push:       true,
+            showgoback: false,
+            saveAll:    false,
+          })
+        ],
+      });
 
       const stop = cb => {
         workflow.stop();
@@ -1330,29 +1330,34 @@ new (class extends Plugin {
           }
         })
 
-        //set feature as g3w feature
-        feature = new Feature({ feature, properties: attributes.map(a => a.name) });
-        //set new
-        feature.setTemporaryId();
+        try {
+          //set feature as g3w feature
+          feature = new Feature({ feature, properties: attributes.map(a => a.name) });
+          //set new
+          feature.setTemporaryId();
 
-        // add to session and source as new feature
-        session.pushAdd(layerId, feature, false);
-        layer.getEditingLayer().getSource().addFeature(feature);
+          // add to session and source as new feature
+          session.pushAdd(layerId, feature, false);
+          layer.getEditingLayer().getSource().addFeature(feature);
+          //start workflow
+          await promisify(workflow.start({
+            inputs:  { layer, features: [feature] },
+            context: { session },
+          }));
 
-        //start workflow
-        workflow.start({
-          inputs:  { layer, features: [feature] },
-          context: { session },
-        })
-        .then(() => {
           session.save();
-          this
-            .commit({ modal: false, toolbox: this.getToolBoxById(layerId) })
-            .then(() => stop(resolve))
-            .fail(() => stop(reject))
-        })
-        .fail(() => stop(reject));
 
+          try {
+            await promisify(this.commit({ modal: false, toolbox: this.getToolBoxById(layerId) }));
+            stop(resolve);
+          } catch(e) {
+            console.warn(e);
+            stop(reject)
+          }
+        } catch(e) {
+          console.warn(e);
+          stop(reject);
+        }
       } catch(e) {
         console.warn(e);
         reject();
