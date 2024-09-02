@@ -137,16 +137,14 @@
        * @returns edited feature
        */
       getEditingFeature(item) {
-        const id = this.getId(item);
-        return this.efeatures.find(f => id === f.getId());
+        return this.efeatures.find(f => this.getId(item) === f.getId());
       },
 
       /**
        * @returns original feature
        */
       getFeature(item) {
-        const id = this.getId(item);
-        return this.features.find(f => id === f.getId());
+        return this.features.find(f => this.getId(item) === f.getId());
       },
 
       /**

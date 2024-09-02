@@ -147,6 +147,7 @@
                     class   = "magic-checkbox snap_tools_of_tools"
                     :id     = "`snap_${state.id}`"
                     v-model = "tool.options.checked"
+                    @change = "snapAll && tool.options.checked ? tool.options.checkedAll = false : null "
                   />
                   <label :for = "`snap_${state.id}`" v-t-tooltip:right.create= " 'plugins.editing.toolsoftool.snap'">
                     <span :class = "g3wtemplate.font['magnete']"></span>
@@ -159,6 +160,7 @@
                     class   = "magic-checkbox snap_tools_of_tools"
                     :id     = "`snap_all_${state.id}`"
                     v-model = "tool.options.checkedAll"
+                    @change = "tool.options.checkedAll ? tool.options.checked = false : null"
                   />
                   <label
                     v-if                    = "snapAll"
@@ -259,7 +261,7 @@
        * @returns { boolean }
        */
       father() {
-        return this.state.editing.father && !!this.state.editing.dependencies.length;
+        return this.state.editing.father && this.hasRelations;
       },
 
       /**
@@ -301,7 +303,7 @@
       fitZoomToScale(e) {
         if (this.state.selected && !this.canEdit) {
           const map = GUI.getService('map')
-          map.goToRes(map.getCenter(), getResolutionFromScale(this.state._constraints.scale, GUI.getService('map').getMapUnits()));
+          map.goToRes(map.getCenter(), getResolutionFromScale(this.state._constraints.scale, map.getMapUnits()));
         }
       },
 
@@ -350,7 +352,7 @@
        * @since g3w-client-plugin-editing@v3.8.0
        */
       _initSnap() {
-        const tool = (this.state.toolsoftool || []).find(tool => 'snap' === tool.type);
+        const tool = (this.state.toolsoftool || []).find(t => 'snap' === t.type);
 
         if (!tool) {
           return;
@@ -376,7 +378,7 @@
          */
         this.snapUnwatches = [];
 
-        this.$watch(() => tool.options.checked, () => this.activeSnapInteraction());
+        this.$watch(() => tool.options.checked,    () => this.activeSnapInteraction());
         this.$watch(() => tool.options.checkedAll, () => this.activeSnapInteraction());
         // Toggle snap interaction
         this.$watch(() => tool.options.active, () => {
@@ -389,9 +391,9 @@
 
         g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing')
           .getLayers()
-          .filter(layer => Layer.LayerTypes.VECTOR === layer.getType()) // skip raster, alphanumerical..
-          .forEach(layer => {
-            const toolbox = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').getToolBoxById(layer.getId());
+          .filter(l => Layer.LayerTypes.VECTOR === l.getType()) // skip raster, alphanumerical..
+          .forEach(l => {
+            const toolbox = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').getToolBoxById(l.getId());
             const source  = toolbox.getLayer().getEditingSource();
 
             this.snapFeatures.extend(source.readFeatures());
@@ -406,8 +408,8 @@
               },
             });
 
-            // SNAP TO ALL: check if current editing layer is not equal to `layerId`
-            if (tool.options.layerId !== layer.getId()) {
+            // SNAP TO ALL: check if the current editing layer is not equal to `layerId`
+            if (tool.options.layerId !== l.getId()) {
               const editing = toolbox.getState().editing;
               this.snapUnwatches.push(this.$watch(() => editing.on, this.setShowSnapAll));
               this.snapToolboxes.push(editing);
@@ -463,7 +465,7 @@
        * @since g3w-client-plugin-editing@v3.8.0
        */
       setShowSnapAll() {
-        const tool = (this.state.toolsoftool || []).find(tool => 'snap' === tool.type);
+        const tool = (this.state.toolsoftool || []).find(t => 'snap' === t.type);
         if (tool) {
           this.snapAll            = !!this.snapToolboxes.find(editing => editing.on);
           tool.options.checkedAll = tool.options.showSnapAll ? tool.options.checkedAll : false;
@@ -477,7 +479,7 @@
        */
       activeSnapInteraction() {
         const map  = GUI.getService('map');
-        const tool = (this.state.toolsoftool || []).find(tool => 'snap' === tool.type);
+        const tool = (this.state.toolsoftool || []).find(t => 'snap' === t.type);
 
         if (snapInteraction) {
           map.removeInteraction(snapInteraction);
@@ -488,8 +490,8 @@
         // snap = true
         if ((tool.options.checked || tool.options.checkedAll) && tool.options.active) {
           snapInteraction = new ol.interaction.Snap({
-            source:   !tool.options.checkedAll && tool.options.checked && tool.options.source, // SNAP TO LAYER: get options source as props pass from toolbox
-            features: tool.options.checkedAll  && this.snapFeatures                        // SNAP TO ALL:   get features
+            source:   !tool.options.checkedAll && tool.options.checked && tool.options.source, // SNAP TO LAYER: get option source as props pass from toolbox
+            features: tool.options.checkedAll  && this.snapFeatures                        // SNAP TO ALL: get features
           });
           map.addInteraction(snapInteraction);
         }

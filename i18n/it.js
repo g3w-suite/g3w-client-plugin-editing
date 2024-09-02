@@ -1,6 +1,6 @@
 export default {
   close_editing_panel: {
-    message: "Per terminare clicca su ogni segno di spunta"
+    message: "Terminare l'editing dei singoli layer per chiudere la sessione"
   },
   errors: {
     no_layers: "Si è verificato un errore nel caricamento dei layers in editing.",
@@ -43,6 +43,7 @@ export default {
     update_vertex: "Aggiorna vertici elemento",
     update_feature: "Modifica attributi elemento",
     update_multi_features: "Modifica gli attributi degli elementi selezionati",
+    update_multi_features_relations: "Modifica gli attributi di tutte le relazioni selezionate",
     copyfeaturefromexternallayer: "Crea elemento da un livello esterno"
   },
   toolsoftool: {

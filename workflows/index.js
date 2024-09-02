@@ -12,7 +12,7 @@ import { setLayerUniqueFieldValues }                    from '../utils/setLayerU
 import { getRelationsInEditingByFeature }               from '../utils/getRelationsInEditingByFeature';
 import { getFeatureTableFieldValue }                    from '../utils/getFeatureTableFieldValue';
 import { addRemoveToMultipleSelectFeatures }            from '../utils/addRemoveToMultipleSelectFeatures';
-import { promisify }                                    from '../utils/promisify';
+import { promisify, $promisify }                        from '../utils/promisify';
 import { PickFeaturesInteraction }                      from '../interactions/pickfeaturesinteraction';
 
 import { Workflow }                                     from '../g3wsdk/workflow/workflow';
@@ -76,58 +76,59 @@ export class AddFeatureStep extends Step {
     //create promise to listen to pass to setAndUnsetSelectedFeaturesStyle
     this._stopPromise = $.Deferred();
 
-    const d       = $.Deferred();
-    const layerId = inputs.layer.getId();
+    return $promisify(new Promise((resolve, reject) => {
 
-    // Skin when a layer type is vector
-    if (Layer.LayerTypes.VECTOR !== inputs.layer.getType()) { return d.promise() }
+      const layerId = inputs.layer.getId();
 
-    /** @since g3w-client-plugin-editing@v3.8.0 */
-    setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise, inputs, style: this.selectStyle });
+      // Skin when a layer type is vector
+      if (Layer.LayerTypes.VECTOR !== inputs.layer.getType()) { return d.promise() }
 
-    const originalGeometryType = inputs.layer.getEditingGeometryType();
+      /** @since g3w-client-plugin-editing@v3.8.0 */
+      setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise, inputs, style: this.selectStyle });
 
-    this.geometryType = Geometry.getOLGeometry(originalGeometryType);
+      const originalGeometryType = inputs.layer.getEditingGeometryType();
 
-    const source     = inputs.layer.getEditingLayer().getSource();
-    const attributes = inputs.layer.getEditingFields();
+      this.geometryType = Geometry.getOLGeometry(originalGeometryType);
 
-    this.drawInteraction = this.addInteraction(
-      new ol.interaction.Draw({
-        type:              this.geometryType,
-        source:            new ol.source.Vector(),
-        condition:         this._options.condition || (() => true),
-        freehandCondition: ol.events.condition.never,
-        finishCondition:   this._options.finishCondition || (() => true),
-      }), {
-      'drawstart': ({ feature }) => {
-        this.drawingFeature = feature;
-        document.addEventListener('keydown', this._delKeyRemoveLastPoint);
-      },
-      'drawend': e => {
-        let feature;
-        if (this._add) {
-          attributes.forEach(attr => e.feature.set(attr.name, null));
-          feature = new Feature({ feature: e.feature, });
-          feature.setTemporaryId();
-          source.addFeature(feature);
-          context.session.pushAdd(layerId, feature, false);
-        } else {
-          feature = e.feature;
-        }
-        // set Z values based on layer Geometry
-        feature = Geometry.addZValueToOLFeatureGeometry({ feature, geometryType: originalGeometryType });
-  
-        inputs.features.push(feature);
-        this.getContext().get_default_value = true;
-        this.fireEvent('addfeature', feature); // emit event to get from subscribers
-        d.resolve(inputs);
-      },
-    });
+      const source     = inputs.layer.getEditingLayer().getSource();
+      const attributes = inputs.layer.getEditingFields();
 
-    this.drawInteraction.setActive(true);
+      this.drawInteraction = this.addInteraction(
+        new ol.interaction.Draw({
+          type:              this.geometryType,
+          source:            new ol.source.Vector(),
+          condition:         this._options.condition || (() => true),
+          freehandCondition: ol.events.condition.never,
+          finishCondition:   this._options.finishCondition || (() => true),
+        }), {
+          'drawstart': ({ feature }) => {
+            this.drawingFeature = feature;
+            document.addEventListener('keydown', this._delKeyRemoveLastPoint);
+          },
+          'drawend': e => {
+            let feature;
+            if (this._add) {
+              attributes.forEach(attr => e.feature.set(attr.name, null));
+              feature = new Feature({ feature: e.feature, });
+              feature.setTemporaryId();
+              source.addFeature(feature);
+              context.session.pushAdd(layerId, feature, false);
+            } else {
+              feature = e.feature;
+            }
+            // set Z values based on layer Geometry
+            feature = Geometry.addZValueToOLFeatureGeometry({ feature, geometryType: originalGeometryType });
 
-    return d.promise();
+            inputs.features.push(feature);
+            this.getContext().get_default_value = true;
+            this.fireEvent('addfeature', feature); // emit event to get from subscribers
+            resolve(inputs);
+          },
+        });
+
+      this.drawInteraction.setActive(true);
+    }))
+
   }
 
   /**
@@ -163,7 +164,7 @@ export class AddFeatureStep extends Step {
   }
 
   /**
-   * Remove last point/vertex draw
+   * Removed last point/vertex draw
    */
   removeLastPoint() {
     try {
@@ -208,42 +209,42 @@ export class ModifyGeometryVertexStep extends Step {
 
   run(inputs, context) {
     let newFeature, originalFeature;
-    const d             = $.Deferred();
-    const layerId       = inputs.layer.getId();
-    const feature       = this._feature = inputs.features[0];
-    this._originalStyle = inputs.layer.getEditingLayer().getStyle();
-    feature.setStyle(() => [
-      new ol.style.Style({
-        image:    new ol.style.Circle({ radius: 5, fill: null, stroke: new ol.style.Stroke({color: 'orange', width: 2}) }),
-        geometry: feature => new ol.geom.MultiPoint(
-          ( // in the case of multipolygon geometry
-            Geometry.isPolygonGeometryType(inputs.layer.getGeometryType()) &&
-            Geometry.isMultiGeometry(inputs.layer.getGeometryType())
-          ) ? feature.getGeometry().getCoordinates()[0][0] : feature.getGeometry().getCoordinates()[0]
-        )
-      }),
-      new ol.style.Style({ stroke: new ol.style.Stroke({ color: 'yellow', width: 4 }) })
-    ]);
-    this._modifyInteraction = this.addInteraction(
-      new ol.interaction.Modify({
-        features:        new ol.Collection(inputs.features),
-        deleteCondition: this._options.deleteCondition
-      }), {
-        'modifystart': e => { originalFeature = e.features.getArray()[0].clone(); },
-        'modifyend':   e => {
-          const feature = e.features.getArray()[0];
-          if (feature.getGeometry().getExtent() !== originalFeature.getGeometry().getExtent()) {
-            evaluateExpressionFields({ inputs, context, feature }).finally(() => {
-              newFeature = feature.clone();
-              context.session.pushUpdate(layerId, newFeature, originalFeature);
-              inputs.features.push(newFeature);
-              d.resolve(inputs);
-            });
+    return $promisify(new Promise((resolve, reject) => {
+      const layerId       = inputs.layer.getId();
+      const feature       = this._feature = inputs.features[0];
+      this._originalStyle = inputs.layer.getEditingLayer().getStyle();
+      feature.setStyle(() => [
+        new ol.style.Style({
+          image:    new ol.style.Circle({ radius: 5, fill: null, stroke: new ol.style.Stroke({color: 'orange', width: 2}) }),
+          geometry: feature => new ol.geom.MultiPoint(
+            ( // in the case of multipolygon geometry
+              Geometry.isPolygonGeometryType(inputs.layer.getGeometryType())
+              && Geometry.isMultiGeometry(inputs.layer.getGeometryType())
+            ) ? feature.getGeometry().getCoordinates()[0][0] : feature.getGeometry().getCoordinates()[0]
+          )
+        }),
+        new ol.style.Style({ stroke: new ol.style.Stroke({ color: 'yellow', width: 4 }) })
+      ]);
+      this._modifyInteraction = this.addInteraction(
+        new ol.interaction.Modify({
+          features:        new ol.Collection(inputs.features),
+          deleteCondition: this._options.deleteCondition
+        }), {
+          'modifystart': e => { originalFeature = e.features.getArray()[0].clone(); },
+          'modifyend':   e => {
+            const feature = e.features.getArray()[0];
+            if (feature.getGeometry().getExtent() !== originalFeature.getGeometry().getExtent()) {
+              evaluateExpressionFields({ inputs, context, feature }).finally(() => {
+                newFeature = feature.clone();
+                context.session.pushUpdate(layerId, newFeature, originalFeature);
+                inputs.features.push(newFeature);
+                resolve(inputs);
+              });
+            }
           }
         }
-      }
-    );
-    return d.promise();
+      );
+    }))
   }
 
   addMeasureInteraction() {
@@ -285,7 +286,7 @@ export class MoveFeatureStep extends Step {
      * this.promise.resolve(), it fires also thenable method listens to resolve promise of a run task,
      * that call stop task method.*/
     this.promise         = $.Deferred();
-    return $.Deferred(d => {
+    return $promisify(new Promise((resolve) => {
       const layerId        = inputs.layer.getId();
       let originalFeature  = null;
       this.changeKey       = null;
@@ -310,15 +311,15 @@ export class MoveFeatureStep extends Step {
             // evaluated geometry expression
             evaluateExpressionFields({ inputs, context, feature }).finally(() => {
               context.session.pushUpdate(layerId, feature.clone(), originalFeature);
-              d.resolve(inputs);
+              resolve(inputs);
             });
           } else {
-            d.resolve(inputs);
+            resolve(inputs);
           }
         },
       });
 
-    }).promise();
+    }))
   }
 
   stop() {
@@ -410,7 +411,7 @@ export class OpenFormStep extends Step {
 
       setAndUnsetSelectedFeaturesStyle({ promise: d, inputs, style: this.selectStyle });
 
-      if (!this._multi && Array.isArray(inputs.features[inputs.features.length -1])) {
+      if (!this._multi && Array.isArray(inputs.features[inputs.features.length - 1])) {
         d.resolve();
         return;
       }
@@ -675,7 +676,7 @@ export class OpenFormStep extends Step {
             title:     "plugins.editing.edit_relation",
             name:      relation.name,
             id:        relation.id,
-            header:    false,            // hide header form
+            header:    false,            // hide a header form
             component: Vue.extend({
               mixins: [ require('../components/FormRelation.vue') ],
               name: `relation_${Date.now()}`,
@@ -905,15 +906,14 @@ export class SelectElementsStep extends Step {
     const type       = this._options.type || 'bbox'; // 'single' 'bbox' 'multiple';
     const buttonnext = 'multiple' === type && !!this._steps.select.buttonnext;
 
-    return $.Deferred(d => {
-      const promise = d;
+    return $promisify(new Promise((resolve, reject) => {
 
       if (buttonnext) {
         //check if it has already done handler function;
         const { done } = this._steps.select.buttonnext;
         this._steps.select.buttonnext.done = () => {
           if (done && done instanceof Function) { done() }
-          promise.resolve(inputs);
+          resolve(inputs);
         }
       }
 
@@ -940,7 +940,7 @@ export class SelectElementsStep extends Step {
 
               if (this._steps) { this.setUserMessageStepDone('select') }
 
-              promise.resolve(inputs);
+              resolve(inputs);
             }
           }
         });
@@ -962,8 +962,8 @@ export class SelectElementsStep extends Step {
               inputs.features     = features;
               this._originalStyle = setFeaturesSelectedStyle(features);
               if (this._steps) { this.setUserMessageStepDone('select') }
-              setTimeout(() => promise.resolve(inputs), 500);
-            } else { promise.reject() }
+              setTimeout(() => resolve(inputs), 500);
+            } else { reject() }
           }
         });
       }
@@ -987,9 +987,9 @@ export class SelectElementsStep extends Step {
 
               if (this._steps) { this.setUserMessageStepDone('select') }
 
-              promise.resolve(inputs);
+              resolve(inputs);
             } else {
-              promise.reject();
+              reject();
             }
           }
         });
@@ -1003,7 +1003,7 @@ export class SelectElementsStep extends Step {
         const { session }      = this.getContext();
         interactions.external  = new PickFeaturesInteraction({
           layers: GUI.getService('map').getExternalLayers()
-            // filter external layer only vector - Exclude WMS
+            // filter external layer only vector - Exclude the
             // same base geometry
             .filter(l => {
               const features = 'VECTOR' == l.getType() && l.getSource().getFeatures();
@@ -1015,7 +1015,7 @@ export class SelectElementsStep extends Step {
         });
         interactions.external.on('picked', e => {
           if (!(e.features.length > 0)) {
-            promise.reject();
+            reject();
             return;
           }
           const attributes = layer.getEditingFields();
@@ -1041,14 +1041,14 @@ export class SelectElementsStep extends Step {
             source.addFeature(feature);
             session.pushAdd(layerId, feature, false);
             inputs.features.push(feature);
-            promise.resolve(inputs);
+            resolve(inputs);
           });
         });
       }
 
       Object.values(interactions).forEach(i => this.addInteraction(i));
       this._selectInteractions.push(...Object.values(interactions));
-    }).promise();
+    }));
   }
 
   stop() {

@@ -8,8 +8,8 @@
  * @since g3w-client-plugin-editing@v3.8.x
  */
 
-import { Step }         from './step';
-import { promisify }    from '../../utils/promisify';
+import { Step }                  from './step';
+import { promisify, $promisify } from '../../utils/promisify';
 
 const { GUI }                 = g3wsdk.gui;
 const { G3WObject }           = g3wsdk.core;
@@ -343,8 +343,8 @@ export class Workflow extends G3WObject {
    * @fires start
    */
   start(options = {}) {
-    return $.Deferred(async d => {
-      this._promise = d;
+    return $promisify( new Promise(async (resolve, reject) => {
+      this._promise = { resolve, reject };
       this._inputs  = options.inputs;
       this._context = options.context || {};
   
@@ -391,22 +391,22 @@ export class Workflow extends G3WObject {
         //start flow of workflow
         const outputs = await this.runStep(this.getSteps()[this._stepIndex], this.getInputs());
         if (showUserMessage) {
-          setTimeout(() => { this.clearUserMessagesSteps(); d.resolve(outputs); }, 500);
+          setTimeout(() => { this.clearUserMessagesSteps(); resolve(outputs); }, 500);
         } else {
-          d.resolve(outputs);
+          resolve(outputs);
         }
       } catch (e) {
         console.warn(e);
         if (showUserMessage) {
           this.clearUserMessagesSteps();
         }
-        d.reject(e);
+        reject(e);
       }
 
       if (this.runOnce) {
         this.stop();
       }
-    }).promise();
+    }));
   }
 
   /**
@@ -415,7 +415,7 @@ export class Workflow extends G3WObject {
    * @fires stop
    */
   stop() {
-    return $.Deferred(async d => {
+    return $promisify(new Promise(async (resolve, reject) => {
       this._promise = null;
 
       try {
@@ -423,7 +423,7 @@ export class Workflow extends G3WObject {
         if (this._child) {
           await promisify(this._child.stop());  
         }
-      } catch (e) {
+      } catch(e) {
         console.warn(e);
       }
       
@@ -443,19 +443,19 @@ export class Workflow extends G3WObject {
         // reset counter and reject flow
         if (this._stepIndex > 0) {
           this._stepIndex = 0;
-          d.reject();
+          reject();
           return Promise.reject();
         } else {
-          d.resolve();
+          resolve();
         }
       } catch (e) {
         console.warn(e);
-        d.reject(e);
+        reject(e);
       }
 
       this.emit('stop');
 
-    }).promise();
+    }));
   }
 
   /**

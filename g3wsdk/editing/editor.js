@@ -46,10 +46,10 @@ export default class Editor extends G3WObject {
       getFeatures(options = {}) {
         // skip is not onlien or all features of layers are already got
         if (!ApplicationState.online || this._allfeatures) {
-          return $.Deferred(d => d.resolve());
+          return $promisify(Promise.resolve());
         }
 
-        return $promisify(async d => {
+        return $promisify(async () => {
 
           let doRequest = true; // default --> perform request
 
@@ -76,8 +76,9 @@ export default class Editor extends G3WObject {
           /** @TODO simplfy nested promises */
           if (doRequest) {
             const features = await promisify(this._layer.getFeatures(options));
-            // add features from server
+            // add features from server to editing features store (cloned from original)
             this._featuresstore.addFeatures((features || []).map(f => f.clone()));
+            //set all features to true if no filter is set (e.g., Table layer)
             this._allfeatures = !options.filter;
             return features;
           }
@@ -93,7 +94,7 @@ export default class Editor extends G3WObject {
     };
 
     /**
-     * @FIXME add description
+     * { Boolean } true, mean all features of layer are get (e.g. Table layer)
      */
     this._allfeatures = false;
 
@@ -185,7 +186,7 @@ export default class Editor extends G3WObject {
 
   /**
    * Apply response data from server in case of new inserted feature
-   *
+   * @param { Object } response
    * @param response.response.new            array of new ids
    * @param response.response.new.clientid   temporary id created by client __new__
    * @param response.response.new.id         the new id created and stored on server
@@ -214,7 +215,7 @@ export default class Editor extends G3WObject {
             // handle value to relation field saved on server
             if (is_pk) {
               const field  = options.childField[options.fatherField.indexOf(is_pk)];             // relation field to overwrite
-              const source = ToolBox.get(relationId).getSession().getEditor().getEditingSource(); // get source of editing layer.
+              const source = ToolBox.get(relationId).getSession().getEditor().getEditingSource(); // get a source of editing layer.
               (options.ids || []).forEach(id => {                          // loop relation ids
                 const feature = source.getFeatureById(id);
                 if (feature) { feature.set(field.name, field.value) }   // set father feature `value` and `name`
@@ -332,7 +333,7 @@ export default class Editor extends G3WObject {
   }
 
   /**
-   * Method to clear all filled variable
+   * Method to clear all filled variables
    */
   clear() {
     this._started     = false;
@@ -343,7 +344,7 @@ export default class Editor extends G3WObject {
     this._layer.getFeaturesStore().clear();
 
     // vector layer
-    if (this._layer.getType() === Layer.LayerTypes.VECTOR) {
+    if (Layer.LayerTypes.VECTOR === this._layer.getType()) {
       this._layer.resetEditingSource(this._featuresstore.getFeaturesCollection());
     }
   }

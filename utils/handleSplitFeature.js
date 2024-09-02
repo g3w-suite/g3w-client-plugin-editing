@@ -22,7 +22,7 @@ export async function handleSplitFeature({
   inputs,
   context,
   splittedGeometries = []
-}={}) {
+} = {}) {
   const newFeatures              = [];
   const { layer }                = inputs;
   const session                  = context.session;

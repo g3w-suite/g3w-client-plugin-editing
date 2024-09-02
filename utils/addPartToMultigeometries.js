@@ -10,7 +10,6 @@ import { $promisify }               from './promisify';
  */
 export function addPartToMultigeometries(inputs, context) {
   return $promisify(async () => {
-    const layerId = inputs.layer.getId();
     let feature;
     let originalFeature;
 
@@ -30,7 +29,7 @@ export function addPartToMultigeometries(inputs, context) {
     try { await evaluateExpressionFields({ inputs, context, feature });}
     catch (e) { console.warn(e); }
 
-    context.session.pushUpdate(layerId, feature, originalFeature);
+    context.session.pushUpdate(inputs.layer.getId(), feature, originalFeature);
 
     inputs.features = [feature];
     return inputs;
