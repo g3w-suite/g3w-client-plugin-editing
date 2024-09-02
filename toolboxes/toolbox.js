@@ -12,7 +12,6 @@ import { getNotEditableFieldsNoPkValues }               from '../utils/getNotEdi
 import { getDeltaXY }                                   from '../utils/getDeltaXY';
 import { chooseFeatureFromFeatures }                    from '../utils/chooseFeatureFromFeatures';
 import { convertToGeometry }                            from '../utils/convertToGeometry';
-import { getProjectLayerFeatureById }                   from '../utils/getProjectLayerFeatureById';
 import { addTableFeature }                              from '../utils/addTableFeature';
 import { getRelationFieldsFromRelation }                from '../utils/getRelationFieldsFromRelation';
 import { getLayersDependencyFeatures }                  from '../utils/getLayersDependencyFeatures';
@@ -533,7 +532,7 @@ export class ToolBox extends G3WObject {
                                     this.addInteraction(
                                       layer.external
                                         ? new PickFeaturesInteraction({ layer: GUI.getService('map').getLayerById(layer.id) })
-                                        : new PickCoordinatesInteraction(), {
+                                        : new g3wsdk.ol.interactions.PickCoordinatesInteraction(), {
                                         'picked': async e => {
                                           try {
                                             resolve(convertToGeometry(
