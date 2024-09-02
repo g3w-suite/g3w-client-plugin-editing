@@ -583,72 +583,6 @@
       },
 
       /**
-       * Update external (key-value relations)
-       * 
-       * Changes the relation field value when and if the parent changes the value of relation field
-       * 
-       * @param input is the input object of parent of relation that changes
-       */
-      onInputChange(input) {
-
-        //ownField is the field of relation feature link to parent feature layer
-        // relationFiled are fields belong to parent layer
-        const { ownField, relationField } = getRelationFieldsFromRelation({
-          layerId:  this._relationLayerId,
-          relation: this.relation
-        });
-
-        // get if parent form input that is changing
-        // is the field in relation of the current feature relation Layer
-
-        // skip when ..
-        if (false === (this.parent.editable.length > 0 && relationField.find(rField => rField === input.name))) {
-          return;
-        }
-
-        // change currentParent Feature relation value
-        this.parent.values[input.name] = input.value;
-
-        // loop relation fields of current feature
-        this.relations
-          .map(r => r.fields.find(f => ownField.includes(f.name)))
-          .filter(Boolean)
-          .forEach(field => {
-            field.value     = this.parent.values[field.name];
-            const relation  = this.getLayer().getEditingSource().getFeatureById(relation.id);
-            const oRelation = relation.clone();
-            relation.set(field.name, input.value);
-            if (!relation.isNew()) {
-              g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing')
-                .getToolBoxById(this._relationLayerId)
-                .getSession()
-                .pushUpdate(this._relationLayerId, relation, oRelation);
-            }
-          });
-
-       /* // loop relation fields of current feature
-          //@TODO Refactor it
-        this.relations
-          .forEach(r => {
-            r.fields
-              .filter(f => ownField.includes(f.name))
-              .forEach(field => {
-                field.value     = this.parent.values[field.name];
-                const relation  = this.getLayer().getEditingSource().getFeatureById(r.id);
-                const oRelation = relation.clone();
-                relation.set(field.name, input.value);
-                if (!relation.isNew()) {
-                  g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing')
-                    .getToolBoxById(this._relationLayerId)
-                    .getSession()
-                    .pushUpdate(this._relationLayerId, relation, oRelation);
-                }
-            })
-          })*/
-
-      },
-
-      /**
        * ORIGINAL SOURCE: g3w-client-plugin-editing@v3.7.0/services/relationservice.js
        * 
        * Get value from feature if layer has key value
@@ -1655,13 +1589,6 @@
 
       // add tools for each relation
       this.relations.forEach(r => this.addTools(r.id) );
-
-      try {
-        g3wsdk.gui.GUI.getCurrentContent().content.getService().getEventBus().$on('changeinput', this.onInputChange.bind(this))
-      } catch (e) {
-        console.warn(e);
-      }
-
     },
 
     async activated() {
