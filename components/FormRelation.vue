@@ -1401,26 +1401,17 @@
                   help: "editing.steps.help.select_feature_to_relation",
                   run(inputs, context) {
                     return $promisify(new Promise(async (resolve, reject) => {
+                      //create a promise for setAndUnsetSelectedFeaturesStyle;
+                      const promise = new Promise(r => this.resolve = r);
                       GUI.setModal(false);
                       const editingLayer        = inputs.layer.getEditingLayer();
-                      this._originalLayerStyle  = editingLayer.getStyle();
-
                       try {
-
                         if (context.beforeRun && 'function' === typeof context.beforeRun) {
                           await promisify(context.beforeRun());
                         }
-
-                        let features = editingLayer.getSource().getFeatures();
-
-                        if (context.excludeFeatures) {
-                          features = features
-                            .filter(f => Object.entries(context.excludeFeatures).reduce((bool, [field, value]) => bool && value != f.get(field), true))
-                        }
-                        this._stopPromise = $.Deferred();
-
+                        const features = editingLayer.getSource().getFeatures().filter(f => Object.entries(context.excludeFeatures || {}).reduce((bool, [field, value]) => bool && value != f.get(field), true))
                         setAndUnsetSelectedFeaturesStyle({
-                          promise: this._stopPromise.promise(),
+                          promise: $promisify(promise),
                           inputs:  { layer: inputs.layer, features },
                           style:   this.selectStyle
                         });
@@ -1433,7 +1424,7 @@
                             resolve(inputs);
                           }
                         });
-                      } catch (e) {
+                      } catch(e) {
                         console.warn(e);
                         reject(e);
                       }
@@ -1441,10 +1432,9 @@
                   },
                   stop() {
                     GUI.setModal(true);
-                    this._originalLayerStyle = null;
-                    if (this._stopPromise) {
-                      this._stopPromise.resolve(true);
-                    }
+                    //resolve to resolve setAndUnsetSelectedFeaturesStyle
+                    this.resolve(true);
+                    this.resolve = null;
                     return true;
                   },
                 })
