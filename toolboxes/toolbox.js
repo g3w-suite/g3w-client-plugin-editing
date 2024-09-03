@@ -962,64 +962,61 @@ export class ToolBox extends G3WObject {
                 },
                 run(inputs, context) {
                   /** @since g3w-client-plugin-editing@v3.8.0 */
-                  const d               = $.Deferred();
-                  const source          = inputs.layer.getEditingLayer().getSource();
+                  return $promisify(async () => {
+                    const source  = inputs.layer.getEditingLayer().getSource();
+                    const promise = new Promise((resolve, reject) => {
+                      this.addInteraction(
+                        new ol.interaction.Draw({
+                          type: 'LineString',
+                          features: new ol.Collection(),
+                          freehandCondition: ol.events.condition.never
+                        }), {
+                          'drawend': async e => {
+                            let isSplitted = false;
+                            const splittedGeometries = splitFeatures({
+                              splitfeature: e.feature,
+                              features:     inputs.features
+                            });
+                            const splittedGeometriesLength = splittedGeometries.length;
 
-                  /** @since g3w-client-plugin-editing@v3.8.0 */
-                  this._stopPromise     = $.Deferred();
-                  setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise, inputs, style: this.selectStyle });
+                            for (let i = 0; i < splittedGeometriesLength; i++) {
+                              if (splittedGeometries[i].geometries.length > 1) {
+                                isSplitted = true;
+                                await handleSplitFeature({
+                                  context,
+                                  inputs,
+                                  feature:            inputs.features.find(f => f.getUid() === splittedGeometries[i].uid),
+                                  splittedGeometries: splittedGeometries[i].geometries,
+                                  session:            context.session,
+                                });
+                              }
+                            }
 
-                  this.addInteraction(
-                    new ol.interaction.Draw({
-                      type: 'LineString',
-                      features: new ol.Collection(),
-                      freehandCondition: ol.events.condition.never
-                    }), {
-                    'drawend': async e => {
-                      let isSplitted = false;
-                      const splittedGeometries = splitFeatures({
-                        splitfeature: e.feature,
-                        features:     inputs.features
-                      });
-                      const splittedGeometriesLength = splittedGeometries.length;
+                            /** @since g3w-client-plugin-editing@v3.8.0 */
+                            (isSplitted ? resolve : reject)(inputs);
+                            //need to set timeout promise, because at the end of the workflow all user messages are cleared
+                            await new Promise((r) => setTimeout(r, 600));
+                            GUI.showUserMessage({
+                              type:      isSplitted ? 'success': 'warning',
+                              message:   isSplitted ? 'plugins.editing.messages.splitted' : 'plugins.editing.messages.nosplittedfeature',
+                              autoclose: true
+                            })
+                          }
+                        });
 
-                      for (let i = 0; i < splittedGeometriesLength; i++) {
-                        if (splittedGeometries[i].geometries.length > 1) {
-                          isSplitted = true;
-                          await handleSplitFeature({
-                            context,
-                            inputs,
-                            feature:            inputs.features.find(f => f.getUid() === splittedGeometries[i].uid),
-                            splittedGeometries: splittedGeometries[i].geometries,
-                            session:            context.session,
-                          });
-                        }
-                      }
+                      this.addInteraction(
+                        new ol.interaction.Snap({ source, edge: true })
+                      );
+                    })
 
-                      /** @since g3w-client-plugin-editing@v3.8.0 */
-                      //resolve select style feature
-                      this._stopPromise.resolve(true);
-                      d[isSplitted ? 'resolve' : 'reject'](inputs);
-                      //need to set timeout promise, because at the end of the workflow all user messages are cleared
-                      await new Promise((r) => setTimeout(r, 600));
-                      GUI.showUserMessage({
-                        type:      isSplitted ? 'success': 'warning',
-                        message:   isSplitted ? 'plugins.editing.messages.splitted' : 'plugins.editing.messages.nosplittedfeature',
-                        autoclose: true
-                      })
-                    }
-                  });
+                    /** @since g3w-client-plugin-editing@v3.8.0 */
+                    setAndUnsetSelectedFeaturesStyle({ promise: $promisify(async () => { try { return await promise; } catch(e) { console.warn(e); return Promise.reject(e); }}), inputs, style: this.selectStyle });
 
-                  this.addInteraction(
-                    new ol.interaction.Snap({ source, edge: true })
-                  );
+                    return promise;
+                  })
 
-                  return d.promise();
+
                 },
-                //@since 3.9.0
-                async stop() {
-                  this._stopPromise = null;
-                }
               }),
             ],
             registerEscKeyEvent: true,
