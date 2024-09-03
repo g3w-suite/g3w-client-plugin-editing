@@ -669,31 +669,34 @@ export class ToolBox extends G3WObject {
                 },
                 run(inputs) {
                   /** @since g3w-client-plugin-editing@v3.8.0 */
-                  return $promisify(new Promise((resolve, reject) => {
-                    if (0 === inputs.features.length) {
-                      return reject('no feature');
-                    }
-                    this._stopPromise = $.Deferred();
-
-                    /** @since g3w-client-plugin-editing@v3.8.0 */
-                    setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise, inputs, style: this.selectStyle });
-
-                    this.addInteraction(
-                      new ol.interaction.Draw({ type: 'Point', condition: e => inputs.features.some(f => isPointOnVertex({ feature: f, coordinates: e.coordinate}))}), {
-                      'drawend': e => {
-                        inputs.coordinates = e.feature.getGeometry().getCoordinates();
-                        this.setUserMessageStepDone('from');
-                        resolve(inputs);
+                  return $promisify( async () => {
+                    const promise = new Promise((resolve, reject) => {
+                      this.resolve = resolve;
+                      if (0 === inputs.features.length) {
+                        return reject('no feature');
                       }
-                    });
-                    this.addInteraction(
-                      new ol.interaction.Snap({ edge: false, features: new ol.Collection(inputs.features) })
-                    );
-                  }))
+                      this.addInteraction(
+                        new ol.interaction.Draw({ type: 'Point', condition: e => inputs.features.some(f => isPointOnVertex({ feature: f, coordinates: e.coordinate}))}), {
+                        'drawend': e => {
+                          inputs.coordinates = e.feature.getGeometry().getCoordinates();
+                          this.setUserMessageStepDone('from');
+                          resolve(inputs);
+                        }
+                      });
+                      this.addInteraction(
+                        new ol.interaction.Snap({ edge: false, features: new ol.Collection(inputs.features) })
+                      );
+                    })
+                    /** @since g3w-client-plugin-editing@v3.8.0 */
+                    setAndUnsetSelectedFeaturesStyle({ promise: $promisify(async () => { try { return await promise; } catch(e) { console.warn(e); return Promise.reject(e); } }), inputs, style: this.selectStyle })
+                    return promise;
+                  })
                 },
                 stop() {
                   /** @since g3w-client-plugin-editing@v3.8.0 */
-                  this._stopPromise.resolve(true);
+                  //Always resolve promise (in case of a press esc key)
+                  this.resolve(true);
+                  this.resolve = null;
                 },
               }),
               // move elements
