@@ -1283,7 +1283,7 @@ new (class extends Plugin {
     feature,
   } = {}) {
     // skip when mandatory params are missing
-    if (undefined === feature || undefined === layerId) {
+    if ([ feature, layerId ].includes(undefined)) {
       return Promise.reject();
     }
     return new Promise(async (resolve, reject) => {

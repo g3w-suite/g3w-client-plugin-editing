@@ -724,7 +724,7 @@
                     const fields         = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[layerId];
 
                     /** @FIXME add description */
-                    if (undefined === layer || undefined === fields) {
+                    if ([layer, fields].includes(undefined)) {
                       return;
                     }
 
