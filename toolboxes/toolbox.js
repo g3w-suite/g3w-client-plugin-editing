@@ -323,41 +323,49 @@ export class ToolBox extends G3WObject {
               // confirm step
               new Step({
                 run(inputs) {
-                  return $.Deferred(d => {
+                  return $promisify(async () => {
                     const editingLayer = inputs.layer.getEditingLayer();
                     const feature      = inputs.features[0];
                     const layerId      = inputs.layer.getId();
-                    GUI
-                      .dialog
-                      .confirm(
-                        `<h4>${tPlugin('editing.messages.delete_feature')}</h4>`
-                        + `<div style="font-size:1.2em;">`
-                        + (inputs.layer.getChildren().length && getRelationsInEditing({ layerId, relations: inputs.layer.getRelations().getArray() }).length
+                    const promise = new Promise((resolve, reject) => {
+                      GUI
+                        .dialog
+                        .confirm(
+                          `<h4>${tPlugin('editing.messages.delete_feature')}</h4>`
+                          + `<div style="font-size:1.2em;">`
+                          + (inputs.layer.getChildren().length && getRelationsInEditing({ layerId, relations: inputs.layer.getRelations().getArray() }).length
                             ? tPlugin('editing.messages.delete_feature_relations')
                             : ''
                           )
-                        + `</div>`,
-                        result => {
-                          if (!result) {
-                            d.reject(inputs);
-                            return;
-                          }
-                          editingLayer.getSource().removeFeature(feature);
-                          // Remove unique values from unique fields of a layer (when deleting a feature)
-                          const fields = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[layerId];
-                          if (fields) {
-                            Object
+                          + `</div>`,
+                          result => {
+                            if (!result) {
+                              reject(inputs);
+                              return;
+                            }
+                            editingLayer.getSource().removeFeature(feature);
+                            // Remove unique values from unique fields of a layer (when deleting a feature)
+                            const fields = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[layerId];
+                            if (fields) {
+                              Object
                               .keys(feature.getProperties())
-                              .filter(field => undefined !== fields[field])
-                              .forEach(field => fields[field].delete(feature.get(field)));
+                              .filter(f => undefined !== fields[f])
+                              .forEach(f => fields[f].delete(feature.get(f)));
+                            }
+                            resolve(inputs);
                           }
-                          d.resolve(inputs);
-                        }
-                      );
+                        );
+                    });
+
                     if (inputs.features) {
-                      setAndUnsetSelectedFeaturesStyle({ promise: d.promise(), inputs, style: this.selectStyle });
+                      setAndUnsetSelectedFeaturesStyle({
+                        promise: $promisify(async () => { try { return await promise; } catch(e) { console.warn(e); return Promise.reject(e) }}),
+                        inputs,
+                        style:   this.selectStyle,
+                      });
                     }
-                  }).promise();
+                    return promise;
+                  })
                 }
               }),
             ],
@@ -497,133 +505,132 @@ export class ToolBox extends G3WObject {
                     layer,
                     help: 'editing.steps.help.draw_new_feature',
                     run(inputs, context) {
-                      const d                = $.Deferred();
-                      const originalLayer    = inputs.layer;
-                      const geometryType     = originalLayer.getGeometryType();
-                      const layerId          = originalLayer.getId();
-                      //get attributes/properties from current layer in editing
-                      const attributes       = originalLayer.getEditingFields().filter(attribute => !attribute.pk);
-                      const session          = context.session;
-                      const editingLayer     = originalLayer.getEditingLayer();
-                      const source           = editingLayer.getSource();
-                      //set reactive
-                      const vueInstance      = new (Vue.extend(require('../components/CopyFeaturesFromOtherLayers.vue')))({layers});
-                      const message          = vueInstance.$mount().$el;
-                      GUI.showModalDialog({
-                        title:      tPlugin('editing.relation.copy_feature_from_other_layer'),
-                        className:  'modal-left',
-                        closeButton: false,
-                        message,
-                        buttons: {
-                          cancel: {
-                            label: 'Cancel',
-                            className: 'btn-danger',
-                            callback() { d.reject(); }
-                          },
-                          ok: {
-                            label: 'Ok',
-                            className: 'btn-success',
-                            callback: async () => {
-                              try {
-                                //get selected layer
-                                const layer = layers.find(l => l.selected);
-                                const feature = await $promisify(async () => {
-                                  const features = await (new Promise(async resolve => {
-                                    this.addInteraction(
-                                      layer.external
-                                        ? new PickFeaturesInteraction({ layer: GUI.getService('map').getLayerById(layer.id) })
-                                        : new g3wsdk.ol.interactions.PickCoordinatesInteraction(), {
-                                        'picked': async e => {
-                                          try {
-                                            resolve(convertToGeometry(
-                                              layer.external
-                                                ? e.features                             // external layer
-                                                : ((await DataRouterService.getData('query:coordinates', { // TOC/PROJECT layer
-                                                  inputs: {
-                                                    coordinates:           e.coordinate,
-                                                    query_point_tolerance: ProjectsRegistry.getCurrentProject().getQueryPointTolerance(),
-                                                    layerIds:              [layer.id],
-                                                    multilayers:           false
-                                                  },
-                                                  outputs: null
-                                                })).data[0] || { features: [] }).features,
-                                              geometryType,
-                                            ))
-                                          } catch(e) {
-                                            console.warn(e);
+                      return $promisify(new Promise((resolve, reject) => {
+                        const originalLayer    = inputs.layer;
+                        const geometryType     = originalLayer.getGeometryType();
+                        const layerId          = originalLayer.getId();
+                        //get attributes/properties from current layer in editing
+                        const attributes       = originalLayer.getEditingFields().filter(a => !a.pk);
+                        const session          = context.session;
+                        const editingLayer     = originalLayer.getEditingLayer();
+                        const source           = editingLayer.getSource();
+                        //set reactive
+                        const vueInstance      = new (Vue.extend(require('../components/CopyFeaturesFromOtherLayers.vue')))({layers});
+                        const message          = vueInstance.$mount().$el;
+                        GUI.showModalDialog({
+                          title:      tPlugin('editing.relation.copy_feature_from_other_layer'),
+                          className:  'modal-left',
+                          closeButton: false,
+                          message,
+                          buttons: {
+                            cancel: {
+                              label: 'Cancel',
+                              className: 'btn-danger',
+                              callback() { reject(); }
+                            },
+                            ok: {
+                              label: 'Ok',
+                              className: 'btn-success',
+                              callback: async () => {
+                                try {
+                                  //get selected layer
+                                  const layer   = layers.find(l => l.selected);
+                                  const feature = await $promisify(async () => {
+                                    const features = await (new Promise(async resolve => {
+                                      this.addInteraction(
+                                        layer.external
+                                            ? new PickFeaturesInteraction({ layer: GUI.getService('map').getLayerById(layer.id) })
+                                            : new g3wsdk.ol.interactions.PickCoordinatesInteraction(), {
+                                          'picked': async e => {
+                                            try {
+                                              resolve(convertToGeometry(
+                                                layer.external
+                                                  ? e.features                             // external layer
+                                                  : ((await DataRouterService.getData('query:coordinates', { // TOC/PROJECT layer
+                                                    inputs: {
+                                                      coordinates:           e.coordinate,
+                                                      query_point_tolerance: ProjectsRegistry.getCurrentProject().getQueryPointTolerance(),
+                                                      layerIds:              [layer.id],
+                                                      multilayers:           false
+                                                    },
+                                                    outputs: null
+                                                  })).data[0] || { features: [] }).features,
+                                                geometryType,
+                                              ))
+                                            } catch(e) {
+                                              console.warn(e);
+                                            }
                                           }
                                         }
-                                      }
-                                    );
-                                  }));
+                                      );
+                                    }));
 
-                                  let _feature;
+                                    let _feature;
 
-                                  try {
-                                    _feature = features.length > 1
-                                      ? await promisify(chooseFeatureFromFeatures({ features, inputs }))
-                                      : features[0];
-                                  } catch (e) {
-                                    console.warn(e);
-                                  }
+                                    try {
+                                      _feature = features.length > 1
+                                        ? await promisify(chooseFeatureFromFeatures({ features, inputs }))
+                                        : features[0];
+                                    } catch (e) {
+                                      console.warn(e);
+                                    }
 
-                                  if (_feature) {
-                                    const feature = new Feature({
-                                      feature:    _feature,
-                                      properties: attributes.map(attribute => attribute.name)
-                                    })
+                                    if (_feature) {
+                                      const feature = new Feature({
+                                        feature:    _feature,
+                                        properties: attributes.map(a => a.name)
+                                      })
 
-                                    feature.setTemporaryId();
-                                    return feature;
-                                  }
+                                      feature.setTemporaryId();
+                                      return feature;
+                                    }
 
-                                  GUI.showUserMessage({
-                                    type:     'warning',
-                                    message:  'plugins.editing.messages.no_feature_selected',
-                                    closable:  false,
-                                    autoclose: true
+                                    GUI.showUserMessage({
+                                      type:     'warning',
+                                      message:  'plugins.editing.messages.no_feature_selected',
+                                      closable:  false,
+                                      autoclose: true
+                                    });
+
+                                    return Promise.reject();
                                   });
 
-                                  return Promise.reject();
-                                });
+                                  //@TODO check better way
+                                  //Set undefined property to null otherwise on commit
+                                  // property are lost
+                                  attributes.forEach(({ name }) => {
+                                    if (undefined === feature.get(name)) { feature.set(name, null) }
+                                  })
 
-                                //@TODO check better way
-                                //Set undefined property to null otherwise on commit
-                                // property are lost
-                                attributes.forEach(({name}) => {
-                                  if (undefined === feature.get(name)) { feature.set(name, null) }
-                                })
-
-                                originalLayer.getEditingNotEditableFields()
-                                  .find(field => {
-                                    if (originalLayer.isPkField(field)) { feature.set(field, null) }
-                                  });
-                                //remove eventually Z Values
-                                removeZValueToOLFeatureGeometry({ feature });
-                                feature.setTemporaryId();
-                                source.addFeature(feature);
-                                session.pushAdd(layerId, feature, false);
-                                inputs.features.push(feature)
-                                this.fireEvent('addfeature', feature)
-                                d.resolve(inputs);
-                              }
-                              catch(e) {
-                                console.warn(e);
-                                d.reject(e);
+                                  originalLayer.getEditingNotEditableFields()
+                                    .find(field => {
+                                      if (originalLayer.isPkField(field)) { feature.set(field, null) }
+                                    });
+                                  //remove eventually Z Values
+                                  removeZValueToOLFeatureGeometry({ feature });
+                                  feature.setTemporaryId();
+                                  source.addFeature(feature);
+                                  session.pushAdd(layerId, feature, false);
+                                  inputs.features.push(feature)
+                                  this.fireEvent('addfeature', feature)
+                                  resolve(inputs);
+                                }
+                                catch(e) {
+                                  console.warn(e);
+                                  reject(e);
+                                }
                               }
                             }
                           }
-                        }
-                      }).on('hide.bs.modal', () => vueInstance.$destroy()); //destroy vue instance after dialog is closed
-                      //hide user message step
-                      return d.promise();
+                        }).on('hide.bs.modal', () => vueInstance.$destroy()); //destroy vue instance after dialog is a closed
+                        //hide user message step
+                      }));
                     },
                   }),
                   openFormStep,
                 ],
                 registerEscKeyEvent: true
               });
-              return workflow;
             })(),
           }
         })(),
@@ -651,7 +658,7 @@ export class ToolBox extends G3WObject {
                 },
               }, true),
               // get vertex
-              layer.getGeometryType().indexOf('Point') >= 0 ? undefined : new Step({
+              layer.getGeometryType().includes('Point') ? undefined : new Step({
                 layer,
                 help: 'editing.steps.help.select',
                 steps: {
@@ -700,7 +707,7 @@ export class ToolBox extends G3WObject {
                   }
                 },
                 run(inputs, context) {
-                  return $.Deferred(d => {
+                  return $promisify(async () => {
                     const {
                       layer,
                       features,
@@ -709,69 +716,71 @@ export class ToolBox extends G3WObject {
                     const source  = layer.getEditingLayer().getSource();
                     const layerId = layer.getId();
                     const session = context.session;
+                    const promise = new Promise((resolve, reject) => {
+                      this.addInteraction(
+                        new ol.interaction.Draw({ type: 'Point', features: new ol.Collection() }), {
+                          'drawend': evt => {
+                            const [x, y]                    = evt.feature.getGeometry().getCoordinates();
+                            const deltaXY                   = coordinates ? getDeltaXY({x, y, coordinates}) : null;
+                            const featuresLength            = features.length;
+                            const promisesDefaultEvaluation = [];
 
-                    /** @since g3w-client-plugin-editing@v3.8.0 */
-                    setAndUnsetSelectedFeaturesStyle({ promise: d, inputs, style: this.selectStyle });
-
-                    this.addInteraction(
-                      new ol.interaction.Draw({ type: 'Point', features: new ol.Collection() }), {
-                      'drawend': evt => {
-                        const [x, y]                    = evt.feature.getGeometry().getCoordinates();
-                        const deltaXY                   = coordinates ? getDeltaXY({x, y, coordinates}) : null;
-                        const featuresLength            = features.length;
-                        const promisesDefaultEvaluation = [];
-  
-                        for (let i = 0; i < featuresLength; i++) {
-                          const feature = cloneFeature(features[i], layer);
-                          if (deltaXY) {
-                            feature.getGeometry().translate(deltaXY.x, deltaXY.y);
-                          }
-                          else {
-                            const coordinates = feature.getGeometry().getCoordinates();
-                            const deltaXY = getDeltaXY({ x, y, coordinates });
-                            feature.getGeometry().translate(deltaXY.x, deltaXY.y)
-                          }
-                          // set media fields to null
-                          layer.getEditingMediaFields({}).forEach(f => feature.set(f, null));
-                          /**
-                           * evaluated geometry expression
-                           */
-                          promisesDefaultEvaluation.push(evaluateExpressionFields({ inputs, context, feature }))
-                        }
-                        Promise
-                          .allSettled(promisesDefaultEvaluation)
-                          .then(promises => promises
-                            .forEach(({ status, value:feature }) => {
-  
-                              /**
-                               * @todo improve client core to handle this situation on session.pushAdd not copy pk field not editable only
-                               */
-                              const noteditablefieldsvalues = getNotEditableFieldsNoPkValues({ layer, feature });
-                              const newFeature = session.pushAdd(layerId, feature);
-                              // after pushAdd need to set not edit
-                              if (Object.entries(noteditablefieldsvalues).length) {
-                                Object
-                                  .entries(noteditablefieldsvalues)
-                                  .forEach(([field, value]) => newFeature.set(field, value));
+                            for (let i = 0; i < featuresLength; i++) {
+                              const feature = cloneFeature(features[i], layer);
+                              if (deltaXY) {
+                                feature.getGeometry().translate(deltaXY.x, deltaXY.y);
                               }
-  
-                              //need to add to editing layer source newFeature
-                              source.addFeature(newFeature);
-  
-                              inputs.features.push(newFeature);
-                            })
-                          )
-                          .finally(() => {
-                            this.setUserMessageStepDone('to');
-                            d.resolve(inputs);
-                          })
-                      }
+                              else {
+                                const coordinates = feature.getGeometry().getCoordinates();
+                                const deltaXY = getDeltaXY({ x, y, coordinates });
+                                feature.getGeometry().translate(deltaXY.x, deltaXY.y)
+                              }
+                              // set media fields to null
+                              layer.getEditingMediaFields({}).forEach(f => feature.set(f, null));
+                              /**
+                               * evaluated geometry expression
+                               */
+                              promisesDefaultEvaluation.push(evaluateExpressionFields({ inputs, context, feature }))
+                            }
+                            Promise
+                              .allSettled(promisesDefaultEvaluation)
+                              .then(promises => promises
+                                .forEach(({ status, value:feature }) => {
+
+                                  /**
+                                   * @todo improve client core to handle this situation on session.pushAdd not copy pk field not editable only
+                                   */
+                                  const noteditablefieldsvalues = getNotEditableFieldsNoPkValues({ layer, feature });
+                                  const newFeature = session.pushAdd(layerId, feature);
+                                  // after pushAdd need to set not edit
+                                  if (Object.entries(noteditablefieldsvalues).length) {
+                                    Object
+                                      .entries(noteditablefieldsvalues)
+                                      .forEach(([field, value]) => newFeature.set(field, value));
+                                  }
+
+                                  //need to add to editing layer source newFeature
+                                  source.addFeature(newFeature);
+
+                                  inputs.features.push(newFeature);
+                                })
+                              )
+                              .finally(() => {
+                                this.setUserMessageStepDone('to');
+                                resolve(inputs);
+                              })
+                            }
+                          });
+
+                      this.addInteraction(
+                        new ol.interaction.Snap({ source, edge: false })
+                      );
                     });
 
-                    this.addInteraction(
-                      new ol.interaction.Snap({ source, edge: false })
-                    );
-                  }).promise();
+                    /** @since g3w-client-plugin-editing@v3.8.0 */
+                    setAndUnsetSelectedFeaturesStyle({ promise: $promisify(async () => { try { return await promise; } catch(e) { console.warn(e); return Promise.reject(e); } }), inputs, style: this.selectStyle });
+                    return promise;
+                  });
                 },
               }),
             ].filter(Boolean),
@@ -844,7 +853,7 @@ export class ToolBox extends G3WObject {
               new Step({
                 layer,
                 run(inputs, context) {
-                  return $.Deferred(d => {
+                  return $promisify(new Promise((resolve, reject) => {
                     const originaLayer    = inputs.layer;
                     const editingLayer    = inputs.layer.getEditingLayer();
                     const layerId         = originaLayer.getId();
@@ -886,7 +895,7 @@ export class ToolBox extends G3WObject {
                               feature
                             }).finally(() => {
                               session.pushUpdate(layerId, feature, originalFeature);
-                              d.resolve(inputs);
+                              resolve(inputs);
                             });
                             /**
                              * end of evaluated
@@ -894,14 +903,14 @@ export class ToolBox extends G3WObject {
                             } else {
                               editingLayer.getSource().removeFeature(feature);
                               session.pushDelete(layerId, feature);
-                              d.resolve(inputs);
+                              resolve(inputs);
                             }
                             found = true;
                           }
                         },
                         {
-                          layerFilter(layer){
-                            return layer === tempLayer
+                          layerFilter(layer) {
+                            return layer === tempLayer;
                           },
                           hitTolerance: 1
                         }
@@ -911,7 +920,7 @@ export class ToolBox extends G3WObject {
                       map.removeLayer(tempLayer);
                       tempLayer = null;
                     });
-                  }).promise();
+                  }));
                 },
               }),
             ],
