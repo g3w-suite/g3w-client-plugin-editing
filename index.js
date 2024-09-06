@@ -979,7 +979,7 @@ new (class extends Plugin {
 
         let data      = !online && { [toolbox.getSession().getId()]: commitItems };
         //get current offline editing changes
-        const changes = !online && ApplicationService.getOfflineItem('EDITING_CHANGES');
+        const changes = !online && JSON.parse(window.localStorage.getItem('EDITING_CHANGES') || null);
 
         // handle offline changes
         /** ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8 */

@@ -353,7 +353,9 @@
         unlock = false,
       } = {}) {
         return new Promise((resolve, reject) => {
-          const changes = ApplicationService.getOfflineItem('EDITING_CHANGES');
+          // get offline item
+          const changes = JSON.parse(window.localStorage.getItem('EDITING_CHANGES') || null);
+
           // if you find changes offline previously
           if (!changes) { return }
 
@@ -379,7 +381,8 @@
                 layerIds.forEach(layerId => this.service.getLayerById(layerId).unlock());
               }
               // always reset items to null
-              ApplicationService.setOfflineItem('EDITING_CHANGES');
+              try      { window.localStorage.setItem('EDITING_CHANGES', "{}"); }
+              catch(e) { console.warn(e); }
             }
           }, 1000)
         })
@@ -423,15 +426,11 @@
       },
 
       django_admin_url() {
-        const config = ApplicationService.getConfig();
-        const user   = config.user;
-        return user.is_superuser ? new URL('/django-admin/editing/g3weditingfeaturelock/', initConfig.baseurl) : false;
+        return window.initConfig.user.is_superuser ? new URL('/django-admin/editing/g3weditingfeaturelock/', window.initConfig.baseurl) : false;
       },
 
       filemanager_url() {
-        const config = ApplicationService.getConfig();
-        const user   = config.user;
-        return user.is_superuser ? new URL('/filemanager/', initConfig.baseurl) : false;
+        return window.initConfig.user.is_superuser ? new URL('/filemanager/', window.initConfig.baseurl) : false;
       },
 
     },
@@ -439,7 +438,7 @@
     watch:{
 
       canCommit(bool) {
-        ApplicationService.registerLeavePage({ bool });
+        window.onbeforeunload = () => bool || undefined; // register leave page
       },
 
       /**
