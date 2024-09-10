@@ -1670,7 +1670,7 @@ export class ToolBox extends G3WObject {
 
       this.state.layer.getEditor()
         .commit(commit)
-        .then(response => {
+        .then( response => {
 
           // skip when response is null or undefined and response.result is false
           if (!(response && response.result)) {
@@ -1682,19 +1682,28 @@ export class ToolBox extends G3WObject {
 
           // sync server data with local data
           for (const id in new_relations) {
-            ToolBox
-              .get(id)               // get session of relation by id
+            const toolbox = ToolBox.get(id)
+            toolbox
               .getSession()
               .getEditor()
               .applyCommitResponse({        // apply commit response to current editing relation layer
                 response: new_relations[id],
                 result:   true
               });
+
+            //@since 3.9.0
+            toolbox._session.saveChangesOnServer(); // dispatch setter event.
+
           }
 
           this.__clearHistory();
 
-          this._session.saveChangesOnServer(commit); // dispatch setter event.
+          /**
+           * @since v3.9.0
+           * After commit get new unique values
+           */
+          this._session.saveChangesOnServer();
+
 
           // ES6 promises only accept a single response
           if (__esPromise) {
@@ -2845,7 +2854,7 @@ export class ToolBox extends G3WObject {
   /**
    * Hook to get informed that are saved on server
    */
-  __saveChangesOnServer(commitItems) {
+  __saveChangesOnServer() {
     if (this._resetOnSaveChangesOnServer) {
       this.getFieldUniqueValuesFromServer({ reset: true });
     }

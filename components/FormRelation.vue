@@ -699,7 +699,6 @@
           const relation        = this.relations[index];
           const toolId          = relationtool.state.id.split(`${relation.id}_`)[1];
           const relationfeature = this.getLayer().getEditingSource().getFeatureById(relation.id);
-          const featurestore    = this.getLayer().getEditingSource();
           const selectStyle     = is_vector && SELECTED_STYLES[this.getLayer().getGeometryType()]; // get selected vector style
           const options         = this._createWorkflowOptions({ features: [relationfeature] });
 
@@ -718,39 +717,32 @@
                     this.relations.splice(index, 1);
                     // remove tool from relation tools
                     this.tools.splice(index, 1);
-                    // remove relation layer unique field values from feature
-                    let feature        = relationfeature;
-                    //get parent layer unique fields
-                    const parentfields = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[this.layerId];
-                    // current relation fields
-                    const fields       = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[this._relationLayerId];
-                    //
-                    // /** Check if parent layer has unique fields and relation layer has unique fields
-                    const are_unique_fields = !([parentfields, fields].includes(undefined));
-
-                    if (are_unique_fields) {
-                      /** @FIXME add description */
-                      if (undefined === parentfields.__uniqueFieldsValuesRelations) {
-                        parentfields.__uniqueFieldsValuesRelations = {};
-                      }
+                    // current relation layer fields
+                    const unique_fields        = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[this._relationLayerId];
+                    //check if relation layer has unique values stored
+                    if (undefined !== unique_fields) {
+                      //get parent layer unique fields
+                      const parent_relation_unique_fields = (
+                        g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[this.layerId]
+                        && g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[this.layerId].__uniqueFieldsValuesRelations
+                        && g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[this.layerId].__uniqueFieldsValuesRelations[this._relationLayerId]
+                      )
                       Object
-                        .keys(feature.getProperties())
-                        .forEach(property => {
-                          /** @FIXME add description */
-                          if (undefined === parentfields.__uniqueFieldsValuesRelations[this._relationLayerId]) {
-                            parentfields.__uniqueFieldsValuesRelations[this._relationLayerId] = {};
+                        .keys(relationfeature.getProperties())
+                        .filter(p => undefined !== unique_fields[p])
+                        .forEach(p => {
+                          const values = new Set(unique_fields[p]);
+                          values.delete(relationfeature.get(p));
+                          //In the case of parent store unique values field of relation, update values of this field
+                          if (parent_relation_unique_fields) {
+                            parent_relation_unique_fields.__uniqueFieldsValuesRelations[this._relationLayerId][p] = values;
                           }
-                          /** @FIXME add description */
-                          if (undefined !== fields[property]) {
-                            const values = new Set(fields[property]);
-                            values.delete(feature.get(property));
-                            parentfields.__uniqueFieldsValuesRelations[this._relationLayerId][property] = values;
-                          }
-                        });
+                        })
                     }
 
-                    featurestore.removeFeature(relationfeature);
-                    // check if relation feature delete is new.
+                    //remove feature from source
+                    this.getLayer().getEditingSource().removeFeature(relationfeature);
+                    // Check if relation feature delete is new.
                     // In this case, we need to check if there are temporary changes not related to this current feature
                     if (
                       relationfeature.isNew()
@@ -762,13 +754,14 @@
                         .filter(w => w.getContextService() instanceof FormService)
                         .forEach(w => setTimeout(() => w.getContextService().state.update = false));
                     } else {
-                      //set parent workflow update
+                      //set parent workflow update to enable to save all buttons
                       updateWorkflows();
                     }
 
                     d.resolve(res);
                   }
 
+                  //click
                   if (!res) {
                     d.reject();
                   }

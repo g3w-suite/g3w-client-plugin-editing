@@ -572,13 +572,13 @@ export class OpenFormStep extends Step {
                       .find(f => f.getUid() === feature.getUid()) //Find current form editing feature by unique id of feature uid
                       .getProperties() //get properties
                   )
-                    .forEach(([k, v]) => {
-                      const field = service.getFields().find(f => k === f.name);
-                      //if field exists (geometry field is discarded)
-                      if (field) {
-                        field.value = field._value = v;
-                      }
-                    })
+                  .forEach(([k, v]) => {
+                    const field = service.getFields().find(f => k === f.name);
+                    //if field exists (geometry field is discarded)
+                    if (field) {
+                      field.value = field._value = v;
+                    }
+                  })
                 })
               } catch(e) {
                 console.warn(e);
@@ -649,7 +649,7 @@ export class OpenFormStep extends Step {
               if (this._isContentChild) {
                 Workflow.Stack.getParents().forEach(w => w.getContextService().setUpdate(true, { force: true }));
               }
-
+              //@TODO add field unique new value id not set
               resolve(inputs);
             }
           },
