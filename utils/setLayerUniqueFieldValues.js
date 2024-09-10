@@ -16,13 +16,9 @@ export async function setLayerUniqueFieldValues(layerId) {
   const layer    = CatalogLayersStoresRegistry.getLayerById(layerId);
   layer
     .getEditingFields()
-    .forEach(field => {
-      // skip when ..
-      if (!(
-        field.validate.unique
-        && undefined === (service.state.uniqueFieldsValues[layerId] ? service.state.uniqueFieldsValues[layerId][field.name] : []))
-      ) { return }
-
+    //filter field that is unique and not yet set unique values
+    .filter(field => field.validate.unique && undefined === (service.state.uniqueFieldsValues[layerId] && service.state.uniqueFieldsValues[layerId][field.name]))
+    .forEach((field => {
       promises.push(
         layer
           .getFilterData({ unique: field.name })
@@ -33,8 +29,7 @@ export async function setLayerUniqueFieldValues(layerId) {
             service.state.uniqueFieldsValues[layerId][field.name] = new Set(values);
           })
       );
-    });
+    }))
   await Promise.allSettled(promises);
-
   return service.state.uniqueFieldsValues[layerId];
 }
