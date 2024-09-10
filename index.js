@@ -1038,65 +1038,74 @@ new (class extends Plugin {
 
         }
 
-        // check if the application is online
-        const { commit, response } = online ? await promisify(
-          toolbox.getSession().commit({ items: items || commitItems, __esPromise: true })
-        ) : {};
+        try {
+          // check if the application is online
+          const { commit, response } = online ? await promisify(
+            toolbox.getSession().commit({ items: items || commitItems, __esPromise: true })
+          ) : {};
 
+          //check if is online and there are some commit items
+          const online2 = online && commit;
 
-        //check if is online and there are some commit items
-        const online2 = online && commit;
+          const result = online2 && response.result;
 
-        const result = online2 && response.result;
+          if (result && messages && messages.success) {
+            // hide saving dialog
+            if (dialog) { dialog.modal('hide') }
 
-        if (result && messages && messages.success) {
-          // hide saving dialog
-          if (dialog) { dialog.modal('hide') }
+            //Show save user message
+            GUI.showUserMessage({
+              type:     'success',
+              message:   messages.success.message || "plugins.editing.messages.saved",
+              duration:  2000,
+              autoclose: undefined === messages.success.autoclose ? true : messages.success.autoclose,
+            });
+          }
 
-          //Show save user message
-          GUI.showUserMessage({
-            type:     'success',
-            message:   messages.success.message || "plugins.editing.messages.saved",
-            duration:  2000,
-            autoclose: undefined === messages.success.autoclose ? true : messages.success.autoclose,
-          });
+          // In the case of vector layer need to refresh map commit changes
+          if (result && Layer.LayerTypes.VECTOR === layer.getType() ) {
+            GUI.getService('map').refreshMap({ force: true });
+          }
+
+          if (online) {
+            this.state.saveConfig.cb.done(toolbox);
+          }
+
+          // add items when close editing to result to show changes
+          const layerId = result && toolbox.getId();
+
+          if (layerId) {
+            this.state.featuresOnClose[layerId] = this.state.featuresOnClose[layerId] || new Set();
+            [
+              ...response.response.new.map(n => n.id),
+              ...commit.update.map(u => u.id)
+            ].forEach(fid => this.state.featuresOnClose[layerId].add(fid));
+          }
+
+          // @since 3.7.2 - click on save all disk icon (editing form relation)
+          if (result) { this.emit('commit', response.response) }
+
+          // the result is false. It was done a commit, but an error occurs
+          if (online2 && !result) {
+            serverError = true;
+            throw response;
+          }
+        } catch(e) {
+          console.warn(e);
+          if (online) {
+            serverError = true;
+            throw e;
+          }
         }
 
-        // In the case of vector layer need to refresh map commit changes
-        if (result && Layer.LayerTypes.VECTOR === layer.getType() ) {
-          GUI.getService('map').refreshMap({ force: true });
-        }
-
-        if (online) {
-          this.state.saveConfig.cb.done(toolbox);
-        }
-
-        // add items when close editing to result to show changes
-        const layerId = result && toolbox.getId(); 
-
-        if (layerId) {
-          this.state.featuresOnClose[layerId] = this.state.featuresOnClose[layerId] || new Set();
-          [
-            ...response.response.new.map(n => n.id),
-            ...commit.update.map(u => u.id)
-          ].forEach(fid => this.state.featuresOnClose[layerId].add(fid));
-        }
-
-        // @since 3.7.2 - click on save all disk icon (editing form relation)
-        if (result) { this.emit('commit', response.response) }
-
-        // the result is false. It was done a commit, but an error occurs
-        if (online2 && !result) {
-          serverError = true;
-          throw response;
-        }
       } catch (e) {
         console.warn(e);
 
         // hide saving dialog
         if (dialog) { dialog.modal('hide') }
 
-        // rollback relations
+        // rollback
+        //@TODO check if it is usefull
         if (modal) {
           try { await _rollback(commitItems.relations); }
           catch (e) { console.warn(e); }
@@ -1105,7 +1114,7 @@ new (class extends Plugin {
         // parse server error
         if (serverError || modal) {
           const message = online
-            ? (messages.error.message || (new serverErrorParser({ error: e.errors || e || {}})).parse({ type: 'responseJSON' }))
+            ? (messages.error.message || (new serverErrorParser({ error: e.errors || e || {}})).parse({ type: 'String' }))
             : e;
 
           GUI.showUserMessage({
