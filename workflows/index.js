@@ -688,7 +688,7 @@ export class OpenFormStep extends Step {
           return;
         }
         GUI.setLoadingContent(true);
-
+        //set unique values for relation layer based on unique fields
         await setLayerUniqueFieldValues(inputs.layer.getRelationById(e.relation.name).getChild());
         formService.setCurrentComponentById(e.relation.name);
         GUI.setLoadingContent(false);

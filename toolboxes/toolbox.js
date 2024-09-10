@@ -1309,10 +1309,11 @@ export class ToolBox extends G3WObject {
   }
 
   /**
+   * Set unique value to filed unique
    * @param reset
    */
   getFieldUniqueValuesFromServer({
-    reset=false
+    reset = false
   } = {}) {
     this.state.layer.getWidgetData({
       type: 'unique',
@@ -1320,7 +1321,7 @@ export class ToolBox extends G3WObject {
     })
     .then((response) => {
       Object
-        .entries(response.data)
+        .entries(response.data || [])
         .forEach(([fieldName, values]) => {
           if (reset) {
             this.uniqueFields[fieldName].input.options.values.splice(0);
@@ -1337,8 +1338,8 @@ export class ToolBox extends G3WObject {
    * @param filter
    */
   setFeaturesOptions({
-    filter } = {}
-  ) {
+    filter
+  } = {}) {
     if (filter) {
       // in case of no features filter request check if no features_filed is present otherwise it get first field
       if (filter.nofeatures) {
@@ -1480,6 +1481,7 @@ export class ToolBox extends G3WObject {
 
       const handlerAfterSessionGetFeatures = async promise => {
         this.emit('start-editing');
+        //set unique fields values
         await setLayerUniqueFieldValues(this.getId());
         await g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').runEventHandler({ type: 'start-editing', id });
         try {

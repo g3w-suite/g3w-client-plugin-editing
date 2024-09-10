@@ -604,6 +604,7 @@ new (class extends Plugin {
     const layerId      = session.getId();
     const sessionItems = session.getLastHistoryState().items;
 
+    //update unique values fields after undo
     this.undoRedoLayerUniqueFieldValues({
       layerId,
       sessionItems,
@@ -630,6 +631,7 @@ new (class extends Plugin {
     const session      = this.state.toolboxselected.getSession();
     const layerId      = session.getId();
     const sessionItems = session.getLastHistoryState().items;
+    //update unique values fields after redo
     this.undoRedoLayerUniqueFieldValues({
       layerId,
       sessionItems,
@@ -639,7 +641,7 @@ new (class extends Plugin {
 
     this.undoRedoRelationUniqueFieldValues({
       relationSessionItems: redoItems,
-      action: 'redo'
+      action:               'redo'
     });
 
     // redo relations
