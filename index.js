@@ -612,7 +612,7 @@ new (class extends Plugin {
     });
 
     const undoItems = session.undo();
-
+    //update unique values of relations after undo
     this.undoRedoRelationUniqueFieldValues({
       relationSessionItems: undoItems,
       action:               'undo'
@@ -638,7 +638,7 @@ new (class extends Plugin {
       action: 'redo'
     });
     const redoItems = session.redo();
-
+    //update unique values of relations after redo
     this.undoRedoRelationUniqueFieldValues({
       relationSessionItems: redoItems,
       action:               'redo'
@@ -1160,10 +1160,12 @@ new (class extends Plugin {
 
       Object
         .keys(this.state.uniqueFieldsValues[layerId])
-        .forEach(name => {
+        .forEach(name => { //name is the name of field
+          //check if change is an update [oldVal, newValue]
           const is_array = Array.isArray(item);
           let oldVal, newVal;
-          if (is_array) { // 0 = old feature, 1 = new feature
+          if (is_array) {
+            // 0 = old value feature, 1 = new value feature
             const has_change = item[1].feature.get(name) != item[0].feature.get(name);
             // update feature that contains "new" and "old" values of feature
             oldVal = has_change ? (action === 'undo' ? item[1].feature.get(name) :  item[0].feature.get(name)) : undefined;
@@ -1200,13 +1202,13 @@ new (class extends Plugin {
     Object
       .entries(relationSessionItems)
       .forEach(([layerId, { own: sessionItems, dependencies: relationSessionItems }]) => {
-
+        //undo/redo unique field of layer
         this.undoRedoLayerUniqueFieldValues({
           layerId,
           sessionItems,
           action
         });
-
+        //undo/redo unique field of relations
         this.undoRedoRelationUniqueFieldValues({
           relationSessionItems,
           action
