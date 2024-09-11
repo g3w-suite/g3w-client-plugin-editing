@@ -26,7 +26,7 @@ const { noop }                                 = g3wsdk.core.utils;
 const { GUI }                                  = g3wsdk.gui;
 const { Panel }                                = g3wsdk.gui.vue;
 const { Server: serverErrorParser }            = g3wsdk.core.errors.parsers;
-const { Geometry }                             = g3wsdk.core.geometry;
+const { Geometry }                             = g3wsdk.core.geoutils;
 const {
   getScaleFromResolution,
   getResolutionFromScale,

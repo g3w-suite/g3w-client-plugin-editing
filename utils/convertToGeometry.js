@@ -8,7 +8,7 @@ const {
   addZValueToOLFeatureGeometry,
 } = g3wsdk.core.geoutils.Geometry;
 
-const { isMultiGeometry } = g3wsdk.core.geometry.Geometry;
+const { isMultiGeometry } = g3wsdk.core.geoutils.Geometry;
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1

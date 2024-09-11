@@ -495,13 +495,6 @@
         this.checkOfflineChanges({ unlock: true });
       }
 
-      // register "offline" event
-      this.unByKeys.push({
-        owner : ApplicationService,
-        setter: 'offline',
-        key:    ApplicationService.onafter('offline', () => {})
-      });
-
       // register "online" event
       this.unByKeys.push({
         owner :  ApplicationService,

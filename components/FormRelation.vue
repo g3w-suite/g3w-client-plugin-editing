@@ -281,7 +281,7 @@
   const { ProjectsRegistry }            = g3wsdk.core.project;
   const { CatalogLayersStoresRegistry } = g3wsdk.core.catalog;
   const { DataRouterService }           = g3wsdk.core.data;
-  const { Geometry }                    = g3wsdk.core.geometry;
+  const { Geometry }                    = g3wsdk.core.geoutils;
   const { isSameBaseGeometryType }      = g3wsdk.core.geoutils;
   const { tPlugin:t }                   = g3wsdk.core.i18n;
   const { Layer }                       = g3wsdk.core.layer;

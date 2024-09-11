@@ -57,7 +57,7 @@ const {
 const { ProjectsRegistry }                = g3wsdk.core.project;
 const { DataRouterService }               = g3wsdk.core.data;
 const { CatalogLayersStoresRegistry }     = g3wsdk.core.catalog;
-const { Geometry }                        = g3wsdk.core.geometry;
+const { Geometry }                        = g3wsdk.core.geoutils;
 const {
   dissolve,
   isSameBaseGeometryType,

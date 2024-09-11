@@ -19,7 +19,7 @@ import { Workflow }                                     from '../g3wsdk/workflow
 import { Step }                                         from '../g3wsdk/workflow/step';
 
 const { G3WObject, ApplicationState }                   = g3wsdk.core;
-const { Geometry }                                      = g3wsdk.core.geometry;
+const { Geometry }                                      = g3wsdk.core.geoutils;
 const {
   convertSingleMultiGeometry,
   isSameBaseGeometryType,
