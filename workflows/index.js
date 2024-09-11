@@ -680,15 +680,18 @@ export class OpenFormStep extends Step {
         ]
       });
 
-      // overwrite click on relation
+      // Overwrite click on relation.
+      // Open FormRelation.vue component
       formService.handleRelation = async e => {
-        // skip when multi editing
+        // Skip when multi editing features
+        // It is not possible to manage relationss when we edit multi-features
         if (this._multi) {
           GUI.showUserMessage({ type: 'info', message: 'plugins.editing.errors.editing_multiple_relations', duration: 3000, autoclose: true });
           return;
         }
         GUI.setLoadingContent(true);
         //set unique values for relation layer based on unique fields
+        //@TODO need a find a way to call once and not every time we open a relation
         await setLayerUniqueFieldValues(inputs.layer.getRelationById(e.relation.name).getChild());
         formService.setCurrentComponentById(e.relation.name);
         GUI.setLoadingContent(false);
