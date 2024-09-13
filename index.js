@@ -216,6 +216,9 @@ new (class extends Plugin {
 
       this.state.editableLayers[layer.getId()] = layer;
 
+      //set default empty object
+      this.state.uniqueFieldsValues[layer.getId()] = {}
+
       /**
        * attach layer widgets event: get data from api when a field of a layer
        * is related to a wgis form widget (ex. relation reference, value map, etc..)
@@ -850,6 +853,9 @@ new (class extends Plugin {
 
     this.state.toolboxselected     = null;
     this.state.message             =  null;
+
+    //reset unique values
+    Object.keys(this.state.uniqueFieldsValues).forEach(id => this.state.uniqueFieldsValue[id] = {});
 
     GUI.getService('map').refreshMap();
   }

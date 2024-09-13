@@ -92,15 +92,6 @@ export class ToolBox extends G3WObject {
 
     this._start       = false;
 
-    const uniqueFields = layer.getEditingFields()
-      .filter(f => f.input && 'unique' === f.input.type)
-      .reduce((fields, f) => { fields[f.name] = f; return fields; }, {});
-
-    /**
-     * unique fields type
-     */
-    this.uniqueFields = Object.keys(uniqueFields).length ? uniqueFields : null;
-
     /** constraint loading features to a filter set */
     this.constraints  = { filter: null, show: null, tools: [] };
 
@@ -1216,12 +1207,6 @@ export class ToolBox extends G3WObject {
     // BACKOMP v3.x
     this.originalState = this.state.originalState;
 
-    // get informed when save on server
-    if (this.uniqueFields) {
-      this.getFieldUniqueValuesFromServer();
-      this._resetOnSaveChangesOnServer = true;
-    }
-
     //event features
     this._getFeaturesEvent = { event: null, fnc: null };
 
@@ -1306,30 +1291,6 @@ export class ToolBox extends G3WObject {
    */
   hasDependencies() {
     return this.state.editing.dependencies.length > 0;
-  }
-
-  /**
-   * Set unique value to filed unique
-   * @param reset
-   */
-  getFieldUniqueValuesFromServer({
-    reset = false
-  } = {}) {
-    this.state.layer.getWidgetData({
-      type: 'unique',
-      fields: Object.values(this.uniqueFields).map(field => field.name).join()
-    })
-    .then((response) => {
-      Object
-        .entries(response.data || [])
-        .forEach(([fieldName, values]) => {
-          if (reset) {
-            this.uniqueFields[fieldName].input.options.values.splice(0);
-          }
-          values.forEach(value => this.uniqueFields[fieldName].input.options.values.push(value));
-        })
-    })
-    .fail(console.warn)
   }
 
   /**
@@ -1690,10 +1651,6 @@ export class ToolBox extends G3WObject {
                 response: new_relations[id],
                 result:   true
               });
-
-            //@since 3.9.0
-            toolbox._session.saveChangesOnServer(); // dispatch setter event.
-
           }
 
           this.__clearHistory();
@@ -1702,7 +1659,7 @@ export class ToolBox extends G3WObject {
            * @since v3.9.0
            * After commit get new unique values
            */
-          this._session.saveChangesOnServer();
+          this._session.saveChangesOnServer(commit);
 
 
           // ES6 promises only accept a single response
@@ -2853,11 +2810,21 @@ export class ToolBox extends G3WObject {
 
   /**
    * Hook to get informed that are saved on server
+   * Get unique id for each commited layer/relation
    */
-  __saveChangesOnServer() {
-    if (this._resetOnSaveChangesOnServer) {
-      this.getFieldUniqueValuesFromServer({ reset: true });
+  async __saveChangesOnServer(commit) {
+    const promises = [ setLayerUniqueFieldValues(this.getId()) ];
+    const relationsId = [];
+    const addRelationId = (relations = {}) => {
+      Object.entries(relations).forEach(([id, commit]) => {
+        relationsId.push(id);
+        addRelationId(commit.relations);
+      })
     }
+    addRelationId(commit.relations);
+    relationsId.forEach(id => promises.push(setLayerUniqueFieldValues(id)));
+
+    await Promise.allSettled(promises);
   }
 
   /**

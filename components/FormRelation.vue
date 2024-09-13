@@ -721,22 +721,13 @@
                     const unique_fields        = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[this._relationLayerId];
                     //check if relation layer has unique values stored
                     if (undefined !== unique_fields) {
-                      //get parent layer unique fields
-                      const parent_relation_unique_fields = (
-                        g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[this.layerId]
-                        && g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[this.layerId].__uniqueFieldsValuesRelations
-                        && g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[this.layerId].__uniqueFieldsValuesRelations[this._relationLayerId]
-                      )
                       Object
                         .keys(relationfeature.getProperties())
                         .filter(p => undefined !== unique_fields[p])
                         .forEach(p => {
                           const values = new Set(unique_fields[p]);
+                          //@TODO Check if we need remove
                           values.delete(relationfeature.get(p));
-                          //In the case of parent store unique values field of relation, update values of this field
-                          if (parent_relation_unique_fields) {
-                            parent_relation_unique_fields.__uniqueFieldsValuesRelations[this._relationLayerId][p] = values;
-                          }
                         })
                     }
 
