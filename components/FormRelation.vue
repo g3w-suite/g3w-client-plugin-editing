@@ -192,6 +192,7 @@
                   class   = "magic-checkbox"
                   type    = "checkbox">
                   <label :for="`select_relation__${index}`"></label>
+              </td>
               <td>
                 <div style = "display: flex">
                   <!-- RELATION TOOLS -->
