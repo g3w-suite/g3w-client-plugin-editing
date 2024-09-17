@@ -4,7 +4,6 @@ import { Workflow }                              from './g3wsdk/workflow/workflo
 import { Step }                                  from './g3wsdk/workflow/step';
 import { promisify, $promisify }                 from './utils/promisify';
 import { createFeature }                         from './utils/createFeature';
-import { getProjectLayerFeatureById }            from './utils/getProjectLayerFeatureById';
 import { getEditingLayerById }                   from './utils/getEditingLayerById';
 import { setAndUnsetSelectedFeaturesStyle }      from './utils/setAndUnsetSelectedFeaturesStyle';
 import { addPartToMultigeometries }              from './utils/addPartToMultigeometries';
@@ -22,7 +21,7 @@ const { Layer, LayersStore }                   = g3wsdk.core.layer;
 const { Feature }                              = g3wsdk.core.layer.features;
 const { MapLayersStoreRegistry }               = g3wsdk.core.map;
 const { Plugin, PluginService }                = g3wsdk.core.plugin;
-const { noop }                                 = g3wsdk.core.utils;
+const { XHR, noop }                            = g3wsdk.core.utils;
 const { GUI }                                  = g3wsdk.gui;
 const { Panel }                                = g3wsdk.gui.vue;
 const { Server: serverErrorParser }            = g3wsdk.core.errors.parsers;
@@ -1514,21 +1513,35 @@ async function _rollback(relations = {}) {
         }),
         // update
         ...(has_features && update || []).map(async ({ id }) => {
-          const f       = await getProjectLayerFeatureById({ layerId, fid: id });
-          const feature = source.getFeatureById(id);
-
-          feature.setProperties(f.properties);
-          feature.setGeometry(f.geometry);
+          try {
+            const response = await XHR.get({
+              url:    CatalogLayersStoresRegistry.getLayerById(layerId).getUrl('data'),
+              params: { fids: id },
+            });
+            const f        = (response.result && response.vector.data.features || []).at(0);
+            const feature  = source.getFeatureById(id);
+            feature.setProperties(f.properties);
+            feature.setGeometry(f.geometry);
+          } catch(e) {
+            console.warn(e);
+          }
         }),
         // delete
         ...del.map(async id => {
-          const f       = await getProjectLayerFeatureById({ layerId, fid: id });
-          const feature = new ol.Feature({ geometry: f.geometry })
+          try {
+            const response = await XHR.get({
+              url:    CatalogLayersStoresRegistry.getLayerById(layerId).getUrl('data'),
+              params: { fids: id },
+            });
+            const f = (response.result && response.vector.data.features || []).at(0);
+            const feature = new ol.Feature({ geometry: f.geometry })
+            feature.setProperties(f.properties);
+            feature.setId(id);
+            source.addFeature(new Feature({ feature })); // add it again to source because relation layer is locked
+          } catch(e) {
+            console.warn(e);
+          }
 
-          feature.setProperties(f.properties);
-          feature.setId(id);
-          // need to add again to source because it is for relation layer is locked
-          source.addFeature(new Feature({ feature }));
         }),
         _rollback(relations),
       ];
