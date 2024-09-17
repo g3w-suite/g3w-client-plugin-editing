@@ -1,4 +1,13 @@
-const {sortAlphabeticallyArray, sortNumericArray} = g3wsdk.core.utils;
+/** Sort an array of strings (alphabetical order) */
+function sortAlphabeticallyArray(arr) {
+  return arr.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+};
+
+/* Sort an array of numbers (natural order) */
+function sortNumericArray(arr, ascending = true) {
+  return arr.sort((a, b) => (ascending ? (a - b) : (b - a)));
+};
+
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
  * 
