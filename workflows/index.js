@@ -117,7 +117,9 @@ export class AddFeatureStep extends Step {
               feature = e.feature;
             }
             // set Z values based on layer Geometry
-            feature = Geometry.addZValueToOLFeatureGeometry({ feature, geometryType: originalGeometryType });
+            if (Geometry.is3DGeometry(originalGeometryType)) {
+              feature = Geometry.addZValueToOLFeatureGeometry({ feature, geometryType: originalGeometryType });
+            }
 
             inputs.features.push(feature);
             this.getContext().get_default_value = true;
@@ -469,7 +471,7 @@ export class OpenFormStep extends Step {
         title:           "plugins.editing.editing_attributes",
         name:            layerName,
         crumb:           { title: layerName },
-        id:              'form_' + layerName,
+        id:              `form_${layerName}`,
         dataid:          layerName,
         layer:           inputs.layer,
         isnew:           this._originalFeatures.length > 1 ? false : this._originalFeatures[0].isNew(), // specify if is a new feature
@@ -528,7 +530,7 @@ export class OpenFormStep extends Step {
                 [...Workflow.Stack._workflows]
                   .reverse()
                   .filter(w => "function" === typeof w.getLastStep()._saveAll) // need to filter only workflow that
-                  .map( w => new Promise(async (resolve, reject) => {
+                  .map( w => new Promise(async (resolve) => {
                     const task   = w.getLastStep();
                     const fields = w.getContext().service.state.fields.filter(f => task._multi ? null !== f.value : true);
                     // skip when no fields
@@ -536,6 +538,7 @@ export class OpenFormStep extends Step {
                     await Workflow.Stack.getCurrent().getContextService().saveDefaultExpressionFieldsNotDependencies();
                     task._features.forEach(f => task.getInputs().layer.setFieldsWithValues(f, fields));
                     const newFeatures = task._features.map(f => f.clone());
+                    //Is a relation form
                     if (task._isContentChild) {
                       task.getInputs().relationFeatures = { newFeatures, originalFeatures: task._originalFeatures };
                     }
@@ -550,8 +553,34 @@ export class OpenFormStep extends Step {
               )
               try {
                 await promisify(g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').service.commit({ modal: false }));
-                Workflow.Stack._workflows.forEach(w => w.getContext().service.setUpdate(false, { force: false }));
-              } catch (e) {
+                [...Workflow.Stack._workflows]
+                  .reverse()
+                  .filter(w => "function" === typeof w.getLastStep()._saveAll)
+                  .forEach(w => {
+                  const service = w.getContext().service; //form service
+                  //need to set update form false because already saved on server
+                  service.setUpdate(false, { force: false });
+                  const feature = service.feature;
+                  // Check if the feature is new.
+                  // In this case, after commit, need to set new to false, and force update to false.
+                  if (feature.isNew()) {
+                    feature.state.new    = false;
+                    service.force.update = false;
+                  }
+                  Object.entries(
+                    w.getInputs().layer.getEditingSource().readFeatures()
+                      .find(f => f.getUid() === feature.getUid()) //Find current form editing feature by unique id of feature uid
+                      .getProperties() //get properties
+                  )
+                  .forEach(([k, v]) => {
+                    const field = service.getFields().find(f => k === f.name);
+                    //if field exists (geometry field is discarded)
+                    if (field) {
+                      field.value = field._value = v;
+                    }
+                  })
+                })
+              } catch(e) {
                 console.warn(e);
               }
               this.loading = false;
@@ -620,7 +649,7 @@ export class OpenFormStep extends Step {
               if (this._isContentChild) {
                 Workflow.Stack.getParents().forEach(w => w.getContextService().setUpdate(true, { force: true }));
               }
-
+              //@TODO add field unique new value id not set
               resolve(inputs);
             }
           },
@@ -651,15 +680,18 @@ export class OpenFormStep extends Step {
         ]
       });
 
-      // overwrite click on relation
+      // Overwrite click on relation.
+      // Open FormRelation.vue component
       formService.handleRelation = async e => {
-        // skip when multi editing
+        // Skip when multi editing features
+        // It is not possible to manage relationss when we edit multi-features
         if (this._multi) {
           GUI.showUserMessage({ type: 'info', message: 'plugins.editing.errors.editing_multiple_relations', duration: 3000, autoclose: true });
           return;
         }
         GUI.setLoadingContent(true);
-
+        //set unique values for relation layer based on unique fields
+        //@TODO need a find a way to call once and not every time we open a relation
         await setLayerUniqueFieldValues(inputs.layer.getRelationById(e.relation.name).getChild());
         formService.setCurrentComponentById(e.relation.name);
         GUI.setLoadingContent(false);
