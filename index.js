@@ -854,7 +854,7 @@ new (class extends Plugin {
     this.state.message             =  null;
 
     //reset unique values
-    Object.keys(this.state.uniqueFieldsValues).forEach(id => this.state.uniqueFieldsValue[id] = {});
+    Object.keys(this.state.uniqueFieldsValues).forEach(id => this.state.uniqueFieldsValues[id] = {});
 
     GUI.getService('map').refreshMap();
   }
