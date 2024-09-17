@@ -79,8 +79,8 @@ export class AddFeatureStep extends Step {
     const d       = $.Deferred();
     const layerId = inputs.layer.getId();
 
-    // Skin when a layer type is vector
-    if (Layer.LayerTypes.VECTOR !== inputs.layer.getType()) { return d.promise() }
+      // Skip when a layer type is vector
+      if (Layer.LayerTypes.VECTOR !== inputs.layer.getType()) { return  }
 
     /** @since g3w-client-plugin-editing@v3.8.0 */
     setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise, inputs, style: this.selectStyle });
@@ -117,7 +117,7 @@ export class AddFeatureStep extends Step {
         }
         // set Z values based on layer Geometry
         feature = Geometry.addZValueToOLFeatureGeometry({ feature, geometryType: originalGeometryType });
-  
+
         inputs.features.push(feature);
         this.getContext().get_default_value = true;
         this.fireEvent('addfeature', feature); // emit event to get from subscribers
@@ -163,7 +163,7 @@ export class AddFeatureStep extends Step {
   }
 
   /**
-   * Remove last point/vertex draw
+   * Removed last point/vertex draw
    */
   removeLastPoint() {
     try {
@@ -467,7 +467,7 @@ export class OpenFormStep extends Step {
         title:           "plugins.editing.editing_attributes",
         name:            layerName,
         crumb:           { title: layerName },
-        id:              'form_' + layerName,
+        id:              `form_${layerName}`,
         dataid:          layerName,
         layer:           inputs.layer,
         isnew:           this._originalFeatures.length > 1 ? false : this._originalFeatures[0].isNew(), // specify if is a new feature
@@ -500,61 +500,88 @@ export class OpenFormStep extends Step {
                 </span>
               </div>
             </section>`,
-            name: 'Saveall',
-            /** @TODO figure out who populate these props (ie. core client code?) */
-            props: { update: { type: Boolean }, valid: { type: Boolean } },
-            data() {
-              return {
-                loading: false,
-                enabled: Workflow.Stack._workflows.slice(0, Workflow.Stack.getLength() - 1)
-                  .every(w => {
-                    const valid = ((w.getContext().service instanceof FormService) ? w.getContext().service.getState() : {}).valid;
-                    return valid || undefined === valid;
-                  }),
-              };
+          name: 'Saveall',
+          /** @TODO figure out who populate these props (ie. core client code?) */
+          props: { update: { type: Boolean }, valid: { type: Boolean } },
+          data() {
+            return {
+              loading: false,
+              enabled: Workflow.Stack._workflows.slice(0, Workflow.Stack.getLength() - 1)
+                .every(w => {
+                  const valid = ((w.getContext().service instanceof FormService) ? w.getContext().service.getState() : {}).valid;
+                  return valid || undefined === valid;
+                }),
+            };
+          },
+          computed: {
+            /** @returns {boolean} whether disable save all button (eg. when parent or current form is not valid/ updated) */
+            disabled() {
+              return !this.enabled || !(this.valid && this.update);
             },
-            computed: {
-              /** @returns {boolean} whether disable save all button (eg. when parent or current form is not valid/ updated) */
-              disabled() {
-                return !this.enabled || !(this.valid && this.update);
-              },
+          },
+          methods: {
+            async saveAll() {
+              this.loading = true;
+              await Promise.allSettled(
+                [...Workflow.Stack._workflows]
+                  .reverse()
+                  .filter(w => "function" === typeof w.getLastStep()._saveAll) // need to filter only workflow that
+                  .map( w => new Promise(async (resolve) => {
+                    const task   = w.getLastStep();
+                    const fields = w.getContext().service.state.fields.filter(f => task._multi ? null !== f.value : true);
+                    // skip when no fields
+                    if (0 === fields.length) { return }
+                    await Workflow.Stack.getCurrent().getContextService().saveDefaultExpressionFieldsNotDependencies();
+                    task._features.forEach(f => task.getInputs().layer.setFieldsWithValues(f, fields));
+                    const newFeatures = task._features.map(f => f.clone());
+                    //Is a relation form
+                    if (task._isContentChild) {
+                      task.getInputs().relationFeatures = { newFeatures, originalFeatures: task._originalFeatures };
+                    }
+                    await task.fireEvent('saveform', { newFeatures, originalFeatures: task._originalFeatures });
+                    newFeatures.forEach((f, i) => task.getContext().session.pushUpdate(task.layerId, f, task._originalFeatures[i]));
+                    await handleRelation1_1LayerFields({ layerId: task.layerId, features: newFeatures, fields, task });
+                    task.fireEvent('savedfeature', newFeatures);                 // called after saved
+                    task.fireEvent(`savedfeature_${task.layerId}`, newFeatures); // called after saved using layerId
+                    task.getContext().session.save();
+                    return resolve();
+                  }))
+              )
+              try {
+                await promisify(g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').service.commit({ modal: false }));
+                [...Workflow.Stack._workflows]
+                  .reverse()
+                  .filter(w => "function" === typeof w.getLastStep()._saveAll)
+                  .forEach(w => {
+                  const service = w.getContext().service; //form service
+                  //need to set update form false because already saved on server
+                  service.setUpdate(false, { force: false });
+                  const feature = service.feature;
+                  // Check if the feature is new.
+                  // In this case, after commit, need to set new to false, and force update to false.
+                  if (feature.isNew()) {
+                    feature.state.new    = false;
+                    service.force.update = false;
+                  }
+                  Object.entries(
+                    w.getInputs().layer.getEditingSource().readFeatures()
+                      .find(f => f.getUid() === feature.getUid()) //Find current form editing feature by unique id of feature uid
+                      .getProperties() //get properties
+                  )
+                  .forEach(([k, v]) => {
+                    const field = service.getFields().find(f => k === f.name);
+                    //if field exists (geometry field is discarded)
+                    if (field) {
+                      field.value = field._value = v;
+                    }
+                  })
+                })
+              } catch(e) {
+                console.warn(e);
+              }
+              this.loading = false;
             },
-            methods: {
-              async saveAll() {
-                this.loading = true;
-                await Promise.allSettled(
-                  [...Workflow.Stack._workflows]
-                    .reverse()
-                    .filter(w => "function" === typeof w.getLastStep()._saveAll) // need to filter only workflow that
-                    .map( w => new Promise(async (resolve, reject) => {
-                      const task   = w.getLastStep();
-                      const fields = w.getContext().service.state.fields.filter(f => task._multi ? null !== f.value : true);
-                      // skip when no fields
-                      if (0 === fields.length) { return }
-                      await Workflow.Stack.getCurrent().getContextService().saveDefaultExpressionFieldsNotDependencies();
-                      task._features.forEach(f => task.getInputs().layer.setFieldsWithValues(f, fields));
-                      const newFeatures = task._features.map(f => f.clone());
-                      if (task._isContentChild) {
-                        task.getInputs().relationFeatures = { newFeatures, originalFeatures: task._originalFeatures };
-                      }
-                      await task.fireEvent('saveform', { newFeatures, originalFeatures: task._originalFeatures });
-                      newFeatures.forEach((f, i) => task.getContext().session.pushUpdate(task.layerId, f, task._originalFeatures[i]));
-                      await handleRelation1_1LayerFields({ layerId: task.layerId, features: newFeatures, fields, task });
-                      task.fireEvent('savedfeature', newFeatures);                 // called after saved
-                      task.fireEvent(`savedfeature_${task.layerId}`, newFeatures); // called after saved using layerId
-                      task.getContext().session.save();
-                      return resolve();
-                    }))
-                )
-                try {
-                  await promisify(g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').service.commit({ modal: false }));
-                  Workflow.Stack._workflows.forEach(w => w.getContext().service.setUpdate(false, { force: false }));
-                } catch (e) {
-                  console.warn(e);
-                }
-                this.loading = false;
-              },
-            },
+          },
         },
         buttons:         [
           {
@@ -566,7 +593,7 @@ export class OpenFormStep extends Step {
             class: "btn-success",
             // save features
             cbk: async (fields) => {
-              fields = this._multi ? fields.filter(field => null !== field.value) : fields;
+              fields = this._multi ? fields.filter(f => null !== f.value) : fields;
 
               // skip when no fields
               if (0 === fields.length) {
@@ -649,15 +676,18 @@ export class OpenFormStep extends Step {
         ]
       });
 
-      // overwrite click on relation
+      // Overwrite click on relation.
+      // Open FormRelation.vue component
       formService.handleRelation = async e => {
-        // skip when multi editing
+        // Skip when multi editing features
+        // It is not possible to manage relationss when we edit multi-features
         if (this._multi) {
           GUI.showUserMessage({ type: 'info', message: 'plugins.editing.errors.editing_multiple_relations', duration: 3000, autoclose: true });
           return;
         }
         GUI.setLoadingContent(true);
-
+        //set unique values for relation layer based on unique fields
+        //@TODO need a find a way to call once and not every time we open a relation
         await setLayerUniqueFieldValues(inputs.layer.getRelationById(e.relation.name).getChild());
         formService.setCurrentComponentById(e.relation.name);
         GUI.setLoadingContent(false);
@@ -668,22 +698,22 @@ export class OpenFormStep extends Step {
         ...(g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.formComponents[layerId] || []),
         // relation components (exlcude ONE relation + layer is the father get relation layers that set in editing on g3w-admin)
         ...getRelationsInEditingByFeature({
-            layerId,
-            relations: this._multi ? [] : inputs.layer.getRelations().getArray().filter(r => r.getType() !== 'ONE' && r.getFather() === layerId),
-            feature:   this._multi ? false : inputs.features[inputs.features.length - 1],
-          }).map(({ relation, relations }) => ({
-            title:     "plugins.editing.edit_relation",
-            name:      relation.name,
-            id:        relation.id,
-            header:    false,            // hide header form
-            component: Vue.extend({
-              mixins: [ require('../components/FormRelation.vue') ],
-              name: `relation_${Date.now()}`,
-              data() {
-                return { layerId, relation, relations };
-              },
-            }),
-          }))
+          layerId,
+          relations: this._multi ? [] : inputs.layer.getRelations().getArray().filter(r => r.getType() !== 'ONE' && r.getFather() === layerId),
+          feature:   this._multi ? false : inputs.features[inputs.features.length - 1],
+        }).map(({ relation, relations }) => ({
+          title:     "plugins.editing.edit_relation",
+          name:      relation.name,
+          id:        relation.id,
+          header:    false,            // hide a header form
+          component: Vue.extend({
+            mixins: [ require('../components/FormRelation.vue') ],
+            name: `relation_${Date.now()}`,
+            data() {
+              return { layerId, relation, relations };
+            },
+          }),
+        }))
       ]);
 
       // fire openform event
@@ -1003,7 +1033,7 @@ export class SelectElementsStep extends Step {
         const { session }      = this.getContext();
         interactions.external  = new PickFeaturesInteraction({
           layers: GUI.getService('map').getExternalLayers()
-            // filter external layer only vector - Exclude WMS
+            // filter external layer only vector - Exclude the
             // same base geometry
             .filter(l => {
               const features = 'VECTOR' == l.getType() && l.getSource().getFeatures();

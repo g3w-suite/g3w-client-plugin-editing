@@ -1,5 +1,4 @@
-import { Workflow } from '../g3wsdk/workflow/workflow';
-
+const {sortAlphabeticallyArray, sortNumericArray} = g3wsdk.core.utils;
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
  * 
@@ -17,141 +16,78 @@ import { Workflow } from '../g3wsdk/workflow/workflow';
 export function getFormFields({
   inputs,
   context,
-  feature,
-  isChild = false,
-  multi,
+  feature, //current feature
+  multi, // true -> multi features (e.g edit multi features attributes form)
 } = {}) {
 
-  let has_unique        = false;                                               // check for unique validation
-
+  //editing service
   const service         = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing');
-  const relationLayerId = Workflow.Stack.getFirst().getInputs().layer.getId(); // root layerId (in case of child edit relation)
-  const layerId         = inputs.layer.getId();                                // current form layerId
-  const unique_values   = [];                                                  // unique values by feature field
+  // current form layerId// unique values by feature field
+  const layerId         = inputs.layer.getId();
 
   const fields          = inputs.layer.getFieldsWithValues( // editing fields with values (in case of update)
     feature,
     {
-      exclude:           context.excludeFields,
-      get_default_value: undefined !== context.get_default_value ? context.get_default_value : false,
+      exclude:           context.excludeFields, // add exclude fields
+      get_default_value: undefined === context.get_default_value ? false : context.get_default_value,
     }
   );
 
-  fields.forEach(field => {
-    if (field.validate.unique && field.editable) {
-      has_unique = true;
-      unique_values.push({
-        field,                           // feature field
-        _value: feature.get(field.name), // feature field value (current in editing)
-      })
-    }
-  });
+  //Loop through fields
+  const unique_values = fields
+    //check if field is a unique field. Exclude pk not edittable
+    .filter(f => !(f.pk && false === f.editable) && ('unique' === f.input.type || f.validate.unique))
+    .map(field => ({
+      field,                            // feature field
+       _value: feature.get(field.name), // feature current field value
+      }))
 
+  //Loop through unique fields
   unique_values.forEach(({ _value, field }) => {
-    let current_values; // current editing feature add to
 
-    const relations = isChild && (
-      service.state.uniqueFieldsValues[relationLayerId] &&
-      service.state.uniqueFieldsValues[relationLayerId].__uniqueFieldsValuesRelations
-    );
-    const has_values = relations && (
-      undefined !== relations
-      && undefined !== relations[layerId]
-      && undefined !== relations[layerId][field.name]
-    );
+    //get current stored unique values for field
+    const current_values = service.state.uniqueFieldsValues[layerId][field.name] || new Set([]);
 
-    // child form --> belongs to relation (get child layer unique field values)
-    if (isChild && has_values) {
-      current_values = relations[layerId][field.name];
-    }
-
-    // root layer --> TODO: CHECK IF FIELD IS RELATED TO 1:1 RELATION
-    if (!isChild || !has_values) {
-      current_values = service.state.uniqueFieldsValues[layerId] ? service.state.uniqueFieldsValues[layerId][field.name] : []
-    }
+    //NEED TO ADD ALWAYS CURRENT VALUE
+    field.input.options.values = (['integer', 'float', 'bigint'].includes(field.type) ? sortNumericArray: sortAlphabeticallyArray)(Array.from(current_values));
 
     // convert "current" values to string (when not null or undefined)
-    current_values.forEach(value => { field.validate.exclude_values.add([null, undefined].indexOf(value) === -1 ? `${value}` : value ); });
-
-    // convert "inputs" values to string (when not null or undefined)
-    inputs.features.forEach(feature => {
-      const value = feature.get(field.name);
-      if ([null, undefined].indexOf(value) === -1) {
-        field.validate.exclude_values.add(`${value}`);
-      }
-    });
+    current_values.forEach(v => field.validate.exclude_values.add(![null, undefined].includes(v)? `${v}` : v ) );
 
     // remove current value from exclude_values
-    field.validate.exclude_values.delete(_value);
+    field.validate.exclude_values.delete(`${_value}`);
   });
 
-  // skip when ..
-  if (!has_unique) {
+  // skip when no fields are unique in multi features change form attribute
+  if (0 === unique_values.length) {
     return _handleMulti(fields, multi);
   }
 
-  // Listen event method after close/save form
+  // Listen to event method after close/save form
   const savedfeatureFnc = () => {
     unique_values.forEach(({ _value, field }) => {
-      // skip when ...
+      // initial value is the same that current field vale (no changed)
       if (_value === field.value) { return }
-
-      const layer = isChild && service.state.uniqueFieldsValues[relationLayerId];
-
-      // relation form
-      if (layer) {
-        // change relation layer unique field values
-        layer.__uniqueFieldsValuesRelations          = layer.__uniqueFieldsValuesRelations          || {};
-        layer.__uniqueFieldsValuesRelations[layerId] = layer.__uniqueFieldsValuesRelations[layerId] || {};
-        const values = new Set(service.state.uniqueFieldsValues[layerId][field.name]);
-        values.delete(_value);
-        values.add(field.value);
-        layer.__uniqueFieldsValuesRelations[layerId][field.name] = values;
-      }
-
-      // root layer form 
-      if (!layer && service.state.uniqueFieldsValues[layerId] && undefined !== service.state.uniqueFieldsValues[layerId][field.name]) {
+      //  layer form
+      if (service.state.uniqueFieldsValues[layerId][field.name]) {
         // change layer unique field values
         const values = service.state.uniqueFieldsValues[layerId][field.name];
+        //If changed, delete it from _value
         values.delete(_value);
+        //aff new one to value list unique field
         values.add(field.value);
       }
-
     });
-
-    // Save temporary relation feature changes on father (root) layer feature 
-    const relations = false === isChild && (
-      service.state.uniqueFieldsValues[layerId] &&
-      service.state.uniqueFieldsValues[layerId].__uniqueFieldsValuesRelations
-    );
-
-    // skip when no relation unique fields values are stored
-    if (relations && undefined !== relations) {
-      Object
-        .keys(relations)
-        .forEach(relationLayerId => {
-          Object
-            .entries(relations[relationLayerId])
-            .forEach(([fieldName, uniqueValues]) => {
-              service.state.uniqueFieldsValues[relationLayerId][fieldName] = uniqueValues;
-            })
-        });
-      // clear temporary relations unique fields values
-      if (service.state.uniqueFieldsValues[layerId]) {
-        delete service.state.uniqueFieldsValues[layerId].__uniqueFieldsValuesRelations;
-      }
-    }
 
     return { once: true };
   };
 
+  //event when insert/edit form button is pressed
   service.subscribe(`savedfeature_${layerId}`, savedfeatureFnc);
+  //event when close form layer
   service.subscribe(`closeform_${layerId}`, () => {
+    //unsubscribe event
     service.unsubscribe(`savedfeature_${layerId}`, savedfeatureFnc);
-    // clear temporary relations unique fields values
-    if (service.state.uniqueFieldsValues[layerId]) {
-      delete service.state.uniqueFieldsValues[layerId].__uniqueFieldsValuesRelations;
-    }
     return { once: true };
   });
 
@@ -161,13 +97,14 @@ export function getFormFields({
 function _handleMulti(fields, multi) {
   if (multi) {
     fields = fields.map(field => {
-        const f = JSON.parse(JSON.stringify(field));
-        f.value = null;
-        f.forceNull = true;
-        f.validate.required = false;
-        return f;
-      })
-      .filter(field => !field.pk)
+      const f             = JSON.parse(JSON.stringify(field));
+      f.value             = null;
+      f._value            = null; // @since v3.9.0 Fix update form field: Set the same value of value
+      f.forceNull         = true;
+      f.validate.required = false; //set false because all features have already required field filled
+      return f;
+    }).filter(f => !f.pk)
   }
+
   return fields;
 }

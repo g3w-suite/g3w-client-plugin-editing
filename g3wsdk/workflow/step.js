@@ -50,7 +50,7 @@ export class Step extends G3WObject {
     this._outputs = options.outputs || null;
 
     /**
-     * Dynamic state of step
+     * Dynamic state of a step
      */
     this.state = {
       id:      options.id || null,

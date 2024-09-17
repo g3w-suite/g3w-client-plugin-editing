@@ -90,15 +90,6 @@ export class ToolBox extends G3WObject {
 
     this._start       = false;
 
-    const uniqueFields = layer.getEditingFields()
-      .filter(f => f.input && 'unique' === f.input.type)
-      .reduce((fields, f) => { fields[f.name] = f; return fields; }, {});
-
-    /**
-     * unique fields type
-     */
-    this.uniqueFields = Object.keys(uniqueFields).length ? uniqueFields : null;
-
     /** constraint loading features to a filter set */
     this.constraints  = { filter: null, show: null, tools: [] };
 
@@ -533,9 +524,9 @@ export class ToolBox extends G3WObject {
                           label: 'Ok',
                           className: 'btn-success',
                           callback: async () => {
-                            const features = [];
+                            const features                          = [];
                             let isThereEmptyFieldRequiredNotDefined = false;
-                            const promisesFeatures = [];
+                            const promisesFeatures                  = [];
                             selectedFeatures.forEach(selectedFeature => {
                               /**
                                * check if the layer belongs to project or not
@@ -558,7 +549,7 @@ export class ToolBox extends G3WObject {
                                   const selectedFeature = selectedFeatures[index];
                                   // Check if there is an empty filed required not defined
                                   isThereEmptyFieldRequiredNotDefined = undefined !== attributes
-                                    .find(({name, validate: {required=false}}) => (undefined === layerFeature.properties[name] && required));
+                                    .find(({ name, validate: { required = false } }) => (undefined === layerFeature.properties[name] && required));
                 
                                 const feature = new Feature({
                                   feature: selectedFeature,
@@ -741,7 +732,7 @@ export class ToolBox extends G3WObject {
                         Promise
                           .allSettled(promisesDefaultEvaluation)
                           .then(promises => promises
-                            .forEach(({status, value:feature}) => {
+                            .forEach(({ status, value:feature }) => {
   
                               /**
                                * @todo improve client core to handle this situation on session.pushAdd not copy pk field not editable only
@@ -980,37 +971,26 @@ export class ToolBox extends G3WObject {
                         if (splittedGeometries[i].geometries.length > 1) {
                           isSplitted = true;
                           await handleSplitFeature({
-                            feature: inputs.features.find(f => f.getUid() === splittedGeometries[i].uid),
                             context,
-                            splittedGeometries: splittedGeometries[i].geometries,
                             inputs,
-                            session: context.session,
+                            feature:            inputs.features.find(f => f.getUid() === splittedGeometries[i].uid),
+                            splittedGeometries: splittedGeometries[i].geometries,
+                            session:            context.session,
                           });
                         }
-                      }
-
-                      if (isSplitted) {
-                        GUI.showUserMessage({
-                          type: 'success',
-                          message: 'plugins.editing.messages.splitted',
-                          autoclose: true
-                        });
-                      } else {
-                        GUI.showUserMessage({
-                          type: 'warning',
-                          message: 'plugins.editing.messages.nosplittedfeature',
-                          autoclose: true
-                        });
                       }
 
                       /** @since g3w-client-plugin-editing@v3.8.0 */
                       //resolve select style feature
                       this._stopPromise.resolve(true);
-
-                      //need to set timeout promise, because at the end of the workflow all user messages are cleared
-                      await new Promise((r) => setTimeout(r, 1000));
-
                       d[isSplitted ? 'resolve' : 'reject'](inputs);
+                      //need to set timeout promise, because at the end of the workflow all user messages are cleared
+                      await new Promise((r) => setTimeout(r, 600));
+                      GUI.showUserMessage({
+                        type:      isSplitted ? 'success': 'warning',
+                        message:   isSplitted ? 'plugins.editing.messages.splitted' : 'plugins.editing.messages.nosplittedfeature',
+                        autoclose: true
+                      })
                     }
                   });
 
@@ -1226,12 +1206,6 @@ export class ToolBox extends G3WObject {
     // BACKOMP v3.x
     this.originalState = this.state.originalState;
 
-    // get informed when save on server
-    if (this.uniqueFields) {
-      this.getFieldUniqueValuesFromServer();
-      this._resetOnSaveChangesOnServer = true;
-    }
-
     //event features
     this._getFeaturesEvent = { event: null, fnc: null };
 
@@ -1249,6 +1223,8 @@ export class ToolBox extends G3WObject {
     //@since 3.8.0 Store ol keys event start when we are in editing
     this._olStartKeysEvent = [];
 
+    //@since 3.8.1 store all unwatches
+    this.unwatches = [];
   }
 
   /**
@@ -1345,36 +1321,13 @@ export class ToolBox extends G3WObject {
   }
 
   /**
-   * @param reset
-   */
-  getFieldUniqueValuesFromServer({
-    reset=false
-  }={}) {
-    this.state.layer.getWidgetData({
-      type: 'unique',
-      fields: Object.values(this.uniqueFields).map(field => field.name).join()
-    })
-    .then((response) => {
-      Object
-        .entries(response.data)
-        .forEach(([fieldName, values]) => {
-          if (reset) {
-            this.uniqueFields[fieldName].input.options.values.splice(0);
-          }
-          values.forEach(value => this.uniqueFields[fieldName].input.options.values.push(value));
-        })
-    })
-    .fail(console.warn)
-  }
-
-  /**
    * Create getFeatures options
    * 
    * @param filter
    */
   setFeaturesOptions({
-    filter } = {}
-  ) {
+    filter
+  } = {}) {
     if (filter) {
       // in case of no features filter request check if no features_filed is present otherwise it get first field
       if (filter.nofeatures) {
@@ -1403,6 +1356,7 @@ export class ToolBox extends G3WObject {
 
   /**
    * @since 3.8.0 Handle scale constraint
+   * @sto <Boolean> stop true when called from stop method
    * @private
    */
   _handleScaleConstraint() {
@@ -1478,6 +1432,7 @@ export class ToolBox extends G3WObject {
 
       const handlerAfterSessionGetFeatures = async promise => {
         this.emit('start-editing');
+        //set unique fields values
         await setLayerUniqueFieldValues(this.getId());
         await g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').runEventHandler({ type: 'start-editing', id });
         try {
@@ -1666,7 +1621,7 @@ export class ToolBox extends G3WObject {
           d.reject(response);
           return;
         }
-        
+
         const { new_relations = {} } = response.response; // check if new relations are saved on server
 
         // sync server data with local data
@@ -1683,7 +1638,12 @@ export class ToolBox extends G3WObject {
 
         this.__clearHistory();
 
-        this._session.saveChangesOnServer(commit); // dispatch setter event.
+          /**
+           * @since v3.9.0
+           * After commit get new unique values
+           */
+          this._session.saveChangesOnServer(commit);
+
 
         // ES6 promises only accept a single response
         if (__esPromise) {
@@ -1691,7 +1651,7 @@ export class ToolBox extends G3WObject {
         } else {
           d.resolve(commit, response);
         }
-        
+
 
       })
       .fail(err => d.reject(err));
@@ -1922,12 +1882,12 @@ export class ToolBox extends G3WObject {
     const update_tools = this.state._tools
       .filter(tool => {
         // exclude
-        if (-1 !== excludetools.indexOf(tool.getId()) ) {
+        if (excludetools.includes(tool.getId()) ) {
           return false;
         }
         return editing_constraints
           ? tool.type.find(type => type === 'change_feature' || type ==='change_attr_feature')
-          : -1 !== UPDATEONEFEATUREONLYTOOLSID.indexOf(tool.getId()) ;
+          : UPDATEONEFEATUREONLYTOOLSID.includes(tool.getId()) ;
       })
       .map(tool => {
         const id = tool.getId();
@@ -2282,7 +2242,7 @@ export class ToolBox extends G3WObject {
       });
     };
     const steps = (this._states.length - 1) - currentStateIndex;
-    this._constrains.undo = (null !== this.state.editing.session.current) && (this.state.editing.session.maxSteps > steps);
+    this._constrains.undo = (null !== this.state.editing.session.current) && (steps < 10); // 10 = maximum "buffer history" lenght for undo/redo
     return this._constrains.undo;
   }
 
@@ -2702,7 +2662,7 @@ export class ToolBox extends G3WObject {
             .getLayer()
             .getRelations()
             .getArray()
-            .find(r => -1 !== relations.indexOf(r.getFather())) // parent relation layer
+            .find(r => relations.includes(r.getFather())) // parent relation layer
             .getFather()
           ].relations[id] = commitObj.relations[id];
         return id;
@@ -2836,11 +2796,21 @@ export class ToolBox extends G3WObject {
 
   /**
    * Hook to get informed that are saved on server
+   * Get unique id for each commited layer/relation
    */
-  __saveChangesOnServer(commitItems) {
-    if (this._resetOnSaveChangesOnServer) {
-      this.getFieldUniqueValuesFromServer({ reset: true });
+  async __saveChangesOnServer(commit) {
+    const promises = [ setLayerUniqueFieldValues(this.getId()) ];
+    const relationsId = [];
+    const addRelationId = (relations = {}) => {
+      Object.entries(relations).forEach(([id, commit]) => {
+        relationsId.push(id);
+        addRelationId(commit.relations);
+      })
     }
+    addRelationId(commit.relations);
+    relationsId.forEach(id => promises.push(setLayerUniqueFieldValues(id)));
+
+    await Promise.allSettled(promises);
   }
 
   /**

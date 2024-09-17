@@ -76,8 +76,9 @@ export default class Editor extends G3WObject {
           /** @TODO simplfy nested promises */
           if (doRequest) {
             const features = await promisify(this._layer.getFeatures(options));
-            // add features from server
+            // add features from server to editing features store (cloned from original)
             this._featuresstore.addFeatures((features || []).map(f => f.clone()));
+            //set all features to true if no filter is set (e.g., Table layer)
             this._allfeatures = !options.filter;
             return features;
           }
@@ -93,7 +94,7 @@ export default class Editor extends G3WObject {
     };
 
     /**
-     * @FIXME add description
+     * { Boolean } true, mean all features of layer are get (e.g. Table layer)
      */
     this._allfeatures = false;
 
@@ -192,7 +193,7 @@ export default class Editor extends G3WObject {
 
   /**
    * Apply response data from server in case of new inserted feature
-   *
+   * @param { Object } response
    * @param response.response.new            array of new ids
    * @param response.response.new.clientid   temporary id created by client __new__
    * @param response.response.new.id         the new id created and stored on server
@@ -206,27 +207,33 @@ export default class Editor extends G3WObject {
     // skip when no response and response.result is false
     if (!(response && response.result)) { return }
 
+    //Loop on new features saved on server
+    // clientid - temporary id of new feature
+    // id - id saved on server (autogenerate, next value) to subtituite to clientid feature id
+    // properties - properties of feature returned by server
     response.response.new.forEach(({ clientid, id, properties } = {}) => {
-
+      //get feature from current layer in editing
       const feature = this._featuresstore.getFeatureById(clientid);
-
-      feature.setId(id);                       // set new id
+      // set new id
+      feature.setId(id);
+      //set properties
       feature.setProperties(properties);
-
-      relations.forEach(relation => {                                              // handle relations (if provided)
+      //Loop on eventual relation updated or created
+      relations.forEach(r => {         // handle relations (if provided)
         Object
-          .entries(relation)
-          .forEach(([ relationId, options = {}]) => {
-            const is_pk = options.fatherField.find(d => this._layer.isPkField(d)); // check if parent field is a Primary Key
+          .entries(r)
+          .forEach(([ id, opts = {}]) => { // id - relation layer id, opts - Object contain relation properties
+            //get the editing source of relation layer
+            const source = ToolBox.get(id).getSession().getEditor().getEditingSource();
             // handle value to relation field saved on server
-            if (is_pk) {
-              const field  = options.childField[options.fatherField.indexOf(is_pk)];             // relation field to overwrite
-              const source = ToolBox.get(relationId).getSession().getEditor().getEditingSource(); // get source of editing layer.
-              (options.ids || []).forEach(id => {                          // loop relation ids
-                const feature = source.getFeatureById(id);
-                if (feature) { feature.set(field.name, field.value) }   // set father feature `value` and `name`
-              })
-            }
+            (opts.ids || []).forEach(id => {
+              const rFeature = source.getFeatureById(id);
+              if (rFeature) {
+                opts.fatherField.forEach((ff, i) => {// loop relation ids
+                  rFeature.set(opts.childField[i], feature.get(ff))  // set father feature `value` and `name`
+                })
+              }
+            })
           });
       });
 
@@ -281,12 +288,12 @@ export default class Editor extends G3WObject {
                   ...commit.relations[relationId].update.map(r => r.id) // updated
                 ],
                 fatherField: relation.getFatherField(), // father Fields <Array>
-                childField: relation.getChildField()    // child Fields <Array>
+                childField:  relation.getChildField()    // child Fields <Array>
               }
             };
           });
       }
-  
+
       /** @TODO simplfy nested promises */
       const r = await promisify(this._layer.commit(commit));
       this.applyCommitResponse(r, relations);
@@ -339,7 +346,7 @@ export default class Editor extends G3WObject {
   }
 
   /**
-   * Method to clear all filled variable
+   * Method to clear all filled variables
    */
   clear() {
     this._started     = false;
@@ -350,7 +357,7 @@ export default class Editor extends G3WObject {
     this._layer.getFeaturesStore().clear();
 
     // vector layer
-    if (this._layer.getType() === Layer.LayerTypes.VECTOR) {
+    if (Layer.LayerTypes.VECTOR === this._layer.getType()) {
       this._layer.resetEditingSource(this._featuresstore.getFeaturesCollection());
     }
   }
