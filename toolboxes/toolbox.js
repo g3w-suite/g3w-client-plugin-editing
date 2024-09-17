@@ -92,15 +92,6 @@ export class ToolBox extends G3WObject {
 
     this._start       = false;
 
-    const uniqueFields = layer.getEditingFields()
-      .filter(f => f.input && 'unique' === f.input.type)
-      .reduce((fields, f) => { fields[f.name] = f; return fields; }, {});
-
-    /**
-     * unique fields type
-     */
-    this.uniqueFields = Object.keys(uniqueFields).length ? uniqueFields : null;
-
     /** constraint loading features to a filter set */
     this.constraints  = { filter: null, show: null, tools: [] };
 
@@ -1216,12 +1207,6 @@ export class ToolBox extends G3WObject {
     // BACKOMP v3.x
     this.originalState = this.state.originalState;
 
-    // get informed when save on server
-    if (this.uniqueFields) {
-      this.getFieldUniqueValuesFromServer();
-      this._resetOnSaveChangesOnServer = true;
-    }
-
     //event features
     this._getFeaturesEvent = { event: null, fnc: null };
 
@@ -1309,36 +1294,13 @@ export class ToolBox extends G3WObject {
   }
 
   /**
-   * @param reset
-   */
-  getFieldUniqueValuesFromServer({
-    reset=false
-  } = {}) {
-    this.state.layer.getWidgetData({
-      type: 'unique',
-      fields: Object.values(this.uniqueFields).map(field => field.name).join()
-    })
-    .then((response) => {
-      Object
-        .entries(response.data)
-        .forEach(([fieldName, values]) => {
-          if (reset) {
-            this.uniqueFields[fieldName].input.options.values.splice(0);
-          }
-          values.forEach(value => this.uniqueFields[fieldName].input.options.values.push(value));
-        })
-    })
-    .fail(console.warn)
-  }
-
-  /**
    * Create getFeatures options
    * 
    * @param filter
    */
   setFeaturesOptions({
-    filter } = {}
-  ) {
+    filter
+  } = {}) {
     if (filter) {
       // in case of no features filter request check if no features_filed is present otherwise it get first field
       if (filter.nofeatures) {
@@ -1480,6 +1442,7 @@ export class ToolBox extends G3WObject {
 
       const handlerAfterSessionGetFeatures = async promise => {
         this.emit('start-editing');
+        //set unique fields values
         await setLayerUniqueFieldValues(this.getId());
         await g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').runEventHandler({ type: 'start-editing', id });
         try {
@@ -1668,7 +1631,7 @@ export class ToolBox extends G3WObject {
 
       this.state.layer.getEditor()
         .commit(commit)
-        .then(response => {
+        .then( response => {
 
           // skip when response is null or undefined and response.result is false
           if (!(response && response.result)) {
@@ -1680,8 +1643,8 @@ export class ToolBox extends G3WObject {
 
           // sync server data with local data
           for (const id in new_relations) {
-            ToolBox
-              .get(id)               // get session of relation by id
+            const toolbox = ToolBox.get(id)
+            toolbox
               .getSession()
               .getEditor()
               .applyCommitResponse({        // apply commit response to current editing relation layer
@@ -1692,7 +1655,12 @@ export class ToolBox extends G3WObject {
 
           this.__clearHistory();
 
-          this._session.saveChangesOnServer(commit); // dispatch setter event.
+          /**
+           * @since v3.9.0
+           * After commit get new unique values
+           */
+          this._session.saveChangesOnServer(commit);
+
 
           // ES6 promises only accept a single response
           if (__esPromise) {
@@ -2842,11 +2810,21 @@ export class ToolBox extends G3WObject {
 
   /**
    * Hook to get informed that are saved on server
+   * Get unique id for each commited layer/relation
    */
-  __saveChangesOnServer(commitItems) {
-    if (this._resetOnSaveChangesOnServer) {
-      this.getFieldUniqueValuesFromServer({ reset: true });
+  async __saveChangesOnServer(commit) {
+    const promises = [ setLayerUniqueFieldValues(this.getId()) ];
+    const relationsId = [];
+    const addRelationId = (relations = {}) => {
+      Object.entries(relations).forEach(([id, commit]) => {
+        relationsId.push(id);
+        addRelationId(commit.relations);
+      })
     }
+    addRelationId(commit.relations);
+    relationsId.forEach(id => promises.push(setLayerUniqueFieldValues(id)));
+
+    await Promise.allSettled(promises);
   }
 
   /**

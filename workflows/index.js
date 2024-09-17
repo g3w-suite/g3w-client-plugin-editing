@@ -73,18 +73,18 @@ export class AddFeatureStep extends Step {
   }
 
   run(inputs, context) {
-    //create promise to listen to pass to setAndUnsetSelectedFeaturesStyle
-    this._stopPromise = $.Deferred();
 
     return $promisify(new Promise((resolve, reject) => {
+      //create promise to listen to pass to setAndUnsetSelectedFeaturesStyle
+      const promise = new Promise(r => this.resolve = r);
 
       const layerId = inputs.layer.getId();
 
-      // Skin when a layer type is vector
-      if (Layer.LayerTypes.VECTOR !== inputs.layer.getType()) { return d.promise() }
+      // Skip when a layer type is vector
+      if (Layer.LayerTypes.VECTOR !== inputs.layer.getType()) { return  }
 
       /** @since g3w-client-plugin-editing@v3.8.0 */
-      setAndUnsetSelectedFeaturesStyle({ promise: this._stopPromise, inputs, style: this.selectStyle });
+      setAndUnsetSelectedFeaturesStyle({ promise: $promisify(promise), inputs, style: this.selectStyle });
 
       const originalGeometryType = inputs.layer.getEditingGeometryType();
 
@@ -117,7 +117,9 @@ export class AddFeatureStep extends Step {
               feature = e.feature;
             }
             // set Z values based on layer Geometry
-            feature = Geometry.addZValueToOLFeatureGeometry({ feature, geometryType: originalGeometryType });
+            if (Geometry.is3DGeometry(originalGeometryType)) {
+              feature = Geometry.addZValueToOLFeatureGeometry({ feature, geometryType: originalGeometryType });
+            }
 
             inputs.features.push(feature);
             this.getContext().get_default_value = true;
@@ -177,12 +179,14 @@ export class AddFeatureStep extends Step {
   stop() {
     this.removeInteraction(this.drawInteraction);
     this.removeMeasureInteraction();
+    this.resolve(true);
 
     this.drawInteraction = null;
     this.drawingFeature  = null;
+    this.resolve         = null;
 
     document.removeEventListener('keydown', this._delKeyRemoveLastPoint);
-    this._stopPromise.resolve(true);
+
     return true;
   }
 
@@ -285,14 +289,14 @@ export class MoveFeatureStep extends Step {
      * and another one for a run task. If we use the same promise, when stop a task without move feature,
      * this.promise.resolve(), it fires also thenable method listens to resolve promise of a run task,
      * that call stop task method.*/
-    this.promise         = $.Deferred();
     return $promisify(new Promise((resolve) => {
+      const promise         = new Promise(r => this.resolve = r);
       const layerId        = inputs.layer.getId();
       let originalFeature  = null;
       this.changeKey       = null;
       let isGeometryChange = false; // changed if geometry is changed
 
-      setAndUnsetSelectedFeaturesStyle({ promise: this.promise, inputs, style: this.selectStyle });
+      setAndUnsetSelectedFeaturesStyle({ promise: $promisify(promise), inputs, style: this.selectStyle });
 
       this.addInteraction(
         new ol.interaction.Translate({
@@ -323,7 +327,8 @@ export class MoveFeatureStep extends Step {
   }
 
   stop() {
-    this.promise.resolve();
+    this.resolve(true);
+    this.resolve   = null;
     this.changeKey = null;
   }
 }
@@ -399,9 +404,7 @@ export class OpenFormStep extends Step {
    * @returns {*}
    */
   run(inputs, context) {
-    return $.Deferred(async d => {
-
-      this.promise         = d;
+    const promise = new Promise(async (resolve, reject) => {
       this._isContentChild = Workflow.Stack.getLength() > 1;
       this.layerId         = inputs.layer.getId();
 
@@ -409,10 +412,10 @@ export class OpenFormStep extends Step {
 
       GUI.getService('map').disableClickMapControls(true);
 
-      setAndUnsetSelectedFeaturesStyle({ promise: d, inputs, style: this.selectStyle });
+
 
       if (!this._multi && Array.isArray(inputs.features[inputs.features.length - 1])) {
-        d.resolve();
+        resolve();
         return;
       }
 
@@ -468,7 +471,7 @@ export class OpenFormStep extends Step {
         title:           "plugins.editing.editing_attributes",
         name:            layerName,
         crumb:           { title: layerName },
-        id:              'form_' + layerName,
+        id:              `form_${layerName}`,
         dataid:          layerName,
         layer:           inputs.layer,
         isnew:           this._originalFeatures.length > 1 ? false : this._originalFeatures[0].isNew(), // specify if is a new feature
@@ -501,61 +504,88 @@ export class OpenFormStep extends Step {
                 </span>
               </div>
             </section>`,
-            name: 'Saveall',
-            /** @TODO figure out who populate these props (ie. core client code?) */
-            props: { update: { type: Boolean }, valid: { type: Boolean } },
-            data() {
-              return {
-                loading: false,
-                enabled: Workflow.Stack._workflows.slice(0, Workflow.Stack.getLength() - 1)
-                  .every(w => {
-                    const valid = ((w.getContext().service instanceof FormService) ? w.getContext().service.getState() : {}).valid;
-                    return valid || undefined === valid;
-                  }),
-              };
+          name: 'Saveall',
+          /** @TODO figure out who populate these props (ie. core client code?) */
+          props: { update: { type: Boolean }, valid: { type: Boolean } },
+          data() {
+            return {
+              loading: false,
+              enabled: Workflow.Stack._workflows.slice(0, Workflow.Stack.getLength() - 1)
+                .every(w => {
+                  const valid = ((w.getContext().service instanceof FormService) ? w.getContext().service.getState() : {}).valid;
+                  return valid || undefined === valid;
+                }),
+            };
+          },
+          computed: {
+            /** @returns {boolean} whether disable save all button (eg. when parent or current form is not valid/ updated) */
+            disabled() {
+              return !this.enabled || !(this.valid && this.update);
             },
-            computed: {
-              /** @returns {boolean} whether disable save all button (eg. when parent or current form is not valid/ updated) */
-              disabled() {
-                return !this.enabled || !(this.valid && this.update);
-              },
+          },
+          methods: {
+            async saveAll() {
+              this.loading = true;
+              await Promise.allSettled(
+                [...Workflow.Stack._workflows]
+                  .reverse()
+                  .filter(w => "function" === typeof w.getLastStep()._saveAll) // need to filter only workflow that
+                  .map( w => new Promise(async (resolve) => {
+                    const task   = w.getLastStep();
+                    const fields = w.getContext().service.state.fields.filter(f => task._multi ? null !== f.value : true);
+                    // skip when no fields
+                    if (0 === fields.length) { return }
+                    await Workflow.Stack.getCurrent().getContextService().saveDefaultExpressionFieldsNotDependencies();
+                    task._features.forEach(f => task.getInputs().layer.setFieldsWithValues(f, fields));
+                    const newFeatures = task._features.map(f => f.clone());
+                    //Is a relation form
+                    if (task._isContentChild) {
+                      task.getInputs().relationFeatures = { newFeatures, originalFeatures: task._originalFeatures };
+                    }
+                    await task.fireEvent('saveform', { newFeatures, originalFeatures: task._originalFeatures });
+                    newFeatures.forEach((f, i) => task.getContext().session.pushUpdate(task.layerId, f, task._originalFeatures[i]));
+                    await handleRelation1_1LayerFields({ layerId: task.layerId, features: newFeatures, fields, task });
+                    task.fireEvent('savedfeature', newFeatures);                 // called after saved
+                    task.fireEvent(`savedfeature_${task.layerId}`, newFeatures); // called after saved using layerId
+                    task.getContext().session.save();
+                    return resolve();
+                  }))
+              )
+              try {
+                await promisify(g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').service.commit({ modal: false }));
+                [...Workflow.Stack._workflows]
+                  .reverse()
+                  .filter(w => "function" === typeof w.getLastStep()._saveAll)
+                  .forEach(w => {
+                  const service = w.getContext().service; //form service
+                  //need to set update form false because already saved on server
+                  service.setUpdate(false, { force: false });
+                  const feature = service.feature;
+                  // Check if the feature is new.
+                  // In this case, after commit, need to set new to false, and force update to false.
+                  if (feature.isNew()) {
+                    feature.state.new    = false;
+                    service.force.update = false;
+                  }
+                  Object.entries(
+                    w.getInputs().layer.getEditingSource().readFeatures()
+                      .find(f => f.getUid() === feature.getUid()) //Find current form editing feature by unique id of feature uid
+                      .getProperties() //get properties
+                  )
+                  .forEach(([k, v]) => {
+                    const field = service.getFields().find(f => k === f.name);
+                    //if field exists (geometry field is discarded)
+                    if (field) {
+                      field.value = field._value = v;
+                    }
+                  })
+                })
+              } catch(e) {
+                console.warn(e);
+              }
+              this.loading = false;
             },
-            methods: {
-              async saveAll() {
-                this.loading = true;
-                await Promise.allSettled(
-                  [...Workflow.Stack._workflows]
-                    .reverse()
-                    .filter(w => "function" === typeof w.getLastStep()._saveAll) // need to filter only workflow that
-                    .map( w => new Promise(async (resolve, reject) => {
-                      const task   = w.getLastStep();
-                      const fields = w.getContext().service.state.fields.filter(f => task._multi ? null !== f.value : true);
-                      // skip when no fields
-                      if (0 === fields.length) { return }
-                      await Workflow.Stack.getCurrent().getContextService().saveDefaultExpressionFieldsNotDependencies();
-                      task._features.forEach(f => task.getInputs().layer.setFieldsWithValues(f, fields));
-                      const newFeatures = task._features.map(f => f.clone());
-                      if (task._isContentChild) {
-                        task.getInputs().relationFeatures = { newFeatures, originalFeatures: task._originalFeatures };
-                      }
-                      await task.fireEvent('saveform', { newFeatures, originalFeatures: task._originalFeatures });
-                      newFeatures.forEach((f, i) => task.getContext().session.pushUpdate(task.layerId, f, task._originalFeatures[i]));
-                      await handleRelation1_1LayerFields({ layerId: task.layerId, features: newFeatures, fields, task });
-                      task.fireEvent('savedfeature', newFeatures);                 // called after saved
-                      task.fireEvent(`savedfeature_${task.layerId}`, newFeatures); // called after saved using layerId
-                      task.getContext().session.save();
-                      return resolve();
-                    }))
-                )
-                try {
-                  await promisify(g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').service.commit({ modal: false }));
-                  Workflow.Stack._workflows.forEach(w => w.getContext().service.setUpdate(false, { force: false }));
-                } catch (e) {
-                  console.warn(e);
-                }
-                this.loading = false;
-              },
-            },
+          },
         },
         buttons:         [
           {
@@ -567,12 +597,12 @@ export class OpenFormStep extends Step {
             class: "btn-success",
             // save features
             cbk: async (fields) => {
-              fields = this._multi ? fields.filter(field => null !== field.value) : fields;
+              fields = this._multi ? fields.filter(f => null !== f.value) : fields;
 
               // skip when no fields
               if (0 === fields.length) {
                 GUI.setModal(false);
-                d.resolve(inputs);
+                resolve(inputs);
                 return;
               }
 
@@ -619,8 +649,8 @@ export class OpenFormStep extends Step {
               if (this._isContentChild) {
                 Workflow.Stack.getParents().forEach(w => w.getContextService().setUpdate(true, { force: true }));
               }
-
-              d.resolve(inputs);
+              //@TODO add field unique new value id not set
+              resolve(inputs);
             }
           },
           {
@@ -644,21 +674,24 @@ export class OpenFormStep extends Step {
                 GUI.setModal(false);
                 this.fireEvent('cancelform', inputs.features); // fire event cancel form to emit to subscrivers
               }
-              d.reject(inputs);
+              reject(inputs);
             }
           }
         ]
       });
 
-      // overwrite click on relation
+      // Overwrite click on relation.
+      // Open FormRelation.vue component
       formService.handleRelation = async e => {
-        // skip when multi editing
+        // Skip when multi editing features
+        // It is not possible to manage relationss when we edit multi-features
         if (this._multi) {
           GUI.showUserMessage({ type: 'info', message: 'plugins.editing.errors.editing_multiple_relations', duration: 3000, autoclose: true });
           return;
         }
         GUI.setLoadingContent(true);
-
+        //set unique values for relation layer based on unique fields
+        //@TODO need a find a way to call once and not every time we open a relation
         await setLayerUniqueFieldValues(inputs.layer.getRelationById(e.relation.name).getChild());
         formService.setCurrentComponentById(e.relation.name);
         GUI.setLoadingContent(false);
@@ -669,22 +702,22 @@ export class OpenFormStep extends Step {
         ...(g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.formComponents[layerId] || []),
         // relation components (exlcude ONE relation + layer is the father get relation layers that set in editing on g3w-admin)
         ...getRelationsInEditingByFeature({
-            layerId,
-            relations: this._multi ? [] : inputs.layer.getRelations().getArray().filter(r => r.getType() !== 'ONE' && r.getFather() === layerId),
-            feature:   this._multi ? false : inputs.features[inputs.features.length - 1],
-          }).map(({ relation, relations }) => ({
-            title:     "plugins.editing.edit_relation",
-            name:      relation.name,
-            id:        relation.id,
-            header:    false,            // hide a header form
-            component: Vue.extend({
-              mixins: [ require('../components/FormRelation.vue') ],
-              name: `relation_${Date.now()}`,
-              data() {
-                return { layerId, relation, relations };
-              },
-            }),
-          }))
+          layerId,
+          relations: this._multi ? [] : inputs.layer.getRelations().getArray().filter(r => r.getType() !== 'ONE' && r.getFather() === layerId),
+          feature:   this._multi ? false : inputs.features[inputs.features.length - 1],
+        }).map(({ relation, relations }) => ({
+          title:     "plugins.editing.edit_relation",
+          name:      relation.name,
+          id:        relation.id,
+          header:    false,            // hide a header form
+          component: Vue.extend({
+            mixins: [ require('../components/FormRelation.vue') ],
+            name: `relation_${Date.now()}`,
+            data() {
+              return { layerId, relation, relations };
+            },
+          }),
+        }))
       ]);
 
       // fire openform event
@@ -706,8 +739,11 @@ export class OpenFormStep extends Step {
       listenRelation1_1FieldChange({ layerId: this.layerId, fields }).then(d => this._unwatchs = d);
 
       this.disableSidebar(true);
-
-    }).promise();
+    })
+    return $promisify(async () => {
+      setAndUnsetSelectedFeaturesStyle({ promise: $promisify(promise), inputs, style: this.selectStyle });
+      return promise;
+    });
   }
 
   /**
@@ -746,7 +782,6 @@ export class OpenFormStep extends Step {
     this.fireEvent(`closeform_${this.layerId}`);
 
     this.layerId = null;
-    this.promise = null;
     this._unwatchs.forEach(unwatch => unwatch());
     this._unwatchs = [];
 
@@ -779,53 +814,55 @@ export class OpenTableStep extends Step {
     // set current plugin layout (right content)
     g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').setCurrentLayout();
 
-    const d              = $.Deferred();
-    this._isContentChild = Workflow.Stack.getLength() > 1;
+    return $promisify(new Promise((resolve, reject) => {
+      this._isContentChild = Workflow.Stack.getLength() > 1;
+      const features       = (inputs.layer.readEditingFeatures() || []);
+      const headers        = (inputs.layer.getEditingFields() || []).filter(h => features.length ? Object.keys(features[0].getProperties()).includes(h.name) : true);
+      this._isContentChild = Workflow.Stack.getLength() > 1;
+      const excludeFields  = this._isContentChild ? (context.excludeFields || []) : [];
+      const service        = Object.assign(new G3WObject,
+        {
+          state: {
+            inputs,
+            context,
+            promise: { resolve, reject },
+            headers, // column names
+            features,
+            rows: features.length > 0
+              // ordered properties
+              ? (
+                excludeFields.length > 0
+                  ? features.filter(feat => !excludeFields.reduce((a, f, i) => a && context.fatherValue[i] === `${feat.get(f)}` , true))
+                  : features
+              )
+                .map(f => headers.map(h => h.name).reduce((props, header) => Object.assign(props, {
+                  [header]: getFeatureTableFieldValue({ layerId: inputs.layer.getId(), feature: f, property: header }),
+                  '__gis3w_feature_uid': f.getUid(), // private attribute unique value
+                }), {}))
+              // features already bind to parent feature
+              : features,
+            title:        `${inputs.layer.getName()}` || 'Link relation',
+            isrelation:   this._isContentChild,
+            capabilities: inputs.layer.getEditingCapabilities(),
+            layerId:      inputs.layer.getId(),
+            workflow:     null,
+          }
+        }
+      );
 
-    const features       = (inputs.layer.readEditingFeatures() || []);
-    const headers        = (inputs.layer.getEditingFields() || []).filter(h => features.length ? Object.keys(features[0].getProperties()).includes(h.name) : true);
-    this._isContentChild = Workflow.Stack.getLength() > 1;
-    const excludeFields  = this._isContentChild ? (context.excludeFields || []) : [];
-    const service        = Object.assign(new G3WObject, { state: {
-      inputs,
-      context,
-      promise: d,
-      headers, // column names
-      features,
-      rows: features.length > 0
-        // ordered properties
-        ? (
-          excludeFields.length > 0
-            ? features.filter(feat => !excludeFields.reduce((a, f, i) => a && context.fatherValue[i] === `${feat.get(f)}` , true))
-            : features
-        )
-          .map(f => headers.map(h => h.name).reduce((props, header) => Object.assign(props, {
-            [header]: getFeatureTableFieldValue({ layerId: inputs.layer.getId(), feature: f, property: header }),
-            '__gis3w_feature_uid': f.getUid(), // private attribute unique value
-          }), {}))
-        // features already bind to parent feature
-        : features,
-      title:        `${inputs.layer.getName()}` || 'Link relation',
-      isrelation:   this._isContentChild,
-      capabilities: inputs.layer.getEditingCapabilities(),
-      layerId:      inputs.layer.getId(),
-      workflow:     null,
-    } });
-
-    GUI.showContent({
-      content: new Component({
-        title:             `${inputs.layer.getName()}`,
-        push:              this._isContentChild,
-        service,
-        state:             service.state,
-        internalComponent: new (Vue.extend(require('../components/Table.vue')))({ service }),
-      }),
-      push:       this._isContentChild,
-      showgoback: false,
-      closable:   false,
-    });
-
-    return d.promise();
+      GUI.showContent({
+        content: new Component({
+          title:             `${inputs.layer.getName()}`,
+          push:              this._isContentChild,
+          service,
+          state:             service.state,
+          internalComponent: new (Vue.extend(require('../components/Table.vue')))({ service }),
+        }),
+        push:       this._isContentChild,
+        showgoback: false,
+        closable:   false,
+      });
+    }))
   }
 
   /**
@@ -854,22 +891,23 @@ export class PickFeatureStep extends Step {
   }
 
   run(inputs) {
-    return $.Deferred(d => {
+    const promise = new Promise((resolve) => {
       this.addInteraction(
         new PickFeaturesInteraction({ layer: inputs.layer.getEditingLayer() }), {
-        'picked': e => {
-          if (0 === inputs.features.length) {
-            inputs.features   = e.features;
-            inputs.coordinate = e.coordinate;
-          }
-          setAndUnsetSelectedFeaturesStyle({ promise: d, inputs, style: this.selectStyle });
-  
-          if (this._steps) { this.setUserMessageStepDone('select') }
-  
-          d.resolve(inputs);
-        },
-      });
-    });
+          'picked': e => {
+            if (0 === inputs.features.length) {
+              inputs.features   = e.features;
+              inputs.coordinate = e.coordinate;
+            }
+            if (this._steps) { this.setUserMessageStepDone('select') }
+            resolve(inputs);
+          },
+        });
+    })
+    return $promisify(async () => {
+      setAndUnsetSelectedFeaturesStyle({ promise: $promisify(promise), inputs, style: this.selectStyle });
+      return promise;
+    })
   }
 
 }
