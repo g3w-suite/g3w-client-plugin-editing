@@ -1647,7 +1647,7 @@ export class ToolBox extends G3WObject {
 
       this.state.layer.getEditor()
         .commit(commit)
-        .then( response => {
+        .then(response => {
 
           // skip when response is null or undefined and response.result is false
           if (!(response && response.result)) {
@@ -1655,7 +1655,7 @@ export class ToolBox extends G3WObject {
             return;
           }
 
-        const { new_relations = {} } = response.response; // check if new relations are saved on server
+          const { new_relations = {} } = response.response; // check if new relations are saved on server
 
           // sync server data with local data
           for (const id in new_relations) {
@@ -1669,7 +1669,7 @@ export class ToolBox extends G3WObject {
               });
           }
 
-        this.__clearHistory();
+          this.__clearHistory();
 
           /**
            * @since v3.9.0
@@ -1678,16 +1678,14 @@ export class ToolBox extends G3WObject {
           this._session.saveChangesOnServer(commit);
 
 
-        // ES6 promises only accept a single response
-        if (__esPromise) {
-          resolve({ commit, response });
-        } else {
-          resolve(commit, response);
-        }
-      } catch(e) {
-        console.warn(e);
-        reject(e);
-      }
+          // ES6 promises only accept a single response
+          if (__esPromise) {
+            resolve({ commit, response });
+          } else {
+            resolve(commit, response);
+          }
+        })
+        .fail(e => { console.warn(e); reject(e); })
     }))
   }
 
