@@ -216,7 +216,7 @@ new (class extends Plugin {
       this.state.editableLayers[layer.getId()] = layer;
 
       //set default empty object
-      this.state.uniqueFieldsValues[layer.getId()] = {}
+      this.state.uniqueFieldsValues[layer.getId()] = {};
 
       /**
        * attach layer widgets event: get data from api when a field of a layer
