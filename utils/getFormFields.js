@@ -46,7 +46,7 @@ export function getFormFields({
   unique_values.forEach(({ _value, field }) => {
     //get current stored unique values for field
     const current_values = service.state.uniqueFieldsValues[layerId][field.name] || new Set([]);
-    //filter null value otherwise sort function get an error
+    //filter null value otherwise sort function gets an error
     const values = Array.from(current_values).filter(v => null !== v );
     //NEED TO ADD ALWAYS CURRENT VALUE
     field.input.options.values = (['integer', 'float', 'bigint'].includes(field.type) ? sortNumericArray: sortAlphabeticallyArray)(values);
