@@ -570,9 +570,6 @@
 
       this.service.getToolBoxes().forEach(t => t.resetDefault());
 
-      // clear all unique values fields related to layer (after a closing editing panel).
-      this.state.uniqueFieldsValues = {};
-
       // re-enable query map control
       const control = GUI.getService('map').getMapControlByType({ type: 'query' });
       if (control && !control.isToggled()) {
