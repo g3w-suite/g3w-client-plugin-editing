@@ -11,7 +11,7 @@ const { splitFeature } = g3wsdk.core.geoutils;
  * 
  * @since g3w-client-plugin-editing@v3.9.0
  */
-function splitFeatures(features, splitfeature) {
+export function splitFeatures(features, splitfeature) {
   return (features || []).reduce((a, f) => {
     const geometries = splitFeature({ splitfeature, feature: f });
     if (geometries.length > 1) {
