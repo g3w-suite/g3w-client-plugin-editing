@@ -1,14 +1,13 @@
-const {
-  isSameBaseGeometryType,
-  convertSingleMultiGeometry,
-}                         = g3wsdk.core.geoutils;
+import { isSameBaseGeometryType }    from '../utils/isSameBaseGeometryType';
+
+const { convertSingleMultiGeometry } = g3wsdk.core.geoutils;
 const {
   is3DGeometry,
   removeZValueToOLFeatureGeometry,
   addZValueToOLFeatureGeometry,
 } = g3wsdk.core.geoutils.Geometry;
 
-const { isMultiGeometry } = g3wsdk.core.geoutils.Geometry;
+const { isMultiGeometry }            = g3wsdk.core.geoutils.Geometry;
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1

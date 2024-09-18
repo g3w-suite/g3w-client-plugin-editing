@@ -24,6 +24,7 @@ import { checkSessionItems }                            from '../utils/checkSess
 import { promisify, $promisify }                        from '../utils/promisify';
 import { unlinkRelation }                               from '../utils/unlinkRelation';
 import { splitFeatures }                                from '../utils/splitFeatures';
+import { isSameBaseGeometryType }                       from '../utils/isSameBaseGeometryType';
 import { PickFeaturesInteraction }                      from '../interactions/pickfeaturesinteraction';
 
 import {
@@ -59,7 +60,6 @@ const { CatalogLayersStoresRegistry }     = g3wsdk.core.catalog;
 const { Geometry }                        = g3wsdk.core.geoutils;
 const {
   dissolve,
-  isSameBaseGeometryType,
   multiGeometryToSingleGeometries,
   singleGeometriesToMultiGeometry,
 }                                         = g3wsdk.core.geoutils;
