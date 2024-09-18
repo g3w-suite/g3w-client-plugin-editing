@@ -23,9 +23,8 @@ import { addPartToMultigeometries }                     from '../utils/addPartTo
 import { checkSessionItems }                            from '../utils/checkSessionItems';
 import { promisify, $promisify }                        from '../utils/promisify';
 import { unlinkRelation }                               from '../utils/unlinkRelation';
+import { splitFeatures }                                from '../utils/splitFeatures';
 import { PickFeaturesInteraction }                      from '../interactions/pickfeaturesinteraction';
-
-
 
 import {
   OpenFormStep,
@@ -36,6 +35,7 @@ import {
   ModifyGeometryVertexStep,
   OpenTableStep,
 }                                                       from '../workflows';
+
 Object
   .entries({
     Workflow,
@@ -49,7 +49,6 @@ Object
   })
   .forEach(([k, v]) => console.assert(undefined !== v, `${k} is undefined`));
 
-const { G3W_FID }                         = g3wsdk.constant;
 const {
   ApplicationState,
   G3WObject
@@ -63,7 +62,6 @@ const {
   isSameBaseGeometryType,
   multiGeometryToSingleGeometries,
   singleGeometriesToMultiGeometry,
-  splitFeatures,
 }                                         = g3wsdk.core.geoutils;
 const { removeZValueToOLFeatureGeometry } = g3wsdk.core.geoutils.Geometry;
 const { tPlugin }                         = g3wsdk.core.i18n;
@@ -967,10 +965,7 @@ export class ToolBox extends G3WObject {
                         }), {
                           'drawend': async e => {
                             let isSplitted = false;
-                            const splittedGeometries = splitFeatures({
-                              splitfeature: e.feature,
-                              features:     inputs.features
-                            });
+                            const splittedGeometries = splitFeatures(inputs.features, e.feature);
                             const splittedGeometriesLength = splittedGeometries.length;
 
                             for (let i = 0; i < splittedGeometriesLength; i++) {
