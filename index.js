@@ -200,7 +200,7 @@ new (class extends Plugin {
     // loop over editable layers
     (await Promise.allSettled(
       CatalogLayersStoresRegistry
-        .getLayers({ EDITABLE: true })
+        .getLayers({ EDITABLE: true }, { TOC_ORDER : true })
         .map(l => l.getLayerForEditing({
           vectorurl:    this.config.vectorurl,
           project_type: this.config.project_type
