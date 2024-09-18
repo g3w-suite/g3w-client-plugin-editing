@@ -51,6 +51,7 @@ Object
   })
   .forEach(([k, v]) => console.assert(undefined !== v, `${k} is undefined`));
 
+const { GEOMETRY_TYPES }                  = g3wsdk.constant;
 const {
   ApplicationState,
   G3WObject
@@ -59,10 +60,6 @@ const { ProjectsRegistry }                = g3wsdk.core.project;
 const { DataRouterService }               = g3wsdk.core.data;
 const { CatalogLayersStoresRegistry }     = g3wsdk.core.catalog;
 const { Geometry }                        = g3wsdk.core.geoutils;
-const {
-  multiGeometryToSingleGeometries,
-  singleGeometriesToMultiGeometry,
-}                                         = g3wsdk.core.geoutils;
 const { removeZValueToOLFeatureGeometry } = g3wsdk.core.geoutils.Geometry;
 const { tPlugin }                         = g3wsdk.core.i18n;
 const { Layer }                           = g3wsdk.core.layer;
@@ -857,7 +854,17 @@ export class ToolBox extends G3WObject {
                     const feature         = features[0];
                     const originalFeature = feature.clone();
                     const geometry        = feature.getGeometry();
-                    const geometries      = multiGeometryToSingleGeometries(geometry);
+                    let geometries = [];
+
+                    // ensure single geometry
+                    switch (geometry.getType()) {
+                      case GEOMETRY_TYPES.MULTIPOLYGON:    geometries = geometry.getPolygons(); break;
+                      case GEOMETRY_TYPES.MULTILINE:       geometries = geometry.getLineStrings(); break;
+                      case GEOMETRY_TYPES.MULTILINESTRING: geometries = geometry.getLineStrings(); break;
+                      case GEOMETRY_TYPES.MULTIPOINT:      geometries = geometry.getPoints(); break;
+                      default:                             console.warn('invalid geometry type', geometry.getType()); break;
+                    }
+
                     const source          = new ol.source.Vector({features: geometries.map(geometry => new ol.Feature(geometry))});
                     const map             = this.getMap();
                     const pixel           = map.getPixelFromCoordinate(coordinate);
@@ -876,8 +883,11 @@ export class ToolBox extends G3WObject {
                         if (!found) {
                           source.removeFeature(_feature);
                           if (source.getFeatures().length) {
-                            const newGeometry = singleGeometriesToMultiGeometry(source.getFeatures().map(feature => feature.getGeometry()));
-                            feature.setGeometry(newGeometry);
+                            const geometries = source.getFeatures().map(f => f.getGeometry());
+                            const type = geometries[0] && geometries[0].getType();
+                            feature.setGeometry(
+                              type && new ol.geom[`Multi${type}`](geometries.map(g => g.getCoordinates())) // ensures multi geometry
+                            );
                             /**
                              * evaluated geometry expression
                              */
