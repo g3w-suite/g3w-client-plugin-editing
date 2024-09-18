@@ -2120,6 +2120,8 @@ export class ToolBox extends G3WObject {
     }
     this.state._disabledtools = null;
     this.setShow(true);
+    //need to set selected false
+    this.state.selected = false;
   }
 
   /**
