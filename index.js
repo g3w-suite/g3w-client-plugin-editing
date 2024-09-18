@@ -227,63 +227,63 @@ new (class extends Plugin {
         .filter(field => field.input && 'select_autocomplete' === field.input.type && !field.input.options.filter_expression && !field.input.options.usecompleter)
         /** @TODO need to avoid to call the same fnc to same event many times to avoid waste server request time */
         .forEach(field => ['start-editing', 'show-relation-editing'].forEach(type => {
-            const id                    = layer.getId();
-            this.state.events[type][id] = this.state.events[type][id] || [];
+          const id                    = layer.getId();
+          this.state.events[type][id] = this.state.events[type][id] || [];
 
-            this.state.events[type][id].push(async () => {
-              const options         = field.input.options;
-  
-              // remove all values
-              options.loading.state = 'loading';
-              options.values        = [];
-  
-              const relationLayer = options.layer_id && CatalogLayersStoresRegistry.getLayerById(options.layer_id);
-              const has_filter    = ([undefined, null].includes(options.filter_fields || []) || 0 === (options.filter_fields || []).length);
-  
-              try {
-  
-                // relation reference widget + no filter set
-                if (options.relation_reference && has_filter) {
-                  const response = await layer.getFilterData({ fformatter: field.name }); // get data with fformatter
-                  if (response && response.data) {
-                    // response data is an array ok key value objects
-                    options.values.push(...response.data.map(([value, key]) => ({ key, value })));
-                    options.loading.state = 'ready';
-                    this.fireEvent('autocomplete', { field, data: [response.data] });
-                    return options.values;
-                  }
-                }
-  
-                // value map widget
-                if (relationLayer) {
-                  const response = await promisify(relationLayer.getDataTable({ ordering: options.key }));
-                  if (response && response.features) {
-                    options.values.push(...(response.features || []).map(feature => ({
-                      key:   feature.properties[options.key],
-                      value: feature.properties[options.value]
-                    })));
+          this.state.events[type][id].push(async () => {
+            const options         = field.input.options;
 
-                    options.loading.state = 'ready';
-                    this.fireEvent('autocomplete', { field, features: response.features })
-                    return options.values;
-                  }
+            // remove all values
+            options.loading.state = 'loading';
+            options.values        = [];
+
+            const relationLayer = options.layer_id && CatalogLayersStoresRegistry.getLayerById(options.layer_id);
+            const has_filter    = ([undefined, null].includes(options.filter_fields || []) || 0 === (options.filter_fields || []).length);
+
+            try {
+
+              // relation reference widget + no filter set
+              if (options.relation_reference && has_filter) {
+                const response = await layer.getFilterData({ fformatter: field.name }); // get data with fformatter
+                if (response && response.data) {
+                  // response data is an array ok key value objects
+                  options.values.push(...response.data.map(([value, key]) => ({ key, value })));
+                  options.loading.state = 'ready';
+                  this.fireEvent('autocomplete', { field, data: [response.data] });
+                  return options.values;
                 }
-  
-                /** @TODO check if deprecated */
-                const features        = [];
-                options.loading.state = 'ready';
-                this.fireEvent('autocomplete', { field, features });
-                return features;
-  
-              } catch (e) {
-                console.warn(e);
-                options.loading.state = 'error';
-                return Promise.reject(e);
               }
-            });
-          }));
 
-          this.state.sessions[layer.getId()] = null;
+              // value map widget
+              if (relationLayer) {
+                const response = await promisify(relationLayer.getDataTable({ ordering: options.key }));
+                if (response && response.features) {
+                  options.values.push(...(response.features || []).map(feature => ({
+                    key:   feature.properties[options.key],
+                    value: feature.properties[options.value]
+                  })));
+
+                  options.loading.state = 'ready';
+                  this.fireEvent('autocomplete', { field, features: response.features })
+                  return options.values;
+                }
+              }
+
+              /** @TODO check if deprecated */
+              const features        = [];
+              options.loading.state = 'ready';
+              this.fireEvent('autocomplete', { field, features });
+              return features;
+
+            } catch (e) {
+              console.warn(e);
+              options.loading.state = 'error';
+              return Promise.reject(e);
+            }
+          });
+        }));
+
+        this.state.sessions[layer.getId()] = null;
 
       });
 
