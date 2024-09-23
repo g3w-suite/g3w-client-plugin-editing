@@ -3,12 +3,12 @@
  */
 export class PickFeaturesInteraction extends ol.interaction.Pointer {
 
-  constructor(options = {}) {
+  constructor(opts = {}) {
     let features = []; // picked features
 
     const featuresAtPixel = ({ pixel, map } = {}) => map.getFeaturesAtPixel(pixel, {
-      layerFilter: l => l === options.layer,
-      hitTolerance: (isMobile && isMobile.any) ? 10 : 0
+      layerFilter: l => opts.layer === l,
+      hitTolerance: (isMobile && isMobile.any) ? 10 : 0,
     });
 
     super({
@@ -17,8 +17,8 @@ export class PickFeaturesInteraction extends ol.interaction.Pointer {
         return features;
       },
       handleUpEvent(e) {
-        if (features && features.length) {
-          this.dispatchEvent({ type: 'picked', features, coordinate: e.coordinate, layer: options.layer });
+        if (features && features.length > 0) {
+          this.dispatchEvent({ type: 'picked', features, coordinate: e.coordinate, layer: opts.layer });
         }
         return true;
       },
