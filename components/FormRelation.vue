@@ -192,6 +192,7 @@
                   class   = "magic-checkbox"
                   type    = "checkbox">
                   <label :for="`select_relation__${index}`"></label>
+              </td>
               <td>
                 <div style = "display: flex">
                   <!-- RELATION TOOLS -->
@@ -267,7 +268,8 @@
   import { updateWorkflows }                              from '../utils/updateWorkflows';
   import { getRelationId }                                from '../utils/getRelationId';
   import { getFeatureTableFieldValue }                    from '../utils/getFeatureTableFieldValue';
-  import { chooseFeatureFromFeatures }                    from "../utils/chooseFeatureFromFeatures";
+  import { chooseFeatureFromFeatures }                    from '../utils/chooseFeatureFromFeatures';
+  import { isSameBaseGeometryType }                       from '../utils/isSameBaseGeometryType';
   import { PickFeaturesInteraction }                      from '../interactions/pickfeaturesinteraction';
   import { VM }                                           from '../eventbus';
   import {
@@ -281,8 +283,7 @@
   const { ProjectsRegistry }            = g3wsdk.core.project;
   const { CatalogLayersStoresRegistry } = g3wsdk.core.catalog;
   const { DataRouterService }           = g3wsdk.core.data;
-  const { Geometry }                    = g3wsdk.core.geometry;
-  const { isSameBaseGeometryType }      = g3wsdk.core.geoutils;
+  const { Geometry }                    = g3wsdk.core.geoutils;
   const { tPlugin:t }                   = g3wsdk.core.i18n;
   const { Layer }                       = g3wsdk.core.layer;
   const { Feature }                     = g3wsdk.core.layer.features;

@@ -4,7 +4,6 @@ import { Workflow }                              from './g3wsdk/workflow/workflo
 import { Step }                                  from './g3wsdk/workflow/step';
 import { promisify, $promisify }                 from './utils/promisify';
 import { createFeature }                         from './utils/createFeature';
-import { getProjectLayerFeatureById }            from './utils/getProjectLayerFeatureById';
 import { getEditingLayerById }                   from './utils/getEditingLayerById';
 import { setAndUnsetSelectedFeaturesStyle }      from './utils/setAndUnsetSelectedFeaturesStyle';
 import { addPartToMultigeometries }              from './utils/addPartToMultigeometries';
@@ -22,11 +21,11 @@ const { Layer, LayersStore }                   = g3wsdk.core.layer;
 const { Feature }                              = g3wsdk.core.layer.features;
 const { MapLayersStoreRegistry }               = g3wsdk.core.map;
 const { Plugin, PluginService }                = g3wsdk.core.plugin;
-const { noop }                                 = g3wsdk.core.utils;
+const { XHR, noop }                            = g3wsdk.core.utils;
 const { GUI }                                  = g3wsdk.gui;
 const { Panel }                                = g3wsdk.gui.vue;
 const { Server: serverErrorParser }            = g3wsdk.core.errors.parsers;
-const { Geometry }                             = g3wsdk.core.geometry;
+const { Geometry }                             = g3wsdk.core.geoutils;
 const {
   getScaleFromResolution,
   getResolutionFromScale,
@@ -199,7 +198,7 @@ new (class extends Plugin {
     // loop over editable layers
     (await Promise.allSettled(
       CatalogLayersStoresRegistry
-        .getLayers({ EDITABLE: true })
+        .getLayers({ EDITABLE: true }, { TOC_ORDER : true })
         .map(l => l.getLayerForEditing({
           vectorurl:    this.config.vectorurl,
           project_type: this.config.project_type
@@ -217,7 +216,7 @@ new (class extends Plugin {
       this.state.editableLayers[layer.getId()] = layer;
 
       //set default empty object
-      this.state.uniqueFieldsValues[layer.getId()] = {}
+      this.state.uniqueFieldsValues[layer.getId()] = {};
 
       /**
        * attach layer widgets event: get data from api when a field of a layer
@@ -228,63 +227,63 @@ new (class extends Plugin {
         .filter(field => field.input && 'select_autocomplete' === field.input.type && !field.input.options.filter_expression && !field.input.options.usecompleter)
         /** @TODO need to avoid to call the same fnc to same event many times to avoid waste server request time */
         .forEach(field => ['start-editing', 'show-relation-editing'].forEach(type => {
-            const id                    = layer.getId();
-            this.state.events[type][id] = this.state.events[type][id] || [];
+          const id                    = layer.getId();
+          this.state.events[type][id] = this.state.events[type][id] || [];
 
-            this.state.events[type][id].push(async () => {
-              const options         = field.input.options;
-  
-              // remove all values
-              options.loading.state = 'loading';
-              options.values        = [];
-  
-              const relationLayer = options.layer_id && CatalogLayersStoresRegistry.getLayerById(options.layer_id);
-              const has_filter    = ([undefined, null].includes(options.filter_fields || []) || 0 === (options.filter_fields || []).length);
-  
-              try {
-  
-                // relation reference widget + no filter set
-                if (options.relation_reference && has_filter) {
-                  const response = await layer.getFilterData({ fformatter: field.name }); // get data with fformatter
-                  if (response && response.data) {
-                    // response data is an array ok key value objects
-                    options.values.push(...response.data.map(([value, key]) => ({ key, value })));
-                    options.loading.state = 'ready';
-                    this.fireEvent('autocomplete', { field, data: [response.data] });
-                    return options.values;
-                  }
-                }
-  
-                // value map widget
-                if (relationLayer) {
-                  const response = await promisify(relationLayer.getDataTable({ ordering: options.key }));
-                  if (response && response.features) {
-                    options.values.push(...(response.features || []).map(feature => ({
-                      key:   feature.properties[options.key],
-                      value: feature.properties[options.value]
-                    })));
+          this.state.events[type][id].push(async () => {
+            const options         = field.input.options;
 
-                    options.loading.state = 'ready';
-                    this.fireEvent('autocomplete', { field, features: response.features })
-                    return options.values;
-                  }
+            // remove all values
+            options.loading.state = 'loading';
+            options.values        = [];
+
+            const relationLayer = options.layer_id && CatalogLayersStoresRegistry.getLayerById(options.layer_id);
+            const has_filter    = ([undefined, null].includes(options.filter_fields || []) || 0 === (options.filter_fields || []).length);
+
+            try {
+
+              // relation reference widget + no filter set
+              if (options.relation_reference && has_filter) {
+                const response = await layer.getFilterData({ fformatter: field.name }); // get data with fformatter
+                if (response && response.data) {
+                  // response data is an array ok key value objects
+                  options.values.push(...response.data.map(([value, key]) => ({ key, value })));
+                  options.loading.state = 'ready';
+                  this.fireEvent('autocomplete', { field, data: [response.data] });
+                  return options.values;
                 }
-  
-                /** @TODO check if deprecated */
-                const features        = [];
-                options.loading.state = 'ready';
-                this.fireEvent('autocomplete', { field, features });
-                return features;
-  
-              } catch (e) {
-                console.warn(e);
-                options.loading.state = 'error';
-                return Promise.reject(e);
               }
-            });
-          }));
 
-          this.state.sessions[layer.getId()] = null;
+              // value map widget
+              if (relationLayer) {
+                const response = await promisify(relationLayer.getDataTable({ ordering: options.key }));
+                if (response && response.features) {
+                  options.values.push(...(response.features || []).map(feature => ({
+                    key:   feature.properties[options.key],
+                    value: feature.properties[options.value]
+                  })));
+
+                  options.loading.state = 'ready';
+                  this.fireEvent('autocomplete', { field, features: response.features })
+                  return options.values;
+                }
+              }
+
+              /** @TODO check if deprecated */
+              const features        = [];
+              options.loading.state = 'ready';
+              this.fireEvent('autocomplete', { field, features });
+              return features;
+
+            } catch (e) {
+              console.warn(e);
+              options.loading.state = 'error';
+              return Promise.reject(e);
+            }
+          });
+        }));
+
+        this.state.sessions[layer.getId()] = null;
 
       });
 
@@ -855,7 +854,7 @@ new (class extends Plugin {
     this.state.message             =  null;
 
     //reset unique values
-    Object.keys(this.state.uniqueFieldsValues).forEach(id => this.state.uniqueFieldsValue[id] = {});
+    Object.keys(this.state.uniqueFieldsValues).forEach(id => this.state.uniqueFieldsValues[id] = {});
 
     GUI.getService('map').refreshMap();
   }
@@ -987,7 +986,7 @@ new (class extends Plugin {
 
         let data      = !online && { [toolbox.getSession().getId()]: commitItems };
         //get current offline editing changes
-        const changes = !online && ApplicationService.getOfflineItem('EDITING_CHANGES');
+        const changes = !online && JSON.parse(window.localStorage.getItem('EDITING_CHANGES') || null);
 
         // handle offline changes
         /** ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8 */
@@ -1302,10 +1301,10 @@ new (class extends Plugin {
     feature,
   } = {}) {
     // skip when mandatory params are missing
-    if (undefined === feature || undefined === layerId) {
+    if ([ feature, layerId ].includes(undefined)) {
       return Promise.reject();
     }
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       const layer = this.getLayerById(layerId);
       // get session
       const session = this.getSessionById(layerId);
@@ -1325,15 +1324,15 @@ new (class extends Plugin {
       /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/easyaddfeatureworkflow.js@v3.7.1 */
       // create workflow
       const workflow = new Workflow({
-      type: 'addfeature',
-      steps: [
-        new OpenFormStep({
-          push:       true,
-          showgoback: false,
-          saveAll:    false,
-        })
-      ],
-    });
+        type: 'addfeature',
+        steps: [
+          new OpenFormStep({
+            push:       true,
+            showgoback: false,
+            saveAll:    false,
+          })
+        ],
+      });
 
       const stop = cb => {
         workflow.stop();
@@ -1349,29 +1348,34 @@ new (class extends Plugin {
           }
         })
 
-        //set feature as g3w feature
-        feature = new Feature({ feature, properties: attributes.map(a => a.name) });
-        //set new
-        feature.setTemporaryId();
+        try {
+          //set feature as g3w feature
+          feature = new Feature({ feature, properties: attributes.map(a => a.name) });
+          //set new
+          feature.setTemporaryId();
 
-        // add to session and source as new feature
-        session.pushAdd(layerId, feature, false);
-        layer.getEditingLayer().getSource().addFeature(feature);
+          // add to session and source as new feature
+          session.pushAdd(layerId, feature, false);
+          layer.getEditingLayer().getSource().addFeature(feature);
+          //start workflow
+          await promisify(workflow.start({
+            inputs:  { layer, features: [feature] },
+            context: { session },
+          }));
 
-        //start workflow
-        workflow.start({
-          inputs:  { layer, features: [feature] },
-          context: { session },
-        })
-        .then(() => {
           session.save();
-          this
-            .commit({ modal: false, toolbox: this.getToolBoxById(layerId) })
-            .then(() => stop(resolve))
-            .fail(() => stop(reject))
-        })
-        .fail(() => stop(reject));
 
+          try {
+            await promisify(this.commit({ modal: false, toolbox: this.getToolBoxById(layerId) }));
+            stop(resolve);
+          } catch(e) {
+            console.warn(e);
+            stop(reject)
+          }
+        } catch(e) {
+          console.warn(e);
+          stop(reject);
+        }
       } catch(e) {
         console.warn(e);
         reject();
@@ -1509,21 +1513,35 @@ async function _rollback(relations = {}) {
         }),
         // update
         ...(has_features && update || []).map(async ({ id }) => {
-          const f       = await getProjectLayerFeatureById({ layerId, fid: id });
-          const feature = source.getFeatureById(id);
-
-          feature.setProperties(f.properties);
-          feature.setGeometry(f.geometry);
+          try {
+            const response = await XHR.get({
+              url:    CatalogLayersStoresRegistry.getLayerById(layerId).getUrl('data'),
+              params: { fids: id },
+            });
+            const f        = (response.result && response.vector.data.features || []).at(0);
+            const feature  = source.getFeatureById(id);
+            feature.setProperties(f.properties);
+            feature.setGeometry(f.geometry);
+          } catch(e) {
+            console.warn(e);
+          }
         }),
         // delete
         ...del.map(async id => {
-          const f       = await getProjectLayerFeatureById({ layerId, fid: id });
-          const feature = new ol.Feature({ geometry: f.geometry })
+          try {
+            const response = await XHR.get({
+              url:    CatalogLayersStoresRegistry.getLayerById(layerId).getUrl('data'),
+              params: { fids: id },
+            });
+            const f = (response.result && response.vector.data.features || []).at(0);
+            const feature = new ol.Feature({ geometry: f.geometry })
+            feature.setProperties(f.properties);
+            feature.setId(id);
+            source.addFeature(new Feature({ feature })); // add it again to source because relation layer is locked
+          } catch(e) {
+            console.warn(e);
+          }
 
-          feature.setProperties(f.properties);
-          feature.setId(id);
-          // need to add again to source because it is for relation layer is locked
-          source.addFeature(new Feature({ feature }));
         }),
         _rollback(relations),
       ];

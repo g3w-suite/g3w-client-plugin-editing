@@ -353,14 +353,16 @@
         unlock = false,
       } = {}) {
         return new Promise((resolve, reject) => {
-          const changes = ApplicationService.getOfflineItem('EDITING_CHANGES');
+          // get offline item
+          const changes = JSON.parse(window.localStorage.getItem('EDITING_CHANGES') || null);
+
           // if you find changes offline previously
           if (!changes) { return }
 
           const promises = [];
           const layerIds = [];
           //FORCE TO WAIT OTHERWISE STILL OFF LINE
-          setTimeout(() => {
+          setTimeout(async () => {
             for (const layerId in changes) {
               layerIds.push(layerId);
               const toolbox     = this.service.getToolBoxById(layerId);
@@ -368,19 +370,22 @@
               promises.push(this.service.commit({ toolbox, commitItems, modal }))
             }
 
-            $.when
-              .apply(this.service, promises)
-              .then(resolve)
-              .fail(e => { console.warn(e); reject(e) })
-              .always(() => {
-                if (unlock) {
-                  layerIds.forEach(layerId => this.service.getLayerById(layerId).unlock());
-                }
-                // always reset items to null
-                ApplicationService.setOfflineItem('EDITING_CHANGES');
-              })
+            try {
+              await promisify($.when.apply(this.service, promises));
+              resolve();
+            } catch(e) {
+              console.warn(e);
+              reject(e);
+            } finally {
+              if (unlock) {
+                layerIds.forEach(layerId => this.service.getLayerById(layerId).unlock());
+              }
+              // always reset items to null
+              try      { window.localStorage.setItem('EDITING_CHANGES', "{}"); }
+              catch(e) { console.warn(e); }
+            }
           }, 1000)
-        });
+        })
       },
 
     },
@@ -421,15 +426,11 @@
       },
 
       django_admin_url() {
-        const config = ApplicationService.getConfig();
-        const user   = config.user;
-        return user.is_superuser ? new URL('/django-admin/editing/g3weditingfeaturelock/', initConfig.baseurl) : false;
+        return window.initConfig.user.is_superuser ? new URL('/django-admin/editing/g3weditingfeaturelock/', window.initConfig.baseurl) : false;
       },
 
       filemanager_url() {
-        const config = ApplicationService.getConfig();
-        const user   = config.user;
-        return user.is_superuser ? new URL('/filemanager/', initConfig.baseurl) : false;
+        return window.initConfig.user.is_superuser ? new URL('/filemanager/', window.initConfig.baseurl) : false;
       },
 
     },
@@ -437,7 +438,7 @@
     watch:{
 
       canCommit(bool) {
-        ApplicationService.registerLeavePage({ bool });
+        window.onbeforeunload = () => bool || undefined; // register leave page
       },
 
       /**
@@ -493,13 +494,6 @@
       if (ApplicationState.online) {
         this.checkOfflineChanges({ unlock: true });
       }
-
-      // register "offline" event
-      this.unByKeys.push({
-        owner : ApplicationService,
-        setter: 'offline',
-        key:    ApplicationService.onafter('offline', () => {})
-      });
 
       // register "online" event
       this.unByKeys.push({
@@ -575,9 +569,6 @@
       this.state.featuresOnClose = {};
 
       this.service.getToolBoxes().forEach(t => t.resetDefault());
-
-      // clear all unique values fields related to layer (after a closing editing panel).
-      this.state.uniqueFieldsValues = {};
 
       // re-enable query map control
       const control = GUI.getService('map').getMapControlByType({ type: 'query' });

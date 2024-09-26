@@ -96,10 +96,10 @@
             :class              = "{ 'enabled' : tool.enabled, 'toggled' : tool.active, [`editbtn ${tool.id}`]: true }"
           >
             <img
-              height           = "25"
-              width            = "25"
-              :src             = "resourcesurl + 'images/' + tool.icon"
-              v-t-title:plugin = "`${tool.name}`"
+              height = "25"
+              width  = "25"
+              :src   = "resourcesurl + 'images/' + tool.icon"
+              :title = "get_tool_title(`${tool.name}`)"
             />
           </div>
         </div>
@@ -200,6 +200,7 @@
   const { GUI }                    = g3wsdk.gui;
   const { Layer }                  = g3wsdk.core.layer;
   const { getResolutionFromScale } = g3wsdk.ol.utils;
+  const { tPlugin }                = g3wsdk.core.i18n;
 
   let snapInteraction;
 
@@ -280,6 +281,13 @@
 
       toolboxCursor() {
         return (!this.isLayerReady || !this.canEdit) ? `url(${this.resourcesurl}cursors/mZoomIn.svg), zoom-in` : undefined;
+      },
+
+      /**
+       * @since g3w-client-plugin-editing@v3.9.0
+       */
+      get_tool_title() {
+        return title => g3wsdk.core.ApplicationState.language && tPlugin(title);
       },
 
     },

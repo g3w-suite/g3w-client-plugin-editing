@@ -13,17 +13,15 @@ import { getRelationsInEditingByFeature }               from '../utils/getRelati
 import { getFeatureTableFieldValue }                    from '../utils/getFeatureTableFieldValue';
 import { addRemoveToMultipleSelectFeatures }            from '../utils/addRemoveToMultipleSelectFeatures';
 import { promisify, $promisify }                        from '../utils/promisify';
+import { isSameBaseGeometryType }                       from '../utils/isSameBaseGeometryType';
 import { PickFeaturesInteraction }                      from '../interactions/pickfeaturesinteraction';
 
 import { Workflow }                                     from '../g3wsdk/workflow/workflow';
 import { Step }                                         from '../g3wsdk/workflow/step';
 
 const { G3WObject, ApplicationState }                   = g3wsdk.core;
-const { Geometry }                                      = g3wsdk.core.geometry;
-const {
-  convertSingleMultiGeometry,
-  isSameBaseGeometryType,
-}                                                       = g3wsdk.core.geoutils;
+const { Geometry }                                      = g3wsdk.core.geoutils;
+const { convertSingleMultiGeometry }                    = g3wsdk.core.geoutils;
 const { removeZValueToOLFeatureGeometry }               = g3wsdk.core.geoutils.Geometry;
 const { Layer }                                         = g3wsdk.core.layer;
 const { Feature }                                       = g3wsdk.core.layer.features;

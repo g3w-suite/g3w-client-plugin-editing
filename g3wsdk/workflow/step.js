@@ -192,7 +192,7 @@ export class Step extends G3WObject {
    * 
    * @since g3w-client-plugin-editing@v3.8.0
    */
-  setUserMessageSteps(steps={}) {
+  setUserMessageSteps(steps = {}) {
     this.state.usermessagesteps = steps;
   }
 
@@ -327,7 +327,7 @@ export class Step extends G3WObject {
    *
    * @since g3w-client-plugin-editing@v3.8.0
    */
-  fireEvent(event, options={}) {
+  fireEvent(event, options = {}) {
     return g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').fireEvent(event, options);
   }
 
@@ -420,8 +420,8 @@ export class Step extends G3WObject {
           type: 'snap',
           options: {
             checkedAll: false,
-            checked: false,
-            active: true,
+            checked:    false,
+            active:     true,
             run({ layer }) {
               this.active  = true;
               this.layerId = layer.getId();
@@ -564,14 +564,14 @@ export class Step extends G3WObject {
   /**
    * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editingworkflow.js@v3.7.1
    * 
-   * @param step
+   * @param workflow
    * @param tools
    * 
    * @since g3w-client-editing@v3.8.0
    */
   setToolsOfTools(workflow, tools = [] ) {
     this._workflow = workflow;
-    this._tools = tools;
+    this._tools    = tools;
   }
 
 }

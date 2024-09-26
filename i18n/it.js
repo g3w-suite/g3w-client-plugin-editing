@@ -159,7 +159,7 @@ export default {
   modal: {
     tools: {
       copyfeaturefromotherlayer: {
-        title: "Seleziona feature/s",
+        title: "Seleziona layer",
         edit_attributes: "Edita attributi delle features in multiple mode"
       },
       copyfeaturefromprojectlayer: {

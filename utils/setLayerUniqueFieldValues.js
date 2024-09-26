@@ -27,7 +27,7 @@ export async function setLayerUniqueFieldValues(layerId) {
         .map(f => f.name).join()
     }).then((response) => {
         Object
-          .entries(response.data || [])
+          .entries(response.data || {})
           .forEach(([name, values]) => {
             service.state.uniqueFieldsValues[layerId][name] = new Set(values)
           })

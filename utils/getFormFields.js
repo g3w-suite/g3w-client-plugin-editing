@@ -1,4 +1,9 @@
-const {sortAlphabeticallyArray, sortNumericArray} = g3wsdk.core.utils;
+/** Sort an array of strings (alphabetical order) */
+const sortAlphabeticallyArray = (arr) => arr.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+
+/* Sort an array of numbers (natural order) */
+const sortNumericArray = (arr, ascending = true) => arr.sort((a, b) => (ascending ? (a - b) : (b - a)));
+
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
  * 
@@ -44,12 +49,15 @@ export function getFormFields({
 
   //Loop through unique fields
   unique_values.forEach(({ _value, field }) => {
-
     //get current stored unique values for field
     const current_values = service.state.uniqueFieldsValues[layerId][field.name] || new Set([]);
-
+    //filter null value otherwise sort function gets an error
+    const values = Array.from(current_values).filter(v => null !== v );
     //NEED TO ADD ALWAYS CURRENT VALUE
-    field.input.options.values = (['integer', 'float', 'bigint'].includes(field.type) ? sortNumericArray: sortAlphabeticallyArray)(Array.from(current_values));
+    field.input.options.values = (['integer', 'float', 'bigint'].includes(field.type) ? sortNumericArray: sortAlphabeticallyArray)(values);
+    if (current_values.has(null)) {
+      field.input.options.values.unshift(null);
+    }
 
     // convert "current" values to string (when not null or undefined)
     current_values.forEach(v => field.validate.exclude_values.add(![null, undefined].includes(v)? `${v}` : v ) );
