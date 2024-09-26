@@ -93,7 +93,7 @@ new (class extends Plugin {
       },
       editableLayers:      {},
       events:              {
-        'start-editing': {},
+        'start-editing':         {},
         'show-relation-editing': {},
         layer: {
           start_editing: {
@@ -200,7 +200,7 @@ new (class extends Plugin {
     // loop over editable layers
     (await Promise.allSettled(
       CatalogLayersStoresRegistry
-        .getLayers({ EDITABLE: true })
+        .getLayers({ EDITABLE: true }, { TOC_ORDER : true })
         .map(l => l.getLayerForEditing({
           vectorurl:    this.config.vectorurl,
           project_type: this.config.project_type
@@ -217,6 +217,9 @@ new (class extends Plugin {
 
       this.state.editableLayers[layer.getId()] = layer;
 
+      //set default empty object
+      this.state.uniqueFieldsValues[layer.getId()] = {}
+
       /**
        * attach layer widgets event: get data from api when a field of a layer
        * is related to a wgis form widget (ex. relation reference, value map, etc..)
@@ -230,14 +233,14 @@ new (class extends Plugin {
             this.state.events[type][id] = this.state.events[type][id] || [];
 
             this.state.events[type][id].push(async () => {
-              const options = field.input.options;
+              const options         = field.input.options;
   
               // remove all values
               options.loading.state = 'loading';
-              options.values = [];
+              options.values        = [];
   
               const relationLayer = options.layer_id && CatalogLayersStoresRegistry.getLayerById(options.layer_id);
-              const has_filter    = ([undefined, null].indexOf(options.filter_fields || []) > -1 || 0 === (options.filter_fields || []).length);
+              const has_filter    = ([undefined, null].includes(options.filter_fields || []) || 0 === (options.filter_fields || []).length);
   
               try {
   
@@ -623,6 +626,7 @@ new (class extends Plugin {
     const layerId      = session.getId();
     const sessionItems = session.getLastHistoryState().items;
 
+    //update unique values fields after undo
     this.undoRedoLayerUniqueFieldValues({
       layerId,
       sessionItems,
@@ -630,7 +634,7 @@ new (class extends Plugin {
     });
 
     const undoItems = session.undo();
-
+    //update unique values of relations after undo
     this.undoRedoRelationUniqueFieldValues({
       relationSessionItems: undoItems,
       action:               'undo'
@@ -649,16 +653,17 @@ new (class extends Plugin {
     const session      = this.state.toolboxselected.getSession();
     const layerId      = session.getId();
     const sessionItems = session.getLastHistoryState().items;
+    //update unique values fields after redo
     this.undoRedoLayerUniqueFieldValues({
       layerId,
       sessionItems,
       action: 'redo'
     });
     const redoItems = session.redo();
-
+    //update unique values of relations after redo
     this.undoRedoRelationUniqueFieldValues({
       relationSessionItems: redoItems,
-      action: 'redo'
+      action:               'redo'
     });
 
     // redo relations
@@ -856,15 +861,9 @@ new (class extends Plugin {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   async stop() {
-    const commitpromises = [];
-    this.state._toolboxes
-      .forEach(toolbox => {
-        // check if temp changes are waiting to save on server
-        if (toolbox.getSession().getHistory().state.commit) {
-          // ask to commit before exit
-          commitpromises.push(this.commit({ toolbox, modal : true }));
-        }
-      });
+    const commitpromises = this.state._toolboxes
+      .filter(t => t.getSession().getHistory().state.commit) // check if temp changes are waiting to save on server
+      .map( toolbox => this.commit({ toolbox, modal : true }))
     try {
       await promisify($.when.apply(this, commitpromises));    
     } catch (e) {
@@ -876,6 +875,9 @@ new (class extends Plugin {
     this.state.toolboxselected     = null;
     this.state.toolboxidactivetool =  null;
     this.state.message             =  null;
+
+    //reset unique values
+    Object.keys(this.state.uniqueFieldsValues).forEach(id => this.state.uniqueFieldsValues[id] = {});
 
     GUI.getService('map').refreshMap();
   }
@@ -987,7 +989,9 @@ new (class extends Plugin {
           } catch(e) {
             console.warn(e);
             // In the case of pressed cancel button to commit features modal
-            if (e && e.cancel) { return Promise.reject(e) }
+            if (e && e.cancel) {
+              return Promise.reject(e);
+            }
             //need to be set server Error
             serverError = true;
           }
@@ -1064,65 +1068,74 @@ new (class extends Plugin {
 
         }
 
-        // check if the application is online
-        const { commit, response } = online ? await promisify(
-          toolbox.getSession().commit({ items: items || commitItems, __esPromise: true })
-        ) : {};
+        try {
+          // check if the application is online
+          const { commit, response } = online ? await promisify(
+            toolbox.getSession().commit({ items: items || commitItems, __esPromise: true })
+          ) : {};
 
+          //check if is online and there are some commit items
+          const online2 = online && commit;
 
-        //check if is online and there are some commit items
-        const online2 = online && commit;
+          const result = online2 && response.result;
 
-        const result = online2 && response.result;
+          if (result && messages && messages.success) {
+            // hide saving dialog
+            if (dialog) { dialog.modal('hide') }
 
-        if (result && messages && messages.success) {
-          // hide saving dialog
-          if (dialog) { dialog.modal('hide') }
+            //Show save user message
+            GUI.showUserMessage({
+              type:     'success',
+              message:   messages.success.message || "plugins.editing.messages.saved",
+              duration:  2000,
+              autoclose: undefined === messages.success.autoclose ? true : messages.success.autoclose,
+            });
+          }
 
-          //Show save user message
-          GUI.showUserMessage({
-            type:     'success',
-            message:   messages.success.message || "plugins.editing.messages.saved",
-            duration:  2000,
-            autoclose: undefined !== messages.success.autoclose ? messages.success.autoclose : true,
-          });
+          // In the case of vector layer need to refresh map commit changes
+          if (result && Layer.LayerTypes.VECTOR === layer.getType() ) {
+            GUI.getService('map').refreshMap({ force: true });
+          }
+
+          if (online) {
+            this.state.saveConfig.cb.done(toolbox);
+          }
+
+          // add items when close editing to result to show changes
+          const layerId = result && toolbox.getId();
+
+          if (layerId) {
+            this.state.featuresOnClose[layerId] = this.state.featuresOnClose[layerId] || new Set();
+            [
+              ...response.response.new.map(n => n.id),
+              ...commit.update.map(u => u.id)
+            ].forEach(fid => this.state.featuresOnClose[layerId].add(fid));
+          }
+
+          // @since 3.7.2 - click on save all disk icon (editing form relation)
+          if (result) { this.emit('commit', response.response) }
+
+          // the result is false. It was done a commit, but an error occurs
+          if (online2 && !result) {
+            serverError = true;
+            throw response;
+          }
+        } catch(e) {
+          console.warn(e);
+          if (online) {
+            serverError = true;
+            throw e;
+          }
         }
 
-        // In the case of vector layer need to refresh map commit changes
-        if (result && Layer.LayerTypes.VECTOR === layer.getType() ) {
-          GUI.getService('map').refreshMap({ force: true });
-        }
-
-        if (online) {
-          this.state.saveConfig.cb.done(toolbox);
-        }
-
-        // add items when close editing to result to show changes
-        const layerId = result && toolbox.getId(); 
-
-        if (layerId) {
-          this.state.featuresOnClose[layerId] = this.state.featuresOnClose[layerId] || new Set();
-          [
-            ...response.response.new.map(n => n.id),
-            ...commit.update.map(u => u.id)
-          ].forEach(fid => this.state.featuresOnClose[layerId].add(fid));
-        }
-
-        // @since 3.7.2 - click on save all disk icon (editing form relation)
-        if (result) { this.emit('commit', response.response) }
-
-        // the result is false. It was done a commit, but a error occurs
-        if (online2 && !result) {
-          serverError = true;
-          throw response;
-        }
       } catch (e) {
         console.warn(e);
 
         // hide saving dialog
         if (dialog) { dialog.modal('hide') }
 
-        // rollback relations
+        // rollback
+        //@TODO check if it is usefull
         if (modal) {
           try { await _rollback(commitItems.relations); }
           catch (e) { console.warn(e); }
@@ -1175,10 +1188,12 @@ new (class extends Plugin {
 
       Object
         .keys(this.state.uniqueFieldsValues[layerId])
-        .forEach(name => {
+        .forEach(name => { //name is the name of field
+          //check if change is an update [oldVal, newValue]
           const is_array = Array.isArray(item);
           let oldVal, newVal;
-          if (is_array) { // 0 = old feature, 1 = new feature
+          if (is_array) {
+            // 0 = old value feature, 1 = new value feature
             const has_change = item[1].feature.get(name) != item[0].feature.get(name);
             // update feature that contains "new" and "old" values of feature
             oldVal = has_change ? (action === 'undo' ? item[1].feature.get(name) :  item[0].feature.get(name)) : undefined;
@@ -1214,14 +1229,14 @@ new (class extends Plugin {
   }) {
     Object
       .entries(relationSessionItems)
-      .forEach(([layerId, {own:sessionItems, dependencies:relationSessionItems}]) => {
-
+      .forEach(([layerId, { own: sessionItems, dependencies: relationSessionItems }]) => {
+        //undo/redo unique field of layer
         this.undoRedoLayerUniqueFieldValues({
           layerId,
           sessionItems,
           action
         });
-
+        //undo/redo unique field of relations
         this.undoRedoRelationUniqueFieldValues({
           relationSessionItems,
           action
@@ -1324,7 +1339,7 @@ new (class extends Plugin {
       session.start({
         filter: {
           nofeatures:       true,                    // no feature
-          nofeatures_field: attributes[0].name // get first field in editing form
+          nofeatures_field: attributes[0].name // get the first field in editing form
         },
         editing: true,
       })
@@ -1422,7 +1437,7 @@ new (class extends Plugin {
    */
   showPanel(options = {}) {
     if (options.toolboxes && Array.isArray(options.toolboxes)) {
-      this.getToolBoxes().forEach(tb => tb.setShow(-1 !== options.toolboxes.indexOf(tb.getId())));
+      this.getToolBoxes().forEach(tb => tb.setShow(options.toolboxes.includes(tb.getId())));
     }
     this.showEditingPanel(options);
   }
@@ -1490,6 +1505,13 @@ new (class extends Plugin {
    */
   resetCurrentLayout() {
     ApplicationService.setCurrentLayout(this.state.currentLayout);
+  }
+
+  /**
+   * @since g3w-client-plugin-editing@v3.8.1
+   */
+  getActiveTool() {
+    return this.getToolBoxes().filter(t => t.getActiveTool())[0];
   }
 
 });

@@ -1,6 +1,6 @@
 import { Workflow }                      from '../g3wsdk/workflow/workflow';
 import { getRelationFieldsFromRelation } from '../utils/getRelationFieldsFromRelation';
-import { updateParentWorkflows }         from '../utils/updateParentWorkflows';
+import { updateWorkflows }               from './updateWorkflows';
 import { getEditingLayerById }           from '../utils/getEditingLayerById';
 
 const { GUI }     = g3wsdk.gui;
@@ -36,8 +36,8 @@ export function unlinkRelation({
       getRelationFieldsFromRelation({ relation, layerId: id }).ownField.forEach(f => feature.set(f, null))
       Workflow.Stack.getCurrent().getSession().pushUpdate(id, feature, originalRelation);
       relations.splice(index, 1);
-      updateParentWorkflows();
-      d.resolve(true);
+      updateWorkflows();
+      resolve(true);
     };
     if (dialog) {
       GUI.dialog.confirm(tPlugin("editing.messages.unlink_relation"), result => result ? unlink() : d.reject(false));

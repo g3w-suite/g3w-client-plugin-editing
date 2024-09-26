@@ -234,7 +234,7 @@
 
       /**
        * Start tool of toolbox
-       * 
+       *
        * @param toolId
        * @param toolboxId
        */
@@ -330,7 +330,7 @@
        * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
        * 
        * Called by Editing Panel on creation time
-       * 
+       *
        * @since g3w-client-plugin-editing@v3.8.0
        */
       registerOnLineOffLineEvent() {
@@ -359,7 +359,7 @@
 
       /**
        * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
-       * 
+       *
        * Check if alread have off lines changes
        *
        * @param { Object }  opts
@@ -590,9 +590,6 @@
       this.state.featuresOnClose = {};
 
       this.service.getToolBoxes().forEach(toolbox => toolbox.resetDefault());
-
-      // clear all unique values fields related to layer (after a closing editing panel).
-      this.state.uniqueFieldsValues = {};
 
       this._enableQueryMapControl();
     },
