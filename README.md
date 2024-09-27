@@ -1,4 +1,4 @@
-# g3w-client-plugin-editing v3.8.2
+# g3w-client-plugin-editing v3.8.3
 
 A javascript plugin that includes map editing tools for those G3W-SUITE projects that require collaborative mapping contributions (user submitted edits).
 
