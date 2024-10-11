@@ -256,14 +256,13 @@ new (class extends Plugin {
 
               // value map widget
               if (relationLayer) {
-                //orderring by value or key depend on orderbyvalue Boolean value
+                //ordering by value or key depend on orderbyvalue Boolean value
                 const response = await promisify(relationLayer.getDataTable({ ordering: options.orderbyvalue ? options.value : options.key }));
                 if (response && response.features) {
                   options.values.push(...(response.features || []).map(feature => ({
-                    key:   feature.properties[options.key],
-                    value: feature.properties[options.value]
+                    key:   feature.properties[options.value],
+                    value: feature.properties[options.key],
                   })));
-
                   options.loading.state = 'ready';
                   this.fireEvent('autocomplete', { field, features: response.features })
                   return options.values;
