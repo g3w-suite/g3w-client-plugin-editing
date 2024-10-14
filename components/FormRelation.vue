@@ -890,7 +890,11 @@
 
         const options = this._createWorkflowOptions();
 
-        const { ownField, relationField } = getRelationFieldsFromRelation({
+        //Get fields and values from parent feature
+        //@TODO fatherField is Array of child fields related with parent layer. Need to rename it
+        const { fatherField, fatherValue } = options.context;
+
+        const { relationField } = getRelationFieldsFromRelation({
           layerId:  this._relationLayerId,
           relation: this.relation
         });
@@ -903,20 +907,17 @@
           const { newFeatures, originalFeatures } = outputs.relationFeatures;
 
           // Set Relation child feature value
-          const setRelationFieldValue = ({ oIndex, value }) => {
+          const setRelationFieldValue = ({ field, value }) => {
             newFeatures.forEach((newFeature, i) => {
-              newFeature.set(ownField[oIndex], value);
+              newFeature.set(field, value);
               if (options.parentFeature.isNew()) {
-                originalFeatures[i].set(ownField[oIndex], value);
+                originalFeatures[i].set(field, value);
               }
               this.getLayer().getEditingSource().updateFeature(newFeature);
               options.context.session.pushUpdate(this._relationLayerId, newFeature, originalFeatures[i]);
             })
           };
-
-          Object
-            .entries(this.getParent().values)
-            .forEach(([field, value]) => setRelationFieldValue({ value, oIndex: relationField.findIndex(f => field === f) }));
+          fatherField.forEach((field, i) => setRelationFieldValue({ field, value: fatherValue[i] }));
 
           //check if parent feature is new and if parent layer has editable fields
           if (options.parentFeature.isNew() && this.getParent().editable.length > 0) {
@@ -926,7 +927,7 @@
                 if (relationField.find(evt.key)) {
                   //set value to relation field
                   setRelationFieldValue({
-                    oIndex: relationField.findIndex(rField => evt.key === rField),
+                    field:  evt.key,
                     value:  evt.target.get(evt.key)
                   });
                 }
@@ -1157,8 +1158,8 @@
           context: {
             session:       Workflow.Stack.getCurrent().getSession(),        // get parent workflow
             excludeFields: fields.ownField,                                 // array of fields to be excluded
-            fatherValue:   parent.map(([_, value]) => value),
-            fatherField:   parent.map(([field]) => fields.ownField[fields.relationField.findIndex(rField => field === rField)]),
+            fatherValue:   parent.map(([_, value]) => value),               // values of parent fields in relation
+            fatherField:   parent.map(([field]) => fields.ownField[fields.relationField.findIndex(rField => field === rField)]), //children fields
           },
           inputs: {
             features: options.features || [],
