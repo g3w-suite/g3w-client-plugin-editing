@@ -177,7 +177,7 @@ export class ToolBox extends G3WObject {
       layer,
       id               : layer.getId(),
       changingtools    : false, // whether to show tools during change phase
-      show             : true,  // whether to show the toolbox if we need to filtered
+      show             : layer.config.editing.visible,  // whether to show the toolbox if we need to filtered
       color            : layer.getColor()       || 'blue',
       title            : ` ${layer.getTitle()}` || "Edit Layer",
       customTitle      : false,
