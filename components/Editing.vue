@@ -126,6 +126,7 @@
         /** @since g3w-client-plugin-editing@v3.8.0 */
         editinglayers:         Object.entries(g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing')
                                 .getEditableLayers())
+                                .filter((_,l) => l.config.editing.visible) //exclude layers that are set visible to false
                                 .map(([id, layer]) => ({ id, name: layer.getName(), title: layer.getTitle() })),
         /** @since g3w-client-plugin-editing@v3.8.0 */
         activetool:            null,
