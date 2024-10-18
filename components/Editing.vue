@@ -52,7 +52,7 @@
     <!-- LAYERS SELECT -->
     <!-- ORIGINAL SOURCE: componentsSelectEditingLayers.vue@v3.7.1 -->
     <div
-      v-if  = "state.showselectlayers && state.toolboxes.length > 1"
+      v-if  = "state.showselectlayers && editinglayers.length > 1"
       id    = "g3w-select-editable-layers-content"
       class = "skin-color"
     >
@@ -126,7 +126,7 @@
         /** @since g3w-client-plugin-editing@v3.8.0 */
         editinglayers:         Object.entries(g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing')
                                 .getEditableLayers())
-                                .filter((_,l) => l.config.editing.visible) //exclude layers that are set visible to false
+                                .filter(([_,l]) => l.config.editing.visible) //exclude layers that are set visible to false
                                 .map(([id, layer]) => ({ id, name: layer.getName(), title: layer.getTitle() })),
         /** @since g3w-client-plugin-editing@v3.8.0 */
         activetool:            null,

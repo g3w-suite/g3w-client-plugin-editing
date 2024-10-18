@@ -203,15 +203,13 @@ new (class extends Plugin {
           vectorurl:    this.config.vectorurl,
           project_type: this.config.project_type
         }))
-    )).forEach(response => {
+    )).forEach(({ status, value:layer }) => {
 
       // skip on http error
-      if ('fulfilled' !== response.status) {
+      if ('fulfilled' !== status) {
         this.state.layers_in_error = true;
         return;
       }
-
-      const layer = response.value;
 
       this.state.editableLayers[layer.getId()] = layer;
 
@@ -287,6 +285,7 @@ new (class extends Plugin {
 
       });
 
+
     let i = 0;
     this
       .getLayers()
@@ -336,18 +335,22 @@ new (class extends Plugin {
     this.getLayers().forEach(l => this.addToolBox(new ToolBox(l, [...l.getChildren(), ...l.getFathers()].filter(id => this.getLayerById(id)))));
 
     await GUI.isReady();
+
     this._setupGUI();
 
     this.setHookLoading({ loading: false });
-    this.setApi(this.service.getApi());
     this.setReady(true);
   }
 
   // setup plugin interface
   async _setupGUI() {
 
-    // skip when ..
-    if (!this.registerPlugin(this.config.gid) || false === this.config.visible) {
+    //@since 3.9.0
+    // skip when:
+    // 1 - plugin is not referred to the current project id
+    // 2 - configuration of plugin, visible is set to false
+    // 3 - There aren't editable layers or all are not visible
+    if (!this.registerPlugin(this.config.gid) || false === this.config.visible || 0 === this.getLayers().filter(l => l.config.editing.visible).length) {
       return;
     }
 
