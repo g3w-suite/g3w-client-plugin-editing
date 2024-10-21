@@ -484,7 +484,6 @@ export class OpenFormStep extends Step {
         headerComponent: this._saveAll && {
           template: /* html */ `
             <section class="editing-save-all-form">
-              <bar-loader :loading="loading"/>
               <div
                 class = "editing-button"
                 style = "background-color: #fff; display: flex; justify-content: flex-end; width: 100%;"
@@ -507,7 +506,6 @@ export class OpenFormStep extends Step {
           props: { update: { type: Boolean }, valid: { type: Boolean } },
           data() {
             return {
-              loading: false,
               enabled: Workflow.Stack._workflows.slice(0, Workflow.Stack.getLength() - 1)
                 .every(w => {
                   const valid = ((w.getContext().service instanceof FormService) ? w.getContext().service.getState() : {}).valid;
@@ -523,7 +521,10 @@ export class OpenFormStep extends Step {
           },
           methods: {
             async saveAll() {
-              this.loading = true;
+              //Set loading content
+              GUI.setLoadingContent(true);
+              //Disable form
+              GUI.disableContent(true);
               await Promise.allSettled(
                 [...Workflow.Stack._workflows]
                   .reverse()
@@ -581,7 +582,10 @@ export class OpenFormStep extends Step {
               } catch(e) {
                 console.warn(e);
               }
-              this.loading = false;
+              //set loading content false
+              GUI.setLoadingContent(false);
+              //enable form
+              GUI.disableContent(false);
             },
           },
         },
