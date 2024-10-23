@@ -1434,7 +1434,8 @@ new (class extends Plugin {
    * ORIGINAL SOURCE: g3w-client-plugin-editing/g3w-editing-components/panel.js.js@v3.6
    */
   showEditingPanel(opts = {}) {
-    if (this.getLayers().length > 0) {
+    //need to filter visible
+    if (this.getLayers().filter(l => l.config.editing.visible).length > 0) {
       this.state.panel = new Panel({
         ...opts,
         id:            "editing-panel",

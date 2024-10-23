@@ -2129,7 +2129,8 @@ export class ToolBox extends G3WObject {
       });
     }
     this.state._disabledtools = null;
-    this.setShow(true);
+    /** since 3.9.0  set show based on visibile porpety of config editing object setting*/
+    this.state.show           = this.layer.config.editing.visible;
     //need to set selected false
     this.state.selected = false;
   }
