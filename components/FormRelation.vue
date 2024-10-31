@@ -161,7 +161,7 @@
         <table
           v-if  = "relationsLength > 0 && !update"
           ref   = "relationTable"
-          class = "table g3wform-relation-table table-striped"
+          class = "table g3wform-relation-table table-striped nowrap"
         >
           <thead>
             <tr>
