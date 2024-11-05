@@ -818,7 +818,11 @@
 
         const options = this._createWorkflowOptions();
 
-        const { ownField, relationField } = getRelationFieldsFromRelation({
+        //Get fields and values from parent feature
+        //@TODO fatherField is Array of child fields related with parent layer. Need to rename it
+        const { fatherField, fatherValue } = options.context;
+
+        const { relationField } = getRelationFieldsFromRelation({
           layerId:  this._relationLayerId,
           relation: this.relation
         });
@@ -831,20 +835,17 @@
           const { newFeatures, originalFeatures } = outputs.relationFeatures;
 
           // Set Relation child feature value
-          const setRelationFieldValue = ({ oIndex, value }) => {
+          const setRelationFieldValue = ({ field, value }) => {
             newFeatures.forEach((newFeature, i) => {
-              newFeature.set(ownField[oIndex], value);
+              newFeature.set(field, value);
               if (options.parentFeature.isNew()) {
-                originalFeatures[i].set(ownField[oIndex], value);
+                originalFeatures[i].set(field, value);
               }
               this.getLayer().getEditingSource().updateFeature(newFeature);
               options.context.session.pushUpdate(this._relationLayerId, newFeature, originalFeatures[i]);
             })
           };
-
-          Object
-            .entries(this.getParent().values)
-            .forEach(([field, value]) => setRelationFieldValue({ value, oIndex: relationField.findIndex(f => field === f) }));
+          fatherField.forEach((field, i) => setRelationFieldValue({ field, value: fatherValue[i] }));
 
           //check if parent feature is new and if parent layer has editable fields
           if (options.parentFeature.isNew() && this.getParent().editable.length > 0) {
@@ -854,7 +855,7 @@
                 if (relationField.find(evt.key)) {
                   //set value to relation field
                   setRelationFieldValue({
-                    oIndex: relationField.findIndex(rField => evt.key === rField),
+                    field:  evt.key,
                     value:  evt.target.get(evt.key)
                   });
                 }
@@ -1032,7 +1033,7 @@
        * @return {{layerId, editable: *[], values: *, pk: *}}
        */
       getParent() {
-        const parentLayer = Workflow.Stack.getCurrent().getLayer();
+        const parentLayer = this.parentWorkflow.getLayer();
         const { ownField } = getRelationFieldsFromRelation({ layerId: this.layerId, relation: this.relation });
 
         const pk = ownField.find(f => parentLayer.isPkField(f))
@@ -1050,10 +1051,10 @@
           // to fill the field with the relation layer feature when commit
           values: ownField.reduce((father, field) => {
             //get feature
-            const feature = Workflow.Stack.getCurrent().getCurrentFeature();
+            const feature = this.parentWorkflow.getCurrentFeature();
             //get fields of form because contains values that have temporary changes not yet saved
             // in case of form fields
-            const fields  = Workflow.Stack.getCurrent().getInputs().fields;
+            const fields  = this.parentWorkflow.getInputs().fields;
             return Object.assign(father, {
               [field]: (pk === field && feature.isNew()) //check if isPk and parent feature isNew
                 ? feature.getId()
@@ -1085,8 +1086,8 @@
           context: {
             session:       Workflow.Stack.getCurrent().getSession(),        // get parent workflow
             excludeFields: fields.ownField,                                 // array of fields to be excluded
-            fatherValue:   parent.map(([_, value]) => value),
-            fatherField:   parent.map(([field]) => fields.ownField[fields.relationField.findIndex(rField => field === rField)]),
+            fatherValue:   parent.map(([_, value]) => value),               // values of parent fields in relation
+            fatherField:   parent.map(([field]) => fields.ownField[fields.relationField.findIndex(rField => field === rField)]), //children fields
           },
           inputs: {
             features: options.features || [],
@@ -1204,6 +1205,7 @@
 
           // external layers with same geometry of relation layer
           ...GUI.getService('map').getExternalLayers()
+            .filter(l => 'vector' === l._type)
             .filter(l => {
               const features = l.getSource().getFeatures() || [];
               // skip when ..
@@ -1244,8 +1246,6 @@
 
       this.loadEventuallyRelationValuesForInputs = false;
 
-      const parentLayer = Workflow.Stack.getCurrent().getLayer();
-
       // relation related to current feature of current layer in editing
       /**
        * Current relation feature (in editing)
@@ -1264,38 +1264,7 @@
        */ 
       this._layerType    = this.getLayer().getType();
 
-      const fatherFields = getRelationFieldsFromRelation({ layerId: this.layerId, relation: this.relation }).ownField;
-
-      const pk = fatherFields.find(f => parentLayer.isPkField(f))
-
-      /**
-       * Father relation fields (editable and pk)
-       */
-      this.parent    = {
-        // layerId is id of the parent of relation
-        layerId: this.layerId,
-        // get editable fields
-        editable: fatherFields.filter(f => parentLayer.isEditingFieldEditable(f)),
-        // check if father field is a pk and is not editable
-        pk,
-        // Check if the parent field is editable.
-        // If not, get the id of parent feature so the server can generate the right value
-        // to fill the field with the relation layer feature when commit
-        values: fatherFields.reduce((father, field) => {
-          //get feature
-          const feature = Workflow.Stack.getCurrent().getCurrentFeature();
-          //get fields of form because contains values that have temporary changes not yet saved
-          // in case of form fields
-          const fields  = Workflow.Stack.getCurrent().getInputs().fields;
-          return Object.assign(father, {
-            [field]: (field === pk && feature.isNew()) //check if isPk and parent feature isNew
-            ? feature.getId()
-              //check if fields are set (parent workflow is a form)
-              // or for example, for feature property field value
-            : fields ? fields.find(f => field === f.name).value: feature.get(field)
-          });
-        }, {}),
-      };
+      this.parentWorkflow = Workflow.Stack.getCurrent();
 
       /**
        * editing a constraint type
