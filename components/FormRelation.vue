@@ -1283,8 +1283,7 @@
             })),
 
           // external layers with same geometry of relation layer
-          ...GUI.getService('map').getExternalLayers()
-            .filter(l => 'vector' === l._type)
+          ...GUI.getService('map').getExternalLayers('vector')
             .filter(l => {
               const features = l.getSource().getFeatures() || [];
               // skip when ..
