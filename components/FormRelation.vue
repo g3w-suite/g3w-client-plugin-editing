@@ -1105,7 +1105,7 @@
        * @return {{layerId, editable: *[], values: *, pk: *}}
        */
       getParent() {
-        const parentLayer = Workflow.Stack.getCurrent().getLayer();
+        const parentLayer = this.parentWorkflow.getLayer();
         const { ownField } = getRelationFieldsFromRelation({ layerId: this.layerId, relation: this.relation });
 
         const pk = ownField.find(f => parentLayer.isPkField(f))
@@ -1123,10 +1123,10 @@
           // to fill the field with the relation layer feature when commit
           values: ownField.reduce((father, field) => {
             //get feature
-            const feature = Workflow.Stack.getCurrent().getCurrentFeature();
+            const feature = this.parentWorkflow.getCurrentFeature();
             //get fields of form because contains values that have temporary changes not yet saved
             // in case of form fields
-            const fields  = Workflow.Stack.getCurrent().getInputs().fields;
+            const fields  = this.parentWorkflow.getInputs().fields;
             return Object.assign(father, {
               [field]: (pk === field && feature.isNew()) //check if isPk and parent feature isNew
                 ? feature.getId()
@@ -1283,7 +1283,7 @@
             })),
 
           // external layers with same geometry of relation layer
-          ...GUI.getService('map').getExternalLayers()
+          ...GUI.getService('map').getExternalLayers('vector')
             .filter(l => {
               const features = l.getSource().getFeatures() || [];
               // skip when ..
@@ -1342,10 +1342,13 @@
        */ 
       this._layerType    = this.getLayer().getType();
 
+      this.parentWorkflow = Workflow.Stack.getCurrent();
+
       /**
        * editing a constraint type
        */
-      this.capabilities = Workflow.Stack.getCurrent().getLayer().getEditingCapabilities();
+      this.capabilities = this.parentWorkflow.getLayer().getEditingCapabilities();
+
 
       /**
        * relation tools
