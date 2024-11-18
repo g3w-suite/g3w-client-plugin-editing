@@ -1269,7 +1269,8 @@
       /**
        * editing a constraint type
        */
-      this.capabilities = parentLayer.getEditingCapabilities();
+      this.capabilities = this.parentWorkflow.getLayer().getEditingCapabilities();
+
 
       /**
        * relation tools
