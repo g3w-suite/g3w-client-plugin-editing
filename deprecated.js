@@ -257,9 +257,9 @@ export class Session extends g3wsdk.core.G3WObject {
     /** reactive state of history */
     this._constrains = {
       commit: false,
-      undo:false,
-      redo: false
-    },
+      undo:   false,
+      redo:   false,
+    };
 
     // editor
     this._editor = options.editor;
@@ -730,9 +730,8 @@ export class Session extends g3wsdk.core.G3WObject {
             .getLayer()
             .getRelations()
             .getArray()
-            .find(r => -1 !== relations.indexOf(r.getFather())) // parent relation layer
-            .getFather()
-          ].relations[id] = commitObj.relations[id];
+            .find(r => id === r.getChild() && commitObj.relations[r.getFather()]) // parent relation layer
+            .getFather()].relations[id] = commitObj.relations[id];
         return id;
       })
       .forEach(id => delete commitObj.relations[id]);
