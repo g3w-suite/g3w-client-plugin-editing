@@ -2624,7 +2624,7 @@ export class ToolBox extends G3WObject {
     // key is a layer id that has changes to apply
     for (const key in itemsToCommit) {
       let isRelation = false; //set relation to false
-      const items = itemsToCommit[key];
+      const items    = itemsToCommit[key];
       // case key (layer id) is not equal to id (current layer id on editing)
       if (key !== id) {
         isRelation = true; //set true because these changes belong to features relation items
@@ -2686,23 +2686,20 @@ export class ToolBox extends G3WObject {
         delete commitObj.relations[key];
       }
     }
-
     // Remove deep relations from current layer (commitObj) that are not relative to that layer
     const relations = Object.keys(commitObj.relations || {});
     relations
       .filter(id => undefined === this.state.layer.getEditor().getLayer().getRelations().getArray().find(r => id === r.getChild())) // child relations
       .map(id => {
-        commitObj.relations[
-          ToolBox
-            .get(id)
-            .getSession()
-            .getEditor()
-            .getLayer()
-            .getRelations()
-            .getArray()
-            .find(r => relations.includes(r.getFather())) // parent relation layer
-            .getFather()
-          ].relations[id] = commitObj.relations[id];
+        commitObj.relations[ToolBox
+          .get(id)
+          .getSession()
+          .getEditor()
+          .getLayer()
+          .getRelations()
+          .getArray()
+          .find(r => id === r.getChild() && commitObj.relations[r.getFather()]) // parent relation layer
+          .getFather()].relations[id] = commitObj.relations[id];
         return id;
       })
       .forEach(id => delete commitObj.relations[id]);
