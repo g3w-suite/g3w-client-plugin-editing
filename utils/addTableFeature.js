@@ -7,7 +7,7 @@ import { $promisify } from './promisify';
  * @since g3w-client-plugin-editing@v3.8.0
  */
 export function addTableFeature(inputs, context) {
-  const feature = inputs.features.length > 0 ? inputs.features[inputs.features.length -1 ] : inputs.layer.createNewFeature();
+  const feature = inputs.features.length > 0 ? inputs.features[inputs.features.length - 1 ] : inputs.layer.createNewFeature();
 
   feature.setTemporaryId();
 
