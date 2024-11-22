@@ -408,6 +408,63 @@ export class ToolBox extends G3WObject {
             ],
           }),
         },
+        // @since 3.9.0  Edit Attributes of relations features to Multi features
+        (is_vector) && capabilities.includes('change_attr_feature') && {
+          id: 'editmultiattributesrelationfeatures',
+          type: ['change_attr_feature'],
+          name: "editing.tools.update_multi_features",
+          icon: "EditMultiRelationFeatures.png",
+          /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editmultifeatureattributesworkflow.js@v3.7.1 */
+          op: new Workflow({
+            layer,
+            type: 'editmultiattributesrelationfeatures',
+            helpMessage: 'editing.tools.update_multi_features',
+            registerEscKeyEvent: true,
+            runOnce: true,
+            steps: [
+              new SelectElementsStep({
+                type: 'multiple',
+                steps: {
+                  select: {
+                    description: `editing.workflow.steps.${ApplicationState.ismobile ? 'selectDrawBoxAtLeast2Feature' : 'selectMultiPointSHIFTAtLeast2Feature'}`,
+                    buttonnext: {
+                      disabled: true,
+                      condition:({ features=[] }) => features.length < 2,
+                      done: () => { Workflow.Stack.getCurrent().clearUserMessagesSteps(); }
+                    },
+                    dynamic: 0,
+                    done: false
+                  }
+                }
+              }),
+              new Step({ run: async (inputs, context)  => {
+                const relations = Array.from(
+                  new Set(
+                    (await Promise.allSettled(inputs.features.map(feature => {
+                      return getLayersDependencyFeatures(inputs.layer.getId(), {
+                        // @since g3w-client-plugin-editin@v3.7.0
+                        relations: inputs.layer.getRelations().getArray().filter(r =>
+                          inputs.layer.getId() === r.getFather() && // get only child relation features of current editing layer
+                          getEditingLayerById(r.getChild()) &&      // child layer is in editing
+                          'ONE' !== r.getType()                     // exclude ONE relation (Join 1:1)
+                        ),
+                        feature,
+                        filterType: 'fid',
+                      });
+                    }))).filter(({status }) => 'fulfilled' === status).map(({ value }) => value).flat()
+                  )
+                );
+                //In case of multi relation in editing
+                if (relations.length > 1) {
+                  alert('Choose relations')
+                }
+
+                return $promisify(Promise.resolve(inputs, context));
+              }}),
+              new OpenFormStep({ multi: true }),
+            ],
+          }),
+        },
         // Move Feature
         (is_vector) && capabilities.includes('change_feature') && {
           id: 'movefeature',
