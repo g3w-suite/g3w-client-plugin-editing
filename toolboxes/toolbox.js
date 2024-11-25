@@ -580,7 +580,6 @@ export class ToolBox extends G3WObject {
                 steps: [
                   new Step({
                     layer,
-                    help: 'editing.steps.help.draw_new_feature',
                     run(inputs, context) {
                       return $promisify(new Promise((resolve, reject) => {
                         const originalLayer    = inputs.layer;
@@ -610,35 +609,42 @@ export class ToolBox extends G3WObject {
                               className: 'btn-success',
                               callback: async () => {
                                 try {
+                                  const feature = await $promisify(async () => {
+                                    GUI.showUserMessage({
+                                      type:      'tool',
+                                      message:   'plugins.editing.workflow.steps.selectPoint',
+                                      size:      'small',
+                                      autoclose: false,
+                                      closable:  false
+                                    });
                                   //get selected layer
                                   const layer   = layers.find(l => l.selected);
-                                  const feature = await $promisify(async () => {
                                     const features = await (new Promise(async resolve => {
                                       this.addInteraction(
                                         layer.external
-                                            ? new PickFeaturesInteraction({ layer: GUI.getService('map').getLayerById(layer.id) })
-                                            : new g3wsdk.ol.interactions.PickCoordinatesInteraction(), {
-                                          'picked': async e => {
-                                            try {
-                                              resolve(convertToGeometry(
-                                                layer.external
-                                                  ? e.features                             // external layer
-                                                  : ((await DataRouterService.getData('query:coordinates', { // TOC/PROJECT layer
-                                                    inputs: {
-                                                      coordinates:           e.coordinate,
-                                                      query_point_tolerance: ProjectsRegistry.getCurrentProject().getQueryPointTolerance(),
-                                                      layerIds:              [layer.id],
-                                                      multilayers:           false
-                                                    },
-                                                    outputs: null
-                                                  })).data[0] || { features: [] }).features,
-                                                geometryType,
-                                              ))
-                                            } catch(e) {
-                                              console.warn(e);
-                                            }
+                                          ? new PickFeaturesInteraction({ layer: GUI.getService('map').getLayerById(layer.id) })
+                                          : new g3wsdk.ol.interactions.PickCoordinatesInteraction(), {
+                                        'picked': async e => {
+                                          try {
+                                            resolve(convertToGeometry(
+                                              layer.external
+                                                ? e.features                             // external layer
+                                                : ((await DataRouterService.getData('query:coordinates', { // TOC/PROJECT layer
+                                                  inputs: {
+                                                    coordinates:           e.coordinate,
+                                                    query_point_tolerance: ProjectsRegistry.getCurrentProject().getQueryPointTolerance(),
+                                                    layerIds:              [layer.id],
+                                                    multilayers:           false
+                                                  },
+                                                  outputs: null
+                                                })).data[0] || { features: [] }).features,
+                                              geometryType,
+                                            ))
+                                          } catch(e) {
+                                            console.warn(e);
                                           }
                                         }
+                                      }
                                       );
                                     }));
 
@@ -703,6 +709,9 @@ export class ToolBox extends G3WObject {
                         //hide user message step
                       }));
                     },
+                    stop() {
+                      GUI.closeUserMessage();
+                    }
                   }),
                   openFormStep,
                 ],
