@@ -24,6 +24,7 @@
         <button
           @click     = "completeStep(step)"
           :class     = "'btn btn-success' + (step.buttonnext.disabled ? ' g3w-disabled' : '' )"
+          style      = "margin-left: 10px;"
           v-t-plugin = "'editing.workflow.next'"
         ></button>
       </span>

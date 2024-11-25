@@ -479,7 +479,7 @@ export class OpenFormStep extends Step {
         formStructure:   inputs.layer.hasFormStructure() && inputs.layer.getLayerEditingFormStructure() || undefined,
         modal:           true,
         push:            this._options.push || this._isContentChild, /** @since v3.7 force push content on top without clear previous content */
-        showgoback:      undefined !== this._options.showgoback ? this._options.showgoback : !this._isContentChild, /** @since v3.7 force show back button */
+        showgoback:      undefined === this._options.showgoback ? !this._isContentChild : this._options.showgoback, /** @since v3.7 force show back button */
         /** @TODO make it straightforward: `headerComponent` vs `buttons` ? */
         headerComponent: this._saveAll && {
           template: /* html */ `
@@ -775,8 +775,8 @@ export class OpenFormStep extends Step {
     if (contextService && false === this._isContentChild) {
       contextService.setUpdate(false, { force: false });
     }
-
-    GUI.closeForm({ pop: this.push || this._isContentChild });
+    //@since 3.9.0 add GUI.getContentLength() in case of edit multi relationfeatures tool
+    GUI.closeForm({ pop: this.push || this._isContentChild && GUI.getContentLength() > 1 });
 
     g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').resetCurrentLayout();
 

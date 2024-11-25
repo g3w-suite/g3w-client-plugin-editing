@@ -80,15 +80,21 @@ export class ToolBox extends G3WObject {
   constructor(layer, dependencies = []) {
     super();
 
-    const is_vector       = [undefined, Layer.LayerTypes.VECTOR].includes(layer.getType());
-    const geometryType    = is_vector && layer.getGeometryType();
-    const is_point        = is_vector && Geometry.isPointGeometryType(geometryType);
-    const is_line         = is_vector && Geometry.isLineGeometryType(geometryType);
-    const is_poly         = is_vector && Geometry.isPolygonGeometryType(geometryType);
-    const is_table        = Layer.LayerTypes.TABLE === layer.getType();
-    const isMultiGeometry = geometryType && Geometry.isMultiGeometry(geometryType);
-    const iconGeometry    = is_vector && (is_point ? 'Point' : is_line ? 'Line' : 'Polygon');
-
+    const is_vector          = [undefined, Layer.LayerTypes.VECTOR].includes(layer.getType());
+    const geometryType       = is_vector && layer.getGeometryType();
+    const is_point           = is_vector && Geometry.isPointGeometryType(geometryType);
+    const is_line            = is_vector && Geometry.isLineGeometryType(geometryType);
+    const is_poly            = is_vector && Geometry.isPolygonGeometryType(geometryType);
+    const is_table           = Layer.LayerTypes.TABLE === layer.getType();
+    const isMultiGeometry    = geometryType && Geometry.isMultiGeometry(geometryType);
+    const iconGeometry       = is_vector && (is_point ? 'Point' : is_line ? 'Line' : 'Polygon');
+    //@since 3.9.0 Check if layer has relation layers editable
+    const editable_relations = layer.getRelations().getArray()
+                              .filter(relation => {
+                                const l = CatalogLayersStoresRegistry.getLayerById(getRelationId({ layerId: layer.getId(), relation }));
+                                return l.isEditable() && l.config.editing.visible;
+                              })
+                              .map(r => r);
     this._start       = false;
 
     /** constraint loading features to a filter set */
@@ -103,7 +109,7 @@ export class ToolBox extends G3WObject {
      * _states: [
      *     {
      *       id: unique key
-     *       state: [state] // example: history contsins features state
+     *       state: [state] // example: history contains features state
      *                      // array because a tool can apply changes to more than one features at time (split di una feature)
      *     },
      *     {
@@ -409,7 +415,7 @@ export class ToolBox extends G3WObject {
           }),
         },
         // @since 3.9.0  Edit Attributes of relations features to Multi features
-        (is_vector) && capabilities.includes('change_attr_feature') && {
+        (is_vector) && capabilities.includes('change_attr_feature') && editable_relations.filter(r => 'ONE' !== r.getType()).length > 0 && {
           id: 'editmultiattributesrelationfeatures',
           type: ['change_attr_feature'],
           name: "editing.tools.update_multi_features",
@@ -429,39 +435,65 @@ export class ToolBox extends G3WObject {
                     description: `editing.workflow.steps.${ApplicationState.ismobile ? 'selectDrawBoxAtLeast2Feature' : 'selectMultiPointSHIFTAtLeast2Feature'}`,
                     buttonnext: {
                       disabled: true,
-                      condition:({ features=[] }) => features.length < 2,
-                      done: () => { Workflow.Stack.getCurrent().clearUserMessagesSteps(); }
+                      condition: ({ features = [] }) => features.length < 2,
+                      done:      () => { Workflow.Stack.getCurrent().clearUserMessagesSteps(); }
                     },
                     dynamic: 0,
-                    done: false
+                    done:    false
                   }
                 }
               }),
               new Step({ run: async (inputs, context)  => {
-                const relations = Array.from(
-                  new Set(
-                    (await Promise.allSettled(inputs.features.map(feature => {
-                      return getLayersDependencyFeatures(inputs.layer.getId(), {
-                        // @since g3w-client-plugin-editin@v3.7.0
-                        relations: inputs.layer.getRelations().getArray().filter(r =>
-                          inputs.layer.getId() === r.getFather() && // get only child relation features of current editing layer
-                          getEditingLayerById(r.getChild()) &&      // child layer is in editing
-                          'ONE' !== r.getType()                     // exclude ONE relation (Join 1:1)
-                        ),
-                        feature,
-                        filterType: 'fid',
-                      });
-                    }))).filter(({status }) => 'fulfilled' === status).map(({ value }) => value).flat()
-                  )
-                );
+                GUI.setModal(true);
+                const relations = editable_relations.filter(r => 'ONE' !== r.getType());
+                //get relation features from feature parent layer
+                await Promise.allSettled(inputs.features.map(feature => getLayersDependencyFeatures(inputs.layer.getId(), {
+                  relations,
+                  feature,
+                  filterType: 'fid',
+                })))
+
                 //In case of multi relation in editing
                 if (relations.length > 1) {
                   alert('Choose relations')
                 }
+                //start child workflow
+                const workflow = new Workflow({
+                  type: 'editmultiattributes',
+                  steps: [
+                    new OpenFormStep({ multi: true }),
+                  ],
+                });
+                //Relations layer
+                const rLayer = getEditingLayerById(relations[0].getChild());
 
+                const fields = getRelationFieldsFromRelation({
+                  layerId:  relations[0].getChild(),
+                  relation: relations[0]
+                });
+
+                const options = {
+                  context: {
+                    session:       Workflow.Stack.getCurrent().getSession(),        // get parent workflow
+                    excludeFields: fields.ownField,                                 // array of fields to be excluded
+                  },
+                  inputs: {
+                    features: rLayer.readFeatures(),
+                    layer:    rLayer
+                  }
+                };
+
+                try {
+                  await promisify(workflow.start(options));
+                } catch(e) {
+                  console.warn(e);
+                }
+
+                workflow.stop();
+
+                GUI.setModal(false);
                 return $promisify(Promise.resolve(inputs, context));
               }}),
-              new OpenFormStep({ multi: true }),
             ],
           }),
         },
@@ -1254,7 +1286,7 @@ export class ToolBox extends G3WObject {
     this.state._tools.forEach(tool => {
       Object.assign(tool, {
         disabledtoolsoftools: [],
-        enabled:              false,
+        enabled:              !!tool.enabled,
         active:               false,
         message:              null,
         messages:             tool.op.getMessages(),
@@ -1828,7 +1860,7 @@ export class ToolBox extends G3WObject {
    * 
    * @param bool
    */
-  setEditing(bool=true) {
+  setEditing(bool = true) {
     this.setEnable(bool);
     this.state.editing.on = bool;
     this.enableTools(bool);
@@ -1853,7 +1885,7 @@ export class ToolBox extends G3WObject {
    * 
    * @returns {boolean}
    */
-  setEnable(bool=false) {
+  setEnable(bool = false) {
     this.state.enabled = bool;
     return this.state.enabled;
   }
@@ -2056,9 +2088,9 @@ export class ToolBox extends G3WObject {
     const disabledtools = this.state._disabledtools || [];
     tools
       .forEach(tool => {
-        const enabled = undefined !== tool.enable ? tool.enable : bool;
-        tool.enabled = (bool && disabledtools.length)
-          ? disabledtools.indexOf(tool.getId()) === -1
+        const enabled = undefined === tool.enable ? bool : tool.enable;
+        tool.enabled = (bool && disabledtools.length > 0)
+          ? !disabledtools.includes(tool.getId())
           : toRawType(enabled) === 'Boolean'
             ? enabled
             : enabled({ bool, tool });
@@ -2823,11 +2855,11 @@ export class ToolBox extends G3WObject {
       if ((Layer.LayerTypes.VECTOR === this.state._layerType) && this.state._getFeaturesOption.filter.bbox) {
         const fnc = () => {
           if (
-              //added ApplicationState.online
-              ApplicationState.online
-              && this.state.editing.canEdit
-              && this.state.selected //need to be selected
-              && 0 === GUI.getContentLength()
+            //added ApplicationState.online
+            ApplicationState.online
+            && this.state.editing.canEdit
+            && this.state.selected //need to be selected
+            && 0 === GUI.getContentLength()
           ) {
             this.state._getFeaturesOption.filter.bbox = GUI.getService('map').getMapBBOX();
             this.state.loading = true;
