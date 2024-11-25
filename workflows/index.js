@@ -1092,6 +1092,7 @@ export class SelectElementsStep extends Step {
   }
 
   stop() {
+    Object.values(this.getSteps() || {}).forEach(s => s.reset && s.reset() );
     this._selectInteractions.forEach(i => this.removeInteraction(i));
 
     if (this._vectorLayer) {

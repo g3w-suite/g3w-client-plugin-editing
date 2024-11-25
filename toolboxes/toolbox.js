@@ -402,11 +402,12 @@ export class ToolBox extends G3WObject {
                     description: `editing.workflow.steps.${ApplicationState.ismobile ? 'selectDrawBoxAtLeast2Feature' : 'selectMultiPointSHIFTAtLeast2Feature'}`,
                     buttonnext: {
                       disabled: true,
-                      condition:({ features=[] }) => features.length < 2,
-                      done: () => { Workflow.Stack.getCurrent().clearUserMessagesSteps(); }
+                      condition:({ features = [] }) => features.length < 2,
+                      done:     () => { Workflow.Stack.getCurrent().clearUserMessagesSteps(); },
                     },
                     dynamic: 0,
-                    done: false
+                    done:    false,
+                    reset() { this.dynamic = 0; },
                   }
                 }
               }),
@@ -439,7 +440,8 @@ export class ToolBox extends G3WObject {
                       done:      () => { Workflow.Stack.getCurrent().clearUserMessagesSteps(); }
                     },
                     dynamic: 0,
-                    done:    false
+                    done:    false,
+                    reset() { this.dynamic = 0; },
                   }
                 }
               }),
