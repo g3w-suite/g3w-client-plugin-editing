@@ -582,6 +582,17 @@ export class ToolBox extends G3WObject {
                 steps: [
                   new Step({
                     layer,
+                    //@since 3.9.0 to show user message steps
+                    steps: {
+                      chooselayer: {
+                        description: `editing.modal.tools.copyfeaturefromotherlayer.title`,
+                        done: false,
+                      },
+                      selectgeometry: {
+                        description: `editing.workflow.steps.selectPoint`,
+                        done: false,
+                      }
+                    },
                     run(inputs, context) {
                       return $promisify(new Promise((resolve, reject) => {
                         const originalLayer    = inputs.layer;
@@ -610,15 +621,10 @@ export class ToolBox extends G3WObject {
                               label: 'Ok',
                               className: 'btn-success',
                               callback: async () => {
+                                //set choose layer step done
+                                this.setUserMessageStepDone('chooselayer');
                                 try {
                                   const feature = await $promisify(async () => {
-                                    GUI.showUserMessage({
-                                      type:      'tool',
-                                      message:   'plugins.editing.workflow.steps.selectPoint',
-                                      size:      'small',
-                                      autoclose: false,
-                                      closable:  false
-                                    });
                                   //get selected layer
                                   const layer   = layers.find(l => l.selected);
                                     const features = await (new Promise(async resolve => {
@@ -711,9 +717,6 @@ export class ToolBox extends G3WObject {
                         //hide user message step
                       }));
                     },
-                    stop() {
-                      GUI.closeUserMessage();
-                    }
                   }),
                   openFormStep,
                 ],
