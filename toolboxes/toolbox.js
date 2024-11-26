@@ -445,57 +445,59 @@ export class ToolBox extends G3WObject {
                   }
                 }
               }),
-              new Step({ run: async (inputs, context)  => {
-                GUI.setModal(true);
-                const relations = editable_relations.filter(r => 'ONE' !== r.getType());
-                //get relation features from feature parent layer
-                await Promise.allSettled(inputs.features.map(feature => getLayersDependencyFeatures(inputs.layer.getId(), {
-                  relations,
-                  feature,
-                  filterType: 'fid',
-                })))
+              new Step({
+                run: async (inputs, context)  => {
+                  GUI.setModal(true);
+                  const relations = editable_relations.filter(r => 'ONE' !== r.getType());
+                  //get relation features from feature parent layer
+                  await Promise.allSettled(inputs.features.map(feature => getLayersDependencyFeatures(inputs.layer.getId(), {
+                    relations,
+                    feature,
+                    filterType: 'fid',
+                  })))
 
-                //In case of multi relation in editing
-                if (relations.length > 1) {
-                  alert('Choose relations')
-                }
-                //start child workflow
-                const workflow = new Workflow({
-                  type: 'editmultiattributes',
-                  steps: [
-                    new OpenFormStep({ multi: true }),
-                  ],
-                });
-                //Relations layer
-                const rLayer = getEditingLayerById(relations[0].getChild());
-
-                const fields = getRelationFieldsFromRelation({
-                  layerId:  relations[0].getChild(),
-                  relation: relations[0]
-                });
-
-                const options = {
-                  context: {
-                    session:       Workflow.Stack.getCurrent().getSession(),        // get parent workflow
-                    excludeFields: fields.ownField,                                 // array of fields to be excluded
-                  },
-                  inputs: {
-                    features: rLayer.readFeatures(),
-                    layer:    rLayer
+                  //In case of multi relation in editing
+                  if (relations.length > 1) {
+                    alert('Choose relations')
                   }
-                };
+                  //start child workflow
+                  const workflow = new Workflow({
+                    type: 'editmultiattributes',
+                    steps: [
+                      new OpenFormStep({ multi: true }),
+                    ],
+                  });
+                  //Relations layer
+                  const rLayer = getEditingLayerById(relations[0].getChild());
 
-                try {
-                  await promisify(workflow.start(options));
-                } catch(e) {
-                  console.warn(e);
+                  const fields = getRelationFieldsFromRelation({
+                    layerId:  relations[0].getChild(),
+                    relation: relations[0]
+                  });
+
+                  const options = {
+                    context: {
+                      session:       Workflow.Stack.getCurrent().getSession(),        // get parent workflow
+                      excludeFields: fields.ownField,                                 // array of fields to be excluded
+                    },
+                    inputs: {
+                      features: rLayer.readFeatures(),
+                      layer:    rLayer
+                    }
+                  };
+
+                  try {
+                    await promisify(workflow.start(options));
+                  } catch(e) {
+                    console.warn(e);
+                  }
+
+                  workflow.stop();
+
+                  GUI.setModal(false);
+                  return $promisify(Promise.resolve(inputs, context));
                 }
-
-                workflow.stop();
-
-                GUI.setModal(false);
-                return $promisify(Promise.resolve(inputs, context));
-              }}),
+              }),
             ],
           }),
         },
