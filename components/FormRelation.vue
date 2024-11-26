@@ -634,8 +634,8 @@
             type: 'editfeatureattributes',
           },
 
-          // @since 3.9.0 copy feature
-          this.capabilities.includes('add_feature') && {
+          // @since 3.9.0 copy featureonly for table layer
+          Layer.LayerTypes.TABLE === this._layerType && this.capabilities.includes('add_feature') && {
             state: Vue.observable({
               icon:   'pasteFeaturesFromOtherLayers.png',
               id:     `${id}_copyfeature`,
