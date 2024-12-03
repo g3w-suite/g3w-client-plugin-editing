@@ -509,6 +509,15 @@ export class Step extends G3WObject {
   }
 
   /**
+   * @since 3.9.0
+   * @return {Promise<void>}
+   */
+  async stopRun() {
+    this._rejectRun();
+    await new Promise((resolve) => this.once('stop', resolve))
+  }
+
+  /**
    * @FIXME add description
    */
   getId() {

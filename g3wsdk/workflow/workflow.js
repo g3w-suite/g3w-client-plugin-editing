@@ -441,10 +441,8 @@ export class Workflow extends G3WObject {
         if (step.isRunning()) {
           //clear messages steps
           this.clearMessages();
-          //reject a current step
-          step._rejectRun();
-          //wait stop
-          await new Promise((_, reject) => { step.once('stop', reject)})
+          //wait stop run
+          await step.stopRun();
         }
         // reset counter and reject flow
         if (this._stepIndex > 0) {
