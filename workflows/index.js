@@ -700,7 +700,13 @@ export class OpenFormStep extends Step {
                   }
                 }
               },
-              cbk: reject
+              cbk:  () => {
+                if (!this._isContentChild) {
+                  GUI.setModal(false);
+                  this.fireEvent('cancelform', inputs.features); // fire event cancel form to emit to subscrivers
+                }
+                reject(inputs);
+              }
             }
           ]
         });
@@ -809,11 +815,6 @@ export class OpenFormStep extends Step {
     this.layerId = null;
     this._unwatchs.forEach(unwatch => unwatch());
     this._unwatchs = [];
-
-    if (!this._isContentChild) {
-      GUI.setModal(false);
-      this.fireEvent('cancelform', this.getInputs().features); // fire event cancel form to emit to subscrivers
-    }
   }
 
 }
