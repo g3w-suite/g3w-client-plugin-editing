@@ -629,12 +629,11 @@ export class OpenFormStep extends Step {
               cbk: async (fields) => {
                 fields = this._multi ? fields.filter(f => null !== f.value) : fields;
 
-                // skip when no fields
-                if (0 === fields.length) {
-                  GUI.setModal(false);
-                  resolve(inputs);
-                  return;
-                }
+              // skip when no fields
+              if (0 === fields.length) {
+                resolve(inputs);
+                return;
+              }
 
                 const newFeatures = [];
 
