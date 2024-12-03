@@ -603,7 +603,6 @@ export class OpenFormStep extends Step {
 
               // skip when no fields
               if (0 === fields.length) {
-                GUI.setModal(false);
                 resolve(inputs);
                 return;
               }
