@@ -427,7 +427,7 @@ export class ToolBox extends G3WObject {
             type:                'editmultiattributesrelationfeatures',
             helpMessage:         'editing.tools.update_multi_features_relations_from_parents',
             registerEscKeyEvent: true,
-            runOnce:             false,
+            runOnce:             true,
             steps: [
               new SelectElementsStep({
                 type: 'multiple',
