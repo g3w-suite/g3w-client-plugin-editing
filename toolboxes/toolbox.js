@@ -92,7 +92,7 @@ export class ToolBox extends G3WObject {
     const editable_relations = layer.getRelations().getArray()
                               .filter(relation => {
                                 const l = CatalogLayersStoresRegistry.getLayerById(getRelationId({ layerId: layer.getId(), relation }));
-                                return l.isEditable() && l.config.editing.visible;
+                                return l.isEditable();
                               })
                               .map(r => r);
     this._start       = false;
