@@ -140,7 +140,7 @@ export class ToolBox extends G3WObject {
      * ORIGINAL SOURCE: g3w-client/src/core/editing/session.js@v3.9.1
      */
     this._session = Object.assign(new G3WObject({ setters: {
-      start:                        (options={}) => $promisify(this.__startSession(options)),
+      start:                        async (options={}) => await this.__startSession(options),
       stop:                         ()           => $promisify(this.__stopSession()),
       getFeatures:                  (options={}) => $promisify(this.__getFeatures(options)),
       saveChangesOnServer:          commitItems  => this.__saveChangesOnServer(commitItems),
@@ -1496,7 +1496,7 @@ export class ToolBox extends G3WObject {
               this.startLoading();
               this.setFeaturesOptions({ filter });
               try {
-                handlerAfterSessionGetFeatures(await promisify(this._session.start(this.state._getFeaturesOption)))
+                await handlerAfterSessionGetFeatures(promisify(this._session.start(this.state._getFeaturesOption)))
               } catch(e) {
                 console.warn(e);
                 this.setEditing(false);
@@ -1509,12 +1509,12 @@ export class ToolBox extends G3WObject {
       if (!is_started && !GIVE_ME_A_NAME) {
         this._start = true;
         this.startLoading();
-        this._session.start(this.state._getFeaturesOption).then(handlerAfterSessionGetFeatures)
+        await handlerAfterSessionGetFeatures(promisify(this._session.start(this.state._getFeaturesOption)))
       }
 
       if (is_started && !this._start) {
         this.startLoading();
-        this._session.getFeatures(this.state._getFeaturesOption).then(handlerAfterSessionGetFeatures);
+        await handlerAfterSessionGetFeatures(promisify(this._session.getFeatures(this.state._getFeaturesOption)))
         this._start = true;
       }
 
