@@ -419,13 +419,13 @@ export class ToolBox extends G3WObject {
         (is_vector) && capabilities.includes('change_attr_feature') && editable_relations.filter(r => 'ONE' !== r.getType()).length > 0 && {
           id: 'editmultiattributesrelationfeatures',
           type: ['change_attr_feature'],
-          name: "editing.tools.update_multi_features",
+          name: "editing.tools.update_multi_features_relations_from_parents",
           icon: "EditMultiRelationFeatures.png",
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editmultifeatureattributesworkflow.js@v3.7.1 */
           op: new Workflow({
             layer,
             type:                'editmultiattributesrelationfeatures',
-            helpMessage:         'editing.tools.update_multi_features',
+            helpMessage:         'editing.tools.update_multi_features_relations_from_parents',
             registerEscKeyEvent: true,
             runOnce:             false,
             steps: [
