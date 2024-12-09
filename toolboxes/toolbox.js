@@ -1126,12 +1126,12 @@ export class ToolBox extends G3WObject {
             const type = this.getLayer().getGeometryType();
             const has_same_geom = layer => {
               // check if tool is visible and the layer is a Vector
-              const features = 'VECTOR' === layer.getType() && layer.getSource().getFeatures();
+              const features = layer instanceof ol.layer.Vector && layer.getSource().getFeatures();
               return features && features.length ? isSameBaseGeometryType(features[0].getGeometry().getType(), type) : true;
             };
             map.onbefore('loadExternalLayer',  layer => !tool.visible && (tool.visible = has_same_geom(layer)));
             map.onafter('unloadExternalLayer', layer => {
-              const features = tool.visible && 'VECTOR' === layer.getType() && layer.getSource().getFeatures();
+              const features = tool.visible && layer instanceof ol.layer.Vector && layer.getSource().getFeatures();
               if (features && features.length && isSameBaseGeometryType(features[0].getGeometry().getType(), type)) {
                 tool.visible = map.getExternalLayers().find(l => undefined !== has_same_geom(l));
               }
