@@ -140,7 +140,7 @@ export class ToolBox extends G3WObject {
      * ORIGINAL SOURCE: g3w-client/src/core/editing/session.js@v3.9.1
      */
     this._session = Object.assign(new G3WObject({ setters: {
-      start:                        async (options={}) => await this.__startSession(options),
+      start:                        (options={}) => $promisify(this.__startSession(options)),
       stop:                         ()           => $promisify(this.__stopSession()),
       getFeatures:                  (options={}) => $promisify(this.__getFeatures(options)),
       saveChangesOnServer:          commitItems  => this.__saveChangesOnServer(commitItems),
