@@ -1046,11 +1046,11 @@ export class SelectElementsStep extends Step {
             // filter external layer only vector - Exclude the
             // same base geometry
             .filter(l => {
-              const features = 'VECTOR' == l.getType() && l.getSource().getFeatures();
+              const features = l instanceof ol.layer.Vector && l.getSource().getFeatures();
               if (features.length > 0) {
                 return isSameBaseGeometryType(features[0].getGeometry().getType(), geometryType)
               }
-              return true;
+              return false;
             })
         });
         interactions.external.on('picked', e => {
