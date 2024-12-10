@@ -368,10 +368,10 @@ export class Workflow extends G3WObject {
   
       if (showUserMessage) {
         GUI.showUserMessage({
-          title: 'plugins.editing.workflow.title.steps',
-          type: 'tool',
+          title:    'plugins.editing.workflow.title.steps',
+          type:     'tool',
           position: 'left',
-          size: 'small',
+          size:     'small',
           closable: false,
           hooks: {
             body: {

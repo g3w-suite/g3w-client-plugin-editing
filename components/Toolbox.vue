@@ -98,7 +98,7 @@
             <img
               height = "25"
               width  = "25"
-              :src   = "resourcesurl + 'images/' + tool.icon"
+              :src   = "`${resourcesurl}images/${tool.icon}`"
               :title = "get_tool_title(`${tool.name}`)"
             />
           </div>

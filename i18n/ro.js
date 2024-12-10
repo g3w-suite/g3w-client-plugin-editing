@@ -42,6 +42,7 @@ export default  {
     update_feature: "Actualizează atributul entității",
     update_multi_features: "Actualizează atributele entităților selectate",
     update_multi_features_relations: "Update attributes of all selected relations",
+    update_multi_features_relations_from_parents : "Editați înregistrările relațiilor de la una sau mai multe caracteristici părinte",
     copyfeaturefromexternallayer: "Create Feature from added layer"
   },
   toolsoftool: {
