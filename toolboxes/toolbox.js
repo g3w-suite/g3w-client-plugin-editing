@@ -1277,48 +1277,6 @@ export class ToolBox extends G3WObject {
             registerEscKeyEvent: true
           }),
         },
-        // Copy Features from external layer
-        (is_line || is_poly) && capabilities.includes('add_feature') && {
-          id: 'copyfeaturefromexternallayer',
-          type: ['add_feature'],
-          name: "editing.tools.copyfeaturefromexternallayer",
-          icon: "copyPolygonFromFeature.png",
-          visible: tool => {
-            const map  = GUI.getService('map');
-            const type = this.getLayer().getGeometryType();
-            const has_same_geom = layer => {
-              // check if tool is visible and the layer is a Vector
-              const features = 'VECTOR' === layer.getType() && layer.getSource().getFeatures();
-              return features && features.length ? isSameBaseGeometryType(features[0].getGeometry().getType(), type) : true;
-            };
-            map.onbefore('loadExternalLayer',  layer => !tool.visible && (tool.visible = has_same_geom(layer)));
-            map.onafter('unloadExternalLayer', layer => {
-              const features = tool.visible && 'VECTOR' === layer.getType() && layer.getSource().getFeatures();
-              if (features && features.length && isSameBaseGeometryType(features[0].getGeometry().getType(), type)) {
-                tool.visible = map.getExternalLayers().find(l => undefined !== has_same_geom(l));
-              }
-            });
-            return false;
-          },
-          /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addfeaturefrommapvectorlayersworkflow.js@v3.7.1 */
-          op: new Workflow({
-            layer,
-            type: 'addfeaturefrommapvectorlayers',
-            runOnce: true,
-            steps: [
-              new SelectElementsStep({
-                layer,
-                type: 'external',
-                help: 'editing.steps.help.copy'
-              }, false),
-              new OpenFormStep({
-                layer,
-                help: 'editing.steps.help.copy'
-              }),
-            ],
-            registerEscKeyEvent: true
-          }),
-        },
         // Add Table feature (alphanumerical layer - No geometry)
         is_table && capabilities.includes('add_feature') && {
           id: 'addfeature',
