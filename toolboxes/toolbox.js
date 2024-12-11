@@ -481,7 +481,7 @@ export class ToolBox extends G3WObject {
                             relationId: this.$options.relationId
                           }
                         }
-                      }))({ relations, relationId: relations[0].state.id })
+                      }))({ relations, relationId: relations[0].state.id });
 
                       GUI.showModalDialog({
                         title:      tPlugin('editing.relations'),
@@ -497,7 +497,7 @@ export class ToolBox extends G3WObject {
                           ok: {
                             label: 'OK',
                             className: 'btn-success',
-                            callback: async () => {
+                            callback() {
                               //set relation layer id to editin
                               relationLayerId = relations.find(r => vueInstance.relationId === r.state.id).getChild();
                               resolve();
@@ -679,97 +679,98 @@ export class ToolBox extends G3WObject {
                             ok: {
                               label: 'Ok',
                               className: 'btn-success',
-                              callback: async () => {
-                                alert()
-                                //set choose layer step done
-                                this.setUserMessageStepDone('chooselayer');
-                                try {
-                                  const feature = await $promisify(async () => {
-                                  //get selected layer
-                                  const layer   = layers.find(l => l.selected);
-                                    const features = await (new Promise(async resolve => {
-                                      this.addInteraction(
-                                        layer.external
-                                          ? new PickFeaturesInteraction({ layer: GUI.getService('map').getLayerById(layer.id) })
-                                          : new g3wsdk.ol.interactions.PickCoordinatesInteraction(), {
-                                        'picked': async e => {
-                                          try {
-                                            resolve(convertToGeometry(
-                                              layer.external
-                                                ? e.features                             // external layer
-                                                : ((await DataRouterService.getData('query:coordinates', { // TOC/PROJECT layer
-                                                  inputs: {
-                                                    coordinates:           e.coordinate,
-                                                    query_point_tolerance: ProjectsRegistry.getCurrentProject().getQueryPointTolerance(),
-                                                    layerIds:              [layer.id],
-                                                    multilayers:           false
-                                                  },
-                                                  outputs: null
-                                                })).data[0] || { features: [] }).features,
-                                              geometryType,
-                                            ))
-                                          } catch(e) {
-                                            console.warn(e);
-                                          }
-                                        }
+                              callback: () => {
+                                (async () => {
+                                  //set choose layer step done
+                                  this.setUserMessageStepDone('chooselayer');
+                                  try {
+                                    const feature = await $promisify(async () => {
+                                      //get selected layer
+                                      const layer   = layers.find(l => l.selected);
+                                      const features = await (new Promise(async resolve => {
+                                        this.addInteraction(
+                                            layer.external
+                                                ? new PickFeaturesInteraction({ layer: GUI.getService('map').getLayerById(layer.id) })
+                                                : new g3wsdk.ol.interactions.PickCoordinatesInteraction(), {
+                                              'picked': async e => {
+                                                try {
+                                                  resolve(convertToGeometry(
+                                                      layer.external
+                                                          ? e.features                             // external layer
+                                                          : ((await DataRouterService.getData('query:coordinates', { // TOC/PROJECT layer
+                                                            inputs: {
+                                                              coordinates:           e.coordinate,
+                                                              query_point_tolerance: ProjectsRegistry.getCurrentProject().getQueryPointTolerance(),
+                                                              layerIds:              [layer.id],
+                                                              multilayers:           false
+                                                            },
+                                                            outputs: null
+                                                          })).data[0] || { features: [] }).features,
+                                                      geometryType,
+                                                  ))
+                                                } catch(e) {
+                                                  console.warn(e);
+                                                }
+                                              }
+                                            }
+                                        );
+                                      }));
+
+                                      let _feature;
+
+                                      try {
+                                        _feature = features.length > 1
+                                            ? await promisify(chooseFeatureFromFeatures({ features, inputs }))
+                                            : features[0];
+                                      } catch (e) {
+                                        console.warn(e);
                                       }
-                                      );
-                                    }));
 
-                                    let _feature;
+                                      if (_feature) {
+                                        const feature = new Feature({
+                                          feature:    _feature,
+                                          properties: attributes.map(a => a.name)
+                                        })
 
-                                    try {
-                                      _feature = features.length > 1
-                                        ? await promisify(chooseFeatureFromFeatures({ features, inputs }))
-                                        : features[0];
-                                    } catch (e) {
-                                      console.warn(e);
-                                    }
+                                        feature.setTemporaryId();
+                                        return feature;
+                                      }
 
-                                    if (_feature) {
-                                      const feature = new Feature({
-                                        feature:    _feature,
-                                        properties: attributes.map(a => a.name)
-                                      })
+                                      GUI.showUserMessage({
+                                        type:     'warning',
+                                        message:  'plugins.editing.messages.no_feature_selected',
+                                        closable:  false,
+                                        autoclose: true
+                                      });
 
-                                      feature.setTemporaryId();
-                                      return feature;
-                                    }
-
-                                    GUI.showUserMessage({
-                                      type:     'warning',
-                                      message:  'plugins.editing.messages.no_feature_selected',
-                                      closable:  false,
-                                      autoclose: true
+                                      return Promise.reject();
                                     });
 
-                                    return Promise.reject();
-                                  });
+                                    //@TODO check better way
+                                    //Set undefined property to null otherwise on commit
+                                    // property are lost
+                                    attributes.forEach(({ name }) => {
+                                      if (undefined === feature.get(name)) { feature.set(name, null) }
+                                    })
 
-                                  //@TODO check better way
-                                  //Set undefined property to null otherwise on commit
-                                  // property are lost
-                                  attributes.forEach(({ name }) => {
-                                    if (undefined === feature.get(name)) { feature.set(name, null) }
-                                  })
-
-                                  originalLayer.getEditingNotEditableFields()
-                                    .find(field => {
-                                      if (originalLayer.isPkField(field)) { feature.set(field, null) }
-                                    });
-                                  //remove eventually Z Values
-                                  removeZValueToOLFeatureGeometry({ feature });
-                                  feature.setTemporaryId();
-                                  source.addFeature(feature);
-                                  session.pushAdd(layerId, feature, false);
-                                  inputs.features.push(feature)
-                                  this.fireEvent('addfeature', feature)
-                                  resolve(inputs);
-                                }
-                                catch(e) {
-                                  console.warn(e);
-                                  reject(e);
-                                }
+                                    originalLayer.getEditingNotEditableFields()
+                                        .find(field => {
+                                          if (originalLayer.isPkField(field)) { feature.set(field, null) }
+                                        });
+                                    //remove eventually Z Values
+                                    removeZValueToOLFeatureGeometry({ feature });
+                                    feature.setTemporaryId();
+                                    source.addFeature(feature);
+                                    session.pushAdd(layerId, feature, false);
+                                    inputs.features.push(feature)
+                                    this.fireEvent('addfeature', feature)
+                                    resolve(inputs);
+                                  }
+                                  catch(e) {
+                                    console.warn(e);
+                                    reject(e);
+                                  }
+                                })();
                               }
                             }
                           }
