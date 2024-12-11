@@ -1440,7 +1440,7 @@ new (class extends Plugin {
         ...opts,
         id:            "editing-panel",
         title:         opts.title || "plugins.editing.editing_data",
-        internalPanel: new (Vue.extend(require('./components/Editing.vue')))({
+        internalPanel: new (Vue.extend(require('./components/Editing.vue').default))({
           service:       this,
           resourcesurl:  opts.resourcesUrl || GUI.getResourcesUrl(),
           showcommitbar: undefined !== opts.showcommitbar ? opts.showcommitbar : true,
