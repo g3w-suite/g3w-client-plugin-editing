@@ -524,6 +524,17 @@ export class ToolBox extends G3WObject {
                   //Relations layer
                   const rLayer = getEditingLayerById(relationLayerId);
 
+                  if (0 === rLayer.readFeatures().length) {
+                    GUI.setModal(false);
+
+                    GUI.showUserMessage({
+                      type: 'warning',
+                      message: 'plugins.editing.no_relations_found',
+                      autoclose: true,
+                    })
+                    return $promisify(Promise.reject());
+                  }
+
                   const fields = getRelationFieldsFromRelation({
                     layerId:  relations[0].getChild(),
                     relation: relations[0]
