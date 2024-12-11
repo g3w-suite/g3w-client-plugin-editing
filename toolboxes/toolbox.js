@@ -887,7 +887,8 @@ export class ToolBox extends G3WObject {
                                 feature.getGeometry().translate(deltaXY.x, deltaXY.y)
                               }
                               // set media fields to null
-                              layer.getEditingMediaFields({}).forEach(f => feature.set(f, null));
+                              //@since 3.9.0 Comment
+                              //layer.getEditingMediaFields({}).forEach(f => feature.set(f, null));
                               /**
                                * evaluated geometry expression
                                */
