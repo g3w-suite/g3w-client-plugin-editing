@@ -462,51 +462,52 @@ export class ToolBox extends G3WObject {
                   if (relations.length > 1) {
                     //ser relation layer id
                     try {
-                      await new Promise((resolve, reject) => {
-                        const vueInstance      = new (Vue.extend({
-                          name: 'multi-relations-fetures',
-                          template: `<div>
-                            <select v-select2 = "'relationId'">
-                              <option v-for = "relation in relations" 
-                                :key   = "relation.state.id" 
-                                :value = "relation.state.id">
-                                  {{ relation.state.name }}
-                              </option>
-                            </select>
-                          </div>
+                      const { promise, resolve, reject } = Promise.withResolvers();
+                      const vueInstance      = new (Vue.extend({
+                        name: 'multi-relations-fetures',
+                        template: `<div>
+                          <select v-select2 = "'relationId'">
+                            <option v-for = "relation in relations" 
+                              :key   = "relation.state.id" 
+                              :value = "relation.state.id">
+                                {{ relation.state.name }}
+                            </option>
+                          </select>
+                        </div>
                         `,
-                          data() {
-                            return {
-                              relations:  this.$options.relations,
-                              relationId: this.$options.relationId
-                            }
+                        data() {
+                          return {
+                            relations:  this.$options.relations,
+                            relationId: this.$options.relationId
                           }
-                        }))({ relations, relationId: relations[0].state.id })
+                        }
+                      }))({ relations, relationId: relations[0].state.id })
 
-                        GUI.showModalDialog({
-                          title:      tPlugin('editing.relations'),
-                          className:  'modal-left',
-                          closeButton: false,
-                          message:     vueInstance.$mount().$el,
-                          buttons: {
-                            cancel: {
-                              label: 'Cancel',
-                              className: 'btn-danger',
-                              callback() { reject(); }
-                            },
-                            ok: {
-                              label: 'Ok',
-                              className: 'btn-success',
-                              callback: async () => {
-                                //set relation layer id to editin
-                                relationLayerId = relations.find(r => vueInstance.relationId === r.state.id).getChild();
-                                resolve();
-                              }
+                      GUI.showModalDialog({
+                        title:      tPlugin('editing.relations'),
+                        className:  'modal-left',
+                        closeButton: false,
+                        message:     vueInstance.$mount().$el,
+                        buttons: {
+                          cancel: {
+                            label: 'Cancel',
+                            className: 'btn-danger',
+                            callback() { reject(); }
+                          },
+                          ok: {
+                            label: 'OK',
+                            className: 'btn-success',
+                            callback: async () => {
+                              //set relation layer id to editin
+                              relationLayerId = relations.find(r => vueInstance.relationId === r.state.id).getChild();
+                              resolve();
                             }
                           }
-                        }).on('hide.bs.modal', () => vueInstance.$destroy()); //destroy vue instance after dialog is a closed
-                        //hide user message step
-                      })
+                        }
+                      }).on('hide.bs.modal', () => vueInstance.$destroy()); //destroy vue instance after dialog is a closed
+                      //hide user message step
+                      await promise;
+
                     } catch(e) {
                       console.warn(e);
                       GUI.setModal(false);
@@ -521,6 +522,7 @@ export class ToolBox extends G3WObject {
                       new OpenFormStep({ multi: true }),
                     ],
                   });
+
                   //Relations layer
                   const rLayer = getEditingLayerById(relationLayerId);
 
@@ -533,7 +535,7 @@ export class ToolBox extends G3WObject {
                     context: {
                       session:        Workflow.Stack.getCurrent().getSession(),        // get parent workflow
                       excludeFields:  fields.ownField,                                 // array of fields to be excluded
-                      isContentChild: false, //@since 3.9.0 force child to flase
+                      isContentChild: false, //@since 3.9.0 force child to false
                     },
                     inputs: {
                       features: rLayer.readFeatures(),
@@ -678,6 +680,7 @@ export class ToolBox extends G3WObject {
                               label: 'Ok',
                               className: 'btn-success',
                               callback: async () => {
+                                alert()
                                 //set choose layer step done
                                 this.setUserMessageStepDone('chooselayer');
                                 try {
