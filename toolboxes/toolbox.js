@@ -1686,9 +1686,6 @@ export class ToolBox extends G3WObject {
 
       //eventually reset start resolve feature waiting promise
       this.startResolve                           = null;
-      //set start to false
-      this._start                                 = false
-      this.state.editing.on                       = false;
 
       if (this.state._constraints.scale) {
         this._handleScaleConstraint(true);
@@ -1728,6 +1725,9 @@ export class ToolBox extends G3WObject {
 
       try {
         await promisify(this._session.stop());
+        //set start to false
+        this._start           = false
+        this.state.editing.on = false;
         this.state.enabled    = false;
         this.stopLoading();
         this.state._getFeaturesOption = {};
@@ -1738,7 +1738,7 @@ export class ToolBox extends G3WObject {
         // clear layer unique field values
         g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[this.getId()] = {};
         return true;
-      } catch (e) {
+      } catch(e) {
         console.warn(e);
         return Promise.reject(e);
       }
@@ -1792,16 +1792,16 @@ export class ToolBox extends G3WObject {
             return;
           }
 
-          const { new_relations = {} } = response.response; // check if new relations are saved on server
+          const { relations = {} } = response.response; // check if relations are saved on server
 
           // sync server data with local data
-          for (const id in new_relations) {
+          for (const id in relations) {
             const toolbox = ToolBox.get(id)
             toolbox
               .getSession()
               .getEditor()
               .applyCommitResponse({        // apply commit response to current editing relation layer
-                response: new_relations[id],
+                response: relations[id],
                 result:   true
               });
           }
@@ -2937,7 +2937,6 @@ export class ToolBox extends G3WObject {
       console.warn(e);
       return Promise.reject(e);
     } finally {
-      if (!this.inEditing()) { return; }
       if (ApplicationState.online) {
         this._stopSessionChildren(this.state.id);
       }
