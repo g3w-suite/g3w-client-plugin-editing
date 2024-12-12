@@ -572,14 +572,14 @@
        * 
        * @since g3w-client-plugin-editing@v3.7.4
        */
-      onCommit({ new_relations = {} }) {
+      onCommit({ relations = {} }) {
         const relationLayer = getEditingLayerById(this.relation.child);
 
         // there is a new relation saved on server
-        if (new_relations[relationLayer.getId()] && Array.isArray(new_relations[relationLayer.getId()].new)) {
+        if (relations[relationLayer.getId()] && Array.isArray(relations[relationLayer.getId()].new)) {
           this._new_relations_ids = [
             ...(this._new_relations_ids || []),
-            ...new_relations[relationLayer.getId()].new.map(({ clientid, id }) => ({ clientid, id }))
+            ...relations[relationLayer.getId()].new.map(({ clientid, id }) => ({ clientid, id }))
           ]
         }
       },
