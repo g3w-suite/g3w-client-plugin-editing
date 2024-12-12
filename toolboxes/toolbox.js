@@ -689,30 +689,30 @@ export class ToolBox extends G3WObject {
                                       const layer   = layers.find(l => l.selected);
                                       const features = await (new Promise(async resolve => {
                                         this.addInteraction(
-                                            layer.external
-                                                ? new PickFeaturesInteraction({ layer: GUI.getService('map').getLayerById(layer.id) })
-                                                : new g3wsdk.ol.interactions.PickCoordinatesInteraction(), {
+                                          layer.external
+                                            ? new PickFeaturesInteraction({ layer: GUI.getService('map').getLayerById(layer.id) })
+                                            : new g3wsdk.ol.interactions.PickCoordinatesInteraction(), {
                                               'picked': async e => {
                                                 try {
                                                   resolve(convertToGeometry(
-                                                      layer.external
-                                                          ? e.features                             // external layer
-                                                          : ((await DataRouterService.getData('query:coordinates', { // TOC/PROJECT layer
-                                                            inputs: {
-                                                              coordinates:           e.coordinate,
-                                                              query_point_tolerance: ProjectsRegistry.getCurrentProject().getQueryPointTolerance(),
-                                                              layerIds:              [layer.id],
-                                                              multilayers:           false
-                                                            },
-                                                            outputs: null
-                                                          })).data[0] || { features: [] }).features,
-                                                      geometryType,
+                                                    layer.external
+                                                      ? e.features                             // external layer
+                                                      : ((await DataRouterService.getData('query:coordinates', { // TOC/PROJECT layer
+                                                        inputs: {
+                                                          coordinates:           e.coordinate,
+                                                          query_point_tolerance: ProjectsRegistry.getCurrentProject().getQueryPointTolerance(),
+                                                          layerIds:              [layer.id],
+                                                          multilayers:           false
+                                                        },
+                                                        outputs: null
+                                                      })).data[0] || { features: [] }).features,
+                                                    geometryType,
                                                   ))
                                                 } catch(e) {
                                                   console.warn(e);
                                                 }
                                               }
-                                            }
+                                          }
                                         );
                                       }));
 
@@ -754,9 +754,9 @@ export class ToolBox extends G3WObject {
                                     })
 
                                     originalLayer.getEditingNotEditableFields()
-                                        .find(field => {
-                                          if (originalLayer.isPkField(field)) { feature.set(field, null) }
-                                        });
+                                      .find(field => {
+                                        if (originalLayer.isPkField(field)) { feature.set(field, null) }
+                                      });
                                     //remove eventually Z Values
                                     removeZValueToOLFeatureGeometry({ feature });
                                     feature.setTemporaryId();
