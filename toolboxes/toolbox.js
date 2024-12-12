@@ -522,9 +522,19 @@ export class ToolBox extends G3WObject {
                       new OpenFormStep({ multi: true }),
                     ],
                   });
-
                   //Relations layer
                   const rLayer = getEditingLayerById(relationLayerId);
+
+                  if (0 === rLayer.readFeatures().length) {
+                    GUI.setModal(false);
+
+                    GUI.showUserMessage({
+                      type: 'warning',
+                      message: 'plugins.editing.no_relations_found',
+                      autoclose: true,
+                    })
+                    return $promisify(Promise.reject());
+                  }
 
                   const fields = getRelationFieldsFromRelation({
                     layerId:  relations[0].getChild(),
@@ -891,7 +901,8 @@ export class ToolBox extends G3WObject {
                                 feature.getGeometry().translate(deltaXY.x, deltaXY.y)
                               }
                               // set media fields to null
-                              layer.getEditingMediaFields({}).forEach(f => feature.set(f, null));
+                              //@since 3.9.0 Comment
+                              //layer.getEditingMediaFields({}).forEach(f => feature.set(f, null));
                               /**
                                * evaluated geometry expression
                                */
