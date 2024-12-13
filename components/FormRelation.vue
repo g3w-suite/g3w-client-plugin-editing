@@ -396,7 +396,7 @@
         const is_vector =  (external || layer.isGeoLayer())
         this.runAddRelationWorkflow({
           workflow: is_vector
-            ? new this._add_link_workflow.selectandcopy({
+            ? this._add_link_workflow.selectandcopy({
                 copyLayer: layer,
                 isVector:  true,
                 help:      'editing.steps.help.copy',
@@ -421,7 +421,7 @@
        */
       addVectorRelation() {
         this.runAddRelationWorkflow({
-          workflow: new this._add_link_workflow.add(),
+          workflow: this._add_link_workflow.add(),
           isVector: Layer.LayerTypes.VECTOR === this._layerType,
         });
         this.show_vector_tools = false;
@@ -473,7 +473,7 @@
           this.resize();
         } else {
           this.runAddRelationWorkflow({
-            workflow: new this._add_link_workflow.add(),
+            workflow: this._add_link_workflow.add(),
             isVector: Layer.LayerTypes.VECTOR === this._layerType,
           });
         }
@@ -1029,7 +1029,7 @@
         this.disabled = true;
 
         const is_vector = Layer.LayerTypes.VECTOR === this._layerType;
-        const workflow = new this._add_link_workflow.link( is_vector ? {
+        const workflow = this._add_link_workflow.link( is_vector ? {
           selectStyle: SELECTED_STYLES[this.getLayer().getGeometryType()]
         } : {});
         const options  = this._createWorkflowOptions();
