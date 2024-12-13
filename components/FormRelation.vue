@@ -906,11 +906,10 @@
             await promise;
           } catch (e) {
             console.trace('START TOOL FAILED', e);
-            return Promise.reject(e);
           } finally {
             relationtool.state.active = false;
           }
-        } catch (e) {
+        } catch(e) {
           console.warn(e);
         }
       },
