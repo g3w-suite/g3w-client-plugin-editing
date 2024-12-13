@@ -18,8 +18,8 @@ export function areCoordinatesEqual({
  switch (type) {
    case 'Polygon':
    case 'MultiLineString':
-     coordinates = _.flatMap(coordinates);
-     return _.flatMap(geometry.getCoordinates()).every((c, i) => coords(c, coordinates[i]));
+     coordinates = coordinates.flat();
+     return geometry.getCoordinates().flat().every((c, i) => coords(c, coordinates[i]));
 
    case 'LineString':
    case 'MultiPoint':
@@ -29,8 +29,8 @@ export function areCoordinatesEqual({
      // in case of add part or remove part
      if (coordinates.length !== geometry.getPolygons().length) { return false }
      return geometry.getPolygons().some((poly, i) => {
-       const _coords =  _.flatMap(coordinates[i]);
-       return _.flatMap(poly.getCoordinates()).every((c, i) => coords(c, _coords[i]))
+       const _coords =  coordinates[i].flat();
+       return poly.getCoordinates().flat().every((c, i) => coords(c, _coords[i]))
      });
 
    case 'Point':
