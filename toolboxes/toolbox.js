@@ -673,7 +673,7 @@ export class ToolBox extends G3WObject {
                         const editingLayer     = originalLayer.getEditingLayer();
                         const source           = editingLayer.getSource();
                         //set reactive
-                        const vueInstance      = new (Vue.extend(require('../components/CopyFeaturesFromOtherLayers.vue')))({layers});
+                        const vueInstance      = new (Vue.extend(require('../components/CopyFeaturesFromOtherLayers.vue').default))({layers});
                         const message          = vueInstance.$mount().$el;
                         GUI.showModalDialog({
                           title:      tPlugin('editing.relation.copy_feature_from_other_layer'),
