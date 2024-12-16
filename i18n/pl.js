@@ -39,6 +39,7 @@ export default {
     update_feature: "Update feature attribute",
     update_multi_features: "Update attributes of selected features",
     update_multi_features_relations: "Update attributes of all selected relations",
+    update_multi_features_relations_from_parents : "Edit relations records from one or mode parent features",
     copyfeaturefromexternallayer: "Create Feature from added layer"
   },
   toolsoftool: {

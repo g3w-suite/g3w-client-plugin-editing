@@ -258,6 +258,7 @@
 
   import { Workflow }                                     from '../g3wsdk/workflow/workflow';
   import { Step }                                         from '../g3wsdk/workflow/step';
+  import { cloneFeature }                                 from '../utils/cloneFeature';
   import { setAndUnsetSelectedFeaturesStyle }             from '../utils/setAndUnsetSelectedFeaturesStyle';
   import { promisify, $promisify }                        from '../utils/promisify';
   import { getRelationFieldsFromRelation }                from '../utils/getRelationFieldsFromRelation';
@@ -395,7 +396,7 @@
         const is_vector =  (external || layer.isGeoLayer())
         this.runAddRelationWorkflow({
           workflow: is_vector
-            ? new this._add_link_workflow.selectandcopy({
+            ? this._add_link_workflow.selectandcopy({
                 copyLayer: layer,
                 isVector:  true,
                 help:      'editing.steps.help.copy',
@@ -420,7 +421,7 @@
        */
       addVectorRelation() {
         this.runAddRelationWorkflow({
-          workflow: new this._add_link_workflow.add(),
+          workflow: this._add_link_workflow.add(),
           isVector: Layer.LayerTypes.VECTOR === this._layerType,
         });
         this.show_vector_tools = false;
@@ -472,7 +473,7 @@
           this.resize();
         } else {
           this.runAddRelationWorkflow({
-            workflow: new this._add_link_workflow.add(),
+            workflow: this._add_link_workflow.add(),
             isVector: Layer.LayerTypes.VECTOR === this._layerType,
           });
         }
@@ -571,14 +572,14 @@
        * 
        * @since g3w-client-plugin-editing@v3.7.4
        */
-      onCommit({ new_relations = {} }) {
+      onCommit({ relations = {} }) {
         const relationLayer = getEditingLayerById(this.relation.child);
 
         // there is a new relation saved on server
-        if (new_relations[relationLayer.getId()] && Array.isArray(new_relations[relationLayer.getId()].new)) {
+        if (relations[relationLayer.getId()] && Array.isArray(relations[relationLayer.getId()].new)) {
           this._new_relations_ids = [
             ...(this._new_relations_ids || []),
-            ...new_relations[relationLayer.getId()].new.map(({ clientid, id }) => ({ clientid, id }))
+            ...relations[relationLayer.getId()].new.map(({ clientid, id }) => ({ clientid, id }))
           ]
         }
       },
@@ -631,6 +632,18 @@
               active:  false,
             }),
             type: 'editfeatureattributes',
+          },
+
+          // @since 3.9.0 copy featureonly for table layer
+          Layer.LayerTypes.TABLE === this._layerType && this.capabilities.includes('add_feature') && {
+            state: Vue.observable({
+              icon:   'pasteFeaturesFromOtherLayers.png',
+              id:     `${id}_copyfeature`,
+              name:   'editing.tools.copy',
+              enabled: true,
+              active:  false,
+            }),
+            type: 'addfeature',
           },
 
           // delete feature
@@ -702,6 +715,45 @@
           const relationfeature = this.getLayer().getEditingSource().getFeatureById(relation.id);
           const selectStyle     = is_vector && SELECTED_STYLES[this.getLayer().getGeometryType()]; // get selected vector style
           const options         = this._createWorkflowOptions({ features: [relationfeature] });
+
+          //@since 3.9.0 COPY FEATURE FROM ATTRIBUTE TABLE LAYER
+          if ('copyfeature' === toolId) {
+            await (
+              new Promise(async (resolve, reject) => {
+                //replace current feature with clone
+                options.inputs.features = [cloneFeature(relationfeature, this.getLayer())];
+                // //need to sett original layer
+                // options.inputs.layer    = CatalogLayersStoresRegistry.getLayerById(this._relationLayerId);
+                const workflow = new Workflow({
+                  type: 'addtablefeature',
+                  steps: [
+                    new Step({ help: 'editing.steps.help.new', run: addTableFeature }),
+                    new OpenFormStep(),
+                  ],
+                });
+                try {
+                  const outputs = await promisify(workflow.start(options));
+                  const feature = outputs.features[outputs.features.length - 1];
+                  this.relations.push({ id: feature.getId(), fields: this.getLayer().getFieldsWithValues(feature, { relation: true }) });
+                  resolve(feature);
+                } catch(e) {
+                  console.warn(e);
+                  //in case of seva all click
+                  if (options.inputs && options.inputs.relationFeatures) {
+                    this.relations.push(
+                      ...(options.inputs.relationFeatures.newFeatures || []).map(f => ({ id: f.getId(), fields: this.getLayer().getFieldsWithValues(f, { relation: true }) }))
+                    )
+                  }
+                  reject(e);
+
+                } finally {
+                  workflow.stop();
+                  relationtool.state.active = false;
+
+                }
+              })
+            );
+          }
 
           // DELETE FEATURE RELATION
           if ('deletefeature' === toolId) {
@@ -854,11 +906,10 @@
             await promise;
           } catch (e) {
             console.trace('START TOOL FAILED', e);
-            return Promise.reject(e);
           } finally {
             relationtool.state.active = false;
           }
-        } catch (e) {
+        } catch(e) {
           console.warn(e);
         }
       },
@@ -977,7 +1028,7 @@
         this.disabled = true;
 
         const is_vector = Layer.LayerTypes.VECTOR === this._layerType;
-        const workflow = new this._add_link_workflow.link( is_vector ? {
+        const workflow = this._add_link_workflow.link( is_vector ? {
           selectStyle: SELECTED_STYLES[this.getLayer().getGeometryType()]
         } : {});
         const options  = this._createWorkflowOptions();

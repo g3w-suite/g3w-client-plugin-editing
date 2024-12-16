@@ -406,7 +406,8 @@ export class OpenFormStep extends Step {
       const promise = new Promise(async (resolve, reject) => {
         //@since 3.9.0
         this._rejectRun      = reject;
-        this._isContentChild = Workflow.Stack.getLength() > 1;
+        //@since 3.9.0 can set isContentChild attribute to force it (case edit relation features from multi parent features)
+        this._isContentChild = undefined === context.isContentChild ? Workflow.Stack.getLength() > 1 : context.isContentChild;
         this.layerId         = inputs.layer.getId();
 
         GUI.setLoadingContent(false);
@@ -672,43 +673,45 @@ export class OpenFormStep extends Step {
 
                 GUI.setModal(false);
 
-                this.fireEvent('savedfeature', newFeatures);                 // called after saved
-                this.fireEvent(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
-                // In case of save of child it means that child is updated so also parent
-                if (this._isContentChild) {
-                  Workflow.Stack.getParents().forEach(w => w.getContextService().setUpdate(true, { force: true }));
+              this.fireEvent('savedfeature', newFeatures);                 // called after saved
+              this.fireEvent(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
+              // In case of save of child it means that child is updated so also parent
+              if (this._isContentChild) {
+                Workflow.Stack.getParents()
+                  //filter only with has getContextService to be sure
+                  .filter(w =>  w.getContextService() && w.getContextService().setUpdate)
+                  .forEach(w => w.getContextService().setUpdate(true, { force: true }));
+              }
+              //@TODO add field unique new value id not set
+              resolve(inputs);
+            }
+          },
+          {
+            id:    'cancel',
+            title: "plugins.editing.form.buttons.cancel",
+            type:  "cancel",
+            class: "btn-danger",
+            /// buttons in case of change
+            eventButtons: {
+              update: {
+                false : {
+                  id:    'close',
+                  title: "close",
+                  type:  "cancel",
+                  class: "btn-danger",
                 }
-
-                //@TODO add field unique new value id not set
-                resolve(inputs);
               }
             },
-            {
-              id:    'cancel',
-              title: "plugins.editing.form.buttons.cancel",
-              type:  "cancel",
-              class: "btn-danger",
-              /// buttons in case of change
-              eventButtons: {
-                update: {
-                  false : {
-                    id:    'close',
-                    title: "close",
-                    type:  "cancel",
-                    class: "btn-danger",
-                  }
-                }
-              },
-              cbk:  () => {
-                if (!this._isContentChild) {
-                  GUI.setModal(false);
-                  this.fireEvent('cancelform', inputs.features); // fire event cancel form to emit to subscrivers
-                }
-                reject(inputs);
+            cbk: () => {
+              if (!this._isContentChild) {
+                GUI.setModal(false);
+                this.fireEvent('cancelform', inputs.features); // fire event cancel form to emit to subscrivers
               }
+              reject(inputs);
             }
-          ]
-        });
+          }
+        ]
+      });
 
         // Overwrite click on relation.
         // Open FormRelation.vue component
@@ -799,7 +802,7 @@ export class OpenFormStep extends Step {
     const contextService = is_parent_table && Workflow.Stack.getCurrent().getContextService();
 
     // force update parent form update
-    if (contextService && false === this._isContentChild) {
+    if (contextService && contextService.setUpdate && false === this._isContentChild) {
       contextService.setUpdate(false, { force: false });
     }
 

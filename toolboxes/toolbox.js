@@ -92,7 +92,7 @@ export class ToolBox extends G3WObject {
     const editable_relations = layer.getRelations().getArray()
                               .filter(relation => {
                                 const l = CatalogLayersStoresRegistry.getLayerById(getRelationId({ layerId: layer.getId(), relation }));
-                                return l.isEditable() && l.config.editing.visible;
+                                return l.isEditable();
                               })
                               .map(r => r);
     this._start       = false;
@@ -419,15 +419,15 @@ export class ToolBox extends G3WObject {
         (is_vector) && capabilities.includes('change_attr_feature') && editable_relations.filter(r => 'ONE' !== r.getType()).length > 0 && {
           id: 'editmultiattributesrelationfeatures',
           type: ['change_attr_feature'],
-          name: "editing.tools.update_multi_features",
+          name: "editing.tools.update_multi_features_relations_from_parents",
           icon: "EditMultiRelationFeatures.png",
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editmultifeatureattributesworkflow.js@v3.7.1 */
           op: new Workflow({
             layer,
-            type: 'editmultiattributesrelationfeatures',
-            helpMessage: 'editing.tools.update_multi_features',
+            type:                'editmultiattributesrelationfeatures',
+            helpMessage:         'editing.tools.update_multi_features_relations_from_parents',
             registerEscKeyEvent: true,
-            runOnce: true,
+            runOnce:             true,
             steps: [
               new SelectElementsStep({
                 type: 'multiple',
@@ -455,11 +455,65 @@ export class ToolBox extends G3WObject {
                     feature,
                     filterType: 'fid',
                   })))
+                  //get first relation layer id
+                  let relationLayerId = relations[0].getChild();
 
                   //In case of multi relation in editing
                   if (relations.length > 1) {
-                    alert('Choose relations')
+                    //ser relation layer id
+                    try {
+                      await new Promise((resolve, reject) => {
+                        const vueInstance      = new (Vue.extend({
+                          name: 'multi-relations-fetures',
+                          template: `<div>
+                            <select v-select2 = "'relationId'">
+                              <option v-for = "relation in relations" 
+                                :key   = "relation.state.id" 
+                                :value = "relation.state.id">
+                                  {{ relation.state.name }}
+                              </option>
+                            </select>
+                          </div>
+                        `,
+                          data() {
+                            return {
+                              relations:  this.$options.relations,
+                              relationId: this.$options.relationId
+                            }
+                          }
+                        }))({ relations, relationId: relations[0].state.id })
+
+                        GUI.showModalDialog({
+                          title:      tPlugin('editing.relations'),
+                          className:  'modal-left',
+                          closeButton: false,
+                          message:     vueInstance.$mount().$el,
+                          buttons: {
+                            cancel: {
+                              label: 'Cancel',
+                              className: 'btn-danger',
+                              callback() { reject(); }
+                            },
+                            ok: {
+                              label: 'Ok',
+                              className: 'btn-success',
+                              callback: async () => {
+                                //set relation layer id to editin
+                                relationLayerId = relations.find(r => vueInstance.relationId === r.state.id).getChild();
+                                resolve();
+                              }
+                            }
+                          }
+                        }).on('hide.bs.modal', () => vueInstance.$destroy()); //destroy vue instance after dialog is a closed
+                        //hide user message step
+                      })
+                    } catch(e) {
+                      console.warn(e);
+                      GUI.setModal(false);
+                      return $promisify(Promise.reject(e));
+                    }
                   }
+
                   //start child workflow
                   const workflow = new Workflow({
                     type: 'editmultiattributes',
@@ -468,7 +522,18 @@ export class ToolBox extends G3WObject {
                     ],
                   });
                   //Relations layer
-                  const rLayer = getEditingLayerById(relations[0].getChild());
+                  const rLayer = getEditingLayerById(relationLayerId);
+
+                  if (0 === rLayer.readFeatures().length) {
+                    GUI.setModal(false);
+
+                    GUI.showUserMessage({
+                      type: 'warning',
+                      message: 'plugins.editing.no_relations_found',
+                      autoclose: true,
+                    })
+                    return $promisify(Promise.reject());
+                  }
 
                   const fields = getRelationFieldsFromRelation({
                     layerId:  relations[0].getChild(),
@@ -477,16 +542,19 @@ export class ToolBox extends G3WObject {
 
                   const options = {
                     context: {
-                      session:       Workflow.Stack.getCurrent().getSession(),        // get parent workflow
-                      excludeFields: fields.ownField,                                 // array of fields to be excluded
+                      session:        Workflow.Stack.getCurrent().getSession(),        // get parent workflow
+                      excludeFields:  fields.ownField,                                 // array of fields to be excluded
+                      isContentChild: false, //@since 3.9.0 force child to flase
                     },
                     inputs: {
                       features: rLayer.readFeatures(),
                       layer:    rLayer
                     }
-                  };
+                  }
 
                   try {
+                    //set eventually unique values
+                    await setLayerUniqueFieldValues(relationLayerId);
                     await promisify(workflow.start(options));
                   } catch(e) {
                     console.warn(e);
@@ -830,7 +898,8 @@ export class ToolBox extends G3WObject {
                                 feature.getGeometry().translate(deltaXY.x, deltaXY.y)
                               }
                               // set media fields to null
-                              layer.getEditingMediaFields({}).forEach(f => feature.set(f, null));
+                              //@since 3.9.0 Comment
+                              //layer.getEditingMediaFields({}).forEach(f => feature.set(f, null));
                               /**
                                * evaluated geometry expression
                                */
@@ -1220,48 +1289,6 @@ export class ToolBox extends G3WObject {
             registerEscKeyEvent: true
           }),
         },
-        // Copy Features from external layer
-        (is_line || is_poly) && capabilities.includes('add_feature') && {
-          id: 'copyfeaturefromexternallayer',
-          type: ['add_feature'],
-          name: "editing.tools.copyfeaturefromexternallayer",
-          icon: "copyPolygonFromFeature.png",
-          visible: tool => {
-            const map  = GUI.getService('map');
-            const type = this.getLayer().getGeometryType();
-            const has_same_geom = layer => {
-              // check if tool is visible and the layer is a Vector
-              const features = 'VECTOR' === layer.getType() && layer.getSource().getFeatures();
-              return features && features.length ? isSameBaseGeometryType(features[0].getGeometry().getType(), type) : true;
-            };
-            map.onbefore('loadExternalLayer',  layer => !tool.visible && (tool.visible = has_same_geom(layer)));
-            map.onafter('unloadExternalLayer', layer => {
-              const features = tool.visible && 'VECTOR' === layer.getType() && layer.getSource().getFeatures();
-              if (features && features.length && isSameBaseGeometryType(features[0].getGeometry().getType(), type)) {
-                tool.visible = map.getExternalLayers().find(l => undefined !== has_same_geom(l));
-              }
-            });
-            return false;
-          },
-          /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addfeaturefrommapvectorlayersworkflow.js@v3.7.1 */
-          op: new Workflow({
-            layer,
-            type: 'addfeaturefrommapvectorlayers',
-            runOnce: true,
-            steps: [
-              new SelectElementsStep({
-                layer,
-                type: 'external',
-                help: 'editing.steps.help.copy'
-              }, false),
-              new OpenFormStep({
-                layer,
-                help: 'editing.steps.help.copy'
-              }),
-            ],
-            registerEscKeyEvent: true
-          }),
-        },
         // Add Table feature (alphanumerical layer - No geometry)
         is_table && capabilities.includes('add_feature') && {
           id: 'addfeature',
@@ -1601,7 +1628,7 @@ export class ToolBox extends G3WObject {
               this.startLoading();
               this.setFeaturesOptions({ filter });
               try {
-                handlerAfterSessionGetFeatures(await promisify(this._session.start(this.state._getFeaturesOption)))
+                await handlerAfterSessionGetFeatures(promisify(this._session.start(this.state._getFeaturesOption)))
               } catch(e) {
                 console.warn(e);
                 this.setEditing(false);
@@ -1614,12 +1641,12 @@ export class ToolBox extends G3WObject {
       if (!is_started && !GIVE_ME_A_NAME) {
         this._start = true;
         this.startLoading();
-        this._session.start(this.state._getFeaturesOption).then(handlerAfterSessionGetFeatures)
+        await handlerAfterSessionGetFeatures(promisify(this._session.start(this.state._getFeaturesOption)))
       }
 
       if (is_started && !this._start) {
         this.startLoading();
-        this._session.getFeatures(this.state._getFeaturesOption).then(handlerAfterSessionGetFeatures);
+        await handlerAfterSessionGetFeatures(promisify(this._session.getFeatures(this.state._getFeaturesOption)))
         this._start = true;
       }
 
@@ -1659,9 +1686,6 @@ export class ToolBox extends G3WObject {
 
       //eventually reset start resolve feature waiting promise
       this.startResolve                           = null;
-      //set start to false
-      this._start                                 = false
-      this.state.editing.on                       = false;
 
       if (this.state._constraints.scale) {
         this._handleScaleConstraint(true);
@@ -1701,6 +1725,9 @@ export class ToolBox extends G3WObject {
 
       try {
         await promisify(this._session.stop());
+        //set start to false
+        this._start           = false
+        this.state.editing.on = false;
         this.state.enabled    = false;
         this.stopLoading();
         this.state._getFeaturesOption = {};
@@ -1711,7 +1738,7 @@ export class ToolBox extends G3WObject {
         // clear layer unique field values
         g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[this.getId()] = {};
         return true;
-      } catch (e) {
+      } catch(e) {
         console.warn(e);
         return Promise.reject(e);
       }
@@ -1765,16 +1792,16 @@ export class ToolBox extends G3WObject {
             return;
           }
 
-          const { new_relations = {} } = response.response; // check if new relations are saved on server
+          const { relations = {} } = response.response; // check if relations are saved on server
 
           // sync server data with local data
-          for (const id in new_relations) {
+          for (const id in relations) {
             const toolbox = ToolBox.get(id)
             toolbox
               .getSession()
               .getEditor()
               .applyCommitResponse({        // apply commit response to current editing relation layer
-                response: new_relations[id],
+                response: relations[id],
                 result:   true
               });
           }
@@ -2910,7 +2937,6 @@ export class ToolBox extends G3WObject {
       console.warn(e);
       return Promise.reject(e);
     } finally {
-      if (!this.inEditing()) { return; }
       if (ApplicationState.online) {
         this._stopSessionChildren(this.state.id);
       }
