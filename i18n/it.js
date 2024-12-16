@@ -44,6 +44,7 @@ export default {
     update_feature: "Modifica attributi elemento",
     update_multi_features: "Modifica gli attributi degli elementi selezionati",
     update_multi_features_relations: "Modifica gli attributi di tutte le relazioni selezionate",
+    update_multi_features_relations_from_parents : "Edita i record relazionati di uno o più padri",
     copyfeaturefromexternallayer: "Crea elemento da un livello esterno"
   },
   toolsoftool: {

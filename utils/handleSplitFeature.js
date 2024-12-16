@@ -52,7 +52,8 @@ export async function handleSplitFeature({
       newFeature.setGeometry(splittedGeometry);
 
       // set media fields to null
-      layer.getEditingMediaFields({}).forEach(f => newFeature.set(f, null));
+      //@since 3.9.0 Commented
+      //layer.getEditingMediaFields({}).forEach(f => newFeature.set(f, null));
 
       feature = new Feature({ feature: newFeature });
 

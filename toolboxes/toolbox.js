@@ -80,15 +80,21 @@ export class ToolBox extends G3WObject {
   constructor(layer, dependencies = []) {
     super();
 
-    const is_vector       = [undefined, Layer.LayerTypes.VECTOR].includes(layer.getType());
-    const geometryType    = is_vector && layer.getGeometryType();
-    const is_point        = is_vector && Geometry.isPointGeometryType(geometryType);
-    const is_line         = is_vector && Geometry.isLineGeometryType(geometryType);
-    const is_poly         = is_vector && Geometry.isPolygonGeometryType(geometryType);
-    const is_table        = Layer.LayerTypes.TABLE === layer.getType();
-    const isMultiGeometry = geometryType && Geometry.isMultiGeometry(geometryType);
-    const iconGeometry    = is_vector && (is_point ? 'Point' : is_line ? 'Line' : 'Polygon');
-
+    const is_vector          = [undefined, Layer.LayerTypes.VECTOR].includes(layer.getType());
+    const geometryType       = is_vector && layer.getGeometryType();
+    const is_point           = is_vector && Geometry.isPointGeometryType(geometryType);
+    const is_line            = is_vector && Geometry.isLineGeometryType(geometryType);
+    const is_poly            = is_vector && Geometry.isPolygonGeometryType(geometryType);
+    const is_table           = Layer.LayerTypes.TABLE === layer.getType();
+    const isMultiGeometry    = geometryType && Geometry.isMultiGeometry(geometryType);
+    const iconGeometry       = is_vector && (is_point ? 'Point' : is_line ? 'Line' : 'Polygon');
+    //@since 3.9.0 Check if layer has relation layers editable
+    const editable_relations = layer.getRelations().getArray()
+                              .filter(relation => {
+                                const l = CatalogLayersStoresRegistry.getLayerById(getRelationId({ layerId: layer.getId(), relation }));
+                                return l.isEditable();
+                              })
+                              .map(r => r);
     this._start       = false;
 
     /** constraint loading features to a filter set */
@@ -103,7 +109,7 @@ export class ToolBox extends G3WObject {
      * _states: [
      *     {
      *       id: unique key
-     *       state: [state] // example: history contsins features state
+     *       state: [state] // example: history contains features state
      *                      // array because a tool can apply changes to more than one features at time (split di una feature)
      *     },
      *     {
@@ -396,15 +402,170 @@ export class ToolBox extends G3WObject {
                     description: `editing.workflow.steps.${ApplicationState.ismobile ? 'selectDrawBoxAtLeast2Feature' : 'selectMultiPointSHIFTAtLeast2Feature'}`,
                     buttonnext: {
                       disabled: true,
-                      condition:({ features=[] }) => features.length < 2,
-                      done: () => { Workflow.Stack.getCurrent().clearUserMessagesSteps(); }
+                      condition:({ features = [] }) => features.length < 2,
+                      done:     () => { Workflow.Stack.getCurrent().clearUserMessagesSteps(); },
                     },
                     dynamic: 0,
-                    done: false
+                    done:    false,
+                    reset() { this.dynamic = 0; },
                   }
                 }
               }),
               new OpenFormStep({ multi: true }),
+            ],
+          }),
+        },
+        // @since 3.9.0  Edit Attributes of relations features to Multi features
+        (is_vector) && capabilities.includes('change_attr_feature') && editable_relations.filter(r => 'ONE' !== r.getType()).length > 0 && {
+          id: 'editmultiattributesrelationfeatures',
+          type: ['change_attr_feature'],
+          name: "editing.tools.update_multi_features_relations_from_parents",
+          icon: "EditMultiRelationFeatures.png",
+          /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editmultifeatureattributesworkflow.js@v3.7.1 */
+          op: new Workflow({
+            layer,
+            type:                'editmultiattributesrelationfeatures',
+            helpMessage:         'editing.tools.update_multi_features_relations_from_parents',
+            registerEscKeyEvent: true,
+            runOnce:             true,
+            steps: [
+              new SelectElementsStep({
+                type: 'multiple',
+                steps: {
+                  select: {
+                    description: `editing.workflow.steps.${ApplicationState.ismobile ? 'selectDrawBoxAtLeast2Feature' : 'selectMultiPointSHIFTAtLeast2Feature'}`,
+                    buttonnext: {
+                      disabled: true,
+                      condition: ({ features = [] }) => features.length < 2,
+                      done:      () => { Workflow.Stack.getCurrent().clearUserMessagesSteps(); }
+                    },
+                    dynamic: 0,
+                    done:    false,
+                    reset() { this.dynamic = 0; },
+                  }
+                }
+              }),
+              new Step({
+                run: async (inputs, context)  => {
+                  GUI.setModal(true);
+                  const relations = editable_relations.filter(r => 'ONE' !== r.getType());
+                  //get relation features from feature parent layer
+                  await Promise.allSettled(inputs.features.map(feature => getLayersDependencyFeatures(inputs.layer.getId(), {
+                    relations,
+                    feature,
+                    filterType: 'fid',
+                  })))
+                  //get first relation layer id
+                  let relationLayerId = relations[0].getChild();
+
+                  //In case of multi relation in editing
+                  if (relations.length > 1) {
+                    //ser relation layer id
+                    try {
+                      await new Promise((resolve, reject) => {
+                        const vueInstance      = new (Vue.extend({
+                          name: 'multi-relations-fetures',
+                          template: `<div>
+                            <select v-select2 = "'relationId'">
+                              <option v-for = "relation in relations" 
+                                :key   = "relation.state.id" 
+                                :value = "relation.state.id">
+                                  {{ relation.state.name }}
+                              </option>
+                            </select>
+                          </div>
+                        `,
+                          data() {
+                            return {
+                              relations:  this.$options.relations,
+                              relationId: this.$options.relationId
+                            }
+                          }
+                        }))({ relations, relationId: relations[0].state.id })
+
+                        GUI.showModalDialog({
+                          title:      tPlugin('editing.relations'),
+                          className:  'modal-left',
+                          closeButton: false,
+                          message:     vueInstance.$mount().$el,
+                          buttons: {
+                            cancel: {
+                              label: 'Cancel',
+                              className: 'btn-danger',
+                              callback() { reject(); }
+                            },
+                            ok: {
+                              label: 'Ok',
+                              className: 'btn-success',
+                              callback: async () => {
+                                //set relation layer id to editin
+                                relationLayerId = relations.find(r => vueInstance.relationId === r.state.id).getChild();
+                                resolve();
+                              }
+                            }
+                          }
+                        }).on('hide.bs.modal', () => vueInstance.$destroy()); //destroy vue instance after dialog is a closed
+                        //hide user message step
+                      })
+                    } catch(e) {
+                      console.warn(e);
+                      GUI.setModal(false);
+                      return $promisify(Promise.reject(e));
+                    }
+                  }
+
+                  //start child workflow
+                  const workflow = new Workflow({
+                    type: 'editmultiattributes',
+                    steps: [
+                      new OpenFormStep({ multi: true }),
+                    ],
+                  });
+                  //Relations layer
+                  const rLayer = getEditingLayerById(relationLayerId);
+
+                  if (0 === rLayer.readFeatures().length) {
+                    GUI.setModal(false);
+
+                    GUI.showUserMessage({
+                      type: 'warning',
+                      message: 'plugins.editing.no_relations_found',
+                      autoclose: true,
+                    })
+                    return $promisify(Promise.reject());
+                  }
+
+                  const fields = getRelationFieldsFromRelation({
+                    layerId:  relations[0].getChild(),
+                    relation: relations[0]
+                  });
+
+                  const options = {
+                    context: {
+                      session:        Workflow.Stack.getCurrent().getSession(),        // get parent workflow
+                      excludeFields:  fields.ownField,                                 // array of fields to be excluded
+                      isContentChild: false, //@since 3.9.0 force child to flase
+                    },
+                    inputs: {
+                      features: rLayer.readFeatures(),
+                      layer:    rLayer
+                    }
+                  }
+
+                  try {
+                    //set eventually unique values
+                    await setLayerUniqueFieldValues(relationLayerId);
+                    await promisify(workflow.start(options));
+                  } catch(e) {
+                    console.warn(e);
+                  }
+
+                  workflow.stop();
+
+                  GUI.setModal(false);
+                  return $promisify(Promise.resolve(inputs, context));
+                }
+              }),
             ],
           }),
         },
@@ -489,7 +650,17 @@ export class ToolBox extends G3WObject {
                 steps: [
                   new Step({
                     layer,
-                    help: 'editing.steps.help.draw_new_feature',
+                    //@since 3.9.0 to show user message steps
+                    steps: {
+                      chooselayer: {
+                        description: `editing.modal.tools.copyfeaturefromotherlayer.title`,
+                        done: false,
+                      },
+                      selectgeometry: {
+                        description: `editing.workflow.steps.selectPoint`,
+                        done: false,
+                      }
+                    },
                     run(inputs, context) {
                       return $promisify(new Promise((resolve, reject) => {
                         const originalLayer    = inputs.layer;
@@ -518,36 +689,38 @@ export class ToolBox extends G3WObject {
                               label: 'Ok',
                               className: 'btn-success',
                               callback: async () => {
+                                //set choose layer step done
+                                this.setUserMessageStepDone('chooselayer');
                                 try {
+                                  const feature = await $promisify(async () => {
                                   //get selected layer
                                   const layer   = layers.find(l => l.selected);
-                                  const feature = await $promisify(async () => {
                                     const features = await (new Promise(async resolve => {
                                       this.addInteraction(
                                         layer.external
-                                            ? new PickFeaturesInteraction({ layer: GUI.getService('map').getLayerById(layer.id) })
-                                            : new g3wsdk.ol.interactions.PickCoordinatesInteraction(), {
-                                          'picked': async e => {
-                                            try {
-                                              resolve(convertToGeometry(
-                                                layer.external
-                                                  ? e.features                             // external layer
-                                                  : ((await DataRouterService.getData('query:coordinates', { // TOC/PROJECT layer
-                                                    inputs: {
-                                                      coordinates:           e.coordinate,
-                                                      query_point_tolerance: ProjectsRegistry.getCurrentProject().getQueryPointTolerance(),
-                                                      layerIds:              [layer.id],
-                                                      multilayers:           false
-                                                    },
-                                                    outputs: null
-                                                  })).data[0] || { features: [] }).features,
-                                                geometryType,
-                                              ))
-                                            } catch(e) {
-                                              console.warn(e);
-                                            }
+                                          ? new PickFeaturesInteraction({ layer: GUI.getService('map').getLayerById(layer.id) })
+                                          : new g3wsdk.ol.interactions.PickCoordinatesInteraction(), {
+                                        'picked': async e => {
+                                          try {
+                                            resolve(convertToGeometry(
+                                              layer.external
+                                                ? e.features                             // external layer
+                                                : ((await DataRouterService.getData('query:coordinates', { // TOC/PROJECT layer
+                                                  inputs: {
+                                                    coordinates:           e.coordinate,
+                                                    query_point_tolerance: ProjectsRegistry.getCurrentProject().getQueryPointTolerance(),
+                                                    layerIds:              [layer.id],
+                                                    multilayers:           false
+                                                  },
+                                                  outputs: null
+                                                })).data[0] || { features: [] }).features,
+                                              geometryType,
+                                            ))
+                                          } catch(e) {
+                                            console.warn(e);
                                           }
                                         }
+                                      }
                                       );
                                     }));
 
@@ -725,7 +898,8 @@ export class ToolBox extends G3WObject {
                                 feature.getGeometry().translate(deltaXY.x, deltaXY.y)
                               }
                               // set media fields to null
-                              layer.getEditingMediaFields({}).forEach(f => feature.set(f, null));
+                              //@since 3.9.0 Comment
+                              //layer.getEditingMediaFields({}).forEach(f => feature.set(f, null));
                               /**
                                * evaluated geometry expression
                                */
@@ -1115,48 +1289,6 @@ export class ToolBox extends G3WObject {
             registerEscKeyEvent: true
           }),
         },
-        // Copy Features from external layer
-        (is_line || is_poly) && capabilities.includes('add_feature') && {
-          id: 'copyfeaturefromexternallayer',
-          type: ['add_feature'],
-          name: "editing.tools.copyfeaturefromexternallayer",
-          icon: "copyPolygonFromFeature.png",
-          visible: tool => {
-            const map  = GUI.getService('map');
-            const type = this.getLayer().getGeometryType();
-            const has_same_geom = layer => {
-              // check if tool is visible and the layer is a Vector
-              const features = 'VECTOR' === layer.getType() && layer.getSource().getFeatures();
-              return features && features.length ? isSameBaseGeometryType(features[0].getGeometry().getType(), type) : true;
-            };
-            map.onbefore('loadExternalLayer',  layer => !tool.visible && (tool.visible = has_same_geom(layer)));
-            map.onafter('unloadExternalLayer', layer => {
-              const features = tool.visible && 'VECTOR' === layer.getType() && layer.getSource().getFeatures();
-              if (features && features.length && isSameBaseGeometryType(features[0].getGeometry().getType(), type)) {
-                tool.visible = map.getExternalLayers().find(l => undefined !== has_same_geom(l));
-              }
-            });
-            return false;
-          },
-          /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addfeaturefrommapvectorlayersworkflow.js@v3.7.1 */
-          op: new Workflow({
-            layer,
-            type: 'addfeaturefrommapvectorlayers',
-            runOnce: true,
-            steps: [
-              new SelectElementsStep({
-                layer,
-                type: 'external',
-                help: 'editing.steps.help.copy'
-              }, false),
-              new OpenFormStep({
-                layer,
-                help: 'editing.steps.help.copy'
-              }),
-            ],
-            registerEscKeyEvent: true
-          }),
-        },
         // Add Table feature (alphanumerical layer - No geometry)
         is_table && capabilities.includes('add_feature') && {
           id: 'addfeature',
@@ -1197,7 +1329,7 @@ export class ToolBox extends G3WObject {
     this.state._tools.forEach(tool => {
       Object.assign(tool, {
         disabledtoolsoftools: [],
-        enabled:              false,
+        enabled:              !!tool.enabled,
         active:               false,
         message:              null,
         messages:             tool.op.getMessages(),
@@ -1496,7 +1628,7 @@ export class ToolBox extends G3WObject {
               this.startLoading();
               this.setFeaturesOptions({ filter });
               try {
-                handlerAfterSessionGetFeatures(await promisify(this._session.start(this.state._getFeaturesOption)))
+                await handlerAfterSessionGetFeatures(promisify(this._session.start(this.state._getFeaturesOption)))
               } catch(e) {
                 console.warn(e);
                 this.setEditing(false);
@@ -1509,12 +1641,12 @@ export class ToolBox extends G3WObject {
       if (!is_started && !GIVE_ME_A_NAME) {
         this._start = true;
         this.startLoading();
-        this._session.start(this.state._getFeaturesOption).then(handlerAfterSessionGetFeatures)
+        await handlerAfterSessionGetFeatures(promisify(this._session.start(this.state._getFeaturesOption)))
       }
 
       if (is_started && !this._start) {
         this.startLoading();
-        this._session.getFeatures(this.state._getFeaturesOption).then(handlerAfterSessionGetFeatures);
+        await handlerAfterSessionGetFeatures(promisify(this._session.getFeatures(this.state._getFeaturesOption)))
         this._start = true;
       }
 
@@ -1554,9 +1686,6 @@ export class ToolBox extends G3WObject {
 
       //eventually reset start resolve feature waiting promise
       this.startResolve                           = null;
-      //set start to false
-      this._start                                 = false
-      this.state.editing.on                       = false;
 
       if (this.state._constraints.scale) {
         this._handleScaleConstraint(true);
@@ -1596,6 +1725,9 @@ export class ToolBox extends G3WObject {
 
       try {
         await promisify(this._session.stop());
+        //set start to false
+        this._start           = false
+        this.state.editing.on = false;
         this.state.enabled    = false;
         this.stopLoading();
         this.state._getFeaturesOption = {};
@@ -1606,7 +1738,7 @@ export class ToolBox extends G3WObject {
         // clear layer unique field values
         g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[this.getId()] = {};
         return true;
-      } catch (e) {
+      } catch(e) {
         console.warn(e);
         return Promise.reject(e);
       }
@@ -1660,16 +1792,16 @@ export class ToolBox extends G3WObject {
             return;
           }
 
-          const { new_relations = {} } = response.response; // check if new relations are saved on server
+          const { relations = {} } = response.response; // check if relations are saved on server
 
           // sync server data with local data
-          for (const id in new_relations) {
+          for (const id in relations) {
             const toolbox = ToolBox.get(id)
             toolbox
               .getSession()
               .getEditor()
               .applyCommitResponse({        // apply commit response to current editing relation layer
-                response: new_relations[id],
+                response: relations[id],
                 result:   true
               });
           }
@@ -1771,7 +1903,7 @@ export class ToolBox extends G3WObject {
    * 
    * @param bool
    */
-  setEditing(bool=true) {
+  setEditing(bool = true) {
     this.setEnable(bool);
     this.state.editing.on = bool;
     this.enableTools(bool);
@@ -1796,7 +1928,7 @@ export class ToolBox extends G3WObject {
    * 
    * @returns {boolean}
    */
-  setEnable(bool=false) {
+  setEnable(bool = false) {
     this.state.enabled = bool;
     return this.state.enabled;
   }
@@ -1999,9 +2131,9 @@ export class ToolBox extends G3WObject {
     const disabledtools = this.state._disabledtools || [];
     tools
       .forEach(tool => {
-        const enabled = undefined !== tool.enable ? tool.enable : bool;
-        tool.enabled = (bool && disabledtools.length)
-          ? disabledtools.indexOf(tool.getId()) === -1
+        const enabled = undefined === tool.enable ? bool : tool.enable;
+        tool.enabled = (bool && disabledtools.length > 0)
+          ? !disabledtools.includes(tool.getId())
           : toRawType(enabled) === 'Boolean'
             ? enabled
             : enabled({ bool, tool });
@@ -2766,11 +2898,11 @@ export class ToolBox extends G3WObject {
       if ((Layer.LayerTypes.VECTOR === this.state._layerType) && this.state._getFeaturesOption.filter.bbox) {
         const fnc = () => {
           if (
-              //added ApplicationState.online
-              ApplicationState.online
-              && this.state.editing.canEdit
-              && this.state.selected //need to be selected
-              && 0 === GUI.getContentLength()
+            //added ApplicationState.online
+            ApplicationState.online
+            && this.state.editing.canEdit
+            && this.state.selected //need to be selected
+            && 0 === GUI.getContentLength()
           ) {
             this.state._getFeaturesOption.filter.bbox = GUI.getService('map').getMapBBOX();
             this.state.loading = true;
@@ -2805,7 +2937,6 @@ export class ToolBox extends G3WObject {
       console.warn(e);
       return Promise.reject(e);
     } finally {
-      if (!this.inEditing()) { return; }
       if (ApplicationState.online) {
         this._stopSessionChildren(this.state.id);
       }

@@ -1,93 +1,97 @@
 import { promisify } from '../../utils/promisify';
 
+class Queque {
+  constructor() { this.tasks = []; }
+  addTask(task) { this.tasks.push(task); }
+  run(reverse = false) { while (this.tasks.length) { const task = reverse ? this.tasks.pop() : this.tasks.shift(); task(); } }
+  flush() { return this.tasks.splice(0); }
+  getLength() { return this.tasks.length; }
+  clear() { this.run(); this.tasks = []; }
+}
+
+
 /**
  * Class Flow of workflow step by step
  * 
  * ORIGINAL SOURCE: g3w-client/src/core/workflow/flow.js@v3.9.1
  * ORIGINAL SOURCE: g3w-client/src/core/workflow/queque.js@v3.9.1
  */
-export function Flow() {
-  console.warn('[G3W-CLIENT] g3wsdk.core.workflow.Flow is deprecated');
-
-  class Queque {
-    constructor() { this.tasks = []; }
-    addTask(task) { this.tasks.push(task); }
-    run(reverse = false) { while (this.tasks.length) { const task = reverse ? this.tasks.pop() : this.tasks.shift(); task(); } }
-    flush() { return this.tasks.splice(0); }
-    getLength() { return this.tasks.length; }
-    clear() { this.run(); this.tasks = []; }
+export class Flow extends g3wsdk.core.G3WObject {
+  constructor() {
+    super();
+    console.warn('[G3W-CLIENT] g3wsdk.core.workflow.Flow is deprecated');
+    this.steps   = [];
+    this.counter = 0;
+    this.context = null;
+    this.queques = {
+      end:   new Queque(),
+      micro: new Queque()
+    };
+    this.inputs;
+    this.d;
+    this._workflow;
   }
 
-  let steps = [];
-  let inputs;
-  let counter = 0;
-  let context = null;
-  let d;
-  let _workflow;
-  this.queques = {
-    end: new Queque(),
-    micro: new Queque()
-  };
   //start workflow
-  this.start = function(workflow) {
-    d = $.Deferred();
-    if (counter > 0) {
+  start(workflow) {
+    this.d = $.Deferred();
+    if (this.counter > 0) {
       console.log("reset workflow before restarting");
     }
-    _workflow = workflow;
-    inputs = workflow.getInputs();
-    context = workflow.getContext();
-    steps = workflow.getSteps();
+    this._workflow = workflow;
+    this.inputs    = workflow.getInputs();
+    this.context   = workflow.getContext();
+    this.steps     = workflow.getSteps();
     // check if there are steps
-    if (steps && steps.length) {
+    if (this.steps && this.steps.length) {
       //run step (first)
-      this.runStep(steps[0], inputs, context);
+      this.runStep(this.steps[0], this.inputs, this.context);
     }
     // return a promise that will be reolved if all step go right
-    return d.promise();
+    return this.d.promise();
   };
 
   //run step
-  this.runStep = function(step, inputs) {
+  runStep(step, inputs) {
     //run step that run task
-    _workflow.setMessages({
+    this._workflow.setMessages({
       help: step.state.help
     });
     const runMicroTasks = this.queques.micro.getLength();
-    step.run(inputs, context, this.queques)
+    step.run(inputs, this.context, this.queques)
       .then(outputs => {
         runMicroTasks && this.queques.micro.run();
         this.onDone(outputs);
       })
-      .fail(error => this.onError(error));
+      .fail(e => this.onError(e));
   };
 
   //check if all step are resolved
-  this.onDone = function(outputs) {
-    counter++;
-    if (counter === steps.length) {
-      counter = 0;
-      d.resolve(outputs);
+  onDone(outputs) {
+    this.counter++;
+    if (this.counter === this.steps.length) {
+      this.counter = 0;
+      this.d.resolve(outputs);
       return;
     }
-    this.runStep(steps[counter], outputs);
+    this.runStep(this.steps[this.counter], outputs);
   };
 
   // in case of error
-  this.onError = function(err) {
-    counter = 0;
+  onError(e) {
+    this.counter = 0;
     this.clearQueques();
-    d.reject(err);
+    this.d.reject(e);
   };
 
   // stop flow
-  this.stop = function() {
+  stop() {
     const d = $.Deferred();
-    steps[counter].isRunning() ? steps[counter].stop() : null;
+    this.steps[counter].isRunning() ? this.steps[this.counter].stop() : null;
     this.clearQueques();
-    if (counter > 0) {
+    if (this.counter > 0) {
       // set counter to 0
-      counter = 0;
+      this.counter = 0;
       // reject flow
       d.reject();
     } else {
@@ -97,15 +101,13 @@ export function Flow() {
     return d.promise();
   };
 
-  this.clearQueques = function(){
+  clearQueques(){
     this.queques.micro.clear();
     this.queques.end.clear();
   }
 
-  g3wsdk.core.utils.base(this)
 }
 
-g3wsdk.core.utils.inherit(Flow, g3wsdk.core.G3WObject);
 
 /**
  * ORIGINAL SOURCE: g3w-client/src/services/editing.js@v3.9.1
@@ -812,15 +814,15 @@ export class Session extends g3wsdk.core.G3WObject {
           return;
         }
         
-        const { new_relations = {} } = response.response; // check if new relations are saved on server
+        const { relations = {} } = response.response; // check if new relations are saved on server
 
         // sync server data with local data
-        for (const id in new_relations) {
+        for (const id in relations) {
           Session.Registry
             .getSession(id)               // get session of relation by id
             .getEditor()
             .applyCommitResponse({        // apply commit response to current editing relation layer
-              response: new_relations[id],
+              response: relations[id],
               result: true
             });
         }

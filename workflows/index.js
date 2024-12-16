@@ -403,7 +403,8 @@ export class OpenFormStep extends Step {
    */
   run(inputs, context) {
     const promise = new Promise(async (resolve, reject) => {
-      this._isContentChild = Workflow.Stack.getLength() > 1;
+      //@since 3.9.0 can set isContentChild attribute to force it (case edit relation features from multi parent features)
+      this._isContentChild = undefined === context.isContentChild ? Workflow.Stack.getLength() > 1 : context.isContentChild;
       this.layerId         = inputs.layer.getId();
 
       GUI.setLoadingContent(false);
@@ -479,7 +480,7 @@ export class OpenFormStep extends Step {
         formStructure:   inputs.layer.hasFormStructure() && inputs.layer.getLayerEditingFormStructure() || undefined,
         modal:           true,
         push:            this._options.push || this._isContentChild, /** @since v3.7 force push content on top without clear previous content */
-        showgoback:      undefined !== this._options.showgoback ? this._options.showgoback : !this._isContentChild, /** @since v3.7 force show back button */
+        showgoback:      undefined === this._options.showgoback ? !this._isContentChild : this._options.showgoback, /** @since v3.7 force show back button */
         /** @TODO make it straightforward: `headerComponent` vs `buttons` ? */
         headerComponent: this._saveAll && {
           template: /* html */ `
@@ -603,7 +604,6 @@ export class OpenFormStep extends Step {
 
               // skip when no fields
               if (0 === fields.length) {
-                GUI.setModal(false);
                 resolve(inputs);
                 return;
               }
@@ -649,7 +649,10 @@ export class OpenFormStep extends Step {
               this.fireEvent(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
               // In case of save of child it means that child is updated so also parent
               if (this._isContentChild) {
-                Workflow.Stack.getParents().forEach(w => w.getContextService().setUpdate(true, { force: true }));
+                Workflow.Stack.getParents()
+                  //filter only with has getContextService to be sure
+                  .filter(w =>  w.getContextService() && w.getContextService().setUpdate)
+                  .forEach(w => w.getContextService().setUpdate(true, { force: true }));
               }
               //@TODO add field unique new value id not set
               resolve(inputs);
@@ -772,11 +775,11 @@ export class OpenFormStep extends Step {
     const contextService = is_parent_table && Workflow.Stack.getCurrent().getContextService();
 
     // force update parent form update
-    if (contextService && false === this._isContentChild) {
+    if (contextService && contextService.setUpdate && false === this._isContentChild) {
       contextService.setUpdate(false, { force: false });
     }
-
-    GUI.closeForm({ pop: this.push || this._isContentChild });
+    //@since 3.9.0 add GUI.getContentLength() in case of edit multi relationfeatures tool
+    GUI.closeForm({ pop: this.push || this._isContentChild && GUI.getContentLength() > 1 });
 
     g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').resetCurrentLayout();
 
@@ -1092,6 +1095,7 @@ export class SelectElementsStep extends Step {
   }
 
   stop() {
+    Object.values(this.getSteps() || {}).forEach(s => s.reset && s.reset() );
     this._selectInteractions.forEach(i => this.removeInteraction(i));
 
     if (this._vectorLayer) {
