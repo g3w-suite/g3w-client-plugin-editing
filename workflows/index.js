@@ -485,7 +485,7 @@ export class OpenFormStep extends Step {
         /** @TODO make it straightforward: `headerComponent` vs `buttons` ? */
         headerComponent: this._saveAll && {
           template: /* html */ `
-            <section class="editing-save-all-form">
+            <section class = "editing-save-all-form" style = "display: flex;">
               <div
                 class  = "editing-button"
                 :style = "{cursor: disabled ? 'not-allowed' : 'pointer'}"
