@@ -464,28 +464,28 @@ export class OpenFormStep extends Step {
           });
         }
 
-        /** ORIGINAL SOURCE: g3w-client-plugin-editing/form/editingform.js@v3.7.8 */
-        /** ORIGINAL SOURCE: g3w-client-plugin-editing/form/editingformservice.js@v3.7.8 */
-        const formService = GUI.showForm({
-          feature:         this._originalFeatures[0],
-          title:           "plugins.editing.editing_attributes",
-          name:            layerName,
-          crumb:           { title: layerName },
-          id:              `form_${layerName}`,
-          dataid:          layerName,
-          layer:           inputs.layer,
-          isnew:           this._originalFeatures.length > 1 ? false : this._originalFeatures[0].isNew(), // specify if is a new feature
-          parentData:      getParentFormData(),
-          fields,
-          context_inputs:  this._multi ? false: { context, inputs },
-          formStructure:   inputs.layer.hasFormStructure() && inputs.layer.getLayerEditingFormStructure() || undefined,
-          modal:           true,
-          push:            this._options.push || this._isContentChild, /** @since v3.7 force push content on top without clear previous content */
-          showgoback:      undefined === this._options.showgoback ? !this._isContentChild : this._options.showgoback, /** @since v3.7 force show back button */
-          /** @TODO make it straightforward: `headerComponent` vs `buttons` ? */
-          headerComponent: this._saveAll && {
-            template: /* html */ `
-            <section class="editing-save-all-form" style = "display: flex;">
+      /** ORIGINAL SOURCE: g3w-client-plugin-editing/form/editingform.js@v3.7.8 */
+      /** ORIGINAL SOURCE: g3w-client-plugin-editing/form/editingformservice.js@v3.7.8 */
+      const formService = GUI.showForm({
+        feature:         this._originalFeatures[0],
+        title:           "plugins.editing.editing_attributes",
+        name:            layerName,
+        crumb:           { title: layerName },
+        id:              `form_${layerName}`,
+        dataid:          layerName,
+        layer:           inputs.layer,
+        isnew:           this._originalFeatures.length > 1 ? false : this._originalFeatures[0].isNew(), // specify if is a new feature
+        parentData:      getParentFormData(),
+        fields,
+        context_inputs:  this._multi ? false: { context, inputs },
+        formStructure:   inputs.layer.hasFormStructure() && inputs.layer.getLayerEditingFormStructure() || undefined,
+        modal:           true,
+        push:            this._options.push || this._isContentChild, /** @since v3.7 force push content on top without clear previous content */
+        showgoback:      undefined === this._options.showgoback ? !this._isContentChild : this._options.showgoback, /** @since v3.7 force show back button */
+        /** @TODO make it straightforward: `headerComponent` vs `buttons` ? */
+        headerComponent: this._saveAll && {
+          template: /* html */ `
+            <section class="editing-save-all-form">
               <div
                 class  = "editing-button"
                 :style = "{cursor: disabled ? 'not-allowed' : 'pointer'}"
