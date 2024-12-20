@@ -36,9 +36,6 @@ export class Step extends G3WObject {
     //store promise of current running step when call stop
     this._stop = (options.stop || this.stop || (async () => true)).bind(this);
 
-    /** since 3.9.0 */
-    this._rejectRun = null;
-
     /**
      * @FIXME add description
      */
@@ -477,18 +474,15 @@ export class Step extends G3WObject {
 
       try {
         this.state.running = true;                // change state to running
-        const runPromise   = promisify(this._run(inputs, context));
-        return await (this._rejectRun ? runPromise : Promise.race([new Promise((_, reject) => this._rejectRun = reject), runPromise]));
+        return await promisify(this._run(inputs, context));
       } catch(e) {
         console.warn(e);
         this.state.error = e;
         return Promise.reject(e);
       } finally {
-        //always call stop
         this.__stop();
-        this._rejectRun = null;
       }
-    })
+    });
   }
 
   /**
@@ -506,15 +500,6 @@ export class Step extends G3WObject {
       this._workflow._toolsoftool.forEach(t => t.options.stop());
     }
     this.emit('stop');
-  }
-
-  /**
-   * @since 3.9.0
-   * @return {Promise<void>}
-   */
-  async stopRun() {
-    this._rejectRun();
-    await new Promise((resolve) => this.once('stop', resolve))
   }
 
   /**

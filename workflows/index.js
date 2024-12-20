@@ -404,8 +404,6 @@ export class OpenFormStep extends Step {
   run(inputs, context) {
     return $promisify(async () => {
       const promise = new Promise(async (resolve, reject) => {
-        //@since 3.9.0
-        this._rejectRun      = reject;
         //@since 3.9.0 can set isContentChild attribute to force it (case edit relation features from multi parent features)
         this._isContentChild = undefined === context.isContentChild ? Workflow.Stack.getLength() > 1 : context.isContentChild;
         this.layerId         = inputs.layer.getId();
