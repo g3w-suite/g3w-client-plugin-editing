@@ -61,7 +61,7 @@
       <div
         v-if       = "!state.changingtools && (state.editing.on || toggled.layer)"
         :class     = "{ 'panel-body':true, disabled: (!isLayerReady || !canEdit) }"
-        :style     = "{ cursor: toolboxCursor }"
+        :style     = "{ cursor: toolboxCursor, padding: '15px' }"
         @click     = "fitZoomToScale"
       >
 
@@ -589,6 +589,9 @@
     margin-bottom: 8px;
   }
   .panel-heading {
+    border-bottom: 1px solid transparent;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
     padding: 5px 10px 5px 10px;
     width:100%;
   }
