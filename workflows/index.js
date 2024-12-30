@@ -403,10 +403,25 @@ export class OpenFormStep extends Step {
    */
   run(inputs, context) {
     return $promisify(async () => {
-      const promise = new Promise(async (resolve, reject) => {
-        //@since 3.9.0 can set isContentChild attribute to force it (case edit relation features from multi parent features)
-        this._isContentChild = undefined === context.isContentChild ? Workflow.Stack.getLength() > 1 : context.isContentChild;
-        this.layerId         = inputs.layer.getId();
+      //@since 3.9.0 can set isContentChild attribute to force it
+      // (case edit relation features from multi-parent features)
+      this._isContentChild   = undefined === context.isContentChild ? Workflow.Stack.getLength() > 1 : context.isContentChild;
+      this.layerId           = inputs.layer.getId();
+      this._features         = this._multi ? inputs.features : [inputs.features[inputs.features.length - 1]];
+      this._originalFeatures = this._features.map(f => f.clone());
+
+      //@since 3.9.0 promise
+      const promise = new Promise((resolve) => {
+        g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').subscribe(`closeform_${this.layerId}`, () => {
+          resolve();
+          return { once: true }; // once close form, remove subscribing
+        })
+      })
+
+      //set selected features
+      setAndUnsetSelectedFeaturesStyle({ promise: $promisify(promise), inputs, style: this.selectStyle });
+
+      return new Promise(async (resolve, reject) => {
 
         GUI.setLoadingContent(false);
 
@@ -420,8 +435,6 @@ export class OpenFormStep extends Step {
         g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').setCurrentLayout();
 
         const layerName        = inputs.layer.getName();
-        this._features         = this._multi ? inputs.features : [inputs.features[inputs.features.length - 1]];
-        this._originalFeatures = this._features.map(f => f.clone());
 
         // create a child relation feature set a father relation field value
         if (this._isContentChild) {
@@ -509,13 +522,13 @@ export class OpenFormStep extends Step {
                 style      = "background-color: #fff; display: flex; justify-content: flex-end; width: 100%;"
               >
                 <span
-                  class               = "save-all-icon"
+                  class               = "save-all-icon skin-color-dark"
                   v-disabled          = "!disabled"
                   @click.stop.prevent = "closeForm"
                 >
                   <i
                     :class = "g3wtemplate.font['close']"
-                    style  = "color: red; font-size: 1.8em; padding: 5px; border-radius: 5px; cursor: pointer; box-shadow: 0 3px 5px rgba(0,0,0,0.5); margin: 5px;"
+                    style  = "font-size: 1.8em; padding: 5px; border-radius: 5px; cursor: pointer; box-shadow: 0 3px 5px rgba(0,0,0,0.5); margin: 5px;"
                   ></i>
                 </span>
               </div> 
@@ -771,9 +784,6 @@ export class OpenFormStep extends Step {
 
         this.disableSidebar(true);
       });
-
-      setAndUnsetSelectedFeaturesStyle({ promise: $promisify(promise), inputs, style: this.selectStyle });
-      return promise;
     });
   }
 
