@@ -25,7 +25,6 @@ import { promisify, $promisify }                        from '../utils/promisify
 import { unlinkRelation }                               from '../utils/unlinkRelation';
 import { splitFeatures }                                from '../utils/splitFeatures';
 import { isSameBaseGeometryType }                       from '../utils/isSameBaseGeometryType';
-import { dissolve }                                     from '../utils/dissolve';
 import { PickFeaturesInteraction }                      from '../interactions/pickfeaturesinteraction';
 
 import {
@@ -59,7 +58,7 @@ const {
 const { ProjectsRegistry }                = g3wsdk.core.project;
 const { DataRouterService }               = g3wsdk.core.data;
 const { CatalogLayersStoresRegistry }     = g3wsdk.core.catalog;
-const { Geometry }                        = g3wsdk.core.geoutils;
+const { Geometry, dissolve }              = g3wsdk.core.geoutils;
 const { removeZValueToOLFeatureGeometry } = g3wsdk.core.geoutils.Geometry;
 const { tPlugin }                         = g3wsdk.core.i18n;
 const { Layer }                           = g3wsdk.core.layer;
