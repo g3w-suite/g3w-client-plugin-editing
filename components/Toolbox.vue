@@ -615,7 +615,7 @@
     padding: 13px;
     color: currentColor !important;
     font-size: 1.1em;
-    margin: 0px;
+    margin: 0;
   }
   .panel-title {
     font-weight: bold;
@@ -655,7 +655,6 @@
     margin-bottom: 5px;
     font-size: 1.1em;
     color: #000;
-    margin-top: 5px;
   }
   .snap-tool {
     display: flex;
@@ -670,6 +669,9 @@
   }
   .tools-of-tool-snap label span {
     color: #222d32 !important;
+  }
+  .panel-body {
+    padding: 15px;
   }
   .panel-body.disabled {
     opacity: .7;
