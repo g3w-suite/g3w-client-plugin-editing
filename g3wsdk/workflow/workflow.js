@@ -642,5 +642,5 @@ Workflow.Stack = {
   removeAt(i)    { workflows.splice(i, 1); },
   insertAt(i, w) { workflows[i] = w; },
   getAt(i)       { return workflows[i]; },
-  async clear()  { await this.getFirst().stop(); workflows.splice(0); }
+  async clear()  { workflows.splice(0); }
 };

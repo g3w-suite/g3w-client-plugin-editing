@@ -499,7 +499,7 @@ export class OpenFormStep extends Step {
             <section class = "editing-save-all-form" style = "display: flex;">
               <div
                 class  = "editing-button"
-                :style = "{cursor: disabled ? 'not-allowed' : 'pointer'}"
+                :style = "{ cursor: disabled ? 'not-allowed' : 'pointer' }"
                 style  = "background-color: #fff; display: flex; justify-content: flex-end; width: 100%;"
               >
                 <span
@@ -543,7 +543,7 @@ export class OpenFormStep extends Step {
                     const valid = ((w.getContext().service instanceof FormService) ? w.getContext().service.getState() : {}).valid;
                     return valid || undefined === valid;
                   }),
-                isChild: Workflow.Stack.getLength() > 1,
+                isChild: Workflow.Stack.getLength() > 1 && !(2 === Workflow.Stack.getLength() && Workflow.Stack.getFirst().isType('edittable'))
               };
             },
             computed: {
@@ -625,7 +625,16 @@ export class OpenFormStep extends Step {
                * Close editing form
                */
               async closeForm() {
+                //get current active tool
+                const tool = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.toolboxselected.getActiveTool();
+                //stop active tool and wait
+                await promisify(tool.stop());
+                //clear all workflow stacks
                 Workflow.Stack.clear();
+                //check if the tool needs to run on time. If not, start again
+                if (!tool.getOperator().runOnce) {
+                  tool.start();
+                }
               }
             },
           },
@@ -686,7 +695,7 @@ export class OpenFormStep extends Step {
 
               this.fireEvent('savedfeature', newFeatures);                 // called after saved
               this.fireEvent(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
-              // In case of save of child it means that child is updated so also parent
+              // In case of save of child, it means that child is updated so also parent
               if (this._isContentChild) {
                 Workflow.Stack.getParents()
                   //filter only with has getContextService to be sure
@@ -714,10 +723,7 @@ export class OpenFormStep extends Step {
               }
             },
             cbk: () => {
-              if (!this._isContentChild) {
-                GUI.setModal(false);
-                this.fireEvent('cancelform', inputs.features); // fire event cancel form to emit to subscrivers
-              }
+              this.fireEvent('cancelform', inputs.features); // fire event cancel form to emit to subscribers
               reject(inputs);
             }
           }
@@ -805,6 +811,7 @@ export class OpenFormStep extends Step {
     // Ex. copy multiple features from another layer
     if (is_parent_table) {
       GUI.getService('map').disableClickMapControls(false);
+      GUI.setModal(false);
     }
 
     const contextService = is_parent_table && Workflow.Stack.getCurrent().getContextService();

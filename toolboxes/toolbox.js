@@ -543,7 +543,7 @@ export class ToolBox extends G3WObject {
                     context: {
                       session:        Workflow.Stack.getCurrent().getSession(),        // get parent workflow
                       excludeFields:  fields.ownField,                                 // array of fields to be excluded
-                      isContentChild: false, //@since 3.9.0 force child to flase
+                      isContentChild: false, //@since 3.9.0 force child to false
                     },
                     inputs: {
                       features: rLayer.readFeatures(),
