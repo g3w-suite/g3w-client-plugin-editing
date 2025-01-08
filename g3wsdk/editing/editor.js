@@ -8,8 +8,6 @@
 
 import { ToolBox }               from '../../toolboxes/toolbox';
 import { promisify, $promisify } from '../../utils/promisify';
-import { getRelationsInEditing } from "../../utils/getRelationsInEditing";
-import {getRelationId} from "editing/utils/getRelationId";
 
 const { ApplicationState, G3WObject }    = g3wsdk.core;
 const { FeaturesStore }                  = g3wsdk.core.layer.features;
