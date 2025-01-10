@@ -567,8 +567,7 @@ export class OpenFormStep extends Step {
                       const fields = w.getContext().service.state.fields.filter(f => task._multi ? null !== f.value : true);
                       // skip when no fields
                       if (0 === fields.length) { return }
-                      //@since 3.9.0 commented. Deprecate
-                      //await Workflow.Stack.getCurrent().getContextService().saveDefaultExpressionFieldsNotDependencies();
+                      await Workflow.Stack.getCurrent().getContextService().saveDefaultExpressionFieldsNotDependencies();
                       task._features.forEach(f => task.getInputs().layer.setFieldsWithValues(f, fields));
                       const newFeatures = task._features.map(f => f.clone());
                       //Is a relation form
@@ -663,8 +662,7 @@ export class OpenFormStep extends Step {
                 GUI.setLoadingContent(true);
                 GUI.disableContent(true);
 
-                //@since 3.9.0 commented. Deprecate
-                //await Workflow.Stack.getCurrent().getContextService().saveDefaultExpressionFieldsNotDependencies();
+                await Workflow.Stack.getCurrent().getContextService().saveDefaultExpressionFieldsNotDependencies();
 
                 GUI.setLoadingContent(false);
                 GUI.disableContent(false);
