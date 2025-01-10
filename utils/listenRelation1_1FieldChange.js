@@ -10,6 +10,7 @@ const { CatalogLayersStoresRegistry } = g3wsdk.core.catalog;
  *
  * @param opts.layerId Current editing layer id
  * @param opts.fields Array of form fields of current editing layer
+ * @param opts.formService form service
  *
  * @returns Array of watch function event to remove listen
  *
@@ -18,6 +19,7 @@ const { CatalogLayersStoresRegistry } = g3wsdk.core.catalog;
 export async function listenRelation1_1FieldChange({
   layerId,
   fields = [],
+  formService,
 } = {}) {
   const unwatches = []; // unwatches field value (event change)
 
@@ -44,7 +46,7 @@ export async function listenRelation1_1FieldChange({
     const fatherFormRelationField = fields.find(f => fatherField.includes(f.name)); // get father layer field (for each relation)
     // skip when not relation field and not layer child is in editing
     if (!(fatherFormRelationField && service.getLayerById(childLayerId))) {
-      return;
+      return unwatches;
     }
 
     //store original editable property of fields relation to child layer relation
@@ -76,7 +78,6 @@ export async function listenRelation1_1FieldChange({
     }
 
     //if not feature is on source child layer, it means it locked or not exist on a server need to check
-
     // listen for relation field changes (vue watcher)
     unwatches.push(
       VM.$watch(
@@ -92,7 +93,6 @@ export async function listenRelation1_1FieldChange({
 
           fatherFormRelationField.editable                    = false;     // disable edit
           fatherFormRelationField.input.options.loading.state = 'loading'; // show input bar loader
-
           if (undefined === relationLockFeatures[fatherFormRelationField.value]) {
             //get feature from a child layer source
             try {
@@ -120,6 +120,8 @@ export async function listenRelation1_1FieldChange({
               field.value = feature
                 ? feature.get(field.name.replace(relation.getPrefix(), ''))
                 : null
+              //@since 3.9.0 call change input to run eventually default expression
+              formService.changeInput(field);
             });
 
           // reset edit state

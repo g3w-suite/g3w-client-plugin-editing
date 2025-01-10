@@ -30,7 +30,7 @@ export async function handleRelation1_1LayerFields({
     .getArray()
     .filter(relation => 'ONE' === relation.getType())
     .map(relation => {
-      return new Promise(async (resolve) => {
+      return new Promise(async (resolve, reject) => {
         // skip when layer is not a father layer (1:1 relation)
         if (layerId !== relation.getFather()) {
           resolve();
@@ -48,6 +48,11 @@ export async function handleRelation1_1LayerFields({
         // check if child relation layer is editable (in editing)
         const childLayerId = relation.getChild();
         const childField   = relation.getChildField()[0];
+        //In case of not editable child layer, exit
+        if (!service.getLayerById(childLayerId)) {
+          reject();
+          return;
+        }
         const source       = service.getLayerById(childLayerId).getEditingSource();
         let childFeature; // original child feature
         let newChild; //eventually child feature cloned with changes
