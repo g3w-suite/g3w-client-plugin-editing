@@ -2576,13 +2576,13 @@ export class ToolBox extends G3WObject {
    */
   __getCommitItems() {
     const itemsToCommit = this.__commit();
-    const id = this.state.layer.getId();
+    const id            = this.state.layer.getId();
     let state;
     let layer;
     const commitObj = {
-      add: [],      // features to add
-      update: [],   // features to update
-      delete: [],   // features to delete
+      add:       [],      // features to add
+      update:    [],   // features to update
+      delete:    [],   // features to delete
       relations: {} // relation features
     };
     // key is a layer id that has changes to apply
@@ -2591,39 +2591,47 @@ export class ToolBox extends G3WObject {
       const items    = itemsToCommit[key];
       // case key (layer id) is not equal to id (current layer id on editing)
       if (key !== id) {
-        isRelation = true; //set true because these changes belong to features relation items
+        isRelation            = true; //set true because these changes belong to features relation items
         const sessionRelation = ToolBox.get(key).getSession();
         //check lock ids of relation layer
         const lockids =  sessionRelation ? sessionRelation.getEditor().getLockIds(): [];
-        //create a relations object
+        //create a relation object
         commitObj.relations[key] = {
           lockids,
-          add: [],
-          update: [],
-          delete: [],
+          add:       [],
+          update:    [],
+          delete:    [],
           relations: {} //@since v3.7.1
         };
         layer = commitObj.relations[key];
       } else {
         layer = commitObj;
       }
-
+      //@since 3.9.0 Check if it has 3D geometry type (Z or MZ)
+      const is_vector    = Layer.LayerTypes.VECTOR === ToolBox.get(key).getLayer().getType(); // check if is vector layer
+      const geometryType = is_vector && CatalogLayersStoresRegistry.getLayerById(key).getGeometryType(); //get geometry type if vector layer
+      const is3DGeometry = geometryType && g3wsdk.core.geoutils.Geometry.is3DGeometry(geometryType); //Boolean check if is 3D geometry
       items
-        .forEach((item) => {
-          //check state of feature item
+        .forEach(item => {
+          //check the state of feature item
           state = item.getState();
           const GeoJSONFormat = new ol.format.GeoJSON();
           // item needs to be deleted
           if ('delete' === state) {
-            //check if is new. If is new mean is not present on server
+            //check if is new. If is new mean is not present on server,
             //so no need to say to server to delete it
             if (!item.isNew()) {
               layer.delete.push(item.getId());
             }
             return;
           }
-          //convert feature to json ex. {geometry:{tye: 'Point'}, properties:{}.....}
+          //convert feature to json ex. {geometry:{type: 'Point'}, properties:{}.....}
           const itemObj = GeoJSONFormat.writeFeatureObject(item);
+          //In the case of 3D geometry need to set the same tpe of layer (LineStringMZ...)
+          if (is3DGeometry) {
+            itemObj.geometry.type = geometryType
+          }
+
           //get properties
           const childs_properties = item.getProperties();
           for (const p in itemObj.properties) {
@@ -2637,7 +2645,7 @@ export class ToolBox extends G3WObject {
               itemObj.properties[p] = childs_properties[p]
             }
           }
-          // in case of add it have to remove not editable properties
+          // in case of adding, it has to remove not editable properties
           layer[item.isNew() ? 'add' : item.getState()].push(itemObj);
         });
       // check in case of no edit remove relation key
@@ -2650,7 +2658,7 @@ export class ToolBox extends G3WObject {
         delete commitObj.relations[key];
       }
     }
-    // Remove deep relations from current layer (commitObj) that are not relative to that layer
+    // Remove deep relations from the current layer (commitObj) that are not relative to that layer
     const relations = Object.keys(commitObj.relations || {});
     relations
       .filter(id => undefined === this.state.layer.getEditor().getLayer().getRelations().getArray().find(r => id === r.getChild())) // child relations
@@ -2695,8 +2703,8 @@ export class ToolBox extends G3WObject {
   __clearHistory(ids) {
     if (ids) {
       this._states.forEach((state, idx) => {
-        if (ids.indexOf(state.id) !== -1) {
-          if (this.state.editing.session.current && this.state.editing.session.current === state.id()) {
+        if (ids.includes(state.id)) {
+          if (this.state.editing.session.current && state.id === this.state.editing.session.current) {
             this.__undo();
           }
           this._states.splice(idx, 1);
@@ -2720,7 +2728,7 @@ export class ToolBox extends G3WObject {
       const features = await promisify(this.state.layer.getEditor().start(options));
       this.state.editing.session.started = true;
       return features;
-    } catch (e) {
+    } catch(e) {
       console.warn(e);
       return Promise.reject(e);
     } finally {
@@ -2730,11 +2738,11 @@ export class ToolBox extends G3WObject {
       if ((Layer.LayerTypes.VECTOR === this.state._layerType) && this.state._getFeaturesOption.filter.bbox) {
         const fnc = () => {
           if (
-              //added ApplicationState.online
-              ApplicationState.online
-              && this.state.editing.canEdit
-              && this.state.selected //need to be selected
-              && 0 === GUI.getContentLength()
+            //added ApplicationState.online
+            ApplicationState.online
+            && this.state.editing.canEdit
+            && this.state.selected //need to be selected
+            && 0 === GUI.getContentLength()
           ) {
             this.state._getFeaturesOption.filter.bbox = GUI.getService('map').getMapBBOX();
             this.state.loading = true;
@@ -2749,8 +2757,8 @@ export class ToolBox extends G3WObject {
         if (GUI.getContentLength()) {
           GUI.once('closecontent', () => {
             const map = GUI.getService('map').getMap();
-            setTimeout(() => { map.dispatchEvent({ type: this._getFeaturesEvent.event, target: map } ) })
-          });
+            setTimeout(() => map.dispatchEvent({ type: this._getFeaturesEvent.event, target: map }))
+          })
         }
       }
     }
