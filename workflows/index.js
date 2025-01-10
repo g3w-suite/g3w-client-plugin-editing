@@ -732,7 +732,7 @@ export class OpenFormStep extends Step {
       }
 
       //listen eventually field relation 1:1 changes value
-      listenRelation1_1FieldChange({ layerId: this.layerId, fields }).then(d => this._unwatchs = d);
+      listenRelation1_1FieldChange({ layerId: this.layerId, fields, formService }).then(d => this._unwatchs = d);
 
       this.disableSidebar(true);
 
