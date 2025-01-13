@@ -188,16 +188,6 @@ export class Workflow extends G3WObject {
   }
 
   /**
-   * @FIXME add description
-   */
-  removeChild() {
-    if (this._child) {
-      Workflow.Stack.removeAt(this._child.getStackIndex());
-    }
-    this._child = null;
-  }
-
-  /**
    * @param input.key
    * @param input.value
    */
@@ -298,7 +288,7 @@ export class Workflow extends G3WObject {
   /**
    * @FIXME add description
    */
-  reject () {
+  reject() {
     if (this._promise) {
       this._promise.reject();
     }
@@ -314,19 +304,28 @@ export class Workflow extends G3WObject {
     }
   }
 
+  /**
+   * Method to run steps of workflow
+   * @param step
+   * @param inputs
+   * @return {Promise<unknown>}
+   */
   async runStep(step, inputs) {
     try {
+      //set step message
       this.setMessages({ help: step.state.help });
+      //run step
       const outputs = await promisify(step.__run(inputs, this.getContext()));
       // onDone → check if all step is resolved
       this._stepIndex++;
+      //check if is the last of workflow steps
       if (this._stepIndex === this.getSteps().length) {
         this._stepIndex = 0;
         return outputs;
       } else {
         return this.runStep(this.getSteps()[this._stepIndex], outputs);
       }
-    } catch (e) {
+    } catch(e) { //In case of reject
       this._stepIndex = 0;
       return Promise.reject(e);
     }
@@ -358,13 +357,15 @@ export class Workflow extends G3WObject {
       ) {
         Workflow.Stack.getCurrent().addChild(this)
       }
-  
-      this._stackIndex = Workflow.Stack.push(this);
-      this._steps      = options.steps || this._steps;
 
+      //get stack index
+      this._stackIndex = Workflow.Stack.push(this);
+      //get steps
+      this._steps      = options.steps || this._steps;
+      //for each step assign current workflow to _workflow
       (this._steps || []).forEach(s => s._workflow = this);
   
-      const showUserMessage = Object.keys(this._userMessageSteps).length;
+      const showUserMessage = Object.keys(this._userMessageSteps).length > 0;
   
       if (showUserMessage) {
         GUI.showUserMessage({
@@ -383,19 +384,20 @@ export class Workflow extends G3WObject {
           }
         });
       }
-      //emit start
+      //emit start Workflow
       this.emit('start');
   
       try {
         console.assert(0 === this._stepIndex, `reset workflow before restarting: ${this._stepIndex}`)
         //start flow of workflow
         const outputs = await this.runStep(this.getSteps()[this._stepIndex], this.getInputs());
+        //In case of show user message (tool steps)
         if (showUserMessage) {
           setTimeout(() => { this.clearUserMessagesSteps(); resolve(outputs); }, 500);
         } else {
           resolve(outputs);
         }
-      } catch (e) {
+      } catch(e) {
         console.warn(e);
         if (showUserMessage) {
           this.clearUserMessagesSteps();
@@ -403,6 +405,7 @@ export class Workflow extends G3WObject {
         reject(e);
       }
 
+      //in case of worflow that need to run once time, stop workflow
       if (this.runOnce) {
         this.stop();
       }
@@ -414,31 +417,32 @@ export class Workflow extends G3WObject {
    * 
    * @fires stop
    */
-  stop() {
+  async stop() {
     return $promisify(new Promise(async (resolve, reject) => {
+
       this._promise = null;
 
       try {
         // stop child workflow
         if (this._child) {
-          await promisify(this._child.stop());  
+          await promisify(this._child.stop());
         }
       } catch(e) {
         console.warn(e);
       }
-      
-      // ensure that child is always removed
-      this.removeChild();
-
-      Workflow.Stack.removeAt(this.getStackIndex());
+      //remove child
+      this._child = null;
 
       // stop flow
       try {
-        if (this.getSteps()[this._stepIndex].isRunning()) {
+        //get current step
+        const step = this.getSteps()[this._stepIndex];
+        //check if it is running
+        if (step.isRunning()) {
           //clear messages steps
           this.clearMessages();
-          //stop a current step
-          this.getSteps()[this._stepIndex].__stop();
+          //wait stop run
+          await step.__stop();
         }
         // reset counter and reject flow
         if (this._stepIndex > 0) {
@@ -448,11 +452,15 @@ export class Workflow extends G3WObject {
         } else {
           resolve();
         }
-      } catch (e) {
+      } catch(e) {
         console.warn(e);
         reject(e);
       }
 
+      //remove workflow from stack
+      Workflow.Stack.removeAt(this.getStackIndex());
+
+      //emit stop Workflow
       this.emit('stop');
 
     }));
@@ -634,5 +642,5 @@ Workflow.Stack = {
   removeAt(i)    { workflows.splice(i, 1); },
   insertAt(i, w) { workflows[i] = w; },
   getAt(i)       { return workflows[i]; },
-  clear()        { while (workflows.length) { (workflows.pop()).stop(); } },
+  async clear()  { workflows.splice(0); }
 };
