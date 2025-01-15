@@ -723,61 +723,60 @@ export class ToolBox extends G3WObject {
                                       );
                                     }));
 
-                                      let _feature;
+                                    let _feature;
 
-                                      try {
-                                        _feature = features.length > 1
-                                            ? await promisify(chooseFeatureFromFeatures({ features, inputs }))
-                                            : features[0];
-                                      } catch (e) {
-                                        console.warn(e);
-                                      }
+                                    try {
+                                      _feature = features.length > 1
+                                        ? await promisify(chooseFeatureFromFeatures({ features, inputs }))
+                                        : features[0];
+                                    } catch (e) {
+                                      console.warn(e);
+                                    }
 
-                                      if (_feature) {
-                                        const feature = new Feature({
-                                          feature:    _feature,
-                                          properties: attributes.map(a => a.name)
-                                        })
+                                    if (_feature) {
+                                      const feature = new Feature({
+                                        feature:    _feature,
+                                        properties: attributes.map(a => a.name)
+                                      })
 
-                                        feature.setTemporaryId();
-                                        return feature;
-                                      }
+                                      feature.setTemporaryId();
+                                      return feature;
+                                    }
 
-                                      GUI.showUserMessage({
-                                        type:     'warning',
-                                        message:  'plugins.editing.messages.no_feature_selected',
-                                        closable:  false,
-                                        autoclose: true
-                                      });
-
-                                      return Promise.reject();
+                                    GUI.showUserMessage({
+                                      type:     'warning',
+                                      message:  'plugins.editing.messages.no_feature_selected',
+                                      closable:  false,
+                                      autoclose: true
                                     });
 
-                                    //@TODO check better way
-                                    //Set undefined property to null otherwise on commit
-                                    // property are lost
-                                    attributes.forEach(({ name }) => {
-                                      if (undefined === feature.get(name)) { feature.set(name, null) }
-                                    })
+                                    return Promise.reject();
+                                  });
 
-                                    originalLayer.getEditingNotEditableFields()
-                                      .find(field => {
-                                        if (originalLayer.isPkField(field)) { feature.set(field, null) }
-                                      });
-                                    //remove eventually Z Values
-                                    removeZValueToOLFeatureGeometry({ feature });
-                                    feature.setTemporaryId();
-                                    source.addFeature(feature);
-                                    session.pushAdd(layerId, feature, false);
-                                    inputs.features.push(feature)
-                                    this.fireEvent('addfeature', feature)
-                                    resolve(inputs);
-                                  }
-                                  catch(e) {
-                                    console.warn(e);
-                                    reject(e);
-                                  }
-                                })();
+                                  //@TODO check better way
+                                  //Set undefined property to null otherwise on commit
+                                  // property are lost
+                                  attributes.forEach(({ name }) => {
+                                    if (undefined === feature.get(name)) { feature.set(name, null) }
+                                  })
+
+                                  originalLayer.getEditingNotEditableFields()
+                                    .find(field => {
+                                      if (originalLayer.isPkField(field)) { feature.set(field, null) }
+                                    });
+                                  //remove eventually Z Values
+                                  removeZValueToOLFeatureGeometry({ feature });
+                                  feature.setTemporaryId();
+                                  source.addFeature(feature);
+                                  session.pushAdd(layerId, feature, false);
+                                  inputs.features.push(feature)
+                                  this.fireEvent('addfeature', feature)
+                                  resolve(inputs);
+                                }
+                                catch(e) {
+                                  console.warn(e);
+                                  reject(e);
+                                }
                               }
                             }
                           }
