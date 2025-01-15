@@ -957,7 +957,7 @@ new (class extends Plugin {
                 inputs: {
                   close,
                   layer,
-                  message: (new (Vue.extend(require('./components/Changes.vue')))({
+                  message: (new (Vue.extend(require('./components/Changes.vue').default))({
                     propsData: {
                       commits: commitItems,
                       layer

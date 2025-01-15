@@ -14,7 +14,7 @@ export function chooseFeatureFromFeatures({
 
     const feature = [];
 
-    const comp = new (Vue.extend(require('../components/ChooseFeatureToEdit.vue')))({
+    const comp = new (Vue.extend(require('../components/ChooseFeatureToEdit.vue').default))({
       features:   Array.isArray(features) ? features : [],
       feature,
       attributes: inputs.layer.getEditingFields().map(({ name, label }) => ({ name, label })),
