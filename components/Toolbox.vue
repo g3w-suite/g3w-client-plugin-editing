@@ -612,7 +612,7 @@
     color: #3a4448;
   }
   .editbtn.start-editing {
-    padding: 10px;
+    padding: 13px;
     color: currentColor !important;
     font-size: 1.1em;
     margin: 0;
