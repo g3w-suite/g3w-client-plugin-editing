@@ -320,9 +320,36 @@ export default class Editor extends G3WObject {
     // properties - properties of feature returned by server
     response.response.new.forEach(({ clientid, id, properties } = {}) => {
       //get feature from current layer in editing
-      const feature = this._featuresstore.getFeatureById(clientid);
+      const feature  = this.getEditingSource().getFeatureById(clientid);
       // set new id
       feature.setId(id);
+      //set properties
+      feature.setProperties(properties);
+      //Loop on eventual relation updated or created
+      relations.forEach(r => {         // handle relations (if provided)
+        Object
+          .entries(r)
+          .forEach(([ id, opts = {}]) => { // id - relation layer id, opts - Object contain relation properties
+            //get the editing source of relation layer
+            const source = ToolBox.get(id).getSession().getEditor().getEditingSource();
+            // handle value to relation field saved on server
+            (opts.ids || []).forEach(id => {
+              const rFeature = source.getFeatureById(id);
+              if (rFeature) {
+                opts.fatherField.forEach((ff, i) => {// loop relation ids
+                  rFeature.set(opts.childField[i], feature.get(ff))  // set father feature `value` and `name`
+                })
+              }
+            })
+          });
+      });
+
+    });
+
+    //@since 3.9.0 take in account update properties returned by server (Useful in case of media input changes)
+    (response.response.update || []).forEach(({ id, properties } = {}) => {
+      //get feature from current layer in editing
+      const feature  = this.getEditingSource().getFeatureById(id);
       //set properties
       feature.setProperties(properties);
       //Loop on eventual relation updated or created
@@ -439,10 +466,10 @@ export default class Editor extends G3WObject {
    */
   stop() {
     return $promisify(async () => {
-      const response = await promisify(this._layer.unlock());
+      const { result } = await promisify(this._layer.unlock());
       this.clear();
-      return response;
-    });
+      return result;
+    })
   }
 
   /**

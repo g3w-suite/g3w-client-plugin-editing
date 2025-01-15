@@ -814,15 +814,15 @@ export class Session extends g3wsdk.core.G3WObject {
           return;
         }
         
-        const { new_relations = {} } = response.response; // check if new relations are saved on server
+        const { relations = {} } = response.response; // check if new relations are saved on server
 
         // sync server data with local data
-        for (const id in new_relations) {
+        for (const id in relations) {
           Session.Registry
             .getSession(id)               // get session of relation by id
             .getEditor()
             .applyCommitResponse({        // apply commit response to current editing relation layer
-              response: new_relations[id],
+              response: relations[id],
               result: true
             });
         }

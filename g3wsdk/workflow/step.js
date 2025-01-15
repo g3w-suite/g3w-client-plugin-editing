@@ -31,7 +31,9 @@ export class Step extends G3WObject {
 
     this._options = options;
 
+    //store promise of current running step when call run
     this._run  = (options.run  || this.run  || (async () => true)).bind(this);
+    //store promise of current running step when call stop
     this._stop = (options.stop || this.stop || (async () => true)).bind(this);
 
     /**
@@ -102,7 +104,7 @@ export class Step extends G3WObject {
      * @since g3w-client-plugin-editing@v3.8.0
      */
     if (options.onStop) {
-      this.on('run', options.onStop);
+      this.on('stop', options.onStop);
     }
 
     /**
@@ -389,7 +391,7 @@ export class Step extends G3WObject {
    */
   registerEscKeyEvent(callback) {
     if (callback) {
-      this.on('run', ()  => this.bindEscKeyUp(callback));
+      this.on('run',  () => this.bindEscKeyUp(callback));
       this.on('stop', () => this.unbindEscKeyUp());
     }
   }
@@ -410,10 +412,12 @@ export class Step extends G3WObject {
    */ 
   __run(inputs, context) {
     return $promisify(async() => {
+      //set step inputs
       this.setInputs(inputs);
+      //set step context
       this.setContext(context);
 
-      const step = this;
+      const step         = this;
       const toolsOfTools = {
 
         snap: {
@@ -471,7 +475,7 @@ export class Step extends G3WObject {
       try {
         this.state.running = true;                // change state to running
         return await promisify(this._run(inputs, context));
-      } catch (e) {
+      } catch(e) {
         console.warn(e);
         this.state.error = e;
         return Promise.reject(e);
@@ -489,8 +493,8 @@ export class Step extends G3WObject {
    *
    * @fires stop
    */
-  __stop() {
-    this._stop(this._inputs, this._context);   // stop task
+  async __stop() {
+    await this._stop(this._inputs, this._context);   // stop task
     this.state.running = false;                // remove running state
     if (this._workflow) {
       this._workflow._toolsoftool.forEach(t => t.options.stop());
