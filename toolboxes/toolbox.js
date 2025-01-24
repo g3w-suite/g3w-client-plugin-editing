@@ -2166,7 +2166,7 @@ export class ToolBox extends G3WObject {
         const messages = this.state.activetool.getOperator().getHelpMessage() || this.state.activetool.getOperator().getRunningStep() ? this.state.activetool.messages : null;
         this.state.toolmessages.help = messages && messages.help || null
 
-      } catch (e) {
+      } catch(e) {
         console.warn(e);
       }
     });
@@ -3009,7 +3009,7 @@ export class ToolBox extends G3WObject {
    */
   async _startOp(tool, options, hideSidebar) {
     // reset features
-    options.inputs.features = [];
+    options.inputs.features = options.features || [];
 
     if (hideSidebar) {
       GUI.hideSidebar();
@@ -3026,7 +3026,7 @@ export class ToolBox extends G3WObject {
       }
       this._session.rollback();
     } finally {
-      if (!tool.getOperator().runOnce && Layer.LayerTypes.TABLE !== this.getLayer().getType() ) {
+      if (!tool.getOperator().runOnce && Layer.LayerTypes.VECTOR === this.getLayer().getType() ) {
         await this._startOp(tool, options, hideSidebar);
       } else {
         tool.stop();
@@ -3039,16 +3039,16 @@ export class ToolBox extends G3WObject {
    * 
    * @since g3w-client-plugin-editing@v3.8.0
    */
-  _stopTool(tool, force=false) {
+  _stopTool(tool, force = false) {
     return $promisify(async () => {
       if (!tool.getOperator()) {
         tool.emit('stop', { session: this._session });
-        return
+        return;
       }
       try {
         await promisify(tool.getOperator().stop(force));
-      } catch (e) {
-        console.warn(e)
+      } catch(e) {
+        console.warn(e);
         this._session.rollback();
       } finally {
         tool.active = false;

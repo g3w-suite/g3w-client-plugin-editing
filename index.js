@@ -1204,7 +1204,7 @@ new (class extends Plugin {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   undoRedoRelationUniqueFieldValues({
-    relationSessionItems,
+    relationSessionItems = {},
     action,
   }) {
     Object
