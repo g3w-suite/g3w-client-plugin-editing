@@ -36,7 +36,6 @@ import {
   ModifyGeometryVertexStep,
   OpenTableStep,
 }                                                       from '../workflows';
-import it from "editing/i18n/it";
 
 Object
   .entries({
