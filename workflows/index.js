@@ -233,8 +233,10 @@ export class ModifyGeometryVertexStep extends Step {
           deleteCondition: this._options.deleteCondition,
           condition:       (e) => {
             const features = e.map.getFeaturesAtPixel(e.pixel, { hitTolerance: 10 });
-            if (2 === features.length) {
-              if (feature._uid === features[1]._uid) {
+            //in a collections, the first element is a collection of features
+            //instead the second element and the others are features
+            if (features.length >= 2) { //consider maybe other features very close to current editing feature
+              if (features.slice(1).find(f => feature._uid === f._uid)) {
                 return true;
               }
             }
