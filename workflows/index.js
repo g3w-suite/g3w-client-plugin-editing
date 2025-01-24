@@ -230,7 +230,16 @@ export class ModifyGeometryVertexStep extends Step {
       this._modifyInteraction = this.addInteraction(
         new ol.interaction.Modify({
           features:        new ol.Collection(inputs.features),
-          deleteCondition: this._options.deleteCondition
+          deleteCondition: this._options.deleteCondition,
+          condition:       (e) => {
+            const features = e.map.getFeaturesAtPixel(e.pixel, { hitTolerance: 10 });
+            if (2 === features.length) {
+              if (feature._uid === features[1]._uid) {
+                return true;
+              }
+            }
+            resolve(inputs);
+          },
         }), {
           'modifystart': e => { originalFeature = e.features.getArray()[0].clone(); },
           'modifyend':   e => {
@@ -240,7 +249,6 @@ export class ModifyGeometryVertexStep extends Step {
                 newFeature = feature.clone();
                 context.session.pushUpdate(layerId, newFeature, originalFeature);
                 inputs.features.push(newFeature);
-                resolve(inputs);
               });
             }
           }
