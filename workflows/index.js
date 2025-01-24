@@ -247,11 +247,12 @@ export class ModifyGeometryVertexStep extends Step {
           'modifyend':   e => {
             const feature = e.features.getArray()[0];
             if (feature.getGeometry().getExtent() !== originalFeature.getGeometry().getExtent()) {
-              evaluateExpressionFields({ inputs, context, feature }).finally(() => {
-                newFeature = feature.clone();
-                context.session.pushUpdate(layerId, newFeature, originalFeature);
-                inputs.features.push(newFeature);
-              });
+              evaluateExpressionFields({ inputs, context, feature })
+                .finally(() => {
+                  newFeature = feature.clone();
+                  context.session.pushUpdate(layerId, newFeature, originalFeature);
+                  inputs.features.push(newFeature);
+                });
             }
           }
         }

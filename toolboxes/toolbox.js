@@ -36,6 +36,7 @@ import {
   ModifyGeometryVertexStep,
   OpenTableStep,
 }                                                       from '../workflows';
+import it from "editing/i18n/it";
 
 Object
   .entries({
@@ -2556,13 +2557,18 @@ export class ToolBox extends G3WObject {
     // fill history
     return $promisify(async () => {
       // add temporary modify to history
-      if (this.state.editing.session.changes.length) {
-        const uniqueId = options.id || Date.now();
-        await promisify(this.__add(uniqueId, this.state.editing.session.changes));
+      if (this.state.editing.session.changes.length > 0) {
+        //@since 3.9.1 get array of uniqueIds
+        //case of modify vertex. Multi changes in one save
+        const uniqueIds = [];
+        await Promise.allSettled(this.state.editing.session.changes.map(c => {
+          const uniqueId = options.id || Date.now();
+          uniqueIds.push(uniqueId);
+          return promisify(this.__add(uniqueId, [c]));
+        }));
         // clear to temporary changes
         this.state.editing.session.changes = [];
-        // resolve if unique id
-        return uniqueId;
+        return uniqueIds;
       }
       return null;
     });
