@@ -2280,8 +2280,9 @@ export class ToolBox extends G3WObject {
       // in the history from the current "state" so if it
       // can create a new history
       if (null === this.state.editing.session.current) {
-        this._states = [{ id: uniqueId, items }]
+        this._states = [{ id: uniqueId, items }];
       } else {
+        //last state
         if (this._states.length > 0 && this.state.editing.session.current < this._states.at(-1).id) {
           this._states = this._states.filter(s => s.id <= this.state.editing.session.current);
         }
@@ -2308,19 +2309,15 @@ export class ToolBox extends G3WObject {
    */
   __undo() {
     let items;
-    if (this.state.editing.session.current === this._states[0].id) {
-      this.state.editing.session.current = null;
-      items = this._states[0].items;
-    } else {
-      this._states.find((state, idx) => {
-        if (state.id === this.state.editing.session.current) {
-          items = this._states[idx].items;
-          this.state.editing.session.current = this._states[idx-1].id;
-          return true;
-        }
-      })
-    }
-    items = checkSessionItems(this._history.id, items, 0);
+    this._states.find((state, idx) => {
+      if (state.id === this.state.editing.session.current) {
+        //get item of current state
+        items = checkSessionItems(this._history.id, this._states[idx].items, 0);
+        //set current the previous one
+        this.state.editing.session.current = 0 === idx ? null : this._states[idx - 1].id;
+        return true;
+      }
+    })
     // set internal state
     this.__canUndo();
     this.__canCommit();
@@ -2344,8 +2341,8 @@ export class ToolBox extends G3WObject {
       this.state.editing.session.current = this._states[0].id;
     } else {
       this._states.find((state, idx) => {
-        if (this.state.editing.session.current === state.id) {
-          this.state.editing.session.current = this._states[idx+1].id;
+        if (state.id === this.state.editing.session.current) {
+          this.state.editing.session.current = this._states[idx + 1].id;
           items = this._states[idx+1].items;
           return true;
         }
@@ -2364,7 +2361,7 @@ export class ToolBox extends G3WObject {
    * 
    * @param id
    * 
-   * @returns {T}
+   * @returns { Object }
    *
    * @since g3w-client-plugin-editing@v3.8.0
    */

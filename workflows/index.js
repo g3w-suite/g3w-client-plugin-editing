@@ -212,9 +212,13 @@ export class ModifyGeometryVertexStep extends Step {
   run(inputs, context) {
     let newFeature, originalFeature;
     return $promisify(new Promise((resolve, reject) => {
-      const layerId       = inputs.layer.getId();
-      const feature       = this._feature = inputs.features[0];
+      const layerId         = inputs.layer.getId();
+      const feature         = this._feature = inputs.features[0];
       this._originalStyle = inputs.layer.getEditingLayer().getStyle();
+      //set state to enable/disable save button changes
+      const state         = {
+        modified: false
+      }
       feature.setStyle(() => [
         new ol.style.Style({
           image:    new ol.style.Circle({ radius: 5, fill: null, stroke: new ol.style.Stroke({color: 'orange', width: 2}) }),
@@ -227,6 +231,44 @@ export class ModifyGeometryVertexStep extends Step {
         }),
         new ol.style.Style({ stroke: new ol.style.Stroke({ color: 'yellow', width: 4 }) })
       ]);
+
+
+      GUI.showUserMessage({
+        type:     'tool',
+        position: 'left',
+        size:     'small',
+        title: 'plugins.editing.tools.update_vertex',
+        closable: false,
+        hooks: {
+          body: {
+            template: `
+              <div style = "display: flex; justify-content: space-between; padding: 10px;"> 
+                <button v-disabled = "false === state.modified" @click.stop = "resolve" v-t = "'save'"   class = "btn btn-success"></button>
+                <button @click.stop = "reject"  v-t = "'cancel'" class = "btn btn-danger"></button>
+              </div>
+            `,
+            data() {
+              return { state }
+            },
+            methods: {
+              resolve() {
+                this.done();
+                inputs.features.push(newFeature);
+                resolve(inputs);
+              },
+              reject()  { this.done(); reject(); },
+              done()   {
+                //register temporary changes to save or rollback to current editing feature state
+                context.session.pushUpdate(layerId, newFeature, originalFeature);
+                GUI.closeUserMessage();
+                GUI.disableSideBar(false);
+              }
+            },
+            created() { GUI.disableSideBar(true); }
+          }
+        }
+      })
+
       this._modifyInteraction = this.addInteraction(
         new ol.interaction.Modify({
           features:        new ol.Collection(inputs.features),
@@ -235,23 +277,19 @@ export class ModifyGeometryVertexStep extends Step {
             const features = e.map.getFeaturesAtPixel(e.pixel, { hitTolerance: 10 });
             //in a collections, the first element is a collection of features
             //instead the second element and the others are features
-            if (features.length >= 2) { //consider maybe other features very close to current editing feature
-              if (features.slice(1).find(f => feature._uid === f._uid)) {
-                return true;
-              }
+            //consider maybe other features very close to current editing feature
+            if (features.length >= 2 && features.slice(1).find(f => feature._uid === f._uid)) {
+              return true;
             }
-            resolve(inputs);
           },
         }), {
-          'modifystart': e => { originalFeature = e.features.getArray()[0].clone(); },
+          'modifystart': e => { originalFeature = originalFeature || e.features.getArray()[0].clone() },
           'modifyend':   e => {
-            const feature = e.features.getArray()[0];
-            if (feature.getGeometry().getExtent() !== originalFeature.getGeometry().getExtent()) {
-              evaluateExpressionFields({ inputs, context, feature })
+            newFeature = e.features.getArray()[0];
+            if (newFeature.getGeometry().getExtent() !== originalFeature.getGeometry().getExtent()) {
+              evaluateExpressionFields({ inputs, context, feature: newFeature })
                 .finally(() => {
-                  newFeature = feature.clone();
-                  context.session.pushUpdate(layerId, newFeature, originalFeature);
-                  inputs.features.push(newFeature);
+                  state.modified = true;
                 });
             }
           }
