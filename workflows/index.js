@@ -210,10 +210,11 @@ export class ModifyGeometryVertexStep extends Step {
   }
 
   run(inputs, context) {
-    let newFeature, originalFeature;
+    let newFeature;
     return $promisify(new Promise((resolve, reject) => {
       const layerId         = inputs.layer.getId();
       const feature         = this._feature = inputs.features[0];
+      const originalFeature = feature.clone();
       this._originalStyle = inputs.layer.getEditingLayer().getStyle();
       //set state to enable/disable save button changes
       const state         = {
@@ -258,8 +259,11 @@ export class ModifyGeometryVertexStep extends Step {
               },
               reject()  { this.done(); reject(); },
               done()   {
-                //register temporary changes to save or rollback to current editing feature state
-                context.session.pushUpdate(layerId, newFeature, originalFeature);
+                //only in case of changes
+                if (state.modified) {
+                  //register temporary changes to save or rollback to current editing feature state
+                  context.session.pushUpdate(layerId, newFeature, originalFeature);
+                }
                 GUI.closeUserMessage();
                 GUI.disableSideBar(false);
               }
@@ -271,21 +275,18 @@ export class ModifyGeometryVertexStep extends Step {
 
       this._modifyInteraction = this.addInteraction(
         new ol.interaction.Modify({
-          features:        new ol.Collection(inputs.features),
-          deleteCondition: this._options.deleteCondition,
-          condition:       (e) => {
+          features:        new ol.Collection([feature]),
+          deleteCondition: this._options.deleteCondition || ol.events.condition.altKeyOnly,
+          condition:       e => {
             const features = e.map.getFeaturesAtPixel(e.pixel, { hitTolerance: 10 });
             //in a collections, the first element is a collection of features
             //instead the second element and the others are features
             //consider maybe other features very close to current editing feature
-            if (features.length >= 2 && features.slice(1).find(f => feature._uid === f._uid)) {
-              return true;
-            }
+            return features.length >= 2 && features.slice(1).find(f => feature._uid === f._uid);
           },
         }), {
-          'modifystart': e => { originalFeature = originalFeature || e.features.getArray()[0].clone() },
           'modifyend':   e => {
-            newFeature = e.features.getArray()[0];
+            newFeature = e.features.getArray()[0].clone();
             if (newFeature.getGeometry().getExtent() !== originalFeature.getGeometry().getExtent()) {
               evaluateExpressionFields({ inputs, context, feature: newFeature })
                 .finally(() => {

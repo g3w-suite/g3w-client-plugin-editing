@@ -89,7 +89,7 @@ class OlFeaturesStore extends FeaturesStore {
     if (index >= 0) {
       this._features.removeAt(index);
       this._features.insertAt(index, feature);
-      this._features.dispatchEvent('change')
+      this._features.dispatchEvent('change');
     }
   }
 
