@@ -314,6 +314,9 @@ export class Workflow extends G3WObject {
     try {
       //set step message
       this.setMessages({ help: step.state.help });
+
+      //@since 3.9.1
+      this.emit('settoolsoftool', (step.tools || []));
       //run step
       const outputs = await promisify(step.__run(inputs, this.getContext()));
       // onDone → check if all step is resolved

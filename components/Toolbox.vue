@@ -197,12 +197,24 @@
 </template>
 
 <script>
+  import { setVertexStyle } from "../utils/setVertexStyle";
+
   const { GUI }                    = g3wsdk.gui;
   const { Layer }                  = g3wsdk.core.layer;
   const { getResolutionFromScale } = g3wsdk.ol.utils;
   const { tPlugin }                = g3wsdk.core.i18n;
 
   let snapInteraction;
+  const snapSource = new ol.source.Vector({ features: [] });
+
+  snapSource.on('addfeature', ({ feature }) => {
+    setVertexStyle({
+      feature,
+      vertexColor: 'black',
+      lineColor:   'black'
+    })
+  })
+
 
   export default {
 
@@ -351,7 +363,7 @@
        */
       toggleFilterByRelation() {
         this.toggled.relation = !this.toggled.relation;
-        this.$emit('update-filter-layers', this.toggled.relation ? [this.state.id, ...this.state.editing.dependencies]: []);
+        this.$emit('update-filter-layers', this.toggled.relation ? [this.state.id, ...this.state.editing.dependencies] : []);
       },
 
       /**
@@ -386,12 +398,11 @@
          */
         this.snapUnwatches = [];
 
-        this.$watch(() => tool.options.checked,    () => this.activeSnapInteraction());
-        this.$watch(() => tool.options.checkedAll, () => this.activeSnapInteraction());
+        this.$watch(() => tool.options.checked,    this.activeSnapInteraction);
+        this.$watch(() => tool.options.checkedAll, this.activeSnapInteraction);
         // Toggle snap interaction
         this.$watch(() => tool.options.active, () => {
-          if (tool.options.active) {
-            this.activeSnapInteraction();
+          if (tool.options.active) { this.activeSnapInteraction();
           } else if (snapInteraction) {
             GUI.getService('map').removeInteraction(snapInteraction);
           }
@@ -453,7 +464,11 @@
           this.snapUnwatches = null;
           this.snapToolboxes = null;
           this.snapEvents    = null;
-        } catch (e) {
+          //reset feature vertex style
+          snapSource.getFeatures().forEach(f => f.setStyle(null));
+          //clear source features
+          snapSource.clear();
+        } catch(e) {
           console.warn(e);
         }
       },
@@ -463,8 +478,8 @@
        * 
        * @since g3w-client-plugin-editing@v3.8.0
        */
-      addSnapFeatures(features) {
-        this.snapFeatures.extend(features)
+      addSnapFeatures(features = []) {
+        snapSource.addFeatures(features);
       },
 
       /**
@@ -497,11 +512,25 @@
 
         // snap = true
         if ((tool.options.checked || tool.options.checkedAll) && tool.options.active) {
+          const uids      = this.state.activetool.getOperator().getInputs().features.map(f => f._uid);
+          snapSource.addFeatures((
+            tool.options.checkedAll
+              ? this.snapFeatures.getArray()
+              : tool.options.checked
+                ? tool.options.source.getFeatures()
+                : []
+          ).filter(f => !uids.includes(f._uid)));
+
           snapInteraction = new ol.interaction.Snap({
-            source:   !tool.options.checkedAll && tool.options.checked && tool.options.source, // SNAP TO LAYER: get option source as props pass from toolbox
-            features: tool.options.checkedAll  && this.snapFeatures                        // SNAP TO ALL: get features
+            source: snapSource,
           });
+
           map.addInteraction(snapInteraction);
+        } else {
+          //reset feature vertex style
+          snapSource.getFeatures().forEach(f => f.setStyle(null));
+          //clear source features
+          snapSource.clear();
         }
       },
 
@@ -523,9 +552,16 @@
         this.$emit('on-editing', bool);
       },
 
-      'state.toolsoftool'(newTools, oldTools) {
-        if (!newTools.length) {
-          oldTools.filter(t => 'measure' === t.type).forEach(t => t.options.onChange(false));
+      'state.toolsoftool'(newTools = [], oldTools = []) {
+        if (0 === newTools.length) {
+          oldTools.forEach(t => {
+            if ('measure' === t.type) {
+              t.options.onChange(false)
+            }
+            if ('snap' === t.type) {
+              t.options.checked = t.options.checkedAll = false;
+            }
+          })
           this._unloadSnap();
         } else {
           this._initSnap();
@@ -539,7 +575,6 @@
      */
     created() {
       this.$emit('canEdit', { id: this.state.id });
-      // this._initSnap();
     },
 
     async mounted() {

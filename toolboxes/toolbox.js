@@ -2085,9 +2085,9 @@ export class ToolBox extends G3WObject {
             const { active = false } = options;
             // set tool options
             tool.messages             = options.messages || tool.messages;
-            tool.visible              = undefined !== options.visible              ? options.visible              : true;
-            tool.enabled              = undefined !== options.enabled              ? options.enabled              : false;
-            tool.disabledtoolsoftools = undefined !== options.disabledtoolsoftools ? options.disabledtoolsoftools : [];
+            tool.visible              = undefined === options.visible              ? true :  options.visible;
+            tool.enabled              = undefined === options.enabled              ? false : options.enabled;
+            tool.disabledtoolsoftools = undefined === options.disabledtoolsoftools ? [] :    options.disabledtoolsoftools;
             if (tool.visible) {
               toolsId.push(id);
             }
@@ -2147,24 +2147,22 @@ export class ToolBox extends G3WObject {
       try {
         await promisify(this.stopActiveTool(tool));
 
+        //set empty tools of tools
         this.state.toolsoftool.splice(0);
+        //set as active tool
         this.state.activetool = tool;
 
         const workflow = tool.getOperator();
 
         if (workflow) {
           // filter eventually disable tools of tools
-          workflow.once('settoolsoftool', ts => this.state.toolsoftool.push(...(ts || []).filter(t => !tool.disabledtoolsoftools.includes(t.type))));
-          workflow.once('start',          ts => this.state.toolsoftool.forEach(t => (ts || []).includes(t.type) && (t.options.active = true)));
-          workflow.once('stop',           ts => this._deactivetools(tool, ts));
-          workflow.once('reject',         ts => this._deactivetools(tool, ts));
+          workflow.on('settoolsoftool',   ts => { this.state.toolsoftool.splice(0); this.state.toolsoftool.push(...(ts || []).filter(t => !tool.disabledtoolsoftools.includes(t.type))); });
+          // set tool messages
+          const messages      = (workflow.getHelpMessage() || workflow.getRunningStep()) ? this.state.activetool.messages : null;
+          this.state.toolmessages.help = messages && messages.help || null;
         }
 
         tool.start();
-
-        // set tool messages
-        const messages = this.state.activetool.getOperator().getHelpMessage() || this.state.activetool.getOperator().getRunningStep() ? this.state.activetool.messages : null;
-        this.state.toolmessages.help = messages && messages.help || null
 
       } catch(e) {
         console.warn(e);
@@ -2173,27 +2171,8 @@ export class ToolBox extends G3WObject {
   }
 
   /**
-   * @since g3w-client-plugin-editing@v3.8.0 
-   */
-  _deactivetools(tool, tools = []) {
-    // in case of deactivate tool and current active tool, it was clicked
-    if (tool === this.state.activetool) {
-      this.state.activetool = null;
-      this.state.toolsoftool.splice(0);
-    }
-    this.state.toolsoftool.forEach(t => tools.includes(t.type) && (t.options.active = false));
-  }
-
-  /**
-   * @returns {null}
-   */
-  getActiveTool() {
-    return this.state.activetool;
-  }
-
-  /**
    * @param tool
-   * 
+   *
    * @returns {*}
    */
   stopActiveTool(tool) {
@@ -2216,7 +2195,14 @@ export class ToolBox extends G3WObject {
       } catch(e) {
         console.warn(e);
       }
-    });
+    })
+  }
+
+  /**
+   * @returns {null}
+   */
+  getActiveTool() {
+    return this.state.activetool;
   }
 
   /**
@@ -2257,7 +2243,7 @@ export class ToolBox extends G3WObject {
       });
     }
     this.state._disabledtools = null;
-    /** since 3.9.0  set show based on visibile porpety of config editing object setting*/
+    /** since 3.9.0  set show based on visibile property of config editing object setting*/
     this.state.show           = this.state.layer.config.editing.visible;
     //need to set selected false
     this.state.selected = false;

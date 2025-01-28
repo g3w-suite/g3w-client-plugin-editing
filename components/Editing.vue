@@ -33,12 +33,12 @@
       </div>
 
       <!-- UNDO BUTTON -->
-      <div @click.stop = "undo" :class = "['editing-button', (canUndo ? 'enabled': '')]">
+      <div v-disabled = "(canCommit && activetool)" @click.stop = "undo" :class = "['editing-button', (canUndo ? 'enabled': '')]">
         <span :class = "['editing-icon', g3wtemplate.font['arrow-left']]"></span>
       </div>
 
       <!-- REDO BUTTON -->
-      <div @click.stop = "redo" :class = "['editing-button', (canRedo ? 'enabled' : '')]">
+      <div v-disabled = "(canCommit && activetool)" @click.stop = "redo" :class = "['editing-button', (canRedo ? 'enabled' : '')]">
         <span :class = "['editing-icon', g3wtemplate.font['arrow-right']]"></span>
       </div>
 
@@ -258,6 +258,7 @@
       stopTool(id) {
         if (id) {
           this.service.getToolBoxById(id).stopActiveTool();
+          this.activetool = null;
         }
       },
 
@@ -543,6 +544,7 @@
           fids:      [],
           formatter: 1
         };
+
         layerIdChanges
           .forEach(id => {
             const fids = [...this.state.featuresOnClose[id]];

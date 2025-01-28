@@ -1441,11 +1441,12 @@ new (class extends Plugin {
         id:            "editing-panel",
         title:         opts.title || "plugins.editing.editing_data",
         internalPanel: new (Vue.extend(require('./components/Editing.vue').default))({
-          service:       this,
-          resourcesurl:  opts.resourcesUrl || GUI.getResourcesUrl(),
-          showcommitbar: undefined !== opts.showcommitbar ? opts.showcommitbar : true,
+          service:           this,
+          resourcesurl:      opts.resourcesUrl || GUI.getResourcesUrl(),
+          showcommitbar:     undefined === opts.showcommitbar || opts.showcommitbar,
         }),
-      });
+      })
+
       GUI.showPanel(this.state.panel);
 
       if (!this.state.show_errors && this.state.layers_in_error) {

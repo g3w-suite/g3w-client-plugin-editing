@@ -14,6 +14,7 @@ import { getFeatureTableFieldValue }                    from '../utils/getFeatur
 import { addRemoveToMultipleSelectFeatures }            from '../utils/addRemoveToMultipleSelectFeatures';
 import { promisify, $promisify }                        from '../utils/promisify';
 import { isSameBaseGeometryType }                       from '../utils/isSameBaseGeometryType';
+import { setVertexStyle }                               from "../utils/setVertexStyle";
 import { PickFeaturesInteraction }                      from '../interactions/pickfeaturesinteraction';
 
 import { Workflow }                                     from '../g3wsdk/workflow/workflow';
@@ -197,7 +198,7 @@ export class AddFeatureStep extends Step {
 export class ModifyGeometryVertexStep extends Step {
 
   constructor(options = {}) {
-    options.snap = undefined !== options.snap ? options.snap : true;
+    options.snap = undefined === options.snap || options.snap;
     options.help = "editing.steps.help.edit_feature_vertex";
 
     super(options);
@@ -220,20 +221,10 @@ export class ModifyGeometryVertexStep extends Step {
       const state         = {
         modified: false
       }
-      feature.setStyle(() => [
-        new ol.style.Style({
-          image:    new ol.style.Circle({ radius: 5, fill: null, stroke: new ol.style.Stroke({color: 'orange', width: 2}) }),
-          geometry: feature => new ol.geom.MultiPoint(
-            ( // in the case of multipolygon geometry
-              Geometry.isPolygonGeometryType(inputs.layer.getGeometryType())
-              && Geometry.isMultiGeometry(inputs.layer.getGeometryType())
-            ) ? feature.getGeometry().getCoordinates()[0][0] : feature.getGeometry().getCoordinates()[0]
-          )
-        }),
-        new ol.style.Style({ stroke: new ol.style.Stroke({ color: 'yellow', width: 4 }) })
-      ]);
 
+      setVertexStyle({ feature });
 
+      //Show user message to save or not vertex changes
       GUI.showUserMessage({
         type:     'tool',
         position: 'left',
@@ -244,7 +235,7 @@ export class ModifyGeometryVertexStep extends Step {
           body: {
             template: `
               <div style = "display: flex; justify-content: space-between; padding: 10px;"> 
-                <button v-disabled = "false === state.modified" @click.stop = "resolve" v-t = "'save'"   class = "btn btn-success"></button>
+                <button v-disabled = "false === state.modified" @click.stop = "resolve" v-t = "'save'" class = "btn btn-success"></button>
                 <button @click.stop = "reject"  v-t = "'cancel'" class = "btn btn-danger"></button>
               </div>
             `,
@@ -264,11 +255,9 @@ export class ModifyGeometryVertexStep extends Step {
                   //register temporary changes to save or rollback to current editing feature state
                   context.session.pushUpdate(layerId, newFeature, originalFeature);
                 }
-                GUI.closeUserMessage();
-                GUI.disableSideBar(false);
               }
             },
-            created() { GUI.disableSideBar(true); }
+            created() {  }
           }
         }
       })
@@ -311,6 +300,7 @@ export class ModifyGeometryVertexStep extends Step {
   }
 
   stop() {
+    GUI.closeUserMessage();
     this._feature.setStyle(this._originalStyle);
     return true;
   }

@@ -432,7 +432,7 @@ export class Step extends G3WObject {
               this.source  = layer.getEditingLayer().getSource();
             },
             stop() {
-              this.active = false;
+              this.active = this.checked = this.checkedAll = false;
             }
           }
         },
@@ -446,6 +446,7 @@ export class Step extends G3WObject {
             },
             stop() {
               step.removeMeasureInteraction();
+              this.checked = false;
               this.onChange(false);
             },
             onChange(bool) {
