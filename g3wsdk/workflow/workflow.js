@@ -376,7 +376,7 @@ export class Workflow extends G3WObject {
           closable: false,
           hooks: {
             body: {
-              ...require('../../components/UserMessage.vue'),
+              ...require('../../components/UserMessage.vue').default,
               data: () => ({
                 steps: this._userMessageSteps,
               })

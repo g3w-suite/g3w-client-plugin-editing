@@ -15,14 +15,14 @@ export function isPointOnVertex({
   switch (type) {
     case 'Polygon':
     case 'MultiLineString':
-      return _.flatMap(geometry.getCoordinates()).some(coords);
+      return geometry.getCoordinates().flat().some(coords);
  
     case 'LineString':
     case 'MultiPoint':
       return geometry.getCoordinates().some(coords);
  
     case 'MultiPolygon':
-      return geometry.getPolygons().some(poly => _.flatMap(poly.getCoordinates()).some(coords));
+      return geometry.getPolygons().some(poly => poly.getCoordinates().flat().some(coords));
  
     case 'Point':
       return g3wsdk.core.geoutils.areCoordinatesEqual(coordinates, geometry.getCoordinates());

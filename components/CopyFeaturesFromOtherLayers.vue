@@ -22,8 +22,6 @@
 
 <script>
 
-  const { GUI }                                  = g3wsdk.gui;
-
   export default {
 
     name: 'Copyfeaturesfromotherlayers',
