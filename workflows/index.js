@@ -222,6 +222,7 @@ export class ModifyGeometryVertexStep extends Step {
         modified: false
       }
 
+      //set vertex style to editing feature
       setVertexStyle({ feature });
 
       //Show user message to save or not vertex changes
@@ -244,20 +245,18 @@ export class ModifyGeometryVertexStep extends Step {
             },
             methods: {
               resolve() {
-                this.done();
                 inputs.features.push(newFeature);
                 resolve(inputs);
               },
-              reject()  { this.done(); reject(); },
-              done()   {
-                //only in case of changes
-                if (state.modified) {
-                  //register temporary changes to save or rollback to current editing feature state
-                  context.session.pushUpdate(layerId, newFeature, originalFeature);
-                }
-              }
+              reject()  { reject(); },
             },
-            created() {  }
+            beforeDestroy() {
+              //only in case of changes
+              if (state.modified) {
+                //register temporary changes to save or rollback to current editing feature state
+                context.session.pushUpdate(layerId, newFeature, originalFeature);
+              }
+            }
           }
         }
       })

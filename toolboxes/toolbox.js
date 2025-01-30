@@ -1955,16 +1955,17 @@ export class ToolBox extends G3WObject {
    */
   setSelected(bool = false) {
     this.state.selected = bool;
+
+    if (false === this.state.selected && this.state.activetool) {
+      this.stopActiveTool();
+    }
+
+    const map = GUI.getService('map').getMap();
     //Check if layer has a scale constraint
     if (this.state._constraints.scale) {
-      const map = GUI.getService('map').getMap();
       //run handle scale contraint handler function
       this._handleScaleConstraint();
 
-      //IN CASE START EDITING AND CAN EDIT NEED TO DISPATCH EVENT MOVE END MAP
-      if (this._start && this.state.canEdit) {
-        map.dispatchEvent({ type: this._getFeaturesEvent.event, target: map })
-      }
       //SELECTED AND NOT REGISTER MAP CHANGE RESOLUTION
       if (this.state.selected && !this.keyChangeResolution) {
         this.keyChangeResolution = map.getView().on('change:resolution', () => this._handleScaleConstraint() );
@@ -1975,6 +1976,11 @@ export class ToolBox extends G3WObject {
         ol.Observable.unByKey(this.keyChangeResolution);
         this.keyChangeResolution = null;
       }
+    }
+
+    //IN CASE START EDITING AND CAN EDIT NEED TO DISPATCH EVENT MOVE END MAP
+    if (this.state.selected && this._start && (this.state._constraints.scale ? this.state.canEdit : true)) {
+      map.dispatchEvent({ type: this._getFeaturesEvent.event, target: map });
     }
   }
 
@@ -2147,8 +2153,6 @@ export class ToolBox extends G3WObject {
       try {
         await promisify(this.stopActiveTool(tool));
 
-        //set empty tools of tools
-        this.state.toolsoftool.splice(0);
         //set as active tool
         this.state.activetool = tool;
 
@@ -2156,7 +2160,10 @@ export class ToolBox extends G3WObject {
 
         if (workflow) {
           // filter eventually disable tools of tools
-          workflow.on('settoolsoftool',   ts => { this.state.toolsoftool.splice(0); this.state.toolsoftool.push(...(ts || []).filter(t => !tool.disabledtoolsoftools.includes(t.type))); });
+          workflow.on('settoolsoftool', ts => {
+            //set empty tools of tools
+            this.state.toolsoftool = (ts || []).filter(t => !tool.disabledtoolsoftools.includes(t.type))
+          })
           // set tool messages
           const messages      = (workflow.getHelpMessage() || workflow.getRunningStep()) ? this.state.activetool.messages : null;
           this.state.toolmessages.help = messages && messages.help || null;
@@ -2189,7 +2196,8 @@ export class ToolBox extends G3WObject {
           activeTool.removeAllListeners();
           await promisify(activeTool.stop(true));
         }
-        this.state.toolsoftool.splice(0);
+        //@since 3.9.1 Changed to set empty array cause reactivity of vue instead of splice(0)
+        this.state.toolsoftool = [];
         this.state.toolmessages.help = null;
         this.state.activetool        = null;
       } catch(e) {
