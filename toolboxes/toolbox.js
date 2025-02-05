@@ -1723,12 +1723,10 @@ export class ToolBox extends G3WObject {
         await promisify(this._session.stop());
         //set start to false
         this._start           = false
-        this.state.editing.on = false;
-        this.state.enabled    = false;
         this.stopLoading();
+        this.setEditing(false);
         this.state._getFeaturesOption = {};
         this.stopActiveTool();
-        this.enableTools(false);
         this.clearToolboxMessages();
         this.emit('stop-editing');
         // clear layer unique field values
@@ -1903,6 +1901,7 @@ export class ToolBox extends G3WObject {
     this.setEnable(bool);
     this.state.editing.on = bool;
     this.enableTools(bool);
+    this.state.layer.setInEditing(bool);
   }
 
   /**
