@@ -4,6 +4,9 @@ const { Geometry } = g3wsdk.core.geoutils;
  * @param feature
  * @param lineColor,
  * @param vertexColor
+ * @param strokeWidth
+ * @param radius
+ * @param fillVertex
  */
 export function setVertexStyle({
   feature,
