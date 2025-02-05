@@ -203,18 +203,7 @@
   const { tPlugin }                = g3wsdk.core.i18n;
 
   let snapInteraction;
-  const snapSource = new ol.source.Vector();
-
-  //Listen add feature ad set vertex style
-  snapSource.on('addfeature', ({ feature }) => {
-    setVertexStyle({
-      feature,
-      vertexColor: 'black',
-      lineColor:   'black'
-    })
-  })
-
-
+  const snapFeatures = new ol.Collection([]);
 
   export default {
 
@@ -469,10 +458,10 @@
        * @since 3.9.1 Clear snap features
        */
       clearSnapFeatures() {
-        //reset feature vertex style
-        snapSource.getFeatures().forEach(f => f.setStyle(null));
+        //reset style
+        snapFeatures.getArray().forEach(f => f.setStyle(null));
         //clear source features
-        snapSource.clear();
+        snapFeatures.clear();
       },
 
       /**
@@ -481,7 +470,16 @@
        * @since g3w-client-plugin-editing@v3.8.0
        */
       addSnapFeatures(features = []) {
-        snapSource.addFeatures(features.filter(f => !this.uids.includes(f._uid)));
+        features
+          .filter(f => !this.uids.includes(f._uid))
+          .forEach(f => {
+            setVertexStyle({
+              feature: f,
+              vertexColor: 'black',
+              lineColor:   'black'
+            })
+            snapFeatures.push(f);
+          });
       },
 
       /**
@@ -512,12 +510,13 @@
        */
       handleSnapInteractionFeatures({ tool, active, all } = {}) {
         const map  = GUI.getService('map');
-
         // snap = true
         if (active) {
+          //clear and remove eventually previous feature and snap interaction
+          this.clearSnap();
           g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing')
             .getLayers()
-            .filter(l => Layer.LayerTypes.VECTOR === l.getType()) // skip raster, alphanumerical..
+            .filter(l => l.isInEditing() && Layer.LayerTypes.VECTOR === l.getType()) // skip not in editing, raster, alphanumerical..
             .filter(l => all || tool.options.layerId === l.getId())
             .forEach(l => {
               const source  = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').getToolBoxById(l.getId()).getLayer().getEditingSource();
@@ -530,12 +529,12 @@
                 //G3WObject event keys
                 settersAndKeys: {
                   'addFeature':  source.onbefore('addFeature',  this.addSnapFeatures),
-                  'clear':       source.onbefore('clear', () => source.readFeatures().forEach(f => snapSource.removeFeature(f)))
+                  'clear':       source.onbefore('clear', () => source.readFeatures().forEach(f => snapFeatures.remove(f)))
                 },
               });
 
             });
-          snapInteraction = new ol.interaction.Snap({ source: snapSource });
+          snapInteraction = new ol.interaction.Snap({ features: snapFeatures });
           map.addInteraction(snapInteraction);
         }
         else {
