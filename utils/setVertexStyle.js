@@ -8,15 +8,21 @@ const { Geometry } = g3wsdk.core.geoutils;
 export function setVertexStyle({
   feature,
   vertexColor = 'red',
-  lineColor   = 'yellow'
+  lineColor   = 'yellow',
+  fillVertex= false,
+  strokeWidth= 3,
+  radius     = 4,
 } = {}) {
   const geometryType = feature.getGeometry().getType();
   feature.setStyle(() => [
     new ol.style.Style({
       image: new ol.style.Circle({
-        radius: 5,
-        fill:   null,
-        stroke: new ol.style.Stroke({ color: vertexColor, width: 3 })
+        radius,
+        ...(fillVertex
+          ? { fill: new ol.style.Fill({ color: vertexColor }) }
+          : { stroke: new ol.style.Stroke({ color: vertexColor, width: 3 }) }
+        )
+
       }),
       geometry: f => new ol.geom.MultiPoint(
         ( // in the case of multipolygon geometry
@@ -28,6 +34,6 @@ export function setVertexStyle({
             : [f.getGeometry().getCoordinates()]
       )
     }),
-    new ol.style.Style({ stroke: new ol.style.Stroke({ color: lineColor, width: 4 })})
+    new ol.style.Style({ stroke: new ol.style.Stroke({ color: lineColor, width: strokeWidth })})
   ]);
 }

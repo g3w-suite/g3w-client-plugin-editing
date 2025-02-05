@@ -476,7 +476,8 @@
             setVertexStyle({
               feature: f,
               vertexColor: 'black',
-              lineColor:   'black'
+              fillVertex:  true,
+              lineColor:   'black',
             })
             snapFeatures.push(f);
           });
