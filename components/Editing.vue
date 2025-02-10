@@ -7,11 +7,6 @@
 
     <bar-loader :loading = "saving"/>
 
-    <helpdiv
-      v-if = "layersInEditing > 0"
-      style = "font-weight: bold"
-      message = "plugins.editing.close_editing_panel.message" />
-
     <!-- OFFLINE MESSAGE -->
     <div
       v-if  = "!appState.online"
@@ -449,7 +444,13 @@
        * @since g3w-client-plugin-editing@v3.8.0
        */
       layersInEditing(n) {
-        document.getElementsByClassName('close-pane-button')[0].classList[0 === n ? 'remove' : 'add']('g3w-disabled');
+        this.$gui.updateSidebarButton({
+          type: 'close',
+          opts: {
+            enabled: 0 === n,
+            tooltip: 0 === n ? this.tooltip : 'plugins.editing.close_editing_panel.message',
+          }
+        })
       },
 
       /**
@@ -483,6 +484,9 @@
     },
 
     created() {
+
+      //get original tooltip close sidebar button
+      this.tooltip = this.$gui.sidebar.buttons.close.tooltip;
 
       this._selectedlayers = []; //store previous selected layers
 
