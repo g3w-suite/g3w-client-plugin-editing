@@ -30,8 +30,8 @@ export class Workflow extends G3WObject {
 
     super();
 
-     /** @since g3w-client-plugin-editing@v3.8.0*/
-    this._type =  undefined !== options.type ? options.type : null;
+    /** @since g3w-client-plugin-editing@v3.8.0*/
+    this._type = undefined !== options.type ? options.type : null;
 
     /**
      * @since g3w-client-plugin-editing@v3.8.0
@@ -226,7 +226,7 @@ export class Workflow extends G3WObject {
   /**
    * @param steps
    */
-  setSteps(steps=[]) {
+  setSteps(steps = []) {
     this._steps = steps;
     this.setUserMessagesSteps(steps);
   }
@@ -266,7 +266,7 @@ export class Workflow extends G3WObject {
    */
   clearMessages() {
     this._messages.help = null;
-    if (Object.keys(this._userMessageSteps).length) {
+    if (Object.keys(this._userMessageSteps).length > 0) {
       this.clearUserMessagesSteps();
     }
   }
@@ -275,14 +275,14 @@ export class Workflow extends G3WObject {
    * @returns { * | null }
    */
   getLastStep() {
-    return this._steps.length ? this._steps[ this._steps.length - 1 ] : null;
+    return this._steps.length > 0 ? this._steps[ this._steps.length - 1 ] : null;
   }
 
   /**
-   * @returns { Step }
+   * @returns { Object }
    */
   getRunningStep() {
-    return this._steps.find(step => step.isRunning());
+    return this._steps.find(s => s.isRunning());
   }
 
   /**
@@ -314,6 +314,9 @@ export class Workflow extends G3WObject {
     try {
       //set step message
       this.setMessages({ help: step.state.help });
+
+      //@since 3.9.1
+      this.emit('settoolsoftool', (step.tools || []));
       //run step
       const outputs = await promisify(step.__run(inputs, this.getContext()));
       // onDone → check if all step is resolved
@@ -474,7 +477,7 @@ export class Workflow extends G3WObject {
       .keys(this._userMessageSteps)
       .forEach(type => {
         const step = this._userMessageSteps[type];
-        step.done = false;
+        step.done  = false;
         if (step.buttonnext) {
           step.buttonnext.disabled = true;
         }
@@ -485,7 +488,7 @@ export class Workflow extends G3WObject {
   /**
    * @since 3.9.0
    */
-  setBackButtonLabel(label=null) {
+  setBackButtonLabel(label = null) {
     this.backbuttonlabel = label;
   }
 
@@ -542,7 +545,7 @@ export class Workflow extends G3WObject {
    * 
    * @since g3w-client-editing@v3.8.0
    */
-  startFromLastStep(options) {
+  startFromLastStep(options = {}) {
     this.setSteps([ this.getSteps().pop() ]);
     return this.start(options);
   }
@@ -554,7 +557,7 @@ export class Workflow extends G3WObject {
    */
   getCurrentFeature() {
     const feats = this.getFeatures();
-    return feats[feats.length -1];
+    return feats[feats.length - 1];
   }
 
   /**
@@ -583,7 +586,7 @@ export class Workflow extends G3WObject {
    * @since g3w-client-editing@v3.8.0
    */
   escKeyUpHandler(evt) {
-    if (evt.keyCode === 27) {
+    if (27 === evt.keyCode) {
       evt.data.workflow.reject();
       evt.data.callback();
     }
@@ -614,7 +617,7 @@ export class Workflow extends G3WObject {
    */
   registerEscKeyEvent(callback) {
     this.on('start', () => this.bindEscKeyUp(callback));
-    this.on('stop', () => this.unbindEscKeyUp());
+    this.on('stop',  () => this.unbindEscKeyUp());
   }
 
 }

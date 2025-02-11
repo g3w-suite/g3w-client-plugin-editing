@@ -1,6 +1,6 @@
 export default {
   close_editing_panel: {
-    message: "Terminare l'editing dei singoli layer per chiudere la sessione"
+    message: "⚠️ Prima conferma le modifiche (✅) su ogni livello"
   },
   errors: {
     no_layers: "Si è verificato un errore nel caricamento dei layers in editing.",

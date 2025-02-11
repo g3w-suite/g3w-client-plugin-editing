@@ -7,11 +7,6 @@
 
     <bar-loader :loading = "saving"/>
 
-    <helpdiv
-      v-if = "layersInEditing > 0"
-      style = "font-weight: bold"
-      message = "plugins.editing.close_editing_panel.message" />
-
     <!-- OFFLINE MESSAGE -->
     <div
       v-if  = "!appState.online"
@@ -33,12 +28,12 @@
       </div>
 
       <!-- UNDO BUTTON -->
-      <div @click.stop = "undo" :class = "['editing-button', (canUndo ? 'enabled': '')]">
+      <div v-disabled = "(canCommit && activetool)" @click.stop = "undo" :class = "['editing-button', (canUndo ? 'enabled': '')]">
         <span :class = "['editing-icon', g3wtemplate.font['arrow-left']]"></span>
       </div>
 
       <!-- REDO BUTTON -->
-      <div @click.stop = "redo" :class = "['editing-button', (canRedo ? 'enabled' : '')]">
+      <div v-disabled = "(canCommit && activetool)" @click.stop = "redo" :class = "['editing-button', (canRedo ? 'enabled' : '')]">
         <span :class = "['editing-icon', g3wtemplate.font['arrow-right']]"></span>
       </div>
 
@@ -258,6 +253,7 @@
       stopTool(id) {
         if (id) {
           this.service.getToolBoxById(id).stopActiveTool();
+          this.activetool = null;
         }
       },
 
@@ -448,7 +444,8 @@
        * @since g3w-client-plugin-editing@v3.8.0
        */
       layersInEditing(n) {
-        document.getElementsByClassName('close-pane-button')[0].classList[0 === n ? 'remove' : 'add']('g3w-disabled');
+        ApplicationState.sidebar.btn_close     = !n;
+        ApplicationState.sidebar.tooltip_close = n ? 'plugins.editing.close_editing_panel.message' : '';
       },
 
       /**
@@ -482,7 +479,6 @@
     },
 
     created() {
-
       this._selectedlayers = []; //store previous selected layers
 
       this.appState        = ApplicationState;
@@ -543,6 +539,7 @@
           fids:      [],
           formatter: 1
         };
+
         layerIdChanges
           .forEach(id => {
             const fids = [...this.state.featuresOnClose[id]];

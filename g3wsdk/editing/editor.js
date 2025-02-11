@@ -89,7 +89,7 @@ class OlFeaturesStore extends FeaturesStore {
     if (index >= 0) {
       this._features.removeAt(index);
       this._features.insertAt(index, feature);
-      this._features.dispatchEvent('change')
+      this._features.dispatchEvent('change');
     }
   }
 
@@ -269,7 +269,8 @@ export default class Editor extends G3WObject {
         item.feature[Actions[item.feature.getState()].opposite]();
       }
       // get method from object
-      this._featuresstore[Actions[item.feature.getState()].fnc](item.feature);
+      //@since 3.9.1 need to clone it otherwise it replace
+      this._featuresstore[Actions[item.feature.getState()].fnc](item.feature.clone());
     });
   }
 

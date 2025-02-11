@@ -1723,12 +1723,10 @@ export class ToolBox extends G3WObject {
         await promisify(this._session.stop());
         //set start to false
         this._start           = false
-        this.state.editing.on = false;
-        this.state.enabled    = false;
         this.stopLoading();
+        this.setEditing(false);
         this.state._getFeaturesOption = {};
         this.stopActiveTool();
-        this.enableTools(false);
         this.clearToolboxMessages();
         this.emit('stop-editing');
         // clear layer unique field values
@@ -1903,6 +1901,7 @@ export class ToolBox extends G3WObject {
     this.setEnable(bool);
     this.state.editing.on = bool;
     this.enableTools(bool);
+    this.state.layer.setInEditing(bool);
   }
 
   /**
@@ -1955,16 +1954,17 @@ export class ToolBox extends G3WObject {
    */
   setSelected(bool = false) {
     this.state.selected = bool;
+
+    if (false === this.state.selected && this.state.activetool) {
+      this.stopActiveTool();
+    }
+
+    const map = GUI.getService('map').getMap();
     //Check if layer has a scale constraint
     if (this.state._constraints.scale) {
-      const map = GUI.getService('map').getMap();
       //run handle scale contraint handler function
       this._handleScaleConstraint();
 
-      //IN CASE START EDITING AND CAN EDIT NEED TO DISPATCH EVENT MOVE END MAP
-      if (this._start && this.state.canEdit) {
-        map.dispatchEvent({ type: this._getFeaturesEvent.event, target: map })
-      }
       //SELECTED AND NOT REGISTER MAP CHANGE RESOLUTION
       if (this.state.selected && !this.keyChangeResolution) {
         this.keyChangeResolution = map.getView().on('change:resolution', () => this._handleScaleConstraint() );
@@ -1975,6 +1975,11 @@ export class ToolBox extends G3WObject {
         ol.Observable.unByKey(this.keyChangeResolution);
         this.keyChangeResolution = null;
       }
+    }
+
+    //IN CASE START EDITING AND CAN EDIT NEED TO DISPATCH EVENT MOVE END MAP
+    if (this.state.selected && this._start && (this.state._constraints.scale ? this.state.canEdit : true)) {
+      map.dispatchEvent({ type: this._getFeaturesEvent.event, target: map });
     }
   }
 
@@ -2085,9 +2090,9 @@ export class ToolBox extends G3WObject {
             const { active = false } = options;
             // set tool options
             tool.messages             = options.messages || tool.messages;
-            tool.visible              = undefined !== options.visible              ? options.visible              : true;
-            tool.enabled              = undefined !== options.enabled              ? options.enabled              : false;
-            tool.disabledtoolsoftools = undefined !== options.disabledtoolsoftools ? options.disabledtoolsoftools : [];
+            tool.visible              = undefined === options.visible              ? true :  options.visible;
+            tool.enabled              = undefined === options.enabled              ? false : options.enabled;
+            tool.disabledtoolsoftools = undefined === options.disabledtoolsoftools ? [] :    options.disabledtoolsoftools;
             if (tool.visible) {
               toolsId.push(id);
             }
@@ -2147,53 +2152,33 @@ export class ToolBox extends G3WObject {
       try {
         await promisify(this.stopActiveTool(tool));
 
-        this.state.toolsoftool.splice(0);
+        //set as active tool
         this.state.activetool = tool;
 
         const workflow = tool.getOperator();
 
         if (workflow) {
           // filter eventually disable tools of tools
-          workflow.once('settoolsoftool', ts => this.state.toolsoftool.push(...(ts || []).filter(t => !tool.disabledtoolsoftools.includes(t.type))));
-          workflow.once('start',          ts => this.state.toolsoftool.forEach(t => (ts || []).includes(t.type) && (t.options.active = true)));
-          workflow.once('stop',           ts => this._deactivetools(tool, ts));
-          workflow.once('reject',         ts => this._deactivetools(tool, ts));
+          workflow.on('settoolsoftool', ts => {
+            //set empty tools of tools
+            this.state.toolsoftool = (ts || []).filter(t => !tool.disabledtoolsoftools.includes(t.type))
+          })
+          // set tool messages
+          const messages      = (workflow.getHelpMessage() || workflow.getRunningStep()) ? this.state.activetool.messages : null;
+          this.state.toolmessages.help = messages && messages.help || null;
         }
 
         tool.start();
 
-        // set tool messages
-        const messages = this.state.activetool.getOperator().getHelpMessage() || this.state.activetool.getOperator().getRunningStep() ? this.state.activetool.messages : null;
-        this.state.toolmessages.help = messages && messages.help || null
-
-      } catch (e) {
+      } catch(e) {
         console.warn(e);
       }
     });
   }
 
   /**
-   * @since g3w-client-plugin-editing@v3.8.0 
-   */
-  _deactivetools(tool, tools = []) {
-    // in case of deactivate tool and current active tool, it was clicked
-    if (tool === this.state.activetool) {
-      this.state.activetool = null;
-      this.state.toolsoftool.splice(0);
-    }
-    this.state.toolsoftool.forEach(t => tools.includes(t.type) && (t.options.active = false));
-  }
-
-  /**
-   * @returns {null}
-   */
-  getActiveTool() {
-    return this.state.activetool;
-  }
-
-  /**
    * @param tool
-   * 
+   *
    * @returns {*}
    */
   stopActiveTool(tool) {
@@ -2210,13 +2195,21 @@ export class ToolBox extends G3WObject {
           activeTool.removeAllListeners();
           await promisify(activeTool.stop(true));
         }
-        this.state.toolsoftool.splice(0);
+        //@since 3.9.1 Changed to set empty array cause reactivity of vue instead of splice(0)
+        this.state.toolsoftool = [];
         this.state.toolmessages.help = null;
         this.state.activetool        = null;
       } catch(e) {
         console.warn(e);
       }
-    });
+    })
+  }
+
+  /**
+   * @returns {null}
+   */
+  getActiveTool() {
+    return this.state.activetool;
   }
 
   /**
@@ -2257,7 +2250,7 @@ export class ToolBox extends G3WObject {
       });
     }
     this.state._disabledtools = null;
-    /** since 3.9.0  set show based on visibile porpety of config editing object setting*/
+    /** since 3.9.0  set show based on visibile property of config editing object setting*/
     this.state.show           = this.state.layer.config.editing.visible;
     //need to set selected false
     this.state.selected = false;
@@ -2280,8 +2273,9 @@ export class ToolBox extends G3WObject {
       // in the history from the current "state" so if it
       // can create a new history
       if (null === this.state.editing.session.current) {
-        this._states = [{ id: uniqueId, items }]
+        this._states = [{ id: uniqueId, items }];
       } else {
+        //last state
         if (this._states.length > 0 && this.state.editing.session.current < this._states.at(-1).id) {
           this._states = this._states.filter(s => s.id <= this.state.editing.session.current);
         }
@@ -2308,19 +2302,15 @@ export class ToolBox extends G3WObject {
    */
   __undo() {
     let items;
-    if (this.state.editing.session.current === this._states[0].id) {
-      this.state.editing.session.current = null;
-      items = this._states[0].items;
-    } else {
-      this._states.find((state, idx) => {
-        if (state.id === this.state.editing.session.current) {
-          items = this._states[idx].items;
-          this.state.editing.session.current = this._states[idx-1].id;
-          return true;
-        }
-      })
-    }
-    items = checkSessionItems(this._history.id, items, 0);
+    this._states.find((state, idx) => {
+      if (state.id === this.state.editing.session.current) {
+        //get item of current state
+        items = checkSessionItems(this._history.id, this._states[idx].items, 0);
+        //set current the previous one
+        this.state.editing.session.current = 0 === idx ? null : this._states[idx - 1].id;
+        return true;
+      }
+    })
     // set internal state
     this.__canUndo();
     this.__canCommit();
@@ -2344,8 +2334,8 @@ export class ToolBox extends G3WObject {
       this.state.editing.session.current = this._states[0].id;
     } else {
       this._states.find((state, idx) => {
-        if (this.state.editing.session.current === state.id) {
-          this.state.editing.session.current = this._states[idx+1].id;
+        if (state.id === this.state.editing.session.current) {
+          this.state.editing.session.current = this._states[idx + 1].id;
           items = this._states[idx+1].items;
           return true;
         }
@@ -2364,7 +2354,7 @@ export class ToolBox extends G3WObject {
    * 
    * @param id
    * 
-   * @returns {T}
+   * @returns { Object }
    *
    * @since g3w-client-plugin-editing@v3.8.0
    */
@@ -2556,13 +2546,18 @@ export class ToolBox extends G3WObject {
     // fill history
     return $promisify(async () => {
       // add temporary modify to history
-      if (this.state.editing.session.changes.length) {
-        const uniqueId = options.id || Date.now();
-        await promisify(this.__add(uniqueId, this.state.editing.session.changes));
+      if (this.state.editing.session.changes.length > 0) {
+        //@since 3.9.1 get array of uniqueIds
+        //case of modify vertex. Multi changes in one save
+        const uniqueIds = [];
+        await Promise.allSettled(this.state.editing.session.changes.map(c => {
+          const uniqueId = options.id || Date.now();
+          uniqueIds.push(uniqueId);
+          return promisify(this.__add(uniqueId, [c]));
+        }));
         // clear to temporary changes
         this.state.editing.session.changes = [];
-        // resolve if unique id
-        return uniqueId;
+        return uniqueIds;
       }
       return null;
     });
@@ -3009,7 +3004,7 @@ export class ToolBox extends G3WObject {
    */
   async _startOp(tool, options, hideSidebar) {
     // reset features
-    options.inputs.features = [];
+    options.inputs.features = options.features || [];
 
     if (hideSidebar) {
       GUI.hideSidebar();
@@ -3026,7 +3021,7 @@ export class ToolBox extends G3WObject {
       }
       this._session.rollback();
     } finally {
-      if (!tool.getOperator().runOnce && Layer.LayerTypes.TABLE !== this.getLayer().getType() ) {
+      if (!tool.getOperator().runOnce && Layer.LayerTypes.VECTOR === this.getLayer().getType() ) {
         await this._startOp(tool, options, hideSidebar);
       } else {
         tool.stop();
@@ -3039,16 +3034,16 @@ export class ToolBox extends G3WObject {
    * 
    * @since g3w-client-plugin-editing@v3.8.0
    */
-  _stopTool(tool, force=false) {
+  _stopTool(tool, force = false) {
     return $promisify(async () => {
       if (!tool.getOperator()) {
         tool.emit('stop', { session: this._session });
-        return
+        return;
       }
       try {
         await promisify(tool.getOperator().stop(force));
-      } catch (e) {
-        console.warn(e)
+      } catch(e) {
+        console.warn(e);
         this._session.rollback();
       } finally {
         tool.active = false;

@@ -14,6 +14,7 @@ import { getFeatureTableFieldValue }                    from '../utils/getFeatur
 import { addRemoveToMultipleSelectFeatures }            from '../utils/addRemoveToMultipleSelectFeatures';
 import { promisify, $promisify }                        from '../utils/promisify';
 import { isSameBaseGeometryType }                       from '../utils/isSameBaseGeometryType';
+import { setVertexStyle }                               from "../utils/setVertexStyle";
 import { PickFeaturesInteraction }                      from '../interactions/pickfeaturesinteraction';
 
 import { Workflow }                                     from '../g3wsdk/workflow/workflow';
@@ -197,7 +198,7 @@ export class AddFeatureStep extends Step {
 export class ModifyGeometryVertexStep extends Step {
 
   constructor(options = {}) {
-    options.snap = undefined !== options.snap ? options.snap : true;
+    options.snap = undefined === options.snap || options.snap;
     options.help = "editing.steps.help.edit_feature_vertex";
 
     super(options);
@@ -210,38 +211,75 @@ export class ModifyGeometryVertexStep extends Step {
   }
 
   run(inputs, context) {
-    let newFeature, originalFeature;
+    let newFeature;
     return $promisify(new Promise((resolve, reject) => {
-      const layerId       = inputs.layer.getId();
-      const feature       = this._feature = inputs.features[0];
+      const layerId         = inputs.layer.getId();
+      const feature         = this._feature = inputs.features[0];
+      const originalFeature = feature.clone();
       this._originalStyle = inputs.layer.getEditingLayer().getStyle();
-      feature.setStyle(() => [
-        new ol.style.Style({
-          image:    new ol.style.Circle({ radius: 5, fill: null, stroke: new ol.style.Stroke({color: 'orange', width: 2}) }),
-          geometry: feature => new ol.geom.MultiPoint(
-            ( // in the case of multipolygon geometry
-              Geometry.isPolygonGeometryType(inputs.layer.getGeometryType())
-              && Geometry.isMultiGeometry(inputs.layer.getGeometryType())
-            ) ? feature.getGeometry().getCoordinates()[0][0] : feature.getGeometry().getCoordinates()[0]
-          )
-        }),
-        new ol.style.Style({ stroke: new ol.style.Stroke({ color: 'yellow', width: 4 }) })
-      ]);
-      this._modifyInteraction = this.addInteraction(
-        new ol.interaction.Modify({
-          features:        new ol.Collection(inputs.features),
-          deleteCondition: this._options.deleteCondition
-        }), {
-          'modifystart': e => { originalFeature = e.features.getArray()[0].clone(); },
-          'modifyend':   e => {
-            const feature = e.features.getArray()[0];
-            if (feature.getGeometry().getExtent() !== originalFeature.getGeometry().getExtent()) {
-              evaluateExpressionFields({ inputs, context, feature }).finally(() => {
-                newFeature = feature.clone();
-                context.session.pushUpdate(layerId, newFeature, originalFeature);
+      //set state to enable/disable save button changes
+      const state         = {
+        modified: false
+      }
+
+      //set vertex style to editing feature
+      setVertexStyle({ feature });
+
+      //Show user message to save or not vertex changes
+      GUI.showUserMessage({
+        type:     'tool',
+        position: 'left',
+        size:     'small',
+        title: 'plugins.editing.tools.update_vertex',
+        closable: false,
+        hooks: {
+          body: {
+            template: `
+              <div style = "display: flex; justify-content: space-between; padding: 10px;"> 
+                <button v-disabled = "false === state.modified" @click.stop = "resolve" v-t = "'save'" class = "btn btn-success"></button>
+                <button @click.stop = "reject"  v-t = "'cancel'" class = "btn btn-danger"></button>
+              </div>
+            `,
+            data() {
+              return { state }
+            },
+            methods: {
+              resolve() {
                 inputs.features.push(newFeature);
                 resolve(inputs);
-              });
+              },
+              reject()  { reject(); },
+            },
+            beforeDestroy() {
+              //only in case of changes
+              if (state.modified) {
+                //register temporary changes to save or rollback to current editing feature state
+                context.session.pushUpdate(layerId, newFeature, originalFeature);
+              }
+            }
+          }
+        }
+      })
+
+      this._modifyInteraction = this.addInteraction(
+        new ol.interaction.Modify({
+          features:        new ol.Collection([feature]),
+          deleteCondition: this._options.deleteCondition || ol.events.condition.altKeyOnly,
+          condition:       e => {
+            const features = e.map.getFeaturesAtPixel(e.pixel, { hitTolerance: 10 });
+            //in a collections, the first element is a collection of features
+            //instead the second element and the others are features
+            //consider maybe other features very close to current editing feature
+            return features.length >= 2 && features.slice(1).find(f => feature._uid === f._uid);
+          },
+        }), {
+          'modifyend':   e => {
+            newFeature = e.features.getArray()[0].clone();
+            if (newFeature.getGeometry().getExtent() !== originalFeature.getGeometry().getExtent()) {
+              evaluateExpressionFields({ inputs, context, feature: newFeature })
+                .finally(() => {
+                  state.modified = true;
+                });
             }
           }
         }
@@ -261,6 +299,7 @@ export class ModifyGeometryVertexStep extends Step {
   }
 
   stop() {
+    GUI.closeUserMessage();
     this._feature.setStyle(this._originalStyle);
     return true;
   }

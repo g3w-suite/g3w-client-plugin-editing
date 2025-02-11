@@ -147,7 +147,6 @@
                     class   = "magic-checkbox snap_tools_of_tools"
                     :id     = "`snap_${state.id}`"
                     v-model = "tool.options.checked"
-                    @change = "snapAll && tool.options.checked ? tool.options.checkedAll = false : null "
                   />
                   <label :for = "`snap_${state.id}`" v-t-tooltip:right.create= " 'plugins.editing.toolsoftool.snap'">
                     <span :class = "g3wtemplate.font['magnete']"></span>
@@ -160,7 +159,6 @@
                     class   = "magic-checkbox snap_tools_of_tools"
                     :id     = "`snap_all_${state.id}`"
                     v-model = "tool.options.checkedAll"
-                    @change = "tool.options.checkedAll ? tool.options.checked = false : null"
                   />
                   <label
                     v-if                    = "snapAll"
@@ -197,21 +195,29 @@
 </template>
 
 <script>
+  import { setVertexStyle } from "../utils/setVertexStyle";
+
   const { GUI }                    = g3wsdk.gui;
   const { Layer }                  = g3wsdk.core.layer;
   const { getResolutionFromScale } = g3wsdk.ol.utils;
   const { tPlugin }                = g3wsdk.core.i18n;
 
   let snapInteraction;
+  const snapFeatures = new ol.Collection([]);
 
   export default {
 
     name: 'Toolbox',
 
-    props: [
-      'state',
-      'resourcesurl'
-    ],
+    props: {
+      state: {
+        type:      Object,
+        required : true
+      },
+      resourcesurl: {
+        type: String
+      }
+    },
 
     data() {
       return {
@@ -351,7 +357,7 @@
        */
       toggleFilterByRelation() {
         this.toggled.relation = !this.toggled.relation;
-        this.$emit('update-filter-layers', this.toggled.relation ? [this.state.id, ...this.state.editing.dependencies]: []);
+        this.$emit('update-filter-layers', this.toggled.relation ? [this.state.id, ...this.state.editing.dependencies] : []);
       },
 
       /**
@@ -359,22 +365,15 @@
        * 
        * @since g3w-client-plugin-editing@v3.8.0
        */
-      _initSnap() {
-        const tool = (this.state.toolsoftool || []).find(t => 'snap' === t.type);
+      _initSnap(tool) {
 
-        if (!tool) {
-          return;
-        }
+        //@since 3.9.1
+        this.uids          = this.state.activetool.getOperator().getInputs().features.map(f => f._uid);
 
         /**
          * @FIXME add description
          */
-        this.snapFeatures = new ol.Collection();
-
-        /**
-         * @FIXME add description
-         */
-        this.snapEvents = [];
+        this.snapEvents    = [];
 
         /**
          * editing toolboxes dependencies
@@ -386,45 +385,42 @@
          */
         this.snapUnwatches = [];
 
-        this.$watch(() => tool.options.checked,    () => this.activeSnapInteraction());
-        this.$watch(() => tool.options.checkedAll, () => this.activeSnapInteraction());
-        // Toggle snap interaction
-        this.$watch(() => tool.options.active, () => {
-          if (tool.options.active) {
-            this.activeSnapInteraction();
-          } else if (snapInteraction) {
-            GUI.getService('map').removeInteraction(snapInteraction);
-          }
-        });
+        this.checkbox      = {
+          bs: false,
+          ba: false
+        }
 
         g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing')
           .getLayers()
           .filter(l => Layer.LayerTypes.VECTOR === l.getType()) // skip raster, alphanumerical..
+          .filter(l => tool.options.layerId !== l.getId())
           .forEach(l => {
-            const toolbox = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').getToolBoxById(l.getId());
-            const source  = toolbox.getLayer().getEditingSource();
-
-            this.snapFeatures.extend(source.readFeatures());
-
-            this.snapEvents.push({
-              source,
-              olKey:           source.getFeaturesCollection().on('add', evt => this.addSnapFeatures([evt.element])),
-              settersAndKeys: {
-                'addFeatures': source.onbefore('addFeatures', this.addSnapFeatures),
-                'addFeature':  source.onbefore('addFeature', this.addSnapFeatures),
-                'clear':       source.onbefore('clear', () => { source.readFeatures().forEach(f => this.snapFeatures.remove(f)); })
-              },
-            });
-
             // SNAP TO ALL: check if the current editing layer is not equal to `layerId`
-            if (tool.options.layerId !== l.getId()) {
-              const editing = toolbox.getState().editing;
-              this.snapUnwatches.push(this.$watch(() => editing.on, this.setShowSnapAll));
-              this.snapToolboxes.push(editing);
-            }
-        });
+            const editing = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').getToolBoxById(l.getId()).getState().editing;
+            this.snapUnwatches.push(this.$watch(() => editing.on, this.setShowSnapAll));
+            this.snapToolboxes.push(editing);
+          })
 
-        this.setShowSnapAll();
+        this.snapUnwatches.push(this.$watch(
+          () => [ tool.options.checked, tool.options.checkedAll ],
+          ([ bs, ba ]) => {
+            if ((bs && this.checkbox.ba) || (ba && this.checkbox.bs)) {
+              tool.options[(bs && this.checkbox.ba) ? 'checkedAll' : 'checked'] = false;
+            }
+
+            this.checkbox.bs = bs;
+            this.checkbox.ba = ba;
+
+            //@TODO check way to checked off other
+            !(bs && ba) && this.handleSnapInteractionFeatures({
+              tool,
+              active: bs || ba,
+              all:    ba
+            })
+          }
+        ));
+
+        this.setShowSnapAll(tool);
 
       },
 
@@ -434,8 +430,6 @@
        * @since g3w-client-plugin-editing@v3.8.0
        */
       _unloadSnap() {
-        if (!snapInteraction) { return }
-
         try {
           // stops event listeners
           this
@@ -443,28 +437,31 @@
             .forEach(d => {
               Object
                 .keys(d.settersAndKeys)
-                .forEach(event => { d.source.un(event, d.settersAndKeys[event]) });
+                .forEach(event => d.source.un(event, d.settersAndKeys[event]));
               ol.Observable.unByKey(d.olKey)
             });
-          this.snapUnwatches.forEach(unwatch => unwatch());
 
-          snapInteraction    = null;
+          this.snapUnwatches.forEach(uw => uw());
 
-          this.snapUnwatches = null;
-          this.snapToolboxes = null;
-          this.snapEvents    = null;
-        } catch (e) {
+          this.snapUnwatches = [];
+          this.snapToolboxes = [];
+          this.snapEvents    = [];
+
+          this.clearSnapFeatures();
+
+        } catch(e) {
           console.warn(e);
         }
       },
 
       /**
-       * ORIGINAL SOURCE: g3w-client-plugin-editing/components/ToolsOfToolSnap.vue@v3.7.1
-       * 
-       * @since g3w-client-plugin-editing@v3.8.0
+       * @since 3.9.1 Clear snap features
        */
-      addSnapFeatures(features) {
-        this.snapFeatures.extend(features)
+      clearSnapFeatures() {
+        //reset style
+        snapFeatures.getArray().forEach(f => f.setStyle(null));
+        //clear source features
+        snapFeatures.clear();
       },
 
       /**
@@ -472,12 +469,18 @@
        * 
        * @since g3w-client-plugin-editing@v3.8.0
        */
-      setShowSnapAll() {
-        const tool = (this.state.toolsoftool || []).find(t => 'snap' === t.type);
-        if (tool) {
-          this.snapAll            = !!this.snapToolboxes.find(editing => editing.on);
-          tool.options.checkedAll = tool.options.showSnapAll ? tool.options.checkedAll : false;
-        }
+      addSnapFeatures(features = []) {
+        features
+          .filter(f => !this.uids.includes(f._uid))
+          .forEach(f => {
+            setVertexStyle({
+              feature: f,
+              vertexColor: 'black',
+              fillVertex:  true,
+              lineColor:   'black',
+            })
+            snapFeatures.push(f);
+          });
       },
 
       /**
@@ -485,23 +488,58 @@
        * 
        * @since g3w-client-plugin-editing@v3.8.0
        */
-      activeSnapInteraction() {
-        const map  = GUI.getService('map');
-        const tool = (this.state.toolsoftool || []).find(t => 'snap' === t.type);
+      setShowSnapAll(tool) {
+        this.snapAll            = !!this.snapToolboxes.find(editing => editing.on);
+        tool.options.checkedAll = tool.options.showSnapAll ? tool.options.checkedAll : false;
+      },
 
+      clearSnap() {
+        const map = GUI.getService('map');
+        this.clearSnapFeatures();
         if (snapInteraction) {
           map.removeInteraction(snapInteraction);
+          snapInteraction = null;
         }
 
-        snapInteraction = null;
+      },
 
+      /**
+       * ORIGINAL SOURCE: g3w-client-plugin-editing/components/ToolsOfToolSnap.vue@v3.7.1
+       * 
+       * @since g3w-client-plugin-editing@v3.8.0
+       *
+       */
+      handleSnapInteractionFeatures({ tool, active, all } = {}) {
+        const map  = GUI.getService('map');
         // snap = true
-        if ((tool.options.checked || tool.options.checkedAll) && tool.options.active) {
-          snapInteraction = new ol.interaction.Snap({
-            source:   !tool.options.checkedAll && tool.options.checked && tool.options.source, // SNAP TO LAYER: get option source as props pass from toolbox
-            features: tool.options.checkedAll  && this.snapFeatures                        // SNAP TO ALL: get features
-          });
+        if (active) {
+          //clear and remove eventually previous feature and snap interaction
+          this.clearSnap();
+          g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing')
+            .getLayers()
+            .filter(l => l.isInEditing() && Layer.LayerTypes.VECTOR === l.getType()) // skip not in editing, raster, alphanumerical..
+            .filter(l => all || tool.options.layerId === l.getId())
+            .forEach(l => {
+              const source  = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').getToolBoxById(l.getId()).getLayer().getEditingSource();
+              //add snap features
+              this.addSnapFeatures(source.readFeatures());
+              this.snapEvents.push({
+                source,
+                //OL event key
+                olKey:           source.getFeaturesCollection().on('add', evt => this.addSnapFeatures([evt.element])),
+                //G3WObject event keys
+                settersAndKeys: {
+                  'addFeature':  source.onbefore('addFeature',  this.addSnapFeatures),
+                  'clear':       source.onbefore('clear', () => source.readFeatures().forEach(f => snapFeatures.remove(f)))
+                },
+              });
+
+            });
+          snapInteraction = new ol.interaction.Snap({ features: snapFeatures });
           map.addInteraction(snapInteraction);
+        }
+        else {
+          this.clearSnap();
         }
       },
 
@@ -523,13 +561,22 @@
         this.$emit('on-editing', bool);
       },
 
-      'state.toolsoftool'(newTools, oldTools) {
-        if (!newTools.length) {
-          oldTools.filter(t => 'measure' === t.type).forEach(t => t.options.onChange(false));
+      'state.toolsoftool'(nts = [], ots = []) {
+        //no tools
+        if (nts.length === ots.length) { return }
+
+        //no new tools
+        if (0 === nts.length && ots.find(t => 'snap' === t.type)) {
+          this.clearSnap();
           this._unloadSnap();
-        } else {
-          this._initSnap();
         }
+
+        //no old tools
+        if (0 === ots.length) {
+          const snaptool = nts.find(t => 'snap' === t.type)
+          snaptool && this._initSnap(snaptool);
+        }
+
       },
 
     },
@@ -539,7 +586,6 @@
      */
     created() {
       this.$emit('canEdit', { id: this.state.id });
-      // this._initSnap();
     },
 
     async mounted() {
@@ -547,11 +593,6 @@
       // (ex. tools visibility which differs from default behaviour)
       await this.$nextTick();
     },
-
-    beforeDestroy() {
-      this._unloadSnap();
-    },
-
   };
 </script>
 
