@@ -185,6 +185,7 @@ new (class extends Plugin {
         showPanel:                        this.showPanel.bind(this),
         setSaveConfig:                    this.setSaveConfig.bind(this),
         addFormComponents:                this.addFormComponents.bind(this),
+        getEditableLayersId:              () => Object.keys(this.getEditableLayers())
       }
     });
 
