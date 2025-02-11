@@ -1,6 +1,6 @@
 export default {
   close_editing_panel: {
-    message: "To close editing form need to exit from editing layer"
+    message: "⚠️ To close editing form need to exit from editing layer"
   },
   errors: {
     no_layers: "Es tritt ein Fehler auf. Es ist nicht möglich, Layer zu bearbeiten",

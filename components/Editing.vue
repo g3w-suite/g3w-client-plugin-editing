@@ -444,13 +444,8 @@
        * @since g3w-client-plugin-editing@v3.8.0
        */
       layersInEditing(n) {
-        this.$gui.updateSidebarButton({
-          type: 'close',
-          opts: {
-            enabled: 0 === n,
-            tooltip: 0 === n ? this.tooltip : 'plugins.editing.close_editing_panel.message',
-          }
-        })
+        ApplicationState.sidebar.btn_close     = !n;
+        ApplicationState.sidebar.tooltip_close = n ? 'plugins.editing.close_editing_panel.message' : '';
       },
 
       /**
@@ -484,10 +479,6 @@
     },
 
     created() {
-
-      //get original tooltip close sidebar button
-      this.tooltip = this.$gui.sidebar.buttons.close.tooltip;
-
       this._selectedlayers = []; //store previous selected layers
 
       this.appState        = ApplicationState;
