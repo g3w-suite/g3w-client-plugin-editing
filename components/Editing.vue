@@ -83,10 +83,13 @@
         @update-filter-layers = "updateFilterLayers"
       />
     </div>
-
-    <p v-if = "django_admin_url"><a :href = "django_admin_url" target = "_blank">&#x1F512; Locked features</a></p>
-    <p v-if = "filemanager_url"><a  :href = "filemanager_url"  target = "_blank">&#x1F4C2; File manager</a></p>
-
+    
+    <!-- show only if not in iframe-->
+    <section v-if = "!appState.iframe">
+      <p v-if = "django_admin_url" @click.stop = "editInIframe" style = "cursor: pointer">&#x270f; Edit in iframe</p>
+      <p v-if = "django_admin_url"><a :href = "django_admin_url" target = "_blank">&#x1F512; Locked features</a></p>
+      <p v-if = "filemanager_url"><a  :href = "filemanager_url"  target = "_blank">&#x1F4C2; File manager</a></p>
+    </section>
   </div>
 
 </template>
@@ -137,6 +140,31 @@
     },
 
     methods: {
+      /**
+       * @since v4.0.0
+       * Open iframe to edit visible layers
+       */
+      editInIframe() {
+        const w = window.open('about:blank', '_blank', `fullscreen=yes`);
+          w.document.write(`<!doctype HTML><html><head><title>Test Iframe</title><style>html,body,iframe{width:100%;height:100%;margin:0;border:0;display:block;}</style></head><body><iframe src="${location.href}"></iframe></body></html>`);
+          //Listen message from application
+          w.addEventListener('message', e => {
+            if ('app:ready' === e.data.action) {
+              // send message to iframe every time ifrema send a message con contentWindow
+              w.document.querySelector('iframe').contentWindow.postMessage({
+                id:      null,
+                action: 'editing:add',
+                data: {
+                  qgs_layer_id: this.selectedlayers.length ? this.selectedlayers: this.state.toolboxes.map(({ id }) => id),
+                  properties: { },
+                }
+              }, '*');
+            }
+          }, false);
+  
+          // prevent page refresh (eg. CTRL+R)
+          w.onbeforeunload = () => w.close();
+      },
 
       /**
        *
@@ -432,8 +460,7 @@
 
     },
 
-    watch:{
-
+    watch: {
       canCommit(bool) {
         window.onbeforeunload = () => bool || undefined; // register leave page
       },
