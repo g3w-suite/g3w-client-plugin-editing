@@ -432,10 +432,10 @@ export class ToolBox extends G3WObject {
                 type: 'multiple',
                 steps: {
                   select: {
-                    description: `editing.workflow.steps.${ApplicationState.ismobile ? 'selectDrawBoxAtLeast2Feature' : 'selectMultiPointSHIFTAtLeast2Feature'}`,
+                    description: `editing.workflow.steps.${ApplicationState.ismobile ? 'selectDrawBox' : 'selectMultiPointSHIFT'}`,
                     buttonnext: {
                       disabled: true,
-                      condition: ({ features = [] }) => features.length < 2,
+                      condition: ({ features = [] }) => features.length < 1,
                       done:      () => { Workflow.Stack.getCurrent().clearUserMessagesSteps(); }
                     },
                     dynamic: 0,
