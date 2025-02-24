@@ -92,8 +92,8 @@ export class ToolBox extends G3WObject {
       .filter(relation => {
         const l = CatalogLayersStoresRegistry.getLayerById(getRelationId({ layerId: layer.getId(), relation }));
         return l && l.isEditable();
-      })
-      .map(r => r);
+      });
+         
     this._start       = false;
 
     /** constraint loading features to a filter set */
