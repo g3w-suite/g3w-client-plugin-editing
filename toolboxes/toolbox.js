@@ -87,14 +87,13 @@ export class ToolBox extends G3WObject {
     const is_table           = Layer.LayerTypes.TABLE === layer.getType();
     const isMultiGeometry    = geometryType && Geometry.isMultiGeometry(geometryType);
     const iconGeometry       = is_vector && (is_point ? 'Point' : is_line ? 'Line' : 'Polygon');
-    //@since 3.9.0 Check if layer has relation layers editable
+    //@since 3.9.0 Check if layer has "relation layers" that are editable
     const editable_relations = layer.getRelations().getArray()
-                              .filter(relation => {
-                                const l = CatalogLayersStoresRegistry.getLayerById(getRelationId({ layerId: layer.getId(), relation }));
-                                //@since 3.9.1 Fix in case child layer is not visible on TOC (set view permission from admin)
-                                return l && l.isEditable();
-                              })
-                              .map(r => r);
+      .filter(relation => {
+        const l = CatalogLayersStoresRegistry.getLayerById(getRelationId({ layerId: layer.getId(), relation }));
+        return l && l.isEditable();
+      })
+      .map(r => r);
     this._start       = false;
 
     /** constraint loading features to a filter set */
