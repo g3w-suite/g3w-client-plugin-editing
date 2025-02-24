@@ -91,7 +91,8 @@ export class ToolBox extends G3WObject {
     const editable_relations = layer.getRelations().getArray()
                               .filter(relation => {
                                 const l = CatalogLayersStoresRegistry.getLayerById(getRelationId({ layerId: layer.getId(), relation }));
-                                return l.isEditable();
+                                //@since 3.9.1 Fix in case child layer is not visible on TOC (set view permission from admin)
+                                return l && l.isEditable();
                               })
                               .map(r => r);
     this._start       = false;
