@@ -1,168 +1,168 @@
 export default {
   close_editing_panel: {
-    message: "To close editing form need to exit from editing layer"
+    message: "Закінчіть редагування шару щоб закрити вікно редагування"
   },
   errors: {
-    no_layers: "An error occurs. It's no possible to edit layers",
-    some_layers: "An error occurs: It's no possible to edit some layers",
-    editing_multiple_relations: 'Editing multiple relationships is not currently supported',
+    no_layers: "Помилка. Неможливо почати редагування шарів",
+    some_layers: "Помилка: Неможливо почати редагування шарів",
+    editing_multiple_relations: 'Редагування декількох відношень одночасно наразі не підтримується',
   },
-  search: "Search",
+  search: "Пошук",
   editing_changes: "Editing Changes",
-  editing_data: "Editing Layers",
-  editing_attributes: "Editing attributes",
-  relations: "Relations",
-  edit_relation: "Edit relation",
-  back_to_relations: "Back to Relations",
-  no_relations_found: "No relations found",
-  relation_data: "Relation data",
-  relation_already_added: "Relation already added",
-  list_of_relations_feature: "List of relations feature ",
+  editing_data: "Редагування шарів",
+  editing_attributes: "Редагування атрибутів",
+  relations: "Відношення",
+  edit_relation: "Редагувати відношення",
+  back_to_relations: "Повернутися до відношень",
+  no_relations_found: "Відношення відсутні",
+  relation_data: "Дані відношення",
+  relation_already_added: "Відношення вже додане",
+  list_of_relations_feature: "Об'єкти відношення",
   tooltip: {
-    edit_layer: "Edit Layer",
-    filter_by_relation: "Filter layers by relation",
+    edit_layer: "Редагувати шар",
+    filter_by_relation: "Фільтрувати шари за відношенням",
   },
   toolbox: {
-    title: 'Edit'
+    title: 'Редагування'
   },
   table: {
-    edit: "Edit feature",
-    copy: "Create a copy",
-    delete: "Delete feature"
+    edit: "Редагувати об'єкт",
+    copy: "Копіювати",
+    delete: "Видалити"
   },
   tools: {
-    copy: "Copy features",
-    pastefeaturesfromotherlayers: "Paste features from other layer",
-    addpart: "Add part to multipart",
-    deletepart: "Delete part from multipart",
-    merge: "Dissolve features",
-    split: "Split Feature",
-    add_feature: "Add feature",
-    delete_feature: "Delete feature",
-    move_feature: "Move feature",
-    update_vertex: "Update feature vertex",
-    update_feature: "Update feature attribute",
-    update_multi_features: "Update attributes of selected features",
-    update_multi_features_relations: "Update attributes of all selected relations",
-    update_multi_features_relations_from_parents : "Edit relations records from one or mode parent features",
-    copyfeaturefromexternallayer: "Create Feature from added layer"
+    copy: "Копіювати об'єкти",
+    pastefeaturesfromotherlayers: "Вставити об'єкти з іншого шару",
+    addpart: "Додати частину",
+    deletepart: "Видалити частину",
+    merge: "Злити об'єкти",
+    split: "Розділити об'єкт",
+    add_feature: "Додати",
+    delete_feature: "Видалити",
+    move_feature: "Перемістити",
+    update_vertex: "Змінити вершину",
+    update_feature: "Змінити атрибути",
+    update_multi_features: "Змінити атрибути вибраних об'єктів",
+    update_multi_features_relations: "Змінити атрибути у вибраних відношеннях",
+    update_multi_features_relations_from_parents : "Редагувати зв'язані записи батьківських об'єктів",
+    copyfeaturefromexternallayer: "Створити об'єкт з доданого шару"
   },
   toolsoftool: {
-    measure: "Show measure",
-    snap: "Snap layer",
-    snapall: "Snap to all layers"
+    measure: "Вимірювання",
+    snap: "Прив'язка до шару",
+    snapall: "Прив'язка до всіх шарів"
   },
   steps: {
     help: {
-      select_elements: "Select features",
-      select_element: "Select feature",
-      copy: "Create new copy of selected features",
-      merge: "Dissolve features",
-      split: "Split Feature",
-      new: "Create new feature",
-      edit_table: "Edit table features",
-      draw_new_feature: "Draw feature on map",
-      action_confirm: "Confirm action",
-      double_click_delete: "Select feature on map to delete",
-      edit_feature_vertex: "Modify or add a vertex on selected feature",
-      move: "Move selected feature",
-      select_feature_to_relation: "Select feature that you bind relation",
-      show_edit_feature_form:  "Show feature form to edit attributes",
-      pick_feature: "Select feature on map to modify",
-      insert_attributes_feature: "Insert attributes of the feature"
+      select_elements: "Вибрати об'єкти",
+      select_element: "Вибрати об'єкт",
+      copy: "Створити копію вибраних об'єктів",
+      merge: "Злити об'єкти",
+      split: "Розділити об'єкт",
+      new: "Новий об'єкт",
+      edit_table: "Редагувати таблицю атрибутів",
+      draw_new_feature: "Оцифрувати об'єкт",
+      action_confirm: "Підтвердити дію",
+      double_click_delete: "Виберіть об'єкт, який потрібно видалити",
+      edit_feature_vertex: "Змінити або додати вершину до вибраного об'єкта",
+      move: "Перемістити вибраний об'єкт",
+      select_feature_to_relation: "Виберіть об'єкт, який потрібно зв'язати",
+      show_edit_feature_form:  "Відкрити форму об'єкту",
+      pick_feature: "Виберіть об'єкт, який потрібно змінити",
+      insert_attributes_feature: "Вставити атрибути об'єкта"
     }
   },
   workflow: {
     steps: {
-      select: 'Click on feature to select',
-      draw_part: "Draw new part",
-      draw_geometry : "Draw geometry",
-      merge: 'Select featurewhere dissolve',
-      selectSHIFT: 'Select features drawing a rectangle pressing SHIFT',
-      selectDrawBox: "Select features drawing a rectangle by two point of opposite corners",
-      selectDrawBoxAtLeast2Feature: "Select at least features drawing a rectangle by two point of opposite corners",
-      selectPoint: "Click on feature to select",
-      selectPointSHIFT: 'Select features drawing a rectangle pressing SHIFT (multifeatures) or click on one feature',
-      selectMultiPointSHIFT: 'Select features drawing a rectangle pressing SHIFT or click on feature',
-      selectMultiPointSHIFTAtLeast2Feature: 'Select at least 2 features drawing a rectangle pressing SHIFT or click on feature',
-      copyCTRL: 'Copy selected features using CTRL+C',
-      selectStartVertex: 'Select starting vertex of selected features',
-      selectToPaste: 'Select the point where paste the features selected',
-      draw_split_line: "Draw a line to split selected feature"
+      select: "Виберіть об'єкт",
+      draw_part: "Оцифрувати нову частину",
+      draw_geometry : "Оцифрувати об'єкт",
+      merge: "Виберіть об'єкт, який потрібно злити",
+      selectSHIFT: "Вибрати об'єкти у прямокутній області з затиснутим SHIFT",
+      selectDrawBox: "Вибрати об'єкти у прямокутній області, що задана протилежними вершинами",
+      selectDrawBoxAtLeast2Feature: "Вибрати щонайменше 2 об'єкти у прямокутній області, що задана протилежними вершинами",
+      selectPoint: "Клацніть по об'єкту щоб вибрати його",
+      selectPointSHIFT: "Виберіть об'єкти у прямокутній області з затиснутим SHIFT або клацніть по об'єкту",
+      selectMultiPointSHIFT: "Виберіть об'єкти у прямокутній області з затиснутим SHIFT або клацніть по об'єкту",
+      selectMultiPointSHIFTAtLeast2Feature: "Вибрати щонайменше 2 об'єкти у прямокутній області з затиснутим SHIFT або клацніть по об'єкту",
+      copyCTRL: "Копіювати вибрані об'єкти за допомогою CTRL+C",
+      selectStartVertex: "Вибрати початкову вершину",
+      selectToPaste: "Вибрати точку, де буде вставлено об'єкти",
+      draw_split_line: "Задайте лінію поділу вибраного об'єкта"
     },
     title: {
-      steps: 'Steps'
+      steps: "Кроки"
     },
-    next: 'Next',
+    next: "Далі",
   },
   messages: {
-    featureslockbyotheruser: "Some geometries/records are not editable because in editing by other user",
-    splitted: "Splitted",
-    nosplittedfeature: "Feature not spitted",
-    press_esc: "Press ESC to back",
-    online: "Back ONLINE. Now you can save your changes on database",
-    offline: "You are OFFLINE. All changes are saved locally",
-    delete_feature: "Do you want delete selected feature ?",
-    delete_feature_relations: "If feature has bindings relations, these relations become orphans. We suggest to handle these relations before detele this feature",
-    unlink_relation: "Do you want unlink relation?",
-    commit_feature: "Summary of changes",
-    toolbox_has_no_geometry: "this layer has no geometry",
-    toolbox_has_relation: "this layer is part of a relation",
-    saved: "Data saved successfully",
-    saved_local:"Data saved locally successfully",
-    loading_data: "Loading data",
-    saving: "Saving data. Please wait ...",
+    featureslockbyotheruser: "Частина об'єктів/записів редагується іншим користувачем і недоступна для змін",
+    splitted: "Розділено",
+    nosplittedfeature: "Не розділено",
+    press_esc: "Натисність ESC щоб повернутися",
+    online: "Ви знову онлайн. Тепер ви можете зберегти зміни до бази даних",
+    offline: "Ви офлайн. Зміни збережено на локальному рівні",
+    delete_feature: "Видалити вибрані об'єкти?",
+    delete_feature_relations: "Видалення об'єкта з посиланнми на відношення, призведе до утворення 'сиріт'. Перш ніж видаляти цей об'єкт, рекомендуємо розібратися з посиланнями",
+    unlink_relation: "Розірвати відношення?",
+    commit_feature: "Опис змін",
+    toolbox_has_no_geometry: "шар без геометрії",
+    toolbox_has_relation: "шар є частиною відношення",
+    saved: "Дані збережено",
+    saved_local:"Дані збережено на локальному рівні",
+    loading_data: "Завантаження",
+    saving: "Збереження. Будь ласка, зачекайте…",
     constraints: {
-      enable_editing: "Please Zoom In to enable editing tools \nActivation scale at 1:"
+      enable_editing: "Для редагування слід збільшити масштаб \nІнструменти активуються на масштабі 1:"
     },
-    pdf: "Document preview not available. Please click here ",
+    pdf: "Попередній перегляд недоступний. Кланціть тут ",
     commit: {
-      header: "The following list show all changes to commit.",
-      header_relation: "Relation",
-      header_add: "<b>Added</b> show the number of features added",
-      header_update_delete: "<b>Modified</b> and <b>Deleted</b> show the list of features id",
-      add: "Added",
-      delete: "Deleted",
-      update: "Updated"
+      header: "Список змін, які буде збережено.",
+      header_relation: "Відношення",
+      header_add: "<b>Додано</b> показує кількість доданих об'єктів",
+      header_update_delete: "<b>Змінено</b> та <b>Видалено</b> показують ID об'єктів",
+      add: "Додано",
+      delete: "Видалено",
+      update: "Змінено"
     },
-    loading_table_data: "Building Data Table. Please wait ...",
-    copy_and_paste_from_other_layer_mandatory_fields: "It is necessary to fill in any mandatory fields on the features pasted before saving",
-    no_feature_selected: "No feature selected",
-    select_min_2_features: 'Select at least 2 features'
+    loading_table_data: "Завантаження даних. Зачекайте…",
+    copy_and_paste_from_other_layer_mandatory_fields: "Перш ніж зберегти зміни, необхідно заповнити обов'язкові поля у всіх вставлених об'єктах",
+    no_feature_selected: "Об'єкти не вибрано",
+    select_min_2_features: "Виберіть щонайменше 2 об'єкти"
   },
   relation: {
     table: {
-      info: `<div>Select relations to link it to current editing feature.</div>`
+      info: `<div>Виберіть відношення, яке необхідно зв'язати з об'єктом.</div>`
     },
-    draw_new_feature:"Draw new feature",
-    draw_or_copy:"or",
-    copy_feature_from_other_layer:"Copy feature from other layer"
+    draw_new_feature: "Оцифрувати об'єкт",
+    draw_or_copy: "або",
+    copy_feature_from_other_layer: "Копіювати з іншого шару"
   },
   form: {
     relations: {
       tooltips: {
-        back_to_father:"Back to edit father",
-        add_relation: "Create and link new relation",
-        link_relation: "Join a relation to this feature",
-        open_relation_tools: "Show relation tools",
-        unlink_relation: "Unlink relation"
+        back_to_father:"Повернутися до редагування батькіського об'єкта",
+        add_relation: "Створити та додати відношення",
+        link_relation: "Прив'язати відношення",
+        open_relation_tools: "Інструменти відношення",
+        unlink_relation: "Розірвати відношення"
       }
     },
     buttons: {
-      save: "Insert/Edit",
-      save_and_back: "Save and Back",
-      save_and_back_table: "Save and Back",
-      cancel: "Ignore Changes"
+      save: "Вставка/Редагування",
+      save_and_back: "Зберегти та повернутися",
+      save_and_back_table: "Зберегти та повернутися",
+      cancel: "Ігнорувати зміни"
     }
   },
   modal: {
     tools: {
       copyfeaturefromotherlayer: {
-        title: "Select layer",
-        edit_attributes: "Edit attributes of pasted features in multiple mode"
+        title: "Вибрати шар",
+        edit_attributes: "Редагувати атрибути вставлених об'єктів у груповому режимі"
       },
       copyfeaturefromprojectlayer: {
-        title: "Select a feature"
+        title: "Вибрати об'єкт"
       }
     }
   }
