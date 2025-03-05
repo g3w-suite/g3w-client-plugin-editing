@@ -511,6 +511,15 @@
     },
 
     /**
+     * 
+     */
+    async mounted() {
+      await this.$nextTick();
+      //emit openeditingpanel event. Used by simplereporting plugin
+      this.service.fireEvent('openeditingpanel');
+    },
+
+    /**
      * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
      * 
      * Called on a close editing panel panel
