@@ -46,7 +46,7 @@
         <i
           v-disabled              = "editDisabled"
           @click.stop             = "toggleEditing"
-          style                   = "max-height: 35px; margin-left: auto"
+          style                   = "margin-left: auto"
           class                   = "start-editing editbtn skin-tooltip-left"
           :class                  = "{
             'pull-right':       !isMobile(),
