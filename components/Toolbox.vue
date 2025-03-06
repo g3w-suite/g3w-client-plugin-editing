@@ -39,7 +39,7 @@
         ></i>
 
         <!-- PANEL TITLE -->
-        <span class = "panel-title">{{ state.title }}</span>
+        <span class="panel-title">{{ state.title }}</span>
 
         <!-- TOGGLE EDITING -->
         <i
