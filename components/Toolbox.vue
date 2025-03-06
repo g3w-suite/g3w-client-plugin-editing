@@ -26,6 +26,7 @@
       <div
         v-if   = "state.toolboxheader"
         class  = "panel-heading container"
+        style  = "display: flex; align-items: center; gap: 10px;"
         :style = "{ background: state.color}"
       >
 
@@ -44,6 +45,7 @@
         <i
           v-disabled              = "editDisabled"
           @click.stop             = "toggleEditing"
+          style                   = "margin-left: auto"
           class                   = "start-editing editbtn skin-tooltip-left"
           :class                  = "{
             'pull-right':       !isMobile(),
