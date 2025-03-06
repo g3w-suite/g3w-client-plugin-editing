@@ -26,7 +26,7 @@
       <div
         v-if   = "state.toolboxheader"
         class  = "panel-heading container"
-        style  = "display: flex; align-items: center;"
+        style  = "display: flex; align-items: center; gap: 10px;"
         :style = "{ background: state.color}"
       >
 
@@ -34,13 +34,12 @@
         <i
           v-if                     = "father"
           :class                   = "'filter-by-relation ' + g3wtemplate.font['relation']"
-          style                    = "margin-right: 10px;"
           @click                   = "toggleFilterByRelation"
           v-t-tooltip:right.create = "'plugins.editing.tooltip.filter_by_relation'"
         ></i>
 
         <!-- PANEL TITLE -->
-        <span class = "panel-title" style = "margin-right: 10px;">{{ state.title }}</span>
+        <span class="panel-title">{{ state.title }}</span>
 
         <!-- TOGGLE EDITING -->
         <i
