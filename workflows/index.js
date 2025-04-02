@@ -32,6 +32,9 @@ const { FormService }                                   = g3wsdk.gui.vue.service
 const { AreaInteraction, LengthInteraction }            = g3wsdk.ol.interactions.measure;
 const { createMeasureTooltip, removeMeasureTooltip }    = g3wsdk.ol.utils;
 
+import TranformInteraction from 'ol-ext/interaction/Transform';
+
+
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/addfeaturetask.js@v3.7.1
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/addfeaturestep.js@v3.7.1
@@ -305,6 +308,72 @@ export class ModifyGeometryVertexStep extends Step {
   }
 
 }
+
+/**
+ * @since 3.10.0 Rotate feature
+ */
+export class RotateFeatureStep extends Step {
+
+  constructor(options = {}) {
+    options.help = "editing.steps.help.move";
+
+    super(options);
+
+    this.drawInteraction = null;
+    this.promise; // need to be set here in case of picked features
+  }
+
+  run(inputs, context) {
+    /** Need two different promises: One for stop() method and clean-selected feature,
+     * and another one for a run task. If we use the same promise, when stop a task without move feature,
+     * this.promise.resolve(), it fires also thenable method listens to resolve promise of a run task,
+     * that call stop task method.*/
+    return $promisify(new Promise((resolve) => {
+      const promise         = new Promise(r => this.resolve = r);
+      const layerId        = inputs.layer.getId();
+      let originalFeature  = null;
+      this.changeKey       = null;
+      let isGeometryChange = false; // changed if geometry is changed
+
+      setAndUnsetSelectedFeaturesStyle({ promise: $promisify(promise), inputs, style: this.selectStyle });
+      this._rotateInteraction = this.addInteraction(
+        new TranformInteraction({
+          rotate: true,
+          scale: false,
+          features:     new ol.Collection(inputs.features),
+          hitTolerance: (isMobile && isMobile.any) ? 10 : 0 },
+        ), {
+        'rotatestart': e => {
+          const feature   = e.features.getArray()[0];
+          this.changeKey  = feature.once('change', () => isGeometryChange = true);
+          originalFeature = feature.clone();
+        },
+        'rotateend': e => {
+          ol.Observable.unByKey(this.changeKey);
+          const feature = e.features.getArray()[0];
+          if (isGeometryChange) {
+            // evaluated geometry expression
+            evaluateExpressionFields({ inputs, context, feature }).finally(() => {
+              context.session.pushUpdate(layerId, feature.clone(), originalFeature);
+              resolve(inputs);
+            });
+          } else {
+            resolve(inputs);
+          }
+        },
+      });
+      //seat active feature to rotate
+      this._rotateInteraction.select(inputs.features[inputs.features.length - 1], true);
+    }))
+  }
+
+  stop() {
+    this.resolve(true);
+    this.resolve   = null;
+    this.changeKey = null;
+  }
+}
+
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/movefeaturetask.js@v3.7.1

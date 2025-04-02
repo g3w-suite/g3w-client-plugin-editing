@@ -33,6 +33,7 @@ import {
   PickFeatureStep,
   AddFeatureStep,
   MoveFeatureStep,
+  RotateFeatureStep,
   ModifyGeometryVertexStep,
   OpenTableStep,
 }                                                       from '../workflows';
@@ -44,6 +45,7 @@ Object
     SelectElementsStep,
     PickFeatureStep,
     MoveFeatureStep,
+    RotateFeatureStep,
     ModifyGeometryVertexStep,
     OpenTableStep,
     AddFeatureStep,
@@ -583,6 +585,23 @@ export class ToolBox extends G3WObject {
               new PickFeatureStep(),
               new Step({ run: chooseFeature }),
               new MoveFeatureStep(),
+            ],
+          }),
+        },
+         // @since v3.10.0 Rotate Feature 
+         (is_vector) && capabilities.includes('change_feature') && {
+          id:   'rotatefeature',
+          type: ['change_feature'],
+          name: 'editing.tools.rotate_feature',
+          icon: `mActionRotateFeature.svg`,
+          op: new Workflow({
+            layer,
+            type: 'rotatefeature',
+            helpMessage: 'editing.tools.move_feature',
+            steps: [
+              new PickFeatureStep(),
+              new Step({ run: chooseFeature }),
+              new RotateFeatureStep(),
             ],
           }),
         },

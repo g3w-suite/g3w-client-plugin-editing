@@ -38,6 +38,7 @@ export default {
     add_feature: "Lisää ominaisuus",
     delete_feature: "Poista ominaisuus",
     move_feature: "Siirrä ominaisuutta",
+    rotate_feature: "Kierrä ominaisuus",
     update_vertex: "Päivitä pisteen ominaisuutta",
     update_feature: "Päivitä ominaisuus",
     update_multi_features: "Muokkaa valittujen ominaisuuksien attribuutteja",

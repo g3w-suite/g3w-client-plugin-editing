@@ -6,8 +6,9 @@
   "directories": {
     "test": "test"
   },
-  "dependencies": {},
-  "devDependencies": {},
+  "dependencies": {
+    "ol-ext": "^4.0.29"
+  },
   "scripts": {},
   "repository": {
     "type": "git",

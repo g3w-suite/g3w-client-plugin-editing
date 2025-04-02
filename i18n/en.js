@@ -40,6 +40,7 @@ export default {
     add_feature: "Add feature",
     delete_feature: "Delete feature",
     move_feature: "Move feature",
+    rotate_feature: "Rotate feature",
     update_vertex: "Update feature vertex",
     update_feature: "Update feature attribute",
     update_multi_features: "Update attributes of selected features",
