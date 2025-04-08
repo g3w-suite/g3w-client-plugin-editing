@@ -78,7 +78,7 @@ const CURSORS = {
         useSpatialIndex: false,
         wrapX: false // For vector editing across the -180° and 180° meridians to work properly, this should be set to false
       }),
-      name: 'Transform overlay',
+      name: 'Rotate overlay',
       displayInLayerSwitcher: false,
       // Return the style according to the handle type
       style(feature) {
@@ -94,10 +94,10 @@ const CURSORS = {
     this._pointRadius = function () { return undefined }
 
     /* Translate when click on feature */
-    this.set('translateFeature', true);
+    this.set('translateFeature', false);
 
     /* Can translate the feature */
-    this.set('translate', true);
+    this.set('translate', false);
 
     /* Translate when click on the bounding box */
     this.set('translateBBox', false);
