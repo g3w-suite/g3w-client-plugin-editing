@@ -334,7 +334,7 @@ export class RotateFeatureStep extends Step {
 
       setAndUnsetSelectedFeaturesStyle({ promise: $promisify(promise), inputs, style: this.selectStyle });
       this.addInteraction(
-        new RotateInteraction({ features: new ol.Collection(inputs.features) }), {
+        new RotateInteraction({ features: inputs.features }), {
         'rotatestart': e => {
           const feature   = e.features.getArray()[0];
           this.changeKey  = feature.once('change', () => isGeometryChange = true);
@@ -353,7 +353,7 @@ export class RotateFeatureStep extends Step {
           }
           resolve(inputs);
         },
-      });
+      }).select(inputs.features.at(- 1));
     }))
   }
 

@@ -54,7 +54,7 @@ const CURSORS = {
  * @extends ol.interaction.Pointer
  * 
  * @param { Object } options
- * @param { ol.Collection<ol.Feature> } options.features collection of feature to transform,
+ * @param { Array } options.features collection of feature to transform,
  */
  export class RotateInteraction extends ol.interaction.Pointer {
 
@@ -91,7 +91,7 @@ const CURSORS = {
     });
 
     // Collection of feature to transform
-    this.features_ = options.features;
+    this.features_ = new ol.Collection(options.features);
 
     this._pointRadius = function () { return undefined }
 
@@ -142,8 +142,6 @@ const CURSORS = {
 
     // setstyle
     this.setDefaultStyle();
-
-    this.select(options.features.at(-1));
   }
 
   /**
