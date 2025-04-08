@@ -16,6 +16,7 @@ import { promisify, $promisify }                        from '../utils/promisify
 import { isSameBaseGeometryType }                       from '../utils/isSameBaseGeometryType';
 import { setVertexStyle }                               from "../utils/setVertexStyle";
 import { PickFeaturesInteraction }                      from '../interactions/pickfeaturesinteraction';
+import { TransformInteraction }                         from '../interactions/transform';
 
 import { Workflow }                                     from '../g3wsdk/workflow/workflow';
 import { Step }                                         from '../g3wsdk/workflow/step';
@@ -31,9 +32,6 @@ const { Component }                                     = g3wsdk.gui.vue;
 const { FormService }                                   = g3wsdk.gui.vue.services;
 const { AreaInteraction, LengthInteraction }            = g3wsdk.ol.interactions.measure;
 const { createMeasureTooltip, removeMeasureTooltip }    = g3wsdk.ol.utils;
-
-import TranformInteraction from 'ol-ext/interaction/Transform';
-
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/addfeaturetask.js@v3.7.1
@@ -337,7 +335,7 @@ export class RotateFeatureStep extends Step {
 
       setAndUnsetSelectedFeaturesStyle({ promise: $promisify(promise), inputs, style: this.selectStyle });
       this._rotateInteraction = this.addInteraction(
-        new TranformInteraction({
+        new TransformInteraction({
           rotate: true,
           scale: false,
           features:     new ol.Collection(inputs.features),
