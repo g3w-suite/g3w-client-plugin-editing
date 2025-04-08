@@ -16,7 +16,7 @@ import { promisify, $promisify }                        from '../utils/promisify
 import { isSameBaseGeometryType }                       from '../utils/isSameBaseGeometryType';
 import { setVertexStyle }                               from "../utils/setVertexStyle";
 import { PickFeaturesInteraction }                      from '../interactions/pickfeaturesinteraction';
-import { RotateInteraction }                         from '../interactions/rotate';
+import { RotateInteraction }                            from '../interactions/rotate';
 
 import { Workflow }                                     from '../g3wsdk/workflow/workflow';
 import { Step }                                         from '../g3wsdk/workflow/step';
@@ -308,7 +308,7 @@ export class ModifyGeometryVertexStep extends Step {
 }
 
 /**
- * @since 3.10.0 Rotate feature
+ * @since 4.0.0 Rotate feature
  */
 export class RotateFeatureStep extends Step {
 
@@ -328,35 +328,32 @@ export class RotateFeatureStep extends Step {
      * that call stop task method.*/
     return $promisify(new Promise((resolve) => {
       const promise         = new Promise(r => this.resolve = r);
-      const layerId        = inputs.layer.getId();
       let originalFeature  = null;
       this.changeKey       = null;
       let isGeometryChange = false; // changed if geometry is changed
 
       setAndUnsetSelectedFeaturesStyle({ promise: $promisify(promise), inputs, style: this.selectStyle });
-      this._rotateInteraction = this.addInteraction(
+      this.addInteraction(
         new RotateInteraction({ features: new ol.Collection(inputs.features) }), {
         'rotatestart': e => {
           const feature   = e.features.getArray()[0];
           this.changeKey  = feature.once('change', () => isGeometryChange = true);
           originalFeature = feature.clone();
         },
-        'rotateend': e => {
+        'rotateend': async e => {
           ol.Observable.unByKey(this.changeKey);
-          const feature = e.features.getArray()[0];
           if (isGeometryChange) {
-            // evaluated geometry expression
-            evaluateExpressionFields({ inputs, context, feature }).finally(() => {
-              context.session.pushUpdate(layerId, feature.clone(), originalFeature);
-              resolve(inputs);
-            });
-          } else {
-            resolve(inputs);
+            const feature = e.features.getArray()[0];
+            try {
+              await evaluateExpressionFields({ inputs, context, feature });
+            } catch (e) {
+              console.warn(e);
+            }
+            context.session.pushUpdate(inputs.layer.getId(), feature.clone(), originalFeature);
           }
+          resolve(inputs);
         },
       });
-      //seat active feature to rotate
-      this._rotateInteraction.select(inputs.features[inputs.features.length - 1], true);
     }))
   }
 
