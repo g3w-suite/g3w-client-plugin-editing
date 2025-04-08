@@ -16,6 +16,19 @@ function _setCursor(elt, cursor) {
   }
 }
 
+function _project(displacement_vector, base) {
+  var k = (displacement_vector[0] * base[0] + displacement_vector[1] * base[1]) / (base[0] * base[0] + base[1] * base[1]);
+  return [base[0] * k, base[1] * k];
+}
+
+function _move(point, displacementVector) {
+  return [point[0] + displacementVector[0], point[1] + displacementVector[1]];
+}
+
+function _diff(start, end) {
+  return [end[0] - start[0], end[1] - start[1]];
+}
+
 /**
  * Cursors for transform
  */
@@ -42,17 +55,6 @@ const CURSORS = {
  * 
  * @param { Object } options
  * @param { ol.Collection<ol.Feature> } options.features collection of feature to transform,
- * 
- * @fires select
- * @fires rotatestart
- * @fires rotating
- * @fires rotateend
- * @fires translatestart
- * @fires translating
- * @fires translateend
- * @fires scalestart
- * @fires scaling
- * @fires scaleend
  */
  export class RotateInteraction extends ol.interaction.Pointer {
 
@@ -139,7 +141,9 @@ const CURSORS = {
     this.on('propertychange', function () { this.drawSketch_() });
 
     // setstyle
-    this.setDefaultStyle()
+    this.setDefaultStyle();
+
+    this.select(options.features.at(-1));
   }
 
   /**
@@ -439,11 +443,15 @@ const CURSORS = {
     }
   }
 
-  /** Select a feature to transform
-  * @param {ol.Feature} feature the feature to transform
-  * @param {boolean} add true to add the feature to the selection, default false
-  */
-  select(feature, add) {
+  /**
+   * Select a feature to transform
+   * 
+   * @param {ol.Feature} feature the feature to transform
+   * @param {boolean} add true to add the feature to the selection, default false
+   * 
+   * @fires select
+   */
+  select(feature) {
     if (!feature) {
       if (this.selection_) {
         this.selection_.clear()
@@ -453,12 +461,7 @@ const CURSORS = {
     }
     if (!feature.getGeometry || !feature.getGeometry()) return
     // Add to selection
-    if (add) {
-      this.selection_.push(feature)
-    } else {
-      var index = this.selection_.getArray().indexOf(feature)
-      this.selection_.removeAt(index)
-    }
+    this.selection_.push(feature)
     this.ispt_ = (this.selection_.getLength() === 1 ? (this.selection_.item(0).getGeometry().getType() == "Point") : false)
     this.iscircle_ = (this.selection_.getLength() === 1 ? (this.selection_.item(0).getGeometry().getType() == "Circle") : false)
     this.drawSketch_()
@@ -467,9 +470,13 @@ const CURSORS = {
     this.dispatchEvent({ type: 'select', feature: feature, features: this.selection_ })
   }
 
-  /** Update the selection collection.
-  * @param {ol.Collection<ol.Feature>} features the features to transform
-  */
+  /**
+   * Update the selection collection.
+   * 
+   * @param {ol.Collection<ol.Feature>} features the features to transform
+   * 
+   * @fires select
+   */
   setSelection(features) {
     this.selection_.clear()
     features.forEach(function (feature) {
@@ -508,8 +515,15 @@ const CURSORS = {
 
   /**
    * @param {ol.MapBrowserEvent} evt Map browser event.
+   * 
    * @return {boolean} `true` to start the drag sequence.
+   * 
    * @private
+   * 
+   * @fires select
+   * @fires rotatestart
+   * @fires translatestart
+   * @fires scalestart
    */
   handleDownEvent_(evt) {
     var sel = this.getFeatureAtPixel_(evt.pixel)
@@ -603,7 +617,12 @@ const CURSORS = {
 
   /**
    * @param {ol.MapBrowserEvent} evt Map browser event.
+   * 
    * @private
+   * 
+   * @fires rotating
+   * @fires translating
+   * @fires scaling
    */
   handleDragEvent_(evt) {
     var viewRotation = this.getMap().getView().getRotation()
@@ -735,8 +754,8 @@ const CURSORS = {
               var pointA1 = [g1[8], g1[9]]
 
               if (stretch) {
-                var base = (opt % 2 === 0) ? this._countVector(pointA, pointB) : this._countVector(pointD, pointA)
-                var projectedVector = this._projectVectorOnVector(displacementVector, base)
+                var base = (opt % 2 === 0) ? _diff(pointA, pointB) : _diff(pointD, pointA)
+                var projectedVector = _project(displacementVector, base)
                 var nextIndex = opt + 1 < pointArray.length ? opt + 1 : 0
                 var coordsToChange = [...pointArray[opt], ...pointArray[nextIndex]]
 
@@ -748,39 +767,39 @@ const CURSORS = {
                 var projectedLeft, projectedRight
                 switch (opt) {
                   case 0:
-                    displacementVector = this._countVector(pointD, dragCoordinate)
-                    projectedLeft = this._projectVectorOnVector(displacementVector, this._countVector(pointC, pointD))
-                    projectedRight = this._projectVectorOnVector(displacementVector, this._countVector(pointA, pointD));
-                    [g2[0], g2[1]] = this._movePoint(pointA, projectedLeft);
-                    [g2[4], g2[5]] = this._movePoint(pointC, projectedRight);
-                    [g2[6], g2[7]] = this._movePoint(pointD, displacementVector);
-                    [g2[8], g2[9]] = this._movePoint(pointA1, projectedLeft)
+                    displacementVector = _diff(pointD, dragCoordinate)
+                    projectedLeft = _project(displacementVector, _diff(pointC, pointD))
+                    projectedRight = _project(displacementVector, _diff(pointA, pointD));
+                    [g2[0], g2[1]] = _move(pointA, projectedLeft);
+                    [g2[4], g2[5]] = _move(pointC, projectedRight);
+                    [g2[6], g2[7]] = _move(pointD, displacementVector);
+                    [g2[8], g2[9]] = _move(pointA1, projectedLeft)
                     break
                   case 1:
-                    displacementVector = this._countVector(pointA, dragCoordinate)
-                    projectedLeft = this._projectVectorOnVector(displacementVector, this._countVector(pointD, pointA))
-                    projectedRight = this._projectVectorOnVector(displacementVector, this._countVector(pointB, pointA));
-                    [g2[0], g2[1]] = this._movePoint(pointA, displacementVector);
-                    [g2[2], g2[3]] = this._movePoint(pointB, projectedLeft);
-                    [g2[6], g2[7]] = this._movePoint(pointD, projectedRight);
-                    [g2[8], g2[9]] = this._movePoint(pointA1, displacementVector)
+                    displacementVector = _diff(pointA, dragCoordinate)
+                    projectedLeft = _project(displacementVector, _diff(pointD, pointA))
+                    projectedRight = _project(displacementVector, _diff(pointB, pointA));
+                    [g2[0], g2[1]] = _move(pointA, displacementVector);
+                    [g2[2], g2[3]] = _move(pointB, projectedLeft);
+                    [g2[6], g2[7]] = _move(pointD, projectedRight);
+                    [g2[8], g2[9]] = _move(pointA1, displacementVector)
                     break
                   case 2:
-                    displacementVector = this._countVector(pointB, dragCoordinate)
-                    projectedLeft = this._projectVectorOnVector(displacementVector, this._countVector(pointA, pointB))
-                    projectedRight = this._projectVectorOnVector(displacementVector, this._countVector(pointC, pointB));
-                    [g2[0], g2[1]] = this._movePoint(pointA, projectedRight);
-                    [g2[2], g2[3]] = this._movePoint(pointB, displacementVector);
-                    [g2[4], g2[5]] = this._movePoint(pointC, projectedLeft);
-                    [g2[8], g2[9]] = this._movePoint(pointA1, projectedRight)
+                    displacementVector = _diff(pointB, dragCoordinate)
+                    projectedLeft = _project(displacementVector, _diff(pointA, pointB))
+                    projectedRight = _project(displacementVector, _diff(pointC, pointB));
+                    [g2[0], g2[1]] = _move(pointA, projectedRight);
+                    [g2[2], g2[3]] = _move(pointB, displacementVector);
+                    [g2[4], g2[5]] = _move(pointC, projectedLeft);
+                    [g2[8], g2[9]] = _move(pointA1, projectedRight)
                     break
                   case 3:
-                    displacementVector = this._countVector(pointC, dragCoordinate)
-                    projectedLeft = this._projectVectorOnVector(displacementVector, this._countVector(pointB, pointC))
-                    projectedRight = this._projectVectorOnVector(displacementVector, this._countVector(pointD, pointC));
-                    [g2[2], g2[3]] = this._movePoint(pointB, projectedRight);
-                    [g2[4], g2[5]] = this._movePoint(pointC, displacementVector);
-                    [g2[6], g2[7]] = this._movePoint(pointD, projectedLeft)
+                    displacementVector = _diff(pointC, dragCoordinate)
+                    projectedLeft = _project(displacementVector, _diff(pointB, pointC))
+                    projectedRight = _project(displacementVector, _diff(pointD, pointC));
+                    [g2[2], g2[3]] = _move(pointB, projectedRight);
+                    [g2[4], g2[5]] = _move(pointC, displacementVector);
+                    [g2[6], g2[7]] = _move(pointD, projectedLeft)
                     break
                 }
               }
@@ -817,7 +836,6 @@ const CURSORS = {
    * @private
    */
   handleMoveEvent_(evt) {
-    // console.log("handleMoveEvent");
     if (!this.mode_) {
       var sel = this.getFeatureAtPixel_(evt.pixel)
       var element = evt.map.getTargetElement()
@@ -840,6 +858,10 @@ const CURSORS = {
   /**
    * @param {ol.MapBrowserEvent} evt Map browser event.
    * @return {boolean} `false` to stop the drag sequence.
+   * 
+   * @fires rotateend
+   * @fires translateend
+   * @fires scaleend
    */
   handleUpEvent_(evt) {
     // remove rotate0 cursor on Up event, otherwise it's stuck on grab/grabbing
@@ -849,7 +871,6 @@ const CURSORS = {
       this.previousCursor_ = undefined
     }
 
-    //dispatchEvent
     this.dispatchEvent({
       type: this.mode_ + 'end',
       feature: this.selection_.item(0),
@@ -868,28 +889,6 @@ const CURSORS = {
    */
   getFeatures() {
     return this.selection_;
-  }
-
-  /**
-   * @private
-   */
-  _projectVectorOnVector(displacement_vector, base) {
-    var k = (displacement_vector[0] * base[0] + displacement_vector[1] * base[1]) / (base[0] * base[0] + base[1] * base[1]);
-    return [base[0] * k, base[1] * k];
-  }
-
-  /**
-   * @private
-   */
-  _countVector(start, end) {
-    return [end[0] - start[0], end[1] - start[1]];
-  }
-
-  /**
-   * @private
-   */
-  _movePoint(point, displacementVector) {
-    return [point[0]+displacementVector[0], point[1]+displacementVector[1]];
   }
 
 }

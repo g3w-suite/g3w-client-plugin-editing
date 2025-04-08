@@ -575,7 +575,7 @@ export class ToolBox extends G3WObject {
           id:   'movefeature',
           type: ['change_feature'],
           name: 'editing.tools.move_feature',
-          icon: `move${iconGeometry}.png`,
+          icon: `mActionMoveFeature${iconGeometry}.svg`,
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/movefeatureworkflow.js@v3.7.1 */
           op: new Workflow({
             layer,
@@ -588,12 +588,12 @@ export class ToolBox extends G3WObject {
             ],
           }),
         },
-         // @since v3.10.0 Rotate Feature 
+         // @since v4.0.0 Rotate Feature 
          (is_vector) && capabilities.includes('change_feature') && {
           id:   'rotatefeature',
           type: ['change_feature'],
           name: 'editing.tools.rotate_feature',
-          icon: `mActionRotateFeature.svg`,
+          icon: 'mActionRotateFeature.svg',
           op: new Workflow({
             layer,
             type: 'rotatefeature',
