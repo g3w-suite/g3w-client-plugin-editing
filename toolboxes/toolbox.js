@@ -25,7 +25,7 @@ import { promisify, $promisify }                        from '../utils/promisify
 import { unlinkRelation }                               from '../utils/unlinkRelation';
 import { splitFeatures }                                from '../utils/splitFeatures';
 import { isSameBaseGeometryType }                       from '../utils/isSameBaseGeometryType';
-import { PickFeaturesInteraction }                      from '../interactions/pickfeaturesinteraction';
+import { PickFeaturesInteraction }                      from '../interactions/pickfeatures';
 
 import {
   OpenFormStep,
@@ -369,7 +369,7 @@ export class ToolBox extends G3WObject {
           id:   'movevertex',
           type: ['change_feature'],
           name: "editing.tools.update_vertex",
-          icon: "moveVertex.png",
+          icon: "mActionVertexTool.svg",
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/modifygeometryvertexworkflow.js@v3.7.1 */
           op: new Workflow({
             layer,
@@ -387,7 +387,7 @@ export class ToolBox extends G3WObject {
           id:   'editmultiattributes',
           type: ['change_attr_feature'],
           name: "editing.tools.update_multi_features",
-          icon: "multiEditAttributes.png",
+          icon: "mActionMultiEdit.svg",
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editmultifeatureattributesworkflow.js@v3.7.1 */
           op: new Workflow({
             layer,
@@ -421,7 +421,7 @@ export class ToolBox extends G3WObject {
           id:   'editmultiattributesrelationfeatures',
           type: ['change_attr_feature'],
           name: "editing.tools.update_multi_features_relations_from_parents",
-          icon: "EditMultiRelationFeatures.png",
+          icon: "relation.svg",
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editmultifeatureattributesworkflow.js@v3.7.1 */
           op: new Workflow({
             layer,
@@ -612,7 +612,7 @@ export class ToolBox extends G3WObject {
             id:   'copyfeaturesfromotherlayer',
             type: ['add_feature'],
             name: "editing.tools.pastefeaturesfromotherlayers",
-            icon: "pasteFeaturesFromOtherLayers.png",
+            icon: "mActionEditPaste.svg",
             enable: (function() {
               const catalogService      = GUI.getService('catalog');
               const layerId             = layer.getId();
@@ -816,7 +816,7 @@ export class ToolBox extends G3WObject {
           id:   'copyfeatures',
           type: ['add_feature'],
           name: "editing.tools.copy",
-          icon: `copy${iconGeometry}.png`,
+          icon: `mActionMoveFeatureCopy${iconGeometry}.svg`,
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/copyfeaturesworkflow.js@v3.7.1 */
           op: new Workflow({
             layer,

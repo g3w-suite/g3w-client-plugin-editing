@@ -271,7 +271,7 @@
   import { getFeatureTableFieldValue }                    from '../utils/getFeatureTableFieldValue';
   import { chooseFeatureFromFeatures }                    from '../utils/chooseFeatureFromFeatures';
   import { isSameBaseGeometryType }                       from '../utils/isSameBaseGeometryType';
-  import { PickFeaturesInteraction }                      from '../interactions/pickfeaturesinteraction';
+  import { PickFeaturesInteraction }                      from '../interactions/pickfeatures';
   import { VM }                                           from '../eventbus';
   import {
     OpenFormStep,

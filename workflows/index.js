@@ -15,7 +15,7 @@ import { addRemoveToMultipleSelectFeatures }            from '../utils/addRemove
 import { promisify, $promisify }                        from '../utils/promisify';
 import { isSameBaseGeometryType }                       from '../utils/isSameBaseGeometryType';
 import { setVertexStyle }                               from "../utils/setVertexStyle";
-import { PickFeaturesInteraction }                      from '../interactions/pickfeaturesinteraction';
+import { PickFeaturesInteraction }                      from '../interactions/pickfeatures';
 import { RotateInteraction }                            from '../interactions/rotate';
 
 import { Workflow }                                     from '../g3wsdk/workflow/workflow';
