@@ -16,7 +16,7 @@ import { promisify, $promisify }                        from '../utils/promisify
 import { isSameBaseGeometryType }                       from '../utils/isSameBaseGeometryType';
 import { setVertexStyle }                               from "../utils/setVertexStyle";
 import { PickFeaturesInteraction }                      from '../interactions/pickfeaturesinteraction';
-import { TransformInteraction }                         from '../interactions/transform';
+import { RotateInteraction }                         from '../interactions/rotate';
 
 import { Workflow }                                     from '../g3wsdk/workflow/workflow';
 import { Step }                                         from '../g3wsdk/workflow/step';
@@ -335,12 +335,7 @@ export class RotateFeatureStep extends Step {
 
       setAndUnsetSelectedFeaturesStyle({ promise: $promisify(promise), inputs, style: this.selectStyle });
       this._rotateInteraction = this.addInteraction(
-        new TransformInteraction({
-          rotate: true,
-          scale: false,
-          features:     new ol.Collection(inputs.features),
-          hitTolerance: (isMobile && isMobile.any) ? 10 : 0 },
-        ), {
+        new RotateInteraction({ features: new ol.Collection(inputs.features) }), {
         'rotatestart': e => {
           const feature   = e.features.getArray()[0];
           this.changeKey  = feature.once('change', () => isGeometryChange = true);

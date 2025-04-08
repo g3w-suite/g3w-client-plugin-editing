@@ -35,50 +35,43 @@ const CURSORS = {
   'scaleh3': 'ns-resize'
 };
 
-/** Interaction rotate
- * @constructor
- * @extends {ol.interaction.Pointer}
- * @fires select | rotatestart | rotating | rotateend | translatestart | translating | translateend | scalestart | scaling | scaleend
- * @param {any} options
- *  @param {function} options.filter A function that takes a Feature and a Layer and returns true if the feature may be transformed or false otherwise.
- *  @param {Array<ol.Layer>} options.layers array of layers to transform,
- *  @param {ol.Collection<ol.Feature>} options.features collection of feature to transform,
- *	@param {ol.EventsConditionType|undefined} options.condition A function that takes an ol.MapBrowserEvent and a feature collection and returns a boolean to indicate whether that event should be handled. default: ol.events.condition.always.
- *	@param {ol.EventsConditionType|undefined} options.addCondition A function that takes an ol.MapBrowserEvent and returns a boolean to indicate whether that event should be handled ie. the feature will be added to the transforms features. default: ol.events.condition.never.
- *	@param {number | undefined} options.hitTolerance Tolerance to select feature in pixel, default 0
- *	@param {bool} options.translateFeature Translate when click on feature
- *	@param {bool} options.translate Can translate the feature
- *  @param {bool} options.translateBBox Enable translate when the user drags inside the bounding box
- *	@param {bool} options.stretch can stretch the feature
- *	@param {bool} options.scale can scale the feature
- *	@param {bool} options.rotate can rotate the feature
- *	@param {bool} options.noFlip prevent the feature geometry to flip, default false
- *	@param {bool} options.selection the intraction handle selection/deselection, if not use the select prototype to add features to transform, default true
- *	@param {ol.events.ConditionType | undefined} options.keepAspectRatio A function that takes an ol.MapBrowserEvent and returns a boolean to keep aspect ratio, default ol.events.condition.shiftKeyOnly.
- *	@param {ol.events.ConditionType | undefined} options.modifyCenter A function that takes an ol.MapBrowserEvent and returns a boolean to apply scale & strech from the center, default ol.events.condition.metaKey or ol.events.condition.ctrlKey.
- *	@param {boolean} options.enableRotatedTransform Enable transform when map is rotated
- *	@param {boolean} [options.keepRectangle=false] keep rectangle when possible
- *  @param {number} [options.buffer] Increase the extent used as bounding box, default 0
- *	@param {*} options.style list of ol.style for handles
- *  @param {number|Array<number>|function} [options.pointRadius=0] radius for points or a function that takes a feature and returns the radius (or [radiusX, radiusY]). If not null show handles to transform the points
+/**
+ * Rotate interaction
+ * 
+ * @extends ol.interaction.Pointer
+ * 
+ * @param { Object } options
+ * @param { ol.Collection<ol.Feature> } options.features collection of feature to transform,
+ * 
+ * @fires select
+ * @fires rotatestart
+ * @fires rotating
+ * @fires rotateend
+ * @fires translatestart
+ * @fires translating
+ * @fires translateend
+ * @fires scalestart
+ * @fires scaling
+ * @fires scaleend
  */
- export class TransformInteraction extends ol.interaction.Pointer {
+ export class RotateInteraction extends ol.interaction.Pointer {
 
-  constructor(options) {
-    options = options || {}
-    // Extend pointer
+  constructor(options = {}) {
+
     super({
-      handleDownEvent: function(e) { return self.handleDownEvent_(e) },
-      handleDragEvent: function(e) { return this.handleDragEvent_(e) },
-      handleMoveEvent: function(e) { return this.handleMoveEvent_(e) },
-      handleUpEvent: function(e) { return this.handleUpEvent_(e) },
+      handleDownEvent(e) { return self.handleDownEvent_(e) },
+      handleDragEvent(e) { return this.handleDragEvent_(e) },
+      handleMoveEvent(e) { return this.handleMoveEvent_(e) },
+      handleUpEvent(e) { return this.handleUpEvent_(e) },
     })
     
-    var self = this
-    this.selection_ = new ol.Collection()
+    var self = this;
+
+    this.selection_ = new ol.Collection();
 
     // Create a new overlay layer for the sketch
-    this.handles_ = new ol.Collection()
+    this.handles_ = new ol.Collection();
+
     this.overlayLayer_ = new ol.layer.Vector({
       source: new ol.source.Vector({
         features: this.handles_,
@@ -88,60 +81,67 @@ const CURSORS = {
       name: 'Transform overlay',
       displayInLayerSwitcher: false,
       // Return the style according to the handle type
-      style: function (feature) {
+      style(feature) {
         return (self.style[(feature.get('handle') || 'default') + (feature.get('constraint') || '') + (feature.get('option') || '')])
       },
       updateWhileAnimating: true,
       updateWhileInteracting: true,
-    })
+    });
 
     // Collection of feature to transform
-    this.features_ = options.features
-    // Filter or list of layers to transform
-    if (typeof (options.filter) === 'function')
-      this._filter = options.filter
-    this.layers_ = options.layers ? (options.layers instanceof Array) ? options.layers : [options.layers] : null
+    this.features_ = options.features;
 
-    this._handleEvent = options.condition || function () { return true }
-    this.addFn_ = options.addCondition || function () { return false }
-    this.setPointRadius(options.pointRadius)
+    this._pointRadius = function () { return undefined }
+
     /* Translate when click on feature */
-    this.set('translateFeature', (options.translateFeature !== false))
+    this.set('translateFeature', true);
+
     /* Can translate the feature */
-    this.set('translate', (options.translate !== false))
+    this.set('translate', true);
+
     /* Translate when click on the bounding box */
-    this.set('translateBBox', (options.translateBBox === true))
+    this.set('translateBBox', false);
+
     /* Can stretch the feature */
-    this.set('stretch', (options.stretch !== false))
+    this.set('stretch', true);
+
     /* Can scale the feature */
-    this.set('scale', (options.scale !== false))
+    this.set('scale', false);
+
     /* Can rotate the feature */
-    this.set('rotate', (options.rotate !== false))
+    this.set('rotate', true);
+
     /* Keep aspect ratio */
-    this.set('keepAspectRatio', (options.keepAspectRatio || function (e) { return e.originalEvent.shiftKey }))
+    this.set('keepAspectRatio', function (e) { return e.originalEvent.shiftKey });
+
     /* Modify center */
-    this.set('modifyCenter', (options.modifyCenter || function (e) { return e.originalEvent.metaKey || e.originalEvent.ctrlKey }))
+    this.set('modifyCenter', function (e) { return e.originalEvent.metaKey || e.originalEvent.ctrlKey });
+
     /* Prevent flip */
-    this.set('noFlip', (options.noFlip || false))
+    this.set('noFlip', false);
+
     /* Handle selection */
-    this.set('selection', (options.selection !== false))
-    /*  */
-    this.set('hitTolerance', (options.hitTolerance || 0))
+    this.set('selection', true);
+
+    /* Tolerance to select feature in pixel */
+    this.set('hitTolerance', (isMobile && isMobile.any) ? 10 : 0);
+
     /* Enable view rotated transforms */
-    this.set('enableRotatedTransform', (options.enableRotatedTransform || false))
+    this.set('enableRotatedTransform', false);
+
     /* Keep rectangle angles 90 degrees */
-    this.set('keepRectangle', (options.keepRectangle || false))
+    this.set('keepRectangle', false);
+
     /* Add buffer to the feature's extent */
-    this.set('buffer', (options.buffer || 0))
+    this.set('buffer', 0);
 
     // Force redraw when changed
-    this.on('propertychange', function () {
-      this.drawSketch_()
-    })
+    this.on('propertychange', function () { this.drawSketch_() });
 
     // setstyle
     this.setDefaultStyle()
   }
+
   /**
    * Remove the interaction from its current map, if any,  and attach it to a new
    * map, if any. Pass `null` to just remove the interaction from the current map.
@@ -149,7 +149,7 @@ const CURSORS = {
    * @api stable
    */
   setMap(map) {
-    var oldMap = this.getMap()
+    const oldMap = this.getMap()
     if (oldMap) {
       oldMap.removeLayer(this.overlayLayer_)
       if (this.previousCursor_) {
@@ -167,6 +167,7 @@ const CURSORS = {
       this.setDefaultStyle()
     }
   }
+
   /**
    * Activate/deactivate interaction
    * @param {bool}
@@ -177,64 +178,67 @@ const CURSORS = {
     if (this.overlayLayer_) this.overlayLayer_.setVisible(b)
     super.setActive(b)
   }
-  /** Set default sketch style
-   * @param {Object} [options]
-   *  @param {ol.style.Stroke} [stroke] stroke style for selection rectangle, default red dash
-   *  @param {ol.style.Fill} [fill] fill style for selection rectangle, default red
-   *  @param {ol.style.Stroke} [pointStroke] stroke style for handles, default red
-   *  @param {ol.style.Fill} [pointFill] fill style for handles, default white
+
+  /**
+   * Set default sketch style
    */
-  setDefaultStyle(options) {
-    options = options || {}
-    // Style
-    var stroke = options.pointStroke || new ol.style.Stroke({ color: [255, 0, 0, 1], width: 1 })
-    var strokedash = options.stroke || new ol.style.Stroke({ color: [255, 0, 0, 1], width: 1, lineDash: [4, 4] })
-    var fill0 = options.fill || new ol.style.Fill({ color: [255, 0, 0, 0.01] })
-    var fill = options.pointFill || new ol.style.Fill({ color: [255, 255, 255, 0.8] })
-    var circle = new ol.style.RegularShape({
-      fill: fill,
-      stroke: stroke,
+  setDefaultStyle() {
+    const stroke = new ol.style.Stroke({ color: [255, 0, 0, 1], width: 1 })
+    const fill = new ol.style.Fill({ color: [255, 255, 255, 0.8] });
+
+    const circle = new ol.style.RegularShape({
+      fill,
+      stroke,
       radius: this.isTouch ? 12 : 6,
       displacement: this.isTouch ? [24, -24] : [12, -12],
       points: 15
     })
+
     // Old version with no displacement
-    if (!circle.setDisplacement)
-      circle.getAnchor()[0] = this.isTouch ? -10 : -5
-    var bigpt = new ol.style.RegularShape({
-      fill: fill,
-      stroke: stroke,
+    if (!circle.setDisplacement) {
+      circle.getAnchor()[0] = this.isTouch ? -10 : -5;
+    }
+
+    const bigpt = new ol.style.RegularShape({
+      fill,
+      stroke,
       radius: this.isTouch ? 16 : 8,
       points: 4,
       angle: Math.PI / 4
-    })
-    var smallpt = new ol.style.RegularShape({
-      fill: fill,
-      stroke: stroke,
+    });
+
+    const smallpt = new ol.style.RegularShape({
+      fill,
+      stroke,
       radius: this.isTouch ? 12 : 6,
       points: 4,
       angle: Math.PI / 4
-    })
-    function createStyle(img, stroke, fill) {
-      return [new ol.style.Style({ image: img, stroke: stroke, fill: fill })]
-    }
+    });
+
     /** Style for handles */
     this.style = {
-      'default': createStyle(bigpt, strokedash, fill0),
-      'translate': createStyle(bigpt, stroke, fill),
-      'rotate': createStyle(circle, stroke, fill),
-      'rotate0': createStyle(bigpt, stroke, fill),
-      'scale': createStyle(bigpt, stroke, fill),
-      'scale1': createStyle(bigpt, stroke, fill),
-      'scale2': createStyle(bigpt, stroke, fill),
-      'scale3': createStyle(bigpt, stroke, fill),
-      'scalev': createStyle(smallpt, stroke, fill),
-      'scaleh1': createStyle(smallpt, stroke, fill),
-      'scalev2': createStyle(smallpt, stroke, fill),
-      'scaleh3': createStyle(smallpt, stroke, fill),
+      'default': [
+          new ol.style.Style({
+          image:  bigpt,
+          stroke: new ol.style.Stroke({ color: [255, 0, 0, 1], width: 1, lineDash: [4, 4] }),
+          fill:   new ol.style.Fill({ color: [255, 0, 0, 0.01] }),
+        })
+      ],
+      'translate': [ new ol.style.Style({ image:  bigpt, stroke, fill }) ],
+      'rotate':    [ new ol.style.Style({ image: circle, stroke, fill, }) ],
+      'rotate0':   [ new ol.style.Style({ image:  bigpt, stroke, fill }) ],
+      'scale':     [ new ol.style.Style({ image:  bigpt, stroke, fill }) ],
+      'scale1':    [ new ol.style.Style({ image:  bigpt, stroke, fill }) ],
+      'scale2':    [ new ol.style.Style({ image:  bigpt, stroke, fill }) ],
+      'scale3':    [ new ol.style.Style({ image:  bigpt, stroke, fill }) ],
+      'scalev':    [ new ol.style.Style({ image: smallpt, stroke, fill }) ],
+      'scaleh1':   [ new ol.style.Style({ image: smallpt, stroke, fill }) ],
+      'scalev2':   [ new ol.style.Style({ image: smallpt, stroke, fill }) ],
+      'scaleh3':   [ new ol.style.Style({ image: smallpt, stroke, fill }) ],
     }
     this.drawSketch_()
   }
+
   /**
    * Set sketch style.
    * @param {style} style Style name: 'default','translate','rotate','rotate0','scale','scale1','scale2','scale3','scalev','scaleh1','scalev2','scaleh3'
@@ -267,6 +271,7 @@ const CURSORS = {
     }
     this.drawSketch_()
   }
+
   /** Get Feature at pixel
    * @param {ol.Pixel}
    * @return {ol.feature}
@@ -301,25 +306,9 @@ const CURSORS = {
           }
           return null
         }
-        // filter condition
-        if (self._filter) {
-          if (self._filter(feature, layer))
-            return { feature: feature }
-          else
-            return null
-        }
-
-        // feature belong to a layer
-        else if (self.layers_) {
-          for (var i = 0; i < self.layers_.length; i++) {
-            if (self.layers_[i] === layer)
-              return { feature: feature }
-          }
-          return null
-        }
 
         // feature in the collection
-        else if (self.features_) {
+        if (self.features_) {
           self.features_.forEach(function (f) {
             if (f === feature)
               found = true
@@ -337,6 +326,7 @@ const CURSORS = {
       { hitTolerance: this.get('hitTolerance') }
     ) || {}
   }
+
   /** Rotate feature from map view rotation
    * @param {ol.Feature} f the feature
    * @param {boolean} clone clone resulting geom
@@ -352,18 +342,16 @@ const CURSORS = {
     rotGeom.rotate(viewRotation * -1, this.getMap().getView().getCenter())
     return rotGeom
   }
+
   /** Test if rectangle
    * @param {ol.Geometry} geom
    * @returns {boolean}
    * @private
    */
   _isRectangle(geom) {
-    if (this.get('keepRectangle') && geom.getType() === 'Polygon') {
-      var coords = geom.getCoordinates()[0]
-      return coords.length === 5
-    }
-    return false
+    return this.get('keepRectangle') && geom.getType() === 'Polygon' && 5 === geom.getCoordinates()[0].length;
   }
+
   /** Draw transform sketch
   * @param {boolean} draw only the center
   */
@@ -449,8 +437,8 @@ const CURSORS = {
       // Add sketch
       this.overlayLayer_.getSource().addFeatures(features)
     }
-
   }
+
   /** Select a feature to transform
   * @param {ol.Feature} feature the feature to transform
   * @param {boolean} add true to add the feature to the selection, default false
@@ -478,6 +466,7 @@ const CURSORS = {
     // select event
     this.dispatchEvent({ type: 'select', feature: feature, features: this.selection_ })
   }
+
   /** Update the selection collection.
   * @param {ol.Collection<ol.Feature>} features the features to transform
   */
@@ -494,6 +483,7 @@ const CURSORS = {
     // select event
     this.dispatchEvent({ type: 'select', features: this.selection_ })
   }
+
   /** Watch selected features
    * @private
    */
@@ -515,14 +505,13 @@ const CURSORS = {
       )
     }.bind(this))
   }
+
   /**
    * @param {ol.MapBrowserEvent} evt Map browser event.
    * @return {boolean} `true` to start the drag sequence.
    * @private
    */
   handleDownEvent_(evt) {
-    if (!this._handleEvent(evt, this.selection_))
-      return
     var sel = this.getFeatureAtPixel_(evt.pixel)
     var feature = sel.feature
     if (this.selection_.getLength()
@@ -578,7 +567,6 @@ const CURSORS = {
     }
     else if (this.get('selection')) {
       if (feature) {
-        if (!this.addFn_(evt))
           this.selection_.clear()
         var index = this.selection_.getArray().indexOf(feature)
         if (index < 0)
@@ -596,6 +584,7 @@ const CURSORS = {
       return false
     }
   }
+
   /**
    * Get the rotation center
    * @return {ol.coordinate|undefined}
@@ -603,6 +592,7 @@ const CURSORS = {
   getCenter() {
     return this.get('center')
   }
+
   /**
    * Set the rotation center
    * @param {ol.coordinate|undefined} c the center point, default center on the objet
@@ -610,13 +600,12 @@ const CURSORS = {
   setCenter(c) {
     return this.set('center', c)
   }
+
   /**
    * @param {ol.MapBrowserEvent} evt Map browser event.
    * @private
    */
   handleDragEvent_(evt) {
-    if (!this._handleEvent(evt, this.features_))
-      return
     var viewRotation = this.getMap().getView().getRotation()
     var i, j, f, geometry
     var pt0 = [this.coordinate_[0], this.coordinate_[1]]
@@ -822,13 +811,12 @@ const CURSORS = {
     }
     this.isUpdating_ = false
   }
+
   /**
    * @param {ol.MapBrowserEvent} evt Event.
    * @private
    */
   handleMoveEvent_(evt) {
-    if (!this._handleEvent(evt, this.features_))
-      return
     // console.log("handleMoveEvent");
     if (!this.mode_) {
       var sel = this.getFeatureAtPixel_(evt.pixel)
@@ -848,6 +836,7 @@ const CURSORS = {
       }
     }
   }
+
   /**
    * @param {ol.MapBrowserEvent} evt Map browser event.
    * @return {boolean} `false` to stop the drag sequence.
@@ -873,22 +862,14 @@ const CURSORS = {
     this.mode_ = null
     return false
   }
-  /** Set the point radius to calculate handles on points
-   *  @param {number|Array<number>|function} [pointRadius=0] radius for points or a function that takes a feature and returns the radius (or [radiusX, radiusY]). If not null show handles to transform the points
-   */
-  setPointRadius(pointRadius) {
-    if (typeof (pointRadius) === 'function') {
-      this._pointRadius = pointRadius
-    } else {
-      this._pointRadius = function () { return pointRadius }
-    }
-  }
+
   /** Get the features that are selected for transform
    * @return ol.Collection
    */
   getFeatures() {
     return this.selection_;
   }
+
   /**
    * @private
    */
@@ -896,17 +877,19 @@ const CURSORS = {
     var k = (displacement_vector[0] * base[0] + displacement_vector[1] * base[1]) / (base[0] * base[0] + base[1] * base[1]);
     return [base[0] * k, base[1] * k];
   }
+
   /**
    * @private
    */
   _countVector(start, end) {
     return [end[0] - start[0], end[1] - start[1]];
   }
+
   /**
    * @private
    */
   _movePoint(point, displacementVector) {
     return [point[0]+displacementVector[0], point[1]+displacementVector[1]];
   }
-  
+
 }
