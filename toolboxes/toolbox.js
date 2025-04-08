@@ -227,7 +227,7 @@ export class ToolBox extends G3WObject {
           id:   'addfeature',
           type: ['add_feature'],
           name: 'editing.tools.add_feature',
-          icon: `add${iconGeometry}.png`,
+          icon: `mActionCapture${iconGeometry}.svg`,
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addfeatureworkflow.js@v3.7.1 */
           op: new Workflow({
             layer,
@@ -243,7 +243,7 @@ export class ToolBox extends G3WObject {
           id:   'editattributes',
           type: ['change_attr_feature'],
           name: 'editing.tools.update_feature',
-          icon: 'editAttributes.png',
+          icon: 'mActionEditTable.svg',
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editfeatureattributesworkflow.js@v3.7.1 */
           op: new Workflow({
             layer,
@@ -973,7 +973,7 @@ export class ToolBox extends G3WObject {
           id:   'addPart',
           type: ['add_feature', 'change_feature'],
           name: "editing.tools.addpart",
-          icon: "addPart.png",
+          icon: "mActionAddPart.svg",
           visible: isMultiGeometry,
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addparttomultigeometriesworkflow.js@v3.7.1 */
           op: new Workflow({
@@ -1021,7 +1021,7 @@ export class ToolBox extends G3WObject {
           id:   'deletePart',
           type: ['change_feature'],
           name: "editing.tools.deletepart",
-          icon: "deletePart.png",
+          icon: "mActionDeletePart.svg",
           visible: isMultiGeometry,
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/deletepartfrommultigeometriesworkflow.js@v3.7.1 */
           op: new Workflow({
@@ -1126,7 +1126,7 @@ export class ToolBox extends G3WObject {
           id:    'splitfeature',
           type:  ['change_feature'],
           name: "editing.tools.split",
-          icon: "splitFeatures.png",
+          icon: "mActionSplitFeatures.svg",
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/splitfeatureworkflow.js@v3.7.1 */
           op: new Workflow({
             layer,
@@ -1218,7 +1218,7 @@ export class ToolBox extends G3WObject {
           id:   'mergefeatures',
           type: ['change_feature'],
           name: "editing.tools.merge",
-          icon: "mergeFeatures.png",
+          icon: "mActionMergeFeatures.svg",
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/mergefeaturesworkflow.js@v3.7.1 */
           op: new Workflow({
             layer,
@@ -1309,7 +1309,7 @@ export class ToolBox extends G3WObject {
           id:   'addfeature',
           type: ['add_feature'],
           name: "editing.tools.add_feature",
-          icon: "addTableRow.png",
+          icon: "mActionCreateTable.svg",
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addtablefeatureworkflow.js@v3.7.1 */
           op:   new Workflow({
             layer,
@@ -1325,7 +1325,7 @@ export class ToolBox extends G3WObject {
           id:   'edittable',
           type: ['delete_feature', 'change_attr_feature'],
           name: "editing.tools.update_feature",
-          icon: "editAttributes.png",
+          icon: "mActionEditTable.svg",
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/edittableworkflow.js@v3.7.1 */
           op: new Workflow({
             layer,

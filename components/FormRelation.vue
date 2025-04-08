@@ -50,7 +50,7 @@
               <img
                 height           = "25"
                 width            = "25"
-                :src             = "`${resourcesurl}images/multiEditAttributes.png`"
+                :src             = "`${resourcesurl}images/mActionMultiEdit.svg`"
               />
             </span>
           </span>
@@ -649,7 +649,7 @@
           // delete feature
           this.capabilities.includes('delete_feature') && {
             state: Vue.observable({
-              icon:   'deleteTableRow.png',
+              icon:   'mActionEditTable.svg',
               id:     `${id}_deletefeature`,
               name:   'editing.tools.delete_feature',
               enabled: true,
