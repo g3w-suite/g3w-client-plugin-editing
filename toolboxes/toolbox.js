@@ -589,7 +589,7 @@ export class ToolBox extends G3WObject {
           }),
         },
          // @since v4.0.0 Rotate Feature 
-         (is_vector) && capabilities.includes('change_feature') && {
+         (is_line || is_poly || is_point && layer.getEditingFields().find(f => 'rotation' === f.name )) && capabilities.includes('change_feature') && {
           id:   'rotatefeature',
           type: ['change_feature'],
           name: 'editing.tools.rotate_feature',
