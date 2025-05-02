@@ -224,7 +224,7 @@ new (class extends Plugin {
         .getEditingFields()
         .filter(field => field.input && 'select_autocomplete' === field.input.type && !field.input.options.filter_expression && !field.input.options.usecompleter)
         /** @TODO need to avoid to call the same fnc to same event many times to avoid waste server request time */
-        .forEach(field => ['start-editing', 'show-relation-editing'].forEach(type => {
+        .forEach(field => ['start-editing'].forEach(type => {
           const id                    = layer.getId();
           this.state.events[type][id] = this.state.events[type][id] || [];
 
