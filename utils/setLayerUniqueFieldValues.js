@@ -1,5 +1,3 @@
-const { CatalogLayersStoresRegistry } = g3wsdk.core.catalog;
-
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
  * Method to get unique values of unique input values from server
@@ -17,6 +15,14 @@ export async function setLayerUniqueFieldValues(layerId) {
   const service = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing'); //get editing service
   await new Promise((resolve, reject) => {
     const layer = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').getLayerById(layerId);
+    const fields = Object.values(layer
+      .getEditingFields()
+      //filter field that is unique and not yet set unique values
+      .filter(f => !(f.pk && false === f.editable) && ('unique' === f.input.type || f.validate.unique)));
+    if (0 === fields.length) {
+      resolve();
+      return;
+    }
     //get all values for unique field
     layer.getWidgetData({
       type: 'unique',
