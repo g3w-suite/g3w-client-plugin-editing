@@ -159,7 +159,7 @@
         v-disabled = "disabled"
       >
         <table
-          v-if  = "relationsLength > 0 && !update"
+          v-if  = "relationsLength > 0"
           ref   = "relationTable"
           class = "table g3wform-relation-table table-striped nowrap"
         >
