@@ -330,20 +330,20 @@ export class RotateFeatureStep extends Step {
       const promise         = new Promise(r => this.resolve = r);
       let originalFeature  = null;
       this.changeKey       = null;
-      let isGeometryChange = false; // changed if geometry is changed
-
+      let isChange         = false; // changed if geometry or rotaion for Poin geometry is changed
       setAndUnsetSelectedFeaturesStyle({ promise: $promisify(promise), inputs, style: this.selectStyle });
       this.addInteraction(
         new RotateInteraction({ features: inputs.features }), {
         'rotatestart': e => {
-          const feature   = e.features.getArray()[0];
-          this.changeKey  = feature.once('change', () => isGeometryChange = true);
+          const feature   = e.feature;
+          //chage for geometry (Line, Polygon), propertychange fro Point geometry
+          this.changeKey  = feature.once(['change', 'propertychange'], () => isChange = true );
           originalFeature = feature.clone();
         },
         'rotateend': async e => {
           ol.Observable.unByKey(this.changeKey);
-          if (isGeometryChange) {
-            const feature = e.features.getArray()[0];
+          if (isChange) {
+            const feature = e.feature;
             try {
               await evaluateExpressionFields({ inputs, context, feature });
             } catch (e) {
