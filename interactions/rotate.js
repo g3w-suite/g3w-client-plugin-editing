@@ -74,15 +74,6 @@ const CURSORS = {
     /* Can rotate the feature */
     this.set('rotate', true);
 
-    /* Keep aspect ratio */
-    this.set('keepAspectRatio',  e => e.originalEvent.shiftKey );
-
-    /* Modify center */
-    this.set('modifyCenter',  e => e.originalEvent.metaKey || e.originalEvent.ctrlKey );
-
-    /* Prevent flip */
-    this.set('noFlip', false);
-
     /* Handle selection */
     this.set('selection', true);
 
@@ -207,7 +198,7 @@ const CURSORS = {
     for (let i = 0; i < this.style[style].length; i++) {
       const im = this.style[style][i].getImage();
       if (im && style == 'rotate') {
-        im.getAnchor()[0] = -5
+        im.getAnchor()[0] = -5;
       }
         
       if (im && this.isTouch) {
@@ -360,68 +351,20 @@ const CURSORS = {
     this.ispt_     = 'Point' === feature.getGeometry().getType();
 
     if (this.ispt_) {
-
-      let change = false;
-      
-      GUI.showUserMessage({
-        type: 'tool',
-        title: 'Rotazione',
-        message: 'Ciao',
-        size: 'small',
-        autoclose: false,
-        closable: false,
-        iconClass: 'refresh',
-        hooks: {
-          body: {
-            template: `<div id = "rotaion-feature-point-tool" style = "display: flex; align-items: center; padding: 5px;">
-              <input class = "form-control" type="number" min = "0" max = "360" v-model="rotation"/>
-              <button @click = "stop" style = "margin: 3px" class="btn skin-background-color">Done</button>
-            </div>`,
-            data() {
-              return {
-                rotation: feature.get('rotation') || 0,
-              }
-            },
-            methods: {
-              stop: () => {
-                GUI.closeUserMessage();
-                this.dispatchEvent({
-                  type:       'rotateend',
-                  feature,
-                });
-                feature.setStyle(this.oriStyle);
-              }
-            },
-            watch: {
-              rotation: (r) => {
-                if (!change) {
-                  this.dispatchEvent({
-                    type:       'rotatestart',
-                    feature,
-                  });
-                  change = true;
-                }
-                feature.set('rotation', Number(r));
-              }
-            }
-          }
-        }
-
-      })
+      //store previous point rotaion degree
+      this.pdegrees_ = null;
       //need to wait selection set style
       setTimeout(() => {
+        //get original style of the feature
         this.oriStyle = feature.getStyle();
+        //set arrow style
         feature.setStyle(this.style['arrow']);
       })
-      
     }
 
-    //Only if not point geometry show 
-    if (!this.ispt_) {
-      this.drawSketch_();
-      this.watchFeatures_();
-    }
-
+    
+    this.drawSketch_();
+    this.watchFeatures_();
     // select event
     this.dispatchEvent({ type: 'select', feature, features: this.selection_ });
   }
@@ -437,7 +380,7 @@ const CURSORS = {
     this._featureListeners = this.selection_.getArray().map(f  => 
       f.on('change', () => {
         if (!this.isUpdating_) {
-          this.drawSketch_()
+          this.drawSketch_();
         }
       })
     )
@@ -531,10 +474,11 @@ const CURSORS = {
    */
   handleDragEvent_(evt) {
     let i, f, geometry;
-    const feature = this.selection_.item(0);
-    const pt = [evt.coordinate[0], evt.coordinate[1]];
+    const feature    = this.selection_.item(0);
+    const pt         = [evt.coordinate[0], evt.coordinate[1]];
     this.isUpdating_ = true;
     const a = Math.atan2(this.center_[1] - pt[1], this.center_[0] - pt[0]);
+    //No Point geometry type
     if (!this.ispt_) {
       for (i = 0, f; f = this.selection_.item(i); i++) {
         geometry = this.geoms_[i].clone();
@@ -542,7 +486,28 @@ const CURSORS = {
         f.setGeometry(geometry);
       }
     }
-    
+
+    //Point Geometry type
+    if (this.ispt_) {
+      //get rotation degree
+      let degrees = (a * (180 / Math.PI)); // between -180 to 180 (start at 145 lower right to bbox)
+      if (null === this.pdegrees_) {
+        this.pdegrees_ = degrees;
+      }      
+
+      //get direction (clockwise or not)
+      const clockwise       = (this.pdegrees_ > degrees) || (this.pdegrees_ > degrees);
+      //get current rotation
+      let rotation = Number(feature.get('rotation'));
+      if (rotation >= 360) {
+        rotation = (clockwise ? 0 : 360);
+      }
+      //set rotation
+      feature.set('rotation', rotation + (clockwise ? 1 : -1))
+      this.pdegrees_ = degrees;
+
+    }
+
     this.drawSketch_(true);
 
     this.dispatchEvent({
@@ -580,7 +545,8 @@ const CURSORS = {
     })
 
     this.drawSketch_();
-    this.mode_ = null;
+    this.mode_     = null;
+    this.pdegrees_ = null;
     return false;
   }
 
