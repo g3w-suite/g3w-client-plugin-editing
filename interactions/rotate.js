@@ -181,8 +181,8 @@ const CURSORS = {
       'arrow': feat => new ol.style.Style({
                         image: new ol.style.Icon({
                         src: `${GUI.getResourcesUrl()}images/Arrow.svg`,
-                        width	: 40,
-                        height: 40,
+                        width	: 50,
+                        height: 50,
                         rotation: ((feat.get('rotation')) * Math.PI) / 180,
                       }),
                     }),       
@@ -296,8 +296,8 @@ const CURSORS = {
         const p = this.getMap().getPixelFromCoordinate(ol.extent.getCenter(ext));
         if (p) {
           ext = ol.extent.boundingExtent([
-            this.getMap().getCoordinateFromPixel([p[0] - 20, p[1] - 20]),
-            this.getMap().getCoordinateFromPixel([p[0] + 20, p[1] + 20])
+            this.getMap().getCoordinateFromPixel([p[0] - 30, p[1] - 30]),
+            this.getMap().getCoordinateFromPixel([p[0] + 30, p[1] + 30])
           ])
         }
       }
@@ -502,8 +502,11 @@ const CURSORS = {
       const clockwise = (this.pdegrees_ > degrees) || (this.pdegrees_ > degrees);
       //get current rotation
       let rotation    = Number(feature.get('rotation'));
-      if (rotation >= 360) {
-        rotation = (clockwise ? 0 : 360);
+      if (rotation > 360 && clockwise) {
+        rotation = 0;
+      }
+      if (rotation < 0 && !clockwise) {
+        rotation = 360;
       }
     
       this._pointRotation({ rotation: rotation + (clockwise ? 1 : -1), feature });
