@@ -313,54 +313,69 @@ export class ModifyGeometryVertexStep extends Step {
 export class RotateFeatureStep extends Step {
 
   constructor(options = {}) {
-    options.help = "editing.steps.help.move";
+    options.help = "editing.steps.help.rotate";
 
     super(options);
 
-    this.drawInteraction = null;
+    this.isChange          = false; // changed if geometry or rotaion for Poin geometry is changed
+    this._feature          = null;
+    this._originalFeature  = null; 
+    this.drawInteraction   = null;
     this.promise; // need to be set here in case of picked features
   }
 
-  run(inputs, context) {
+  run(inputs) {               
     /** Need two different promises: One for stop() method and clean-selected feature,
      * and another one for a run task. If we use the same promise, when stop a task without move feature,
      * this.promise.resolve(), it fires also thenable method listens to resolve promise of a run task,
      * that call stop task method.*/
     return $promisify(new Promise((resolve) => {
-      const promise         = new Promise(r => this.resolve = r);
-      let originalFeature  = null;
+      const promise        = new Promise(r => this.resolve = r);
       this.changeKey       = null;
-      let isChange         = false; // changed if geometry or rotaion for Poin geometry is changed
       setAndUnsetSelectedFeaturesStyle({ promise: $promisify(promise), inputs, style: this.selectStyle });
       this.addInteraction(
         new RotateInteraction({ features: inputs.features }), {
         'rotatestart': e => {
-          const feature   = e.feature;
-          //chage for geometry (Line, Polygon), propertychange fro Point geometry
-          this.changeKey  = feature.once(['change', 'propertychange'], () => isChange = true );
-          originalFeature = feature.clone();
+          this._feature         = e.feature;
+          this.isChange         = true;
+          this._originalFeature = this._feature.clone();
         },
         'rotateend': async e => {
-          ol.Observable.unByKey(this.changeKey);
-          if (isChange) {
-            const feature = e.feature;
-            try {
-              await evaluateExpressionFields({ inputs, context, feature });
-            } catch (e) {
-              console.warn(e);
-            }
-            context.session.pushUpdate(inputs.layer.getId(), feature.clone(), originalFeature);
+          if (this.isChange) {
+            await this.updateFeature(e.feature);
           }
+          this.isChange = false;
           resolve(inputs);
         },
       }).select(inputs.features.at(- 1));
     }))
   }
 
-  stop() {
+  /**
+   * Method to update layer feature
+   */
+  async updateFeature() {
+    const inputs  = this.getInputs();
+    const context = this.getContext();
+    try {
+      await evaluateExpressionFields({ inputs, context, feature: this._feature });
+    } catch(e) {
+      console.warn(e);
+    }
+    context.session.pushUpdate(inputs.layer.getId(), this._feature.clone(), this._originalFeature);
+  }
+
+  async stop(input, context) {
+    if (this.isChange) {
+     //In case of Point geometry, afetr change rotation and click on tool to stop, need to update feature 
+     await this.updateFeature();
+     //need to save it on session
+     context.session.save();
+    }
     this.resolve(true);
-    this.resolve   = null;
-    this.changeKey = null;
+    this.resolve  = null;
+    this.isChange = false
+    GUI.closeUserMessage();
   }
 }
 
