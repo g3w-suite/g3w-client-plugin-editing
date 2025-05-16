@@ -23,9 +23,7 @@ function _setCursor(elt, cursor) {
 const CURSORS = {
   'default':   'auto',
   'select': '   pointer',
-  'translate': 'move',
   'rotate':    'move',
-  'rotate0':   'move',
 };
 
 /**
@@ -48,6 +46,8 @@ const CURSORS = {
     
     //Selection Features
     this.selection_ = new ol.Collection();
+    //set default Pint feature to false
+    this.ispt_      = false;
 
     // Create a new overlay layer for the sketch
     this.handles_   = new ol.Collection();
@@ -69,16 +69,29 @@ const CURSORS = {
     // Collection of feature to transform
     this.features_ = new ol.Collection(options.features);
 
-    this._pointRadius = () => {};
+    //Is updating geometry
+    this._change   = false;
+
+    //Function to dandle point geometry rotation
+    this._pointRotation = ({ rotation, feature}) => {
+      if (!this._change) {
+        this.dispatchEvent({ type: 'rotatestart', feature });
+      }
+      feature.set('rotation', Number(rotation));
+      if (this._change) {
+         this.dispatchEvent({
+          type:       'rotating',
+          feature,
+        })
+      }
+      this._change = true;
+    }
 
     /* Can rotate the feature */
     this.set('rotate', true);
 
     /* Handle selection */
     this.set('selection', true);
-
-    /* Enable view rotated transforms */
-    this.set('enableRotatedTransform', false);
 
     /* Keep rectangle angles 90 degrees */
     this.set('keepRectangle', false);
@@ -138,42 +151,35 @@ const CURSORS = {
   setDefaultStyle() {
     const stroke = new ol.style.Stroke({ color: [255, 0, 0, 1], width: 1 });
     const fill   = new ol.style.Fill({ color: [255, 255, 255, 0.8] });
-
-    const circle = new ol.style.RegularShape({
-      fill,
-      stroke,
-      radius:       this.isTouch ? 12 : 6,
-      displacement: this.isTouch ? [24, -24] : [12, -12],
-      points:       15
-    })
-
-    // Old version with no displacement
-    if (!circle.setDisplacement) {
-      circle.getAnchor()[0] = this.isTouch ? -10 : -5;
-    }
-
-    const bigpt = new ol.style.RegularShape({
-      fill,
-      stroke,
-      radius: this.isTouch ? 16 : 8,
-      points: 4,
-      angle:  Math.PI / 4
-    });
-
     /** Style for handles */
     this.style = {
       'default': [
           new ol.style.Style({
-          image:  bigpt,
+          image: new ol.style.RegularShape({
+            fill,
+            stroke,
+            radius: this.isTouch ? 16 : 8,
+            points: 4,
+            angle:  Math.PI / 4
+          }),
           stroke: new ol.style.Stroke({ color: [255, 0, 0, 1], width: 1, lineDash: [4, 4] }),
           fill:   new ol.style.Fill({ color: [255, 0, 0, 0.01] }),
         })
       ],
-      'rotate':    [ new ol.style.Style({ image: circle, stroke, fill, }) ],
-      'rotate0':   [ new ol.style.Style({ image: bigpt,  stroke, fill }) ],
-      'arrow':     feat => 
-                    new ol.style.Style({
-                      image: new ol.style.Icon({
+      'rotate':   [ 
+        new ol.style.Style({ 
+          image: new ol.style.RegularShape({
+            fill,
+            stroke,
+            radius: this.isTouch ? 16 : 8,
+            points: 4,
+            angle:  Math.PI / 4
+          }),  
+          stroke, fill 
+        }) 
+      ],
+      'arrow': feat => new ol.style.Style({
+                        image: new ol.style.Icon({
                         src: `${GUI.getResourcesUrl()}images/Arrow.svg`,
                         width	: 40,
                         height: 40,
@@ -186,7 +192,7 @@ const CURSORS = {
 
   /**
    * Set sketch style.
-   * @param {style} style Style name: 'default','translate','rotate','rotate0','scale','scale1','scale2','scale3','scalev','scaleh1','scalev2','scaleh3'
+   * @param {style} style Style name: 'default','rotate'
    * @param {ol.style.Style|Array<ol.style.Style>} olstyle
    * @api stable
    */
@@ -228,7 +234,7 @@ const CURSORS = {
     return this.getMap().forEachFeatureAtPixel(pixel,
       feature => {
         if (this.handles_.getArray().find(f => feature === f)) {
-          return { feature, handle: feature.get('handle'), constraint: feature.get('constraint'), option: feature.get('option') }
+          return { feature, constraint: feature.get('constraint'), option: feature.get('option') }
         }
       },
       { hitTolerance: (isMobile && isMobile.any) ? 10 : 0 }
@@ -237,17 +243,11 @@ const CURSORS = {
 
   /** Rotate feature from map view rotation
    * @param {ol.Feature} f the feature
-   * @param {boolean} clone clone resulting geom
    * @param {ol.geom.Geometry} rotated geometry
    */
-  getGeometryRotateToZero_(f, clone) {
-    const origGeom     = f.getGeometry();
-    const viewRotation = this.getMap().getView().getRotation();
-    if (0 === viewRotation || !this.get('enableRotatedTransform')) {
-      return clone ? origGeom.clone() : origGeom;
-    }
-    const rotGeom = origGeom.clone();
-    rotGeom.rotate(viewRotation * -1, this.getMap().getView().getCenter());
+  getGeometryRotateToZero_(f) {
+    const rotGeom = f.getGeometry().clone();
+    rotGeom.rotate(this.getMap().getView().getRotation() * -1, this.getMap().getView().getCenter());
     return rotGeom;
   }
 
@@ -271,8 +271,6 @@ const CURSORS = {
     this.overlayLayer_.getSource().clear();
     //If no selection feature, skip
     if (!this.selection_.getLength()) { return; }
-    //get roptation of map
-    const viewRotation = this.getMap().getView().getRotation();
     //get extent of selected feature
     let ext = this.getGeometryRotateToZero_(this.selection_.item(0)).getExtent();
     let coords;
@@ -285,18 +283,11 @@ const CURSORS = {
     ext = ol.extent.buffer(ext, this.get('buffer'));
     this.selection_.forEach(f => ol.extent.extend(ext, this.getGeometryRotateToZero_(f).getExtent()));
 
-    let ptRadius = (1 === this.selection_.getLength() ? this._pointRadius(this.selection_.item(0)) : 0);
-    if (ptRadius && !(ptRadius instanceof Array)) {
-      ptRadius = [ptRadius, ptRadius];
-    }
     if (true === center) {
       if (!this.ispt_) {
-        this.overlayLayer_.getSource().addFeature(new ol.Feature({ geometry: new ol.geom.Point(this.center_), handle: 'rotate0' }));
+        this.overlayLayer_.getSource().addFeature(new ol.Feature({ geometry: new ol.geom.Point(this.center_)}));
         geom = ol.geom.Polygon.fromExtent(ext);
-        if (this.get('enableRotatedTransform') && 0 !== viewRotation) {
-          geom.rotate(viewRotation, this.getMap().getView().getCenter());
-        }
-        f = this.bbox_ = new ol.Feature(geom);
+        f = new ol.Feature(geom);
         this.overlayLayer_.getSource().addFeature(f);
       }
     } else {
@@ -304,29 +295,18 @@ const CURSORS = {
         // Calculate extent around the point
         const p = this.getMap().getPixelFromCoordinate(ol.extent.getCenter(ext));
         if (p) {
-          const dx = ptRadius ? ptRadius[0] || 10 : 10;
-          const dy = ptRadius ? ptRadius[1] || 10 : 10;
           ext = ol.extent.boundingExtent([
-            this.getMap().getCoordinateFromPixel([p[0] - dx, p[1] - dy]),
-            this.getMap().getCoordinateFromPixel([p[0] + dx, p[1] + dy])
+            this.getMap().getCoordinateFromPixel([p[0] - 20, p[1] - 20]),
+            this.getMap().getCoordinateFromPixel([p[0] + 20, p[1] + 20])
           ])
         }
       }
       geom = keepRectangle ? new ol.geom.Polygon([coords]) : ol.geom.Polygon.fromExtent(ext);
-      if (this.get('enableRotatedTransform') && 0 !== viewRotation) {
-        geom.rotate(viewRotation, this.getMap().getView().getCenter());
-      }
-      f = this.bbox_ = new ol.Feature(geom);
-      const features = [];
-      const g = geom.getCoordinates()[0];
-      if (!this.ispt_ || ptRadius) {
-        features.push(f);
-      }
-     
-      features.push(new ol.Feature({ geometry: new ol.geom.Point(g[3]), handle: 'rotate' }));
-      
+  
       // Add sketch
-      this.overlayLayer_.getSource().addFeatures(features);
+      this.overlayLayer_.getSource().addFeatures([
+        new ol.Feature(geom),
+      ]);
     }
   }
 
@@ -341,18 +321,59 @@ const CURSORS = {
   select(feature) {
     if (!feature && this.selection_) {
       this.selection_.clear();
-      this.drawSketch_();  
+      return false
     }
+    // Check if feature is already selected
     if (!feature || !feature.getGeometry || !feature.getGeometry()) { return }
 
     // Add to selection
     this.selection_.push(feature)
-    //Chanck if is point feature
+    //Chenck if is point feature
     this.ispt_     = 'Point' === feature.getGeometry().getType();
 
     if (this.ispt_) {
+      
+      GUI.showUserMessage({
+        type:      'tool',
+        title:     'Rotation',
+        size:      'small',
+        autoclose: false,
+        closable:  false,
+        iconClass: 'refresh',
+        hooks: {
+          body: {
+            template: `
+              <div id = "rotation-feature-point-tool">
+                <input class = "form-control" type="number" min = "0" max = "360" :value = "rotation" @input = "change"/>
+              </div>
+            `,
+            data() {
+              return {
+                rotation: feature.get('rotation') || 0,
+              }
+            },
+            methods: {
+              change: evt => this._pointRotation({ feature, rotation: evt.target.value })
+            },
+           
+            created() {
+              feature.on('propertychange', e => this.rotation = e.target.get('rotation') )
+            },
+            beforeDestroy: () => {
+              if (this.change) {
+                this.dispatchEvent({ type: 'rotateend', feature });
+              }
+              this.change_ = false;
+              this.pdegrees_ = null;
+            }
+          }
+        }
+
+      })
+      
       //store previous point rotaion degree
       this.pdegrees_ = null;
+      this.drawSketch_();
       //need to wait selection set style
       setTimeout(() => {
         //get original style of the feature
@@ -362,8 +383,6 @@ const CURSORS = {
       })
     }
 
-    
-    this.drawSketch_();
     this.watchFeatures_();
     // select event
     this.dispatchEvent({ type: 'select', feature, features: this.selection_ });
@@ -395,54 +414,40 @@ const CURSORS = {
    * 
    * @fires select
    * @fires rotatestart
-   * @fires translatestart
-   * @fires scalestart
    */
   handleDownEvent_(evt) {
     const sel          = this.getFeatureAtPixel_(evt.pixel);
     const feature      = sel.feature;
-    if (!feature) {return false; }
-    this.mode_         = sel.handle;
+    if (!feature && this.selection_.getLength()) { 
+      this._rotateEndFnc();
+      this.selection_.clear();
+      this.overlayLayer_.getSource().clear();
+      return false;
+    }
     this.opt_          = sel.option;
     this.constraint_   = sel.constraint;
     this.oriStyle      = feature.getStyle();
     // Save info
-    const viewRotation = this.getMap().getView().getRotation();
     // Get coordinate of the handle (for snapping)
     this.coordinate_   = feature.get('handle') ? feature.getGeometry().getCoordinates() : evt.coordinate;
     this.pixel_        = this.getMap().getCoordinateFromPixel(this.coordinate_); // evt.pixel;
     this.geoms_        = [];
     this.rotatedGeoms_ = [];
     let extent         = ol.extent.createEmpty();
-    let rotExtent      = ol.extent.createEmpty();
-    for (let i = 0, f; f = this.selection_.item(i); i++) {
-      this.geoms_.push(f.getGeometry().clone());
-      extent = ol.extent.extend(extent, f.getGeometry().getExtent());
-      if (this.get('enableRotatedTransform') && 0 !== viewRotation) {
-        const rotGeom = this.getGeometryRotateToZero_(f, true);
-        this.rotatedGeoms_.push(rotGeom);
-        rotExtent = ol.extent.extend(rotExtent, rotGeom.getExtent());
-      }
-    }
+    this.geoms_.push(this.selection_.item(0).getGeometry().clone());
+    extent = ol.extent.extend(extent, this.selection_.item(0).getGeometry().getExtent());
     this.extent_ = (ol.geom.Polygon.fromExtent(extent)).getCoordinates()[0];
-    if (this.get('enableRotatedTransform') && 0 !== viewRotation) {
-      this.rotatedExtent_ = (ol.geom.Polygon.fromExtent(rotExtent)).getCoordinates()[0];
-    }
-    
     this.center_  = this.getCenter() || ol.extent.getCenter(extent);
     // we are now rotating (cursor down on rotate mode), so apply the grabbing cursor
     const element = evt.map.getTargetElement();
-    _setCursor(element, CURSORS.rotate0);
+    _setCursor(element, CURSORS.rotate);
     this.previousCursor_ = element.style.cursor;
     this.angle_          = Math.atan2(this.center_[1] - evt.coordinate[1], this.center_[0] - evt.coordinate[0]);
-
     this.dispatchEvent({
-      type:       this.mode_ + 'start',
-      feature:    this.selection_.item(0),
-      features:   this.selection_,
-      pixel:      evt.pixel,
-      coordinate: evt.coordinate
+      type:       'rotatestart',
+      feature:    this.selection_.item(0)
     });
+    this._change = true
 
     return true
   }
@@ -477,7 +482,7 @@ const CURSORS = {
     const feature    = this.selection_.item(0);
     const pt         = [evt.coordinate[0], evt.coordinate[1]];
     this.isUpdating_ = true;
-    const a = Math.atan2(this.center_[1] - pt[1], this.center_[0] - pt[0]);
+    const a          = Math.atan2(this.center_[1] - pt[1], this.center_[0] - pt[0]);
     //No Point geometry type
     if (!this.ispt_) {
       for (i = 0, f; f = this.selection_.item(i); i++) {
@@ -486,7 +491,6 @@ const CURSORS = {
         f.setGeometry(geometry);
       }
     }
-
     //Point Geometry type
     if (this.ispt_) {
       //get rotation degree
@@ -494,32 +498,35 @@ const CURSORS = {
       if (null === this.pdegrees_) {
         this.pdegrees_ = degrees;
       }      
-
       //get direction (clockwise or not)
-      const clockwise       = (this.pdegrees_ > degrees) || (this.pdegrees_ > degrees);
+      const clockwise = (this.pdegrees_ > degrees) || (this.pdegrees_ > degrees);
       //get current rotation
-      let rotation = Number(feature.get('rotation'));
+      let rotation    = Number(feature.get('rotation'));
       if (rotation >= 360) {
         rotation = (clockwise ? 0 : 360);
       }
-      //set rotation
-      feature.set('rotation', rotation + (clockwise ? 1 : -1))
+    
+      this._pointRotation({ rotation: rotation + (clockwise ? 1 : -1), feature });
       this.pdegrees_ = degrees;
-
     }
 
     this.drawSketch_(true);
 
-    this.dispatchEvent({
-      type:       'rotating',
-      feature,
-      features:   this.selection_,
-      angle:      a - this.angle_,
-      pixel:      evt.pixel,
-      coordinate: evt.coordinate
-    })
-      
     this.isUpdating_ = false;
+  }
+
+  _rotateEndFnc() {
+  // remove rotate cursor on Up event, otherwise it's stuck on grab/grabbing
+    const feature = this.selection_.item(0);
+    _setCursor(this.getMap().getTargetElement(), CURSORS.default);
+    this.previousCursor_ = undefined;
+
+    this.dispatchEvent({
+      type:     'rotateend',
+      feature
+    })
+
+    return false;
   }
 
   /**
@@ -530,24 +537,11 @@ const CURSORS = {
    * @fires translateend
    * @fires scaleend
    */
-  handleUpEvent_(evt) {
-    // remove rotate0 cursor on Up event, otherwise it's stuck on grab/grabbing
-    const feature = this.selection_.item(0);
-    _setCursor(evt.map.getTargetElement(), CURSORS.default);
-    this.previousCursor_ = undefined;
-
-    this.dispatchEvent({
-      type:     this.mode_ + 'end',
-      feature,
-      features: this.selection_,
-      oldgeom:  this.geoms_[0],
-      oldgeoms: this.geoms_
-    })
-
+  handleUpEvent_() {
+    if (!this.ispt_) {
+      this._rotateEndFnc();
+    }
     this.drawSketch_();
-    this.mode_     = null;
-    this.pdegrees_ = null;
-    return false;
   }
 
   /** Get the features that are selected for transform
