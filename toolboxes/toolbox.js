@@ -594,7 +594,6 @@ export class ToolBox extends G3WObject {
           type:   ['change_feature'],
           name:   'editing.tools.rotate_feature',
           icon:   'mActionRotateFeature.svg',
-          runOnce: true,
           op: new Workflow({
             layer,
             type: 'rotatefeature',
