@@ -356,9 +356,9 @@ export class Workflow extends G3WObject {
       if (
           !isChild
           && Workflow.Stack.getLength()
-          && Workflow.Stack.getCurrent() !== this
+          && this !== Workflow.Stack.getCurrent()
       ) {
-        Workflow.Stack.getCurrent().addChild(this)
+        Workflow.Stack.getCurrent().addChild(this);
       }
 
       //get stack index
@@ -458,13 +458,15 @@ export class Workflow extends G3WObject {
       } catch(e) {
         console.warn(e);
         reject(e);
+      } finally {
+        //remove workflow from stack
+        Workflow.Stack.removeAt(this.getStackIndex());
+
+        //emit stop Workflow
+        this.emit('stop');
       }
 
-      //remove workflow from stack
-      Workflow.Stack.removeAt(this.getStackIndex());
-
-      //emit stop Workflow
-      this.emit('stop');
+      
 
     }));
   }
