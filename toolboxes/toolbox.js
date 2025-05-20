@@ -25,7 +25,7 @@ import { promisify, $promisify }                        from '../utils/promisify
 import { unlinkRelation }                               from '../utils/unlinkRelation';
 import { splitFeatures }                                from '../utils/splitFeatures';
 import { isSameBaseGeometryType }                       from '../utils/isSameBaseGeometryType';
-import { PickFeaturesInteraction }                      from '../interactions/pickfeaturesinteraction';
+import { PickFeaturesInteraction }                      from '../interactions/pickfeatures';
 
 import {
   OpenFormStep,
@@ -33,6 +33,7 @@ import {
   PickFeatureStep,
   AddFeatureStep,
   MoveFeatureStep,
+  RotateFeatureStep,
   ModifyGeometryVertexStep,
   OpenTableStep,
 }                                                       from '../workflows';
@@ -44,6 +45,7 @@ Object
     SelectElementsStep,
     PickFeatureStep,
     MoveFeatureStep,
+    RotateFeatureStep,
     ModifyGeometryVertexStep,
     OpenTableStep,
     AddFeatureStep,
@@ -225,7 +227,7 @@ export class ToolBox extends G3WObject {
           id:   'addfeature',
           type: ['add_feature'],
           name: 'editing.tools.add_feature',
-          icon: `add${iconGeometry}.png`,
+          icon: `mActionCapture${iconGeometry}.svg`,
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addfeatureworkflow.js@v3.7.1 */
           op: new Workflow({
             layer,
@@ -241,7 +243,7 @@ export class ToolBox extends G3WObject {
           id:   'editattributes',
           type: ['change_attr_feature'],
           name: 'editing.tools.update_feature',
-          icon: 'editAttributes.png',
+          icon: 'mActionEditTable.svg',
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editfeatureattributesworkflow.js@v3.7.1 */
           op: new Workflow({
             layer,
@@ -367,7 +369,7 @@ export class ToolBox extends G3WObject {
           id:   'movevertex',
           type: ['change_feature'],
           name: "editing.tools.update_vertex",
-          icon: "moveVertex.png",
+          icon: "mActionVertexTool.svg",
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/modifygeometryvertexworkflow.js@v3.7.1 */
           op: new Workflow({
             layer,
@@ -385,7 +387,7 @@ export class ToolBox extends G3WObject {
           id:   'editmultiattributes',
           type: ['change_attr_feature'],
           name: "editing.tools.update_multi_features",
-          icon: "multiEditAttributes.png",
+          icon: "mActionMultiEdit.svg",
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editmultifeatureattributesworkflow.js@v3.7.1 */
           op: new Workflow({
             layer,
@@ -419,7 +421,7 @@ export class ToolBox extends G3WObject {
           id:   'editmultiattributesrelationfeatures',
           type: ['change_attr_feature'],
           name: "editing.tools.update_multi_features_relations_from_parents",
-          icon: "EditMultiRelationFeatures.png",
+          icon: "relation.svg",
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editmultifeatureattributesworkflow.js@v3.7.1 */
           op: new Workflow({
             layer,
@@ -573,7 +575,7 @@ export class ToolBox extends G3WObject {
           id:   'movefeature',
           type: ['change_feature'],
           name: 'editing.tools.move_feature',
-          icon: `move${iconGeometry}.png`,
+          icon: `mActionMoveFeature${iconGeometry}.svg`,
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/movefeatureworkflow.js@v3.7.1 */
           op: new Workflow({
             layer,
@@ -586,6 +588,23 @@ export class ToolBox extends G3WObject {
             ],
           }),
         },
+         // @since v4.0.0 Rotate Feature. Check, in case of Point geometry, if layer has rotation input field
+         (is_line || is_poly || is_point && layer.getEditingFields().find(f => 'rotation' === f.name )) && capabilities.includes('change_feature') && {
+          id:     'rotatefeature',
+          type:   ['change_feature'],
+          name:   'editing.tools.rotate_feature',
+          icon:   'mActionRotateFeature.svg',
+          op: new Workflow({
+            layer,
+            type: 'rotatefeature',
+            helpMessage: 'editing.tools.rotate_feature',
+            steps: [
+              new PickFeatureStep(),
+              new Step({ run: chooseFeature }),
+              new RotateFeatureStep(),
+            ],
+          }),
+        },
         // Copy Feature from another layer
         (() => {
           let layers = [];
@@ -593,7 +612,7 @@ export class ToolBox extends G3WObject {
             id:   'copyfeaturesfromotherlayer',
             type: ['add_feature'],
             name: "editing.tools.pastefeaturesfromotherlayers",
-            icon: "pasteFeaturesFromOtherLayers.png",
+            icon: "mActionEditPaste.svg",
             enable: (function() {
               const catalogService      = GUI.getService('catalog');
               const layerId             = layer.getId();
@@ -797,7 +816,7 @@ export class ToolBox extends G3WObject {
           id:   'copyfeatures',
           type: ['add_feature'],
           name: "editing.tools.copy",
-          icon: `copy${iconGeometry}.png`,
+          icon: `mActionMoveFeatureCopy${iconGeometry}.svg`,
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/copyfeaturesworkflow.js@v3.7.1 */
           op: new Workflow({
             layer,
@@ -954,7 +973,7 @@ export class ToolBox extends G3WObject {
           id:   'addPart',
           type: ['add_feature', 'change_feature'],
           name: "editing.tools.addpart",
-          icon: "addPart.png",
+          icon: "mActionAddPart.svg",
           visible: isMultiGeometry,
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addparttomultigeometriesworkflow.js@v3.7.1 */
           op: new Workflow({
@@ -1002,7 +1021,7 @@ export class ToolBox extends G3WObject {
           id:   'deletePart',
           type: ['change_feature'],
           name: "editing.tools.deletepart",
-          icon: "deletePart.png",
+          icon: "mActionDeletePart.svg",
           visible: isMultiGeometry,
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/deletepartfrommultigeometriesworkflow.js@v3.7.1 */
           op: new Workflow({
@@ -1107,7 +1126,7 @@ export class ToolBox extends G3WObject {
           id:    'splitfeature',
           type:  ['change_feature'],
           name: "editing.tools.split",
-          icon: "splitFeatures.png",
+          icon: "mActionSplitFeatures.svg",
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/splitfeatureworkflow.js@v3.7.1 */
           op: new Workflow({
             layer,
@@ -1199,7 +1218,7 @@ export class ToolBox extends G3WObject {
           id:   'mergefeatures',
           type: ['change_feature'],
           name: "editing.tools.merge",
-          icon: "mergeFeatures.png",
+          icon: "mActionMergeFeatures.svg",
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/mergefeaturesworkflow.js@v3.7.1 */
           op: new Workflow({
             layer,
@@ -1290,7 +1309,7 @@ export class ToolBox extends G3WObject {
           id:   'addfeature',
           type: ['add_feature'],
           name: "editing.tools.add_feature",
-          icon: "addTableRow.png",
+          icon: "mActionCreateTable.svg",
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addtablefeatureworkflow.js@v3.7.1 */
           op:   new Workflow({
             layer,
@@ -1306,7 +1325,7 @@ export class ToolBox extends G3WObject {
           id:   'edittable',
           type: ['delete_feature', 'change_attr_feature'],
           name: "editing.tools.update_feature",
-          icon: "editAttributes.png",
+          icon: "mActionEditTable.svg",
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/edittableworkflow.js@v3.7.1 */
           op: new Workflow({
             layer,

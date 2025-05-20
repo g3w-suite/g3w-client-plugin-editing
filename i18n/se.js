@@ -38,6 +38,7 @@ export default {
     add_feature: "Lägg till egenskap",
     delete_feature: "Ta bort egenskap",
     move_feature: "Flytta egenskap",
+    rotate_feature: "Rotate feature",
     update_vertex: "Uppdatera punktens egenskap",
     update_feature: "Uppdatera egenskap",
     update_multi_features: "Ändra attributen för de valda funktionerna",

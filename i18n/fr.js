@@ -38,6 +38,7 @@ export default {
     add_feature: "Ajouter une fonctionnalité",
     delete_feature: "Supprimer la fonctionnalité",
     move_feature: "Déplacez la fonctionnalité",
+    rotate_feature: "Fonction de rotation",
     update_vertex: "Mettre à jour les sommets des fonctionnalités",
     update_feature: "Modifier les attributs des fonctionnalités",
     update_multi_features: "Modifier les attributs des fonctionnalités sélectionnées",

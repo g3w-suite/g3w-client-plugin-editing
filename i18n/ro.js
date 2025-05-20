@@ -38,6 +38,7 @@ export default  {
     add_feature: "Adaugă entitate",
     delete_feature: "Eliminare entitate",
     move_feature: "Mută entitate",
+    rotate_feature: "Rotire entitate",
     update_vertex: "Actualizează vertecșii entității",
     update_feature: "Actualizează atributul entității",
     update_multi_features: "Actualizează atributele entităților selectate",

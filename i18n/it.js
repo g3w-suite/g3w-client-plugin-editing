@@ -40,6 +40,7 @@ export default {
     add_feature: "Aggiungi elemento",
     delete_feature: "Elimina elemento",
     move_feature: "Muovi elemento",
+    rotate_feature: "Ruota elemento",
     update_vertex: "Aggiorna vertici elemento",
     update_feature: "Modifica attributi elemento",
     update_multi_features: "Modifica gli attributi degli elementi selezionati",

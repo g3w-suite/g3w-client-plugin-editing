@@ -40,6 +40,7 @@ export default {
     add_feature: "Додати",
     delete_feature: "Видалити",
     move_feature: "Перемістити",
+    rotate_feature: "Функція повороту",
     update_vertex: "Змінити вершину",
     update_feature: "Змінити атрибути",
     update_multi_features: "Змінити атрибути вибраних об'єктів",

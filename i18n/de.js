@@ -38,6 +38,7 @@ export default {
     add_feature: "Feature hinzufügen",
     delete_feature: "Feature löschen",
     move_feature: "Feature verschieben",
+    rotate_feature: "Feature verschieben",
     update_vertex: "Feature vertex aktualisieren",
     update_feature: "Feature-Attribut aktualisieren",
     update_multi_features: "Attribute ausgewählter Features aktualisieren",
