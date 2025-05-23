@@ -43,7 +43,7 @@ export default {
     update_feature: "Päivitä ominaisuus",
     update_multi_features: "Muokkaa valittujen ominaisuuksien attribuutteja",
     update_multi_features_relations: "Update attributes of all selected relations",
-    update_multi_features_relations_from_parents : "Edit relations records from one or mode parent features",
+    update_multi_features_relations_from_parents : "Add/Edit relations records from one or mode parent features",
     copyfeaturefromexternallayer: "Create Feature from added layer"
   },
   toolsoftool: {
