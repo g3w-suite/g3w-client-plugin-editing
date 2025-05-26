@@ -28,12 +28,12 @@
       </div>
 
       <!-- UNDO BUTTON -->
-      <div v-disabled = "(canCommit && activetool)" @click.stop = "undo" :class = "['editing-button', (canUndo ? 'enabled': '')]">
+      <div v-disabled = "canCommit" @click.stop = "undo" :class = "['editing-button', (canUndo ? 'enabled': '')]">
         <span :class = "['editing-icon', g3wtemplate.font['arrow-left']]"></span>
       </div>
 
       <!-- REDO BUTTON -->
-      <div v-disabled = "(canCommit && activetool)" @click.stop = "redo" :class = "['editing-button', (canRedo ? 'enabled' : '')]">
+      <div v-disabled = "canCommit" @click.stop = "redo" :class = "['editing-button', (canRedo ? 'enabled' : '')]">
         <span :class = "['editing-icon', g3wtemplate.font['arrow-right']]"></span>
       </div>
 
@@ -68,7 +68,7 @@
     </div>
 
     <!-- TOOLBOXES -->
-    <div id="toolboxes">
+    <div id = "toolboxes">
       <toolbox
         v-for                 = "toolbox in state.toolboxes"
         :key                  = "toolbox.id"
@@ -316,7 +316,7 @@
                 toolbox.stopActiveTool();
               });
             console.info('[EDITING] reverted dirty');
-          } catch (e) {
+          } catch(e) {
             console.warn(e);
           }
         }
@@ -393,6 +393,7 @@
         return (
           'default' === this.state.saveConfig.mode
           && this.state.toolboxselected
+          && this.state.toolboxselected.state.activetool
           && this.state.toolboxselected.state.editing.history.commit
           && this.editingButtonsEnabled
         );
