@@ -271,6 +271,7 @@
   import { getFeatureTableFieldValue }                    from '../utils/getFeatureTableFieldValue';
   import { chooseFeatureFromFeatures }                    from '../utils/chooseFeatureFromFeatures';
   import { isSameBaseGeometryType }                       from '../utils/isSameBaseGeometryType';
+  import { unlinkRelation }                               from '../utils/unlinkRelation';
   import { PickFeaturesInteraction }                      from '../interactions/pickfeatures';
   import { VM }                                           from '../eventbus';
   import {
@@ -649,7 +650,7 @@
           // delete feature
           this.capabilities.includes('delete_feature') && {
             state: Vue.observable({
-              icon:   'mActionEditTable.svg',
+              icon:   'deleteTableRow.png',
               id:     `${id}_deletefeature`,
               name:   'editing.tools.delete_feature',
               enabled: true,
