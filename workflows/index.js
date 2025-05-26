@@ -760,14 +760,13 @@ export class OpenFormStep extends Step {
               type:  "save",
               class: "btn-success",
               // save features
-              cbk: async (fields) => {
+              cbk: async (fields = []) => {
                 fields = this._multi ? fields.filter(f => null !== f.value) : fields;
-
-              // skip when no fields
-              if (0 === fields.length) {
-                resolve(inputs);
-                return;
-              }
+                // skip when no fields
+                if (0 === fields.length) {
+                  resolve(inputs);
+                  return;
+                }
 
                 const newFeatures = [];
 
@@ -806,19 +805,19 @@ export class OpenFormStep extends Step {
 
                 GUI.setModal(false);
 
-              this.fireEvent('savedfeature', newFeatures);                 // called after saved
-              this.fireEvent(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
-              // In case of save of child, it means that child is updated so also parent
-              if (this._isContentChild) {
-                Workflow.Stack.getParents()
-                  //filter only with has getContextService to be sure
-                  .filter(w =>  w.getContextService() && w.getContextService().setUpdate)
-                  .forEach(w => w.getContextService().setUpdate(true, { force: true }));
+                this.fireEvent('savedfeature', newFeatures);                 // called after saved
+                this.fireEvent(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
+                // In case of save of child, it means that child is updated so also parent
+                if (this._isContentChild) {
+                  Workflow.Stack.getParents()
+                    //filter only with has getContextService to be sure
+                    .filter(w =>  w.getContextService() && w.getContextService().setUpdate)
+                    .forEach(w => w.getContextService().setUpdate(true, { force: true }));
+                }
+                //@TODO add field unique new value id not set
+                resolve(inputs);
               }
-              //@TODO add field unique new value id not set
-              resolve(inputs);
-            }
-          },
+            },
           {
             id:    'cancel',
             title: "plugins.editing.form.buttons.cancel",
