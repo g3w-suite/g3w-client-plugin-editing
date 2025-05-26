@@ -671,15 +671,15 @@ export class OpenFormStep extends Step {
                 GUI.setLoadingContent(true);
                 //Disable form
                 GUI.disableContent(true);
+                try {
                 await Promise.allSettled(
                   [...Workflow.Stack._workflows]
                     .reverse()
                     .filter(w => "function" === typeof w.getLastStep()._saveAll) // need to filter only workflow that
                     .map( w => new Promise(async (resolve) => {
                       const task   = w.getLastStep();
+                      //get features fields of form service that has value not null to set of all features
                       const fields = w.getContext().service.state.fields.filter(f => task._multi ? null !== f.value : true);
-                      // skip when no fields
-                      if (0 === fields.length) { return }
                       await Workflow.Stack.getCurrent().getContextService().saveDefaultExpressionFieldsNotDependencies();
                       task._features.forEach(f => task.getInputs().layer.setFieldsWithValues(f, fields));
                       const newFeatures = task._features.map(f => f.clone());
@@ -696,6 +696,9 @@ export class OpenFormStep extends Step {
                       return resolve();
                     }))
                 )
+                } catch(e) {
+                  console.warn(e);
+                }
                 try {
                   await promisify(g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').service.commit({ modal: false }));
                   [...Workflow.Stack._workflows]
