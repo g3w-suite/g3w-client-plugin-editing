@@ -467,8 +467,10 @@ export class ToolBox extends G3WObject {
                       }))
                       return acc;
                     }, {})
-                                      //get first relation layer id
+                  //get first relation layer id
                   let relationLayerId = relations[0].getChild();
+                  //get first relation id
+                  let relationId      = relations[0].state.id;
                   //get action type (update or add relation) for ech parent features
                   let action;
                   //relation layer  
@@ -496,7 +498,7 @@ export class ToolBox extends G3WObject {
                               relationId: this.$options.relationId
                             }
                           }
-                        }))({ relations, relationId: relations[0].state.id })
+                        }))({ relations, relationId })
 
                         GUI.showModalDialog({
                           title:       tPlugin('editing.relations'),
@@ -515,6 +517,7 @@ export class ToolBox extends G3WObject {
                               callback: async () => {
                                 //set relation layer id to editin
                                 relationLayerId = relations.find(r => vueInstance.relationId === r.state.id).getChild();
+                                relationId      = vueInstance.relationId;
                                 resolve();
                               }
                             }
@@ -564,7 +567,7 @@ export class ToolBox extends G3WObject {
                               action: actions[0], 
                             }
                           },
-                          watch: { action: (a) => action = a }
+                          watch: { action: a => action = a }
                         }))
 
                         GUI.showModalDialog({
@@ -597,12 +600,13 @@ export class ToolBox extends G3WObject {
                       return $promisify(Promise.reject(e));
                     }
                   }
-
+                  const relation = relations.find(r => relationId === r.getId());
                   //gte relation layer fields
                   const fields = getRelationFieldsFromRelation({
-                    layerId:  relations[0].getChild(),
-                    relation: relations[0]
+                    layerId: relation.getChild(),
+                    relation
                   });
+
 
                   //relation feature to edit attributes
                   let features;
