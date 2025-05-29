@@ -181,7 +181,7 @@
 
     async mounted() {
       // insert a visual reference for `<empty>` values
-      this.$refs.value.filter(d => !d.textContent).forEach(d => d.innerHTML = `<i><code>&lt;empty&gt;</code></i>`);
+      (this.$refs.value || []).filter(d => !d.textContent).forEach(d => d.innerHTML = `<i><code>&lt;empty&gt;</code></i>`);
     },
 
   };

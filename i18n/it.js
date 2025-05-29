@@ -2,6 +2,9 @@ export default {
   close_editing_panel: {
     message: "⚠️ Prima conferma le modifiche (✅) su ogni livello"
   },
+  disabled_editing: {
+    message: "⚠️ Disattiva strumento editing"
+  },
   errors: {
     no_layers: "Si è verificato un errore nel caricamento dei layers in editing.",
     some_layers: "Si è verificato un errore nel caricamento di alcuni layers in editing",
@@ -45,7 +48,7 @@ export default {
     update_feature: "Modifica attributi elemento",
     update_multi_features: "Modifica gli attributi degli elementi selezionati",
     update_multi_features_relations: "Modifica gli attributi di tutte le relazioni selezionate",
-    update_multi_features_relations_from_parents : "Edita i record relazionati di uno o più padri",
+    update_multi_features_relations_from_parents : "Aggiungi/Edita i record relazionati di uno o più padri",
     copyfeaturefromexternallayer: "Crea elemento da un livello esterno"
   },
   toolsoftool: {

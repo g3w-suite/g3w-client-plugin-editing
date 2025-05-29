@@ -588,260 +588,262 @@ export class OpenFormStep extends Step {
           });
         }
 
-      /** ORIGINAL SOURCE: g3w-client-plugin-editing/form/editingform.js@v3.7.8 */
-      /** ORIGINAL SOURCE: g3w-client-plugin-editing/form/editingformservice.js@v3.7.8 */
-      const formService = GUI.showForm({
-        feature:         this._originalFeatures[0],
-        title:           "plugins.editing.editing_attributes",
-        name:            layerName,
-        crumb:           { title: layerName },
-        id:              `form_${layerName}`,
-        dataid:          layerName,
-        layer:           inputs.layer,
-        isnew:           this._originalFeatures.length > 1 ? false : this._originalFeatures[0].isNew(), // specify if is a new feature
-        parentData:      getParentFormData(),
-        fields,
-        context_inputs:  this._multi ? false: { context, inputs },
-        formStructure:   inputs.layer.hasFormStructure() && inputs.layer.getLayerEditingFormStructure() || undefined,
-        modal:           true,
-        push:            this._options.push || this._isContentChild, /** @since v3.7 force push content on top without clear previous content */
-        showgoback:      undefined === this._options.showgoback ? !this._isContentChild : this._options.showgoback, /** @since v3.7 force show back button */
-        /** @TODO make it straightforward: `headerComponent` vs `buttons` ? */
-        headerComponent: this._saveAll && {
-          template: /* html */ `
-            <section class = "editing-save-all-form" style = "display: flex;">
-              <div
-                class  = "editing-button"
-                :style = "{ cursor: disabled ? 'not-allowed' : 'pointer' }"
-                style  = "background-color: #fff; display: flex; justify-content: flex-end; width: 100%;"
-              >
-                <span
-                  class               = "save-all-icon"
-                  v-disabled          = "disabled"
-                  @click.stop.prevent = "saveAll"
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/form/editingform.js@v3.7.8 */
+        /** ORIGINAL SOURCE: g3w-client-plugin-editing/form/editingformservice.js@v3.7.8 */
+        const formService = GUI.showForm({
+          feature:         this._originalFeatures[0],
+          title:           "plugins.editing.editing_attributes",
+          name:            layerName,
+          crumb:           { title: layerName },
+          id:              `form_${layerName}`,
+          dataid:          layerName,
+          layer:           inputs.layer,
+          isnew:           this._originalFeatures.length > 1 ? false : this._originalFeatures[0].isNew(), // specify if is a new feature
+          parentData:      getParentFormData(),
+          fields,
+          context_inputs:  this._multi ? false: { context, inputs },
+          formStructure:   inputs.layer.hasFormStructure() && inputs.layer.getLayerEditingFormStructure() || undefined,
+          modal:           true,
+          push:            this._options.push || this._isContentChild, /** @since v3.7 force push content on top without clear previous content */
+          showgoback:      undefined === this._options.showgoback ? !this._isContentChild : this._options.showgoback, /** @since v3.7 force show back button */
+          /** @TODO make it straightforward: `headerComponent` vs `buttons` ? */
+          headerComponent: this._saveAll && {
+            template: /* html */ `
+              <section class = "editing-save-all-form" style = "display: flex;">
+                <div
+                  class  = "editing-button"
+                  :style = "{ cursor: disabled ? 'not-allowed' : 'pointer' }"
+                  style  = "background-color: #fff; display: flex; justify-content: flex-end; width: 100%;"
                 >
-                  <i
-                    class  = "skin-color"
-                    :class = "g3wtemplate.font['save']"
-                    style  = "font-size: 1.8em; padding: 5px; border-radius: 5px; cursor: pointer; box-shadow: 0 3px 5px rgba(0,0,0,0.5); margin: 5px;"
-                  ></i>
-                </span>
-              </div>
-              <!-- @since 3.9.0 -->
-              <div
-                v-if       = "isChild"  
-                class      = "close-form-button"
-                :style     = "{ cursor: !disabled ? 'not-allowed' : 'pointer' }"
-                style      = "background-color: #fff; display: flex; justify-content: flex-end; width: 100%;"
-              >
-                <span
-                  class               = "save-all-icon skin-color-dark"
-                  v-disabled          = "!disabled"
-                  @click.stop.prevent = "closeForm"
+                  <span
+                    class               = "save-all-icon"
+                    v-disabled          = "disabled"
+                    @click.stop.prevent = "saveAll"
+                  >
+                    <i
+                      class  = "skin-color"
+                      :class = "g3wtemplate.font['save']"
+                      style  = "font-size: 1.8em; padding: 5px; border-radius: 5px; cursor: pointer; box-shadow: 0 3px 5px rgba(0,0,0,0.5); margin: 5px;"
+                    ></i>
+                  </span>
+                </div>
+                <!-- @since 3.9.0 -->
+                <div
+                  v-if       = "isChild"  
+                  class      = "close-form-button"
+                  :style     = "{ cursor: !disabled ? 'not-allowed' : 'pointer' }"
+                  style      = "background-color: #fff; display: flex; justify-content: flex-end; width: 100%;"
                 >
-                  <i
-                    :class = "g3wtemplate.font['close']"
-                    style  = "font-size: 1.8em; padding: 5px; border-radius: 5px; cursor: pointer; box-shadow: 0 3px 5px rgba(0,0,0,0.5); margin: 5px;"
-                  ></i>
-                </span>
-              </div> 
-            </section>`,
-            name: 'Saveall',
-            /** @TODO figure out who populate these props (ie. core client code?) */
-            props: { update: { type: Boolean }, valid: { type: Boolean } },
-            data() {
-              return {
-                enabled: Workflow.Stack._workflows.slice(0, Workflow.Stack.getLength() - 1)
-                  .every(w => {
-                    const valid = ((w.getContext().service instanceof FormService) ? w.getContext().service.getState() : {}).valid;
-                    return valid || undefined === valid;
-                  }),
-                isChild: Workflow.Stack.getLength() > 1 && !(2 === Workflow.Stack.getLength() && Workflow.Stack.getFirst().isType('edittable'))
-              };
-            },
-            computed: {
-              /** @returns {boolean} whether disable save all button (eg. when parent or current form is not valid/ updated) */
-              disabled() {
-                return !this.enabled || !(this.valid && this.update);
+                  <span
+                    class               = "save-all-icon skin-color-dark"
+                    v-disabled          = "!disabled"
+                    @click.stop.prevent = "closeForm"
+                  >
+                    <i
+                      :class = "g3wtemplate.font['close']"
+                      style  = "font-size: 1.8em; padding: 5px; border-radius: 5px; cursor: pointer; box-shadow: 0 3px 5px rgba(0,0,0,0.5); margin: 5px;"
+                    ></i>
+                  </span>
+                </div> 
+              </section>`,
+              name: 'Saveall',
+              /** @TODO figure out who populate these props (ie. core client code?) */
+              props: { update: { type: Boolean }, valid: { type: Boolean } },
+              data() {
+                return {
+                  enabled: Workflow.Stack._workflows.slice(0, Workflow.Stack.getLength() - 1)
+                    .every(w => {
+                      const valid = ((w.getContext().service instanceof FormService) ? w.getContext().service.getState() : {}).valid;
+                      return valid || undefined === valid;
+                    }),
+                  isChild: Workflow.Stack.getLength() > 1 && !(2 === Workflow.Stack.getLength() && Workflow.Stack.getFirst().isType('edittable'))
+                };
+              },
+              computed: {
+                /** @returns {boolean} whether disable save all button (eg. when parent or current form is not valid/ updated) */
+                disabled() {
+                  return !this.enabled || !(this.valid && this.update);
+                },
+              },
+              methods: {
+                async saveAll() {
+                  //Set loading content
+                  GUI.setLoadingContent(true);
+                  //Disable form
+                  GUI.disableContent(true);
+                  try {
+                  await Promise.allSettled(
+                    [...Workflow.Stack._workflows]
+                      .reverse()
+                      .filter(w => "function" === typeof w.getLastStep()._saveAll) // need to filter only workflow that
+                      .map( w => new Promise(async (resolve) => {
+                        const task   = w.getLastStep();
+                        //get features fields of form service that has value not null to set of all features
+                        const fields = w.getContext().service.state.fields.filter(f => task._multi ? null !== f.value : true);
+                        await Workflow.Stack.getCurrent().getContextService().saveDefaultExpressionFieldsNotDependencies();
+                        task._features.forEach(f => task.getInputs().layer.setFieldsWithValues(f, fields));
+                        const newFeatures = task._features.map(f => f.clone());
+                        //Is a relation form
+                        if (task._isContentChild) {
+                          task.getInputs().relationFeatures = { newFeatures, originalFeatures: task._originalFeatures };
+                        }
+                        await task.fireEvent('saveform', { newFeatures, originalFeatures: task._originalFeatures });
+                        newFeatures.forEach((f, i) => task.getContext().session.pushUpdate(task.layerId, f, task._originalFeatures[i]));
+                        await handleRelation1_1LayerFields({ layerId: task.layerId, features: newFeatures, fields, task });
+                        task.fireEvent('savedfeature', newFeatures);                 // called after saved
+                        task.fireEvent(`savedfeature_${task.layerId}`, newFeatures); // called after saved using layerId
+                        task.getContext().session.save();
+                        return resolve();
+                      }))
+                  )
+                  } catch(e) {
+                    console.warn(e);
+                  }
+                  try {
+                    await promisify(g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').service.commit({ modal: false }));
+                    [...Workflow.Stack._workflows]
+                      .reverse()
+                      .filter(w => "function" === typeof w.getLastStep()._saveAll)
+                      .forEach(w => {
+                        const service = w.getContext().service; //form service
+                        //need to set update form false because already saved on server
+                        service.setUpdate(false, { force: false });
+                        const feature = service.feature;
+                        // Check if the feature is new.
+                        // In this case, after commit, need to set new to false, and force update to false.
+                        if (feature.isNew()) {
+                          feature.state.new    = false;
+                          service.force.update = false;
+                        }
+                        Object.entries(
+                          w.getInputs().layer.getEditingSource().readFeatures()
+                            .find(f => f.getUid() === feature.getUid()) //Find current form editing feature by unique id of feature uid
+                            .getProperties() //get properties
+                        )
+                          .forEach(([k, v]) => {
+                            const field = service.getFields().find(f => k === f.name);
+                            //if field exists (geometry field is discarded)
+                            if (field) {
+                              field.value = field._value = v;
+                            }
+                          })
+                      })
+                  } catch(e) {
+                    console.warn(e);
+                  }
+                  //set loading content false
+                  GUI.setLoadingContent(false);
+                  //enable form
+                  GUI.disableContent(false);
+                },
+                /**
+                 * @since 3.9.0
+                 * Close editing form
+                 */
+                async closeForm() {
+                  //get current active tool
+                  const tool = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.toolboxselected.getActiveTool();
+                  //stop active tool and wait
+                  await promisify(tool.stop());
+                  //clear all workflow stacks
+                  Workflow.Stack.clear();
+                  //check if the tool needs to run on time. If not, start again
+                  if (!tool.getOperator().runOnce) {
+                    tool.start();
+                  }
+                }
               },
             },
-            methods: {
-              async saveAll() {
-                //Set loading content
-                GUI.setLoadingContent(true);
-                //Disable form
-                GUI.disableContent(true);
-                await Promise.allSettled(
-                  [...Workflow.Stack._workflows]
-                    .reverse()
-                    .filter(w => "function" === typeof w.getLastStep()._saveAll) // need to filter only workflow that
-                    .map( w => new Promise(async (resolve) => {
-                      const task   = w.getLastStep();
-                      const fields = w.getContext().service.state.fields.filter(f => task._multi ? null !== f.value : true);
-                      // skip when no fields
-                      if (0 === fields.length) { return }
-                      await Workflow.Stack.getCurrent().getContextService().saveDefaultExpressionFieldsNotDependencies();
-                      task._features.forEach(f => task.getInputs().layer.setFieldsWithValues(f, fields));
-                      const newFeatures = task._features.map(f => f.clone());
-                      //Is a relation form
-                      if (task._isContentChild) {
-                        task.getInputs().relationFeatures = { newFeatures, originalFeatures: task._originalFeatures };
-                      }
-                      await task.fireEvent('saveform', { newFeatures, originalFeatures: task._originalFeatures });
-                      newFeatures.forEach((f, i) => task.getContext().session.pushUpdate(task.layerId, f, task._originalFeatures[i]));
-                      await handleRelation1_1LayerFields({ layerId: task.layerId, features: newFeatures, fields, task });
-                      task.fireEvent('savedfeature', newFeatures);                 // called after saved
-                      task.fireEvent(`savedfeature_${task.layerId}`, newFeatures); // called after saved using layerId
-                      task.getContext().session.save();
-                      return resolve();
-                    }))
-                )
-                try {
-                  await promisify(g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').service.commit({ modal: false }));
-                  [...Workflow.Stack._workflows]
-                    .reverse()
-                    .filter(w => "function" === typeof w.getLastStep()._saveAll)
-                    .forEach(w => {
-                      const service = w.getContext().service; //form service
-                      //need to set update form false because already saved on server
-                      service.setUpdate(false, { force: false });
-                      const feature = service.feature;
-                      // Check if the feature is new.
-                      // In this case, after commit, need to set new to false, and force update to false.
-                      if (feature.isNew()) {
-                        feature.state.new    = false;
-                        service.force.update = false;
-                      }
-                      Object.entries(
-                        w.getInputs().layer.getEditingSource().readFeatures()
-                          .find(f => f.getUid() === feature.getUid()) //Find current form editing feature by unique id of feature uid
-                          .getProperties() //get properties
-                      )
-                        .forEach(([k, v]) => {
-                          const field = service.getFields().find(f => k === f.name);
-                          //if field exists (geometry field is discarded)
-                          if (field) {
-                            field.value = field._value = v;
-                          }
-                        })
-                    })
-                } catch(e) {
-                  console.warn(e);
+            buttons:         [
+              {
+                id:    'save',
+                title:  this._isContentChild
+                  ? Workflow.Stack.getParent().getBackButtonLabel() || "plugins.editing.form.buttons.save_and_back" // get custom back label from parent
+                  : "plugins.editing.form.buttons.save",
+                type:  "save",
+                class: "btn-success",
+                // save features
+                cbk: async (fields = []) => {
+                  fields = this._multi ? fields.filter(f => null !== f.value) : fields;
+                  // skip when no fields
+                  if (0 === fields.length) {
+                    resolve(inputs);
+                    return;
+                  }
+
+                  const newFeatures = [];
+
+                  // @since 3.5.15
+                  GUI.setLoadingContent(true);
+                  GUI.disableContent(true);
+
+                  await Workflow.Stack.getCurrent().getContextService().saveDefaultExpressionFieldsNotDependencies();
+
+                  GUI.setLoadingContent(false);
+                  GUI.disableContent(false);
+
+                  this._features.forEach(f => {
+                    inputs.layer.setFieldsWithValues(f, fields);
+                    newFeatures.push(f.clone());
+                  });
+
+                  if (this._isContentChild) {
+                    inputs.relationFeatures = {
+                      newFeatures,
+                      originalFeatures: this._originalFeatures
+                    };
+                  }
+
+                  await this.fireEvent('saveform', { newFeatures, originalFeatures: this._originalFeatures});
+
+                  newFeatures.forEach((f, i) => context.session.pushUpdate(this.layerId, f, this._originalFeatures[i]));
+
+                  // check and handle if layer has relation 1:1
+                  await handleRelation1_1LayerFields({
+                    layerId:  this.layerId,
+                    features: newFeatures,
+                    fields,
+                    task:     this,
+                  });
+
+                  GUI.setModal(false);
+
+                  this.fireEvent('savedfeature', newFeatures);                 // called after saved
+                  this.fireEvent(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
+                  // In case of save of child, it means that child is updated so also parent
+                  if (this._isContentChild) {
+                    Workflow.Stack.getParents()
+                      //filter only with has getContextService to be sure
+                      .filter(w =>  w.getContextService() && w.getContextService().setUpdate)
+                      .forEach(w => w.getContextService().setUpdate(true, { force: true }));
+                  }
+                  //@TODO add field unique new value id not set
+                  resolve(inputs);
                 }
-                //set loading content false
-                GUI.setLoadingContent(false);
-                //enable form
-                GUI.disableContent(false);
               },
-              /**
-               * @since 3.9.0
-               * Close editing form
-               */
-              async closeForm() {
-                //get current active tool
-                const tool = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.toolboxselected.getActiveTool();
-                //stop active tool and wait
-                await promisify(tool.stop());
-                //clear all workflow stacks
-                Workflow.Stack.clear();
-                //check if the tool needs to run on time. If not, start again
-                if (!tool.getOperator().runOnce) {
-                  tool.start();
+              {
+                id:    'cancel',
+                title: "plugins.editing.form.buttons.cancel",
+                type:  "cancel",
+                class: "btn-danger",
+                /// buttons in case of change
+                eventButtons: {
+                  update: {
+                    false : {
+                      id:    'close',
+                      title: "close",
+                      type:  "cancel",
+                      class: "btn-danger",
+                    }
+                  }
+                },
+                cbk: () => {
+                  this.fireEvent('cancelform', inputs.features); // fire event cancel form to emit to subscribers
+                  reject(inputs);
                 }
               }
-            },
-          },
-          buttons:         [
-            {
-              id:    'save',
-              title:  this._isContentChild
-                ? Workflow.Stack.getParent().getBackButtonLabel() || "plugins.editing.form.buttons.save_and_back" // get custom back label from parent
-                : "plugins.editing.form.buttons.save",
-              type:  "save",
-              class: "btn-success",
-              // save features
-              cbk: async (fields) => {
-                fields = this._multi ? fields.filter(f => null !== f.value) : fields;
-
-              // skip when no fields
-              if (0 === fields.length) {
-                resolve(inputs);
-                return;
-              }
-
-                const newFeatures = [];
-
-                // @since 3.5.15
-                GUI.setLoadingContent(true);
-                GUI.disableContent(true);
-
-                await Workflow.Stack.getCurrent().getContextService().saveDefaultExpressionFieldsNotDependencies();
-
-                GUI.setLoadingContent(false);
-                GUI.disableContent(false);
-
-                this._features.forEach(f => {
-                  inputs.layer.setFieldsWithValues(f, fields);
-                  newFeatures.push(f.clone());
-                });
-
-                if (this._isContentChild) {
-                  inputs.relationFeatures = {
-                    newFeatures,
-                    originalFeatures: this._originalFeatures
-                  };
-                }
-
-                await this.fireEvent('saveform', { newFeatures, originalFeatures: this._originalFeatures});
-
-                newFeatures.forEach((f, i) => context.session.pushUpdate(this.layerId, f, this._originalFeatures[i]));
-
-                // check and handle if layer has relation 1:1
-                await handleRelation1_1LayerFields({
-                  layerId:  this.layerId,
-                  features: newFeatures,
-                  fields,
-                  task:     this,
-                });
-
-                GUI.setModal(false);
-
-              this.fireEvent('savedfeature', newFeatures);                 // called after saved
-              this.fireEvent(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
-              // In case of save of child, it means that child is updated so also parent
-              if (this._isContentChild) {
-                Workflow.Stack.getParents()
-                  //filter only with has getContextService to be sure
-                  .filter(w =>  w.getContextService() && w.getContextService().setUpdate)
-                  .forEach(w => w.getContextService().setUpdate(true, { force: true }));
-              }
-              //@TODO add field unique new value id not set
-              resolve(inputs);
-            }
-          },
-          {
-            id:    'cancel',
-            title: "plugins.editing.form.buttons.cancel",
-            type:  "cancel",
-            class: "btn-danger",
-            /// buttons in case of change
-            eventButtons: {
-              update: {
-                false : {
-                  id:    'close',
-                  title: "close",
-                  type:  "cancel",
-                  class: "btn-danger",
-                }
-              }
-            },
-            cbk: () => {
-              this.fireEvent('cancelform', inputs.features); // fire event cancel form to emit to subscribers
-              reject(inputs);
-            }
-          }
-        ]
-      });
+            ]
+        });
 
         // Overwrite click on relation.
         // Open FormRelation.vue component

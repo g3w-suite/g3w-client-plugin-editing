@@ -45,7 +45,7 @@ export default {
     update_feature: "Змінити атрибути",
     update_multi_features: "Змінити атрибути вибраних об'єктів",
     update_multi_features_relations: "Змінити атрибути у вибраних відношеннях",
-    update_multi_features_relations_from_parents : "Редагувати зв'язані записи батьківських об'єктів",
+    update_multi_features_relations_from_parents : "Додати/Редагувати зв'язані записи батьківських об'єктів",
     copyfeaturefromexternallayer: "Створити об'єкт з доданого шару"
   },
   toolsoftool: {

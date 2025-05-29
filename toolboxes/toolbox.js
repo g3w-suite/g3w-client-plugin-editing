@@ -451,14 +451,30 @@ export class ToolBox extends G3WObject {
                   GUI.setModal(true);
                   const relations = editable_relations.filter(r => 'ONE' !== r.getType());
                   //get relation features from feature parent layer
-                  await Promise.allSettled(inputs.features.map(feature => getLayersDependencyFeatures(inputs.layer.getId(), {
+                  //specific for ech relations
+                  const relationsFeatures = (await Promise.allSettled(inputs.features.map(feature => getLayersDependencyFeatures(inputs.layer.getId(), {
                     relations,
                     feature,
                     filterType: 'fid',
-                  })))
+                  }))))
+                    .filter(({ status })  => "fulfilled" === status)
+                    .reduce((acc, { value: relations } ) => {
+                      relations.forEach(r => Object.entries(r).forEach(([id, features]) => {
+                        if (undefined === acc[id]) {
+                          acc[id] = [];
+                        }
+                        acc[id] = acc[id].concat(features);
+                      }))
+                      return acc;
+                    }, {})
                   //get first relation layer id
                   let relationLayerId = relations[0].getChild();
-
+                  //get first relation id
+                  let relationId      = relations[0].state.id;
+                  //get action type (update or add relation) for ech parent features
+                  let action;
+                  //relation layer  
+                  let rLayer;
                   //In case of multi relation in editing
                   if (relations.length > 1) {
                     //ser relation layer id
@@ -482,7 +498,7 @@ export class ToolBox extends G3WObject {
                               relationId: this.$options.relationId
                             }
                           }
-                        }))({ relations, relationId: relations[0].state.id })
+                        }))({ relations, relationId })
 
                         GUI.showModalDialog({
                           title:       tPlugin('editing.relations'),
@@ -501,6 +517,76 @@ export class ToolBox extends G3WObject {
                               callback: async () => {
                                 //set relation layer id to editin
                                 relationLayerId = relations.find(r => vueInstance.relationId === r.state.id).getChild();
+                                relationId      = vueInstance.relationId;
+                                resolve();
+                              }
+                            }
+                          }
+                        }).on('hide.bs.modal', () => vueInstance.$destroy()); //destroy vue instance after dialog is a closed
+                        //hide user message step
+                      })
+                    } catch(e) {
+                      console.warn(e);
+                      GUI.setModal(false);
+                      return $promisify(Promise.reject(e));
+                    }
+
+                    //Relations layer
+                    rLayer = getEditingLayerById(relationLayerId);
+                    const actions = []
+                      .concat(![undefined, Layer.LayerTypes.VECTOR].includes(rLayer.getType()) ? ['add'] : [])
+                      .concat(relationsFeatures[relationLayerId].length > 0 ? ['update'] : [])
+                    //In case of norelations featire and no vector layer
+                    if (0 === actions.length) {
+                      GUI.setModal(false);
+
+                      GUI.showUserMessage({
+                        type:      'warning',
+                        message:   'plugins.editing.no_relations_found',
+                        autoclose: true,
+                      })
+                      return $promisify(Promise.reject());
+                    }
+                    try {
+                      await new Promise((resolve, reject) => {
+                        const vueInstance      = new (Vue.extend({
+                          name: 'multi-relations-fetures',
+                          template: `<div>
+                            <select v-select2 = "'action'">
+                              <option v-for = "a in actions" 
+                                :key   = "a" 
+                                :value = "a">
+                                  {{ a }}
+                              </option>
+                            </select>
+                          </div>
+                        `,
+                          data() {
+                            return {
+                              actions,
+                              action: actions[0], 
+                            }
+                          },
+                          watch: { action: a => action = a }
+                        }))
+
+                        GUI.showModalDialog({
+                          title:       tPlugin('editing.tools.update_multi_features_relations_from_parents'),
+                          className:   'modal-left',
+                          closeButton: false,
+                          message:     vueInstance.$mount().$el,
+                          buttons: {
+                            cancel: {
+                              label: 'Cancel',
+                              className: 'btn-danger',
+                              callback() { reject(); }
+                            },
+                            ok: {
+                              label: 'Ok',
+                              className: 'btn-success',
+                              callback: async () => {
+                                //set relation layer id to editin
+                                action = vueInstance.action;
                                 resolve();
                               }
                             }
@@ -514,6 +600,33 @@ export class ToolBox extends G3WObject {
                       return $promisify(Promise.reject(e));
                     }
                   }
+                  const relation = relations.find(r => relationId === r.getId());
+                  //gte relation layer fields
+                  const fields = getRelationFieldsFromRelation({
+                    layerId: relation.getChild(),
+                    relation
+                  });
+
+
+                  //relation feature to edit attributes
+                  let features;
+
+                  if ('add' === action) {
+                    //relations features
+                    features = [];
+                    //loop over father features to build a relation chiled feature
+                    for (const f of inputs.features) {
+                      const feature = (await promisify(addTableFeature({ features: [], layer: rLayer }, { session: Workflow.Stack.getCurrent().getSession() }))).features[0];
+                      fields.relationField.forEach((field, _i) => feature.set(fields.ownField[_i], f.get(field)));
+                      features.push(feature);
+                    }  
+                  } 
+                  
+                  //update action
+                  if ('update' === action) {
+                    //get alla relation features belown to fathers
+                    features = relationsFeatures[relationLayerId];
+                  }
 
                   //start child workflow
                   const workflow = new Workflow({
@@ -522,43 +635,25 @@ export class ToolBox extends G3WObject {
                       new OpenFormStep({ multi: true }),
                     ],
                   });
-                  //Relations layer
-                  const rLayer = getEditingLayerById(relationLayerId);
-
-                  if (0 === rLayer.readFeatures().length) {
-                    GUI.setModal(false);
-
-                    GUI.showUserMessage({
-                      type:      'warning',
-                      message:   'plugins.editing.no_relations_found',
-                      autoclose: true,
-                    })
-                    return $promisify(Promise.reject());
-                  }
-
-                  const fields = getRelationFieldsFromRelation({
-                    layerId:  relations[0].getChild(),
-                    relation: relations[0]
-                  });
-
-                  const options = {
+                  // get parent workflow
+                  const session = Workflow.Stack.getCurrent().getSession();
+                  try {
+                    //set eventually unique values
+                    await setLayerUniqueFieldValues(relationLayerId);
+                    await promisify(workflow.start({
                     context: {
-                      session:        Workflow.Stack.getCurrent().getSession(),        // get parent workflow
+                      session,        
                       excludeFields:  fields.ownField,                                 // array of fields to be excluded
                       isContentChild: false, //@since 3.9.0 force child to false
                     },
                     inputs: {
-                      features: rLayer.readFeatures(),
-                      layer:    rLayer
+                      layer: rLayer,
+                      features,
                     }
-                  }
-
-                  try {
-                    //set eventually unique values
-                    await setLayerUniqueFieldValues(relationLayerId);
-                    await promisify(workflow.start(options));
+                  }));
                   } catch(e) {
                     console.warn(e);
+                    session.rollback();
                   }
 
                   workflow.stop();
@@ -590,10 +685,11 @@ export class ToolBox extends G3WObject {
         },
          // @since v4.0.0 Rotate Feature. Check, in case of Point geometry, if layer has rotation input field
          (is_line || is_poly || is_point && layer.getEditingFields().find(f => 'rotation' === f.name )) && capabilities.includes('change_feature') && {
-          id:     'rotatefeature',
-          type:   ['change_feature'],
-          name:   'editing.tools.rotate_feature',
-          icon:   'mActionRotateFeature.svg',
+          id:           'rotatefeature',
+          type:         ['change_feature'],
+          name:         'editing.tools.rotate_feature',
+          icon:         'mActionRotateFeature.svg',
+          disableEdit:   is_point,
           op: new Workflow({
             layer,
             type: 'rotatefeature',
@@ -1355,6 +1451,7 @@ export class ToolBox extends G3WObject {
         getId:                () => tool.id,
         getOperator:          () => tool.op,
         setOperator:          op => tool.op = op,
+        disableEdit:          !!tool.disableEdit, //@since v4.0.0 disable stop editing
       })
     });
 
@@ -1368,7 +1465,7 @@ export class ToolBox extends G3WObject {
     })
 
     // BACKOMP v3.x
-    this.originalState = this.state.originalState;
+    this.originalState     = this.state.originalState;
 
     //event features
     this._getFeaturesEvent = { event: null, fnc: null };
@@ -1382,13 +1479,13 @@ export class ToolBox extends G3WObject {
     }
 
     //@since 3.8.0 Need to store Promise resolve when start toolbox but non editing is enabled (scale constraint, etc..)
-    this.startResolve = null;
+    this.startResolve      = null;
 
     //@since 3.8.0 Store ol keys event start when we are in editing
     this._olStartKeysEvent = [];
 
     //@since 3.8.1 store all unwatches
-    this.unwatches = [];
+    this.unwatches         = [];
   }
 
   /**
@@ -1399,7 +1496,7 @@ export class ToolBox extends G3WObject {
    */
   _stopSessionChildren(layerId) {
     const service = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing');
-    const layer = service.getLayerById(layerId);
+    const layer   = service.getLayerById(layerId);
     getRelationsInEditing({
       layerId,
       relations: layer.getRelations() ? layer.getRelations().getArray() : [],
@@ -3033,7 +3130,7 @@ export class ToolBox extends G3WObject {
       await promisify(tool.op.start(options));
       await promisify(this._session.save());
       g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').saveChange(); // after save temp change check if editing service has a autosave
-    } catch (e) {
+    } catch(e) {
       console.warn(e);
       if (hideSidebar) {
         GUI.showSidebar();
@@ -3043,7 +3140,7 @@ export class ToolBox extends G3WObject {
       if (!tool.getOperator().runOnce && Layer.LayerTypes.VECTOR === this.getLayer().getType() ) {
         await this._startOp(tool, options, hideSidebar);
       } else {
-        tool.stop();
+        this.stopActiveTool();
       }
     }
   }

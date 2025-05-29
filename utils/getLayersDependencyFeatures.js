@@ -33,6 +33,7 @@ export async function getLayersDependencyFeatures(layerId, opts = {}) {
       if (relation.setLoading) { relation.setLoading(true) }
       else { relation.loading = true }
 
+      //Realtion layer id
       const id = getRelationId({ layerId, relation });
 
       opts.relation    = relation;
@@ -73,7 +74,7 @@ export async function getLayersDependencyFeatures(layerId, opts = {}) {
 
       toolbox.stopLoading();
 
-      return id;
+      return { [id] : service.getLayerById(id).readEditingFeatures().filter(f => ownField.every((field, i) => featureValues[i] == f.get(field)))};
     }));
   } catch (e) {
     console.warn(e);
@@ -84,6 +85,7 @@ export async function getLayersDependencyFeatures(layerId, opts = {}) {
     if (relation.setLoading) { relation.setLoading(false) }
     else { relation.loading = false }
   });
+
 
   return response;
 }

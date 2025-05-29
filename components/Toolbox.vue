@@ -42,19 +42,23 @@
         <span class="panel-title">{{ state.title }}</span>
 
         <!-- TOGGLE EDITING -->
-        <i
-          v-disabled              = "editDisabled"
-          @click.stop             = "toggleEditing"
-          style                   = "margin-left: auto"
-          class                   = "start-editing editbtn skin-tooltip-left"
-          :class                  = "{
-            'pull-right':       !isMobile(),
-            'enabled':          isLayerReady,
-            'g3w-icon-toggled': state.editing.on,
-            [g3wtemplate.font[(state.editing.on || toggled.layer) ? 'checkmark' : 'pencil']]: true
-          }"
-          v-t-tooltip:left.create = "'plugins.editing.tooltip.edit_layer'"
-        ></i>
+        <span
+          style                    = "margin-left: auto"
+           v-t-tooltip:left.create = ""
+           :current-tooltip        = "editDisabled ? 'plugins.editing.disabled_editing.message': 'plugins.editing.tooltip.edit_layer'"
+        > 
+          <i
+            v-disabled              = "editDisabled"
+            @click.stop             = "toggleEditing"
+            class                   = "start-editing editbtn skin-tooltip-left"
+            :class                  = "{
+              'pull-right':       !isMobile(),
+              'enabled':          isLayerReady,
+              'g3w-icon-toggled': state.editing.on,
+              [g3wtemplate.font[(state.editing.on || toggled.layer) ? 'checkmark' : 'pencil']]: true
+            }"
+          ></i>
+        </span>  
 
       </div>
 
@@ -242,7 +246,7 @@
        * @since g3w-client-plugin-editing@v3.7.0
        */
       editDisabled() {
-        return this.state.loading && !this.state.startstopediting || (this.state.editing.on && !!this.state.activetool);
+        return this.state.loading && !this.state.startstopediting || (this.state.editing.on && !!this.state.activetool?.disableEdit);
       },
 
       /**
