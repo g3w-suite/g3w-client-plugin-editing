@@ -246,7 +246,7 @@
        * @since g3w-client-plugin-editing@v3.7.0
        */
       editDisabled() {
-        return this.state.loading && !this.state.startstopediting || (this.state.editing.on && !!this.state.activetool);
+        return this.state.loading && !this.state.startstopediting || (this.state.editing.on && !!this.state.activetool?.disableEdit);
       },
 
       /**

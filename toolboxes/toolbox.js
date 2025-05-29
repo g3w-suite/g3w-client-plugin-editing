@@ -685,10 +685,11 @@ export class ToolBox extends G3WObject {
         },
          // @since v4.0.0 Rotate Feature. Check, in case of Point geometry, if layer has rotation input field
          (is_line || is_poly || is_point && layer.getEditingFields().find(f => 'rotation' === f.name )) && capabilities.includes('change_feature') && {
-          id:     'rotatefeature',
-          type:   ['change_feature'],
-          name:   'editing.tools.rotate_feature',
-          icon:   'mActionRotateFeature.svg',
+          id:           'rotatefeature',
+          type:         ['change_feature'],
+          name:         'editing.tools.rotate_feature',
+          icon:         'mActionRotateFeature.svg',
+          disableEdit:   is_point,
           op: new Workflow({
             layer,
             type: 'rotatefeature',
@@ -1450,6 +1451,7 @@ export class ToolBox extends G3WObject {
         getId:                () => tool.id,
         getOperator:          () => tool.op,
         setOperator:          op => tool.op = op,
+        disableEdit:          !!tool.disableEdit, //@since v4.0.0 disable stop editing
       })
     });
 
