@@ -2,6 +2,9 @@ export default {
   close_editing_panel: {
     message: "⚠️ Prima conferma le modifiche (✅) su ogni livello"
   },
+  disabled_editing: {
+    message: "⚠️ Disattiva strumento editing"
+  },
   errors: {
     no_layers: "Si è verificato un errore nel caricamento dei layers in editing.",
     some_layers: "Si è verificato un errore nel caricamento di alcuni layers in editing",
