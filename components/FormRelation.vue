@@ -368,16 +368,22 @@
 
         if (table) {
           table.style.height =
-              ((document.querySelector('.g3wform_body')                                     || {}).offsetHeight || 0)
+              ((document.querySelector('.contents')                                         || {}).offsetHeight || 0)
+            - ((document.querySelector('.close-panel-block')                                || {}).offsetHeight || 0)
             - ((document.querySelector('.g3wform_footer')                                   || {}).offsetHeight || 0)
-            - ((this.$refs.relation_header_title                                                     || {}).offsetHeight || 0)
-            - ((this.$refs.relation_header_tools                                                     || {}).offsetHeight || 0)
-            - ((this.$el.querySelector('.dataTables_scrollHead')                                     || {}).offsetHeight || 0)
-            - ((this.$el.querySelector('.dataTables_paginate.paging_simple_numbers')                 || {}).offsetHeight || 0)
+            - ((this.$refs.relation_header_title                                            || {}).offsetHeight || 0)
+            - ((this.$refs.relation_header_tools                                            || {}).offsetHeight || 0)
+            - ((this.$el.querySelector('.dataTables_scrollHead')                            || {}).offsetHeight || 0)
+            - ((this.$el.querySelector('.dataTables_paginate.paging_simple_numbers')        || {}).offsetHeight || 0)
             - ((document.querySelector('.editing-save-all-form')                            || {}).offsetHeight || 0)
-            - (( this.isVectorRelation && this.show_vector_tools && this.$refs.relation_vector_tools || {}).offsetHeight || 0)
+            - (( this.isVectorRelation 
+                  && this.show_vector_tools 
+                  && this.$refs.relation_vector_tools                                       || {}).offsetHeight || 0)
+            - 30 //padding of g3w-view-content      
             + 'px';
         }
+
+        console.log(table.style.height)
 
         if (this.relationsTable) {
           this.relationsTable.columns.adjust();
