@@ -383,8 +383,6 @@
             + 'px';
         }
 
-        console.log(table.style.height)
-
         if (this.relationsTable) {
           this.relationsTable.columns.adjust();
         }
