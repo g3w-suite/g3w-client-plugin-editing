@@ -944,7 +944,7 @@ export class ToolBox extends G3WObject {
                   /** @since g3w-client-plugin-editing@v3.8.0 */
                   return $promisify( async () => {
                     const promise = new Promise((resolve, reject) => {
-                      this.resolve = resolve;
+                      this.reject = reject;
                       if (0 === inputs.features.length) {
                         return reject('no feature');
                       }
@@ -968,8 +968,8 @@ export class ToolBox extends G3WObject {
                 stop() {
                   /** @since g3w-client-plugin-editing@v3.8.0 */
                   //Always resolve promise (in case of a press esc key)
-                  this.resolve(true);
-                  this.resolve = null;
+                  this.reject();
+                  this.reject = null;
                 },
               }),
               // move elements
@@ -1254,7 +1254,9 @@ export class ToolBox extends G3WObject {
                   /** @since g3w-client-plugin-editing@v3.8.0 */
                   return $promisify(async () => {
                     const source  = inputs.layer.getEditingLayer().getSource();
+                    
                     const promise = new Promise((resolve, reject) => {
+                      this.reject = reject;
                       this.addInteraction(
                         new ol.interaction.Draw({
                           type:              'LineString',
@@ -1289,7 +1291,7 @@ export class ToolBox extends G3WObject {
                               autoclose: true
                             })
                           }
-                        });
+                      });
 
                       this.addInteraction(
                         new ol.interaction.Snap({ source, edge: true })
@@ -1301,9 +1303,11 @@ export class ToolBox extends G3WObject {
 
                     return promise;
                   })
-
-
                 },
+                stop() {
+                  this.reject();
+                  this.reject = null;
+                }
               }),
             ],
             registerEscKeyEvent: true,
@@ -3157,6 +3161,8 @@ export class ToolBox extends G3WObject {
         return;
       }
       try {
+        //stop workflow bing to tool
+        const op = tool.getOperator();
         await promisify(tool.getOperator().stop(force));
       } catch(e) {
         console.warn(e);
