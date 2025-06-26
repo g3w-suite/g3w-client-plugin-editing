@@ -481,7 +481,8 @@ export class Step extends G3WObject {
         this.state.error = e;
         return Promise.reject(e);
       } finally {
-        this.__stop();
+        //check if running
+        this.state.running && await this.__stop();
       }
     });
   }
