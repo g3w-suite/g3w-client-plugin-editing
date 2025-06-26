@@ -23,17 +23,17 @@
     >
 
       <!-- SAVE BUTTON -->
-      <div @click.stop = "commit" :class = "['editing-button', (canCommit ? 'enabled' : '')]">
+      <div @click.stop = "commit" :class = "['editing-button', (canCommit ? 'enabled': '')]">
         <span :class = "['editing-icon', g3wtemplate.font['save']]"></span>
       </div>
 
       <!-- UNDO BUTTON -->
-      <div v-disabled = "canCommit" @click.stop = "undo" :class = "['editing-button', (canUndo ? 'enabled': '')]">
+      <div @click.stop = "undo" :class = "['editing-button', (canUndo ? 'enabled': '')]">
         <span :class = "['editing-icon', g3wtemplate.font['arrow-left']]"></span>
       </div>
 
       <!-- REDO BUTTON -->
-      <div v-disabled = "canCommit" @click.stop = "redo" :class = "['editing-button', (canRedo ? 'enabled' : '')]">
+      <div @click.stop = "redo" :class = "['editing-button', (canRedo ? 'enabled' : '')]">
         <span :class = "['editing-icon', g3wtemplate.font['arrow-right']]"></span>
       </div>
 
@@ -390,10 +390,11 @@
     computed: {
 
       canCommit() {
+        
         return (
           'default' === this.state.saveConfig.mode
           && this.state.toolboxselected
-          && this.state.toolboxselected.state.activetool
+          && !this.state.toolboxselected.state.activetool
           && this.state.toolboxselected.state.editing.history.commit
           && this.editingButtonsEnabled
         );
@@ -402,6 +403,7 @@
       canUndo() {
         const canUndo = (
           this.state.toolboxselected
+          && !this.state.toolboxselected.state.activetool
           && this.state.toolboxselected.state.editing.history.undo
           && this.editingButtonsEnabled
         );
@@ -414,6 +416,7 @@
       canRedo() {
         const canRedo = (
           this.state.toolboxselected
+          && !this.state.toolboxselected.state.activetool
           && this.state.toolboxselected.state.editing.history.redo
           && this.editingButtonsEnabled
         );
