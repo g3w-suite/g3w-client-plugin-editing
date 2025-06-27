@@ -993,6 +993,7 @@ export class ToolBox extends G3WObject {
                     const layerId = layer.getId();
                     const session = context.session;
                     const promise = new Promise((resolve, reject) => {
+                      this.reject = reject;
                       this.addInteraction(
                         new ol.interaction.Draw({ type: 'Point', features: new ol.Collection() }), {
                           'drawend': evt => {
@@ -1059,6 +1060,10 @@ export class ToolBox extends G3WObject {
                     return promise;
                   });
                 },
+                stop() {
+                  this.reject();
+                  this.reject = null;
+                }
               }),
             ].filter(Boolean),
             registerEscKeyEvent: true,
@@ -2316,7 +2321,7 @@ export class ToolBox extends G3WObject {
           await promisify(activeTool.stop(true));
         }
         //@since 3.9.1 Changed to set empty array cause reactivity of vue instead of splice(0)
-        this.state.toolsoftool = [];
+        this.state.toolsoftool       = [];
         this.state.toolmessages.help = null;
         this.state.activetool        = null;
       } catch(e) {
@@ -3141,10 +3146,12 @@ export class ToolBox extends G3WObject {
       }
       this._session.rollback();
     } finally {
+      //In case of runOnce stop activ tool tnat stop workflow;
+      if (tool.getOperator().runOnce) {
+        this.stopActiveTool();
+      }
       if (!tool.getOperator().runOnce && Layer.LayerTypes.VECTOR === this.getLayer().getType() ) {
         await this._startOp(tool, options, hideSidebar);
-      } else {
-        this.stopActiveTool();
       }
     }
   }
