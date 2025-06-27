@@ -326,6 +326,7 @@ export class Workflow extends G3WObject {
         this._stepIndex = 0;
         return outputs;
       } else {
+        //recursion util the enf of all steps
         return this.runStep(this.getSteps()[this._stepIndex], outputs);
       }
     } catch(e) { //In case of reject
@@ -401,6 +402,7 @@ export class Workflow extends G3WObject {
           resolve(outputs);
         }
       } catch(e) {
+        //it means that a certain step it was rejected (manually press ESC) or reject for ather reason
         console.warn(e);
         if (showUserMessage) {
           this.clearUserMessagesSteps();
@@ -408,10 +410,6 @@ export class Workflow extends G3WObject {
         reject(e);
       }
 
-      //in case of worflow that need to run once time, stop workflow
-      if (this.runOnce) {
-        this.stop();
-      }
     }));
   }
 
@@ -465,9 +463,6 @@ export class Workflow extends G3WObject {
         //emit stop Workflow
         this.emit('stop');
       }
-
-      
-
     }));
   }
 
