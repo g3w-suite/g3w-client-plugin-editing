@@ -2772,9 +2772,13 @@ export class ToolBox extends G3WObject {
         layer = commitObj;
       }
       //@since 3.9.0 Check if it has 3D geometry type (Z or MZ)
-      const is_vector    = Layer.LayerTypes.VECTOR === ToolBox.get(key).getLayer().getType(); // check if is vector layer
-      const geometryType = is_vector && CatalogLayersStoresRegistry.getLayerById(key).getGeometryType(); //get geometry type if vector layer
-      const is3DGeometry = geometryType && g3wsdk.core.geoutils.Geometry.is3DGeometry(geometryType); //Boolean check if is 3D geometry
+      /**
+       *  // Comment - need to pass geometry type symple withot Z for example
+       *  const is_vector    = Layer.LayerTypes.VECTOR === ToolBox.get(key).getLayer().getType(); // check if is vector layer
+       *  const geometryType = is_vector && CatalogLayersStoresRegistry.getLayerById(key).getGeometryType(); //get geometry type if vector layer
+       *  const is3DGeometry = geometryType && g3wsdk.core.geoutils.Geometry.is3DGeometry(geometryType); //Boolean check if is 3D geometry
+       * 
+       */
       items
         .forEach(item => {
           //check the state of feature item
@@ -2791,11 +2795,18 @@ export class ToolBox extends G3WObject {
           }
           //convert feature to json ex. {geometry:{type: 'Point'}, properties:{}.....}
           const itemObj = GeoJSONFormat.writeFeatureObject(item);
+          
           //In the case of 3D geometry need to set the same tpe of layer (LineStringMZ...)
-          if (is3DGeometry) {
-            itemObj.geometry.type = geometryType
-          }
 
+          /**
+           * //Comment - need to pass geometry type symple withot Z for example
+           * 
+           * if (is3DGeometry) {
+           *   itemObj.geometry.type = geometryType
+           *  }
+           * 
+          */
+          
           //get properties
           const childs_properties = item.getProperties();
           for (const p in itemObj.properties) {
