@@ -43,9 +43,8 @@
 
         <!-- TOGGLE EDITING -->
         <span
-          style                    = "margin-left: auto"
-           v-t-tooltip:left.create = ""
-           :current-tooltip        = "editDisabled ? 'plugins.editing.disabled_editing.message': 'plugins.editing.tooltip.edit_layer'"
+          style            = "margin-left: auto"
+          :data-i18n-title = "editDisabled ? 'plugins.editing.disabled_editing.message': 'plugins.editing.tooltip.edit_layer'"
         > 
           <i
             v-disabled              = "editDisabled"
