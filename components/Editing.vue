@@ -175,15 +175,19 @@
       /**
        * @param toolboxId
        */
-      commit(toolboxId) {
+      async commit(toolboxId) {
         if (this.canCommit) {
           this.saving = true;
-          this.service
-            .commit({
+          try {
+            await this.service.commit({
               toolbox: this.service.getToolBoxById(toolboxId),
               modal:   false,
             })
-            .always(() => this.saving = false);
+          } catch(e) {
+            console.warn(e);
+          } finally {
+            this.saving = false;
+          }
         }
       },
 
@@ -469,7 +473,7 @@
           toolbox.setShow(has_layers ? is_selected : true);
 
           if (has_layers && !is_selected && is_commit) {
-            service.commit({ toolbox }).always(() => toolbox.stop());
+            service.commit({ toolbox }).finally(() => toolbox.stop());
           }
 
           if (has_layers && !is_selected && !is_commit) {
