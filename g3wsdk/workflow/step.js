@@ -5,8 +5,6 @@
  * 
  * @since g3w-client-plugin-editing@v3.8.x
  */
-import { promisify, $promisify } from '../../utils/promisify';
-
 const { G3WObject }           = g3wsdk.core;
 const { isPointGeometryType } = g3wsdk.core.geoutils.Geometry;
 const { Layer }               = g3wsdk.core.layer;
@@ -410,81 +408,81 @@ export class Step extends G3WObject {
    * 
    * @fires run
    */ 
-  __run(inputs, context) {
-    return $promisify(async() => {
-      //set step inputs
-      this.setInputs(inputs);
-      //set step context
-      this.setContext(context);
-
-      const step         = this;
-      const toolsOfTools = {
-
-        snap: {
-          type: 'snap',
-          options: {
-            checkedAll: false,
-            checked:    false,
-            active:     true,
-            run({ layer }) {
-              this.active  = true;
-              this.layerId = layer.getId();
-              this.source  = layer.getEditingLayer().getSource();
-            },
-            stop() {
-              this.active = this.checked = this.checkedAll = false;
-            }
-          }
-        },
+  async __run(inputs, context) {
   
-        measure: {
-          type: 'measure',
-          options: {
-            checked: false,
-            run() {
-              setTimeout(() => { this.onChange(this.checked); })
-            },
-            stop() {
-              step.removeMeasureInteraction();
-              this.checked = false;
-              this.onChange(false);
-            },
-            onChange(bool) {
-              this.checked = bool;
-              step[bool ? 'addMeasureInteraction':  'removeMeasureInteraction']();
-            },
+    //set step inputs
+    this.setInputs(inputs);
+    //set step context
+    this.setContext(context);
+
+    const step         = this;
+    const toolsOfTools = {
+
+      snap: {
+        type: 'snap',
+        options: {
+          checkedAll: false,
+          checked:    false,
+          active:     true,
+          run({ layer }) {
+            this.active  = true;
+            this.layerId = layer.getId();
+            this.source  = layer.getEditingLayer().getSource();
+          },
+          stop() {
+            this.active = this.checked = this.checkedAll = false;
           }
-        },
-  
-      };
+        }
+      },
 
-      if (this._tools && 0 === this._workflow._toolsoftool.length) {
-        this._workflow._toolsoftool.push(...(
-          this._tools
-            .filter(tool => ('measure' !== tool || (Layer.LayerTypes.VECTOR === inputs.layer.getType() && !isPointGeometryType(inputs.layer.getGeometryType()))))
-            .map(tool => toolsOfTools[tool])
-        ));
-      }
+      measure: {
+        type: 'measure',
+        options: {
+          checked: false,
+          run() {
+            setTimeout(() => { this.onChange(this.checked); })
+          },
+          stop() {
+            step.removeMeasureInteraction();
+            this.checked = false;
+            this.onChange(false);
+          },
+          onChange(bool) {
+            this.checked = bool;
+            step[bool ? 'addMeasureInteraction':  'removeMeasureInteraction']();
+          },
+        }
+      },
 
-      if (this._tools) {
-        this._workflow._toolsoftool.forEach(t => t.options.run({ layer: inputs.layer }));
-        this._workflow.emit('settoolsoftool', this._workflow._toolsoftool);
-      }
+    };
 
-      this.emit('run', { inputs, context });
+    if (this._tools && 0 === this._workflow._toolsoftool.length) {
+      this._workflow._toolsoftool.push(...(
+        this._tools
+          .filter(tool => ('measure' !== tool || (Layer.LayerTypes.VECTOR === inputs.layer.getType() && !isPointGeometryType(inputs.layer.getGeometryType()))))
+          .map(tool => toolsOfTools[tool])
+      ));
+    }
 
-      try {
-        this.state.running = true;                // change state to running
-        return await promisify(this._run(inputs, context));
-      } catch(e) {
-        console.warn(e);
-        this.state.error = e;
-        return Promise.reject(e);
-      } finally {
-        //check if running
-        this.state.running && await this.__stop();
-      }
-    });
+    if (this._tools) {
+      this._workflow._toolsoftool.forEach(t => t.options.run({ layer: inputs.layer }));
+      this._workflow.emit('settoolsoftool', this._workflow._toolsoftool);
+    }
+
+    this.emit('run', { inputs, context });
+
+    try {
+      this.state.running = true;                // change state to running
+      return await this._run(inputs, context);
+    } catch(e) {
+      console.warn(e);
+      this.state.error = e;
+      return Promise.reject(e);
+    } finally {
+      //check if running
+      this.state.running && await this.__stop();
+    }
+    
   }
 
   /**

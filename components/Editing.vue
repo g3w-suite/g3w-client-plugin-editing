@@ -93,7 +93,6 @@
 
 <script>
   import ToolboxComponent             from './Toolbox.vue';
-  import { promisify }                from '../utils/promisify';
 
   const { GUI }                         = g3wsdk.gui;
   const {
@@ -209,7 +208,7 @@
 
         try {
           if (toolbox.state.editing.history.commit) {
-            await promisify(this.service.commit());
+            await (this.service.commit();
           }
         } catch (e) {
           console.warn(e);
@@ -297,7 +296,7 @@
         // commit changes
         try {
           if (toolbox.isDirty() && toolbox.hasDependencies()) {
-            await promisify(this.service.commit({ toolbox }));
+            await this.service.commit({ toolbox });
             console.info('[EDITING] committed dirty')
           }
         } catch (e) {
@@ -368,7 +367,7 @@
             }
 
             try {
-              await promisify($.when.apply(this.service, promises));
+              await Promise.allSettled(promises);
               resolve();
             } catch(e) {
               console.warn(e);

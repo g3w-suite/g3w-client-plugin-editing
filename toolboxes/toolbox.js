@@ -21,7 +21,6 @@ import { isPointOnVertex }                              from '../utils/isPointOn
 import { handleSplitFeature }                           from '../utils/handleSplitFeature';
 import { addPartToMultigeometries }                     from '../utils/addPartToMultigeometries';
 import { checkSessionItems }                            from '../utils/checkSessionItems';
-import { promisify, $promisify }                        from '../utils/promisify';
 import { unlinkRelation }                               from '../utils/unlinkRelation';
 import { splitFeatures }                                from '../utils/splitFeatures';
 import { isSameBaseGeometryType }                       from '../utils/isSameBaseGeometryType';
@@ -147,9 +146,9 @@ export class ToolBox extends G3WObject {
      * ORIGINAL SOURCE: g3w-client/src/core/editing/session.js@v3.9.1
      */
     this._session = Object.assign(new G3WObject({ setters: {
-      start:                        (options={}) => $promisify(this.__startSession(options)),
-      stop:                         ()           => $promisify(this.__stopSession()),
-      getFeatures:                  (options={}) => $promisify(this.__getFeatures(options)),
+      start:                        (options={}) => this.__startSession(options),
+      stop:                         ()           => this.__stopSession(),
+      getFeatures:                  (options={}) => this.__getFeatures(options),
       saveChangesOnServer:          commitItems  => this.__saveChangesOnServer(commitItems),
     }}), {
       _history:                     this._history,
@@ -272,93 +271,94 @@ export class ToolBox extends G3WObject {
               // delete feature
               new Step({
                 help: "editing.steps.help.double_click_delete",
-                run(inputs, context) {
-                  return $promisify(async() => {
-                    const layerId = inputs.layer.getId();
-                    const feature = inputs.features[0];
-  
-                    // get all relations of the current editing layer that are in editing
-                    // and filter relations
-                    // get relation layer id that are in relation with layerId (current layer in editing)
-                    // get fields of relation layer that are in relation with layerId
-                    // Exclude relation child layer that has at least one
-                    // editing field required because when unlink relation feature from
-                    // delete father, when try to commit update relation, we receive an error
-                    // due missing value /null to required field.
-                    const relations = getRelationsInEditing({
-                      layerId,
-                      relations: inputs.layer.getRelations() ? inputs.layer.getRelations().getArray() : []
-                    }).filter(
-                      relation => getEditingLayerById(getRelationId({ layerId, relation }))
-                        .getEditingFields() //get editing field of relation layer
-                        .filter(f => getRelationFieldsFromRelation({ relation, layerId: getRelationId({ layerId, relation }) }).ownField.includes(f.name)) //filter only relation fields
-                        .every(f => !f.validate.required) // check required
-                    );
+                async run(inputs, context) {
+                  
+                  const layerId = inputs.layer.getId();
+                  const feature = inputs.features[0];
 
-                    // promise return features relations and add to relation layer child
-                    if (relations.length > 0) {
-                      await getLayersDependencyFeatures(layerId, { feature, relations});
-                    }
+                  // get all relations of the current editing layer that are in editing
+                  // and filter relations
+                  // get relation layer id that are in relation with layerId (current layer in editing)
+                  // get fields of relation layer that are in relation with layerId
+                  // Exclude relation child layer that has at least one
+                  // editing field required because when unlink relation feature from
+                  // delete father, when try to commit update relation, we receive an error
+                  // due missing value /null to required field.
+                  const relations = getRelationsInEditing({
+                    layerId,
+                    relations: inputs.layer.getRelations() ? inputs.layer.getRelations().getArray() : []
+                  }).filter(
+                    relation => getEditingLayerById(getRelationId({ layerId, relation }))
+                      .getEditingFields() //get editing field of relation layer
+                      .filter(f => getRelationFieldsFromRelation({ relation, layerId: getRelationId({ layerId, relation }) }).ownField.includes(f.name)) //filter only relation fields
+                      .every(f => !f.validate.required) // check required
+                  );
 
-                    inputs.features = [feature];
+                  // promise return features relations and add to relation layer child
+                  if (relations.length > 0) {
+                    await getLayersDependencyFeatures(layerId, { feature, relations});
+                  }
 
-                    // Unlink relation features related to layer id
-                    getRelationsInEditingByFeature({ layerId, relations, feature }).forEach(({ relation, relations }) => {
-                      relations.forEach(r => unlinkRelation({ layerId, relation, relations, index: 0, dialog: false }));
-                    });
+                  inputs.features = [feature];
 
-                    context.session.pushDelete(layerId, feature);
-
-                    return inputs;
+                  // Unlink relation features related to layer id
+                  getRelationsInEditingByFeature({ layerId, relations, feature }).forEach(({ relation, relations }) => {
+                    relations.forEach(r => unlinkRelation({ layerId, relation, relations, index: 0, dialog: false }));
                   });
+
+                  context.session.pushDelete(layerId, feature);
+
+                  return inputs;
+                  
                 },
               }),
               // confirm step
               new Step({
-                run(inputs) {
-                  return $promisify(async () => {
-                    const editingLayer = inputs.layer.getEditingLayer();
-                    const feature      = inputs.features[0];
-                    const layerId      = inputs.layer.getId();
-                    const promise = new Promise((resolve, reject) => {
-                      GUI
-                        .dialog
-                        .confirm(
-                          `<h4>${tPlugin('editing.messages.delete_feature')}</h4>`
-                          + `<div style="font-size:1.2em;">`
-                          + (inputs.layer.getChildren().length && getRelationsInEditing({ layerId, relations: inputs.layer.getRelations().getArray() }).length
-                            ? tPlugin('editing.messages.delete_feature_relations')
-                            : ''
-                          )
-                          + `</div>`,
-                          result => {
-                            if (!result) {
-                              reject(inputs);
-                              return;
-                            }
-                            editingLayer.getSource().removeFeature(feature);
-                            // Remove unique values from unique fields of a layer (when deleting a feature)
-                            const fields = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[layerId];
-                            if (fields) {
-                              Object
-                              .keys(feature.getProperties())
-                              .filter(f => undefined !== fields[f])
-                              .forEach(f => fields[f].delete(feature.get(f)));
-                            }
-                            resolve(inputs);
-                          }
-                        );
-                    });
+                async run(inputs) {
 
-                    if (inputs.features) {
-                      setAndUnsetSelectedFeaturesStyle({
-                        promise: $promisify(async () => { try { return await promise; } catch(e) { console.warn(e); return Promise.reject(e) }}),
-                        inputs,
-                        style:   this.selectStyle,
-                      });
-                    }
-                    return promise;
-                  })
+                  const editingLayer = inputs.layer.getEditingLayer();
+                  const feature      = inputs.features[0];
+                  const layerId      = inputs.layer.getId();
+                  const promise = new Promise((resolve, reject) => {
+                    GUI
+                      .dialog
+                      .confirm(
+                        `<h4>${tPlugin('editing.messages.delete_feature')}</h4>`
+                        + `<div style="font-size:1.2em;">`
+                        + (inputs.layer.getChildren().length && getRelationsInEditing({ layerId, relations: inputs.layer.getRelations().getArray() }).length
+                          ? tPlugin('editing.messages.delete_feature_relations')
+                          : ''
+                        )
+                        + `</div>`,
+                        result => {
+                          if (!result) {
+                            reject(inputs);
+                            return;
+                          }
+                          editingLayer.getSource().removeFeature(feature);
+                          // Remove unique values from unique fields of a layer (when deleting a feature)
+                          const fields = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[layerId];
+                          if (fields) {
+                            Object
+                            .keys(feature.getProperties())
+                            .filter(f => undefined !== fields[f])
+                            .forEach(f => fields[f].delete(feature.get(f)));
+                          }
+                          resolve(inputs);
+                        }
+                      );
+                  });
+
+                  if (inputs.features) {
+                    setAndUnsetSelectedFeaturesStyle({
+                      promise: async () => { try { return await promise; } catch(e) { console.warn(e); return Promise.reject(e) }},
+                      inputs,
+                      style:   this.selectStyle,
+                    });
+                  }
+
+                  return promise;
+                  
                 }
               }),
             ],
@@ -528,7 +528,7 @@ export class ToolBox extends G3WObject {
                     } catch(e) {
                       console.warn(e);
                       GUI.setModal(false);
-                      return $promisify(Promise.reject(e));
+                      return Promise.reject(e);
                     }
 
                     //Relations layer
@@ -545,7 +545,7 @@ export class ToolBox extends G3WObject {
                         message:   'plugins.editing.no_relations_found',
                         autoclose: true,
                       })
-                      return $promisify(Promise.reject());
+                      return Promise.reject();
                     }
                     try {
                       await new Promise((resolve, reject) => {
@@ -597,7 +597,7 @@ export class ToolBox extends G3WObject {
                     } catch(e) {
                       console.warn(e);
                       GUI.setModal(false);
-                      return $promisify(Promise.reject(e));
+                      return Promise.reject(e);
                     }
                   }
                   const relation = relations.find(r => relationId === r.getId());
@@ -616,7 +616,7 @@ export class ToolBox extends G3WObject {
                     features = [];
                     //loop over father features to build a relation chiled feature
                     for (const f of inputs.features) {
-                      const feature = (await promisify(addTableFeature({ features: [], layer: rLayer }, { session: Workflow.Stack.getCurrent().getSession() }))).features[0];
+                      const feature = (await addTableFeature({ features: [], layer: rLayer }, { session: Workflow.Stack.getCurrent().getSession() })).features[0];
                       fields.relationField.forEach((field, _i) => feature.set(fields.ownField[_i], f.get(field)));
                       features.push(feature);
                     }  
@@ -640,7 +640,7 @@ export class ToolBox extends G3WObject {
                   try {
                     //set eventually unique values
                     await setLayerUniqueFieldValues(relationLayerId);
-                    await promisify(workflow.start({
+                    await workflow.start({
                     context: {
                       session,        
                       excludeFields:  fields.ownField,                                 // array of fields to be excluded
@@ -650,7 +650,7 @@ export class ToolBox extends G3WObject {
                       layer: rLayer,
                       features,
                     }
-                  }));
+                  });
                   } catch(e) {
                     console.warn(e);
                     session.rollback();
@@ -659,7 +659,7 @@ export class ToolBox extends G3WObject {
                   workflow.stop();
 
                   GUI.setModal(false);
-                  return $promisify(Promise.resolve(inputs, context));
+                  return Promise.resolve(inputs, context);
                 }
               }),
             ],
@@ -776,7 +776,7 @@ export class ToolBox extends G3WObject {
                       }
                     },
                     run(inputs, context) {
-                      return $promisify(new Promise((resolve, reject) => {
+                      return new Promise((resolve, reject) => {
                         const originalLayer    = inputs.layer;
                         const geometryType     = originalLayer.getGeometryType();
                         const layerId          = originalLayer.getId();
@@ -806,7 +806,7 @@ export class ToolBox extends G3WObject {
                                 //set choose layer step done
                                 this.setUserMessageStepDone('chooselayer');
                                 try {
-                                  const feature = await $promisify(async () => {
+                                  const feature = await (async () => {
                                   //get selected layer
                                   const layer   = layers.find(l => l.selected);
                                     const features = await (new Promise(async resolve => {
@@ -842,7 +842,7 @@ export class ToolBox extends G3WObject {
 
                                     try {
                                       _feature = features.length > 1
-                                        ? await promisify(chooseFeatureFromFeatures({ features, inputs }))
+                                        ? await chooseFeatureFromFeatures({ features, inputs })
                                         : features[0];
                                     } catch (e) {
                                       console.warn(e);
@@ -897,7 +897,7 @@ export class ToolBox extends G3WObject {
                           }
                         }).on('hide.bs.modal', () => vueInstance.$destroy()); //destroy vue instance after dialog is a closed
                         //hide user message step
-                      }));
+                      });
                     },
                   }),
                   openFormStep,
@@ -940,30 +940,28 @@ export class ToolBox extends G3WObject {
                     done:        false,
                   }
                 },
-                run(inputs) {
+                async run(inputs) {
                   /** @since g3w-client-plugin-editing@v3.8.0 */
-                  return $promisify( async () => {
-                    const promise = new Promise((resolve, reject) => {
-                      this.reject = reject;
-                      if (0 === inputs.features.length) {
-                        return reject('no feature');
+                  const promise = new Promise((resolve, reject) => {
+                    this.reject = reject;
+                    if (0 === inputs.features.length) {
+                      return reject('no feature');
+                    }
+                    this.addInteraction(
+                      new ol.interaction.Draw({ type: 'Point', condition: e => inputs.features.some(f => isPointOnVertex({ feature: f, coordinates: e.coordinate}))}), {
+                      'drawend': e => {
+                        inputs.coordinates = e.feature.getGeometry().getCoordinates();
+                        this.setUserMessageStepDone('from');
+                        resolve(inputs);
                       }
-                      this.addInteraction(
-                        new ol.interaction.Draw({ type: 'Point', condition: e => inputs.features.some(f => isPointOnVertex({ feature: f, coordinates: e.coordinate}))}), {
-                        'drawend': e => {
-                          inputs.coordinates = e.feature.getGeometry().getCoordinates();
-                          this.setUserMessageStepDone('from');
-                          resolve(inputs);
-                        }
-                      });
-                      this.addInteraction(
-                        new ol.interaction.Snap({ edge: false, features: new ol.Collection(inputs.features) })
-                      );
-                    })
-                    /** @since g3w-client-plugin-editing@v3.8.0 */
-                    setAndUnsetSelectedFeaturesStyle({ promise: $promisify(async () => { try { return await promise; } catch(e) { console.warn(e); return Promise.reject(e); } }), inputs, style: this.selectStyle })
-                    return promise;
+                    });
+                    this.addInteraction(
+                      new ol.interaction.Snap({ edge: false, features: new ol.Collection(inputs.features) })
+                    );
                   })
+                  /** @since g3w-client-plugin-editing@v3.8.0 */
+                  setAndUnsetSelectedFeaturesStyle({ promise: async () => { try { return await promise; } catch(e) { console.warn(e); return Promise.reject(e); } }, inputs, style: this.selectStyle })
+                  return promise;
                 },
                 stop() {
                   /** @since g3w-client-plugin-editing@v3.8.0 */
@@ -982,83 +980,82 @@ export class ToolBox extends G3WObject {
                     done:        false,
                   }
                 },
-                run(inputs, context) {
-                  return $promisify(async () => {
-                    const {
-                      layer,
-                      features,
-                      coordinates
-                    }             = inputs;
-                    const source  = layer.getEditingLayer().getSource();
-                    const layerId = layer.getId();
-                    const session = context.session;
-                    const promise = new Promise((resolve, reject) => {
-                      this.reject = reject;
-                      this.addInteraction(
-                        new ol.interaction.Draw({ type: 'Point', features: new ol.Collection() }), {
-                          'drawend': evt => {
-                            const [x, y]                    = evt.feature.getGeometry().getCoordinates();
-                            const deltaXY                   = coordinates ? getDeltaXY({x, y, coordinates}) : null;
-                            const featuresLength            = features.length;
-                            const promisesDefaultEvaluation = [];
+                async run(inputs, context) {
+                  const {
+                    layer,
+                    features,
+                    coordinates
+                  }             = inputs;
+                  const source  = layer.getEditingLayer().getSource();
+                  const layerId = layer.getId();
+                  const session = context.session;
+                  const promise = new Promise((resolve, reject) => {
+                    this.reject = reject;
+                    this.addInteraction(
+                      new ol.interaction.Draw({ type: 'Point', features: new ol.Collection() }), {
+                        'drawend': evt => {
+                          const [x, y]                    = evt.feature.getGeometry().getCoordinates();
+                          const deltaXY                   = coordinates ? getDeltaXY({x, y, coordinates}) : null;
+                          const featuresLength            = features.length;
+                          const promisesDefaultEvaluation = [];
 
-                            for (let i = 0; i < featuresLength; i++) {
-                              const feature = cloneFeature(features[i], layer);
-                              if (deltaXY) {
-                                feature.getGeometry().translate(deltaXY.x, deltaXY.y);
-                              }
-                              else {
-                                const coordinates = feature.getGeometry().getCoordinates();
-                                const deltaXY     = getDeltaXY({ x, y, coordinates });
-                                feature.getGeometry().translate(deltaXY.x, deltaXY.y)
-                              }
-                              // set media fields to null
-                              //@since 3.9.0 Comment
-                              //layer.getEditingMediaFields({}).forEach(f => feature.set(f, null));
-                              /**
-                               * evaluated geometry expression
-                               */
-                              promisesDefaultEvaluation.push(evaluateExpressionFields({ inputs, context, feature }))
+                          for (let i = 0; i < featuresLength; i++) {
+                            const feature = cloneFeature(features[i], layer);
+                            if (deltaXY) {
+                              feature.getGeometry().translate(deltaXY.x, deltaXY.y);
                             }
-                            Promise
-                              .allSettled(promisesDefaultEvaluation)
-                              .then(promises => promises
-                                .forEach(({ status, value:feature }) => {
+                            else {
+                              const coordinates = feature.getGeometry().getCoordinates();
+                              const deltaXY     = getDeltaXY({ x, y, coordinates });
+                              feature.getGeometry().translate(deltaXY.x, deltaXY.y)
+                            }
+                            // set media fields to null
+                            //@since 3.9.0 Comment
+                            //layer.getEditingMediaFields({}).forEach(f => feature.set(f, null));
+                            /**
+                             * evaluated geometry expression
+                             */
+                            promisesDefaultEvaluation.push(evaluateExpressionFields({ inputs, context, feature }))
+                          }
+                          Promise
+                            .allSettled(promisesDefaultEvaluation)
+                            .then(promises => promises
+                              .forEach(({ status, value:feature }) => {
 
-                                  /**
-                                   * @todo improve client core to handle this situation on session.pushAdd not copy pk field not editable only
-                                   */
-                                  const noteditablefieldsvalues = getNotEditableFieldsNoPkValues({ layer, feature });
-                                  const newFeature              = session.pushAdd(layerId, feature);
-                                  // after pushAdd need to set not edit
-                                  if (Object.entries(noteditablefieldsvalues).length) {
-                                    Object
-                                      .entries(noteditablefieldsvalues)
-                                      .forEach(([field, value]) => newFeature.set(field, value));
-                                  }
+                                /**
+                                 * @todo improve client core to handle this situation on session.pushAdd not copy pk field not editable only
+                                 */
+                                const noteditablefieldsvalues = getNotEditableFieldsNoPkValues({ layer, feature });
+                                const newFeature              = session.pushAdd(layerId, feature);
+                                // after pushAdd need to set not edit
+                                if (Object.entries(noteditablefieldsvalues).length) {
+                                  Object
+                                    .entries(noteditablefieldsvalues)
+                                    .forEach(([field, value]) => newFeature.set(field, value));
+                                }
 
-                                  //need to add to editing layer source newFeature
-                                  source.addFeature(newFeature);
+                                //need to add to editing layer source newFeature
+                                source.addFeature(newFeature);
 
-                                  inputs.features.push(newFeature);
-                                })
-                              )
-                              .finally(() => {
-                                this.setUserMessageStepDone('to');
-                                resolve(inputs);
+                                inputs.features.push(newFeature);
                               })
-                            }
-                          });
+                            )
+                            .finally(() => {
+                              this.setUserMessageStepDone('to');
+                              resolve(inputs);
+                            })
+                          }
+                        });
 
-                      this.addInteraction(
-                        new ol.interaction.Snap({ source, edge: false })
-                      );
-                    });
-
-                    /** @since g3w-client-plugin-editing@v3.8.0 */
-                    setAndUnsetSelectedFeaturesStyle({ promise: $promisify(async () => { try { return await promise; } catch(e) { console.warn(e); return Promise.reject(e); } }), inputs, style: this.selectStyle });
-                    return promise;
+                    this.addInteraction(
+                      new ol.interaction.Snap({ source, edge: false })
+                    );
                   });
+
+                  /** @since g3w-client-plugin-editing@v3.8.0 */
+                  setAndUnsetSelectedFeaturesStyle({ promise: async () => { try { return await promise; } catch(e) { console.warn(e); return Promise.reject(e); } }, inputs, style: this.selectStyle });
+                  return promise;
+                  
                 },
                 stop() {
                   this.reject();
@@ -1135,7 +1132,7 @@ export class ToolBox extends G3WObject {
               new Step({
                 layer,
                 run(inputs, context) {
-                  return $promisify(new Promise((resolve, reject) => {
+                  return new Promise((resolve, reject) => {
                     const originaLayer    = inputs.layer;
                     const editingLayer    = inputs.layer.getEditingLayer();
                     const layerId         = originaLayer.getId();
@@ -1215,7 +1212,7 @@ export class ToolBox extends G3WObject {
                       map.removeLayer(tempLayer);
                       tempLayer = null;
                     });
-                  }));
+                  });
                 },
               }),
             ],
@@ -1255,59 +1252,58 @@ export class ToolBox extends G3WObject {
                     done:        false,
                   }
                 },
-                run(inputs, context) {
+                async run(inputs, context) {
                   /** @since g3w-client-plugin-editing@v3.8.0 */
-                  return $promisify(async () => {
-                    const source  = inputs.layer.getEditingLayer().getSource();
-                    
-                    const promise = new Promise((resolve, reject) => {
-                      this.reject = reject;
-                      this.addInteraction(
-                        new ol.interaction.Draw({
-                          type:              'LineString',
-                          features:          new ol.Collection(),
-                          freehandCondition: ol.events.condition.never,
-                        }), {
-                          'drawend': async e => {
-                            let isSplitted                 = false;
-                            const splittedGeometries       = splitFeatures(inputs.features, e.feature);
-                            const splittedGeometriesLength = splittedGeometries.length;
+                  const source  = inputs.layer.getEditingLayer().getSource();
+                  
+                  const promise = new Promise((resolve, reject) => {
+                    this.reject = reject;
+                    this.addInteraction(
+                      new ol.interaction.Draw({
+                        type:              'LineString',
+                        features:          new ol.Collection(),
+                        freehandCondition: ol.events.condition.never,
+                      }), {
+                        'drawend': async e => {
+                          let isSplitted                 = false;
+                          const splittedGeometries       = splitFeatures(inputs.features, e.feature);
+                          const splittedGeometriesLength = splittedGeometries.length;
 
-                            for (let i = 0; i < splittedGeometriesLength; i++) {
-                              if (splittedGeometries[i].geometries.length > 1) {
-                                isSplitted = true;
-                                await handleSplitFeature({
-                                  context,
-                                  inputs,
-                                  feature:            inputs.features.find(f => f.getUid() === splittedGeometries[i].uid),
-                                  splittedGeometries: splittedGeometries[i].geometries,
-                                  session:            context.session,
-                                });
-                              }
+                          for (let i = 0; i < splittedGeometriesLength; i++) {
+                            if (splittedGeometries[i].geometries.length > 1) {
+                              isSplitted = true;
+                              await handleSplitFeature({
+                                context,
+                                inputs,
+                                feature:            inputs.features.find(f => f.getUid() === splittedGeometries[i].uid),
+                                splittedGeometries: splittedGeometries[i].geometries,
+                                session:            context.session,
+                              });
                             }
-
-                            /** @since g3w-client-plugin-editing@v3.8.0 */
-                            (isSplitted ? resolve : reject)(inputs);
-                            //need to set timeout promise, because at the end of the workflow all user messages are cleared
-                            await new Promise((r) => setTimeout(r, 600));
-                            GUI.showUserMessage({
-                              type:      isSplitted ? 'success': 'warning',
-                              message:   isSplitted ? 'plugins.editing.messages.splitted' : 'plugins.editing.messages.nosplittedfeature',
-                              autoclose: true
-                            })
                           }
-                      });
 
-                      this.addInteraction(
-                        new ol.interaction.Snap({ source, edge: true })
-                      );
-                    })
+                          /** @since g3w-client-plugin-editing@v3.8.0 */
+                          (isSplitted ? resolve : reject)(inputs);
+                          //need to set timeout promise, because at the end of the workflow all user messages are cleared
+                          await new Promise((r) => setTimeout(r, 600));
+                          GUI.showUserMessage({
+                            type:      isSplitted ? 'success': 'warning',
+                            message:   isSplitted ? 'plugins.editing.messages.splitted' : 'plugins.editing.messages.nosplittedfeature',
+                            autoclose: true
+                          })
+                        }
+                    });
 
-                    /** @since g3w-client-plugin-editing@v3.8.0 */
-                    setAndUnsetSelectedFeaturesStyle({ promise: $promisify(async () => { try { return await promise; } catch(e) { console.warn(e); return Promise.reject(e); }}), inputs, style: this.selectStyle });
-
-                    return promise;
+                    this.addInteraction(
+                      new ol.interaction.Snap({ source, edge: true })
+                    );
                   })
+
+                  /** @since g3w-client-plugin-editing@v3.8.0 */
+                  setAndUnsetSelectedFeaturesStyle({ promise: async () => { try { return await promise; } catch(e) { console.warn(e); return Promise.reject(e); }}, inputs, style: this.selectStyle });
+
+                  return promise;
+                  
                 },
                 stop() {
                   this.reject();
@@ -1352,7 +1348,7 @@ export class ToolBox extends G3WObject {
                   }
                 },
                 run(inputs, context) {
-                  return $promisify(new Promise((resolve, reject) => {
+                  return new Promise((resolve, reject) => {
                     const {
                       layer,
                       features
@@ -1402,7 +1398,7 @@ export class ToolBox extends G3WObject {
                         })
                         .catch(e => { console.warn(e); reject(); })
                     }
-                  }));
+                  });
                 },
               }),
             ],
@@ -1640,7 +1636,7 @@ export class ToolBox extends G3WObject {
    */
   //added option object to start method to have a control by other plugin how
   start(options = {}) {
-    return $promisify(new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       const id                    = this.getId();
       const applicationConstraint = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.constraints.toolboxes[id];
       let {
@@ -1715,7 +1711,7 @@ export class ToolBox extends G3WObject {
         await setLayerUniqueFieldValues(this.getId());
         await g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').runEventHandler({ type: 'start-editing', id });
         try {
-          const features = await promisify(promise);
+          const features = await promise;
           this.stopLoading();
           this.setEditing(true);
           await g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').runEventHandler({ type: 'get-features-editing', id, options: { features } });
@@ -1749,7 +1745,7 @@ export class ToolBox extends G3WObject {
               this.startLoading();
               this.setFeaturesOptions({ filter });
               try {
-                await handlerAfterSessionGetFeatures(promisify(this._session.start(this.state._getFeaturesOption)))
+                await handlerAfterSessionGetFeatures(this._session.start(this.state._getFeaturesOption))
               } catch(e) {
                 console.warn(e);
                 this.setEditing(false);
@@ -1762,17 +1758,17 @@ export class ToolBox extends G3WObject {
       if (!is_started && !GIVE_ME_A_NAME) {
         this._start = true;
         this.startLoading();
-        await handlerAfterSessionGetFeatures(promisify(this._session.start(this.state._getFeaturesOption)))
+        await handlerAfterSessionGetFeatures(this._session.start(this.state._getFeaturesOption))
       }
 
       if (is_started && !this._start) {
         this.startLoading();
-        await handlerAfterSessionGetFeatures(promisify(this._session.getFeatures(this.state._getFeaturesOption)))
+        await handlerAfterSessionGetFeatures(this._session.getFeatures(this.state._getFeaturesOption))
         this._start = true;
       }
 
       if (is_started) { this.setEditing(true); }
-    }));
+    });
   };
 
   /**
@@ -1792,77 +1788,75 @@ export class ToolBox extends G3WObject {
   /**
    * @returns {*}
    */
-  stop() {
-    return $promisify(async () => {
-      if (this.disableCanEditEvent) { this.disableCanEditEvent() }
+  async stop() {
+    if (this.disableCanEditEvent) { this.disableCanEditEvent() }
 
-      this.state._unregisterStartSettersEventsKey.forEach(fnc => fnc());
-      this.state._unregisterStartSettersEventsKey = [];
+    this.state._unregisterStartSettersEventsKey.forEach(fnc => fnc());
+    this.state._unregisterStartSettersEventsKey = [];
 
-      this._olStartKeysEvent.forEach(k => ol.Observable.unByKey(k));
-      this._olStartKeysEvent.splice(0);
+    this._olStartKeysEvent.forEach(k => ol.Observable.unByKey(k));
+    this._olStartKeysEvent.splice(0);
 
-      this.unwatches.forEach(uw => uw());
-      this.unwatches.splice(0);
+    this.unwatches.forEach(uw => uw());
+    this.unwatches.splice(0);
 
-      //eventually reset start resolve feature waiting promise
-      this.startResolve                           = null;
+    //eventually reset start resolve feature waiting promise
+    this.startResolve = null;
 
-      if (this.state._constraints.scale) {
-        this._handleScaleConstraint(true);
+    if (this.state._constraints.scale) {
+      this._handleScaleConstraint(true);
+    }
+
+    const is_started = !!this.__isStarted();
+
+    if (!is_started) { return true }
+
+    if (!ApplicationState.online) { return; }
+
+    const service = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing');
+    const layerId = this.state.id;
+
+    // Check if father relation is editing and has commit feature
+    const fathersInEditing = service.getLayerById(layerId).getFathers().filter(id => {
+      const toolbox = service.getToolBoxById(id);
+      if (toolbox && toolbox.inEditing() && toolbox.isDirty()) {
+        //get a temporary relations object and check if layerId has some changes
+        return Object.keys(toolbox.getSession().getCommitItems() || {}).find(id => layerId === id);
       }
-
-      const is_started = !!this.__isStarted();
-  
-      if (!is_started) { return true }
-  
-      if (!ApplicationState.online) { return; }
-
-      const service = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing');
-      const layerId = this.state.id;
-
-      // Check if father relation is editing and has commit feature
-      const fathersInEditing = service.getLayerById(layerId).getFathers().filter(id => {
-        const toolbox = service.getToolBoxById(id);
-        if (toolbox && toolbox.inEditing() && toolbox.isDirty()) {
-          //get a temporary relations object and check if layerId has some changes
-          return Object.keys(toolbox.getSession().getCommitItems() || {}).find(id => layerId === id);
-        }
-      });
-
-      if (fathersInEditing.length > 0) {
-        this.stopActiveTool();
-        this.enableTools(false);
-        this.clearToolboxMessages();
-        // unregister get features event
-        if (Layer.LayerTypes.VECTOR === this.state._layerType) {
-          GUI.getService('map').getMap().un(this._getFeaturesEvent.event, this._getFeaturesEvent.fnc);
-        }
-        this._stopSessionChildren(this.state.id);
-        // clear layer unique field values
-        g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[this.getId()] = {};
-        return;
-      }
-
-      try {
-        await promisify(this._session.stop());
-        //set start to false
-        this._start           = false
-        this.stopLoading();
-        this.setEditing(false);
-        this.state._getFeaturesOption = {};
-        this.stopActiveTool();
-        this.clearToolboxMessages();
-        this.emit('stop-editing');
-        // clear layer unique field values
-        g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[this.getId()] = {};
-        return true;
-      } catch(e) {
-        console.warn(e);
-        return Promise.reject(e);
-      }
-
     });
+
+    if (fathersInEditing.length > 0) {
+      this.stopActiveTool();
+      this.enableTools(false);
+      this.clearToolboxMessages();
+      // unregister get features event
+      if (Layer.LayerTypes.VECTOR === this.state._layerType) {
+        GUI.getService('map').getMap().un(this._getFeaturesEvent.event, this._getFeaturesEvent.fnc);
+      }
+      this._stopSessionChildren(this.state.id);
+      // clear layer unique field values
+      g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[this.getId()] = {};
+      return;
+    }
+
+    try {
+      await this._session.stop();
+      //set start to false
+      this._start           = false
+      this.stopLoading();
+      this.setEditing(false);
+      this.state._getFeaturesOption = {};
+      this.stopActiveTool();
+      this.clearToolboxMessages();
+      this.emit('stop-editing');
+      // clear layer unique field values
+      g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[this.getId()] = {};
+      return true;
+    } catch(e) {
+      console.warn(e);
+      return Promise.reject(e);
+    }
+
   }
 
   /**
@@ -1880,11 +1874,9 @@ export class ToolBox extends G3WObject {
     ids         = null,
     items,
     relations   = true,
-    /** @since g3w-client-plugin-editing@v3.8.0 */
-    __esPromise = false,
   } = {}) {
 
-    return $promisify(new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       let commit; // committed items
 
       // skip when ..
@@ -1900,49 +1892,46 @@ export class ToolBox extends G3WObject {
       if (!relations) {
         commit.relations = {};
       }
+      try {
+        const response = await this.state.layer.getEditor().commit(commit);
+  
+        // skip when response is null or undefined and response.result is false
+        if (!(response && response.result)) {
+          reject(response);
+          return;
+        }
 
-      this.state.layer.getEditor()
-        .commit(commit)
-        .then(response => {
+        const { relations = {} } = response.response; // check if relations are saved on server
 
-          // skip when response is null or undefined and response.result is false
-          if (!(response && response.result)) {
-            reject(response);
-            return;
-          }
+        // sync server data with local data
+        for (const id in relations) {
+          const toolbox = ToolBox.get(id)
+          toolbox
+            .getSession()
+            .getEditor()
+            .applyCommitResponse({        // apply commit response to current editing relation layer
+              response: relations[id],
+              result:   true
+            });
+        }
 
-          const { relations = {} } = response.response; // check if relations are saved on server
+        this.__clearHistory();
 
-          // sync server data with local data
-          for (const id in relations) {
-            const toolbox = ToolBox.get(id)
-            toolbox
-              .getSession()
-              .getEditor()
-              .applyCommitResponse({        // apply commit response to current editing relation layer
-                response: relations[id],
-                result:   true
-              });
-          }
+        /**
+         * @since v3.9.0
+        * After commit get new unique values
+        */
+        this._session.saveChangesOnServer(commit);
 
-          this.__clearHistory();
-
-          /**
-           * @since v3.9.0
-           * After commit get new unique values
-           */
-          this._session.saveChangesOnServer(commit);
-
-
-          // ES6 promises only accept a single response
-          if (__esPromise) {
-            resolve({ commit, response });
-          } else {
-            resolve(commit, response);
-          }
-        })
-        .fail(e => { console.warn(e); reject(e); })
-    }))
+        resolve({ commit, response });
+        
+      } catch(e) {
+        console.warn(e); 
+        reject(e);
+        
+      }
+    
+    })
   }
 
   /**
@@ -2272,33 +2261,33 @@ export class ToolBox extends G3WObject {
   /**
    * @param tool
    */
-  setActiveTool(tool) {
-    return $promisify(async () => {
-      try {
-        await promisify(this.stopActiveTool(tool));
+  async setActiveTool(tool) {
 
-        //set as active tool
-        this.state.activetool = tool;
+    try {
+      await this.stopActiveTool(tool);
 
-        const workflow = tool.getOperator();
+      //set as active tool
+      this.state.activetool = tool;
 
-        if (workflow) {
-          // filter eventually disable tools of tools
-          workflow.on('settoolsoftool', ts => {
-            //set empty tools of tools
-            this.state.toolsoftool = (ts || []).filter(t => !tool.disabledtoolsoftools.includes(t.type))
-          })
-          // set tool messages
-          const messages      = (workflow.getHelpMessage() || workflow.getRunningStep()) ? this.state.activetool.messages : null;
-          this.state.toolmessages.help = messages && messages.help || null;
-        }
+      const workflow = tool.getOperator();
 
-        tool.start();
-
-      } catch(e) {
-        console.warn(e);
+      if (workflow) {
+        // filter eventually disable tools of tools
+        workflow.on('settoolsoftool', ts => {
+          //set empty tools of tools
+          this.state.toolsoftool = (ts || []).filter(t => !tool.disabledtoolsoftools.includes(t.type))
+        })
+        // set tool messages
+        const messages      = (workflow.getHelpMessage() || workflow.getRunningStep()) ? this.state.activetool.messages : null;
+        this.state.toolmessages.help = messages && messages.help || null;
       }
-    });
+
+      tool.start();
+
+    } catch(e) {
+      console.warn(e);
+    }
+    
   }
 
   /**
@@ -2306,28 +2295,27 @@ export class ToolBox extends G3WObject {
    *
    * @returns {*}
    */
-  stopActiveTool(tool) {
-    return $promisify(async () => {
-      const activeTool = this.getActiveTool();
-      if (tool && (!activeTool || tool === activeTool)) {
-        tool.removeAllListeners();
-        return;
-      }
+  async stopActiveTool(tool) {   
+    const activeTool = this.getActiveTool();
+    if (tool && (!activeTool || tool === activeTool)) {
+      tool.removeAllListeners();
+      return;
+    }
 
-      try {
-        //Need to check if is there active tool
-        if (activeTool) {
-          activeTool.removeAllListeners();
-          await promisify(activeTool.stop(true));
-        }
-        //@since 3.9.1 Changed to set empty array cause reactivity of vue instead of splice(0)
-        this.state.toolsoftool       = [];
-        this.state.toolmessages.help = null;
-        this.state.activetool        = null;
-      } catch(e) {
-        console.warn(e);
+    try {
+      //Need to check if is there active tool
+      if (activeTool) {
+        activeTool.removeAllListeners();
+        await activeTool.stop(true);
       }
-    })
+      //@since 3.9.1 Changed to set empty array cause reactivity of vue instead of splice(0)
+      this.state.toolsoftool       = [];
+      this.state.toolmessages.help = null;
+      this.state.activetool        = null;
+    } catch(e) {
+      console.warn(e);
+    }
+    
   }
 
   /**
@@ -2391,7 +2379,7 @@ export class ToolBox extends G3WObject {
    */
   __add(uniqueId, items) {
     //state object is an array of feature/features changed in a transaction
-    return $promisify(new Promise((resolve) => {
+    return new Promise((resolve) => {
       // before insert an item into the history
       // check if are at last state step (no redo was done)
       // If we are in the middle of undo, delete all changes
@@ -2415,7 +2403,7 @@ export class ToolBox extends G3WObject {
       // return unique id key
       // it can be used in save relation
       resolve(uniqueId);
-    }))
+    })
   }
 
   /**
@@ -2667,25 +2655,23 @@ export class ToolBox extends G3WObject {
    * 
    * @since g3w-client-plugin-editing@v3.8.0
    */
-  __save(options = {}) {
-    // fill history
-    return $promisify(async () => {
-      // add temporary modify to history
-      if (this.state.editing.session.changes.length > 0) {
-        //@since 3.9.1 get array of uniqueIds
-        //case of modify vertex. Multi changes in one save
-        const uniqueIds = [];
-        await Promise.allSettled(this.state.editing.session.changes.map(c => {
-          const uniqueId = options.id || Date.now();
-          uniqueIds.push(uniqueId);
-          return promisify(this.__add(uniqueId, [c]));
-        }));
-        // clear to temporary changes
-        this.state.editing.session.changes = [];
-        return uniqueIds;
-      }
-      return null;
-    });
+  async __save(options = {}) {
+    // add temporary modify to history
+    if (this.state.editing.session.changes.length > 0) {
+      //@since 3.9.1 get array of uniqueIds
+      //case of modify vertex. Multi changes in one save
+      const uniqueIds = [];
+      await Promise.allSettled(this.state.editing.session.changes.map(c => {
+        const uniqueId = options.id || Date.now();
+        uniqueIds.push(uniqueId);
+        return this.__add(uniqueId, [c]);
+      }));
+      // clear to temporary changes
+      this.state.editing.session.changes = [];
+      return uniqueIds;
+    }
+    return null;
+    
   }
 
   /**
@@ -2757,40 +2743,40 @@ export class ToolBox extends G3WObject {
    *
    * @since g3w-client-plugin-editing@v3.8.0
    */
-  __rollback(changes) {
+  async __rollback(changes) {
     // skip when..
     if (changes) {
       return this.state.layer.getEditor().rollback(changes);
     }
 
     // Handle temporary changes of layer
-    return $promisify(async () => {
-      const id = this.state.layer.getId();
-      changes  = { own:[], dependencies: {} };
-  
-      this.state.editing.session.changes.forEach(c => {
-        const change = Array.isArray(c) ? c[0] : c;
-        if (id === change.layerId) {
-          changes.own.push(change);
-        } else {
-          changes.dependencies[change.layerId] = changes.dependencies[change.layerId] || [];
-          // FILO
-          changes.dependencies[change.layerId].unshift(change);
-        }
-      });
+   
+    const id = this.state.layer.getId();
+    changes  = { own:[], dependencies: {} };
 
-      try {
-        await promisify(this.state.layer.getEditor().rollback(changes.own));
-        for (const id in changes.dependencies) {
-          ToolBox.get(id).getSession().rollback(changes.dependencies[id]);
-        }
-        return changes.dependencies;
-      } catch(e) {
-        console.warn(e);
-      } finally {
-        this.state.editing.session.changes = [];
+    this.state.editing.session.changes.forEach(c => {
+      const change = Array.isArray(c) ? c[0] : c;
+      if (id === change.layerId) {
+        changes.own.push(change);
+      } else {
+        changes.dependencies[change.layerId] = changes.dependencies[change.layerId] || [];
+        // FILO
+        changes.dependencies[change.layerId].unshift(change);
       }
     });
+
+    try {
+      await this.state.layer.getEditor().rollback(changes.own);
+      for (const id in changes.dependencies) {
+        ToolBox.get(id).getSession().rollback(changes.dependencies[id]);
+      }
+      return changes.dependencies;
+    } catch(e) {
+      console.warn(e);
+    } finally {
+      this.state.editing.session.changes = [];
+    }
+    
   }
 
   /**
@@ -3020,7 +3006,7 @@ export class ToolBox extends G3WObject {
    */
   async __startSession(options = {}) {
     try {
-      const features = await promisify(this.state.layer.getEditor().start(options));
+      const features = await this.state.layer.getEditor().start(options);
       this.state.editing.session.started = true;
       return features;
     } catch(e) {
@@ -3065,10 +3051,10 @@ export class ToolBox extends G3WObject {
   async __stopSession() {
     try {
       if (this.state.editing.session.started || this.state.editing.session.getfeatures) {
-        await promisify(this.state.layer.getEditor().stop());
+        await this.state.layer.getEditor().stop();
         this.__clearSession();
       }      
-    } catch (e) {
+    } catch(e) {
       console.warn(e);
       return Promise.reject(e);
     } finally {
@@ -3088,7 +3074,7 @@ export class ToolBox extends G3WObject {
   async __getFeatures(options={}) {
     if (!this._allfeatures) {
       this._allfeatures = !options.filter;
-      const features = await promisify(this.state.layer.getEditor().getFeatures(options));
+      const features    = await this.state.layer.getEditor().getFeatures(options);
       this.state.editing.session.getfeatures = true;
       return features;
     }
@@ -3147,8 +3133,8 @@ export class ToolBox extends G3WObject {
     }
 
     try {
-      await promisify(tool.op.start(options));
-      await promisify(this._session.save());
+      await tool.op.start(options);
+      await this._session.save();
       g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').saveChange(); // after save temp change check if editing service has a autosave
     } catch(e) {
       console.warn(e);
@@ -3172,26 +3158,23 @@ export class ToolBox extends G3WObject {
    * 
    * @since g3w-client-plugin-editing@v3.8.0
    */
-  _stopTool(tool, force = false) {
-    return $promisify(async () => {
-      if (!tool.getOperator()) {
-        tool.emit('stop', { session: this._session });
-        return;
-      }
-      try {
-        //stop workflow bing to tool
-        const op = tool.getOperator();
-        await promisify(tool.getOperator().stop(force));
-      } catch(e) {
-        console.warn(e);
-        this._session.rollback();
-      } finally {
-        tool.active = false;
-        tool.emit('stop', { session: this._session });
-      }
-    });
+  async _stopTool(tool, force = false) {
+    if (!tool.getOperator()) {
+      tool.emit('stop', { session: this._session });
+      return;
+    }
+    try {
+      //stop workflow bing to tool
+      const op = tool.getOperator();
+      await tool.getOperator().stop(force);
+    } catch(e) {
+      console.warn(e);
+      this._session.rollback();
+    } finally {
+      tool.active = false;
+      tool.emit('stop', { session: this._session });
+    }
   }
-
 }
 
 /**

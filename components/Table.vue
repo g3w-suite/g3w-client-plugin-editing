@@ -150,7 +150,6 @@
   import { getRelationsInEditing }             from '../utils/getRelationsInEditing';
   import { getFeatureTableFieldValue }         from '../utils/getFeatureTableFieldValue';
   import { addTableFeature }                   from '../utils/addTableFeature';
-  import { promisify }                         from '../utils/promisify';
 
   const { tPlugin }     = g3wsdk.core.i18n;
   const { GUI }         = g3wsdk.gui;
@@ -332,10 +331,10 @@
             });
             this.state.inputs.features.push(feature);
             try {
-              const outputs = await promisify(this.state.workflow.start({
+              const outputs = await this.state.workflow.start({
                 context: this.state.context,
                 inputs:  this.state.inputs
-              }));
+              });
               const feature    = outputs.features[outputs.features.length -1];
               const newFeature = {};
               Object.entries(this.state.rows[0]).forEach(([ key, _ ]) => {
@@ -385,13 +384,8 @@
         inputs.features.push(feature);
 
         try {
-          const outputs = await promisify(
-            this.state.workflow
-            .start({
-              context: this.state.context,
-              inputs
-            })
-          );
+          const outputs = await this.state.workflow.start({ context: this.state.context, inputs });
+          
           const feature = outputs.features[outputs.features.length -1];
           Object
             .entries(this.state.rows[index])

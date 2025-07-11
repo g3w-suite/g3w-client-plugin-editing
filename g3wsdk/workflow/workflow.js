@@ -8,8 +8,7 @@
  * @since g3w-client-plugin-editing@v3.8.x
  */
 
-import { Step }                  from './step';
-import { promisify, $promisify } from '../../utils/promisify';
+import { Step }      from './step';
 
 const { GUI }                 = g3wsdk.gui;
 const { G3WObject }           = g3wsdk.core;
@@ -318,7 +317,7 @@ export class Workflow extends G3WObject {
       //@since 3.9.1
       this.emit('settoolsoftool', (step.tools || []));
       //run step
-      const outputs = await promisify(step.__run(inputs, this.getContext()));
+      const outputs = await step.__run(inputs, this.getContext());
       // onDone → check if all step is resolved
       this._stepIndex++;
       //check if is the last of workflow steps
@@ -346,7 +345,7 @@ export class Workflow extends G3WObject {
    * @fires start
    */
   start(options = {}) {
-    return $promisify( new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       this._promise = { resolve, reject };
       this._inputs  = options.inputs;
       this._context = options.context || {};
@@ -410,7 +409,7 @@ export class Workflow extends G3WObject {
         reject(e);
       }
 
-    }));
+    });
   }
 
   /**
@@ -419,14 +418,14 @@ export class Workflow extends G3WObject {
    * @fires stop
    */
   async stop() {
-    return $promisify(new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
 
       this._promise = null;
 
       try {
         // stop child workflow
         if (this._child) {
-          await promisify(this._child.stop());
+          await this._child.stop();
         }
       } catch(e) {
         console.warn(e);
@@ -463,7 +462,7 @@ export class Workflow extends G3WObject {
         //emit stop Workflow
         this.emit('stop');
       }
-    }));
+    });
   }
 
   /**

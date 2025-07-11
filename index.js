@@ -2,7 +2,7 @@ import './g3wsdk';
 import i18n                                      from './i18n';
 import { Workflow }                              from './g3wsdk/workflow/workflow';
 import { Step }                                  from './g3wsdk/workflow/step';
-import { promisify, $promisify }                 from './utils/promisify';
+import { promisify }                             from './utils/promisify';
 import { createFeature }                         from './utils/createFeature';
 import { getEditingLayerById }                   from './utils/getEditingLayerById';
 import { setAndUnsetSelectedFeaturesStyle }      from './utils/setAndUnsetSelectedFeaturesStyle';
@@ -399,7 +399,7 @@ new (class extends Plugin {
 
         }
 
-        await promisify(toolBox.start({ filter: { fids: fid } }));
+        await toolBox.start({ filter: { fids: fid } });
 
         const _layer    = toolBox.getLayer();
         const source    = _layer.getEditingLayer().getSource();
@@ -487,14 +487,12 @@ new (class extends Plugin {
           steps:       [ new OpenFormStep() ]
         }));
 
-        await promisify(
-          w.start({
-            inputs:  { layer: _layer, features: [feature] },
-            context: { session }
-          })
-        );
+        await w.start({
+          inputs:  { layer: _layer, features: [feature] },
+          context: { session }
+        });
 
-        await promisify(session.save());
+        await session.save();
 
         this.saveChange();
 
@@ -846,8 +844,8 @@ new (class extends Plugin {
       .filter(t => t.getSession().getHistory().state.commit) // check if temp changes are waiting to save on server
       .map( toolbox => this.commit({ toolbox, modal : true }))
     try {
-      await promisify($.when.apply(this, commitpromises));    
-    } catch (e) {
+      await Promise.allSettled(commitpromises);    
+    } catch(e) {
       console.warn(e);
     }
 
@@ -892,7 +890,7 @@ new (class extends Plugin {
    * 
    * @since g3w-client-plugin-editing@v3.8.0
    */
-  commit({
+  async commit({
     toolbox,
     commitItems,
     modal = true,
@@ -912,235 +910,229 @@ new (class extends Plugin {
     ].length;
     let workflow, dialog, serverError;
 
-    return $promisify(async () => {
+    // skip when there is nothing to save
+    if (!has_changes) {
+      GUI.showUserMessage({ type: 'info', message: 'Nothing to save', autoclose: true, closable: false });
+      return toolbox;
+    }
 
-      // skip when there is nothing to save
-      if (!has_changes) {
-        GUI.showUserMessage({ type: 'info', message: 'Nothing to save', autoclose: true, closable: false });
-        return toolbox;
+    try {
+
+      // show commit modal window
+      /** ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8 */
+      if (modal) {
+        workflow = new Workflow({
+          type: 'commitfeatures',
+          steps: [
+            // confirm step
+            new Step({
+              run(inputs) {
+                return new Promise((resolve, reject) => {
+                  const dialog = GUI.dialog.dialog({
+                    message: inputs.message,
+                    title:   `${tPlugin("editing.messages.commit_feature")}: "${inputs.layer.getName()}"`,
+                    buttons: {
+                      SAVE:   { className: "btn-success", callback() { resolve(inputs); }, label: t("save"),   },
+                      CANCEL: { className: "btn-danger",  callback() { reject({cancel : true });        }, label: t(inputs.close ? "exitnosave" : "annul") },
+                      ...(inputs.close ? { CLOSEMODAL : { className: "btn-primary", callback() { dialog.modal('hide'); }, label:  t("annul") }} : {}),
+                    }
+                  });
+                  if (inputs.features) {
+                    setAndUnsetSelectedFeaturesStyle({ promise: promise(), inputs, style: this.selectStyle });
+                  }
+                })
+              },
+            }
+            ),
+          ]
+        });
+        //need to get to confirm or cancel choose from modal
+        try {
+          await workflow.start({
+            inputs: {
+              close,
+              layer,
+              message: (new (Vue.extend(require('./components/Changes.vue').default))({
+                propsData: {
+                  commits: commitItems,
+                  layer
+                }})).$mount().$el,
+            }
+          })
+          
+          await workflow.stop();
+        } catch(e) {
+          console.warn(e);
+          // In the case of pressed cancel button to commit features modal
+          if (e && e.cancel) {
+            return Promise.reject(e);
+          }
+          //need to be set server Error
+          serverError = true;
+        }
+
+        //in case of online application
+        if (online) {
+          dialog = GUI.dialog.dialog({
+            message: `<h4 class="text-center">
+                        <i style="margin-right: 5px;" class=${GUI.getFontClass('spinner')}></i>${tPlugin('editing.messages.saving')}
+                      </h4>`,
+            closeButton: false
+          });
+        }
+      }
+
+      let data      = !online && { [toolbox.getSession().getId()]: commitItems };
+      //get current offline editing changes
+      const changes = !online && JSON.parse(window.localStorage.getItem('EDITING_CHANGES') || null);
+
+      // handle offline changes
+      /** ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8 */
+      Object.keys(changes || {})
+        .forEach(layerId => {
+          const currLayerId = Object.keys(data)[0];
+
+          // check if previous changes are made in the same layer or in relationlayer of current
+          let current = null;
+
+          if (data[layerId]) { current = data; }
+          else if (data[currLayerId].relations[layerId]) {
+            current = data[currLayerId].relations;
+          }
+
+          // check if in the last changes
+          const relationsIds   = !current && Object.keys(changes[layerId].relations || {});
+          const has_relations  = !current && relationsIds.length > 0;
+          const GIVE_ME_A_NAME = !current && has_relations && relationsIds.includes(currLayerId);
+
+          // apply changes
+          if (current || GIVE_ME_A_NAME) {
+            const id   = current ? layerId : currLayerId;
+            const curr = current ? current : data;
+            const prev = current ? changes : changes[layerId].relations;
+            curr[id].add    = [...curr[id].add, ...curr[id].add];
+            curr[id].delete = [...curr[id].delete, ...curr[id].delete];
+
+            (prev[id].update || [])
+              .filter(update => !curr[id].update.find(u => u.id === update.id))
+              .forEach(update => curr[id].update.unshift(update));
+
+            (prev[id].lockids || [])
+              .filter(lock => !curr[id].lockids.find(l => l.featureid === lock.featureid))
+              .forEach(lock => curr[id].update.unshift(lock));
+          }
+
+          if (GIVE_ME_A_NAME) {
+            changes[layerId].relations[currLayerId] = data[currLayerId];
+            data = changes;
+          }
+          if (!current && !has_relations) {
+            data[layerId] = changes[layerId]
+          }
+        });
+
+      if (!online) {
+
+        GUI.showUserMessage({
+          type:      'success',
+          message:   "plugins.editing.messages.saved_local",
+          autoclose: true
+        });
+        //clear history because it saved on browser
+        toolbox.getSession().clearHistory();
+
       }
 
       try {
+        // check if the application is online
+        const { commit, response } = online ? await toolbox.getSession().commit({ items: items || commitItems }) : {};
 
-        // show commit modal window
-        /** ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8 */
-        if (modal) {
-          workflow = new Workflow({
-            type: 'commitfeatures',
-            steps: [
-              // confirm step
-              new Step({
-                run(inputs) {
-                  return $promisify(new Promise((resolve, reject) => {
-                    const dialog = GUI.dialog.dialog({
-                      message: inputs.message,
-                      title:   `${tPlugin("editing.messages.commit_feature")}: "${inputs.layer.getName()}"`,
-                      buttons: {
-                        SAVE:   { className: "btn-success", callback() { resolve(inputs); }, label: t("save"),   },
-                        CANCEL: { className: "btn-danger",  callback() { reject({cancel : true });        }, label: t(inputs.close ? "exitnosave" : "annul") },
-                        ...(inputs.close ? { CLOSEMODAL : { className: "btn-primary", callback() { dialog.modal('hide'); }, label:  t("annul") }} : {}),
-                      }
-                    });
-                    if (inputs.features) {
-                      setAndUnsetSelectedFeaturesStyle({ promise: promise(), inputs, style: this.selectStyle });
-                    }
-                  }))
-                },
-              }
-              ),
-            ]
-          });
-          //need to get to confirm or cancel choose from modal
-          try {
-            await promisify(
-              workflow.start({
-                inputs: {
-                  close,
-                  layer,
-                  message: (new (Vue.extend(require('./components/Changes.vue').default))({
-                    propsData: {
-                      commits: commitItems,
-                      layer
-                    }})).$mount().$el,
-                }
-              })
-            );
-            await promisify(workflow.stop());
-          } catch(e) {
-            console.warn(e);
-            // In the case of pressed cancel button to commit features modal
-            if (e && e.cancel) {
-              return Promise.reject(e);
-            }
-            //need to be set server Error
-            serverError = true;
-          }
+        //check if is online and there are some commit items
+        const online2 = online && commit;
 
-          //in case of online application
-          if (online) {
-            dialog = GUI.dialog.dialog({
-              message: `<h4 class="text-center">
-                          <i style="margin-right: 5px;" class=${GUI.getFontClass('spinner')}></i>${tPlugin('editing.messages.saving')}
-                        </h4>`,
-              closeButton: false
-            });
-          }
-        }
+        const result = online2 && response.result;
 
-        let data      = !online && { [toolbox.getSession().getId()]: commitItems };
-        //get current offline editing changes
-        const changes = !online && JSON.parse(window.localStorage.getItem('EDITING_CHANGES') || null);
+        if (result && messages && messages.success) {
+          // hide saving dialog
+          if (dialog) { dialog.modal('hide') }
 
-        // handle offline changes
-        /** ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8 */
-        Object.keys(changes || {})
-          .forEach(layerId => {
-            const currLayerId = Object.keys(data)[0];
-
-            // check if previous changes are made in the same layer or in relationlayer of current
-            let current = null;
-
-            if (data[layerId]) { current = data; }
-            else if (data[currLayerId].relations[layerId]) {
-              current = data[currLayerId].relations;
-            }
-
-            // check if in the last changes
-            const relationsIds   = !current && Object.keys(changes[layerId].relations || {});
-            const has_relations  = !current && relationsIds.length > 0;
-            const GIVE_ME_A_NAME = !current && has_relations && relationsIds.includes(currLayerId);
-
-            // apply changes
-            if (current || GIVE_ME_A_NAME) {
-              const id   = current ? layerId : currLayerId;
-              const curr = current ? current : data;
-              const prev = current ? changes : changes[layerId].relations;
-              curr[id].add    = [...curr[id].add, ...curr[id].add];
-              curr[id].delete = [...curr[id].delete, ...curr[id].delete];
-
-              (prev[id].update || [])
-                .filter(update => !curr[id].update.find(u => u.id === update.id))
-                .forEach(update => curr[id].update.unshift(update));
-
-              (prev[id].lockids || [])
-                .filter(lock => !curr[id].lockids.find(l => l.featureid === lock.featureid))
-                .forEach(lock => curr[id].update.unshift(lock));
-            }
-
-            if (GIVE_ME_A_NAME) {
-              changes[layerId].relations[currLayerId] = data[currLayerId];
-              data = changes;
-            }
-            if (!current && !has_relations) {
-              data[layerId] = changes[layerId]
-            }
-          });
-
-        if (!online) {
-
+          //Show save user message
           GUI.showUserMessage({
-            type:      'success',
-            message:   "plugins.editing.messages.saved_local",
-            autoclose: true
+            type:     'success',
+            message:   messages.success.message || "plugins.editing.messages.saved",
+            duration:  2000,
+            autoclose: undefined === messages.success.autoclose ? true : messages.success.autoclose,
           });
-          //clear history because it saved on browser
-          toolbox.getSession().clearHistory();
-
         }
 
-        try {
-          // check if the application is online
-          const { commit, response } = online ? await promisify(
-            toolbox.getSession().commit({ items: items || commitItems, __esPromise: true })
-          ) : {};
-
-          //check if is online and there are some commit items
-          const online2 = online && commit;
-
-          const result = online2 && response.result;
-
-          if (result && messages && messages.success) {
-            // hide saving dialog
-            if (dialog) { dialog.modal('hide') }
-
-            //Show save user message
-            GUI.showUserMessage({
-              type:     'success',
-              message:   messages.success.message || "plugins.editing.messages.saved",
-              duration:  2000,
-              autoclose: undefined === messages.success.autoclose ? true : messages.success.autoclose,
-            });
-          }
-
-          // In the case of vector layer need to refresh map commit changes
-          if (result && Layer.LayerTypes.VECTOR === layer.getType() ) {
-            GUI.getService('map').refreshMap({ force: true });
-          }
-
-          if (online) {
-            this.state.saveConfig.cb.done(toolbox);
-          }
-
-          // add items when close editing to result to show changes
-          const layerId = result && toolbox.getId();
-
-          if (layerId) {
-            this.state.featuresOnClose[layerId] = this.state.featuresOnClose[layerId] || new Set();
-            [
-              ...response.response.new.map(n => n.id),
-              ...commit.update.map(u => u.id)
-            ].forEach(fid => this.state.featuresOnClose[layerId].add(fid));
-          }
-
-          // @since 3.7.2 - click on save all disk icon (editing form relation)
-          if (result) { this.emit('commit', response.response) }
-
-          // the result is false. It was done a commit, but an error occurs
-          if (online2 && !result) {
-            serverError = true;
-            throw response;
-          }
-        } catch(e) {
-          console.warn(e);
-          if (online) {
-            serverError = true;
-            throw e;
-          }
+        // In the case of vector layer need to refresh map commit changes
+        if (result && Layer.LayerTypes.VECTOR === layer.getType() ) {
+          GUI.getService('map').refreshMap({ force: true });
         }
 
-      } catch (e) {
+        if (online) {
+          this.state.saveConfig.cb.done(toolbox);
+        }
+
+        // add items when close editing to result to show changes
+        const layerId = result && toolbox.getId();
+
+        if (layerId) {
+          this.state.featuresOnClose[layerId] = this.state.featuresOnClose[layerId] || new Set();
+          [
+            ...response.response.new.map(n => n.id),
+            ...commit.update.map(u => u.id)
+          ].forEach(fid => this.state.featuresOnClose[layerId].add(fid));
+        }
+
+        // @since 3.7.2 - click on save all disk icon (editing form relation)
+        if (result) { this.emit('commit', response.response) }
+
+        // the result is false. It was done a commit, but an error occurs
+        if (online2 && !result) {
+          serverError = true;
+          throw response;
+        }
+      } catch(e) {
         console.warn(e);
-
-        // hide saving dialog
-        if (dialog) { dialog.modal('hide') }
-
-        // rollback
-        //@TODO check if it is usefull
-        if (modal) {
-          try { await _rollback(commitItems.relations); }
-          catch (e) { console.warn(e); }
+        if (online) {
+          serverError = true;
+          throw e;
         }
-
-        // parse server error
-        if (serverError || modal) {
-          const message = online
-            ? (messages.error.message || (new serverErrorParser({ error: e.errors || e || {}})).parse({ type: 'String' }))
-            : e;
-
-          GUI.showUserMessage({
-            type:        'alert',
-            message,
-            textMessage: online ? !messages.error.message : true,
-            autoclose:   online ? (undefined !== messages.error.autoclose ? messages.error.autoclose : false) : false,
-          });
-
-          this.state.saveConfig.cb.error(toolbox, message);
-        }
-
-        return Promise.reject(toolbox);
       }
-      return toolbox;
-    });
+
+    } catch (e) {
+      console.warn(e);
+
+      // hide saving dialog
+      if (dialog) { dialog.modal('hide') }
+
+      // rollback
+      //@TODO check if it is usefull
+      if (modal) {
+        try { await _rollback(commitItems.relations); }
+        catch (e) { console.warn(e); }
+      }
+
+      // parse server error
+      if (serverError || modal) {
+        const message = online
+          ? (messages.error.message || (new serverErrorParser({ error: e.errors || e || {}})).parse({ type: 'String' }))
+          : e;
+
+        GUI.showUserMessage({
+          type:        'alert',
+          message,
+          textMessage: online ? !messages.error.message : true,
+          autoclose:   online ? (undefined !== messages.error.autoclose ? messages.error.autoclose : false) : false,
+        });
+
+        this.state.saveConfig.cb.error(toolbox, message);
+      }
+
+      return Promise.reject(toolbox);
+    }
+    return toolbox;
   }
 
  /**
@@ -1237,7 +1229,7 @@ new (class extends Plugin {
    * @since g3w-client-plugin-editing@v3.7.2
    */
   async stopEditing(layerId, options = {}) {
-    return promisify(this.getToolBoxById(layerId).stop(options));
+    return this.getToolBoxById(layerId).stop(options);
   }
 
   /**
@@ -1279,7 +1271,7 @@ new (class extends Plugin {
     if (options.title) { toolbox.setTitle(options.title) }
 
     // start editing toolbox (options contain also a filter type)
-    data = await promisify(toolbox.start(options))
+    data = await toolbox.start(options);
     // disablemapcontrols in conflict
     if (options.disablemapcontrols) {
       GUI.getService('map').disableClickMapControls(true);
@@ -1361,15 +1353,15 @@ new (class extends Plugin {
           session.pushAdd(layerId, feature, false);
           layer.getEditingLayer().getSource().addFeature(feature);
           //start workflow
-          await promisify(workflow.start({
+          await workflow.start({
             inputs:  { layer, features: [feature] },
             context: { session },
-          }));
+          });
 
           session.save();
 
           try {
-            await promisify(this.commit({ modal: false, toolbox: this.getToolBoxById(layerId) }));
+            await this.commit({ modal: false, toolbox: this.getToolBoxById(layerId) });
             stop(resolve);
           } catch(e) {
             console.warn(e);

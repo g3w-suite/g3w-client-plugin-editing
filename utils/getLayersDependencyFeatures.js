@@ -1,4 +1,3 @@
-import { promisify }                     from '../utils/promisify';
 import { getRelationFieldsFromRelation } from '../utils/getRelationFieldsFromRelation';
 import { getRelationId }                 from '../utils/getRelationId';
 import { getRelationsInEditing }         from '../utils/getRelationsInEditing';
@@ -64,12 +63,12 @@ export async function getLayersDependencyFeatures(layerId, opts = {}) {
 
       try {
         if (online && !session.isStarted()) {
-          await promisify(session.start(options));       // start session and get features
+          await session.start(options);       // start session and get features
         } else if (online && !find) {
-          await promisify(session.getFeatures(options)); // request features from server
+          await session.getFeatures(options); // request features from server
         }
-      } catch (promise) {
-        try { await promisify(promise) } catch (e) { console.warn(e, promise); }
+      } catch(promise) {
+        try { await promise } catch (e) { console.warn(e, promise); }
       }
 
       toolbox.stopLoading();

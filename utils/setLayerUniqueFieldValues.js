@@ -1,3 +1,5 @@
+import { promisify } from "./promisify";
+
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
  * Method to get unique values of unique input values from server
@@ -13,7 +15,7 @@
  */
 export async function setLayerUniqueFieldValues(layerId) {
   const service = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing'); //get editing service
-  await new Promise((resolve, reject) => {
+  await new Promise(async (resolve, reject) => {
     const layer = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').getLayerById(layerId);
     const fields = Object.values(layer
       .getEditingFields()
@@ -23,24 +25,30 @@ export async function setLayerUniqueFieldValues(layerId) {
       resolve();
       return;
     }
-    //get all values for unique field
-    layer.getWidgetData({
-      type: 'unique',
-      fields: Object.values(layer
-        .getEditingFields()
-        //filter field that is unique and not yet set unique values
-        .filter(f => !(f.pk && false === f.editable) && ('unique' === f.input.type || f.validate.unique)))
-        .map(f => f.name).join()
-    }).then((response) => {
-        Object
-          .entries(response.data || {})
-          .forEach(([name, values]) => {
-            service.state.uniqueFieldsValues[layerId][name] = new Set(values)
-          })
+    try {
+      const response = await promisify(layer.getWidgetData({
+        type: 'unique',
+        fields: Object.values(layer
+          .getEditingFields()
+          //filter field that is unique and not yet set unique values
+          .filter(f => !(f.pk && false === f.editable) && ('unique' === f.input.type || f.validate.unique)))
+          .map(f => f.name).join()
+        }));
 
-        resolve(service.state.uniqueFieldsValues[layerId][name])
-      })
-      .fail(e => { console.warn(e); reject(e); })
+      Object
+        .entries(response.data || {})
+        .forEach(([name, values]) => {
+          service.state.uniqueFieldsValues[layerId][name] = new Set(values)
+        })
+
+      resolve(service.state.uniqueFieldsValues[layerId][name])
+    
+    } catch(e) {
+      console.warn(e);
+      reject(e);
+    }
+    
   })
+  
   return service.state.uniqueFieldsValues[layerId];
 }

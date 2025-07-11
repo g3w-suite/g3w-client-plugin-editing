@@ -1,4 +1,3 @@
-import { promisify } from '../../utils/promisify';
 
 class Queque {
   constructor() { this.tasks = []; }
@@ -28,13 +27,14 @@ export class Flow extends g3wsdk.core.G3WObject {
       micro: new Queque()
     };
     this.inputs;
-    this.d;
     this._workflow;
   }
 
   //start workflow
   start(workflow) {
-    this.d = $.Deferred();
+    const { resolve, reject, promise } = Promise.withResolvers();
+    this.resolve = resolve;
+    this.reject  = reject;
     if (this.counter > 0) {
       console.log("reset workflow before restarting");
     }
@@ -48,22 +48,23 @@ export class Flow extends g3wsdk.core.G3WObject {
       this.runStep(this.steps[0], this.inputs, this.context);
     }
     // return a promise that will be reolved if all step go right
-    return this.d.promise();
+    return promise
   };
 
   //run step
-  runStep(step, inputs) {
+  async runStep(step, inputs) {
     //run step that run task
     this._workflow.setMessages({
       help: step.state.help
     });
     const runMicroTasks = this.queques.micro.getLength();
-    step.run(inputs, this.context, this.queques)
-      .then(outputs => {
-        runMicroTasks && this.queques.micro.run();
-        this.onDone(outputs);
-      })
-      .fail(e => this.onError(e));
+    try {
+      const outputs =  await step.run(inputs, this.context, this.queques);
+      runMicroTasks && this.queques.micro.run();
+      this.onDone(outputs);
+    } catch(e) {
+      this.onError(e)
+    }
   };
 
   //check if all step are resolved
@@ -71,7 +72,7 @@ export class Flow extends g3wsdk.core.G3WObject {
     this.counter++;
     if (this.counter === this.steps.length) {
       this.counter = 0;
-      this.d.resolve(outputs);
+      this.resolve(outputs);
       return;
     }
     this.runStep(this.steps[this.counter], outputs);
@@ -81,24 +82,25 @@ export class Flow extends g3wsdk.core.G3WObject {
   onError(e) {
     this.counter = 0;
     this.clearQueques();
-    this.d.reject(e);
+    this.reject(e);
   };
 
   // stop flow
   stop() {
-    const d = $.Deferred();
-    this.steps[counter].isRunning() ? this.steps[this.counter].stop() : null;
-    this.clearQueques();
-    if (this.counter > 0) {
-      // set counter to 0
-      this.counter = 0;
-      // reject flow
-      d.reject();
-    } else {
-      //reject to force rollback session
-      d.resolve();
-    }
-    return d.promise();
+    return new Promise((resolve, reject) => {
+      this.steps[counter].isRunning() ? this.steps[this.counter].stop() : null;
+      this.clearQueques();
+      if (this.counter > 0) {
+        // set counter to 0
+        this.counter = 0;
+        // reject flow
+        reject();
+      } else {
+        //reject to force rollback session
+        resolve();
+      }
+    })
+  
   };
 
   clearQueques(){
@@ -161,57 +163,53 @@ export class Session extends g3wsdk.core.G3WObject {
       /**
        * Start session
        */
-      start(options={}) {
-        return $.Deferred(async d => {
-          try {
-            const features = await promisify(this._editor.start(options));
-            this.state.started = true;
-            d.resolve(features);
-          } catch (e) {
-            console.warn(e);
-            d.reject(e);
-          }
-        }).promise();
+      async start(options={}) {
+      
+        try {
+          const features = await this._editor.start(options);
+          this.state.started = true;
+          return features;
+        } catch (e) {
+          console.warn(e);
+        }
+    
       },
 
       /**
        * stop session
        */
-      stop() {
-        return $.Deferred(async d => {
-          const canStop = this.state.started || this.state.getfeatures;
-          if (!canStop) {
-            return d.resolve();
-          }
-          try {
-            await promisify(this._editor.stop());
-            this.clear();
-            d.resolve();
-          } catch (e) {
-            console.warn(e);
-            d.reject(e);
-          }
-        }).promise()
+      async stop() {
+        const canStop = this.state.started || this.state.getfeatures;
+        if (!canStop) {
+          return;
+        }
+        try {
+          await this._editor.stop();
+          this.clear();
+          return 
+        } catch (e) {
+          console.warn(e);
+        }
       },
 
       /**
        * Get features from server (by editor)
        */
-      getFeatures(options={}) {
-        return $.Deferred(async d => {
-          if (this._allfeatures) {
-            return d.resolve([]);
-          }
-          this._allfeatures = !options.filter;
-          try {
-            const features = await promisify(this._editor.getFeatures(options));
-            this.state.getfeatures = true;
-            d.resolve(features);
-          } catch (e) {
-            console.warn(e);
-            d.reject(e)
-          }
-        }).promise();
+      async getFeatures(options={}) {
+       
+        if (this._allfeatures) {
+          return [];
+        }
+        this._allfeatures = !options.filter;
+        try {
+          const features = await this._editor.getFeatures(options);
+          this.state.getfeatures = true;
+          d.resolve(features);
+        } catch (e) {
+          console.warn(e);
+          d.reject(e)
+        }
+        
       },
 
       /**
@@ -414,23 +412,19 @@ export class Session extends g3wsdk.core.G3WObject {
    * 
    * @param options
    */
-  save(options={}) {
-    //fill history
-    const d = $.Deferred();
+  async save(options = {}) {
     // add temporary modify to history
     if (this.state.changes.length) {
       const uniqueId = options.id || Date.now();
-      this._history.add(uniqueId, this.state.changes)
-        .then(() => {
-          // clear to temporary changes
-          this.state.changes = [];
-          // resolve if unique id
-          d.resolve(uniqueId);
-        });
+      await this._history.add(uniqueId, this.state.changes);
+      // clear to temporary changes
+      this.state.changes = [];
+      // resolve if unique id
+      return uniqueId;
     } else {
-      d.resolve(null);
+      console.warn('No changes to save');
+      return null;
     }
-    return d.promise();
   }
 
   /**
@@ -539,31 +533,24 @@ export class Session extends g3wsdk.core.G3WObject {
   /**
    * Revert (cancel) all changes in history and clean session
    */
-  revert() {
-    const d = $.Deferred();
-    this._editor
-      .revert()
-      .then(() => {
-        this.clearHistory();
-        d.resolve();
-      });
-    return d.promise();
+  async revert() {
+    await this._editor.revert()
+    this.clearHistory();
   }
 
   /**
    * @param changes
    */
-  rollback(changes) {
+  async rollback(changes) {
     // skip when..
     if (changes) {
       return this._editor.rollback(changes);
     }
 
     // Handle temporary changes of layer
-    const d = $.Deferred();
     const id = this.getId();
     changes = {
-      own:[],
+      own:          [],
       dependencies: {}
     };
     this.state.changes.forEach(c => {
@@ -579,18 +566,20 @@ export class Session extends g3wsdk.core.G3WObject {
       }
     });
 
-    this._editor
-      .rollback(changes.own)
-      .then(() => {
-        for (const id in changes.dependencies) {
-          Session.Registry.getSession(id).rollback(changes.dependencies[id]);
-        }
-        d.resolve(changes.dependencies);
-      });
+    try {
+      await this._editor.rollback(changes.own)
+      
+      for (const id in changes.dependencies) {
+        Session.Registry.getSession(id).rollback(changes.dependencies[id]);
+      }
 
+      return changes.dependencies;
+    
+    } catch(e) {
+      console.warn(e);
+    }
+   
     this.state.changes = [];
-
-    return d.promise();
   }
 
   /**
@@ -779,15 +768,12 @@ export class Session extends g3wsdk.core.G3WObject {
    * @param opts.items
    * @param opts.relations
    */
-  commit({
+  async commit({
     ids = null,
     items,
     relations = true,
-    /** @since g3w-client-plugin-editing@v3.8.0 */
-    __esPromise = false,
   } = {}) {
 
-    const d = $.Deferred();
 
     let commit; // committed items
 
@@ -804,45 +790,36 @@ export class Session extends g3wsdk.core.G3WObject {
       commit.relations = {};
     }
 
-    this._editor
-      .commit(commit)
-      .then(response => {
-
-        // skip when response is null or undefined and response.result is false
-        if (!(response && response.result)) {
-          d.reject(response);
-          return;
-        }
+    try {
+      const response = await this._editor.commit(commit);
+       
+      // skip when response is null or undefined and response.result is false
+      if (!(response && response.result)) {
+        return Promise.reject(response);
+      }
         
-        const { relations = {} } = response.response; // check if new relations are saved on server
+      const { relations = {} } = response.response; // check if new relations are saved on server
 
-        // sync server data with local data
-        for (const id in relations) {
-          Session.Registry
-            .getSession(id)               // get session of relation by id
-            .getEditor()
-            .applyCommitResponse({        // apply commit response to current editing relation layer
-              response: relations[id],
-              result: true
-            });
-        }
+      // sync server data with local data
+      for (const id in relations) {
+        Session.Registry
+          .getSession(id)               // get session of relation by id
+          .getEditor()
+          .applyCommitResponse({        // apply commit response to current editing relation layer
+            response: relations[id],
+            result: true
+          });
+      }
 
-        this.clearHistory();
+      this.clearHistory();
 
-        this.saveChangesOnServer(commit); // dispatch setter event.
+      this.saveChangesOnServer(commit); // dispatch setter event.
 
-        // ES6 promises only accept a single response
-        if (__esPromise) {
-          d.resolve({ commit, response });
-        } else {
-          d.resolve(commit, response);
-        }
+      return { commit, response }; 
         
-
-      })
-      .fail(err => d.reject(err));
-
-    return d.promise();
+    } catch(e) {
+      return Promise.reject(e);
+    } 
   }
 
   /**
@@ -895,9 +872,8 @@ export class Session extends g3wsdk.core.G3WObject {
    * 
    * @since g3w-client-plugin-editing@v3.8.0
    */
-  __add(uniqueId, items) {
+  async __add(uniqueId, items) {
     //state object is an array of feature/features changed in a transaction
-    const d = $.Deferred();
     // before insert an item into the history
     // check if are at last state step (no redo was done)
     // If we are in the middle of undo, delete all changes
@@ -919,8 +895,8 @@ export class Session extends g3wsdk.core.G3WObject {
     this._history.canRedo();
     // return unique id key
     // it can be used in save relation
-    d.resolve(uniqueId);
-    return d.promise();
+    return uniqueId;
+    
   }
   
   /**

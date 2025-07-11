@@ -1,5 +1,4 @@
 import { Workflow }                 from '../g3wsdk/workflow/workflow';
-import { promisify }                from '../utils/promisify';
 import { setFeaturesSelectedStyle } from '../utils/setFeaturesSelectedStyle';
 
 const { Layer } = g3wsdk.core.layer;
@@ -28,9 +27,15 @@ export function setAndUnsetSelectedFeaturesStyle({ promise, inputs, style } = {}
    *       so original is the same selected. In case of current layer
    *       need to wait.
    */
-  const selectOriginalStyleHandle = () => {
+  const selectOriginalStyleHandle = async () => {
     const originalStyle = setFeaturesSelectedStyle(features, style);
-    promisify(promise).finally(() => { features.flat().forEach((f => f.setStyle(originalStyle))) });
+    try {
+      await promise;
+    } catch(e) {
+      console.warn(e);
+    } finally {
+      features.flat().forEach((f => f.setStyle(originalStyle)))
+    }
   };
 
   const is_vector = Layer.LayerTypes.VECTOR === layer.getType();

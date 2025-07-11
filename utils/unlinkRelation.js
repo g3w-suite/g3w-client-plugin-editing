@@ -2,7 +2,6 @@ import { Workflow }                      from '../g3wsdk/workflow/workflow';
 import { getRelationFieldsFromRelation } from '../utils/getRelationFieldsFromRelation';
 import { updateWorkflows }               from './updateWorkflows';
 import { getEditingLayerById }           from '../utils/getEditingLayerById';
-import { $promisify }                    from "../utils/promisify";
 
 const { GUI }     = g3wsdk.gui;
 const { tPlugin } = g3wsdk.core.i18n;
@@ -28,7 +27,7 @@ export function unlinkRelation({
   index,
   dialog = true,
 }) {
-  return $promisify(new Promise((resolve) => {
+  return new Promise((resolve) => {
     const unlink = () => {
       const id               = layerId === relation.child ? relation.father : relation.child; // relation layer id
       const feature          = getEditingLayerById(id).getEditingSource().getFeatureById(relations[index].id);
@@ -45,5 +44,5 @@ export function unlinkRelation({
     } else {
       unlink();
     }
-  }));
+  });
 }

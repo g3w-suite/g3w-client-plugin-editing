@@ -1,4 +1,3 @@
-import { $promisify } from './promisify';
 /**
  * 
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/addfeaturetabletask.js@v3.7.1
@@ -6,7 +5,7 @@ import { $promisify } from './promisify';
  * 
  * @since g3w-client-plugin-editing@v3.8.0
  */
-export function addTableFeature(inputs, context) {
+export async function addTableFeature(inputs, context) {
   const feature = inputs.features.length > 0 ? inputs.features[inputs.features.length - 1 ] : inputs.layer.createNewFeature();
 
   feature.setTemporaryId();
@@ -19,5 +18,5 @@ export function addTableFeature(inputs, context) {
 
   context.get_default_value = true;
 
-  return $promisify(Promise.resolve(inputs, context));
+  return { inputs, context };
 }
