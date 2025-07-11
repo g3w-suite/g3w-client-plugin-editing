@@ -3017,7 +3017,7 @@ export class ToolBox extends G3WObject {
       this.state._getFeaturesOption = options;
       // register get features event (only in case filter bbox)
       if ((Layer.LayerTypes.VECTOR === this.state._layerType) && this.state._getFeaturesOption.filter.bbox) {
-        const fnc = () => {
+        const fnc = async () => {
           if (
             //added ApplicationState.online
             ApplicationState.online
@@ -3027,9 +3027,8 @@ export class ToolBox extends G3WObject {
           ) {
             this.state._getFeaturesOption.filter.bbox = GUI.getService('map').getMapBBOX();
             this.state.loading = true;
-            this._session
-              .getFeatures(this.state._getFeaturesOption)
-              .then(promise => promise.then(() => this.state.loading = false) )
+            await this._session.getFeatures(this.state._getFeaturesOption);
+            this.state.loading = false;
           }
         };
         this._getFeaturesEvent.event = 'moveend';
