@@ -208,7 +208,7 @@
 
         try {
           if (toolbox.state.editing.history.commit) {
-            await (this.service.commit();
+            await this.service.commit();
           }
         } catch (e) {
           console.warn(e);
