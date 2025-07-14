@@ -34,7 +34,7 @@ import { PickFeaturesInteraction, PickFeatureStep }     from './actions/pick-fea
 import { AddFeatureStep }                               from './actions/add-feature';
 import { MoveFeatureStep }                              from './actions/move-feature';
 import { RotateFeatureStep }                            from './actions/rotate-feature';
-import { ModifyGeometryVertexStep }                     from './actions/modify-geometry';
+import { ModifyGeometryVertexStep }                     from './actions/move-vertex';
 import { OpenTableStep }                                from './actions/open-table';
 
 Object
