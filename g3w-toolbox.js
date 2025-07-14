@@ -32,15 +32,14 @@ import { checkSessionItems }                            from './utils/checkSessi
 import { unlinkRelation }                               from './utils/unlinkRelation';
 import { splitFeatures }                                from './utils/splitFeatures';
 import { isSameBaseGeometryType }                       from './utils/isSameBaseGeometryType';
-import { PickFeaturesInteraction }                      from './actions/pick-features';
 
 import { OpenFormStep }                                 from './actions/open-form';
 import { SelectElementsStep }                           from './actions/select-elements';
-import { PickFeatureStep }                              from './actions/pick-feature';
+import { PickFeaturesInteraction, PickFeatureStep }     from './actions/pick-feature';
 import { AddFeatureStep }                               from './actions/add-feature';
 import { MoveFeatureStep }                              from './actions/move-feature';
 import { RotateFeatureStep }                            from './actions/rotate-feature';
-import { ModifyGeometryVertexStep }                     from './actions/modify-geometry-vertex';
+import { ModifyGeometryVertexStep }                     from './actions/modify-geometry';
 import { OpenTableStep }                                from './actions/open-table';
 
 Object

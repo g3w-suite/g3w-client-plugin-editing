@@ -11,7 +11,7 @@ import { setFeaturesSelectedStyle }                     from '../utils/setFeatur
 import { chooseFeatureFromFeatures }                    from '../utils/chooseFeatureFromFeatures';
 import { addRemoveToMultipleSelectFeatures }            from '../utils/addRemoveToMultipleSelectFeatures';
 import { isSameBaseGeometryType }                       from '../utils/isSameBaseGeometryType';
-import { PickFeaturesInteraction }                      from '../actions/pick-features';
+import { PickFeaturesInteraction }                      from '../actions/pick-feature';
 import { Step }                                         from '../g3w-step';
 
 const { ApplicationState }                              = g3wsdk.core;
