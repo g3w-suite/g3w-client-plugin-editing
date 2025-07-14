@@ -1476,14 +1476,14 @@ new (class extends Plugin {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   setCurrentLayout() {
-    ApplicationService.setCurrentLayout(this.getName());
+    ApplicationState.gui.layout.__current = this.getName() ?? 'app';
   }
 
   /**
    * @since g3w-client-plugin-editing@v3.8.0
    */
   resetCurrentLayout() {
-    ApplicationService.setCurrentLayout(this.state.currentLayout);
+    ApplicationState.gui.layout.__current = this.state.currentLayout ?? 'app';
   }
 
   /**
