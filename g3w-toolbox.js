@@ -17,7 +17,6 @@ import { chooseFeature }                                from './utils/chooseFeat
 import { cloneFeature }                                 from './utils/cloneFeature';
 import { evaluateExpressionFields }                     from './utils/evaluateExpressionFields';
 import { getNotEditableFieldsNoPkValues }               from './utils/getNotEditableFieldsNoPkValues';
-import { getDeltaXY }                                   from './utils/getDeltaXY';
 import { chooseFeatureFromFeatures }                    from './utils/chooseFeatureFromFeatures';
 import { convertToGeometry }                            from './utils/convertToGeometry';
 import { addTableFeature }                              from './utils/addTableFeature';
@@ -25,11 +24,8 @@ import { getRelationFieldsFromRelation }                from './utils/getRelatio
 import { getLayersDependencyFeatures }                  from './utils/getLayersDependencyFeatures';
 import { getEditingLayerById }                          from './utils/getEditingLayerById';
 import { getRelationsInEditingByFeature }               from './utils/getRelationsInEditingByFeature';
-import { isPointOnVertex }                              from './utils/isPointOnVertex';
-import { handleSplitFeature }                           from './utils/handleSplitFeature';
 import { addPartToMultigeometries }                     from './utils/addPartToMultigeometries';
 import { unlinkRelation }                               from './utils/unlinkRelation';
-import { splitFeatures }                                from './utils/splitFeatures';
 import { isSameBaseGeometryType }                       from './utils/isSameBaseGeometryType';
 
 import { OpenFormStep }                                 from './actions/open-form';
@@ -64,6 +60,7 @@ const { ProjectsRegistry }                = g3wsdk.core.project;
 const { DataRouterService }               = g3wsdk.core.data;
 const { CatalogLayersStoresRegistry }     = g3wsdk.core.catalog;
 const { Geometry, dissolve }              = g3wsdk.core.geoutils;
+const { splitFeature }                    = g3wsdk.core.geoutils;
 const { removeZValueToOLFeatureGeometry } = g3wsdk.core.geoutils.Geometry;
 const { tPlugin }                         = g3wsdk.core.i18n;
 const { Layer }                           = g3wsdk.core.layer;
@@ -952,7 +949,7 @@ export class ToolBox extends G3WObject {
                       return reject('no feature');
                     }
                     this.addInteraction(
-                      new ol.interaction.Draw({ type: 'Point', condition: e => inputs.features.some(f => isPointOnVertex({ feature: f, coordinates: e.coordinate}))}), {
+                      new ol.interaction.Draw({ type: 'Point', condition: e => inputs.features.some(f => _isPointOnVertex({ feature: f, coordinates: e.coordinate}))}), {
                       'drawend': e => {
                         inputs.coordinates = e.feature.getGeometry().getCoordinates();
                         this.setUserMessageStepDone('from');
@@ -999,7 +996,7 @@ export class ToolBox extends G3WObject {
                       new ol.interaction.Draw({ type: 'Point', features: new ol.Collection() }), {
                         'drawend': evt => {
                           const [x, y]                    = evt.feature.getGeometry().getCoordinates();
-                          const deltaXY                   = coordinates ? getDeltaXY({x, y, coordinates}) : null;
+                          const deltaXY                   = coordinates ? _getDeltaXY({x, y, coordinates}) : null;
                           const featuresLength            = features.length;
                           const promisesDefaultEvaluation = [];
 
@@ -1010,7 +1007,7 @@ export class ToolBox extends G3WObject {
                             }
                             else {
                               const coordinates = feature.getGeometry().getCoordinates();
-                              const deltaXY     = getDeltaXY({ x, y, coordinates });
+                              const deltaXY     = _getDeltaXY({ x, y, coordinates });
                               feature.getGeometry().translate(deltaXY.x, deltaXY.y)
                             }
                             // set media fields to null
@@ -1270,13 +1267,13 @@ export class ToolBox extends G3WObject {
                       }), {
                         'drawend': async e => {
                           let isSplitted                 = false;
-                          const splittedGeometries       = splitFeatures(inputs.features, e.feature);
+                          const splittedGeometries       = _splitFeatures(inputs.features, e.feature);
                           const splittedGeometriesLength = splittedGeometries.length;
 
                           for (let i = 0; i < splittedGeometriesLength; i++) {
                             if (splittedGeometries[i].geometries.length > 1) {
                               isSplitted = true;
-                              await handleSplitFeature({
+                              await _handleSplitFeature({
                                 context,
                                 inputs,
                                 feature:            inputs.features.find(f => f.getUid() === splittedGeometries[i].uid),
@@ -3215,4 +3212,170 @@ function _checkSessionItems(historyId, items, action) {
     });
 
   return newItems;
+}
+
+/**
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/utils/getDeltaXY.js@v4.0.0
+ *
+ * @param { Object } delta
+ * @param delta.x
+ * @param delta.y
+ * @param delta.coordinates
+ * 
+ * @returns {{ x: number, y: number }}
+ */
+function _getDeltaXY({ x, y, coordinates } = {}) {
+  const coords = _getCoordinates(coordinates);
+  return {
+    x: x - coords.x,
+    y: y - coords.y
+  }
+}
+
+/**
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/utils/getDeltaXY.js@v4.0.0
+ */
+function _getCoordinates(coords) {
+  return Array.isArray(coords[0]) ? _getCoordinates(coords[0]) : {
+    x: coords[0],
+    y: coords[1]
+  };
+}
+
+/**
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/utils/handleSplitFeature.js@v4.0.0
+ *
+ * @param feature
+ * @param inputs
+ * @param context
+ * @param splittedGeometries
+ * 
+ * @returns {Promise<*[]>}
+ * 
+ * @since g3w-client-plugin-editing@v3.8.0
+ */
+export async function _handleSplitFeature({
+  feature,
+  inputs,
+  context,
+  splittedGeometries = []
+} = {}) {
+  const newFeatures              = [];
+  const { layer }                = inputs;
+  const session                  = context.session;
+  const source                   = layer.getEditingLayer().getSource();
+  const layerId                  = layer.getId();
+  const oriFeature               = feature.clone();
+  inputs.features                = splittedGeometries.length ? [] : inputs.features;
+  const splittedGeometriesLength = splittedGeometries.length;
+
+  for (let index = 0; index < splittedGeometriesLength; index++) {
+    const splittedGeometry = splittedGeometries[index];
+    if (0 === index) {
+      /**
+       * check geometry evaluated expression
+       */
+      feature.setGeometry(splittedGeometry);
+      try {
+        await evaluateExpressionFields({ inputs, context, feature });
+      } catch(e) {
+        console.warn(e);
+      }
+
+      session.pushUpdate(layerId, feature, oriFeature);
+
+    } else {
+      const newFeature = cloneFeature(oriFeature, layer);
+      newFeature.setGeometry(splittedGeometry);
+
+      // set media fields to null
+      //@since 3.9.0 Commented
+      //layer.getEditingMediaFields({}).forEach(f => newFeature.set(f, null));
+
+      feature = new Feature({ feature: newFeature });
+
+      feature.setTemporaryId();
+
+      // evaluate geometry expression
+      try { await evaluateExpressionFields({ inputs, context, feature }); }
+      catch(e) { console.warn(e); }
+
+      /**
+       * @todo improve client core to handle this situation on sesssion.pushAdd not copy pk field not editable only
+       */
+      const noteditablefieldsvalues = getNotEditableFieldsNoPkValues({ layer, feature });
+
+      if (Object.entries(noteditablefieldsvalues).length) {
+        const newFeature = session.pushAdd(layerId, feature);
+        Object.entries(noteditablefieldsvalues).forEach(([field, value]) => newFeature.set(field, value));
+        newFeatures.push(newFeature);
+        //need to add features with no editable fields on layers source
+        source.addFeature(newFeature);
+      } else {
+        newFeatures.push(session.pushAdd(layerId, feature));
+        //add feature to source
+        source.addFeature(feature);
+      }
+    }
+    inputs.features.push(feature);
+  }
+
+  return newFeatures;
+}
+
+/**
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/utils/handleSplitFeature.js@v4.0.0
+ * 
+ * @param feature
+ * @param coordinates
+ *
+ * @returns { boolean }
+ */
+function _isPointOnVertex({
+  feature,
+  coordinates,
+ }) {
+  const geometry = feature.getGeometry();
+  const type     = geometry.getType();
+  const coords   = c => g3wsdk.core.geoutils.areCoordinatesEqual(coordinates, c); // whether element have same coordinates
+ 
+  switch (type) {
+    case 'Polygon':
+    case 'MultiLineString':
+      return geometry.getCoordinates().flat().some(coords);
+ 
+    case 'LineString':
+    case 'MultiPoint':
+      return geometry.getCoordinates().some(coords);
+ 
+    case 'MultiPolygon':
+      return geometry.getPolygons().some(poly => poly.getCoordinates().flat().some(coords));
+ 
+    case 'Point':
+      return g3wsdk.core.geoutils.areCoordinatesEqual(coordinates, geometry.getCoordinates());
+ 
+    default:
+      return false;
+  }
+ }
+
+/**
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/utils/splitFeatures.js@v4.0.0
+ * 
+ * @param { Object } opts
+ * @param { Array } opts.features
+ * @param opts.splitfeature
+ * 
+ * @returns { Array } splittered geometries
+ * 
+ * @since g3w-client-plugin-editing@v3.9.0
+ */
+function _splitFeatures(features, splitfeature) {
+  return (features || []).reduce((a, f) => {
+    const geometries = splitFeature({ splitfeature, feature: f });
+    if (geometries.length > 1) {
+      a.push({ uid: f.getUid(), geometries });
+    }
+    return a;
+  }, []);
 }

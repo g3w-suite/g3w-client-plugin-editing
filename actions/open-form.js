@@ -8,9 +8,6 @@
 
 import { getParentFormData }                            from '../utils/getParentFormData';
 import { setAndUnsetSelectedFeaturesStyle }             from '../utils/setAndUnsetSelectedFeaturesStyle';
-import { getFormFields }                                from '../utils/getFormFields';
-import { handleRelation1_1LayerFields }                 from '../utils/handleRelation1_1LayerFields';
-import { listenRelation1_1FieldChange }                 from '../utils/listenRelation1_1FieldChange';
 import { getLayersDependencyFeatures }                  from '../utils/getLayersDependencyFeatures';
 import { getEditingLayerById }                          from '../utils/getEditingLayerById';
 import { setLayerUniqueFieldValues }                    from '../utils/setLayerUniqueFieldValues';
@@ -21,7 +18,8 @@ import { Step }                                         from '../g3w-step';
 
 const { GUI }                                           = g3wsdk.gui;
 const { FormService }                                   = g3wsdk.gui.vue.services;
-
+const { CatalogLayersStoresRegistry }                   = g3wsdk.core.catalog;
+const { DataRouterService }                             = g3wsdk.core.data;
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/openformtask.js@v3.7.1
@@ -136,7 +134,7 @@ export class OpenFormStep extends Step {
         });
       }
 
-      const fields = getFormFields({
+      const fields = _getFormFields({
         inputs,
         context,
         feature: this._features[0],
@@ -267,7 +265,7 @@ export class OpenFormStep extends Step {
                       }
                       await task.fireEvent('saveform', { newFeatures, originalFeatures: task._originalFeatures });
                       newFeatures.forEach((f, i) => task.getContext().session.pushUpdate(task.layerId, f, task._originalFeatures[i]));
-                      await handleRelation1_1LayerFields({ layerId: task.layerId, features: newFeatures, fields, task });
+                      await _handleRelation1_1LayerFields({ layerId: task.layerId, features: newFeatures, fields, task });
                       task.fireEvent('savedfeature', newFeatures);                 // called after saved
                       task.fireEvent(`savedfeature_${task.layerId}`, newFeatures); // called after saved using layerId
                       task.getContext().session.save();
@@ -377,7 +375,7 @@ export class OpenFormStep extends Step {
                 newFeatures.forEach((f, i) => context.session.pushUpdate(this.layerId, f, this._originalFeatures[i]));
 
                 // check and handle if layer has relation 1:1
-                await handleRelation1_1LayerFields({
+                await _handleRelation1_1LayerFields({
                   layerId:  this.layerId,
                   features: newFeatures,
                   fields,
@@ -479,7 +477,7 @@ export class OpenFormStep extends Step {
       }
 
       //listen eventually field relation 1:1 changes value
-      listenRelation1_1FieldChange({ layerId: this.layerId, fields, formService }).then(d => this._unwatchs = d);
+      _listenRelation1_1FieldChange({ layerId: this.layerId, fields, formService }).then(d => this._unwatchs = d);
 
       this.disableSidebar(true);
     });
@@ -527,4 +525,485 @@ export class OpenFormStep extends Step {
     this._unwatchs = [];
   }
 
+}
+
+/** Sort an array of strings (alphabetical order) */
+const sortAlphabeticallyArray = (arr) => arr.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+
+/* Sort an array of numbers (natural order) */
+const sortNumericArray = (arr, ascending = true) => arr.sort((a, b) => (ascending ? (a - b) : (b - a)));
+
+/**
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/utils/getFormFields.js@v3.7.1
+ * 
+ * Get form fields
+ *
+ * @param form.inputs.layer
+ * @param form.inputs.features
+ * @param form.context.excludeFields
+ * @param form.context.get_default_value
+ * @param form.isChild                   - whether is child form (ie. belongs to relation)
+ * @param form.multi                     - in case of multi editing set all fields to null
+ */
+function _getFormFields({
+  inputs,
+  context,
+  feature, //current feature
+  multi, // true -> multi features (e.g edit multi features attributes form)
+} = {}) {
+
+  //editing service
+  const service         = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing');
+  // current form layerId// unique values by feature field
+  const layerId         = inputs.layer.getId();
+
+  const fields          = inputs.layer.getFieldsWithValues( // editing fields with values (in case of update)
+    feature,
+    {
+      exclude:           context.excludeFields, // add exclude fields
+      get_default_value: undefined === context.get_default_value ? false : context.get_default_value,
+    }
+  );
+
+  //Loop through fields
+  const unique_values = fields
+    //check if field is a unique field. Exclude pk not edittable
+    .filter(f => !(f.pk && false === f.editable) && ('unique' === f.input.type || f.validate.unique))
+    .map(field => ({
+      field,                            // feature field
+       _value: feature.get(field.name), // feature current field value
+      }))
+
+  //Loop through unique fields
+  unique_values.forEach(({ _value, field }) => {
+    //get current stored unique values for field
+    const current_values = service.state.uniqueFieldsValues[layerId][field.name] || new Set([]);
+    //filter null value otherwise sort function gets an error
+    const values = Array.from(current_values).filter(v => null !== v );
+    //NEED TO ADD ALWAYS CURRENT VALUE
+    field.input.options.values = (['integer', 'float', 'bigint'].includes(field.type) ? sortNumericArray: sortAlphabeticallyArray)(values);
+    if (current_values.has(null)) {
+      field.input.options.values.unshift(null);
+    }
+
+    // convert "current" values to string (when not null or undefined)
+    current_values.forEach(v => field.validate.exclude_values.add(![null, undefined].includes(v)? `${v}` : v ) );
+
+    // remove current value from exclude_values
+    field.validate.exclude_values.delete(`${_value}`);
+  });
+
+  // skip when no fields are unique in multi features change form attribute
+  if (0 === unique_values.length) {
+    return _handleMulti(fields, multi);
+  }
+
+  // Listen to event method after close/save form
+  const savedfeatureFnc = () => {
+    unique_values.forEach(({ _value, field }) => {
+      // initial value is the same that current field vale (no changed)
+      if (_value === field.value) { return }
+      //  layer form
+      if (service.state.uniqueFieldsValues[layerId][field.name]) {
+        // change layer unique field values
+        const values = service.state.uniqueFieldsValues[layerId][field.name];
+        //If changed, delete it from _value
+        values.delete(_value);
+        //aff new one to value list unique field
+        values.add(field.value);
+      }
+    });
+
+    return { once: true };
+  };
+
+  //event when insert/edit form button is pressed
+  service.subscribe(`savedfeature_${layerId}`, savedfeatureFnc);
+  //event when close form layer
+  service.subscribe(`closeform_${layerId}`, () => {
+    //unsubscribe event
+    service.unsubscribe(`savedfeature_${layerId}`, savedfeatureFnc);
+    return { once: true };
+  });
+
+  return _handleMulti(fields, multi);
+}
+
+/**
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/utils/getFormFields.js@v3.7.1
+ */
+function _handleMulti(fields, multi) {
+  if (multi) {
+    fields = fields.map(field => {
+      const f             = JSON.parse(JSON.stringify(field));
+      f.value             = null;
+      f._value            = null; // @since v3.9.0 Fix update form field: Set the same value of value
+      f.forceNull         = true;
+      f.validate.required = false; //set false because all features have already required field filled
+      return f;
+    }).filter(f => !f.pk)
+  }
+
+  return fields;
+}
+
+/**
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/utils/handleRelation1_1LayerFields.js@v4.0.0
+ * 
+ * Handle layer relation 1:1 features related to feature
+ *
+ * @param opts.layerId Root layerId
+ * @param opts.features Array of update/new features belong to Root layer
+ * @param opts.fields Array of form fields father
+ *
+ * @since g3w-client-plugin-editing@v3.7.0
+ */
+async function _handleRelation1_1LayerFields({
+  layerId,
+  features = [],
+  fields = [],
+  task
+} = {}) {
+
+  // skip when no features
+  if (features.length === 0) { return }
+
+  const service = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing');
+
+  // Get layer relation 1:1
+  const promises = CatalogLayersStoresRegistry
+    .getLayerById(layerId)
+    .getRelations()
+    .getArray()
+    .filter(relation => 'ONE' === relation.getType())
+    .map(relation => {
+      return new Promise(async (resolve, reject) => {
+        // skip when layer is not a father layer (1:1 relation)
+        if (layerId !== relation.getFather()) {
+          resolve();
+          return;
+        }
+        const fatherField = relation.getFatherField()[0];
+        const value       = features[0].get(fatherField);
+
+        //no set father field value. No set
+        if (null === value) {
+          resolve();
+          return
+        }
+
+        // check if child relation layer is editable (in editing)
+        const childLayerId = relation.getChild();
+        const childField   = relation.getChildField()[0];
+        //In case of not editable child layer, exit
+        if (!service.getLayerById(childLayerId)) {
+          reject();
+          return;
+        }
+        const source       = service.getLayerById(childLayerId).getEditingSource();
+        let childFeature; // original child feature
+        let newChild; //eventually child feature cloned with changes
+
+        //check if child feature is already added to
+        childFeature = source.readFeatures().find(f => f.get(childField) === value)
+
+        const fieldsUpdated = undefined !== service
+          .getLayerById(relation.getFather())
+          .getEditingFields()
+          .filter(f => f.vectorjoin_id && f.vectorjoin_id === relation.getId())
+          .find(({name}) => fields.find(f => name == f.name).update)
+
+        const isNewChildFeature = undefined === childFeature;
+
+        //check if fields related to child are changed
+        if (fieldsUpdated) {
+          //Check if we need to create a new child feature
+          if (isNewChildFeature) {
+            //create feature for child layer
+            childFeature = new g3wsdk.core.layer.features.Feature();
+            childFeature.setTemporaryId();
+            // set name attribute to `null`
+            CatalogLayersStoresRegistry
+              .getLayerById(childLayerId)
+              .getEditingFields()
+              .forEach(field => childFeature.set(field.name, null));
+            //set father field value
+            childFeature.set(childField, fields.find(f => fatherField === f.name).value);
+            //add feature to a child source
+            source.addFeature(childFeature);
+            //new feature and child feature are the same
+            newChild = childFeature;
+          } else {
+            //is update
+            if (childFeature) {
+              //clone child Feature so all changes apply by father is set to clone new feature
+              newChild = childFeature.clone();
+            }
+          }
+
+          //check if there is a childFeature to save
+          if (childFeature) {
+            // Loop editable only field of father layerId when
+            // a child relation (1:1) is bind to the current feature
+            const editiableRelatedFieldChild = service
+              .getLayerById(relation.getFather())
+              .getEditingFields()
+              .filter(f => f.vectorjoin_id && f.vectorjoin_id === relation.getId() && f.editable);
+
+            editiableRelatedFieldChild
+              .forEach(field => newChild.set(field.name.replace(relation.getPrefix(), ''), features[0].get(field.name)));
+
+            // add relation new relation
+            if (isNewChildFeature) {
+
+              // check if father field is a Pk (Primary key) if feature is new
+              if (service.getLayerById(layerId).isPkField(fatherField)) {
+                childFeature.set(childField, features[0].getId()); // set temporary
+              }
+
+              //if new need to add to session
+              task.getContext()
+                .session
+                .pushAdd(childLayerId, newChild, false);
+
+            } else {
+              //need to update source child feature
+              source.updateFeature(newChild);
+              //need to update
+              task.getContext()
+                .session
+                .pushUpdate(childLayerId, newChild, childFeature);
+
+            }
+          }
+        }
+
+        resolve();
+
+      })
+    });
+
+  await Promise.allSettled(promises);
+}
+
+/**
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/utils/listenRelation1_1FieldChange.js@v4.0.0
+ * 
+ * Listen changes on 1:1 relation fields (get child values from child layer)
+ *
+ * @param opts.layerId Current editing layer id
+ * @param opts.fields Array of form fields of current editing layer
+ * @param opts.formService form service
+ *
+ * @returns Array of watch function event to remove listen
+ *
+ * @since g3w-client-plugin-editing@v3.7.0
+ */
+async function _listenRelation1_1FieldChange({
+  layerId,
+  fields = [],
+  formService,
+} = {}) {
+  const unwatches = []; // unwatches field value (event change)
+
+  const service = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing'); //get editing service
+
+  const ONE = CatalogLayersStoresRegistry
+    .getLayerById(layerId)
+    .getRelations()
+    .getArray()
+    .filter(r => 'ONE' === r.getType())
+
+  // get all relations 1:1 of current layer
+  for (const relation of ONE) {
+
+    const childLayerId         = relation.getChild(); // get relation child layer id
+    const fatherField          = relation.getFatherField();
+    const relationLockFeatures = {}; //store value
+
+    // NB:
+    // need to check if editable when opening form task
+    // Not set this condition because maybe i ca be used this method
+    // on a move task or other when current fatherFormRelationField, related to 1:1 relation
+    // it can be changed by default expression or in another way not only with form
+    const fatherFormRelationField = fields.find(f => fatherField.includes(f.name)); // get father layer field (for each relation)
+    // skip when not relation field and not layer child is in editing
+    if (!(fatherFormRelationField && service.getLayerById(childLayerId))) {
+      return unwatches;
+    }
+
+    //store original editable property of fields relation to child layer relation
+    const editableRelatedFatherChild = service
+      .getLayerById(relation.getFather())
+      .getEditingFields()
+      .filter(f => f.vectorjoin_id && f.vectorjoin_id === relation.getId())
+      .reduce((accumulator, field) => {
+        const formField             = fields.find(f => f.name === field.name)
+        accumulator[formField.name] = formField.editable;
+        return accumulator;
+      }, {});
+
+    fatherFormRelationField.input.options.loading.state = 'loading'; // show input bar loader
+
+    //get feature from a child layer source
+    relationLockFeatures[fatherFormRelationField.value] = await _getRelation1_1ChildFeature({
+      relation,
+      fatherFormRelationField,
+    })
+
+    fatherFormRelationField.input.options.loading.state = null; // show input bar loader
+
+    //if locked need to set editable to false
+    //can update child
+    if (relationLockFeatures[fatherFormRelationField.value].locked) {
+      Object.keys(editableRelatedFatherChild)
+        .forEach(fn => fields.find(f => fn === f.name).editable = false);
+    }
+
+    //if not feature is on source child layer, it means it locked or not exist on a server need to check
+    // listen for relation field changes (vue watcher)
+    unwatches.push(
+      Vue.$watch(
+        () => fatherFormRelationField.value,
+        async value => {
+
+          // skip empty values
+          if (!value) {
+            fatherFormRelationField.input.options.loading.state = null;
+            fatherFormRelationField.editable                    = true;
+            return;
+          }
+
+          fatherFormRelationField.editable                    = false;     // disable edit
+          fatherFormRelationField.input.options.loading.state = 'loading'; // show input bar loader
+          if (undefined === relationLockFeatures[fatherFormRelationField.value]) {
+            //get feature from a child layer source
+            try {
+
+              relationLockFeatures[fatherFormRelationField.value] = await _getRelation1_1ChildFeature({
+                relation,
+                fatherFormRelationField,
+              })
+
+            } catch (e) {
+              console.warn(e);
+            }
+          }
+
+          const { feature, locked } = relationLockFeatures[fatherFormRelationField.value];
+
+          Object.keys(editableRelatedFatherChild)
+            .forEach(fn => {
+              const field = fields.find(f => fn === f.name);
+              //set editable property
+              field.editable = locked
+                ? false
+                : editableRelatedFatherChild[fn];
+              //need to check if feature is new and not locked ot not present on a source
+              field.value = feature
+                ? feature.get(field.name.replace(relation.getPrefix(), ''))
+                : null
+              //@since 3.9.0 call change input to run eventually default expression
+              formService.changeInput(field);
+            });
+
+          // reset edit state
+          fatherFormRelationField.input.options.loading.state = null;
+          fatherFormRelationField.editable                    = true;
+        }
+      )
+    );
+  }
+
+  return unwatches;
+}
+
+/**
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/utils/getRelation1_1ChildFeature.js@v4.0.0
+ * 
+ * @param { Object } opts
+ * @param opts.relation
+ * @param opts.fatherFormRelationField
+ * 
+ * @returns {Promise<{feature: *, locked: boolean}>}
+ * 
+ * @since g3w-client-plugin-editing@v3.7.0
+ */
+async function _getRelation1_1ChildFeature({
+  relation,
+  fatherFormRelationField,
+}) {
+  const service       = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing'); //get editing service
+  const fatherLayerId = relation.getFather();
+  const childLayerId  = relation.getChild();                             // get relation child layer id
+  const childField    = relation.getChildField()[0];
+
+  // lock feature false
+  let locked  = false;
+  let feature = service.getLayerById(childLayerId)
+    .getEditingSource()
+    .readFeatures()
+    .find(f => fatherFormRelationField.value === f.get(childField))
+
+    //get feature from server and lock
+  if (undefined === feature) {
+
+    const childFeatureStore = service.getLayerById(childLayerId).getFeaturesStore();
+
+    const unByKey = childFeatureStore.oncebefore('featuresLockedByOtherUser', features => feature = features[0])
+
+    await getLayersDependencyFeatures(fatherLayerId, {
+      feature:   new ol.Feature({ [fatherFormRelationField.name]: fatherFormRelationField.value }),
+      relations: [relation]
+    });
+
+    //remove listener
+    childFeatureStore.un('featuresLockedByOtherUser', unByKey);
+
+    //in case of no locked check feature on a source
+    if (undefined === feature) {
+
+      feature = service.getLayerById(childLayerId)
+        .getEditingSource()
+        .readFeatures()
+        .find(f => fatherFormRelationField.value === f.get(childField))
+    }
+
+  }
+
+  //not find on source need to check if exist
+  if (undefined === feature) {
+
+    try {
+      const layer = CatalogLayersStoresRegistry.getLayerById(childLayerId);
+
+      const { data } = await DataRouterService.getData('search:features', {  // get feature of relation layer based on value of relation field
+        inputs: {
+          layer,
+          formatter: 0,
+          filter:    g3wsdk.core.utils.createFilterFormInputs({
+            layer,
+            search_endpoint: 'api',
+            inputs:          [{ attribute: childField, value: fatherFormRelationField.value, }]
+          }),
+          search_endpoint: 'api',
+        },
+        outputs: false,
+      });
+
+      if (data && data[0] && 1 === data[0].features.length) {                // NB: length == 1, due to 1:1 relation type
+        //locked
+        locked = true;
+        feature = data[0].features[0];
+      }
+    } catch(e) {
+      console.warn(e);
+    }
+  }
+
+  //return
+  return {
+    feature, //feature search
+    locked //locked status
+  }
 }
