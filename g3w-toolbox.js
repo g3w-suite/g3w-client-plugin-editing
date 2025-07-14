@@ -352,7 +352,7 @@ export class ToolBox extends G3WObject {
 
                   if (inputs.features) {
                     setAndUnsetSelectedFeaturesStyle({
-                      promise: async () => { try { return await promise; } catch(e) { console.warn(e); return Promise.reject(e) }},
+                      promise,
                       inputs,
                       style:   this.selectStyle,
                     });
