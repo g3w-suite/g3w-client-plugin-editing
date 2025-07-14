@@ -84,8 +84,8 @@
       />
     </div>
 
-    <p v-if = "django_admin_url"><a :href = "django_admin_url" target = "_blank">&#x1F512; Locked features</a></p>
-    <p v-if = "filemanager_url"><a  :href = "filemanager_url"  target = "_blank">&#x1F4C2; File manager</a></p>
+    <p v-if = "django_admin_url"><a :href = "django_admin_url" target = "_blank">&#x1F512; {{ $t('Locked features') }}</a></p>
+    <p v-if = "filemanager_url"><a  :href = "filemanager_url"  target = "_blank">&#x1F4C2; {{ $t('File manager') }}</a></p>
 
   </div>
 
