@@ -11,7 +11,7 @@ import {
   OpenFormStep,
   AddFeatureStep,
 }                                                from './workflows';
-import { ToolBox }                               from './toolboxes/toolbox';
+import { ToolBox }                               from './g3w-toolbox';
 
 const { G3W_FID }                              = g3wsdk.constant;
 const { ApplicationState, ApplicationService } = g3wsdk.core;

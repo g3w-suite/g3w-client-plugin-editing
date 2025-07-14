@@ -6,7 +6,7 @@
  * @since g3w-client-plugin-editing@v3.8.x
  */
 
-import { ToolBox }    from '../../toolboxes/toolbox';
+import { ToolBox }    from '../g3w-toolbox';
 import { $promisify } from '../../utils/promisify';
 
 const { ApplicationState, G3WObject }    = g3wsdk.core;

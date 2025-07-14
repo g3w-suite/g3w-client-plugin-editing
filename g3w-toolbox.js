@@ -1,30 +1,35 @@
-import { Workflow }                                     from '../g3wsdk/workflow/workflow';
-import { Step }                                         from '../g3wsdk/workflow/step';
-import { createEditingDataOptions }                     from '../utils/createEditingDataOptions';
-import { setLayerUniqueFieldValues }                    from '../utils/setLayerUniqueFieldValues';
-import { getRelationsInEditing }                        from '../utils/getRelationsInEditing';
-import { getRelationId }                                from '../utils/getRelationId';
-import { setAndUnsetSelectedFeaturesStyle }             from '../utils/setAndUnsetSelectedFeaturesStyle';
-import { chooseFeature }                                from '../utils/chooseFeature';
-import { cloneFeature }                                 from '../utils/cloneFeature';
-import { evaluateExpressionFields }                     from '../utils/evaluateExpressionFields';
-import { getNotEditableFieldsNoPkValues }               from '../utils/getNotEditableFieldsNoPkValues';
-import { getDeltaXY }                                   from '../utils/getDeltaXY';
-import { chooseFeatureFromFeatures }                    from '../utils/chooseFeatureFromFeatures';
-import { convertToGeometry }                            from '../utils/convertToGeometry';
-import { addTableFeature }                              from '../utils/addTableFeature';
-import { getRelationFieldsFromRelation }                from '../utils/getRelationFieldsFromRelation';
-import { getLayersDependencyFeatures }                  from '../utils/getLayersDependencyFeatures';
-import { getEditingLayerById }                          from '../utils/getEditingLayerById';
-import { getRelationsInEditingByFeature }               from '../utils/getRelationsInEditingByFeature';
-import { isPointOnVertex }                              from '../utils/isPointOnVertex';
-import { handleSplitFeature }                           from '../utils/handleSplitFeature';
-import { addPartToMultigeometries }                     from '../utils/addPartToMultigeometries';
-import { checkSessionItems }                            from '../utils/checkSessionItems';
-import { unlinkRelation }                               from '../utils/unlinkRelation';
-import { splitFeatures }                                from '../utils/splitFeatures';
-import { isSameBaseGeometryType }                       from '../utils/isSameBaseGeometryType';
-import { PickFeaturesInteraction }                      from '../interactions/pickfeatures';
+/**
+ * @file ORIGINAL SOURCE: g3w-client-plugin-editing/toolboxes/toolbox.js@v4.0.0
+ * @since 4.1.0
+ */
+
+import { Workflow }                                     from './g3wsdk/workflow/workflow';
+import { Step }                                         from './g3wsdk/workflow/step';
+import { createEditingDataOptions }                     from './utils/createEditingDataOptions';
+import { setLayerUniqueFieldValues }                    from './utils/setLayerUniqueFieldValues';
+import { getRelationsInEditing }                        from './utils/getRelationsInEditing';
+import { getRelationId }                                from './utils/getRelationId';
+import { setAndUnsetSelectedFeaturesStyle }             from './utils/setAndUnsetSelectedFeaturesStyle';
+import { chooseFeature }                                from './utils/chooseFeature';
+import { cloneFeature }                                 from './utils/cloneFeature';
+import { evaluateExpressionFields }                     from './utils/evaluateExpressionFields';
+import { getNotEditableFieldsNoPkValues }               from './utils/getNotEditableFieldsNoPkValues';
+import { getDeltaXY }                                   from './utils/getDeltaXY';
+import { chooseFeatureFromFeatures }                    from './utils/chooseFeatureFromFeatures';
+import { convertToGeometry }                            from './utils/convertToGeometry';
+import { addTableFeature }                              from './utils/addTableFeature';
+import { getRelationFieldsFromRelation }                from './utils/getRelationFieldsFromRelation';
+import { getLayersDependencyFeatures }                  from './utils/getLayersDependencyFeatures';
+import { getEditingLayerById }                          from './utils/getEditingLayerById';
+import { getRelationsInEditingByFeature }               from './utils/getRelationsInEditingByFeature';
+import { isPointOnVertex }                              from './utils/isPointOnVertex';
+import { handleSplitFeature }                           from './utils/handleSplitFeature';
+import { addPartToMultigeometries }                     from './utils/addPartToMultigeometries';
+import { checkSessionItems }                            from './utils/checkSessionItems';
+import { unlinkRelation }                               from './utils/unlinkRelation';
+import { splitFeatures }                                from './utils/splitFeatures';
+import { isSameBaseGeometryType }                       from './utils/isSameBaseGeometryType';
+import { PickFeaturesInteraction }                      from './interactions/pickfeatures';
 
 import {
   OpenFormStep,
@@ -35,7 +40,7 @@ import {
   RotateFeatureStep,
   ModifyGeometryVertexStep,
   OpenTableStep,
-}                                                       from '../workflows';
+}                                                       from './workflows';
 
 Object
   .entries({
