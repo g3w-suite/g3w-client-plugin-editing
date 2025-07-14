@@ -147,33 +147,37 @@
                 >
 
                   <!-- SNAP TO LAYER -->
-                  <input
-                    type    = "checkbox"
-                    class   = "magic-checkbox snap_tools_of_tools"
-                    :id     = "`snap_${state.id}`"
-                    v-model = "tool.options.checked"
-                  />
-                  <label :for = "`snap_${state.id}`" v-t-tooltip:right.create= " 'plugins.editing.toolsoftool.snap'">
-                    <span :class = "g3wtemplate.font['magnete']"></span>
-                  </label>
-
+                  <div class = "item" >
+                    <input
+                      type    = "checkbox"
+                      class   = "magic-checkbox snap_tools_of_tools"
+                      :id     = "`snap_${state.id}`"
+                      v-model = "tool.options.checked"
+                    />
+                    <label :for = "`snap_${state.id}`" v-t-tooltip:right.create= " 'plugins.editing.toolsoftool.snap'">
+                      <span :class = "g3wtemplate.font['magnete']"></span>
+                    </label>
+                  </div>
+                
                   <!-- SNAP TO ALL LAYERS -->
-                  <input
-                    v-if    = "snapAll"
-                    type    = "checkbox"
-                    class   = "magic-checkbox snap_tools_of_tools"
-                    :id     = "`snap_all_${state.id}`"
-                    v-model = "tool.options.checkedAll"
-                  />
-                  <label
-                    v-if                    = "snapAll"
-                    :for                    = "`snap_all_${state.id}`"
-                    v-t-tooltip:left.create = "'plugins.editing.toolsoftool.snapall'"
-                  >
-                    <span :class = "g3wtemplate.font['magnete']"></span>
-                    <b    :class = "g3wtemplate.font['layers']"></b>
-                  </label>
-
+                  <div class = "item" >
+                    <input
+                      v-if    = "snapAll"
+                      type    = "checkbox"
+                      class   = "magic-checkbox snap_tools_of_tools"
+                      :id     = "`snap_all_${state.id}_all`"
+                      v-model = "tool.options.checkedAll"
+                    />
+                    <label
+                      v-if                    = "snapAll"
+                      :for                    = "`snap_all_${state.id}_all`"
+                      v-t-tooltip:left.create = "'plugins.editing.toolsoftool.snapall'"
+                    >
+                      <span :class = "g3wtemplate.font['magnete']"></span>
+                      <b    :class = "g3wtemplate.font['layers']" style = "margin-left: 3px;"></b>
+                    </label>
+                  </div> 
+                  
                 </div>
 
                 <divider />
@@ -333,7 +337,6 @@
        * @fires starttoolbox
        */
       async toggleEditing() {
-        this.select();
         this.toggled.layer = !(this.state.editing.on || this.toggled.layer);
         if (this.toggled.layer && this.state.layer.state.editing.ready && !this.state.loading) {
           //@since 4.0.0 Check if layer is in editing and it has a editor form specific for a style
@@ -348,6 +351,7 @@
         if (!this.toggled.layer) {
           this.$emit('stoptoolbox', this.state.id);
         }
+        this.select();
 
       },
 
@@ -725,7 +729,13 @@
     width: 100%;
     justify-content: space-between;
   }
-  .tools-of-tool-snap label span {
+
+  .tools-of-tool-snap .item {
+    display: flex;
+    align-items: center;
+  }
+
+  .tools-of-tool-snap .item label span {
     color: #222d32 !important;
   }
   .panel-body {
@@ -736,5 +746,10 @@
   }
   .panel-body.disabled > * {
     pointer-events: none;
+  }
+
+  #toolsoftoolcontainer label {
+    margin-top: 10px;
+    margin-left: 5px;
   }
 </style>

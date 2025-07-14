@@ -1825,19 +1825,15 @@ export class ToolBox extends G3WObject {
       }
     });
 
-    if (fathersInEditing.length > 0) {
-      this.stopActiveTool();
-      this.enableTools(false);
-      this.clearToolboxMessages();
-      // unregister get features event
-      if (Layer.LayerTypes.VECTOR === this.state._layerType) {
-        GUI.getService('map').getMap().un(this._getFeaturesEvent.event, this._getFeaturesEvent.fnc);
+      if (fathersInEditing.length > 0) {
+        this.stopActiveTool();
+        this.enableTools(false);
+        this.clearToolboxMessages();
+        this._stopSessionChildren(this.state.id);
+        // clear layer unique field values
+        g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[this.getId()] = {};
+        return;
       }
-      this._stopSessionChildren(this.state.id);
-      // clear layer unique field values
-      g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[this.getId()] = {};
-      return;
-    }
 
     try {
       await this._session.stop();
@@ -3059,10 +3055,6 @@ export class ToolBox extends G3WObject {
     } finally {
       if (ApplicationState.online) {
         this._stopSessionChildren(this.state.id);
-      }
-      // unregister get features event
-      if (this.state._getFeaturesOption.registerEvents && Layer.LayerTypes.VECTOR === this.state._layerType) {
-        GUI.getService('map').getMap().un(this._getFeaturesEvent.event, this._getFeaturesEvent.fnc);
       }
     }
   }
