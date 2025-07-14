@@ -30,7 +30,7 @@ export async function setLayerUniqueFieldValues(layerId) {
 
       // get widget data
       const response = await XHR.get({
-        url:    layer.getProvider('data').getLayer.getUrl('widget').unique,
+        url:    layer.getProvider('data').getLayer().getUrl('widget').unique,
         params: {
           fields: Object.values(layer
           .getEditingFields()
