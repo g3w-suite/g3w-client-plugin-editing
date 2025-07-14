@@ -6,10 +6,10 @@
  * @since g3w-client-plugin-editing@v3.8.x
  */
 
-import { ToolBox }               from '../../toolboxes/toolbox';
-import { promisify }             from '../../utils/promisify';
+import { ToolBox } from '../../toolboxes/toolbox';
 
 const { ApplicationState, G3WObject }    = g3wsdk.core;
+const { CatalogLayersStoresRegistry }    = g3wsdk.core.catalog;
 const { FeaturesStore }                  = g3wsdk.core.layer.features;
 const { Layer }                          = g3wsdk.core.layer;
 const { XHR }                            = g3wsdk.core.utils;
@@ -186,15 +186,29 @@ export default class Editor extends G3WObject {
           doRequest = !is_cached;
         }
 
-        /** @TODO simplfy nested promises */
-        if (doRequest) {
-          const features = await promisify(this._layer.getFeatures(options));
-          // add features from server to editing features store (cloned from original)
-          this._featuresstore.addFeatures((features || []).map(f => f.clone()));
-          //set all features to true if no filter is set (e.g., Table layer)
-          this._allfeatures = !options.filter;
-          return features;
+        if (!doRequest) {
+          return;
         }
+
+        // get features
+        const store = this._layer.getFeaturesStore()
+        
+        // get features from server (TODO: remove "_filterFeaturesResponse" from core)
+        if (store.getProvider()) {
+          store.addFeatures(
+            store._filterFeaturesResponse(await store.getProvider().getFeatures(options))
+          );
+        }
+
+        const features = store.readFeatures();
+        
+        // add features from server to editing features store (cloned from original)
+        store.addFeatures((features || []).map(f => f.clone()));
+
+        //set all features to true if no filter is set (e.g., Table layer)
+        this._allfeatures = !options.filter;
+
+        return features;
       },
     };
 
@@ -427,10 +441,52 @@ export default class Editor extends G3WObject {
         });
     }
 
+    // commit items
+    let response;
+
+    const store = this._layer.getFeaturesStore()
+
+    if (store.getProvider()) {
+      commit.lockids = store.getLockIds();
+      response = await XHR.post({
+        url:         store.getProvider().getLayer().getUrl('commit'),
+        data:        JSON.stringify(commit),
+        contentType: 'application/json',
+      });
+    } else {
+      response = Promise.reject();
+    }
+
+    // sync selection filter features
+    if (response?.result) {
+      try {
+        const layer = CatalogLayersStoresRegistry.getLayerById(this._layer.getId());
+        //if layer has geometry
+        if (layer.isGeoLayer()) {
+          commit.update.forEach(({ id, geometry } = {}) => {
+            if (layer.getOlSelectionFeature(id)) {
+              const selected = layer.getOlSelectionFeature(id);
+              if (selected) {
+                selected.feature = geometry;
+                GUI.getService('map').setSelectionFeatures('update', { feature: geometry });
+              }
+            }
+          });
+        }
+        commit.delete.forEach(id => {
+          if (layer.hasSelectionFid(id)) {
+            layer.excludeSelectionFid(id);
+          }
+        })
+      } catch(e) {
+        console.warn(e);
+      }
+    }
+
     /** @TODO simplfy nested promises */
-    const r = await promisify(this._layer.commit(commit));
-    this.applyCommitResponse(r, relations);
-    return r;
+    this.applyCommitResponse(response, relations);
+
+    return response;
     
   }
 
