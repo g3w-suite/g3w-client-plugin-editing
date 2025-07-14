@@ -12,6 +12,7 @@ import { promisify }             from '../../utils/promisify';
 const { ApplicationState, G3WObject }    = g3wsdk.core;
 const { FeaturesStore }                  = g3wsdk.core.layer.features;
 const { Layer }                          = g3wsdk.core.layer;
+const { XHR }                            = g3wsdk.core.utils;
 
 /**
  * ORIGINAL SOURE: g3w-client/src/app/core/layers/features/olfeaturesstore.js@v3.10.2
@@ -457,10 +458,12 @@ export default class Editor extends G3WObject {
   }
 
   /**
-   * stop editor
+   * stop editor (unlock)
    */
   async stop() {
-    const { result } = await promisify(this._layer.unlock());
+    const { result } = await XHR.post({
+      url: this._layer.getProvider('data').getLayer().getUrl('unlock')
+    });
     this.clear();
     return result;
   }
