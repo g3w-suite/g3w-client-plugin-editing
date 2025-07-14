@@ -18,7 +18,7 @@ import { PickFeaturesInteraction }                      from '../interactions/pi
 import { RotateInteraction }                            from '../interactions/rotate';
 
 import { Workflow }                                     from '../g3wsdk/workflow/workflow';
-import { Step }                                         from '../g3wsdk/workflow/step';
+import { Step }                                         from '../g3w-step';
 
 const { G3WObject, ApplicationState }                   = g3wsdk.core;
 const { Geometry }                                      = g3wsdk.core.geoutils;

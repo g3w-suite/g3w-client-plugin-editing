@@ -143,7 +143,7 @@
 </template>
 
 <script>
-  import { Step }                              from '../g3wsdk/workflow/step';
+  import { Step }                              from '../g3w-step';
   import { Workflow }                          from '../g3wsdk/workflow/workflow';
   import { OpenFormStep }                      from '../workflows';
   import { cloneFeature }                      from '../utils/cloneFeature';

@@ -1,10 +1,13 @@
 /**
- * @file ORIGINAL SOURCE: g3w-client-plugin-editing/toolboxes/toolbox.js@v4.0.0
- * @since 4.1.0
+ * @file
+ * 
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/toolboxes/toolbox.js@v4.0.0
+ * 
+ * @since g3w-client-plugin-editing@v4.1.0
  */
 
 import { Workflow }                                     from './g3wsdk/workflow/workflow';
-import { Step }                                         from './g3wsdk/workflow/step';
+import { Step }                                         from './g3w-step';
 import { createEditingDataOptions }                     from './utils/createEditingDataOptions';
 import { setLayerUniqueFieldValues }                    from './utils/setLayerUniqueFieldValues';
 import { getRelationsInEditing }                        from './utils/getRelationsInEditing';

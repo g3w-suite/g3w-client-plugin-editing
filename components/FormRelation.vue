@@ -257,7 +257,7 @@
 <script>
 
   import { Workflow }                                     from '../g3wsdk/workflow/workflow';
-  import { Step }                                         from '../g3wsdk/workflow/step';
+  import { Step }                                         from '../g3w-step';
   import { cloneFeature }                                 from '../utils/cloneFeature';
   import { setAndUnsetSelectedFeaturesStyle }             from '../utils/setAndUnsetSelectedFeaturesStyle';
   import { getRelationFieldsFromRelation }                from '../utils/getRelationFieldsFromRelation';

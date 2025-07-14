@@ -1,10 +1,11 @@
 /**
  * @file
  * 
- * ORIGINAL SOURCE: g3w-client/src/core/workflow/step.js@v3.9.1
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/g3wsdk/workflow/step.js@v4.0.0
  * 
- * @since g3w-client-plugin-editing@v3.8.x
+ * @since g3w-client-plugin-editing@v4.1.0
  */
+
 const { G3WObject }           = g3wsdk.core;
 const { isPointGeometryType } = g3wsdk.core.geoutils.Geometry;
 const { Layer }               = g3wsdk.core.layer;

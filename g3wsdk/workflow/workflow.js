@@ -8,7 +8,7 @@
  * @since g3w-client-plugin-editing@v3.8.x
  */
 
-import { Step }      from './step';
+import { Step }      from '../../g3w-step';
 
 const { GUI }                 = g3wsdk.gui;
 const { G3WObject }           = g3wsdk.core;
