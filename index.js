@@ -1,5 +1,5 @@
-import './g3wsdk';
 import i18n                                      from './i18n';
+import Editor                                    from './g3wsdk/editing/editor';
 import { Workflow }                              from './g3wsdk/workflow/workflow';
 import { Step }                                  from './g3wsdk/workflow/step';
 import { promisify }                             from './utils/promisify';
@@ -33,12 +33,30 @@ const {
 
 Object
   .entries({
+    Editor,
     Workflow,
     OpenFormStep,
     AddFeatureStep,
     ToolBox,
   })
   .forEach(([k, v]) => console.assert(undefined !== v, `${k} is undefined`));
+
+/**
+ * Object to provide external plugin to use editing objects
+ */
+window.g3wsdk.core.editing = { Editor };
+
+/**
+ * Default editing capabilities
+ *
+ * @type {string[]}
+ */
+window.g3wsdk.constant.DEFAULT_EDITING_CAPABILITIES = [
+  'add_feature',
+  'change_feature',
+  'change_attr_feature',
+  'delete_feature',
+];
 
 new (class extends Plugin {
 
