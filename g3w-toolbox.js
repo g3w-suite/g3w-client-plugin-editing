@@ -28,7 +28,6 @@ import { getRelationsInEditingByFeature }               from './utils/getRelatio
 import { isPointOnVertex }                              from './utils/isPointOnVertex';
 import { handleSplitFeature }                           from './utils/handleSplitFeature';
 import { addPartToMultigeometries }                     from './utils/addPartToMultigeometries';
-import { checkSessionItems }                            from './utils/checkSessionItems';
 import { unlinkRelation }                               from './utils/unlinkRelation';
 import { splitFeatures }                                from './utils/splitFeatures';
 import { isSameBaseGeometryType }                       from './utils/isSameBaseGeometryType';
@@ -2419,7 +2418,7 @@ export class ToolBox extends G3WObject {
     this._states.find((state, idx) => {
       if (state.id === this.state.editing.session.current) {
         //get item of current state
-        items = checkSessionItems(this._history.id, this._states[idx].items, 0);
+        items = _checkSessionItems(this._history.id, this._states[idx].items, 0);
         //set current the previous one
         this.state.editing.session.current = 0 === idx ? null : this._states[idx - 1].id;
         return true;
@@ -2455,7 +2454,7 @@ export class ToolBox extends G3WObject {
         }
       })
     }
-    items = checkSessionItems(this._history.id, items, 1);
+    items = _checkSessionItems(this._history.id, items, 1);
     // set internal state
     this.__canUndo();
     this.__canCommit();
@@ -3183,3 +3182,37 @@ export class ToolBox extends G3WObject {
 ToolBox._sessions = {};
 ToolBox.get       = id => ToolBox._sessions[id];
 ToolBox.clear     = () => Object.keys(sessions).forEach(id => delete ToolBox._sessions[id]);
+
+
+/**
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/utils/checkSessionItems.js@v4.0.0
+ * 
+ * check if was done an update (update are array contains two items, old and new value)
+ */
+function _checkSessionItems(historyId, items, action) {
+  /**
+   * action: <referred to array index>
+   *  0: undo;
+   *  1: redo;
+   **/
+  const newItems = {
+    own:          [], //array of changes of layer of the current session
+    dependencies: {} // dependencies
+  };
+
+  items
+    .forEach((item) => {
+      if (Array.isArray(item)) { item = item[action] }
+      // check if belong to session
+      if (historyId === item.layerId) { newItems.own.push(item) }
+      else {
+        newItems.dependencies[item.layerId] = newItems.dependencies[item.layerId] || {
+          own:          [],
+          dependencies: {}
+        };
+        newItems.dependencies[item.layerId].own.push(item);
+      }
+    });
+
+  return newItems;
+}

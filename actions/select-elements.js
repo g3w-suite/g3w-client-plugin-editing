@@ -9,7 +9,6 @@
 import { evaluateExpressionFields }                     from '../utils/evaluateExpressionFields';
 import { setFeaturesSelectedStyle }                     from '../utils/setFeaturesSelectedStyle';
 import { chooseFeatureFromFeatures }                    from '../utils/chooseFeatureFromFeatures';
-import { addRemoveToMultipleSelectFeatures }            from '../utils/addRemoveToMultipleSelectFeatures';
 import { isSameBaseGeometryType }                       from '../utils/isSameBaseGeometryType';
 import { PickFeaturesInteraction }                      from '../actions/pick-feature';
 import { Step }                                         from '../g3w-step';
@@ -80,7 +79,7 @@ export class SelectElementsStep extends Step {
           if (feature) {
             inputs.features = [feature];
             if (buttonnext) {
-              addRemoveToMultipleSelectFeatures([feature], inputs, this.multipleselectfeatures, this);
+              _addRemoveToMultipleSelectFeatures([feature], inputs, this.multipleselectfeatures, this);
             } else {
               this._originalStyle = setFeaturesSelectedStyle(inputs.features);
 
@@ -102,7 +101,7 @@ export class SelectElementsStep extends Step {
         interactions.multi.on('drawend', e => {
           const features = layer.getEditingLayer().getSource().getFeaturesInExtent(e.feature.getGeometry().getExtent());
           if (buttonnext) {
-            addRemoveToMultipleSelectFeatures(features, inputs, this.multipleselectfeatures, this);
+            _addRemoveToMultipleSelectFeatures(features, inputs, this.multipleselectfeatures, this);
           } else {
             if (features.length > 0) {
               inputs.features     = features;
@@ -125,7 +124,7 @@ export class SelectElementsStep extends Step {
           layer.getEditingLayer().getSource().forEachFeatureIntersectingExtent(extent, f => { features.push(f) });
 
           if (buttonnext) {
-            addRemoveToMultipleSelectFeatures(features, inputs, this.multipleselectfeatures, this);
+            _addRemoveToMultipleSelectFeatures(features, inputs, this.multipleselectfeatures, this);
           } else {
             if (features.length > 0) {
               inputs.features     = features;
@@ -213,4 +212,30 @@ export class SelectElementsStep extends Step {
     this.multipleselectfeatures = [];
   }
 
+}
+
+/**
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/utils/addRemoveToMultipleSelectFeatures.js@v4.0.0
+ */
+function _addRemoveToMultipleSelectFeatures(features, inputs, selected, task) {
+  (features || []).forEach(f => {
+    const selIndex = selected.indexOf(f);
+    if (selIndex < 0) {
+      task._originalStyle = setFeaturesSelectedStyle([f]);
+      selected.push(f);
+    } else {
+      selected.splice(selIndex, 1);
+      f.setStyle(task._originalStyle);
+    }
+    inputs.features = selected;
+  });
+
+  const steps      = task.getSteps();
+  const buttonnext = steps.select.buttonnext;
+
+  buttonnext.disabled = buttonnext.condition ? buttonnext.condition({ features: selected }) : 0 === selected.length;
+
+  if (undefined !== steps.select.dynamic) {
+    steps.select.dynamic = selected.length;
+  }
 }
