@@ -566,7 +566,7 @@ export default class Editor extends G3WObject {
     const features = store.readFeatures();
     
     // add features from server to editing features store (cloned from original)
-    store.addFeatures((features || []).map(f => f.clone()));
+    this._featuresstore.addFeatures((features || []).map(f => f.clone()));
 
     //set all features to true if no filter is set (e.g., Table layer)
     this._allfeatures = !options.filter;
