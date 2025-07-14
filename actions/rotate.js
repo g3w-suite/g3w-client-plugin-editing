@@ -1,4 +1,12 @@
 /**
+ * @file
+ * 
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/interactions/pickfeatures.j@v4.0.0
+ * 
+ * @since g3w-client-plugin-editing@v4.1.0
+ */
+
+/**
  * @file Initially based on: https://github.com/Viglino/ol-ext/blob/v4.0.30/src/interaction/Transform.js
  * 
  * ol-ext v4.0.30 (https://github.com/Viglino/ol-ext)

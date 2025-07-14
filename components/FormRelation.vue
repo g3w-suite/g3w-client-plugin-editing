@@ -271,14 +271,12 @@
   import { chooseFeatureFromFeatures }                    from '../utils/chooseFeatureFromFeatures';
   import { isSameBaseGeometryType }                       from '../utils/isSameBaseGeometryType';
   import { unlinkRelation }                               from '../utils/unlinkRelation';
-  import { PickFeaturesInteraction }                      from '../interactions/pickfeatures';
-  import {
-    OpenFormStep,
-    OpenTableStep,
-    AddFeatureStep,
-    ModifyGeometryVertexStep,
-    MoveFeatureStep,
-  }                                                       from '../workflows';
+  import { PickFeaturesInteraction }                      from '../actions/pick-features';
+  import { OpenFormStep }                                 from '../actions/open-form';
+  import { OpenTableStep }                                from '../actions/open-table';
+  import { AddFeatureStep }                               from '../actions/add-feature';
+  import { ModifyGeometryVertexStep }                     from '../actions/modify-geometry-vertex';
+  import { MoveFeatureStep }                              from '../actions/move-feature';
 
   const { ProjectsRegistry }            = g3wsdk.core.project;
   const { CatalogLayersStoresRegistry } = g3wsdk.core.catalog;

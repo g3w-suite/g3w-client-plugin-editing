@@ -145,7 +145,7 @@
 <script>
   import { Step }                              from '../g3w-step';
   import { Workflow }                          from '../g3w-workflow';
-  import { OpenFormStep }                      from '../workflows';
+  import { OpenFormStep }                      from '../actions/open-form';
   import { cloneFeature }                      from '../utils/cloneFeature';
   import { getRelationsInEditing }             from '../utils/getRelationsInEditing';
   import { getFeatureTableFieldValue }         from '../utils/getFeatureTableFieldValue';

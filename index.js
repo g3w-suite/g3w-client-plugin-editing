@@ -7,10 +7,9 @@ import { createFeature }                         from './utils/createFeature';
 import { getEditingLayerById }                   from './utils/getEditingLayerById';
 import { setAndUnsetSelectedFeaturesStyle }      from './utils/setAndUnsetSelectedFeaturesStyle';
 import { addPartToMultigeometries }              from './utils/addPartToMultigeometries';
-import {
-  OpenFormStep,
-  AddFeatureStep,
-}                                                from './workflows';
+
+import { OpenFormStep }                          from './actions/open-form';
+import { AddFeatureStep }                        from './actions/add-feature';
 import { ToolBox }                               from './g3w-toolbox';
 
 const { G3W_FID }                              = g3wsdk.constant;

@@ -1,4 +1,12 @@
 /**
+ * @file
+ * 
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/interactions/pickfeatures.j@v4.0.0
+ * 
+ * @since g3w-client-plugin-editing@v4.1.0
+ */
+
+/**
  * @see https://openlayers.org/en/v5.3.0/apidoc/module-ol_interaction_Pointer.html
  */
 export class PickFeaturesInteraction extends ol.interaction.Pointer {
