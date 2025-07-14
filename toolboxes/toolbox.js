@@ -960,7 +960,7 @@ export class ToolBox extends G3WObject {
                     );
                   })
                   /** @since g3w-client-plugin-editing@v3.8.0 */
-                  setAndUnsetSelectedFeaturesStyle({ promise: async () => { try { return await promise; } catch(e) { console.warn(e); return Promise.reject(e); } }, inputs, style: this.selectStyle })
+                  setAndUnsetSelectedFeaturesStyle({ promise, inputs, style: this.selectStyle })
                   return promise;
                 },
                 stop() {
@@ -1053,7 +1053,7 @@ export class ToolBox extends G3WObject {
                   });
 
                   /** @since g3w-client-plugin-editing@v3.8.0 */
-                  setAndUnsetSelectedFeaturesStyle({ promise: async () => { try { return await promise; } catch(e) { console.warn(e); return Promise.reject(e); } }, inputs, style: this.selectStyle });
+                  setAndUnsetSelectedFeaturesStyle({ promise, inputs, style: this.selectStyle });
                   return promise;
                   
                 },
@@ -1300,7 +1300,7 @@ export class ToolBox extends G3WObject {
                   })
 
                   /** @since g3w-client-plugin-editing@v3.8.0 */
-                  setAndUnsetSelectedFeaturesStyle({ promise: async () => { try { return await promise; } catch(e) { console.warn(e); return Promise.reject(e); }}, inputs, style: this.selectStyle });
+                  setAndUnsetSelectedFeaturesStyle({ promise, inputs, style: this.selectStyle });
 
                   return promise;
                   
