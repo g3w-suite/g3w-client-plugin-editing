@@ -3039,7 +3039,7 @@ export class ToolBox extends G3WObject {
             this.state.loading = true;
             this._session
               .getFeatures(this.state._getFeaturesOption)
-              .then(promise => promise.then(() => this.state.loading = false) )
+              .then(() => this.state.loading = false);
           }
         };
         this._getFeaturesEvent.event = 'moveend';
