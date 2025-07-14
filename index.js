@@ -7,6 +7,7 @@ import { createFeature }                         from './utils/createFeature';
 import { getEditingLayerById }                   from './utils/getEditingLayerById';
 import { setAndUnsetSelectedFeaturesStyle }      from './utils/setAndUnsetSelectedFeaturesStyle';
 import { addPartToMultigeometries }              from './utils/addPartToMultigeometries';
+import { getLayerForEditing }                    from './utils/getLayerForEditing';
 
 import { OpenFormStep }                          from './actions/open-form';
 import { AddFeatureStep }                        from './actions/add-feature';
@@ -216,7 +217,8 @@ new (class extends Plugin {
     (await Promise.allSettled(
       CatalogLayersStoresRegistry
         .getLayers({ EDITABLE: true }, { TOC_ORDER : true })
-        .map(l => l.getLayerForEditing({
+        .map(l => getLayerForEditing({
+          layer:        l,
           vectorurl:    this.config.vectorurl,
           project_type: this.config.project_type
         }))
