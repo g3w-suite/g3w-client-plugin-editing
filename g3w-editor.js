@@ -1,13 +1,13 @@
 /**
  * @file
  * 
- * ORIGINAL SOURCE: g3w-client/src/core/editing/editor.js@v3.9.1
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/g3wsdk/editing/editor.j@v4.0.0
  * 
- * @since g3w-client-plugin-editing@v3.8.x
+ * @since g3w-client-plugin-editing@v4.1.0
  */
 
-import { ToolBox }    from '../../g3w-toolbox';
-import { $promisify } from '../../utils/promisify';
+import { ToolBox }    from './g3w-toolbox';
+import { $promisify } from './utils/promisify';
 
 const { ApplicationState, G3WObject }    = g3wsdk.core;
 const { CatalogLayersStoresRegistry }    = g3wsdk.core.catalog;
