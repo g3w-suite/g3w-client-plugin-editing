@@ -1,6 +1,5 @@
 const { XHR } = g3wsdk.core.utils;
 
-
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
  * Method to get unique values of unique input values from server
