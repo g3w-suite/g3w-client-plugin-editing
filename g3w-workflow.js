@@ -1,30 +1,30 @@
-
 /**
  * @file
  * 
- * ORIGINAL SOURCE: g3w-client/src/core/workflow/workflow.js@v3.9.1
- * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editingworkflow.js@v3.7.1
+ * ORIGINAL SOURCE: g3w-client-plugin-editing/g3wsdk/workflow/workflow.js@v4.0.0
  * 
- * @since g3w-client-plugin-editing@v3.8.x
+ * @since g3w-client-plugin-editing@v4.1.0
  */
 
-import { Step }      from '../../g3w-step';
+import { Step }      from './g3w-step';
 
 const { GUI }                 = g3wsdk.gui;
 const { G3WObject }           = g3wsdk.core;
 
 /**
  * Workflow Class (manage flow of steps)
- *
- * @param options.inputs
- * @param options.context
- * @param options.flow
- * @param options.steps
- * @param options.runOnce
- * @param options.backbuttonlabel
  */
 export class Workflow extends G3WObject {
-  
+
+  /**
+   * @param {Object} options
+   * @param options.inputs
+   * @param options.context
+   * @param options.flow
+   * @param options.steps
+   * @param options.runOnce
+   * @param options.backbuttonlabel
+   */
   constructor(options = {}) {
 
     super();
@@ -379,7 +379,7 @@ export class Workflow extends G3WObject {
           closable: false,
           hooks: {
             body: {
-              ...require('../../components/UserMessage.vue').default,
+              ...require('./components/UserMessage.vue').default,
               data: () => ({
                 steps: this._userMessageSteps,
               })

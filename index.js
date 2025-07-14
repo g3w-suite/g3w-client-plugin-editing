@@ -1,6 +1,6 @@
 import i18n                                      from './i18n';
 import Editor                                    from './g3wsdk/editing/editor';
-import { Workflow }                              from './g3wsdk/workflow/workflow';
+import { Workflow }                              from './g3w-workflow';
 import { Step }                                  from './g3w-step';
 import { promisify }                             from './utils/promisify';
 import { createFeature }                         from './utils/createFeature';

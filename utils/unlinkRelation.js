@@ -1,4 +1,4 @@
-import { Workflow }                      from '../g3wsdk/workflow/workflow';
+import { Workflow }                      from '../g3w-workflow';
 import { getRelationFieldsFromRelation } from '../utils/getRelationFieldsFromRelation';
 import { updateWorkflows }               from './updateWorkflows';
 import { getEditingLayerById }           from '../utils/getEditingLayerById';

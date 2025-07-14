@@ -17,7 +17,7 @@ import { setVertexStyle }                               from "../utils/setVertex
 import { PickFeaturesInteraction }                      from '../interactions/pickfeatures';
 import { RotateInteraction }                            from '../interactions/rotate';
 
-import { Workflow }                                     from '../g3wsdk/workflow/workflow';
+import { Workflow }                                     from '../g3w-workflow';
 import { Step }                                         from '../g3w-step';
 
 const { G3WObject, ApplicationState }                   = g3wsdk.core;

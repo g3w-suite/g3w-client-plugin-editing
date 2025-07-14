@@ -11,19 +11,20 @@ const { isPointGeometryType } = g3wsdk.core.geoutils.Geometry;
 const { Layer }               = g3wsdk.core.layer;
 const { GUI }                 = g3wsdk.gui;
 
-/**
- * @param options.input
- * @param options.context
- * @param options.task
- * @param options.outputs
- * @param options.escKeyPressEventHandler
- * @param options.id
- * @param options.name
- * @param options.help
- * @param options.message
- */
 export class Step extends G3WObject {
-  
+
+  /**
+   * @param {Object} options
+   * @param options.input
+   * @param options.context
+   * @param options.task
+   * @param options.outputs
+   * @param options.escKeyPressEventHandler
+   * @param options.id
+   * @param options.name
+   * @param options.help
+   * @param options.message
+   */
   constructor(options = {}) {
 
     super();

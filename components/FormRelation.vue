@@ -256,7 +256,7 @@
 
 <script>
 
-  import { Workflow }                                     from '../g3wsdk/workflow/workflow';
+  import { Workflow }                                     from '../g3w-workflow';
   import { Step }                                         from '../g3w-step';
   import { cloneFeature }                                 from '../utils/cloneFeature';
   import { setAndUnsetSelectedFeaturesStyle }             from '../utils/setAndUnsetSelectedFeaturesStyle';

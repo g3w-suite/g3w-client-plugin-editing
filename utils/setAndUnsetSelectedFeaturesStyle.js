@@ -1,4 +1,4 @@
-import { Workflow }                 from '../g3wsdk/workflow/workflow';
+import { Workflow }                 from '../g3w-workflow';
 import { setFeaturesSelectedStyle } from '../utils/setFeaturesSelectedStyle';
 
 const { Layer } = g3wsdk.core.layer;

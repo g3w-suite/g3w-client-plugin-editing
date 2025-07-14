@@ -6,7 +6,7 @@
  * @since g3w-client-plugin-editing@v4.1.0
  */
 
-import { Workflow }                                     from './g3wsdk/workflow/workflow';
+import { Workflow }                                     from './g3w-workflow';
 import { Step }                                         from './g3w-step';
 import { createEditingDataOptions }                     from './utils/createEditingDataOptions';
 import { setLayerUniqueFieldValues }                    from './utils/setLayerUniqueFieldValues';

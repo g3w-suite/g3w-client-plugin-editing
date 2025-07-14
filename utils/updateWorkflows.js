@@ -1,4 +1,4 @@
-import { Workflow } from '../g3wsdk/workflow/workflow';
+import { Workflow } from '../g3w-workflow';
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/services/relationservice.js@v3.7.1
