@@ -1834,10 +1834,6 @@ export class ToolBox extends G3WObject {
         this.stopActiveTool();
         this.enableTools(false);
         this.clearToolboxMessages();
-        // unregister get features event
-        if (Layer.LayerTypes.VECTOR === this.state._layerType) {
-          GUI.getService('map').getMap().un(this._getFeaturesEvent.event, this._getFeaturesEvent.fnc);
-        }
         this._stopSessionChildren(this.state.id);
         // clear layer unique field values
         g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[this.getId()] = {};
@@ -3074,10 +3070,6 @@ export class ToolBox extends G3WObject {
     } finally {
       if (ApplicationState.online) {
         this._stopSessionChildren(this.state.id);
-      }
-      // unregister get features event
-      if (this.state._getFeaturesOption.registerEvents && Layer.LayerTypes.VECTOR === this.state._layerType) {
-        GUI.getService('map').getMap().un(this._getFeaturesEvent.event, this._getFeaturesEvent.fnc);
       }
     }
   }
