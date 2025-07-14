@@ -144,73 +144,14 @@ export default class Editor extends G3WObject {
     /**
      * Setter hooks.
      */
-    this.setters = {
-      save()                     { this._layer.save(); },
-      addFeature(feature)        { this._featuresstore.addFeature(feature); },
-      updateFeature(feature)     { this._featuresstore.updateFeature(feature); },
-      deleteFeature(feature)     { this._featuresstore.deleteFeature(feature); },
-      setFeatures(features = []) { this._featuresstore.setFeatures(features); },
-      /**
-       * Get features from server method.
-       * Used when vector Layer's bbox is contained into an already requested bbox (so no a new request is done).
-       *
-       * @param { number[] } options.filter.bbox bounding box Array [xmin, ymin, xmax, ymax]
-       *
-       * @returns { boolean } whether can perform a server request
-       */
-      async getFeatures(options = {}) {
-        // skip is not onlien or all features of layers are already got
-        if (!ApplicationState.online || this._allfeatures) {
-          return Promise.resolve();
-        }
-
-        let doRequest = true; // default --> perform request
-
-        const { bbox } = options.filter || {};
-        //check if bbox options filter (bbox of a current map) is passed and is a vector layer
-        const is_vector = bbox && Layer.LayerTypes.VECTOR === this._layer.getType();
-    
-        // first request --> need to perform request
-        if (is_vector && null === this._filter.bbox) {
-          this._filter.bbox = bbox;                                                      // store bbox
-          doRequest         = true;
-        }
-
-        // subsequent requests --> check if bbox is contained into an already requested bbox
-        else if (is_vector) {
-          //Boolean - Check if features are already got inside bbox
-          const is_cached = ol.extent.containsExtent(this._filter.bbox, bbox);
-          if (!is_cached) {
-            this._filter.bbox = ol.extent.extend(this._filter.bbox, bbox);
-          }
-          doRequest = !is_cached;
-        }
-
-        if (!doRequest) {
-          return;
-        }
-
-        // get features
-        const store = this._layer.getFeaturesStore()
-        
-        // get features from server (TODO: remove "_filterFeaturesResponse" from core)
-        if (store.getProvider()) {
-          store.addFeatures(
-            store._filterFeaturesResponse(await store.getProvider().getFeatures(options))
-          );
-        }
-
-        const features = store.readFeatures();
-        
-        // add features from server to editing features store (cloned from original)
-        store.addFeatures((features || []).map(f => f.clone()));
-
-        //set all features to true if no filter is set (e.g., Table layer)
-        this._allfeatures = !options.filter;
-
-        return features;
-      },
-    };
+    this.setters = [
+      'save',
+      'addFeature',
+      'updateFeature',
+      'deleteFeature',
+      'setFeatures',
+      'getFeatures',
+    ];
 
     /**
      * Filter to getFeaturerequest
@@ -243,6 +184,104 @@ export default class Editor extends G3WObject {
      */
     this._started = false;
 
+  }
+
+  /**
+   * @since g3w-client-plugin-editing@v4.1.0
+   */
+  save() {
+    this._layer.save();
+  }
+
+  /**
+   * @since g3w-client-plugin-editing@v4.1.0
+   */
+  addFeature(feature) {
+    this._featuresstore.addFeature(feature);
+  }
+
+  /**
+   * @since g3w-client-plugin-editing@v4.1.0
+   */
+  updateFeature(feature) {
+    this._featuresstore.updateFeature(feature);
+  }
+
+  /**
+   * @since g3w-client-plugin-editing@v4.1.0
+   */
+  deleteFeature(feature) {
+    this._featuresstore.deleteFeature(feature);
+  }
+
+  /**
+   * @since g3w-client-plugin-editing@v4.1.0
+   */
+  setFeatures(features = []) {
+    this._featuresstore.setFeatures(features);
+  }
+
+  /**
+   * Get features from server method.
+   * Used when vector Layer's bbox is contained into an already requested bbox (so no a new request is done).
+   *
+   * @param { number[] } options.filter.bbox bounding box Array [xmin, ymin, xmax, ymax]
+   *
+   * @returns { boolean } whether can perform a server request
+   * 
+   * @since g3w-client-plugin-editing@v4.1.0
+   */
+  async getFeatures(options = {}) {
+    // skip is not onlien or all features of layers are already got
+    if (!ApplicationState.online || this._allfeatures) {
+      return Promise.resolve();
+    }
+
+    let doRequest = true; // default --> perform request
+
+    const { bbox } = options.filter || {};
+    //check if bbox options filter (bbox of a current map) is passed and is a vector layer
+    const is_vector = bbox && Layer.LayerTypes.VECTOR === this._layer.getType();
+
+    // first request --> need to perform request
+    if (is_vector && null === this._filter.bbox) {
+      this._filter.bbox = bbox;                                                      // store bbox
+      doRequest         = true;
+    }
+
+    // subsequent requests --> check if bbox is contained into an already requested bbox
+    else if (is_vector) {
+      //Boolean - Check if features are already got inside bbox
+      const is_cached = ol.extent.containsExtent(this._filter.bbox, bbox);
+      if (!is_cached) {
+        this._filter.bbox = ol.extent.extend(this._filter.bbox, bbox);
+      }
+      doRequest = !is_cached;
+    }
+
+    if (!doRequest) {
+      return;
+    }
+
+    // get features
+    const store = this._layer.getFeaturesStore()
+    
+    // get features from server (TODO: remove "_filterFeaturesResponse" from core)
+    if (store.getProvider()) {
+      store.addFeatures(
+        store._filterFeaturesResponse(await store.getProvider().getFeatures(options))
+      );
+    }
+
+    const features = store.readFeatures();
+    
+    // add features from server to editing features store (cloned from original)
+    store.addFeatures((features || []).map(f => f.clone()));
+
+    //set all features to true if no filter is set (e.g., Table layer)
+    this._allfeatures = !options.filter;
+
+    return features;
   }
 
   /**
