@@ -272,7 +272,6 @@
   import { isSameBaseGeometryType }                       from '../utils/isSameBaseGeometryType';
   import { unlinkRelation }                               from '../utils/unlinkRelation';
   import { PickFeaturesInteraction }                      from '../interactions/pickfeatures';
-  import { VM }                                           from '../eventbus';
   import {
     OpenFormStep,
     OpenTableStep,
@@ -706,7 +705,7 @@
             tools.forEach(t => { if (relationtool.state.id !== t.state.id) { t.state.active = false; } })
           });
 
-          await VM.$nextTick();
+          await this.$nextTick();
 
           // do something with map features
 
@@ -866,7 +865,7 @@
             });
 
             // watch eventually deactive when another tool is activated
-            const unwatch = VM.$watch(
+            const unwatch = this.$watch(
               () => relationtool.state.active,
               bool => {
                 if (!bool) {

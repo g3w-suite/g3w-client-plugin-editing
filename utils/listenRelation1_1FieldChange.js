@@ -1,5 +1,4 @@
-import { VM }                               from '../eventbus';
-import { getRelation1_1ChildFeature }       from './getRelation1_1ChildFeature';
+import { getRelation1_1ChildFeature } from './getRelation1_1ChildFeature';
 
 const { CatalogLayersStoresRegistry } = g3wsdk.core.catalog;
 
@@ -80,7 +79,7 @@ export async function listenRelation1_1FieldChange({
     //if not feature is on source child layer, it means it locked or not exist on a server need to check
     // listen for relation field changes (vue watcher)
     unwatches.push(
-      VM.$watch(
+      Vue.$watch(
         () => fatherFormRelationField.value,
         async value => {
 
