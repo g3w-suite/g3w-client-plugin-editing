@@ -1,4 +1,5 @@
-import { promisify } from "./promisify";
+const { XHR } = g3wsdk.core.utils;
+
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
@@ -26,14 +27,18 @@ export async function setLayerUniqueFieldValues(layerId) {
       return;
     }
     try {
-      const response = await promisify(layer.getWidgetData({
-        type: 'unique',
-        fields: Object.values(layer
+
+      // get widget data
+      const response = await XHR.get({
+        url:    layer.getProvider('data').getLayer.getUrl('widget').unique,
+        params: {
+          fields: Object.values(layer
           .getEditingFields()
           //filter field that is unique and not yet set unique values
           .filter(f => !(f.pk && false === f.editable) && ('unique' === f.input.type || f.validate.unique)))
           .map(f => f.name).join()
-        }));
+        }
+      });
 
       Object
         .entries(response.data || {})
