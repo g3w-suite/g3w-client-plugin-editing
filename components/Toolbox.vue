@@ -538,7 +538,7 @@
             .filter(l => l.isInEditing() && Layer.LayerTypes.VECTOR === l.getType()) // skip not in editing, raster, alphanumerical..
             .filter(l => all || tool.options.layerId === l.getId())
             .forEach(l => {
-              const source  = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').getToolBoxById(l.getId()).getLayer().getEditingSource();
+              const source  = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').getToolBoxById(l.getId()).getLayer().getEditor().getEditingSource();
               //add snap features
               this.addSnapFeatures(source.readFeatures());
               this.snapEvents.push({

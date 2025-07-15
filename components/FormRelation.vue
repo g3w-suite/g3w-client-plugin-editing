@@ -270,6 +270,8 @@
   import { chooseFeatureFromFeatures }                    from '../utils/chooseFeatureFromFeatures';
   import { isSameBaseGeometryType }                       from '../utils/isSameBaseGeometryType';
   import { unlinkRelation }                               from '../utils/unlinkRelation';
+  import { getFieldsWithValues }                          from '../utils/getFieldsWithValues';
+  import { isPkField }                                    from '../utils/isPkField';
   import { PickFeaturesInteraction }                      from '../actions/pick-feature';
   import { OpenFormStep }                                 from '../actions/open-form';
   import { OpenTableStep }                                from '../actions/open-table';
@@ -451,7 +453,7 @@
         const options = this._createWorkflowOptions({
           features: this.relations
             .filter(r => r.select)
-            .map(({ id }) => this.getLayer().getEditingSource().getFeatureById(id) )
+            .map(({ id }) => this.getLayer().getEditor().getEditingSource().getFeatureById(id) )
         });
         try {
           await workflow.start(options);
@@ -592,7 +594,7 @@
       getRelationFeatureValue(featureId, property) {
         return getFeatureTableFieldValue({
             layerId: this._relationLayerId,
-            feature: this.getLayer().getEditingSource().getFeatureById(featureId),
+            feature: this.getLayer().getEditor().getEditingSource().getFeatureById(featureId),
             property,
           });
       },
@@ -712,7 +714,7 @@
           const is_vector       = Layer.LayerTypes.VECTOR === this._layerType;
           const relation        = this.relations[index];
           const toolId          = relationtool.state.id.split(`${relation.id}_`)[1];
-          const relationfeature = this.getLayer().getEditingSource().getFeatureById(relation.id);
+          const relationfeature = this.getLayer().getEditor().getEditingSource().getFeatureById(relation.id);
           const selectStyle     = is_vector && SELECTED_STYLES[this.getLayer().getGeometryType()]; // get selected vector style
           const options         = this._createWorkflowOptions({ features: [relationfeature] });
 
@@ -734,14 +736,14 @@
                 try {
                   const outputs = await workflow.start(options);
                   const feature = outputs.features[outputs.features.length - 1];
-                  this.relations.push({ id: feature.getId(), fields: this.getLayer().getFieldsWithValues(feature, { relation: true }) });
+                  this.relations.push({ id: feature.getId(), fields: getFieldsWithValues(this.getLayer(), feature, { relation: true }) });
                   resolve(feature);
                 } catch(e) {
                   console.warn(e);
                   //in case of seva all click
                   if (options.inputs && options.inputs.relationFeatures) {
                     this.relations.push(
-                      ...(options.inputs.relationFeatures.newFeatures || []).map(f => ({ id: f.getId(), fields: this.getLayer().getFieldsWithValues(f, { relation: true }) }))
+                      ...(options.inputs.relationFeatures.newFeatures || []).map(f => ({ id: f.getId(), fields: getFieldsWithValues(this.getLayer(), f, { relation: true }) }))
                     )
                   }
                   reject(e);
@@ -785,7 +787,7 @@
                     }
 
                     //remove feature from source
-                    this.getLayer().getEditingSource().removeFeature(relationfeature);
+                    this.getLayer().getEditor().getEditingSource().removeFeature(relationfeature);
                     // Check if relation feature delete is new.
                     // In this case, we need to check if there are temporary changes not related to this current feature
                     if (
@@ -823,9 +825,7 @@
               await workflow.start(options);
 
               //get relation layer fields
-              this
-                .getLayer()
-                .getFieldsWithValues(relationfeature, { relation: true })
+              getFieldsWithValues(this.getLayer(), relationfeature, { relation: true })
                 .forEach(f => {
                   relation.fields
                     .forEach(rf => {
@@ -964,7 +964,7 @@
               if (options.parentFeature.isNew()) {
                 originalFeatures[i].set(field, value);
               }
-              this.getLayer().getEditingSource().updateFeature(newFeature);
+              this.getLayer().getEditor().getEditingSource().updateFeature(newFeature);
               options.context.session.pushUpdate(this._relationLayerId, newFeature, originalFeatures[i]);
             })
           };
@@ -989,7 +989,7 @@
           }
 
           this.relations.push(
-            ...(newFeatures || []).map(f => ({ id: f.getId(), fields: this.getLayer().getFieldsWithValues(f, { relation: true }) }))
+            ...(newFeatures || []).map(f => ({ id: f.getId(), fields: getFieldsWithValues(this.getLayer(), f, { relation: true }) }))
           )
 
         } catch(inputs) {
@@ -998,7 +998,7 @@
           // in case of save all pressed on openformtask
           if (inputs && inputs.relationFeatures) {
             this.relations.push(
-              ...(inputs.relationFeatures.newFeatures || []).map(f => ({ id: f.getId(), fields: this.getLayer().getFieldsWithValues(f, { relation: true }) }))
+              ...(inputs.relationFeatures.newFeatures || []).map(f => ({ id: f.getId(), fields: getFieldsWithValues(this.getLayer(), f, { relation: true }) }))
             )
           }
 
@@ -1098,7 +1098,7 @@
                 })
                 Workflow.Stack.getCurrent().getSession().pushUpdate(this._relationLayerId , relation, originalRelation);
               this.relations.push({
-                fields: this.getLayer().getFieldsWithValues(relation, { relation: true }),
+                fields: getFieldsWithValues(this.getLayer(), relation, { relation: true }),
                 id:     relation.getId()
               });
             } else {
@@ -1159,14 +1159,14 @@
         const parentLayer = this.parentWorkflow.getLayer();
         const { ownField } = getRelationFieldsFromRelation({ layerId: this.layerId, relation: this.relation });
 
-        const pk = ownField.find(f => parentLayer.isPkField(f))
+        const pk = ownField.find(f => isPkField(parentLayer, f))
 
         /**
          * Father relation fields (editable and pk)
          */
         return {
           // get editable fields from parent layer editing fields
-          editable: ownField.filter(f => parentLayer.isEditingFieldEditable(f)),
+          editable: ownField.filter(f => (parentLayer.getEditingFields().find(_f => _f.name === f) || { editable: false }).editable),
           // check if father field is a pk and is not editable
           pk,
           // Check if the parent field is editable.
@@ -1245,7 +1245,7 @@
       fieldrequired() {
         return getRelationFieldsFromRelation({ layerId: this._relationLayerId, relation: this.relation })
           .ownField // own Fields is a relation Fields array of Relation Layer
-          .some(field => getEditingLayerById(this._relationLayerId).isFieldRequired(field));
+          .some(field => (getEditingLayerById(this._relationLayerId).getEditingFields().find(f => fiel === f.name) || { validate: { required: false } }).validate.required);
       },
 
       /**
@@ -1398,7 +1398,7 @@
       /**
        * editing a constraint type
        */
-      this.capabilities = this.parentWorkflow.getLayer().getEditingCapabilities();
+      this.capabilities = this.parentWorkflow.getLayer().config.editing.capabilities;
 
 
       /**

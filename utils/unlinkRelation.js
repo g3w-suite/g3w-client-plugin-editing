@@ -29,7 +29,7 @@ export function unlinkRelation({
   return new Promise((resolve) => {
     const unlink = () => {
       const id               = layerId === relation.child ? relation.father : relation.child; // relation layer id
-      const feature          = getEditingLayerById(id).getEditingSource().getFeatureById(relations[index].id);
+      const feature          = getEditingLayerById(id).getEditor().getEditingSource().getFeatureById(relations[index].id);
       const originalRelation = feature.clone();
       // loop on ownField (Array field child relation)
       getRelationFieldsFromRelation({ relation, layerId: id }).ownField.forEach(f => feature.set(f, null))

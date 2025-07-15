@@ -6,8 +6,8 @@
  * @since g3w-client-plugin-editing@v4.1.0
  */
 
-import { ToolBox }    from './g3w-toolbox';
-import { $promisify } from './utils/promisify';
+import { ToolBox }                       from './g3w-toolbox';
+import { $promisify, promisify }         from './utils/promisify';
 
 const { ApplicationState, G3WObject }    = g3wsdk.core;
 const { CatalogLayersStoresRegistry }    = g3wsdk.core.catalog;
@@ -417,7 +417,6 @@ class OlFeaturesStore extends FeaturesStore {
 
 }
 
-
 /**
  * Editor Class: bind editor to layer to do main actions
  *
@@ -425,7 +424,7 @@ class OlFeaturesStore extends FeaturesStore {
  *
  * @constructor
  */
-export default class Editor extends G3WObject {
+class Editor extends G3WObject {
 
   constructor(options = {}) {
 
@@ -729,8 +728,8 @@ export default class Editor extends G3WObject {
    *
    * @since 3.9.0
    */
-  addLockIds(lockids) {
-    this._layer.getSource().addLockIds(lockids);
+  addLockIds(ids) {
+    this._layer._featuresstore.addLockIds(ids);
   }
 
   /**
@@ -878,3 +877,83 @@ export default class Editor extends G3WObject {
   }
 
 }
+
+/**
+ * ORIGINAL SOURCE: g3w-client/src/map/layers/tablelayer.js@v4.0.0
+ *
+ * @param layer
+ * @param force
+ * @return {Promise<any|null>}
+ */
+Editor.getLayer = async function({
+  layer,
+  force = false,
+} = {}) {
+
+  if (!force && !layer.isEditable()) {
+    return null;
+  }
+  
+  // get layer editing config (from server)
+  try {
+    const {
+    vector,
+    constraints = {},
+    capabilities,
+  } = await promisify(layer.getProvider('data').getConfig());
+
+    layer.state.editing =  {
+      started:  false,
+      modified: false,
+      ready:    false
+    }
+
+    // add editing configurations
+    layer.config.editing = {
+      fields:                      vector.fields || [],
+      format:                      vector.format,
+      constraints,
+      capabilities:                capabilities || window.g3wsdk.constant.DEFAULT_EDITING_CAPABILITIES, // default editing capabilities
+      form:                        { perc: null },                                                      // set editing form `perc` to null at beginning
+      style:                       vector.style,                                                        // get vector layer style
+      geometrytype:                vector.geometrytype,                                                 // whether is a vector layer,
+      visible:                     (vector.editing || { visible: true }).visible,                       //@since 3.11.0 let know if layer should be editable directly (true) or through relation layer (false)
+      layer_style:                 (vector.editing || { layer_style: null }).layer_style,               // @since v4.0.0 check if has a layer style to for editing form
+    };
+
+    // set vector layer color 
+    if (vector.style) {                              
+      layer.setColor(vector.style.color);
+    }
+
+    layer._editor = new Editor({ layer }); // create an instance of editor
+    layer.state.editing.ready = true;
+  } catch(e) {
+    console.warn(e);
+  }
+
+  let editing_layer = layer;
+
+  // set editing layer from IMAGE LAYER
+  if (Layer.LayerTypes.IMAGE === layer.getType()) {
+    try {
+      editing_layer = new g3wsdk.core.layer.VectorLayer(layer.config, {
+        vectorurl:    window.initConfig.plugins.editing.vectorurl,
+        project_type: window.initConfig.plugins.editing.project_type,
+        project:      ApplicationState.project,
+      });
+      await Editor.getLayer({ layer: editing_layer });
+      layer.setEditingLayer(editing_layer);
+    } catch(e) {
+      console.warn(e);
+      return Promise.reject(e);
+    }
+  }
+
+  // clone editable layer
+  if ([Layer.LayerTypes.IMAGE, Layer.LayerTypes.TABLE].includes(editing_layer.getType())) {
+    return editing_layer.clone(); 
+  }
+}
+
+export default Editor;

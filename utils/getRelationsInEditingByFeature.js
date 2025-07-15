@@ -1,3 +1,5 @@
+import { isPkField }                     from '../utils/isPkField';
+import { getFieldsWithValues }           from '../utils/getFieldsWithValues';
 import { getRelationFieldsFromRelation } from '../utils/getRelationFieldsFromRelation';
 
 /**
@@ -35,17 +37,17 @@ export function getRelationsInEditingByFeature({
       // get features of relation child layers
       // Loop relation fields
       // In case of new feature, need to check if field is pk field
-      const values = relationField.map(field => feature.isNew() && fatherLayer.isPkField(field) ? feature.getId() : feature.get(field));
+      const values = relationField.map(field => feature.isNew() && isPkField(fatherLayer, field) ? feature.getId() : feature.get(field));
 
       relationinediting = {
         relation: relation.getState(),
         // get relation attributes by feature
         relations: service
           .getLayerById(relationLayerId)
-          .readEditingFeatures()
+          .getEditor().readEditingFeatures()
           .filter(feature => ownField.every((field, i) => feature.get(field) == values[i])) // get relations by feature
           .map(relation => ({
-            fields: layer.getFieldsWithValues(relation, { relation: true }),
+            fields: getFieldsWithValues(layer, relation, { relation: true }),
             id:     relation.getId(),
             select: false, /** @since v3.9.0 Used to set relation select or not **/
           }))

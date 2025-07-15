@@ -79,8 +79,8 @@
 
     data() {
       return {
-        features:  this.layer.readFeatures(),        // original features
-        efeatures: this.layer.readEditingFeatures(), // edited features,
+        features:  this.layer.readFeatures(),                    // original features
+        efeatures: this.layer.getEditor().readEditingFeatures(), // edited features,
       };
     },
 

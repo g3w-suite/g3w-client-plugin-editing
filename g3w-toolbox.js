@@ -27,6 +27,7 @@ import { getRelationsInEditingByFeature }               from './utils/getRelatio
 import { addPartToMultigeometries }                     from './utils/addPartToMultigeometries';
 import { unlinkRelation }                               from './utils/unlinkRelation';
 import { isSameBaseGeometryType }                       from './utils/isSameBaseGeometryType';
+import { isPkField }                                    from './utils/isPkField';
 
 import { OpenFormStep }                                 from './actions/open-form';
 import { SelectElementsStep }                           from './actions/select-elements';
@@ -178,7 +179,7 @@ export class ToolBox extends G3WObject {
     ToolBox._sessions[layer.getId()] = this;
 
     /** @type { 'create' | 'update_attributes' | 'update_geometry' | delete' | undefined } undefined means all possible tools base on type */
-    const capabilities = layer.getEditingCapabilities() || [];
+    const capabilities = layer.config.editing.capabilities || [];
 
     this.state = {
       layer,
@@ -220,7 +221,7 @@ export class ToolBox extends G3WObject {
       _layerType: layer.getType() || Layer.LayerTypes.VECTOR,
       _enabledtools: undefined,
       _disabledtools: undefined,
-      _constraints: layer.getEditingConstrains() || {},
+      _constraints: layer.config.editing.constraints || {},
       _tools: [
         // Add Feature
         (is_vector) && capabilities.includes('add_feature') && {
@@ -876,9 +877,11 @@ export class ToolBox extends G3WObject {
                                     if (undefined === feature.get(name)) { feature.set(name, null) }
                                   })
 
-                                  originalLayer.getEditingNotEditableFields()
+                                  originalLayer.config.editing.fields
+                                    .filter(f => !f.editable) // un-editable fields
+                                    .map(f => f.name)
                                     .find(field => {
-                                      if (originalLayer.isPkField(field)) { feature.set(field, null) }
+                                      if (isPkField(originalLayer, field)) { feature.set(field, null) }
                                     });
                                   //remove eventually Z Values
                                   removeZValueToOLFeatureGeometry({ feature });
@@ -1010,12 +1013,7 @@ export class ToolBox extends G3WObject {
                               const deltaXY     = _getDeltaXY({ x, y, coordinates });
                               feature.getGeometry().translate(deltaXY.x, deltaXY.y)
                             }
-                            // set media fields to null
-                            //@since 3.9.0 Comment
-                            //layer.getEditingMediaFields({}).forEach(f => feature.set(f, null));
-                            /**
-                             * evaluated geometry expression
-                             */
+                            // evaluated geometry expression
                             promisesDefaultEvaluation.push(evaluateExpressionFields({ inputs, context, feature }))
                           }
                           Promise
@@ -2693,7 +2691,12 @@ export class ToolBox extends G3WObject {
 
     // remove not editable proprierties from feature
     if (removeNotEditableProperties) {
-      (editor.getLayer().getEditingNotEditableFields() || []).forEach(f => feature.unset([f]));
+      (
+        editor.getLayer().config.editing.fields
+        .filter(f => !f.editable) // un-editable fields
+        .map(f => f.name)
+        || []
+      ).forEach(f => feature.unset([f]));
     }
 
     const newFeature = feature.clone();
@@ -3287,10 +3290,6 @@ export async function _handleSplitFeature({
     } else {
       const newFeature = cloneFeature(oriFeature, layer);
       newFeature.setGeometry(splittedGeometry);
-
-      // set media fields to null
-      //@since 3.9.0 Commented
-      //layer.getEditingMediaFields({}).forEach(f => newFeature.set(f, null));
 
       feature = new Feature({ feature: newFeature });
 

@@ -12,6 +12,9 @@ import { getLayersDependencyFeatures }                  from '../utils/getLayers
 import { getEditingLayerById }                          from '../utils/getEditingLayerById';
 import { setLayerUniqueFieldValues }                    from '../utils/setLayerUniqueFieldValues';
 import { getRelationsInEditingByFeature }               from '../utils/getRelationsInEditingByFeature';
+import { getFieldsWithValues }                          from '../utils/getFieldsWithValues';
+import { setFieldsWithValues }                          from '../utils/setFieldsWithValues';
+import { isPkField }                                    from '../utils/isPkField';
 
 import { Workflow }                                     from '../g3w-workflow';
 import { Step }                                         from '../g3w-step';
@@ -257,7 +260,7 @@ export class OpenFormStep extends Step {
                       //get features fields of form service that has value not null to set of all features
                       const fields = w.getContext().service.state.fields.filter(f => task._multi ? null !== f.value : true);
                       await Workflow.Stack.getCurrent().getContextService().saveDefaultExpressionFieldsNotDependencies();
-                      task._features.forEach(f => task.getInputs().layer.setFieldsWithValues(f, fields));
+                      task._features.forEach(f => setFieldsWithValues(task.getInputs().layer, f, fields));
                       const newFeatures = task._features.map(f => f.clone());
                       //Is a relation form
                       if (task._isContentChild) {
@@ -292,7 +295,7 @@ export class OpenFormStep extends Step {
                         service.force.update = false;
                       }
                       Object.entries(
-                        w.getInputs().layer.getEditingSource().readFeatures()
+                        w.getInputs().layer.getEditor().getEditingSource().readFeatures()
                           .find(f => f.getUid() === feature.getUid()) //Find current form editing feature by unique id of feature uid
                           .getProperties() //get properties
                       )
@@ -359,7 +362,7 @@ export class OpenFormStep extends Step {
                 GUI.disableContent(false);
 
                 this._features.forEach(f => {
-                  inputs.layer.setFieldsWithValues(f, fields);
+                  setFieldsWithValues(inputs.layer, f, fields);
                   newFeatures.push(f.clone());
                 });
 
@@ -557,7 +560,8 @@ function _getFormFields({
   // current form layerId// unique values by feature field
   const layerId         = inputs.layer.getId();
 
-  const fields          = inputs.layer.getFieldsWithValues( // editing fields with values (in case of update)
+  const fields          = getFieldsWithValues( // editing fields with values (in case of update)
+    inputs.layer,
     feature,
     {
       exclude:           context.excludeFields, // add exclude fields
@@ -700,7 +704,7 @@ async function _handleRelation1_1LayerFields({
           reject();
           return;
         }
-        const source       = service.getLayerById(childLayerId).getEditingSource();
+        const source       = service.getLayerById(childLayerId).getEditor().getEditingSource();
         let childFeature; // original child feature
         let newChild; //eventually child feature cloned with changes
 
@@ -757,7 +761,7 @@ async function _handleRelation1_1LayerFields({
             if (isNewChildFeature) {
 
               // check if father field is a Pk (Primary key) if feature is new
-              if (service.getLayerById(layerId).isPkField(fatherField)) {
+              if (isPkField(service.getLayerById(layerId), fatherField)) {
                 childFeature.set(childField, features[0].getId()); // set temporary
               }
 
@@ -941,7 +945,7 @@ async function _getRelation1_1ChildFeature({
   // lock feature false
   let locked  = false;
   let feature = service.getLayerById(childLayerId)
-    .getEditingSource()
+    .getEditor().getEditingSource()
     .readFeatures()
     .find(f => fatherFormRelationField.value === f.get(childField))
 
@@ -964,7 +968,7 @@ async function _getRelation1_1ChildFeature({
     if (undefined === feature) {
 
       feature = service.getLayerById(childLayerId)
-        .getEditingSource()
+        .getEditor().getEditingSource()
         .readFeatures()
         .find(f => fatherFormRelationField.value === f.get(childField))
     }

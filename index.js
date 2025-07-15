@@ -7,7 +7,6 @@ import { createFeature }                         from './utils/createFeature';
 import { getEditingLayerById }                   from './utils/getEditingLayerById';
 import { setAndUnsetSelectedFeaturesStyle }      from './utils/setAndUnsetSelectedFeaturesStyle';
 import { addPartToMultigeometries }              from './utils/addPartToMultigeometries';
-import { getLayerForEditing }                    from './utils/getLayerForEditing';
 
 import { OpenFormStep }                          from './actions/open-form';
 import { AddFeatureStep }                        from './actions/add-feature';
@@ -40,11 +39,6 @@ Object
     ToolBox,
   })
   .forEach(([k, v]) => console.assert(undefined !== v, `${k} is undefined`));
-
-/**
- * Object to provide external plugin to use editing objects
- */
-window.g3wsdk.core.editing = { Editor };
 
 /**
  * Default editing capabilities
@@ -217,7 +211,7 @@ new (class extends Plugin {
     (await Promise.allSettled(
       CatalogLayersStoresRegistry
         .getLayers({ EDITABLE: true }, { TOC_ORDER : true })
-        .map(l => getLayerForEditing({
+        .map(l => Editor.getLayer({
           layer:        l,
           vectorurl:    this.config.vectorurl,
           project_type: this.config.project_type
@@ -1519,7 +1513,7 @@ async function _rollback(relations = {}) {
     Object
     .entries(relations)
     .flatMap(([ layerId, { add, delete: del, update, relations = {}}]) => {
-      const source       = getEditingLayerById(layerId).getEditingSource();
+      const source       = getEditingLayerById(layerId).getEditor().getEditingSource();
       const has_features = source.readFeatures().length > 0; // check if the relation layer has some features
       // get original values
       return [

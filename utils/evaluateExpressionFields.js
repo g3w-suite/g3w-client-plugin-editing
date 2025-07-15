@@ -1,4 +1,5 @@
-import { getParentFormData } from './getParentFormData';
+import { getFieldsWithValues } from '../utils/getFieldsWithValues';
+import { getParentFormData }   from './getParentFormData';
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
@@ -19,8 +20,8 @@ export async function evaluateExpressionFields({
 } = {}) {
   const promises  = []; // promises from expression evaluation
 
-  inputs.layer
-    .getFieldsWithValues(
+    getFieldsWithValues(
+      inputs.layer,
       feature,
       {
         exclude:           context.excludeFields,

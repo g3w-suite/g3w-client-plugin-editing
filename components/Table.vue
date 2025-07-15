@@ -285,7 +285,7 @@
                     const feature = this.state.features[index];
                     const session = this.state.context.session;
                     const layerId = this.state.inputs.layer.getId();
-                    this.state.inputs.layer.getEditingSource().removeFeature(feature);
+                    this.state.inputs.layer.getEditor().getEditingSource().removeFeature(feature);
                     session.pushDelete(layerId, feature);
                     this.state.rows.splice(index, 1);
                     resolve()

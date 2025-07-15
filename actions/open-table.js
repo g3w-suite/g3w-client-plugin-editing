@@ -41,7 +41,7 @@ export class OpenTableStep extends Step {
 
     return new Promise((resolve, reject) => {
       this._isContentChild = Workflow.Stack.getLength() > 1;
-      const features       = (inputs.layer.readEditingFeatures() || []);
+      const features       = (inputs.layer.getEditor().readEditingFeatures() || []);
       const headers        = (inputs.layer.getEditingFields() || []).filter(h => features.length ? Object.keys(features[0].getProperties()).includes(h.name) : true);
       this._isContentChild = Workflow.Stack.getLength() > 1;
       const excludeFields  = this._isContentChild ? (context.excludeFields || []) : [];
@@ -68,7 +68,7 @@ export class OpenTableStep extends Step {
               : features,
             title:        `${inputs.layer.getName()}` || 'Link relation',
             isrelation:   this._isContentChild,
-            capabilities: inputs.layer.getEditingCapabilities(),
+            capabilities: inputs.layer.config.editing.capabilities,
             layerId:      inputs.layer.getId(),
             workflow:     null,
           }

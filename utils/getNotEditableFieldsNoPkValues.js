@@ -1,3 +1,5 @@
+import { isPkField } from '../utils/isPkField';
+
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
  * 
@@ -10,10 +12,11 @@ export function getNotEditableFieldsNoPkValues({
   layer,
   feature,
 }) {
-  return layer
-    .getEditingNotEditableFields()
+  return layer.config.editing.fields
+    .filter(f => !f.editable) // un-editable fields
+    .map(f => f.name)
     .reduce((fields, field) => {
-      fields[field] = layer.isPkField(field) ? null : feature.get(field); // NB: Primary Key fields need to be `null`
+      fields[field] = isPkField(layer, field) ? null : feature.get(field); // NB: Primary Key fields need to be `null`
       return fields;
     }, {});
 }
