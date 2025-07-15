@@ -7,7 +7,6 @@
  */
 
 import { ToolBox }                       from './g3w-toolbox';
-import { $promisify, promisify }         from './utils/promisify';
 
 const { ApplicationState, G3WObject }    = g3wsdk.core;
 const { CatalogLayersStoresRegistry }    = g3wsdk.core.catalog;
@@ -123,41 +122,37 @@ class Editor extends G3WObject {
             this._loadedIds = [];
           }
         },
-        commit(commitItems, featurestore) {
-          return $promisify(async () => {
-            if (commitItems && this._provider) {
-              commitItems.lockids = this._lockIds;
-              return await XHR.post({
-                url:         this._provider._layer.getUrl('commit'),
-                data:        JSON.stringify(commitItems),
-                contentType: 'application/json',
-              });
-            }
-            return Promise.reject();
-          });
+        async commit(commitItems) {
+          if (commitItems && this._provider) {
+            commitItems.lockids = this._lockIds;
+            return await XHR.post({
+              url:         this._provider._layer.getUrl('commit'),
+              data:        JSON.stringify(commitItems),
+              contentType: 'application/json',
+            });
+          }
+          return Promise.reject();
         },
         featuresLockedByOtherUser(features = []) {},
       },
       addFeature(feature)        { this._addFeature(feature); },
       clone()                    { return cloneDeep(this); },
       getProvider()              { return this._provider; },
-      unlock()                   { return $promisify(async () => await XHR.post({ url: this._provider._layer.getUrl('unlock') })); },
+      async unlock()             { return await XHR.post({ url: this._provider._layer.getUrl('unlock') }) },
       getLockIds()               { return this._lockIds; },
       getFeatureById(id)         { return IS_OL ? this._features.getArray().find(f => id == f.getId()) : this._features.find(f => id == f.getId()); },
       readFeatures()             { return IS_OL ? this._features.getArray() : this._features; },
       getLength()                { return IS_OL ? this._features.getLength() : this._features.length; },
       getFeaturesCollection()    { return this._features; },
-      getFeatures(opts = {}) {
-        return $promisify(async () => {
-          if (this._provider) {
-            //call provider getFeatures to get features from server
-            //get the feature base on response from server features, featurelockis etc ...
-            const features = this._filterFeaturesResponse(await this._provider.getFeatures(opts));
-            this.addFeatures(features);
-            return features;
-          }
-          return this._features; // Get features stored. No call to server is done
-        });
+      async getFeatures(opts = {}) {
+        if (this._provider) {
+          //call provider getFeatures to get features from server
+          //get the feature base on response from server features, featurelockis etc ...
+          const features = this._filterFeaturesResponse(await this._provider.getFeatures(opts));
+          this.addFeatures(features);
+          return features;
+        }
+        return this._features; // Get features stored. No call to server is done
       },
       _filterFeaturesResponse(options = {}) {
         /**
@@ -675,7 +670,7 @@ Editor.getLayer = async function({
     vector,
     constraints = {},
     capabilities,
-  } = await promisify(layer.getProvider('data').getConfig());
+  } = await layer.getProvider('data').getConfig();
 
     layer.state.editing =  {
       started:  false,
