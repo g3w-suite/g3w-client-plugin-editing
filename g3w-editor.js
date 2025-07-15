@@ -21,10 +21,10 @@ class FeaturesStore extends G3WObject {
 
   constructor(opts = {}) {
     super();
-    this._features  = opts.features || [];
-    this._provider  = opts.provider || null;
-    this._loadedIds = []; // store features id load by current user
-    this._lockIds   = []; // store locked features
+    this._features      = opts.features || [];
+    this._provider      = opts.provider || null;
+    this._loadedIds     = []; // store features id load by current user
+    this._lockIds       = []; // store locked features
 
     this.setters    = [
       'addFeatures',
@@ -926,7 +926,6 @@ Editor.getLayer = async function({
       layer.setColor(vector.style.color);
     }
 
-    layer._editor = new Editor({ layer }); // create an instance of editor
     layer.state.editing.ready = true;
   } catch(e) {
     console.warn(e);
@@ -942,7 +941,6 @@ Editor.getLayer = async function({
         project_type: window.initConfig.plugins.editing.project_type,
         project:      ApplicationState.project,
       });
-      await Editor.getLayer({ layer: editing_layer });
       layer.setEditingLayer(editing_layer);
     } catch(e) {
       console.warn(e);
@@ -950,10 +948,19 @@ Editor.getLayer = async function({
     }
   }
 
+  //set editor
+  editing_layer._editor = new Editor({ layer: editing_layer }); // create an instance of editor
+
   // clone editable layer
-  if ([Layer.LayerTypes.IMAGE, Layer.LayerTypes.TABLE].includes(editing_layer.getType())) {
+  if (Layer.LayerTypes.VECTOR === editing_layer.getType()) {
+    return editing_layer; 
+  }
+
+  // clone editable layer
+  if (Layer.LayerTypes.TABLE === editing_layer.getType()) {
     return editing_layer.clone(); 
   }
+
 }
 
 export default Editor;
