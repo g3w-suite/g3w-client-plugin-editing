@@ -29,12 +29,10 @@ class FeaturesStore extends G3WObject {
     this._lockIds   = []; // store locked features
 
     this.setters    = [
-      'addFeatures',
       'addFeature',
       'removeFeature',
       'updateFeature',
       'clear',
-      'getFeatures',
       'commit',
       'featuresLockedByOtherUser',
     ];
@@ -91,7 +89,25 @@ class FeaturesStore extends G3WObject {
    * @since 4.0.0
    */
   clear() {
-    this._clearFeatures();
+    if(this.isOl) {
+      try {
+        // Used remove single features instead use clear method
+        // because some time trows an error
+        for (let i = 0; i < this._features.getArray().length; i++) {
+          this._features.removeAt(i);
+        }
+      } catch(e) {
+        console.warn(e);
+      }
+      //Need to set a new Collection to avoid duplicate
+      this._features = null; //@TODO is still usefully ????
+      this._features = new ol.Collection([]);
+    } else {
+      this._features  = null;
+      this._features  = [];
+      this._lockIds   = [];
+      this._loadedIds = [];
+    }
   }
 
   /**
@@ -149,10 +165,6 @@ class FeaturesStore extends G3WObject {
 
   clone() {
     return cloneDeep(this);
-  }
-
-  setProvider(provider) {
-    this._provider = provider;
   }
 
   getProvider() {
@@ -306,28 +318,6 @@ class FeaturesStore extends G3WObject {
       }
     } else {
       this._features = this._features.filter(f => feature.getUid() !== f.getUid());
-    }
-  }
-
-  _clearFeatures() {
-    if(this.isOl) {
-      try {
-        // Used remove single features instead use clear method
-        // because some time trows an error
-        for (let i = 0; i < this._features.getArray().length; i++) {
-          this._features.removeAt(i);
-        }
-      } catch(e) {
-        console.warn(e);
-      }
-      //Need to set a new Collection to avoid duplicate
-      this._features = null; //@TODO is still usefully ????
-      this._features = new ol.Collection([]);
-    } else {
-      this._features  = null;
-      this._features  = [];
-      this._lockIds   = [];
-      this._loadedIds = [];
     }
   }
 
