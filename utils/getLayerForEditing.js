@@ -1,3 +1,6 @@
+import { promisify } from './promisify';
+import Editor        from '../g3w-editor';
+
 const { LayerTypes } = g3wsdk.core.layer.Layer;
 
 /**
@@ -23,6 +26,48 @@ const { LayerTypes } = g3wsdk.core.layer.Layer;
     if (!force && !layer.isEditable()) {
       return null;
     }
+    
+    // get layer editing config (from server)
+    try {
+      const {
+      vector,
+      constraints = {},
+      capabilities,
+      style,
+    } = await promisify(layer.getProvider('data').getConfig());
+
+      layer.state.editing =  {
+        started:  false,
+        modified: false,
+        ready:    false
+      }
+          
+      await g3wsdk.core.utils.waitFor(() => window.g3wsdk.core.hasOwnProperty('editing'), g3wsdk.constant.TIMEOUT);    // wait until "editing" plugin is loaded
+      
+      // add editing configurations
+      layer.config.editing = {
+        fields:                      vector.fields || [],
+        format:                      vector.format,
+        constraints,
+        capabilities:                capabilities || window.g3wsdk.constant.DEFAULT_EDITING_CAPABILITIES, // default editing capabilities
+        form:                        { perc: null },                                                      // set editing form `perc` to null at beginning
+        style:                       vector.style,                                                        // get vector layer style
+        geometrytype:                vector.geometrytype,                                                 // whether is a vector layer,
+        visible:                     (vector.editing || { visible: true }).visible,                       //@since 3.11.0 let know if layer should be editable directly (true) or through relation layer (false)
+        layer_style:                 (vector.editing || { layer_style: null }).layer_style,               // @since v4.0.0 check if has a layer style to for editing form
+      };
+
+      // set vector layer color 
+      if (vector.style) {                              
+        layer.setColor(vector.style.color);
+      }
+
+      layer._editor = new Editor({ layer }); // create an instance of editor
+      layer.state.editing.ready = true;
+    } catch(e) {
+      console.warn(e);
+    }
+
 
     //IMAGE LAYER
     if (LayerTypes.IMAGE === layer.getType()) {
@@ -42,6 +87,6 @@ const { LayerTypes } = g3wsdk.core.layer.Layer;
 
     //TABLE LAYER
     if (LayerTypes.TABLE === layer.getType()) {
-      return layer;
+      return layer.clone(); // cloned editable layer
     }
   }
