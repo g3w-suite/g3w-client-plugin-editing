@@ -71,15 +71,73 @@ class Editor extends G3WObject {
       _provider: null,
       _loadedIds: [], // store features id load by current user
       _lockIds: [], // store locked features
-      setters: [
-        'addFeature',
-        'removeFeature',
-        'updateFeature',
-        'clear',
-        'commit',
-        'featuresLockedByOtherUser',
-      ],
-      addFeatures(features = []) { features.forEach(f => this._addFeature(f)) },
+      setters: {
+        addFeatures(features = []) { features.forEach(f => this._addFeature(f)) },
+        removeFeature(feature) {
+          if(IS_OL) {
+            const index = this._features.getArray().findIndex(f => feature.getUid() === f.getUid());
+            if (index >= 0) {
+              this._features.removeAt(index);
+              this._features.dispatchEvent('change');
+            }
+          } else {
+            this._features = this._features.filter(f => feature.getUid() !== f.getUid());
+          }
+          this._removeFeature(feature);
+        },
+        updateFeature(feature) {
+          if (IS_OL) {
+            const index = this._features.getArray().findIndex(f => feature.getUid() === f.getUid());
+            if (index >= 0) {
+              this._features.removeAt(index);
+              this._features.insertAt(index, feature);
+              this._features.dispatchEvent('change');
+            }
+          } else {
+            this._features.find((feat, idx) => {
+              if (feature.getUid() === feat.getUid() ) {
+                this._features[idx] = feature;
+                return true;
+              }
+            });
+          }
+        },
+        clear() {
+          if(IS_OL) {
+            try {
+              // Used remove single features instead use clear method
+              // because some time trows an error
+              for (let i = 0; i < this._features.getArray().length; i++) {
+                this._features.removeAt(i);
+              }
+            } catch(e) {
+              console.warn(e);
+            }
+            //Need to set a new Collection to avoid duplicate
+            this._features = null; //@TODO is still usefully ????
+            this._features = new ol.Collection([]);
+          } else {
+            this._features  = null;
+            this._features  = [];
+            this._lockIds   = [];
+            this._loadedIds = [];
+          }
+        },
+        commit(commitItems, featurestore) {
+          return $promisify(async () => {
+            if (commitItems && this._provider) {
+              commitItems.lockids = this._lockIds;
+              return await XHR.post({
+                url:         this._provider._layer.getUrl('commit'),
+                data:        JSON.stringify(commitItems),
+                contentType: 'application/json',
+              });
+            }
+            return Promise.reject();
+          });
+        },
+        featuresLockedByOtherUser(features = []) {},
+      },
       addFeature(feature)        { this._addFeature(feature); },
       clone()                    { return cloneDeep(this); },
       getProvider()              { return this._provider; },
@@ -89,57 +147,6 @@ class Editor extends G3WObject {
       readFeatures()             { return IS_OL ? this._features.getArray() : this._features; },
       getLength()                { return IS_OL ? this._features.getLength() : this._features.length; },
       getFeaturesCollection()    { return this._features; },
-      featuresLockedByOtherUser(features = []) {},
-      removeFeature(feature) {
-        if(IS_OL) {
-          const index = this._features.getArray().findIndex(f => feature.getUid() === f.getUid());
-          if (index >= 0) {
-            this._features.removeAt(index);
-            this._features.dispatchEvent('change');
-          }
-        } else {
-          this._features = this._features.filter(f => feature.getUid() !== f.getUid());
-        }
-        this._removeFeature(feature);
-      },
-      updateFeature(feature) {
-        if (IS_OL) {
-          const index = this._features.getArray().findIndex(f => feature.getUid() === f.getUid());
-          if (index >= 0) {
-            this._features.removeAt(index);
-            this._features.insertAt(index, feature);
-            this._features.dispatchEvent('change');
-          }
-        } else {
-          this._features.find((feat, idx) => {
-            if (feature.getUid() === feat.getUid() ) {
-              this._features[idx] = feature;
-              return true;
-            }
-          });
-        }
-      },
-      clear() {
-        if(IS_OL) {
-          try {
-            // Used remove single features instead use clear method
-            // because some time trows an error
-            for (let i = 0; i < this._features.getArray().length; i++) {
-              this._features.removeAt(i);
-            }
-          } catch(e) {
-            console.warn(e);
-          }
-          //Need to set a new Collection to avoid duplicate
-          this._features = null; //@TODO is still usefully ????
-          this._features = new ol.Collection([]);
-        } else {
-          this._features  = null;
-          this._features  = [];
-          this._lockIds   = [];
-          this._loadedIds = [];
-        }
-      },
       getFeatures(opts = {}) {
         return $promisify(async () => {
           if (this._provider) {
@@ -150,19 +157,6 @@ class Editor extends G3WObject {
             return features;
           }
           return this._features; // Get features stored. No call to server is done
-        });
-      },
-      commit(commitItems, featurestore) {
-        return $promisify(async () => {
-          if (commitItems && this._provider) {
-            commitItems.lockids = this._lockIds;
-            return await XHR.post({
-              url:         this._provider._layer.getUrl('commit'),
-              data:        JSON.stringify(commitItems),
-              contentType: 'application/json',
-            });
-          }
-          return Promise.reject();
         });
       },
       _filterFeaturesResponse(options = {}) {
