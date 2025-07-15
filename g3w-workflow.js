@@ -641,5 +641,6 @@ Workflow.Stack = {
   removeAt(i)    { workflows.splice(i, 1); },
   insertAt(i, w) { workflows[i] = w; },
   getAt(i)       { return workflows[i]; },
-  async clear()  { workflows.splice(0); }
+  async clear()  { workflows.splice(0); },
+  update()       { workflows.filter(w => w.getContextService()).forEach(w => w.getContextService().setUpdate(true, { force: true })) },
 };

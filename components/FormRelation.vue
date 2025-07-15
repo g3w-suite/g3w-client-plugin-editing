@@ -265,7 +265,6 @@
   import { getEditingLayerById }                          from '../utils/getEditingLayerById';
   import { convertToGeometry }                            from '../utils/convertToGeometry';
   import { addTableFeature }                              from '../utils/addTableFeature';
-  import { updateWorkflows }                              from '../utils/updateWorkflows';
   import { getRelationId }                                from '../utils/getRelationId';
   import { getFeatureTableFieldValue }                    from '../utils/getFeatureTableFieldValue';
   import { chooseFeatureFromFeatures }                    from '../utils/chooseFeatureFromFeatures';
@@ -800,7 +799,7 @@
                         .forEach(w => setTimeout(() => w.getContextService().state.update = false));
                     } else {
                       //set parent workflow update to enable to save all buttons
-                      updateWorkflows();
+                      Workflow.Stack.update();
                     }
 
                     d.resolve(res);
@@ -1122,7 +1121,7 @@
         }
 
         if (linked) {
-          updateWorkflows();
+          Workflow.Stack.update();
         }
 
         workflow.stop();

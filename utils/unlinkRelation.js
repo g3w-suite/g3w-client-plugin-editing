@@ -1,6 +1,5 @@
 import { Workflow }                      from '../g3w-workflow';
 import { getRelationFieldsFromRelation } from '../utils/getRelationFieldsFromRelation';
-import { updateWorkflows }               from './updateWorkflows';
 import { getEditingLayerById }           from '../utils/getEditingLayerById';
 
 const { GUI }     = g3wsdk.gui;
@@ -36,7 +35,7 @@ export function unlinkRelation({
       getRelationFieldsFromRelation({ relation, layerId: id }).ownField.forEach(f => feature.set(f, null))
       Workflow.Stack.getCurrent().getSession().pushUpdate(id, feature, originalRelation);
       relations.splice(index, 1);
-      updateWorkflows();
+      Workflow.Stack.update();
       resolve(true);
     };
     if (dialog) {
