@@ -452,7 +452,7 @@
        */
       layersInEditing(n) {
         ApplicationState.sidebar.btn_close     = !n;
-        ApplicationState.sidebar.tooltip_close = n ? 'plugins.editing.close_editing_panel.message' : '';
+        ApplicationState.sidebar.tooltip_close = n ? '⚠️ Confirm changes (✅) on each level to close' : '';
       },
 
       /**

@@ -1,7 +1,4 @@
 export default {
-  close_editing_panel: {
-    message: "⚠️ To close editing form need to exit from editing layer"
-  },
   errors: {
     no_layers: "Tapahtui virhe. Tasoja ei ole mahdollista muokata.",
     some_layers: "Tapahtui virhe. Jotkin tasot eivät ole muokattavissa."

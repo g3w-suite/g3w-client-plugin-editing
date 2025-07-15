@@ -44,7 +44,7 @@
         <!-- TOGGLE EDITING -->
         <span
           style            = "margin-left: auto"
-          :data-i18n-title = "editDisabled ? 'plugins.editing.disabled_editing.message': 'plugins.editing.tooltip.edit_layer'"
+          :data-i18n-title = "editDisabled ? '⚠️ Stop active editing tool': 'plugins.editing.tooltip.edit_layer'"
         > 
           <i
             v-disabled              = "editDisabled"

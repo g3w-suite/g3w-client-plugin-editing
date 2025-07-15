@@ -1,10 +1,4 @@
 export default {
-  close_editing_panel: {
-    message: "⚠️ Confirm changes (✅) on each level to close"
-  },
-  disabled_editing: {
-    message: "⚠️ Stop active editing tool"
-  },
   errors: {
     no_layers: "An error occurs. It's no possible to edit layers",
     some_layers: "An error occurs: It's no possible to edit some layers",
