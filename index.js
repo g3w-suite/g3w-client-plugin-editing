@@ -268,7 +268,7 @@ new (class extends Plugin {
               // value map widget
               if (relationLayer) {
                 //ordering by value or key depend on orderbyvalue Boolean value
-                const response = await promisify(relationLayer.getDataTable({ ordering: options.orderbyvalue ? options.value : options.key }));
+                const response = await relationLayer.getDataTable({ ordering: options.orderbyvalue ? options.value : options.key });
                 if (response && response.features) {
                   options.values.push(...(response.features || []).map(feature => ({
                     key:   feature.properties[options.value],
