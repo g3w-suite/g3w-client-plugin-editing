@@ -12,19 +12,21 @@ import { $promisify, promisify }         from './utils/promisify';
 const { ApplicationState, G3WObject }    = g3wsdk.core;
 const { CatalogLayersStoresRegistry }    = g3wsdk.core.catalog;
 const { Layer }                          = g3wsdk.core.layer;
-const { XHR }                            = g3wsdk.core.utils;
+const { XHR, cloneDeep }                 = g3wsdk.core.utils;
 
 /**
- * ORIGINAL SOURCE: g3w-client@v4.0.0
+ * ORIGINAL SOURCE: g3w-client/src/map/layers/featuresstore.js@v4.0.0
+ * ORIGINAL SOURE: g3w-client/src/app/core/layers/features/olfeaturesstore.js@v3.10.2
  */
 class FeaturesStore extends G3WObject {
 
-  constructor(opts = {}) {
+  constructor(isOl) {
     super();
-    this._features      = opts.features || [];
-    this._provider      = opts.provider || null;
-    this._loadedIds     = []; // store features id load by current user
-    this._lockIds       = []; // store locked features
+    this.isOl       = !!isOl;
+    this._features  = this.isOl ? new ol.Collection([]) : [];
+    this._provider  = null;
+    this._loadedIds = []; // store features id load by current user
+    this._lockIds   = []; // store locked features
 
     this.setters    = [
       'addFeatures',
@@ -146,7 +148,7 @@ class FeaturesStore extends G3WObject {
   featuresLockedByOtherUser(features = []) {}
 
   clone() {
-    g3wsdk.core.layer.features.FeaturesStore.prototype.clone.apply(this);
+    return cloneDeep(this);
   }
 
   setProvider(provider) {
@@ -242,55 +244,91 @@ class FeaturesStore extends G3WObject {
   }
 
   /**
-   * Add new lockid
-   */
-  addLockIds(lockIds) {
-    this._lockIds = [...new Set(this._lockIds.concat(...lockIds))]
-    this._lockIds.forEach(({ featureid }) => this._loadedIds.push(featureid));
-  }
-
-  /**
    * Get feature
    * @param id
    * @return { Feature }
    */
   getFeatureById(id) {
-    return this._features.find(f => id == f.getId());
+    return this.isOl ? this._features.getArray().find(f => id == f.getId()) : this._features.find(f => id == f.getId());
   }
 
   getFeatureByUid(uid) {
-    return this._features.find(f => uid === f.getUid());
+    return this.isOl ? this._features.getArray().find(f => uid === f.getUid()) : this._features.find(f => uid === f.getUid());
   }
 
   _addFeature(feature) {
     this._features.push(feature);
+    // useful for ol.source.Vector
+    if(this.isOl) {
+      this._features.dispatchEvent('change');
+    }
   }
 
   /**
    * Substitute (update) feature after update
    */
   _updateFeature(feature) {
-    this._features.find((feat, idx) => {
-      if (feature.getUid() === feat.getUid() ) {
-        this._features[idx] = feature;
-        return true;
+    if (this.isOl) {
+      const index = this._features.getArray().findIndex(f => feature.getUid() === f.getUid());
+      if (index >= 0) {
+        this._features.removeAt(index);
+        this._features.insertAt(index, feature);
+        this._features.dispatchEvent('change');
       }
-    });
+    } else {
+      this._features.find((feat, idx) => {
+        if (feature.getUid() === feat.getUid() ) {
+          this._features[idx] = feature;
+          return true;
+        }
+      });
+    }
   }
 
   setFeatures(features = []) {
-    this._features = features;
+    if (this.isOl) {
+      //remove features
+      this._features.clear();
+      //add new features
+      this.addFeatures(features);
+      this._features.dispatchEvent('change');
+    } else {
+      this._features = features;
+    }
   }
 
   _removeFeature(feature) {
-    this._features = this._features.filter(f => feature.getUid() !== f.getUid());
+    if(this.isOl) {
+      const index = this._features.getArray().findIndex(f => feature.getUid() === f.getUid());
+      if (index >= 0) {
+        this._features.removeAt(index);
+        this._features.dispatchEvent('change');
+      }
+    } else {
+      this._features = this._features.filter(f => feature.getUid() !== f.getUid());
+    }
   }
 
   _clearFeatures() {
-    this._features  = null;
-    this._features  = [];
-    this._lockIds   = [];
-    this._loadedIds = [];
+    if(this.isOl) {
+      try {
+        // Used remove single features instead use clear method
+        // because some time trows an error
+        for (let i = 0; i < this._features.getArray().length; i++) {
+          this._features.removeAt(i);
+        }
+      } catch(e) {
+        console.warn(e);
+      }
+      //Need to set a new Collection to avoid duplicate
+      this._features = null; //@TODO is still usefully ????
+      this._features = new ol.Collection([]);
+    } else {
+      this._features  = null;
+      this._features  = [];
+      this._lockIds   = [];
+      this._loadedIds = [];
+    }
   }
 
   getDataProvider() {
@@ -299,18 +337,7 @@ class FeaturesStore extends G3WObject {
 
 // only read downloaded features
   readFeatures() {
-    return this._features;
-  }
-
-}
-
-/**
- * ORIGINAL SOURE: g3w-client/src/app/core/layers/features/olfeaturesstore.js@v3.10.2
- */
-class OlFeaturesStore extends FeaturesStore {
-  constructor(opts = {}) {
-    super(opts);
-    this._features = opts.features || new ol.Collection([]);
+    return this.isOl ? this._features.getArray() : this._features;
   }
 
   /**
@@ -318,101 +345,14 @@ class OlFeaturesStore extends FeaturesStore {
    * @return { Number }
    */
   getLength() {
-    return this._features.getLength();
+    return this.isOl ? this._features.getLength() : this._features.length;
   }
-
-  /**
-   * Store features
-   * @param { Array } features
-   */
-  setFeatures(features = []) {
-    //remove features
-    this._features.clear();
-    //add new features
-    this.addFeatures(features);
-    this._features.dispatchEvent('change');
-  };
-
-  /**
-   * @returns {*[]}
-   */
-  readFeatures() {
-    return this._features.getArray();
-  };
 
   /**
    * @return {*|ol.Collection}
    */
   getFeaturesCollection() {
     return this._features;
-  }
-
-  /**
-   * @param id
-   * @returns {*}
-   */
-  getFeatureById(id) {
-    return this._features.getArray().find(f => id == f.getId());
-  }
-
-  getFeatureByUid(uid) {
-    return this._features.getArray().find(f => uid === f.getUid());
-  }
-
-  /**
-   *
-   * @param feature
-   * @private
-   */
-  _addFeature(feature) {
-    this._features.push(feature);
-    // useful for ol.source.Vector
-    this._features.dispatchEvent('change');
-  }
-
-  /**
-   * Substitute the feature after modifying
-   * @param feature
-   * @private
-   */
-  _updateFeature(feature) {
-    const index = this._features.getArray().findIndex(f => feature.getUid() === f.getUid());
-    if (index >= 0) {
-      this._features.removeAt(index);
-      this._features.insertAt(index, feature);
-      this._features.dispatchEvent('change');
-    }
-  }
-
-  /**
-   * Remove feature from store
-   * @param feature
-   * @private
-   */
-  _removeFeature(feature) {
-    const index = this._features.getArray().findIndex(f => feature.getUid() === f.getUid());
-    if (index >= 0) {
-      this._features.removeAt(index);
-      this._features.dispatchEvent('change');
-    }
-  }
-
-  /**
-   * @private
-   */
-  _clearFeatures() {
-    try {
-      // Used remove single features instead use clear method
-      // because some time trows an error
-      for (let i = 0; i < this._features.getArray().length; i++) {
-        this._features.removeAt(i);
-      }
-    } catch(e) {
-      console.warn(e);
-    }
-    //Need to set a new Collection to avoid duplicate
-    this._features = null; //@TODO is still usefully ????
-    this._features = new ol.Collection([]);
   }
 
 }
@@ -462,9 +402,9 @@ class Editor extends G3WObject {
     /**
      * Store editing features
      * 
-     * @type { FeaturesStore | OlFeaturesStore }
+     * @type { FeaturesStore }
      */
-    this._featuresstore = Layer.LayerTypes.TABLE === this._layer.getType() ? new FeaturesStore() : new OlFeaturesStore();
+    this._featuresstore = new FeaturesStore(Layer.LayerTypes.TABLE !== this._layer);
 
     /**
      * Whether editor is active or not
@@ -576,7 +516,7 @@ class Editor extends G3WObject {
   /**
    * Get editing source layer feature
    * 
-   * @returns { FeaturesStore | OlFeaturesStore }
+   * @returns { FeaturesStore }
    */
   getEditingSource() {
     return this._featuresstore;
@@ -720,16 +660,9 @@ class Editor extends G3WObject {
 
     this._layer.setFeatures([...features]);         // substitute layer features with actual editing features ("cloned" to prevent layer actions duplicates, eg. addFeatures)
 
-    this.addLockIds(response.response.new_lockids); // add lock ids
-  }
-
-  /**
-   * @param lockids locks be added to current layer
-   *
-   * @since 3.9.0
-   */
-  addLockIds(ids) {
-    this._layer._featuresstore.addLockIds(ids);
+    // add lock ids
+    this._layer._featuresstore._lockIds = [...new Set(this._layer._featuresstore._lockIds.concat(...response.response.new_lockids))]
+    this._layer._featuresstore._lockIds.forEach(({ featureid }) => this._layer._featuresstore._loadedIds.push(featureid));
   }
 
   /**

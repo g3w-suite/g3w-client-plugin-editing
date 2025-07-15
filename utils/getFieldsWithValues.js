@@ -1,5 +1,5 @@
-const { Feature } = g3wsdk.core.layer.features;
-const _cloneDeep  = g3wsdk.core.layer.features.FeaturesStore.prototype.clone;
+const { Feature }   = g3wsdk.core.layer.features;
+const { cloneDeep } = g3wsdk.core.utils;
 
 /**
  * ORIGINAL SOURCE: g3w-client/src/map/layers/tablelayer.js@v4.0.0
@@ -13,7 +13,7 @@ export function getFieldsWithValues(layer, obj, opts = {}) {
     get_default_value = true
   }  = opts;
 
-  let fields = _cloneDeep.apply(layer.getEditingFields());
+  let fields = cloneDeep(layer.getEditingFields());
   let feature;
 
   if (obj instanceof Feature) {
