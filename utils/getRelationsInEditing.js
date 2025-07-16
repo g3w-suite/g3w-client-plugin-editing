@@ -1,5 +1,7 @@
 import { getRelationId } from '../utils/getRelationId';
 
+const { GUI } = g3wsdk.gui;
+
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
  * 
@@ -15,5 +17,5 @@ export function getRelationsInEditing({
   layerId,
   relations = [],
 }) {
-  return relations.filter(r => g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').getToolBoxById(getRelationId({ layerId, relation: r })));
+  return relations.filter(r => GUI.getPlugin('editing').getToolBoxById(getRelationId({ layerId, relation: r })));
 }

@@ -408,13 +408,13 @@
           ba: false
         }
 
-        g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing')
+        GUI.getPlugin('editing')
           .getLayers()
           .filter(l => Layer.LayerTypes.VECTOR === l.getType()) // skip raster, alphanumerical..
           .filter(l => tool.options.layerId !== l.getId())
           .forEach(l => {
             // SNAP TO ALL: check if the current editing layer is not equal to `layerId`
-            const editing = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').getToolBoxById(l.getId()).getState().editing;
+            const editing = GUI.getPlugin('editing').getToolBoxById(l.getId()).getState().editing;
             this.snapUnwatches.push(this.$watch(() => editing.on, this.setShowSnapAll));
             this.snapToolboxes.push(editing);
           })
@@ -533,12 +533,12 @@
         if (active) {
           //clear and remove eventually previous feature and snap interaction
           this.clearSnap();
-          g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing')
+          GUI.getPlugin('editing')
             .getLayers()
             .filter(l => l.isInEditing() && Layer.LayerTypes.VECTOR === l.getType()) // skip not in editing, raster, alphanumerical..
             .filter(l => all || tool.options.layerId === l.getId())
             .forEach(l => {
-              const source  = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').getToolBoxById(l.getId()).getLayer().getEditor().getEditingSource();
+              const source  = GUI.getPlugin('editing').getToolBoxById(l.getId()).getLayer().getEditor().getEditingSource();
               //add snap features
               this.addSnapFeatures(source.readFeatures());
               this.snapEvents.push({

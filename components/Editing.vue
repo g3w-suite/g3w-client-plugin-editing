@@ -118,7 +118,7 @@
         /** @since g3w-client-plugin-editing@v3.8.0 */
         selectedlayers:        [],
         /** @since g3w-client-plugin-editing@v3.8.0 */
-        editinglayers:         Object.entries(g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing')
+        editinglayers:         Object.entries(GUI.getPlugin('editing')
                                 .getEditableLayers())
                                 .filter(([_,l]) => l.config.editing.visible) //exclude layers that are set visible to false
                                 .map(([id, layer]) => ({ id, name: layer.getName(), title: layer.getTitle() })),
@@ -463,7 +463,7 @@
       selectedlayers(layers = []) {
         const has_layers = layers.length > 0;
 
-        const service = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing');
+        const service = GUI.getPlugin('editing');
 
         this.editinglayers.forEach(({ id }) => {
           const toolbox     = service.getToolBoxById(id);

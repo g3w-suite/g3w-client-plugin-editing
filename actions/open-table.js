@@ -37,7 +37,7 @@ export class OpenTableStep extends Step {
    */
   run(inputs, context) {
     // set current plugin layout (right content)
-    g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').setCurrentLayout();
+    GUI.getPlugin('editing').setCurrentLayout();
 
     return new Promise((resolve, reject) => {
       this._isContentChild = Workflow.Stack.getLength() > 1;
@@ -97,7 +97,7 @@ export class OpenTableStep extends Step {
     this.disableSidebar(false);
     GUI[this._isContentChild ? 'popContent' : 'closeContent']();
     //reset the current plugin layout (right content) to application
-    g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').resetCurrentLayout();
+    GUI.getPlugin('editing').resetCurrentLayout();
   }
 
 }

@@ -339,7 +339,7 @@ export class ToolBox extends G3WObject {
                           }
                           editingLayer.getSource().removeFeature(feature);
                           // Remove unique values from unique fields of a layer (when deleting a feature)
-                          const fields = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[layerId];
+                          const fields = GUI.getPlugin('editing').state.uniqueFieldsValues[layerId];
                           if (fields) {
                             Object
                             .keys(feature.getProperties())
@@ -1499,7 +1499,7 @@ export class ToolBox extends G3WObject {
    *
    */
   _stopSessionChildren(layerId) {
-    const service = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing');
+    const service = GUI.getPlugin('editing');
     const layer   = service.getLayerById(layerId);
     getRelationsInEditing({
       layerId,
@@ -1637,7 +1637,7 @@ export class ToolBox extends G3WObject {
   start(options = {}) {
     return new Promise(async (resolve, reject) => {
       const id                    = this.getId();
-      const applicationConstraint = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.constraints.toolboxes[id];
+      const applicationConstraint = GUI.getPlugin('editing').state.constraints.toolboxes[id];
       let {
         toolboxheader    = true,
         startstopediting = true,
@@ -1707,17 +1707,17 @@ export class ToolBox extends G3WObject {
         this.emit('start-editing');
         //set unique fields values
         await setLayerUniqueFieldValues(this.getId());
-        await g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').runEventHandler({ type: 'start-editing', id });
+        await GUI.getPlugin('editing').runEventHandler({ type: 'start-editing', id });
         try {
           const features = await promise;
           this.stopLoading();
           this.setEditing(true);
-          await g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').runEventHandler({ type: 'get-features-editing', id, options: { features } });
+          await GUI.getPlugin('editing').runEventHandler({ type: 'get-features-editing', id, options: { features } });
           resolve({ features })
         } catch(e) {
           console.warn(e);
           GUI.notify.error(e.message);
-          await g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').runEventHandler({ type: 'error-editing', id, error: e });
+          await GUI.getPlugin('editing').runEventHandler({ type: 'error-editing', id, error: e });
           this.stop();
           this.stopLoading();
           reject(e);
@@ -1811,7 +1811,7 @@ export class ToolBox extends G3WObject {
 
     if (!ApplicationState.online) { return; }
 
-    const service = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing');
+    const service = GUI.getPlugin('editing');
     const layerId = this.state.id;
 
     // Check if father relation is editing and has commit feature
@@ -1829,7 +1829,7 @@ export class ToolBox extends G3WObject {
         this.clearToolboxMessages();
         this._stopSessionChildren(this.state.id);
         // clear layer unique field values
-        g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[this.getId()] = {};
+        GUI.getPlugin('editing').state.uniqueFieldsValues[this.getId()] = {};
         return;
       }
 
@@ -1844,7 +1844,7 @@ export class ToolBox extends G3WObject {
       this.clearToolboxMessages();
       this.emit('stop-editing');
       // clear layer unique field values
-      g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[this.getId()] = {};
+      GUI.getPlugin('editing').state.uniqueFieldsValues[this.getId()] = {};
       return true;
     } catch(e) {
       console.warn(e);
@@ -3129,7 +3129,7 @@ export class ToolBox extends G3WObject {
     try {
       await tool.op.start(options);
       await this._session.save();
-      g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').saveChange(); // after save temp change check if editing service has a autosave
+      GUI.getPlugin('editing').saveChange(); // after save temp change check if editing service has a autosave
     } catch(e) {
       console.warn(e);
       if (hideSidebar) {

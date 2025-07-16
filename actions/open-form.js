@@ -104,7 +104,7 @@ export class OpenFormStep extends Step {
 
     //@since 3.9.0 promise
     const promise = new Promise((resolve) => {
-      g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').subscribe(`closeform_${this.layerId}`, () => {
+      GUI.getPlugin('editing').subscribe(`closeform_${this.layerId}`, () => {
         resolve();
         return { once: true }; // once close form, remove subscribing
       })
@@ -124,7 +124,7 @@ export class OpenFormStep extends Step {
         return;
       }
 
-      g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').setCurrentLayout();
+      GUI.getPlugin('editing').setCurrentLayout();
 
       const layerName        = inputs.layer.getName();
 
@@ -279,7 +279,7 @@ export class OpenFormStep extends Step {
                   console.warn(e);
                 }
                 try {
-                  await g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').service.commit({ modal: false });
+                  await GUI.getPlugin('editing').service.commit({ modal: false });
                   [...Workflow.Stack._workflows]
                     .reverse()
                     .filter(w => "function" === typeof w.getLastStep()._saveAll)
@@ -321,7 +321,7 @@ export class OpenFormStep extends Step {
                */
               async closeForm() {
                 //get current active tool
-                const tool = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.toolboxselected.getActiveTool();
+                const tool = GUI.getPlugin('editing').state.toolboxselected.getActiveTool();
                 //stop active tool and wait
                 await tool.stop();
                 //clear all workflow stacks
@@ -443,7 +443,7 @@ export class OpenFormStep extends Step {
 
       formService.addComponents([
         // custom form components
-        ...(g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.formComponents[layerId] || []),
+        ...(GUI.getPlugin('editing').state.formComponents[layerId] || []),
         // relation components (exlcude ONE relation + layer is the father get relation layers that set in editing on g3w-admin)
         ...getRelationsInEditingByFeature({
           layerId,
@@ -518,7 +518,7 @@ export class OpenFormStep extends Step {
     //@since 3.9.0 add GUI.getContentLength() in case of edit multi relationfeatures tool
     GUI.closeForm({ pop: this.push || this._isContentChild && GUI.getContentLength() > 1 });
 
-    g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').resetCurrentLayout();
+    GUI.getPlugin('editing').resetCurrentLayout();
 
     this.fireEvent('closeform');
     this.fireEvent(`closeform_${this.layerId}`);
@@ -556,7 +556,7 @@ function _getFormFields({
 } = {}) {
 
   //editing service
-  const service         = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing');
+  const service         = GUI.getPlugin('editing');
   // current form layerId// unique values by feature field
   const layerId         = inputs.layer.getId();
 
@@ -672,7 +672,7 @@ async function _handleRelation1_1LayerFields({
   // skip when no features
   if (features.length === 0) { return }
 
-  const service = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing');
+  const service = GUI.getPlugin('editing');
 
   // Get layer relation 1:1
   const promises = CatalogLayersStoresRegistry
@@ -810,7 +810,7 @@ async function _listenRelation1_1FieldChange({
 } = {}) {
   const unwatches = []; // unwatches field value (event change)
 
-  const service = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing'); //get editing service
+  const service = GUI.getPlugin('editing'); //get editing service
 
   const ONE = CatalogLayersStoresRegistry
     .getLayerById(layerId)
@@ -937,7 +937,7 @@ async function _getRelation1_1ChildFeature({
   relation,
   fatherFormRelationField,
 }) {
-  const service       = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing'); //get editing service
+  const service       = GUI.getPlugin('editing'); //get editing service
   const fatherLayerId = relation.getFather();
   const childLayerId  = relation.getChild();                             // get relation child layer id
   const childField    = relation.getChildField()[0];

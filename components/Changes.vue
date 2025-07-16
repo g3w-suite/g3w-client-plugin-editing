@@ -58,6 +58,8 @@
   import { areCoordinatesEqual }       from '../utils/areCoordinatesEqual';
   import { getFeatureTableFieldValue } from '../utils/getFeatureTableFieldValue';
 
+  const { GUI } = g3wsdk.gui;
+
   export default {
 
     name: "changes",
@@ -174,7 +176,7 @@
       },
 
       getLayerById(id) {
-        return g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').service.getLayerById(id);
+        return GUI.getPlugin('editing').service.getLayerById(id);
       },
 
     },

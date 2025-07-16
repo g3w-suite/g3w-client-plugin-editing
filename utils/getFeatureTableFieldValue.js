@@ -1,3 +1,5 @@
+const { GUI } = g3wsdk.gui;
+
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
  * 
@@ -17,7 +19,7 @@ export function getFeatureTableFieldValue({
   property
 } = {}) {
   // get editable fields
-  const { fields } = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').getLayerById(layerId).config.editing;
+  const { fields } = GUI.getPlugin('editing').getLayerById(layerId).config.editing;
 
   // get field value (raw)
   let value        = feature.get(property);

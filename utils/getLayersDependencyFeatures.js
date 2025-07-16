@@ -4,6 +4,7 @@ import { getRelationsInEditing }         from '../utils/getRelationsInEditing';
 import { createEditingDataOptions }      from '../utils/createEditingDataOptions';
 
 const { ApplicationState } = g3wsdk.core;
+const { GUI }              = g3wsdk.gui;
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
@@ -17,7 +18,7 @@ const { ApplicationState } = g3wsdk.core;
  */
 export async function getLayersDependencyFeatures(layerId, opts = {}) {
 
-  const service   = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing'); //get editing service
+  const service   = GUI.getPlugin('editing'); //get editing service
 
   const layer     = service.getLayerById(layerId);
   const relations = opts.relations

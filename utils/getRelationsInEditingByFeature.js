@@ -2,6 +2,8 @@ import { isPkField }                     from '../utils/isPkField';
 import { getFieldsWithValues }           from '../utils/getFieldsWithValues';
 import { getRelationFieldsFromRelation } from '../utils/getRelationFieldsFromRelation';
 
+const { GUI } = g3wsdk.gui;
+
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
  * 
@@ -21,7 +23,7 @@ export function getRelationsInEditingByFeature({
   relations = [],
   feature,
 } = {}) {
-  const service = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing');
+  const service = GUI.getPlugin('editing');
 
   let relationsinediting = [];
   let relationinediting;

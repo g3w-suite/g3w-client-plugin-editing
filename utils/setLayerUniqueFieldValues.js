@@ -1,3 +1,4 @@
+const { GUI } = g3wsdk.gui;
 const { XHR } = g3wsdk.core.utils;
 
 /**
@@ -14,9 +15,9 @@ const { XHR } = g3wsdk.core.utils;
  * @since g3w-client-plugin-editing@v3.8.0
  */
 export async function setLayerUniqueFieldValues(layerId) {
-  const service = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing'); //get editing service
+  const service = GUI.getPlugin('editing'); //get editing service
   await new Promise(async (resolve, reject) => {
-    const layer = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').getLayerById(layerId);
+    const layer = GUI.getPlugin('editing').getLayerById(layerId);
     const fields = Object.values(layer
       .getEditingFields()
       //filter field that is unique and not yet set unique values

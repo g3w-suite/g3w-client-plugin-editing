@@ -330,7 +330,7 @@ export class Step extends G3WObject {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   fireEvent(event, options = {}) {
-    return g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').fireEvent(event, options);
+    return GUI.getPlugin('editing').fireEvent(event, options);
   }
 
   /**
@@ -341,7 +341,7 @@ export class Step extends G3WObject {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   saveSingle(input, context) {
-    context.session.save().then(() => g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').saveChange());
+    context.session.save().then(() => GUI.getPlugin('editing').saveChange());
   }
 
   /**

@@ -662,7 +662,7 @@
 
           // other vector tools (e.g., move feature)
           this.capabilities.includes('change_feature') && Layer.LayerTypes.VECTOR === this._layerType && (
-            g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing')
+            GUI.getPlugin('editing')
               .getToolBoxById(this._relationLayerId)
               .getTools()
               .filter(t => Geometry.isPointGeometryType(this.getLayer().getGeometryType())
@@ -773,7 +773,7 @@
                     // remove tool from relation tools
                     this.tools.splice(index, 1);
                     // current relation layer fields
-                    const unique_fields        = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[this._relationLayerId];
+                    const unique_fields        = GUI.getPlugin('editing').state.uniqueFieldsValues[this._relationLayerId];
                     //check if relation layer has unique values stored
                     if (undefined !== unique_fields) {
                       Object
@@ -1301,7 +1301,7 @@
       this.onCommit = this.onCommit.bind(this);
 
       /** @since 3.7.2 Listen commit when is click on save all button disk icon*/
-      g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').on('commit', this.onCommit);
+      GUI.getPlugin('editing').on('commit', this.onCommit);
 
       this.isVectorRelation = Layer.LayerTypes.VECTOR === relationLayer.getType();
 
@@ -1640,7 +1640,7 @@
         this.loading = true;
 
         try {
-          await g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').runEventHandler({
+          await GUI.getPlugin('editing').runEventHandler({
             type:      'show-relation-editing',
             id:        getRelationId({ layerId: this.layerId, relation: this.relation }),
             component: this,
@@ -1677,7 +1677,7 @@
     beforeDestroy() {
       this.loadEventuallyRelationValuesForInputs = true;
       // unlisten
-      g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').off('commit', this.onCommit);
+      GUI.getPlugin('editing').off('commit', this.onCommit);
       // In the case of vector relation, restore the beginning extent of the map;
       // in the case we zoomed to relation feature
       if (this.isVectorRelation && (null !== this.currentRelationFeatureId)) {
