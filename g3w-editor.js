@@ -200,7 +200,6 @@ class VectorLayer extends Layer {
   } 
 }
 
-
 /**
  * Editor Class: bind editor to layer to do main actions
  *
@@ -734,7 +733,7 @@ class Editor extends G3WObject {
    * start editing
    */
   async start(options = {}) {
-    const features = await (await this.getFeatures(options)); // load layer features based on filter type
+    const features = await this.getFeatures(options); // load layer features based on filter type
     this._started = true;                                 // if all ok set to started
     return features;                                      // features are already inside featuresstore
   }
