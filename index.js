@@ -1,5 +1,5 @@
 import i18n                                    from './i18n';
-import Editor                                  from './g3w-editor';
+import EditingLayer                            from './g3w-layer';
 import { Workflow }                            from './g3w-workflow';
 import { Step }                                from './g3w-step';
 import { createFeature }                       from './utils/createFeature';
@@ -30,7 +30,7 @@ const {
 
 Object
   .entries({
-    Editor,
+    EditingLayer,
     Workflow,
     OpenFormStep,
     AddFeatureStep,
@@ -206,16 +206,33 @@ new (class extends Plugin {
     this.state._toolboxes     = [];
     this.state.toolboxes      = [];
 
-    // loop over editable layers
-    (await Promise.allSettled(
+    
+     (await Promise.allSettled(
       CatalogLayersStoresRegistry
         .getLayers({ EDITABLE: true }, { TOC_ORDER : true })
-        .map(l => Editor.getLayer({
-          layer:        l,
-          vectorurl:    this.config.vectorurl,
-          project_type: this.config.project_type
-        }))
-    )).forEach(({ status, value:layer }) => {
+        .map(layer => new Promise(async (resolve, reject) => {
+          const suffixUrl = `${ApplicationState.project.getType()}/${ApplicationState.project.getId()}/${layer.getId()}/`;
+          const vectorUrl =  ApplicationState.project.state.vectorurl;
+          // get layer editing config (from server)
+          try {
+            const {
+              vector,
+              constraints = {},
+              capabilities,
+            } = await XHR.get({ url: `${vectorUrl}config/${suffixUrl}` });
+                resolve(new EditingLayer({ layer}, {
+                  vector,
+                  constraints,
+                  capabilities,
+                  vectorurl:    this.config.vectorurl,
+                  project_type: this.config.project_type
+              }))
+          } catch(e) {
+            console.warn(e);
+            reject(e);
+          } 
+        })
+    ))).forEach(({ status, value:layer }) => {
 
       // skip on http error
       if ('fulfilled' !== status) {
@@ -362,7 +379,7 @@ new (class extends Plugin {
     // 1 - plugin is not referred to the current project id
     // 2 - configuration of plugin, visible is set to false
     // 3 - There aren't editable layers or all are not visible
-    if (!this.registerPlugin(this.config.gid) || false === this.config.visible || 0 === this.getLayers().filter(l => l.config.editing.visible).length) {
+    if (!this.registerPlugin(this.config.gid) || false === this.config.visible || 0 === this.getLayers().filter(l => l.config.visible).length) {
       return;
     }
 
@@ -1439,7 +1456,7 @@ new (class extends Plugin {
    */
   showEditingPanel(opts = {}) {
     //need to filter visible
-    if (this.getLayers().filter(l => l.config.editing.visible).length > 0) {
+    if (this.getLayers().filter(l => l.config.visible).length > 0) {
       this.state.panel = new Panel({
         ...opts,
         id:            "editing-panel",

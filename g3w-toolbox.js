@@ -179,13 +179,13 @@ export class ToolBox extends G3WObject {
     ToolBox._sessions[layer.getId()] = this;
 
     /** @type { 'create' | 'update_attributes' | 'update_geometry' | delete' | undefined } undefined means all possible tools base on type */
-    const capabilities = layer.config.editing.capabilities || [];
+    const capabilities = layer.config.capabilities || [];
 
     this.state = {
       layer,
       id               : layer.getId(),
       changingtools    : false, // whether to show tools during change phase
-      show             : layer.config.editing.visible,  // whether to show the toolbox if we need to filtered
+      show             : layer.config.visible,  // whether to show the toolbox if we need to filtered
       color            : layer.getColor()       || 'blue',
       title            : ` ${layer.getTitle()}` || "Edit Layer",
       customTitle      : false,
@@ -221,7 +221,7 @@ export class ToolBox extends G3WObject {
       _layerType: layer.getType() || Layer.LayerTypes.VECTOR,
       _enabledtools: undefined,
       _disabledtools: undefined,
-      _constraints: layer.config.editing.constraints || {},
+      _constraints: layer.config.constraints || {},
       _tools: [
         // Add Feature
         (is_vector) && capabilities.includes('add_feature') && {
@@ -877,7 +877,7 @@ export class ToolBox extends G3WObject {
                                     if (undefined === feature.get(name)) { feature.set(name, null) }
                                   })
 
-                                  originalLayer.config.editing.fields
+                                  originalLayer.config.fields
                                     .filter(f => !f.editable) // un-editable fields
                                     .map(f => f.name)
                                     .find(field => {
@@ -1657,7 +1657,7 @@ export class ToolBox extends G3WObject {
   
       filter = applicationConstraint && applicationConstraint.filter || this.constraints.filter || filter;
       //register lock features to show a message
-      const unKeyLock = this.state.layer._editor.onceafter('featuresLockedByOtherUser', () => {
+      const unKeyLock = this.state.layer.onceafter('featuresLockedByOtherUser', () => {
         GUI.showUserMessage({
           type:     'warning',
           subtitle: this.state.layer.getName().toUpperCase(),
@@ -1667,7 +1667,7 @@ export class ToolBox extends G3WObject {
   
       //add featuresLockedByOtherUser setter
       this.state._unregisterStartSettersEventsKey.push(
-        () => this.state.layer._editor.un('featuresLockedByOtherUser', unKeyLock)
+        () => this.state.layer.un('featuresLockedByOtherUser', unKeyLock)
       );
 
 
@@ -1887,7 +1887,7 @@ export class ToolBox extends G3WObject {
         commit.relations = {};
       }
       try {
-        const response = await this.state.layer.getEditor().commit(commit);
+        const response = await this.state.layer.commit(commit);
   
         // skip when response is null or undefined and response.result is false
         if (!(response && response.result)) {
@@ -2330,7 +2330,7 @@ export class ToolBox extends G3WObject {
    * @returns {*}
    */
   getEditor() {
-    return this.state.layer.getEditor();
+    return this.state.layer;
   }
 
   /**
@@ -2358,7 +2358,7 @@ export class ToolBox extends G3WObject {
     }
     this.state._disabledtools = null;
     /** since 3.9.0  set show based on visibile property of config editing object setting*/
-    this.state.show           = this.state.layer.config.editing.visible;
+    this.state.show           = this.state.layer.config.visible;
     //need to set selected false
     this.state.selected = false;
   }
@@ -2608,7 +2608,7 @@ export class ToolBox extends G3WObject {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   __getEditor() {
-    return this.state.layer.getEditor();
+    return this.state.layer;
   }
 
   /**
@@ -2686,12 +2686,12 @@ export class ToolBox extends G3WObject {
      * In case of removeNotEditableProperties true, remove not editable field
      * from feature properties
      */
-    const editor = layerId === this.state.layer.getId() ? this.state.layer.getEditor() : ToolBox.get(layerId).getSession().getEditor();
+    const editor = layerId === this.state.layer.getId() ? this.state.layer : ToolBox.get(layerId).getSession().getEditor();
 
     // remove not editable proprierties from feature
     if (removeNotEditableProperties) {
       (
-        editor.getLayer().config.editing.fields
+        editor.getLayer().config.fields
         .filter(f => !f.editable) // un-editable fields
         .map(f => f.name)
         || []
@@ -2745,7 +2745,7 @@ export class ToolBox extends G3WObject {
   async __rollback(changes) {
     // skip when..
     if (changes) {
-      return this.state.layer.getEditor().rollback(changes);
+      return this.state.layer.rollback(changes);
     }
 
     // Handle temporary changes of layer
@@ -2765,7 +2765,7 @@ export class ToolBox extends G3WObject {
     });
 
     try {
-      await this.state.layer.getEditor().rollback(changes.own);
+      await this.state.layer.rollback(changes.own);
       for (const id in changes.dependencies) {
         ToolBox.get(id).getSession().rollback(changes.dependencies[id]);
       }
@@ -2813,7 +2813,7 @@ export class ToolBox extends G3WObject {
    */
   __undoSession(items) {
     items = items || this.__undo();
-    this.state.layer.getEditor().setChanges(items.own, true);
+    this.state.layer.setChanges(items.own, true);
     this.__canCommit();
     return items.dependencies;
   }
@@ -2829,7 +2829,7 @@ export class ToolBox extends G3WObject {
    */
   __redoSession(items) {
     items = items || this.__redo();
-    this.state.layer.getEditor().setChanges(items.own, true);
+    this.state.layer.setChanges(items.own, true);
     this.__canCommit();
     return items.dependencies;
   }
@@ -2941,7 +2941,7 @@ export class ToolBox extends G3WObject {
     // Remove deep relations from the current layer (commitObj) that are not relative to that layer
     const relations = Object.keys(commitObj.relations || {});
     relations
-      .filter(id => undefined === this.state.layer.getEditor().getLayer().getRelations().getArray().find(r => id === r.getChild())) // child relations
+      .filter(id => undefined === this.state.layer.getRelations().getArray().find(r => id === r.getChild())) // child relations
       .map(id => {
         commitObj.relations[ToolBox
           .get(id)
@@ -3005,7 +3005,7 @@ export class ToolBox extends G3WObject {
    */
   async __startSession(options = {}) {
     try {
-      const features = await this.state.layer.getEditor().start(options);
+      const features = await this.state.layer.start(options);
       this.state.editing.session.started = true;
       return features;
     } catch(e) {
@@ -3049,7 +3049,7 @@ export class ToolBox extends G3WObject {
   async __stopSession() {
     try {
       if (this.state.editing.session.started || this.state.editing.session.getfeatures) {
-        await this.state.layer.getEditor().stop();
+        await this.state.layer.stop();
         this.__clearSession();
       }      
     } catch(e) {
@@ -3068,7 +3068,7 @@ export class ToolBox extends G3WObject {
   async __getFeatures(options={}) {
     if (!this._allfeatures) {
       this._allfeatures = !options.filter;
-      const features    = await this.state.layer.getEditor().getFeatures(options);
+      const features    = await this.state.layer.getFeatures(options);
       this.state.editing.session.getfeatures = true;
       return features;
     }

@@ -1398,7 +1398,7 @@
       /**
        * editing a constraint type
        */
-      this.capabilities = this.parentWorkflow.getLayer().config.editing.capabilities;
+      this.capabilities = this.parentWorkflow.getLayer().config.capabilities;
 
 
       /**

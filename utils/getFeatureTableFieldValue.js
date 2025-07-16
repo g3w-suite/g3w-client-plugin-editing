@@ -19,7 +19,7 @@ export function getFeatureTableFieldValue({
   property
 } = {}) {
   // get editable fields
-  const { fields } = GUI.getPlugin('editing').getLayerById(layerId).config.editing;
+  const { fields } = GUI.getPlugin('editing').getLayerById(layerId).config;
 
   // get field value (raw)
   let value        = feature.get(property);

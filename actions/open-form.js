@@ -952,9 +952,9 @@ async function _getRelation1_1ChildFeature({
     //get feature from server and lock
   if (undefined === feature) {
 
-    const childEditor = service.getLayerById(childLayerId)._editor;
+    const childLayer = service.getLayerById(childLayerId);
 
-    const unByKey     = childEditor.oncebefore('featuresLockedByOtherUser', features => feature = features[0])
+    const unByKey     = childLayer.oncebefore('featuresLockedByOtherUser', features => feature = features[0])
 
     await getLayersDependencyFeatures(fatherLayerId, {
       feature:   new ol.Feature({ [fatherFormRelationField.name]: fatherFormRelationField.value }),

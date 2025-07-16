@@ -293,7 +293,7 @@
        * @returns { Promise }
        */
       isLayerReady() {
-        return this.state.layer.state.editing.ready;
+        return this.state.layer.state.ready;
       },
 
       toolboxCursor() {
@@ -338,13 +338,13 @@
        */
       async toggleEditing() {
         this.toggled.layer = !(this.state.editing.on || this.toggled.layer);
-        if (this.toggled.layer && this.state.layer.state.editing.ready && !this.state.loading) {
+        if (this.toggled.layer && this.state.layer.state.ready && !this.state.loading) {
           //@since 4.0.0 Check if layer is in editing and it has a editor form specific for a style
-          if (!this.state.editing.on && this.state.layer.config.editing.layer_style)  {
+          if (!this.state.editing.on && this.state.layer.config.layer_style)  {
              //In case of legend in separate tab, need to set layers as active tab to avoid that user
             //that has open tab with layer has different legend in case of change style for editing
             GUI.getComponent('catalog').getInternalComponent().activeTab = 'layers';
-            await CatalogLayersStoresRegistry.getLayerById(this.state.layer.getId()).changeCurrentStyle(this.state.layer.config.editing.layer_style);
+            await CatalogLayersStoresRegistry.getLayerById(this.state.layer.getId()).changeCurrentStyle(this.state.layer.config.layer_style);
           }
           this.$emit(this.state.editing.on ? 'stoptoolbox' : 'starttoolbox', this.state.id);
         }
