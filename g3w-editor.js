@@ -16,12 +16,166 @@ const { XHR, cloneDeep }                 = g3wsdk.core.utils;
 
 const is_defined = d => undefined !== d;
 
+class FeaturesStore extends G3WObject {
+  constructor(opts = {}) {
+    super({
+      setters: {
+        addFeatures(features = []) { features.forEach(f => this._addFeature(f)) },
+        removeFeature(feature) {
+          if(this.IS_OL) {
+            const index = this._features.getArray().findIndex(f => feature.getUid() === f.getUid());
+            if (index >= 0) {
+              this._features.removeAt(index);
+              this._features.dispatchEvent('change');
+            }
+          } else {
+            this._features = this._features.filter(f => feature.getUid() !== f.getUid());
+          }
+          this._removeFeature(feature);
+        },
+        updateFeature(feature) {
+          if (this.IS_OL) {
+            const index = this._features.getArray().findIndex(f => feature.getUid() === f.getUid());
+            if (index >= 0) {
+              this._features.removeAt(index);
+              this._features.insertAt(index, feature);
+              this._features.dispatchEvent('change');
+            }
+          } else {
+            this._features.find((feat, idx) => {
+              if (feature.getUid() === feat.getUid() ) {
+                this._features[idx] = feature;
+                return true;
+              }
+            });
+          }
+        }
+      }
+    })
+    this.IS_OL     = opts.IS_OL;
+    this._features = this.IS_OL ? new ol.Collection([]) : []; 
+  }
+  clear() {
+    if(this.IS_OL) {
+      try {
+        // Used remove single features instead use clear method
+        // because some time trows an error
+        for (let i = 0; i < this._features.getArray().length; i++) {
+          this._features.removeAt(i);
+        }
+      } catch(e) {
+        console.warn(e);
+      }
+      //Need to set a new Collection to avoid duplicate
+      this._features = null; //@TODO is still usefully ????
+      this._features = new ol.Collection([]);
+    } else {
+      this._features  = null;
+      this._features  = [];
+   
+    }
+  }  
+  addFeature(feature)        { this._addFeature(feature); }
+  clone()                    { return cloneDeep(this); }
+  getFeatureById(id)         { return this.IS_OL ? this._features.getArray().find(f => id == f.getId()) : this._features.find(f => id == f.getId()); }
+  readFeatures()             { return this.IS_OL ? this._features.getArray() : this._features; }
+  getLength()                { return this.IS_OL ? this._features.getLength() : this._features.length; }
+  getFeaturesCollection()    { return this._features; }
+  _addFeature(feature) {
+    this._features.push(feature);
+    // useful for ol.source.Vector
+    if(this.IS_OL) {
+      this._features.dispatchEvent('change');
+    }
+  }
+  setFeatures(features = []) {
+    if (this.IS_OL) {
+      //remove features
+      this._features.clear();
+      //add new features
+      this.addFeatures(features);
+      this._features.dispatchEvent('change');
+    } else {
+      this._features = features;
+    }
+  }
+
+}
+
 /**
  * @since 4.1.0 Create a Editing Layer
  */
 class EditingLayer {
-  constructor(opts = {}) {
+  constructor(opts = {}, config = {}) {
+    const { layer }                                   = opts;
+    const  { vector, constraints = {}, capabilities } = config;
+    this.config = {
+      fields:                      vector.fields || [],
+      format:                      vector.format,
+      constraints,
+      capabilities:                capabilities || window.g3wsdk.constant.DEFAULT_EDITING_CAPABILITIES, // default editing capabilities
+      form:                        { perc: null },                                                      // set editing form `perc` to null at beginning
+      style:                       vector.style,                                                        // get vector layer style
+      geometrytype:                vector.geometrytype,                                                 // whether is a vector layer,
+      visible:                     (vector.editing || { visible: true }).visible,                       //@since 3.11.0 let know if layer should be editable directly (true) or through relation layer (false)
+      layer_style:                 (vector.editing || { layer_style: null }).layer_style,               // @since v4.0.0 check if has a layer style to for editing form
+    };
 
+    this.state  =  {
+      id:       layer.getId(),
+      geolayer: layer.isGeoLayer(),
+      color:    vector?.style?.color ?? null,
+      started:  false,
+      modified: false,
+      ready:    true,
+    };
+
+    this.mapLayer = layer.getMapLayer();
+
+    const IS_OL = Layer.LayerTypes.TABLE !== layer;
+    /**
+     * ORIGINAL SOURCE: g3w-client/src/map/layers/featuresstore.js@v4.0.0
+     * ORIGINAL SOURE: g3w-client/src/app/core/layers/features/olfeaturesstore.js@v3.10.2
+     * 
+     * Store editing features
+     * 
+     * @type { FeaturesStore }
+     */
+    this._featuresstore = new FeaturesStore({ IS_OL });
+
+    this.type = IS_OL ? 'vector' : 'table';
+
+    //set editor
+    this._editor = new Editor({ layer: this }); // create an instance of editor
+
+  }
+
+  getId() {
+    return this.state.id;
+  }
+
+  getColor() {
+    return this.state.color;
+  }
+
+  setColor(color) {
+    this.state.color = color;
+  }
+
+  getSource() {
+    return this._featuresstore;
+  }
+
+  getType() {
+    return this.type;
+  }
+
+  isGeoLayer() {
+    return this.state.geolayer;
+  }
+
+  getMapLayer() {
+    return this.mapLayer;
   }
 
   /**
@@ -30,11 +184,8 @@ class EditingLayer {
    * 
    * @returns { Array } layer fields
   */
-  getEditingFields(editable = false) {
-    if (Layer.LayerTypes.TABLE === this.type) {
-      return editable ? (this.config.editing.fields || []).filter(f => f.editable) : (this.config.editing.fields || []);
-    }
-    return this.config.editing.fields;
+  getEditingFields() {
+    return this.config.fields;
   }
 }
 
@@ -93,7 +244,7 @@ class Editor extends G3WObject {
      */
     this._layer     = options.layer;
 
-    const IS_OL     = Layer.LayerTypes.TABLE !== this._layer;
+    const IS_OL     = Layer.LayerTypes.TABLE !== this._layer.getType();
 
     this._features  = []; // features collection original from server
 
@@ -108,91 +259,9 @@ class Editor extends G3WObject {
      * 
      * @type { FeaturesStore }
      */
-    this._featuresstore = Object.assign(new G3WObject, {
-      _features: IS_OL ? new ol.Collection([]) : [],  
-      setters: {
-        addFeatures(features = []) { features.forEach(f => this._addFeature(f)) },
-        removeFeature(feature) {
-          if(IS_OL) {
-            const index = this._features.getArray().findIndex(f => feature.getUid() === f.getUid());
-            if (index >= 0) {
-              this._features.removeAt(index);
-              this._features.dispatchEvent('change');
-            }
-          } else {
-            this._features = this._features.filter(f => feature.getUid() !== f.getUid());
-          }
-          this._removeFeature(feature);
-        },
-        updateFeature(feature) {
-          if (IS_OL) {
-            const index = this._features.getArray().findIndex(f => feature.getUid() === f.getUid());
-            if (index >= 0) {
-              this._features.removeAt(index);
-              this._features.insertAt(index, feature);
-              this._features.dispatchEvent('change');
-            }
-          } else {
-            this._features.find((feat, idx) => {
-              if (feature.getUid() === feat.getUid() ) {
-                this._features[idx] = feature;
-                return true;
-              }
-            });
-          }
-        },
-        clear() {
-          if(IS_OL) {
-            try {
-              // Used remove single features instead use clear method
-              // because some time trows an error
-              for (let i = 0; i < this._features.getArray().length; i++) {
-                this._features.removeAt(i);
-              }
-            } catch(e) {
-              console.warn(e);
-            }
-            //Need to set a new Collection to avoid duplicate
-            this._features = null; //@TODO is still usefully ????
-            this._features = new ol.Collection([]);
-          } else {
-            this._features  = null;
-            this._features  = [];
-            this._lockIds   = [];
-            this._loadedIds = [];
-          }
-        },
-      },
-      addFeature(feature)        { this._addFeature(feature); },
-      clone()                    { return cloneDeep(this); },
-      async unlock()             { return await XHR.post({ url: this._provider._layer.getUrl('unlock') }) },
-      getFeatureById(id)         { return IS_OL ? this._features.getArray().find(f => id == f.getId()) : this._features.find(f => id == f.getId()); },
-      readFeatures()             { return IS_OL ? this._features.getArray() : this._features; },
-      getLength()                { return IS_OL ? this._features.getLength() : this._features.length; },
-      getFeaturesCollection()    { return this._features; },
-      _addFeature(feature) {
-        this._features.push(feature);
-        // useful for ol.source.Vector
-        if(IS_OL) {
-          this._features.dispatchEvent('change');
-        }
-      },
-      setFeatures(features = []) {
-        if (IS_OL) {
-          //remove features
-          this._features.clear();
-          //add new features
-          this.addFeatures(features);
-          this._features.dispatchEvent('change');
-        } else {
-          this._features = features;
-        }
-      },
-
-    });
+ 
+    this._featuresstore = new FeaturesStore({ IS_OL });
     
-    // new FeaturesStore(Layer.LayerTypes.TABLE !== this._layer);
-
     /**
      * Whether editor is active or not
      *
@@ -789,5 +858,3 @@ Editor.getLayer = async function({
   return editing_layer;
 
 }
-
-export default Editor;
