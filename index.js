@@ -17,7 +17,6 @@ const { CatalogLayersStoresRegistry }          = g3wsdk.core.catalog;
 const { t, tPlugin }                           = g3wsdk.core.i18n;
 const { Layer, LayersStore }                   = g3wsdk.core.layer;
 const { Feature }                              = g3wsdk.core.layer.features;
-const { MapLayersStoreRegistry }               = g3wsdk.core.map;
 const { Plugin, PluginService }                = g3wsdk.core.plugin;
 const { XHR, noop }                            = g3wsdk.core.utils;
 const { GUI }                                  = g3wsdk.gui;
@@ -201,7 +200,7 @@ new (class extends Plugin {
     });
 
     // add editing layer store to mapstoreregistry
-    MapLayersStoreRegistry.addLayersStore(new LayersStore({ id: 'editing', queryable: false }));
+    ApplicationState.layers['editing'] = new LayersStore({ id: 'editing', queryable: false });
 
     this.state.editableLayers = {};
     this.state._toolboxes     = [];
@@ -342,7 +341,7 @@ new (class extends Plugin {
       });
 
     // after add layers to layerstore
-    MapLayersStoreRegistry.getLayersStore('editing').addLayers(this.getLayers());
+    ApplicationState.layers['editing'].addLayers(this.getLayers());
 
     // create toolboxes
     this.getLayers().forEach(l => this.addToolBox(new ToolBox(l, [...l.getChildren(), ...l.getFathers()].filter(id => this.getLayerById(id)))));
@@ -1477,7 +1476,9 @@ new (class extends Plugin {
     if (this.config.visible) { this.removeTools() }
 
     this.state.unwatchLayout();
-    MapLayersStoreRegistry.removeLayersStore(MapLayersStoreRegistry.getLayersStore('editing'));
+
+    delete ApplicationState.layers['editing'];
+
     ToolBox.clear();
     // turn off events
     GUI.getService('map').off('mapcontrol:toggled', this.state.onMapControlToggled);
