@@ -1245,7 +1245,7 @@
       fieldrequired() {
         return getRelationFieldsFromRelation({ layerId: this._relationLayerId, relation: this.relation })
           .ownField // own Fields is a relation Fields array of Relation Layer
-          .some(field => (getEditingLayerById(this._relationLayerId).getEditingFields().find(f => fiel === f.name) || { validate: { required: false } }).validate.required);
+          .some(field => (getEditingLayerById(this._relationLayerId).getEditingFields().find(f => field === f.name) || { validate: { required: false } }).validate.required);
       },
 
       /**
