@@ -857,10 +857,9 @@ Editor.getLayer = async function({
   }
 
   /**
-   * @TODO remove eitor reference on catalog client Layer
-   * set editor need to set also for catalog layer to backport compatibility
+   * set editor ro editinglayer
    */
-  editing_layer._editor = layer._editor = new Editor({ layer: editing_layer }); // create an instance of editor
+  editing_layer._editor = new Editor({ layer: editing_layer }); // create an instance of editor
 
   // clone editable layer
   if (Layer.LayerTypes.TABLE === editing_layer.getType()) {
