@@ -250,6 +250,16 @@ class Editor extends G3WObject {
     this._loadedIds = []; // store features id load by current user
     this._lockIds   = []; // store locked features
 
+    const suffixUrl = `${ApplicationState.project.getType()}/${ApplicationState.project.getId()}/${this._layer.getId()}/`;
+    const vectorUrl =  ApplicationState.project.state.vectorurl;
+
+    this.urls = {
+      editing:     `${vectorUrl}editing/${suffixUrl}`,
+      commit:      `${vectorUrl}commit/${suffixUrl}`,
+      config:      `${vectorUrl}config/${suffixUrl}`,
+      unlock:      `${vectorUrl}unlock/${suffixUrl}`,
+    }
+
     /**
      * ORIGINAL SOURCE: g3w-client/src/map/layers/featuresstore.js@v4.0.0
      * ORIGINAL SOURE: g3w-client/src/app/core/layers/features/olfeaturesstore.js@v3.10.2
@@ -349,17 +359,19 @@ class Editor extends G3WObject {
       return;
     }
 
+    const url = this.urls.editing;
+
     try {
       let response;
       if (!options.filter) {
         response = await XHR.post({
-          url:         this._layer.getUrl('editing'),
+          url,
           data:        JSON.stringify(params),
           contentType: 'application/json',
         });
       } else if (is_defined(options.filter.bbox)) { // bbox filter
         response = await XHR.post({
-          url:  this._layer.getUrl('editing'),
+          url,
           data: JSON.stringify({
             ...params,
             in_bbox:     options.filter.bbox.join(','),
@@ -375,7 +387,7 @@ class Editor extends G3WObject {
         });
       } else if (options.filter.field) {
         response = await XHR.post({
-          url:         this._layer.getUrl('editing'),
+          url,
           data:        JSON.stringify({ 
             ...params,
             ...options.filter,
@@ -384,7 +396,7 @@ class Editor extends G3WObject {
         })
       } else if (is_defined(options.filter.fids)) {
         response = await XHR.post({
-          url:    this._layer.getUrl('editing'),
+          url,
           data:   JSON.stringify({
             ...params,
             ...options.filter,
@@ -393,7 +405,7 @@ class Editor extends G3WObject {
         })
       } else if (is_defined(options.filter.nofeatures)) {
         response = await XHR.post({
-          url:  this._layer.getUrl('editing'),
+          url,
           data: JSON.stringify({
             ...params,
             field: `${options.filter.nofeatures_field || 'id'}|eq|__G3W__NO_FEATURES__`
@@ -673,7 +685,7 @@ class Editor extends G3WObject {
     try {
       commit.lockids = this._lockIds;
       response = await XHR.post({
-        url:         this._layer.getUrl('commit'),
+        url:         this.urls.commit,
         data:        JSON.stringify(commit),
         contentType: 'application/json',
       });
@@ -733,7 +745,7 @@ class Editor extends G3WObject {
    * start editing
    */
   async start(options = {}) {
-    const features = await this.getFeatures(options); // load layer features based on filter type
+    const features = await this.getFeatures(options);     // load layer features based on filter type
     this._started = true;                                 // if all ok set to started
     return features;                                      // features are already inside featuresstore
   }
@@ -742,9 +754,7 @@ class Editor extends G3WObject {
    * stop editor (unlock)
    */
   async stop() {
-    const { result } = await XHR.post({
-      url: this._layer.getUrl('unlock')
-    });
+    const { result } = await XHR.post({ url: this.urls.unlock });
     this.clear();
     return result;
   }
@@ -857,3 +867,5 @@ Editor.getLayer = async function({
   return editing_layer;
 
 }
+
+export default Editor;
