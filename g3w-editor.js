@@ -11,7 +11,44 @@ import { ToolBox }                       from './g3w-toolbox';
 const { ApplicationState, G3WObject }    = g3wsdk.core;
 const { CatalogLayersStoresRegistry }    = g3wsdk.core.catalog;
 const { Layer }                          = g3wsdk.core.layer;
+const { Feature}                         = g3wsdk.core.layer.features;
 const { XHR, cloneDeep }                 = g3wsdk.core.utils;
+
+const is_defined = d => undefined !== d;
+
+/**
+ * @since 4.1.0 Create a Editing Layer
+ */
+class EditingLayer {
+  constructor(opts = {}) {
+
+  }
+
+  /**
+   * 
+   * @param { Boolean }  editable In case we want only editable fields
+   * 
+   * @returns { Array } layer fields
+  */
+  getEditingFields(editable = false) {
+    if (Layer.LayerTypes.TABLE === this.type) {
+      return editable ? (this.config.editing.fields || []).filter(f => f.editable) : (this.config.editing.fields || []);
+    }
+    return this.config.editing.fields;
+  }
+}
+
+/**  
+ * ORIGINAL SOURCE: g3w-client/src/g3w-globals.js@v4.0.0
+ * Vector Layer Class 
+ * 
+ * */
+class VectorLayer extends Layer { 
+  constructor(config = {}, opts = {}) {
+    super(config, Object.assign(opts, { _TYPE: Layer.LayerTypes.VECTOR })) 
+  } 
+}
+
 
 /**
  * Editor Class: bind editor to layer to do main actions
@@ -36,6 +73,7 @@ class Editor extends G3WObject {
       'deleteFeature',
       'setFeatures',
       'getFeatures',
+      'featuresLockedByOtherUser',
     ];
 
     /**
@@ -53,9 +91,14 @@ class Editor extends G3WObject {
     /**
      * Referred layer
      */
-    this._layer = options.layer;
+    this._layer     = options.layer;
 
-    const IS_OL = Layer.LayerTypes.TABLE !== this._layer;
+    const IS_OL     = Layer.LayerTypes.TABLE !== this._layer;
+
+    this._features  = []; // features collection original from server
+
+    this._loadedIds = []; // store features id load by current user
+    this._lockIds   = []; // store locked features
 
     /**
      * ORIGINAL SOURCE: g3w-client/src/map/layers/featuresstore.js@v4.0.0
@@ -66,10 +109,7 @@ class Editor extends G3WObject {
      * @type { FeaturesStore }
      */
     this._featuresstore = Object.assign(new G3WObject, {
-      _features: IS_OL ? new ol.Collection([]) : [],
-      _provider: null,
-      _loadedIds: [], // store features id load by current user
-      _lockIds: [], // store locked features
+      _features: IS_OL ? new ol.Collection([]) : [],  
       setters: {
         addFeatures(features = []) { features.forEach(f => this._addFeature(f)) },
         removeFeature(feature) {
@@ -122,104 +162,14 @@ class Editor extends G3WObject {
             this._loadedIds = [];
           }
         },
-        async commit(commitItems) {
-          if (commitItems && this._provider) {
-            commitItems.lockids = this._lockIds;
-            return await XHR.post({
-              url:         this._provider._layer.getUrl('commit'),
-              data:        JSON.stringify(commitItems),
-              contentType: 'application/json',
-            });
-          }
-          return Promise.reject();
-        },
-        featuresLockedByOtherUser(features = []) {},
       },
       addFeature(feature)        { this._addFeature(feature); },
       clone()                    { return cloneDeep(this); },
-      getProvider()              { return this._provider; },
       async unlock()             { return await XHR.post({ url: this._provider._layer.getUrl('unlock') }) },
-      getLockIds()               { return this._lockIds; },
       getFeatureById(id)         { return IS_OL ? this._features.getArray().find(f => id == f.getId()) : this._features.find(f => id == f.getId()); },
       readFeatures()             { return IS_OL ? this._features.getArray() : this._features; },
       getLength()                { return IS_OL ? this._features.getLength() : this._features.length; },
       getFeaturesCollection()    { return this._features; },
-      async getFeatures(opts = {}) {
-        if (this._provider) {
-          //call provider getFeatures to get features from server
-          //get the feature base on response from server features, featurelockis etc ...
-          const features = this._filterFeaturesResponse(await this._provider.getFeatures(opts));
-          this.addFeatures(features);
-          return features;
-        }
-        return this._features; // Get features stored. No call to server is done
-      },
-      _filterFeaturesResponse(options = {}) {
-        /**
-         * features uis array of feature returned from server and feature that are currently locked.
-         * featurelocks is array of the feature that can be locker by current client request (not locked by another user)
-         * featurelocks array item
-         * {
-         *   featureid: Is current id of feature locked
-         *   lockid: Is a server unique lock id number
-         * }
-         * ex.
-         * {featureid: "1", lockid: "6bbab1c1c03332fb39b8ffae35e557ba"}
-         *
-         * If featurelocks are less than features, it means that another user is editing these features
-         *
-         *
-         * @type {*[]}
-         */
-        const { features = [], featurelocks = [] } = options;
-
-        //if no features locks mean another user locks all feature requests
-        if (0 === featurelocks.length) {
-          //if there are features on response
-          if (features.length > 0) {
-            //It means that another user locks these features
-            this.featuresLockedByOtherUser(features);
-          }
-          return [];
-        }
-
-        //get already loaded feature id locked by current user
-        const fids = this._lockIds.map(({ featureid }) => featureid);
-        featurelocks
-          .filter(({ featureid }) => !fids.includes(featureid)) //exclude features already locked by current user
-          .forEach(fl => this._lockIds.push(fl)) //update lockIds based on a featurelocks array from response
-
-        //store features locked by another user
-        const lockFeatures = [];
-
-        //Store features to add to layers source
-        const featuresToAdd = features.filter(f => {
-          //get feature id
-          const featureId = f.getId();
-          //check if feature id is locked features
-          //it means that is not locked by another user.
-          if (featurelocks.find(({ featureid }) => featureId == featureid)) {
-            //check if feature is not yet added for the current user
-            if (this._loadedIds.indexOf(featureId) === -1) {
-              this._loadedIds.push(featureId);
-              return true;
-            } else {
-              return false; //feature locked by the current user
-            }
-          } else {
-            lockFeatures.push(f);
-            return false; //feature locked by another user
-          }
-        });
-
-        //if features locks are less than features get from server,
-        // it means that another user locks some features
-        if (featurelocks.length < features.length) {
-          this.featuresLockedByOtherUser(lockFeatures);
-        }
-
-        return featuresToAdd;
-      },
       _addFeature(feature) {
         this._features.push(feature);
         // useful for ol.source.Vector
@@ -251,6 +201,8 @@ class Editor extends G3WObject {
     this._started = false;
 
   }
+
+  featuresLockedByOtherUser(features) {}
 
   /**
    * @since g3w-client-plugin-editing@v4.1.0
@@ -297,7 +249,7 @@ class Editor extends G3WObject {
    * 
    * @since g3w-client-plugin-editing@v4.1.0
    */
-  async getFeatures(options = {}) {
+  async getFeatures(options = {}, params = {}) {
     // skip is not onlien or all features of layers are already got
     if (!ApplicationState.online || this._allfeatures) {
       return Promise.resolve();
@@ -329,17 +281,120 @@ class Editor extends G3WObject {
       return;
     }
 
-    // get features
-    const store = this._layer.getFeaturesStore()
-    
-    // get features from server (TODO: remove "_filterFeaturesResponse" from core)
-    if (store.getProvider()) {
-      store.addFeatures(
-        store._filterFeaturesResponse(await store.getProvider().getFeatures(options))
-      );
+    try {
+      let response;
+      if (!options.filter) {
+        response = await XHR.post({
+          url:         this._layer.getUrl('editing'),
+          data:        JSON.stringify(params),
+          contentType: 'application/json',
+        });
+      } else if (is_defined(options.filter.bbox)) { // bbox filter
+        response = await XHR.post({
+          url:  this._layer.getUrl('editing'),
+          data: JSON.stringify({
+            ...params,
+            in_bbox:     options.filter.bbox.join(','),
+            filtertoken: this._layer.getFilterToken(),
+          }),
+          contentType: 'application/json',
+        })
+      } else if (is_defined(options.filter.fid)) { // fid filter
+        response = await XHR.post({
+          url:         createRelationsUrl(options.filter.fid),
+          contentType: 'application/json',
+          data:        JSON.stringify({ formatter: 1 }),
+        });
+      } else if (options.filter.field) {
+        response = await XHR.post({
+          url:         this._layer.getUrl('editing'),
+          data:        JSON.stringify({ 
+            ...params,
+            ...options.filter,
+          }),
+          contentType: 'application/json',
+        })
+      } else if (is_defined(options.filter.fids)) {
+        response = await XHR.post({
+          url:    this._layer.getUrl('editing'),
+          data:   JSON.stringify({
+            ...params,
+            ...options.filter,
+          }),
+          contentType: 'application/json',
+        })
+      } else if (is_defined(options.filter.nofeatures)) {
+        response = await XHR.post({
+          url:  this._layer.getUrl('editing'),
+          data: JSON.stringify({
+            ...params,
+            field: `${options.filter.nofeatures_field || 'id'}|eq|__G3W__NO_FEATURES__`
+          }),
+          contentType: 'application/json',
+        })
+      }
+
+      // invalid response
+      if (!response.result) {
+        return;
+      }
+
+      const { data, count }       = response.vector;
+      const { featurelocks = [] } = response;
+      const lockIds               = featurelocks.map(lk => lk.featureid);
+      const dataProjection = 'NoGeometry' === response.vector.geometrytype ? null : this._layer.getCrs();
+      let features   = [];
+
+      try {
+
+        features = (new ol.format.GeoJSON({
+          geometryName:      'geometry',
+          dataProjection,
+          featureProjection: dataProjection,
+        }))
+        .readFeatures('string' === typeof data ? JSON.parse(data) : data)
+        .filter(f => lockIds.includes(`${f.getId()}`))
+        .map(feature => new Feature({ feature }));
+
+        //if no features locks mean another user locks all feature requests
+        if (0 === featurelocks.length || count > features.length) {
+          //It means that another user locks these features
+          this.featuresLockedByOtherUser(features);
+        }
+        //get already loaded feature id locked by current user
+        const fids = lockIds.map(({ featureid }) => featureid);
+        featurelocks
+          .filter(({ featureid }) => !fids.includes(featureid)) //exclude features already locked by current user
+          .forEach(fl => this._lockIds.push(fl)) //update lockIds based on a featurelocks array from response
+
+        //store features locked by another user
+        const lockFeatures = [];
+
+        //Store features to add to layers source
+        features = features.filter(f => {
+          //get feature id
+          const featureId = f.getId();
+          //check if feature id is locked features
+          //it means that is not locked by another user.
+          if (featurelocks.find(({ featureid }) => featureId == featureid)) {
+            //check if feature is not yet added for the current user
+            if (!this._loadedIds.includes(featureId)) {
+              this._loadedIds.push(featureId);
+              return true;
+            } else {
+              return false; //feature locked by the current user
+            }
+          } else {
+            lockFeatures.push(f);
+            return false; //feature locked by another user
+          }
+        });
+
+    } catch (e) {
+      console.warn(e);
     }
 
-    const features = store.readFeatures();
+    this._features.push(...features); // add features to original features 
     
     // add features from server to editing features store (cloned from original)
     this._featuresstore.addFeatures((features || []).map(f => f.clone()));
@@ -348,6 +403,11 @@ class Editor extends G3WObject {
     this._allfeatures = !options.filter;
 
     return features;
+    } catch(e) {
+      console.warn(e);
+      return Promise.reject({ message: _("info.server_error")});
+    }
+
   }
 
   /**
@@ -506,7 +566,7 @@ class Editor extends G3WObject {
    * @returns {*}
    */
   getLockIds() {
-    return this._layer.getSource().getLockIds();
+    return this._lockIds;
   }
 
   /**
@@ -542,16 +602,15 @@ class Editor extends G3WObject {
     // commit items
     let response;
 
-    const store = this._layer.getFeaturesStore()
-
-    if (store.getProvider()) {
-      commit.lockids = store.getLockIds();
+    try {
+      commit.lockids = this._lockIds;
       response = await XHR.post({
-        url:         store.getProvider().getLayer().getUrl('commit'),
+        url:         this._layer.getUrl('commit'),
         data:        JSON.stringify(commit),
         contentType: 'application/json',
       });
-    } else {
+    } catch(e) {
+      console.warn(e);
       response = Promise.reject();
     }
 
@@ -587,6 +646,20 @@ class Editor extends G3WObject {
     return response;
     
   }
+  
+  /**
+   * Read features (action to layer)
+   */
+  readFeatures() {
+    return this._features;
+  }
+
+  /**
+   * @returns features stored in editor featurestore
+   */
+  readEditingFeatures() {
+    return this._featuresstore.readFeatures();
+  }
 
   /**
    * start editing
@@ -598,25 +671,11 @@ class Editor extends G3WObject {
   }
 
   /**
-   * Read features (action to layer)
-   */
-  readFeatures() {
-    return this._layer.readFeatures();
-  }
-
-  /**
-   * @returns features stored in editor featurestore
-   */
-  readEditingFeatures() {
-    return this._featuresstore.readFeatures();
-  }
-
-  /**
    * stop editor (unlock)
    */
   async stop() {
     const { result } = await XHR.post({
-      url: this._layer.getProvider('data').getLayer().getUrl('unlock')
+      url: this._layer.getUrl('unlock')
     });
     this.clear();
     return result;
@@ -637,8 +696,10 @@ class Editor extends G3WObject {
     this._filter.bbox = null;
     this._allfeatures = false;
 
+    this._features    = []; // clear features collection
+    this._lockIds     = [];
+    this._loadedIds   = [];
     this._featuresstore.clear();
-    this._layer.getFeaturesStore().clear();
 
     // vector layer
     if (Layer.LayerTypes.VECTOR === this._layer.getType()) {
@@ -706,12 +767,11 @@ Editor.getLayer = async function({
   // set editing layer from IMAGE LAYER
   if (Layer.LayerTypes.IMAGE === layer.getType()) {
     try {
-      editing_layer = new g3wsdk.core.layer.VectorLayer(layer.config, {
+      editing_layer = new VectorLayer(layer.config, {
         vectorurl:    window.initConfig.plugins.editing.vectorurl,
         project_type: window.initConfig.plugins.editing.project_type,
         project:      ApplicationState.project,
       });
-      layer.setEditingLayer(editing_layer);
     } catch(e) {
       console.warn(e);
       return Promise.reject(e);
@@ -722,14 +782,11 @@ Editor.getLayer = async function({
   editing_layer._editor = new Editor({ layer: editing_layer }); // create an instance of editor
 
   // clone editable layer
-  if (Layer.LayerTypes.VECTOR === editing_layer.getType()) {
-    return editing_layer; 
+  if (Layer.LayerTypes.TABLE === editing_layer.getType()) {
+    editing_layer = editing_layer.clone(); 
   }
 
-  // clone editable layer
-  if (Layer.LayerTypes.TABLE === editing_layer.getType()) {
-    return editing_layer.clone(); 
-  }
+  return editing_layer;
 
 }
 

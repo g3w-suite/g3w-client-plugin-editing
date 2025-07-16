@@ -1656,9 +1656,8 @@ export class ToolBox extends G3WObject {
       this.state.startstopediting = startstopediting;
   
       filter = applicationConstraint && applicationConstraint.filter || this.constraints.filter || filter;
-
       //register lock features to show a message
-      const unKeyLock = this.state.layer.getFeaturesStore().onceafter('featuresLockedByOtherUser', () => {
+      const unKeyLock = this.state.layer._editor.onceafter('featuresLockedByOtherUser', () => {
         GUI.showUserMessage({
           type:     'warning',
           subtitle: this.state.layer.getName().toUpperCase(),
@@ -1668,7 +1667,7 @@ export class ToolBox extends G3WObject {
   
       //add featuresLockedByOtherUser setter
       this.state._unregisterStartSettersEventsKey.push(
-        () => this.state.layer.getFeaturesStore().un('featuresLockedByOtherUser', unKeyLock)
+        () => this.state.layer._editor.un('featuresLockedByOtherUser', unKeyLock)
       );
 
 

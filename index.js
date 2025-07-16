@@ -1,16 +1,15 @@
-import i18n                                      from './i18n';
-import Editor                                    from './g3w-editor';
-import { Workflow }                              from './g3w-workflow';
-import { Step }                                  from './g3w-step';
-import { promisify }                             from './utils/promisify';
-import { createFeature }                         from './utils/createFeature';
-import { getEditingLayerById }                   from './utils/getEditingLayerById';
-import { setAndUnsetSelectedFeaturesStyle }      from './utils/setAndUnsetSelectedFeaturesStyle';
-import { addPartToMultigeometries }              from './utils/addPartToMultigeometries';
+import i18n                                    from './i18n';
+import Editor                                  from './g3w-editor';
+import { Workflow }                            from './g3w-workflow';
+import { Step }                                from './g3w-step';
+import { createFeature }                       from './utils/createFeature';
+import { getEditingLayerById }                 from './utils/getEditingLayerById';
+import { setAndUnsetSelectedFeaturesStyle }    from './utils/setAndUnsetSelectedFeaturesStyle';
+import { addPartToMultigeometries }            from './utils/addPartToMultigeometries';
 
-import { OpenFormStep }                          from './actions/open-form';
-import { AddFeatureStep }                        from './actions/add-feature';
-import { ToolBox }                               from './g3w-toolbox';
+import { OpenFormStep }                        from './actions/open-form';
+import { AddFeatureStep }                      from './actions/add-feature';
+import { ToolBox }                             from './g3w-toolbox';
 
 const { G3W_FID }                              = g3wsdk.constant;
 const { ApplicationState, ApplicationService } = g3wsdk.core;
@@ -183,6 +182,7 @@ new (class extends Plugin {
         subscribe:                        this.subscribe.bind(this),
         unsubscribe:                      this.unsubscribe.bind(this),
         getToolBoxById:                   this.getToolBoxById.bind(this),
+        getEditingLayerById:              getEditingLayerById, //@since 4.1.0
         addNewFeature:                    createFeature,
         commitChanges:                    this.commit.bind(this),
         setApplicationEditingConstraints: this.setApplicationEditingConstraints.bind(this),
