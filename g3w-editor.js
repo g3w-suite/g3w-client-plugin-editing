@@ -360,7 +360,6 @@ class Editor extends G3WObject {
     }
 
     const url = this.urls.editing;
-
     try {
       let response;
       if (!options.filter) {
@@ -380,8 +379,9 @@ class Editor extends G3WObject {
           contentType: 'application/json',
         })
       } else if (is_defined(options.filter.fid)) { // fid filter
+        const { fid, relation } = options.filter.fid;
         response = await XHR.post({
-          url:         createRelationsUrl(options.filter.fid),
+          url: `${this.urls.editing}?relationonetomany=${relation.id}|${fid}`,
           contentType: 'application/json',
           data:        JSON.stringify({ formatter: 1 }),
         });
@@ -856,8 +856,11 @@ Editor.getLayer = async function({
     }
   }
 
-  //set editor
-  editing_layer._editor = new Editor({ layer: editing_layer }); // create an instance of editor
+  /**
+   * @TODO remove eitor reference on catalog client Layer
+   * set editor need to set also for catalog layer to backport compatibility
+   */
+  editing_layer._editor = layer._editor = new Editor({ layer: editing_layer }); // create an instance of editor
 
   // clone editable layer
   if (Layer.LayerTypes.TABLE === editing_layer.getType()) {
