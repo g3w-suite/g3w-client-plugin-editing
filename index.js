@@ -200,7 +200,7 @@ new (class extends Plugin {
     });
 
     // add editing layer store to mapstoreregistry
-    ApplicationState.layers['editing'] = new LayersStore({ id: 'editing', queryable: false });
+    ApplicationState.layers['editing'] = new LayersStore({ id: 'editing', queryable: false, catalog: false });
 
     this.state.editableLayers = {};
     this.state._toolboxes     = [];
