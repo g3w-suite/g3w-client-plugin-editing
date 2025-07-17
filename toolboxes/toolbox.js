@@ -272,7 +272,7 @@ export class ToolBox extends G3WObject {
               // delete feature
               new Step({
                 help: "editing.steps.help.double_click_delete",
-                run(inputs, context) {
+                run(inputs) {
                   return $promisify(async() => {
                     const layerId = inputs.layer.getId();
                     const feature = inputs.features[0];
@@ -307,15 +307,13 @@ export class ToolBox extends G3WObject {
                       relations.forEach(r => unlinkRelation({ layerId, relation, relations, index: 0, dialog: false }));
                     });
 
-                    context.session.pushDelete(layerId, feature);
-
                     return inputs;
                   });
                 },
               }),
               // confirm step
               new Step({
-                run(inputs) {
+                run(inputs, context) {
                   return $promisify(async () => {
                     const editingLayer = inputs.layer.getEditingLayer();
                     const feature      = inputs.features[0];
@@ -337,6 +335,7 @@ export class ToolBox extends G3WObject {
                               return;
                             }
                             editingLayer.getSource().removeFeature(feature);
+                            context.session.pushDelete(layerId, feature);
                             // Remove unique values from unique fields of a layer (when deleting a feature)
                             const fields = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[layerId];
                             if (fields) {
@@ -345,6 +344,7 @@ export class ToolBox extends G3WObject {
                               .filter(f => undefined !== fields[f])
                               .forEach(f => fields[f].delete(feature.get(f)));
                             }
+                            
                             resolve(inputs);
                           }
                         );
