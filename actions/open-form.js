@@ -949,7 +949,7 @@ async function _getRelation1_1ChildFeature({
     //get feature from server and lock
   if (undefined === feature) {
 
-    const childEditor = service.getLayerById(childLayerId)._editor;
+    const childEditor = service.getLayerById(childLayerId).getEditor();
 
     const unByKey     = childEditor.oncebefore('featuresLockedByOtherUser', features => feature = features[0])
 
