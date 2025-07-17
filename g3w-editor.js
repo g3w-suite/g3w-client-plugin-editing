@@ -7,9 +7,9 @@
  */
 
 import { ToolBox }                       from './g3w-toolbox';
+import { getCatalogLayerById }           from './utils/getCatalogLayerById';
 
 const { ApplicationState, G3WObject }    = g3wsdk.core;
-const { CatalogLayersStoresRegistry }    = g3wsdk.core.catalog;
 const { Layer }                          = g3wsdk.core.layer;
 const { Feature}                         = g3wsdk.core.layer.features;
 const { XHR, cloneDeep }                 = g3wsdk.core.utils;
@@ -697,7 +697,7 @@ class Editor extends G3WObject {
     // sync selection filter features
     if (response?.result) {
       try {
-        const layer = CatalogLayersStoresRegistry.getLayerById(this._layer.getId());
+        const layer = getCatalogLayerById(this._layer.getId());
         //if layer has geometry
         if (layer.isGeoLayer()) {
           commit.update.forEach(({ id, geometry } = {}) => {

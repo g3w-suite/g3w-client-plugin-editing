@@ -92,14 +92,15 @@
 </template>
 
 <script>
-  import ToolboxComponent             from './Toolbox.vue';
+  import ToolboxComponent             from '../components/Toolbox.vue';
+  import { getCatalogLayers }         from '../utils/getCatalogLayers';
+  import { getCatalogLayerById }      from '../utils/getCatalogLayerById';
 
   const { GUI }                         = g3wsdk.gui;
   const {
     ApplicationState,
     ApplicationService,
   }                                     = g3wsdk.core;
-  const { CatalogLayersStoresRegistry } = g3wsdk.core.catalog;
   const { DataRouterService }           = g3wsdk.core.data;
 
   export default {
@@ -510,7 +511,7 @@
 
       // open editing panel state
       this.state.open = false;
-      CatalogLayersStoresRegistry.getLayers({ EDITABLE: true }).forEach(l => l.setInEditing(true));
+      getCatalogLayers({ EDITABLE: true }).forEach(l => l.setInEditing(true));
 
       GUI.on('opencontent',  this._enableEditingButtons);
       GUI.on('closeform',    this._enableEditingButtons);
@@ -536,7 +537,7 @@
 
       // reset editing panel state
       this.state.open = false;
-      CatalogLayersStoresRegistry.getLayers({ EDITABLE: true }).forEach(l => l.setInEditing(false));
+      getCatalogLayers({ EDITABLE: true }).forEach(l => l.setInEditing(false));
 
       GUI.off('opencontent',  this._enableEditingButtons);
       GUI.off('closeform',    this._enableEditingButtons);
@@ -560,7 +561,7 @@
           .forEach(id => {
             const fids = [...this.state.featuresOnClose[id]];
             if (fids.length > 0) {
-              const layer = CatalogLayersStoresRegistry.getLayerById(id);
+              const layer = getCatalogLayerById(id);
               inputs.layers.push(layer);
               inputs.fids.push(fids);
             }

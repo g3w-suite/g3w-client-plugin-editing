@@ -6,6 +6,8 @@ import { createFeature }                       from './utils/createFeature';
 import { getEditingLayerById }                 from './utils/getEditingLayerById';
 import { setAndUnsetSelectedFeaturesStyle }    from './utils/setAndUnsetSelectedFeaturesStyle';
 import { addPartToMultigeometries }            from './utils/addPartToMultigeometries';
+import { getCatalogLayers }                    from './utils/getCatalogLayers';
+import { getCatalogLayerById }                 from './utils/getCatalogLayerById';
 
 import { OpenFormStep }                        from './actions/open-form';
 import { AddFeatureStep }                      from './actions/add-feature';
@@ -13,7 +15,6 @@ import { ToolBox }                             from './g3w-toolbox';
 
 const { G3W_FID }                              = g3wsdk.constant;
 const { ApplicationState }                     = g3wsdk.core;
-const { CatalogLayersStoresRegistry }          = g3wsdk.core.catalog;
 const { t, tPlugin }                           = g3wsdk.core.i18n;
 const { Layer, LayersStore }                   = g3wsdk.core.layer;
 const { Feature }                              = g3wsdk.core.layer.features;
@@ -169,7 +170,7 @@ new (class extends Plugin {
    */
   async _init() {
     // skip when no editable layer
-    if (!CatalogLayersStoresRegistry.getLayers({ EDITABLE: true }).length) { return }
+    if (!getCatalogLayers({ EDITABLE: true }).length) { return }
 
     this.setHookLoading({ loading: true });
 
@@ -208,8 +209,7 @@ new (class extends Plugin {
 
     // loop over editable layers
     (await Promise.allSettled(
-      CatalogLayersStoresRegistry
-        .getLayers({ EDITABLE: true }, { TOC_ORDER : true })
+      getCatalogLayers({ EDITABLE: true }, { TOC_ORDER : true })
         .map(l => Editor.getLayer({
           layer:        l,
           vectorurl:    this.config.vectorurl,
@@ -247,7 +247,7 @@ new (class extends Plugin {
             options.loading.state = 'loading';
             options.values        = [];
 
-            const relationLayer = options.layer_id && CatalogLayersStoresRegistry.getLayerById(options.layer_id);
+            const relationLayer = options.layer_id && getCatalogLayerById(options.layer_id);
             const has_filter    = ([undefined, null].includes(options.filter_fields || []) || 0 === (options.filter_fields || []).length);
 
             try {
@@ -312,8 +312,7 @@ new (class extends Plugin {
          * @since g3w-client-plugin-editing@v3.7.0
          */
         const fatherId = editingLayer.getId(); // father layer
-        CatalogLayersStoresRegistry
-          .getLayerById(fatherId)
+        getCatalogLayerById(fatherId)
           .getRelations()
           .getArray()
           .filter(relation => 'ONE' === relation.getType() && fatherId === relation.getFather()) // 'ONE' == join 1:1 + father layerId is a father of relation
@@ -1526,7 +1525,7 @@ async function _rollback(relations = {}) {
         ...(has_features && update || []).map(async ({ id }) => {
           try {
             const response = await XHR.get({
-              url:    CatalogLayersStoresRegistry.getLayerById(layerId).getUrl('data'),
+              url:    getCatalogLayerById(layerId).getUrl('data'),
               params: { fids: id },
             });
             const f        = (response.result && response.vector.data.features || []).at(0);
@@ -1541,7 +1540,7 @@ async function _rollback(relations = {}) {
         ...del.map(async id => {
           try {
             const response = await XHR.get({
-              url:    CatalogLayersStoresRegistry.getLayerById(layerId).getUrl('data'),
+              url:    getCatalogLayerById(layerId).getUrl('data'),
               params: { fids: id },
             });
             const f = (response.result && response.vector.data.features || []).at(0);

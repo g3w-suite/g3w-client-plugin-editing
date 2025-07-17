@@ -204,11 +204,11 @@
 </template>
 
 <script>
-  import { setVertexStyle } from "../utils/setVertexStyle";
+  import { setVertexStyle }      from '../utils/setVertexStyle';
+  import { getCatalogLayerById } from '../utils/getCatalogLayerById';
 
   const { GUI }                         = g3wsdk.gui;
   const { Layer }                       = g3wsdk.core.layer;
-  const { CatalogLayersStoresRegistry } = g3wsdk.core.catalog;
   const { getResolutionFromScale }      = g3wsdk.ol.utils;
   const { tPlugin }                     = g3wsdk.core.i18n;
   
@@ -344,7 +344,7 @@
              //In case of legend in separate tab, need to set layers as active tab to avoid that user
             //that has open tab with layer has different legend in case of change style for editing
             GUI.getComponent('catalog').getInternalComponent().activeTab = 'layers';
-            await CatalogLayersStoresRegistry.getLayerById(this.state.layer.getId()).changeCurrentStyle(this.state.layer.config.editing.layer_style);
+            await getCatalogLayerById(this.state.layer.getId()).changeCurrentStyle(this.state.layer.config.editing.layer_style);
           }
           this.$emit(this.state.editing.on ? 'stoptoolbox' : 'starttoolbox', this.state.id);
         }

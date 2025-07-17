@@ -278,9 +278,10 @@
   import { AddFeatureStep }                               from '../actions/add-feature';
   import { ModifyGeometryVertexStep }                     from '../actions/move-vertex';
   import { MoveFeatureStep }                              from '../actions/move-feature';
+  import { getCatalogLayerById }                          from '../utils/getCatalogLayerById';
+  import { getCatalogLayers }                             from '../utils/getCatalogLayers';
 
   const { ProjectsRegistry }            = g3wsdk.core.project;
-  const { CatalogLayersStoresRegistry } = g3wsdk.core.catalog;
   const { DataRouterService }           = g3wsdk.core.data;
   const { Geometry }                    = g3wsdk.core.geoutils;
   const { tPlugin:t }                   = g3wsdk.core.i18n;
@@ -394,7 +395,7 @@
       copyFeatureFromOtherLayer() {
         const copyLayer = this.copyFeatureLayers.find(l => this.copylayerid === l.id);
         let external    = copyLayer.external;
-        let layer       = external ? GUI.getService('map').getLayerById(this.copylayerid) : CatalogLayersStoresRegistry.getLayerById(this.copylayerid);
+        let layer       = external ? GUI.getService('map').getLayerById(this.copylayerid) : getCatalogLayerById(this.copylayerid);
         const is_vector =  (external || layer.isGeoLayer())
         this.runAddRelationWorkflow({
           workflow: is_vector
@@ -724,8 +725,6 @@
               new Promise(async (resolve, reject) => {
                 //replace current feature with clone
                 options.inputs.features = [cloneFeature(relationfeature, this.getLayer())];
-                // //need to sett original layer
-                // options.inputs.layer    = CatalogLayersStoresRegistry.getLayerById(this._relationLayerId);
                 const workflow = new Workflow({
                   type: 'addtablefeature',
                   steps: [
@@ -1310,7 +1309,7 @@
         const geometryType = relationLayer.getGeometryType();
         this.copyFeatureLayers = [
           // project layers with same geometry of relation ayer
-          ...CatalogLayersStoresRegistry.getLayers({
+          ...getCatalogLayers({
             QUERYABLE: true,
             GEOLAYER: true,
           })

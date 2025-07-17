@@ -15,13 +15,13 @@ import { getRelationsInEditingByFeature }               from '../utils/getRelati
 import { getFieldsWithValues }                          from '../utils/getFieldsWithValues';
 import { setFieldsWithValues }                          from '../utils/setFieldsWithValues';
 import { isPkField }                                    from '../utils/isPkField';
+import { getCatalogLayerById }                          from '../utils/getCatalogLayerById';
 
 import { Workflow }                                     from '../g3w-workflow';
 import { Step }                                         from '../g3w-step';
 
 const { GUI }                                           = g3wsdk.gui;
 const { FormService }                                   = g3wsdk.gui.vue.services;
-const { CatalogLayersStoresRegistry }                   = g3wsdk.core.catalog;
 const { DataRouterService }                             = g3wsdk.core.data;
 
 /**
@@ -675,8 +675,7 @@ async function _handleRelation1_1LayerFields({
   const service = GUI.getPlugin('editing');
 
   // Get layer relation 1:1
-  const promises = CatalogLayersStoresRegistry
-    .getLayerById(layerId)
+  const promises = getCatalogLayerById(layerId)
     .getRelations()
     .getArray()
     .filter(relation => 'ONE' === relation.getType())
@@ -727,8 +726,7 @@ async function _handleRelation1_1LayerFields({
             childFeature = new g3wsdk.core.layer.features.Feature();
             childFeature.setTemporaryId();
             // set name attribute to `null`
-            CatalogLayersStoresRegistry
-              .getLayerById(childLayerId)
+            getCatalogLayerById(childLayerId)
               .getEditingFields()
               .forEach(field => childFeature.set(field.name, null));
             //set father field value
@@ -812,8 +810,7 @@ async function _listenRelation1_1FieldChange({
 
   const service = GUI.getPlugin('editing'); //get editing service
 
-  const ONE = CatalogLayersStoresRegistry
-    .getLayerById(layerId)
+  const ONE = getCatalogLayerById(layerId)
     .getRelations()
     .getArray()
     .filter(r => 'ONE' === r.getType())
@@ -979,7 +976,7 @@ async function _getRelation1_1ChildFeature({
   if (undefined === feature) {
 
     try {
-      const layer = CatalogLayersStoresRegistry.getLayerById(childLayerId);
+      const layer = getCatalogLayerById(childLayerId);
 
       const { data } = await DataRouterService.getData('search:features', {  // get feature of relation layer based on value of relation field
         inputs: {

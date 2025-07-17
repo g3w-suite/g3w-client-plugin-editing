@@ -28,6 +28,8 @@ import { addPartToMultigeometries }                     from './utils/addPartToM
 import { unlinkRelation }                               from './utils/unlinkRelation';
 import { isSameBaseGeometryType }                       from './utils/isSameBaseGeometryType';
 import { isPkField }                                    from './utils/isPkField';
+import { getCatalogLayerById }                          from './utils/getCatalogLayerById';
+import { getCatalogLayers }                             from './utils/getCatalogLayers';
 
 import { OpenFormStep }                                 from './actions/open-form';
 import { SelectElementsStep }                           from './actions/select-elements';
@@ -59,7 +61,6 @@ const {
 }                                         = g3wsdk.core;
 const { ProjectsRegistry }                = g3wsdk.core.project;
 const { DataRouterService }               = g3wsdk.core.data;
-const { CatalogLayersStoresRegistry }     = g3wsdk.core.catalog;
 const { Geometry, dissolve }              = g3wsdk.core.geoutils;
 const { splitFeature }                    = g3wsdk.core.geoutils;
 const { removeZValueToOLFeatureGeometry } = g3wsdk.core.geoutils.Geometry;
@@ -93,7 +94,7 @@ export class ToolBox extends G3WObject {
     //@since 3.9.0 Check if layer has "relation layers" that are editable
     const editable_relations = layer.getRelations().getArray()
       .filter(relation => {
-        const l = CatalogLayersStoresRegistry.getLayerById(getRelationId({ layerId: layer.getId(), relation }));
+        const l = getCatalogLayerById(getRelationId({ layerId: layer.getId(), relation }));
         return l && l.isEditable();
       });
          
@@ -719,7 +720,7 @@ export class ToolBox extends G3WObject {
                 bool: true,
                 tool: undefined
               };
-              CatalogLayersStoresRegistry.getLayers({
+              getCatalogLayers({
                 GEOLAYER:  true,
                 BASELAYER: false
               })
@@ -736,7 +737,7 @@ export class ToolBox extends G3WObject {
                 )
                 layers = [
                   //project layers
-                  ...CatalogLayersStoresRegistry.getLayers({ GEOLAYER: true, BASELAYER: false })
+                  ...getCatalogLayers({ GEOLAYER: true, BASELAYER: false })
                     .filter(l => (layerId !== l.getId()) && checkGeometry(l.getGeometryType())),
                   //external layer
                   ...catalogService.getExternalLayers({type:'vector'}).filter(l => checkGeometry(l.geometryType))
@@ -2876,14 +2877,6 @@ export class ToolBox extends G3WObject {
       } else {
         layer = commitObj;
       }
-      //@since 3.9.0 Check if it has 3D geometry type (Z or MZ)
-      /**
-       *  // Comment - need to pass geometry type symple withot Z for example
-       *  const is_vector    = Layer.LayerTypes.VECTOR === ToolBox.get(key).getLayer().getType(); // check if is vector layer
-       *  const geometryType = is_vector && CatalogLayersStoresRegistry.getLayerById(key).getGeometryType(); //get geometry type if vector layer
-       *  const is3DGeometry = geometryType && g3wsdk.core.geoutils.Geometry.is3DGeometry(geometryType); //Boolean check if is 3D geometry
-       * 
-       */
       items
         .forEach(item => {
           //check the state of feature item
