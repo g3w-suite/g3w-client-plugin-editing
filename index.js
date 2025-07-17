@@ -115,7 +115,7 @@ new (class extends Plugin {
       editFeatureKey: undefined,
       panel:          null, // editing panel
       currentLayout:  ApplicationState.gui.layout.__current,
-      unwatchLayout:  (new Vue()).$watch(
+      unwatchLayout:  Vue.watch(
         () => ApplicationState.gui.layout.__current,
         layoutName => this.state.currentLayout = layoutName !== this.getName() ? layoutName : this.state.currentLayout
       ),
