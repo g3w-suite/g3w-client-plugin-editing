@@ -31,7 +31,6 @@ class FeaturesStore extends G3WObject {
           } else {
             this._features = this._features.filter(f => feature.getUid() !== f.getUid());
           }
-          this._removeFeature(feature);
         },
         updateFeature(feature) {
           if (this.IS_OL) {
