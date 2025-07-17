@@ -18,6 +18,7 @@ const { convertSingleMultiGeometry }                    = g3wsdk.core.geoutils;
 const { removeZValueToOLFeatureGeometry }               = g3wsdk.core.geoutils.Geometry;
 const { Feature }                                       = g3wsdk.core.layer.features;
 const { GUI }                                           = g3wsdk.gui;
+const _                                                 = g3wsdk.core.i18n.t;
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/selectelementstask.js@v3.7.1
@@ -36,7 +37,7 @@ export class SelectElementsStep extends Step {
     this._vectorLayer;
 
     if (chain) {
-      this.on('run', () => { this.emit('next-step', g3wsdk.core.i18n.tPlugin("editing.steps.help.select_elements")) });
+      this.on('run', () => { this.emit('next-step', _("plugins.editing.steps.help.select_elements")) });
     }
   }
 

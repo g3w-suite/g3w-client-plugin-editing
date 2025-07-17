@@ -151,7 +151,7 @@
   import { getFeatureTableFieldValue }         from '../utils/getFeatureTableFieldValue';
   import { addTableFeature }                   from '../utils/addTableFeature';
 
-  const { tPlugin }     = g3wsdk.core.i18n;
+  const _               = g3wsdk.core.i18n.t;
   const { GUI }         = g3wsdk.gui;
   const { resizeMixin } = g3wsdk.gui.vue.Mixins;
   const Media_Field     = g3wsdk.gui.vue.Fields.media_field;
@@ -277,8 +277,8 @@
           await (
             new Promise((resolve, reject) => {
               GUI.dialog.confirm(
-                `<h4>${tPlugin('editing.messages.delete_feature')}</h4>
-                <div style="font-size:1.2em;">${ relationinediting ? tPlugin('editing.messages.delete_feature_relations') : ''}</div>`,
+                `<h4>${_('plugins.editing.messages.delete_feature')}</h4>
+                <div style="font-size:1.2em;">${ relationinediting ? _('plugins.editing.messages.delete_feature_relations') : ''}</div>`,
                 (result) => {
                   if (result) {
                     const index   = this.state.features.findIndex(f => f.getUid() === uid);

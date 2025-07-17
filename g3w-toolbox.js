@@ -64,7 +64,7 @@ const { DataRouterService }               = g3wsdk.core.data;
 const { Geometry, dissolve }              = g3wsdk.core.geoutils;
 const { splitFeature }                    = g3wsdk.core.geoutils;
 const { removeZValueToOLFeatureGeometry } = g3wsdk.core.geoutils.Geometry;
-const { tPlugin }                         = g3wsdk.core.i18n;
+const _                                   = g3wsdk.core.i18n.t;
 const { Layer }                           = g3wsdk.core.layer;
 const { Feature }                         = g3wsdk.core.layer.features;
 const { debounce, toRawType }             = g3wsdk.core.utils;
@@ -326,10 +326,10 @@ export class ToolBox extends G3WObject {
                     GUI
                       .dialog
                       .confirm(
-                        `<h4>${tPlugin('editing.messages.delete_feature')}</h4>`
+                        `<h4>${_('plugins.editing.messages.delete_feature')}</h4>`
                         + `<div style="font-size:1.2em;">`
                         + (inputs.layer.getChildren().length && getRelationsInEditing({ layerId, relations: inputs.layer.getRelations().getArray() }).length
-                          ? tPlugin('editing.messages.delete_feature_relations')
+                          ? _('plugins.editing.messages.delete_feature_relations')
                           : ''
                         )
                         + `</div>`,
@@ -504,7 +504,7 @@ export class ToolBox extends G3WObject {
                         }))({ relations, relationId })
 
                         GUI.showModalDialog({
-                          title:       tPlugin('editing.relations'),
+                          title:       _('plugins.editing.relations'),
                           className:   'modal-left',
                           closeButton: false,
                           message:     vueInstance.$mount().$el,
@@ -574,7 +574,7 @@ export class ToolBox extends G3WObject {
                         }))
 
                         GUI.showModalDialog({
-                          title:       tPlugin('editing.tools.update_multi_features_relations_from_parents'),
+                          title:       _('plugins.editing.tools.update_multi_features_relations_from_parents'),
                           className:   'modal-left',
                           closeButton: false,
                           message:     vueInstance.$mount().$el,
@@ -792,7 +792,7 @@ export class ToolBox extends G3WObject {
                         const vueInstance      = new (Vue.extend(require('./components/CopyFeaturesFromOtherLayers.vue').default))({layers});
                         const message          = vueInstance.$mount().$el;
                         GUI.showModalDialog({
-                          title:      tPlugin('editing.relation.copy_feature_from_other_layer'),
+                          title:      _('plugins.editing.relation.copy_feature_from_other_layer'),
                           className:  'modal-left',
                           closeButton: false,
                           message,
@@ -1479,7 +1479,7 @@ export class ToolBox extends G3WObject {
     this.messages = {
       //set message of scale constraint
       constraint: {
-        scale: `${tPlugin('editing.messages.constraints.enable_editing')}${this.state._constraints.scale}`.toUpperCase()
+        scale: `${_('plugins.editing.messages.constraints.enable_editing')}${this.state._constraints.scale}`.toUpperCase()
       }
     }
 

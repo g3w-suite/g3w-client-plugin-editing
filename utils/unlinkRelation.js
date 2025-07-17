@@ -2,8 +2,8 @@ import { Workflow }                      from '../g3w-workflow';
 import { getRelationFieldsFromRelation } from '../utils/getRelationFieldsFromRelation';
 import { getEditingLayerById }           from '../utils/getEditingLayerById';
 
-const { GUI }     = g3wsdk.gui;
-const { tPlugin } = g3wsdk.core.i18n;
+const { GUI } = g3wsdk.gui;
+const _       = g3wsdk.core.i18n.t;
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/services/relationservice.js@v3.7.1
@@ -39,7 +39,7 @@ export function unlinkRelation({
       resolve(true);
     };
     if (dialog) {
-      GUI.dialog.confirm(tPlugin("editing.messages.unlink_relation"), result => result ? unlink() : d.reject(false));
+      GUI.dialog.confirm(_("plugins.editing.messages.unlink_relation"), result => result ? unlink() : d.reject(false));
     } else {
       unlink();
     }

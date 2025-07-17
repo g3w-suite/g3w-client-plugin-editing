@@ -1,4 +1,4 @@
-const { tPlugin }  = g3wsdk.core.i18n;
+const _ = g3wsdk.core.i18n.t;
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
@@ -21,7 +21,7 @@ export function chooseFeatureFromFeatures({
     });
 
     const dialog = g3wsdk.gui.GUI.showModalDialog({
-      title:       tPlugin('editing.modal.tools.copyfeaturefromprojectlayer.title'),
+      title:       _('plugins.editing.modal.tools.copyfeaturefromprojectlayer.title'),
       className:   'modal-left',
       closeButton: false,
       message:     comp.$mount().$el,

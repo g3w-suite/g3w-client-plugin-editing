@@ -15,7 +15,7 @@ import { ToolBox }                             from './g3w-toolbox';
 
 const { G3W_FID }                              = g3wsdk.constant;
 const { ApplicationState }                     = g3wsdk.core;
-const { t, tPlugin }                           = g3wsdk.core.i18n;
+const _                                        = g3wsdk.core.i18n.t;
 const { Layer, LayersStore }                   = g3wsdk.core.layer;
 const { Feature }                              = g3wsdk.core.layer.features;
 const { Plugin, PluginService }                = g3wsdk.core.plugin;
@@ -941,11 +941,11 @@ new (class extends Plugin {
                 return new Promise((resolve, reject) => {
                   const dialog = GUI.dialog.dialog({
                     message: inputs.message,
-                    title:   `${tPlugin("editing.messages.commit_feature")}: "${inputs.layer.getName()}"`,
+                    title:   `${_("plugins.editing.messages.commit_feature")}: "${inputs.layer.getName()}"`,
                     buttons: {
-                      SAVE:   { className: "btn-success", callback() { resolve(inputs); }, label: t("save"),   },
-                      CANCEL: { className: "btn-danger",  callback() { reject({cancel : true });        }, label: t(inputs.close ? "exitnosave" : "annul") },
-                      ...(inputs.close ? { CLOSEMODAL : { className: "btn-primary", callback() { dialog.modal('hide'); }, label:  t("annul") }} : {}),
+                      SAVE:   { className: "btn-success", callback() { resolve(inputs); }, label: _("save"),   },
+                      CANCEL: { className: "btn-danger",  callback() { reject({cancel : true });        }, label: _(inputs.close ? "exitnosave" : "annul") },
+                      ...(inputs.close ? { CLOSEMODAL : { className: "btn-primary", callback() { dialog.modal('hide'); }, label:  _("annul") }} : {}),
                     }
                   });
                   if (inputs.features) {
@@ -986,7 +986,7 @@ new (class extends Plugin {
         if (online) {
           dialog = GUI.dialog.dialog({
             message: `<h4 class="text-center">
-                        <i style="margin-right: 5px;" class=${GUI.getFontClass('spinner')}></i>${tPlugin('editing.messages.saving')}
+                        <i style="margin-right: 5px;" class=${GUI.getFontClass('spinner')}></i>${_('plugins.editing.messages.saving')}
                       </h4>`,
             closeButton: false
           });

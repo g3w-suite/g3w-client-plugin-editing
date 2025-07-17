@@ -284,7 +284,7 @@
   const { ProjectsRegistry }            = g3wsdk.core.project;
   const { DataRouterService }           = g3wsdk.core.data;
   const { Geometry }                    = g3wsdk.core.geoutils;
-  const { tPlugin:t }                   = g3wsdk.core.i18n;
+  const _                               = g3wsdk.core.i18n.t;
   const { Layer }                       = g3wsdk.core.layer;
   const { Feature }                     = g3wsdk.core.layer.features;
   const { toRawType }                   = g3wsdk.core.utils;
@@ -762,7 +762,7 @@
             setAndUnsetSelectedFeaturesStyle({ promise, inputs: { features: [ relationfeature ], layer: this.getLayer() }, style: selectStyle })
 
             GUI.dialog.confirm(
-              t("editing.messages.delete_feature"),
+              _("plugins.editing.messages.delete_feature"),
                 res => {
                   //confirm to delete
                   if (res) {
@@ -1102,7 +1102,7 @@
               });
             } else {
               // in case already present
-              GUI.notify.warning(t("editing.relation_already_added"));
+              GUI.notify.warning(_("plugins.editing.relation_already_added"));
             }
           });
         } catch (e) {
