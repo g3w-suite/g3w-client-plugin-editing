@@ -12,7 +12,7 @@ import { AddFeatureStep }                      from './actions/add-feature';
 import { ToolBox }                             from './g3w-toolbox';
 
 const { G3W_FID }                              = g3wsdk.constant;
-const { ApplicationState, ApplicationService } = g3wsdk.core;
+const { ApplicationState }                     = g3wsdk.core;
 const { CatalogLayersStoresRegistry }          = g3wsdk.core.catalog;
 const { t, tPlugin }                           = g3wsdk.core.i18n;
 const { Layer, LayersStore }                   = g3wsdk.core.layer;
@@ -113,7 +113,7 @@ new (class extends Plugin {
       show_errors:    false,
       editFeatureKey: undefined,
       panel:          null, // editing panel
-      currentLayout:  ApplicationService.getCurrentLayoutName(),
+      currentLayout:  ApplicationState.gui.layout.__current,
       unwatchLayout:  (new Vue()).$watch(
         () => ApplicationState.gui.layout.__current,
         layoutName => this.state.currentLayout = layoutName !== this.getName() ? layoutName : this.state.currentLayout
