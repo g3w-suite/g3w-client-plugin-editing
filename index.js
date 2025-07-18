@@ -332,134 +332,122 @@ new (class extends Plugin {
             editing_layer = editing_layer.clone(); 
           }
 
-          return editing_layer;
+          this.state.editors[layer.getId()]            = editing_layer.getEditor(); 
+          this.state.layers[layer.getId()]             = editing_layer;
+          this.state.uniqueFieldsValues[layer.getId()] = {};
+
+          /**
+           * attach layer widgets event: get data from api when a field of a layer
+           * is related to a wgis form widget (ex. relation reference, value map, etc..)
+           */
+          editing_layer
+            .getEditingFields()
+            .filter(field => field.input && 'select_autocomplete' === field.input.type && !field.input.options.filter_expression && !field.input.options.usecompleter)
+            /** @TODO need to avoid to call the same fnc to same event many times to avoid waste server request time */
+            .forEach(field => ['start-editing'].forEach(type => {
+              const id                    = layer.getId();
+              this.state.events[type][id] = this.state.events[type][id] || [];
+
+              this.state.events[type][id].push(async () => {
+                const options         = field.input.options;
+
+                // remove all values
+                options.loading.state = 'loading';
+                options.values        = [];
+
+                const relationLayer = options.layer_id && getCatalogLayerById(options.layer_id);
+                const has_filter    = ([undefined, null].includes(options.filter_fields || []) || 0 === (options.filter_fields || []).length);
+
+                try {
+
+                  // relation reference widget + no filter set
+                  if (options.relation_reference && has_filter) {
+                    const response = await editing_layer.getFilterData({ fformatter: field.name }); // get data with fformatter
+                    if (response && response.data) {
+                      // response data is an array ok key value objects
+                      options.values.push(...response.data.map(([value, key]) => ({ key, value })));
+                      options.loading.state = 'ready';
+                      this.fireEvent('autocomplete', { field, data: [response.data] });
+                      return options.values;
+                    }
+                  }
+
+                  // value map widget
+                  if (relationLayer) {
+                    //ordering by value or key depend on orderbyvalue Boolean value
+                    const response = await relationLayer.getDataTable({ ordering: options.orderbyvalue ? options.value : options.key });
+                    if (response && response.features) {
+                      options.values.push(...(response.features || []).map(feature => ({
+                        key:   feature.properties[options.value],
+                        value: feature.properties[options.key],
+                      })));
+                      options.loading.state = 'ready';
+                      this.fireEvent('autocomplete', { field, features: response.features })
+                      return options.values;
+                    }
+                  }
+
+                  /** @TODO check if deprecated */
+                  const features        = [];
+                  options.loading.state = 'ready';
+                  this.fireEvent('autocomplete', { field, features });
+                  return features;
+
+                } catch (e) {
+                  console.warn(e);
+                  options.loading.state = 'error';
+                  return Promise.reject(e);
+                }
+              });
+            }));
+
+            this.state.sessions[layer.getId()] = null;
+
+            /**
+             * set 1:1 relation fields editable
+             * 
+             * Check if layer has relation 1:1 (type ONE) and if fields
+             *
+             * belongs to relation where child layer is editable
+             *
+             * @since g3w-client-plugin-editing@v3.7.0
+             */
+            const fatherId = layer.getId(); // father layer
+            getCatalogLayerById(fatherId)
+              .getRelations()
+              .getArray()
+              .filter(relation => 'ONE' === relation.getType() && fatherId === relation.getFather()) // 'ONE' == join 1:1 + father layerId is a father of relation
+              .forEach(relation => {
+                const isChildEditable = undefined !== this.getLayerById(relation.getChild());        // check if child layerId is editable (in editing)
+                this
+                  .getLayerById(relation.getFather())
+                  .getEditingFields()
+                  .filter(f => f.vectorjoin_id && f.vectorjoin_id === relation.getId())              // father layer fields (in editing)
+                  .forEach(f => { f.editable = (f.editable && isChildEditable); });      // current editable boolean value + child editable layer
+              });
+            // Set editing layer color and toolbox style
+            if (!editing_layer.getColor()) {
+              editing_layer.setColor(editing_layer.isGeoLayer() ? [
+                "#C43C39", "#d95f02", "#91522D", "#7F9801", "#0B2637",
+                "#8D5A99", "#85B66F", "#8D2307", "#2B83BA", "#7D8B8F",
+                "#E8718D", "#1E434C", "#9B4F07", '#1b9e77', "#FF9E17",
+                "#7570b3", "#204B24", "#9795A3", "#C94F44", "#7B9F35",
+                "#373276", "#882D61", "#AA9039", "#F38F3A", "#712333",
+                "#3B3A73", "#9E5165", "#A51E22", "#261326", "#e4572e",
+                "#29335c", "#f3a712", "#669bbc", "#eb6841", "#4f372d",
+                "#cc2a36", "#00a0b0", "#00b159", "#f37735", "#ffc425",
+              ][count++ % 40] : '#fff');
+            }
+
+            // create toolbox
+            this.addToolBox(new ToolBox(editing_layer, [...editing_layer.getChildren(), ...editing_layer.getFathers()].filter(id => this.getLayerById(id))));
 
           } catch (e) {
+            this.state.layers_in_error = true;
             console.warn(e);
-            throw e;
           }
         })
-    )).forEach(({ status, value:layer }) => {
-
-      // skip on http error
-      if ('fulfilled' !== status) {
-        this.state.layers_in_error = true;
-        return;
-      }
-
-      this.state.editors[layer.getId()] = layer.getEditor(); 
-      this.state.layers[layer.getId()]  = layer;
-
-      //set default empty object
-      this.state.uniqueFieldsValues[layer.getId()] = {};
-
-      /**
-       * attach layer widgets event: get data from api when a field of a layer
-       * is related to a wgis form widget (ex. relation reference, value map, etc..)
-       */
-      layer
-        .getEditingFields()
-        .filter(field => field.input && 'select_autocomplete' === field.input.type && !field.input.options.filter_expression && !field.input.options.usecompleter)
-        /** @TODO need to avoid to call the same fnc to same event many times to avoid waste server request time */
-        .forEach(field => ['start-editing'].forEach(type => {
-          const id                    = layer.getId();
-          this.state.events[type][id] = this.state.events[type][id] || [];
-
-          this.state.events[type][id].push(async () => {
-            const options         = field.input.options;
-
-            // remove all values
-            options.loading.state = 'loading';
-            options.values        = [];
-
-            const relationLayer = options.layer_id && getCatalogLayerById(options.layer_id);
-            const has_filter    = ([undefined, null].includes(options.filter_fields || []) || 0 === (options.filter_fields || []).length);
-
-            try {
-
-              // relation reference widget + no filter set
-              if (options.relation_reference && has_filter) {
-                const response = await layer.getFilterData({ fformatter: field.name }); // get data with fformatter
-                if (response && response.data) {
-                  // response data is an array ok key value objects
-                  options.values.push(...response.data.map(([value, key]) => ({ key, value })));
-                  options.loading.state = 'ready';
-                  this.fireEvent('autocomplete', { field, data: [response.data] });
-                  return options.values;
-                }
-              }
-
-              // value map widget
-              if (relationLayer) {
-                //ordering by value or key depend on orderbyvalue Boolean value
-                const response = await relationLayer.getDataTable({ ordering: options.orderbyvalue ? options.value : options.key });
-                if (response && response.features) {
-                  options.values.push(...(response.features || []).map(feature => ({
-                    key:   feature.properties[options.value],
-                    value: feature.properties[options.key],
-                  })));
-                  options.loading.state = 'ready';
-                  this.fireEvent('autocomplete', { field, features: response.features })
-                  return options.values;
-                }
-              }
-
-              /** @TODO check if deprecated */
-              const features        = [];
-              options.loading.state = 'ready';
-              this.fireEvent('autocomplete', { field, features });
-              return features;
-
-            } catch (e) {
-              console.warn(e);
-              options.loading.state = 'error';
-              return Promise.reject(e);
-            }
-          });
-        }));
-
-        this.state.sessions[layer.getId()] = null;
-
-        /**
-         * set 1:1 relation fields editable
-         * 
-         * Check if layer has relation 1:1 (type ONE) and if fields
-         *
-         * belongs to relation where child layer is editable
-         *
-         * @since g3w-client-plugin-editing@v3.7.0
-         */
-        const fatherId = layer.getId(); // father layer
-        getCatalogLayerById(fatherId)
-          .getRelations()
-          .getArray()
-          .filter(relation => 'ONE' === relation.getType() && fatherId === relation.getFather()) // 'ONE' == join 1:1 + father layerId is a father of relation
-          .forEach(relation => {
-            const isChildEditable = undefined !== this.getLayerById(relation.getChild());        // check if child layerId is editable (in editing)
-            this
-              .getLayerById(relation.getFather())
-              .getEditingFields()
-              .filter(f => f.vectorjoin_id && f.vectorjoin_id === relation.getId())              // father layer fields (in editing)
-              .forEach(f => { f.editable = (f.editable && isChildEditable); });      // current editable boolean value + child editable layer
-          });
-        // Set editing layer color and toolbox style
-        if (!layer.getColor()) {
-          layer.setColor(layer.isGeoLayer() ? [
-            "#C43C39", "#d95f02", "#91522D", "#7F9801", "#0B2637",
-            "#8D5A99", "#85B66F", "#8D2307", "#2B83BA", "#7D8B8F",
-            "#E8718D", "#1E434C", "#9B4F07", '#1b9e77', "#FF9E17",
-            "#7570b3", "#204B24", "#9795A3", "#C94F44", "#7B9F35",
-            "#373276", "#882D61", "#AA9039", "#F38F3A", "#712333",
-            "#3B3A73", "#9E5165", "#A51E22", "#261326", "#e4572e",
-            "#29335c", "#f3a712", "#669bbc", "#eb6841", "#4f372d",
-            "#cc2a36", "#00a0b0", "#00b159", "#f37735", "#ffc425",
-          ][count++ % 40] : '#fff');
-        }
-
-         // create toolbox
-        this.addToolBox(new ToolBox(layer, [...layer.getChildren(), ...layer.getFathers()].filter(id => this.getLayerById(id))));
-
-      });
+    ));
 
     // after add layers to layerstore
     ApplicationState.layers['editing'].addLayers(this.getLayers());
