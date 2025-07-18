@@ -440,7 +440,12 @@ new (class extends Plugin {
             }
 
             // create toolbox
-            this.addToolBox(new ToolBox(editing_layer, [...editing_layer.getChildren(), ...editing_layer.getFathers()].filter(id => this.getLayerById(id))));
+            this.addToolBox(
+              new ToolBox(editing_layer, [
+                ...editing_layer.getChildren(),
+                ...editing_layer.getFathers()].filter(id => this.getLayerById(id))
+              )
+            );
 
           } catch (e) {
             this.state.layers_in_error = true;
