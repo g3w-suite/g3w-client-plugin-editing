@@ -89,15 +89,10 @@ new (class extends Plugin {
           error: () => {}        // function executed after commit changes error
         }
       },
-      /** editable layers  */
       layers: {},
-      /** @since g3w-client-plugin-editing@v4.1.0 */
-      editors: {},
-      /** @since g3w-client-plugin-editing@v4.1.0 */
-      features: {},              // Edited features (local)
-      /** @since g3w-client-plugin-editing@v4.1.0 */
-      lock_ids: {},              // Locked features
-      /** @since g3w-client-plugin-editing@v4.1.0 */
+      editors: {},               // editable layers (vector)
+      features: {},              // edited features (local)
+      lock_ids: {},              // locked features
       loaded_ids: {},            // Ids of features loaded by current user
       events:              {
         'start-editing':         {},
