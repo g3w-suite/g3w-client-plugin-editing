@@ -66,7 +66,6 @@ new (class extends Plugin {
       editors:             {},
       sessions:            {},    // store all sessions
       toolboxes:           [],
-      _toolboxes:          [],    // TODO: `state._toolboxes` vs `state.toolboxes` ?
       toolboxselected:     null,
       /** @since g3w-client-plugin-editing@v3.6.2 */
       showselectlayers:    true,  // whether to show selected layers on editing panel
@@ -199,7 +198,6 @@ new (class extends Plugin {
     ApplicationState.layers['editing'] = new LayersStore({ id: 'editing', queryable: false, catalog: false });
 
     this.state.layers     = {};
-    this.state._toolboxes = [];
     this.state.toolboxes  = [];
     
     let count = 0;
@@ -638,9 +636,8 @@ new (class extends Plugin {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   addToolBox(toolbox) {
-    this.state._toolboxes.push(toolbox);
-    this.state.sessions[toolbox.getId()] = toolbox.getSession(); // add session
     this.state.toolboxes.push(toolbox.state);
+    this.state.sessions[toolbox.getId()] = toolbox.getSession(); // add session
   }
 
   /**
@@ -732,7 +729,7 @@ new (class extends Plugin {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   getToolBoxById(id) {
-    return this.state._toolboxes.find(tb => id === tb.getId());
+    return this.state.toolboxes.find(tb => id === tb.getId());
   }
 
   /**
@@ -782,7 +779,7 @@ new (class extends Plugin {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   getToolBoxes() {
-    return this.state._toolboxes;
+    return this.state.toolboxes;
   }
 
   /**
@@ -806,7 +803,7 @@ new (class extends Plugin {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   async stop() {
-    const commitpromises = this.state._toolboxes
+    const commitpromises = this.state.toolboxes
       .filter(t => t.getSession().getHistory().state.commit) // check if temp changes are waiting to save on server
       .map( toolbox => this.commit({ toolbox, modal : true }))
     try {
@@ -815,7 +812,7 @@ new (class extends Plugin {
       console.warn(e);
     }
 
-    this.state._toolboxes.forEach(t => t.stop());
+    this.state.toolboxes.forEach(t => t.stop());
 
     this.state.toolboxselected     = null;
     this.state.message             =  null;
