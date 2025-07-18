@@ -40,18 +40,6 @@ Object
   })
   .forEach(([k, v]) => console.assert(undefined !== v, `${k} is undefined`));
 
-/**
- * Default editing capabilities
- *
- * @type {string[]}
- */
-window.g3wsdk.constant.DEFAULT_EDITING_CAPABILITIES = [
-  'add_feature',
-  'change_feature',
-  'change_attr_feature',
-  'delete_feature',
-];
-
 new (class extends Plugin {
 
   constructor() {
@@ -101,7 +89,8 @@ new (class extends Plugin {
           error: () => {}        // function executed after commit changes error
         }
       },
-      editableLayers:      {},
+      /** editable layers  */
+      layers:      {},
       /** @since g3w-client-plugin-editing@v4.1.0 */
       editors:             {},
       events:              {
@@ -165,7 +154,7 @@ new (class extends Plugin {
 
     // skip when no editable layer
     if (getCatalogLayers({ EDITABLE: true }).length) {
-      this._init();
+      this.#init();
     }
 
   }
@@ -175,7 +164,7 @@ new (class extends Plugin {
    * 
    * @since g3w-client-plugin-editing@v3.8.0
    */
-  async _init() {
+  async #init() {
 
     this.setHookLoading({ loading: true });
 
@@ -208,7 +197,7 @@ new (class extends Plugin {
     // add editing layer store to mapstoreregistry
     ApplicationState.layers['editing'] = new LayersStore({ id: 'editing', queryable: false, catalog: false });
 
-    this.state.editableLayers = {};
+    this.state.layers = {};
     this.state._toolboxes     = [];
     this.state.toolboxes      = [];
     
@@ -244,7 +233,7 @@ new (class extends Plugin {
               fields:                      vector.fields || [],
               format:                      vector.format,
               constraints,
-              capabilities:                capabilities || window.g3wsdk.constant.DEFAULT_EDITING_CAPABILITIES, // default editing capabilities
+              capabilities:                capabilities || ['add_feature', 'change_feature', 'change_attr_feature', 'delete_feature' ], // default editing capabilities
               form:                        { perc: null },                                                      // set editing form `perc` to null at beginning
               style:                       vector.style,                                                        // get vector layer style
               geometrytype:                vector.geometrytype,                                                 // whether is a vector layer,
@@ -370,8 +359,8 @@ new (class extends Plugin {
         return;
       }
 
-      this.state.editors[layer.getId()]        = layer.getEditor(); 
-      this.state.editableLayers[layer.getId()] = layer;
+      this.state.editors[layer.getId()] = layer.getEditor(); 
+      this.state.layers[layer.getId()]  = layer;
 
       //set default empty object
       this.state.uniqueFieldsValues[layer.getId()] = {};
@@ -657,7 +646,7 @@ new (class extends Plugin {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   getEditingLayer(id) {
-    return this.state.editableLayers[id].getEditingLayer();
+    return this.state.layers[id].getEditingLayer();
   }
 
   /**
@@ -736,7 +725,7 @@ new (class extends Plugin {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   getLayers() {
-    return Object.values(this.state.editableLayers);
+    return Object.values(this.state.layers);
   }
 
   /**
@@ -749,7 +738,7 @@ new (class extends Plugin {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   getLayerById(id) {
-    return this.state.editableLayers[id];
+    return this.state.layers[id];
   }
 
   /**
@@ -823,7 +812,7 @@ new (class extends Plugin {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   getEditableLayers() {
-    return this.state.editableLayers;
+    return this.state.layers;
   }
 
   /**
@@ -1106,7 +1095,7 @@ new (class extends Plugin {
       // rollback
       //@TODO check if it is usefull
       if (modal) {
-        try { await _rollback(commitItems.relations); }
+        try { await this.#rollback(commitItems.relations); }
         catch (e) { console.warn(e); }
       }
 
@@ -2060,55 +2049,56 @@ new (class extends Plugin {
     }
   }
 
+  async #rollback(relations = {}) {
+    return Promise.allSettled(
+      Object
+      .entries(relations)
+      .flatMap(([ layerId, { add, delete: del, update, relations = {}}]) => {
+        const source       = getEditingLayerById(layerId).getEditor().getEditingSource();
+        const has_features = source.readFeatures().length > 0; // check if the relation layer has some features
+        // get original values
+        return [
+          // add
+          ...(has_features && add || []).map(async ({ id }) => {
+            source.removeFeature(source.getFeatureById(id));
+          }),
+          // update
+          ...(has_features && update || []).map(async ({ id }) => {
+            try {
+              const response = await XHR.get({
+                url:    getCatalogLayerById(layerId).getUrl('data'),
+                params: { fids: id },
+              });
+              const f        = (response.result && response.vector.data.features || []).at(0);
+              const feature  = source.getFeatureById(id);
+              feature.setProperties(f.properties);
+              feature.setGeometry(f.geometry);
+            } catch(e) {
+              console.warn(e);
+            }
+          }),
+          // delete
+          ...del.map(async id => {
+            try {
+              const response = await XHR.get({
+                url:    getCatalogLayerById(layerId).getUrl('data'),
+                params: { fids: id },
+              });
+              const f = (response.result && response.vector.data.features || []).at(0);
+              const feature = new ol.Feature({ geometry: f.geometry })
+              feature.setProperties(f.properties);
+              feature.setId(id);
+              source.addFeature(new Feature({ feature })); // add it again to source because relation layer is locked
+            } catch(e) {
+              console.warn(e);
+            }
+
+          }),
+          #rollback(relations),
+        ];
+      })
+    );
+  }
+
 });
 
-async function _rollback(relations = {}) {
-  return Promise.allSettled(
-    Object
-    .entries(relations)
-    .flatMap(([ layerId, { add, delete: del, update, relations = {}}]) => {
-      const source       = getEditingLayerById(layerId).getEditor().getEditingSource();
-      const has_features = source.readFeatures().length > 0; // check if the relation layer has some features
-      // get original values
-      return [
-        // add
-        ...(has_features && add || []).map(async ({ id }) => {
-          source.removeFeature(source.getFeatureById(id));
-        }),
-        // update
-        ...(has_features && update || []).map(async ({ id }) => {
-          try {
-            const response = await XHR.get({
-              url:    getCatalogLayerById(layerId).getUrl('data'),
-              params: { fids: id },
-            });
-            const f        = (response.result && response.vector.data.features || []).at(0);
-            const feature  = source.getFeatureById(id);
-            feature.setProperties(f.properties);
-            feature.setGeometry(f.geometry);
-          } catch(e) {
-            console.warn(e);
-          }
-        }),
-        // delete
-        ...del.map(async id => {
-          try {
-            const response = await XHR.get({
-              url:    getCatalogLayerById(layerId).getUrl('data'),
-              params: { fids: id },
-            });
-            const f = (response.result && response.vector.data.features || []).at(0);
-            const feature = new ol.Feature({ geometry: f.geometry })
-            feature.setProperties(f.properties);
-            feature.setId(id);
-            source.addFeature(new Feature({ feature })); // add it again to source because relation layer is locked
-          } catch(e) {
-            console.warn(e);
-          }
-
-        }),
-        _rollback(relations),
-      ];
-    })
-  );
-}
