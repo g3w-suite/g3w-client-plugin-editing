@@ -97,6 +97,8 @@ new (class extends Plugin {
       features: {},              // Edited features (local)
       /** @since g3w-client-plugin-editing@v4.1.0 */
       lock_ids: {},              // Locked features
+      /** @since g3w-client-plugin-editing@v4.1.0 */
+      loaded_ids: {},            // Ids of features loaded by current user
       events:              {
         'start-editing':         {},
         'show-relation-editing': {},
@@ -201,9 +203,9 @@ new (class extends Plugin {
     // add editing layer store to mapstoreregistry
     ApplicationState.layers['editing'] = new LayersStore({ id: 'editing', queryable: false, catalog: false });
 
-    this.state.layers = {};
-    this.state._toolboxes     = [];
-    this.state.toolboxes      = [];
+    this.state.layers     = {};
+    this.state._toolboxes = [];
+    this.state.toolboxes  = [];
     
     let count = 0;
 
@@ -263,8 +265,9 @@ new (class extends Plugin {
           const suffixUrl = `${ApplicationState.project.getType()}/${ApplicationState.project.getId()}/${layer.getId()}/`;
           const vectorUrl =  ApplicationState.project.state.vectorurl;
 
-          this.state.features[layer.getId()] = new Collection(Layer.LayerTypes.TABLE !== layer.getType());
-          this.state.lock_ids[layer.getId()] = [];
+          this.state.features[layer.getId()]   = new Collection(Layer.LayerTypes.TABLE !== layer.getType());
+          this.state.lock_ids[layer.getId()]   = [];
+          this.state.loaded_ids[layer.getId()] = [];
 
           /**
            * ORIGINAL SOURCE: g3w-client-plugin-editing/g3wsdk/editing/editor.j@v4.0.0
@@ -281,8 +284,6 @@ new (class extends Plugin {
             _layer:     layer,
             /** Original features (from server) */
             _features: [],
-            /** Ids of features loaded by current user */
-            _loadedIds: [],
             /** @type { boolean } Whether editor is active or not */
             _started: false,
             urls: {
@@ -1624,8 +1625,8 @@ new (class extends Plugin {
           //it means that is not locked by another user.
           if (featurelocks.find(({ featureid }) => featureId == featureid)) {
             //check if feature is not yet added for the current user
-            if (!editor._loadedIds.includes(featureId)) {
-              editor._loadedIds.push(featureId);
+            if (!this.state.loaded_ids[layerId].includes(featureId)) {
+              this.state.loaded_ids[layerId].push(featureId);
               return true;
             } else {
               return false; //feature locked by the current user
@@ -1833,7 +1834,7 @@ new (class extends Plugin {
 
     // add lock ids
     this.state.lock_ids[layerId] = [...new Set(this.state.lock_ids[layerId].concat(...response.response.new_lockids))]
-    this.state.lock_ids[layerId].forEach(({ featureid }) => editor.getLayer()._featuresstore._loadedIds.push(featureid));
+    this.state.lock_ids[layerId].forEach(({ featureid }) => this.state.loaded_ids[layerId].push(featureid));
 
     return response;
   }
@@ -1878,9 +1879,9 @@ new (class extends Plugin {
     editor._filter.bbox = null;
     editor._allfeatures = false;
 
-    editor._features             = []; // clear features collection
-    this.state.lock_ids[layerId] = [];
-    editor._loadedIds            = [];
+    editor._features               = []; // clear features collection
+    this.state.lock_ids[layerId]   = [];
+    this.state.loaded_ids[layerId] = [];
     editor.getEditingSource().clear();
 
     // vector layer
