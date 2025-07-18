@@ -251,21 +251,10 @@ new (class extends Plugin {
             console.warn(e);
           }
 
-          let editing_layer = layer;
-
-          // set editing layer from IMAGE LAYER
-          if (Layer.LayerTypes.IMAGE === layer.getType()) {
-            try {
-              editing_layer = new g3wsdk.core.layer.VectorLayer(layer.config, {
-                vectorurl:    window.initConfig.plugins.editing.vectorurl,
-                project_type: window.initConfig.plugins.editing.project_type,
-                project:      ApplicationState.project,
-              });
-            } catch(e) {
-              console.warn(e);
-              return Promise.reject(e);
-            }
-          }
+          // set editing layer
+          let editing_layer = Layer.LayerTypes.IMAGE === layer.getType()
+            ? new g3wsdk.core.layer.VectorLayer(layer.config)
+            : layer;
 
           const suffixUrl = `${ApplicationState.project.getType()}/${ApplicationState.project.getId()}/${layer.getId()}/`;
           const vectorUrl =  ApplicationState.project.state.vectorurl;
