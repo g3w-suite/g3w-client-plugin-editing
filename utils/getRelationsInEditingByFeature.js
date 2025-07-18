@@ -23,8 +23,6 @@ export function getRelationsInEditingByFeature({
   relations = [],
   feature,
 } = {}) {
-  const service = GUI.getPlugin('editing');
-
   let relationsinediting = [];
   let relationinediting;
   relations.forEach(relation => {
@@ -32,9 +30,9 @@ export function getRelationsInEditingByFeature({
     const father = relation.getFatherField ? relation.getFatherField() : relation.fatherField;
     const relationLayerId = (child === layerId) ? father: child; // get relation LayerId
     //check if the layer is editable
-    if (service.getLayerById(relationLayerId)) {
-      const layer                       = service.getToolBoxById(relationLayerId).getLayer();
-      const fatherLayer                 = service.getLayerById(relation.getFather ? relation.getFather() : relation.father);
+    if (GUI.getPlugin('editing').getLayerById(relationLayerId)) {
+      const layer                       = GUI.getPlugin('editing').getToolBoxById(relationLayerId).getLayer();
+      const fatherLayer                 = GUI.getPlugin('editing').getLayerById(relation.getFather ? relation.getFather() : relation.father);
       const { ownField, relationField } = getRelationFieldsFromRelation({ layerId: relationLayerId, relation });
       // get features of relation child layers
       // Loop relation fields
@@ -44,7 +42,7 @@ export function getRelationsInEditingByFeature({
       relationinediting = {
         relation: relation.getState(),
         // get relation attributes by feature
-        relations: service
+        relations: GUI.getPlugin('editing')
           .getLayerById(relationLayerId)
           .getEditor().readEditingFeatures()
           .filter(feature => ownField.every((field, i) => feature.get(field) == values[i])) // get relations by feature

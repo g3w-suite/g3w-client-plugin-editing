@@ -63,6 +63,8 @@ new (class extends Plugin {
      */
     this.state = {
       open:                false, // check if panel is open or not
+      editors:             {},
+      sessions:            {},    // store all sessions
       toolboxes:           [],
       _toolboxes:          [],    // TODO: `state._toolboxes` vs `state.toolboxes` ?
       toolboxselected:     null,
@@ -70,7 +72,6 @@ new (class extends Plugin {
       showselectlayers:    true,  // whether to show selected layers on editing panel
       message:             null,
       relations:           [],
-      sessions:            {},    // store all sessions
       layers_in_error:     false,
       formComponents:      {},    // plugin components
       subscribers:         {},
@@ -90,7 +91,6 @@ new (class extends Plugin {
         }
       },
       layers: {},                // editable layers (vector)
-      editors: {},
       features: {},              // edited features (local)
       lock_ids: {},              // locked features
       loaded_ids: {},            // Ids of features loaded by current user
@@ -1399,9 +1399,9 @@ new (class extends Plugin {
         id:            "editing-panel",
         title:         opts.title || "plugins.editing.editing_data",
         internalPanel: new (Vue.extend(require('./components/Editing.vue').default))({
-          service:           this,
-          resourcesurl:      opts.resourcesUrl || GUI.getResourcesUrl(),
-          showcommitbar:     undefined === opts.showcommitbar || opts.showcommitbar,
+          state:         this.state,
+          resourcesurl:  opts.resourcesUrl || GUI.getResourcesUrl(),
+          showcommitbar: undefined === opts.showcommitbar || opts.showcommitbar,
         }),
       })
 

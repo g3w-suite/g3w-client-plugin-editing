@@ -279,7 +279,7 @@ export class OpenFormStep extends Step {
                   console.warn(e);
                 }
                 try {
-                  await GUI.getPlugin('editing').service.commit({ modal: false });
+                  await GUI.getPlugin('editing').commit({ modal: false });
                   [...Workflow.Stack._workflows]
                     .reverse()
                     .filter(w => "function" === typeof w.getLastStep()._saveAll)

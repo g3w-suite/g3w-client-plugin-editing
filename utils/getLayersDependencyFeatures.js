@@ -18,9 +18,7 @@ const { GUI }              = g3wsdk.gui;
  */
 export async function getLayersDependencyFeatures(layerId, opts = {}) {
 
-  const service   = GUI.getPlugin('editing'); //get editing service
-
-  const layer     = service.getLayerById(layerId);
+  const layer     = GUI.getPlugin('editing').getLayerById(layerId);
   const relations = opts.relations
     || layer.getChildren().length && layer.getRelations() && getRelationsInEditing({ layerId, relations: layer.getRelations().getArray().filter(r => r.getFather() === layerId) })
     || [];
@@ -41,16 +39,16 @@ export async function getLayersDependencyFeatures(layerId, opts = {}) {
       opts.filterType  = 'ONE' === (relation.getType ? relation.getType() : relation.type) ? '1:1' :  opts.filterType; // In a case of relation 1:1
       const filterType =  opts.filterType || 'fid';
       const options    = createEditingDataOptions(filterType, opts);
-      const session    = service.state.sessions[id];
+      const session    = GUI.getPlugin('editing').state.sessions[id];
       const online     = ApplicationState.online && session;
-      const toolbox    = service.getToolBoxById(id);
+      const toolbox    = GUI.getPlugin('editing').getToolBoxById(id);
 
       // getLayersDependencyFeaturesFromSource
 
       opts.operator = undefined !== opts.operator ? opts.operator : 'eq'; 
 
       const { ownField, relationField } = getRelationFieldsFromRelation({ layerId: id, relation });
-      const features                    = service.getLayerById(layerId).getEditor().readEditingFeatures();
+      const features                    = GUI.getPlugin('editing').getLayerById(layerId).getEditor().readEditingFeatures();
       const featureValues               = relationField.map(field => opts.feature.get(field));
 
       // try to get feature from source without a server request
@@ -74,7 +72,7 @@ export async function getLayersDependencyFeatures(layerId, opts = {}) {
 
       toolbox.stopLoading();
 
-      return { [id] : service.getLayerById(id).getEditor().readEditingFeatures().filter(f => ownField.every((field, i) => featureValues[i] == f.get(field)))};
+      return { [id] : GUI.getPlugin('editing').getLayerById(id).getEditor().readEditingFeatures().filter(f => ownField.every((field, i) => featureValues[i] == f.get(field)))};
     }));
   } catch (e) {
     console.warn(e);

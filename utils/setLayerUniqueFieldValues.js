@@ -15,7 +15,6 @@ const { XHR } = g3wsdk.core.utils;
  * @since g3w-client-plugin-editing@v3.8.0
  */
 export async function setLayerUniqueFieldValues(layerId) {
-  const service = GUI.getPlugin('editing'); //get editing service
   await new Promise(async (resolve, reject) => {
     const layer = GUI.getPlugin('editing').getLayerById(layerId);
     const fields = Object.values(layer
@@ -43,10 +42,10 @@ export async function setLayerUniqueFieldValues(layerId) {
       Object
         .entries(response.data || {})
         .forEach(([name, values]) => {
-          service.state.uniqueFieldsValues[layerId][name] = new Set(values)
+          GUI.getPlugin('editing').state.uniqueFieldsValues[layerId][name] = new Set(values)
         })
 
-      resolve(service.state.uniqueFieldsValues[layerId][name])
+      resolve(GUI.getPlugin('editing').state.uniqueFieldsValues[layerId][name])
     
     } catch(e) {
       console.warn(e);
@@ -55,5 +54,5 @@ export async function setLayerUniqueFieldValues(layerId) {
     
   })
   
-  return service.state.uniqueFieldsValues[layerId];
+  return GUI.getPlugin('editing').state.uniqueFieldsValues[layerId];
 }

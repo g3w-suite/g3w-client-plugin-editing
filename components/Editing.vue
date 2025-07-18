@@ -109,8 +109,7 @@
 
     data() {
       return {
-        state:                 this.$options.service.state,
-        service:               this.$options.service,
+        state:                 this.$options.state,
         resourcesurl:          this.$options.resourcesurl,
         showcommitbar:         this.$options.showcommitbar,
         saving:                false, // whether to show loading bar while committing to server (click on save disk icon)
@@ -166,11 +165,11 @@
       },
 
       undo() {
-        if (this.canUndo) { this.service.undo() }
+        if (this.canUndo) { GUI.getPlugin('editing').undo() }
       },
 
       redo() {
-        if (this.canRedo) { this.service.redo() }
+        if (this.canRedo) { GUI.getPlugin('editing').redo() }
       },
 
       /**
@@ -180,8 +179,8 @@
         if (this.canCommit) {
           this.saving = true;
           try {
-            await this.service.commit({
-              toolbox: this.service.getToolBoxById(toolboxId),
+            await GUI.getPlugin('editing').commit({
+              toolbox: GUI.getPlugin('editing').getToolBoxById(toolboxId),
               modal:   false,
             })
           } catch(e) {
@@ -196,9 +195,9 @@
        * @param id
        */
       async startToolBox(id) {
-        const toolbox = this.service.getToolBoxById(id);
+        const toolbox = GUI.getPlugin('editing').getToolBoxById(id);
         // check if a dependency layer (in relation) has some changes not committed
-        const layerId = ApplicationState.online && toolbox.getDependencies().find(id => this.service.getToolBoxById(id).isDirty());
+        const layerId = ApplicationState.online && toolbox.getDependencies().find(id => GUI.getPlugin('editing').getToolBoxById(id).isDirty());
         if (layerId) {
           await this.commit_dirty(layerId);
         }
@@ -209,11 +208,11 @@
        * @param id
        */
       async stopToolBox(id) {
-        const toolbox = this.service.getToolBoxById(id);
+        const toolbox = GUI.getPlugin('editing').getToolBoxById(id);
 
         try {
           if (toolbox.state.editing.history.commit) {
-            await this.service.commit();
+            await GUI.getPlugin('editing').commit();
           }
         } catch (e) {
           console.warn(e);
@@ -222,7 +221,7 @@
         await toolbox.stop();
 
         // re-enable query map control
-        const control = undefined === this.service.getToolBoxes().find(t => t.state.editing.on) && GUI.getService('map').getMapControlByType({ type: 'query' });
+        const control = undefined === GUI.getPlugin('editing').getToolBoxes().find(t => t.state.editing.on) && GUI.getService('map').getMapControlByType({ type: 'query' });
         if (control && !control.isToggled()) {
           control.toggle();
         }
@@ -236,10 +235,10 @@
        */
       async startTool(toolId, toolboxId) {
 
-        const toolbox = this.service.getToolBoxById(toolboxId);
+        const toolbox = GUI.getPlugin('editing').getToolBoxById(toolboxId);
         const enabled = this.activetool && toolboxId === this.activetool;
 
-        if (!enabled && this.service.getToolBoxById(toolbox.getDependencies().find(id => id === this.activetool))) {
+        if (!enabled && GUI.getPlugin('editing').getToolBoxById(toolbox.getDependencies().find(id => id === this.activetool))) {
           await this.commit_dirty(this.activetool);
         }
 
@@ -256,7 +255,7 @@
        */
       stopTool(id) {
         if (id) {
-          this.service.getToolBoxById(id).stopActiveTool();
+          GUI.getPlugin('editing').getToolBoxById(id).stopActiveTool();
           this.activetool = null;
         }
       },
@@ -265,8 +264,8 @@
        * @param id
        */
       async selectToolBox(id) {
-        const toolbox   = this.service.getToolBoxById(id); // get toolbox by id
-        const toolboxes = this.service.getToolBoxes();            // get all toolboxes
+        const toolbox   = GUI.getPlugin('editing').getToolBoxById(id); // get toolbox by id
+        const toolboxes = GUI.getPlugin('editing').getToolBoxes();            // get all toolboxes
         const selected  = toolboxes.find(t => t.isSelected());    // check if exist already toolbox selected (first time)
 
         // set already selected false
@@ -296,12 +295,12 @@
        * @since g3w-client-plugin-editing@v3.8.0
        */
       async commit_dirty(id) {
-        const toolbox = this.service.getToolBoxById(id);
+        const toolbox = GUI.getPlugin('editing').getToolBoxById(id);
 
         // commit changes
         try {
           if (toolbox.isDirty() && toolbox.hasDependencies()) {
-            await this.service.commit({ toolbox });
+            await GUI.getPlugin('editing').commit({ toolbox });
             console.info('[EDITING] committed dirty')
           }
         } catch (e) {
@@ -310,7 +309,7 @@
             [layerId]
               .concat(toolbox.getDependencies())
               .forEach(id => {
-                const toolbox = this.service.getToolBoxById(id);
+                const toolbox = GUI.getPlugin('editing').getToolBoxById(id);
                 const editor  = toolbox.getEditor();
                 //set original features get from server without changes
                 editor.getEditingSource().setFeatures((editor.readFeatures() || []).map(f => f.clone()));
@@ -366,9 +365,9 @@
           setTimeout(async () => {
             for (const layerId in changes) {
               layerIds.push(layerId);
-              const toolbox     = this.service.getToolBoxById(layerId);
+              const toolbox     = GUI.getPlugin('editing').getToolBoxById(layerId);
               const commitItems = changes[layerId];
-              promises.push(this.service.commit({ toolbox, commitItems, modal }))
+              promises.push(GUI.getPlugin('editing').commit({ toolbox, commitItems, modal }))
             }
 
             try {
@@ -379,7 +378,7 @@
               reject(e);
             } finally {
               if (unlock) {
-                layerIds.forEach(layerId => this.service.getLayerById(layerId).unlock());
+                layerIds.forEach(layerId => GUI.getPlugin('editing').getLayerById(layerId).unlock());
               }
               // always reset items to null
               try      { window.localStorage.setItem('EDITING_CHANGES', "{}"); }
@@ -412,7 +411,7 @@
           && this.editingButtonsEnabled
         );
 
-        this.service.fireEvent('canUndo', canUndo);
+        GUI.getPlugin('editing').fireEvent('canUndo', canUndo);
 
         return canUndo;
       },
@@ -425,7 +424,7 @@
           && this.editingButtonsEnabled
         );
 
-        this.service.fireEvent('canRedo', canRedo);
+        GUI.getPlugin('editing').fireEvent('canRedo', canRedo);
 
         return canRedo;
       },
@@ -464,17 +463,15 @@
       selectedlayers(layers = []) {
         const has_layers = layers.length > 0;
 
-        const service = GUI.getPlugin('editing');
-
         this.editinglayers.forEach(({ id }) => {
-          const toolbox     = service.getToolBoxById(id);
+          const toolbox     = GUI.getPlugin('editing').getToolBoxById(id);
           const is_commit   = has_layers && toolbox.state.editing.history.commit;
           const is_selected = layers.includes(id);
 
           toolbox.setShow(has_layers ? is_selected : true);
 
           if (has_layers && !is_selected && is_commit) {
-            service.commit({ toolbox }).finally(() => toolbox.stop());
+            GUI.getPlugin('editing').commit({ toolbox }).finally(() => toolbox.stop());
           }
 
           if (has_layers && !is_selected && !is_commit) {
@@ -524,7 +521,7 @@
     async mounted() {
       await this.$nextTick();
       //emit openeditingpanel event. Used by simplereporting plugin
-      this.service.fireEvent('openeditingpanel');
+      GUI.getPlugin('editing').fireEvent('openeditingpanel');
     },
 
     /**
@@ -533,7 +530,7 @@
      * Called on a close editing panel panel
      */
     async beforeDestroy() {
-      this.service.stop();
+      GUI.getPlugin('editing').stop();
 
       // reset editing panel state
       this.state.open = false;
@@ -546,7 +543,7 @@
       // unregister "online" and "offline" events
       this.unByKeys.forEach(({ owner, setter, key }) => owner.un(setter, key));
 
-      this.service.fireEvent('closeeditingpanel');
+      GUI.getPlugin('editing').fireEvent('closeeditingpanel');
 
       // Show feature that is updated or created with editing on result content
       const layerIdChanges = Object.keys(this.state.featuresOnClose);
@@ -583,7 +580,7 @@
 
       this.state.featuresOnClose = {};
 
-      this.service.getToolBoxes().forEach(t => t.resetDefault());
+      GUI.getPlugin('editing').getToolBoxes().forEach(t => t.resetDefault());
 
       // re-enable query map control
       const control = GUI.getService('map').getMapControlByType({ type: 'query' });

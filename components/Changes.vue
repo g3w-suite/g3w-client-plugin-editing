@@ -176,7 +176,7 @@
       },
 
       getLayerById(id) {
-        return GUI.getPlugin('editing').service.getLayerById(id);
+        return GUI.getPlugin('editing').getLayerById(id);
       },
 
     },
