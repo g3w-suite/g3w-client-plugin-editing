@@ -209,7 +209,7 @@ new (class extends Plugin {
     this.state.editableLayers = {};
     this.state._toolboxes     = [];
     this.state.toolboxes      = [];
-
+    let i = 0;
     // loop over editable layers
     (await Promise.allSettled(
       getCatalogLayers({ EDITABLE: true }, { TOC_ORDER : true })
@@ -439,13 +439,6 @@ new (class extends Plugin {
 
         this.state.sessions[layer.getId()] = null;
 
-      });
-
-
-    let i = 0;
-    this
-      .getLayers()
-      .forEach(editingLayer => {
         /**
          * set 1:1 relation fields editable
          * 
@@ -455,7 +448,7 @@ new (class extends Plugin {
          *
          * @since g3w-client-plugin-editing@v3.7.0
          */
-        const fatherId = editingLayer.getId(); // father layer
+        const fatherId = layer.getId(); // father layer
         getCatalogLayerById(fatherId)
           .getRelations()
           .getArray()
@@ -469,8 +462,8 @@ new (class extends Plugin {
               .forEach(f => { f.editable = (f.editable && isChildEditable); });      // current editable boolean value + child editable layer
           });
         // Set editing layer color and toolbox style
-        if (!editingLayer.getColor()) {
-          editingLayer.setColor(editingLayer.isGeoLayer() ? [
+        if (!layer.getColor()) {
+          layer.setColor(layer.isGeoLayer() ? [
             "#C43C39", "#d95f02", "#91522D", "#7F9801", "#0B2637",
             "#8D5A99", "#85B66F", "#8D2307", "#2B83BA", "#7D8B8F",
             "#E8718D", "#1E434C", "#9B4F07", '#1b9e77', "#FF9E17",
@@ -481,6 +474,7 @@ new (class extends Plugin {
             "#cc2a36", "#00a0b0", "#00b159", "#f37735", "#ffc425",
           ][i++ % 40] : '#fff');
         }
+
       });
 
     // after add layers to layerstore
