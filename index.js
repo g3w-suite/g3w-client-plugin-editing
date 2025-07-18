@@ -1,5 +1,4 @@
 import i18n                                    from './i18n';
-import Editor                                  from './g3w-editor';
 import { Workflow }                            from './g3w-workflow';
 import { Step }                                from './g3w-step';
 import { createFeature }                       from './utils/createFeature';
@@ -12,14 +11,15 @@ import { getCatalogLayerById }                 from './utils/getCatalogLayerById
 import { OpenFormStep }                        from './actions/open-form';
 import { AddFeatureStep }                      from './actions/add-feature';
 import { ToolBox }                             from './g3w-toolbox';
+import { Collection }                          from './g3w-collection';
 
 const { G3W_FID }                              = g3wsdk.constant;
-const { ApplicationState }                     = g3wsdk.core;
+const { ApplicationState, G3WObject }          = g3wsdk.core;
 const _                                        = g3wsdk.core.i18n.t;
 const { Layer, LayersStore }                   = g3wsdk.core.layer;
 const { Feature }                              = g3wsdk.core.layer.features;
 const { Plugin, PluginService }                = g3wsdk.core.plugin;
-const { XHR, noop }                            = g3wsdk.core.utils;
+const { XHR, noop, cloneDeep }                 = g3wsdk.core.utils;
 const { GUI }                                  = g3wsdk.gui;
 const { Panel }                                = g3wsdk.gui.vue;
 const { Server: serverErrorParser }            = g3wsdk.core.errors.parsers;
@@ -29,9 +29,10 @@ const {
   getResolutionFromScale,
 }                                              = g3wsdk.ol.utils;
 
+const is_defined = d => undefined !== d;
+
 Object
   .entries({
-    Editor,
     Workflow,
     OpenFormStep,
     AddFeatureStep,
@@ -101,6 +102,8 @@ new (class extends Plugin {
         }
       },
       editableLayers:      {},
+      /** @since g3w-client-plugin-editing@v4.1.0 */
+      editors:             {},
       events:              {
         'start-editing':         {},
         'show-relation-editing': {},
@@ -210,11 +213,151 @@ new (class extends Plugin {
     // loop over editable layers
     (await Promise.allSettled(
       getCatalogLayers({ EDITABLE: true }, { TOC_ORDER : true })
-        .map(l => Editor.getLayer({
-          layer:        l,
-          vectorurl:    this.config.vectorurl,
-          project_type: this.config.project_type
-        }))
+        /** ORIGINAL SOURCE: g3w-client/src/map/layers/tablelayer.js@v4.0.0 */
+        .map(async layer => {
+          try {
+            
+          if (!layer.isEditable()) {
+            return null;
+          }
+          
+          // get layer editing config (from server)
+          try {
+            const {
+            vector,
+            constraints = {},
+            capabilities,
+          } = await layer.getProvider('data').getConfig();
+
+            layer.state.editing =  {
+              started:  false,
+              modified: false,
+              ready:    false
+            }
+
+            // add editing configurations
+            layer.config.editing = {
+              fields:                      vector.fields || [],
+              format:                      vector.format,
+              constraints,
+              capabilities:                capabilities || window.g3wsdk.constant.DEFAULT_EDITING_CAPABILITIES, // default editing capabilities
+              form:                        { perc: null },                                                      // set editing form `perc` to null at beginning
+              style:                       vector.style,                                                        // get vector layer style
+              geometrytype:                vector.geometrytype,                                                 // whether is a vector layer,
+              visible:                     (vector.editing || { visible: true }).visible,                       //@since 3.11.0 let know if layer should be editable directly (true) or through relation layer (false)
+              layer_style:                 (vector.editing || { layer_style: null }).layer_style,               // @since v4.0.0 check if has a layer style to for editing form
+            };
+
+            // set vector layer color 
+            if (vector.style) {
+              layer.setColor(vector.style.color);
+            }
+
+            layer.state.editing.ready = true;
+          } catch(e) {
+            console.warn(e);
+          }
+
+          let editing_layer = layer;
+
+          // set editing layer from IMAGE LAYER
+          if (Layer.LayerTypes.IMAGE === layer.getType()) {
+            try {
+              editing_layer = new g3wsdk.core.layer.VectorLayer(layer.config, {
+                vectorurl:    window.initConfig.plugins.editing.vectorurl,
+                project_type: window.initConfig.plugins.editing.project_type,
+                project:      ApplicationState.project,
+              });
+            } catch(e) {
+              console.warn(e);
+              return Promise.reject(e);
+            }
+          }
+
+          const suffixUrl = `${ApplicationState.project.getType()}/${ApplicationState.project.getId()}/${layer.getId()}/`;
+          const vectorUrl =  ApplicationState.project.state.vectorurl;
+
+          /**
+           * ORIGINAL SOURCE: g3w-client-plugin-editing/g3wsdk/editing/editor.j@v4.0.0
+           * ORIGINAL SOURCE: g3w-client/src/map/layers/featuresstore.js@v4.0.0
+           * ORIGINAL SOURCE: g3w-client/src/app/core/layers/features/olfeaturesstore.js@v3.10.2
+           */
+          const editor = editing_layer._editor = Object.assign(new G3WObject, {
+
+            /** Filter to getFeaturerequest */
+            _filter: { bbox: null },
+            /** @type { Boolean } true, mean all features of layer are get (e.g. Table layer) */
+            _allfeatures: false,
+            /** Referred layer */
+            _layer:     layer,
+            /** Original features (from server) */
+            _features: [],
+            /** Edited features (local) */
+            _editing_features: new Collection(Layer.LayerTypes.TABLE !== layer.getType()),
+            /** Ids of features loaded by current user */
+            _loadedIds: [],
+            /** Locked features */
+            _lockIds: [],
+            /** @type { boolean } Whether editor is active or not */
+            _started: false,
+            urls: {
+              editing:     `${vectorUrl}editing/${suffixUrl}`,
+              commit:      `${vectorUrl}commit/${suffixUrl}`,
+              config:      `${vectorUrl}config/${suffixUrl}`,
+              unlock:      `${vectorUrl}unlock/${suffixUrl}`,
+            },
+            /** Store editing features */
+            _featuresstore: Object.assign(new G3WObject, {
+                setters: {
+                  addFeatures: (feats = []) => feats.forEach(f => editor._featuresstore.addFeature(f)),
+                  removeFeature: f => editor._editing_features.remove(f),
+                  updateFeature: f => editor._editing_features.update(f),
+                },
+                clear:                     () => editor._editing_features.clear(),
+                addFeature:                f => editor._editing_features.add(f),
+                clone:                     () => cloneDeep(editor._featuresstore),
+                getFeatureById:            () => editor._editing_features.getArray().find(f => id == f.getId()),
+                readFeatures:              () => editor._editing_features.getArray(),
+                getLength:                 () => editor._editing_features.getArray().length,
+                getFeaturesCollection:     () => editor._editing_features._store,
+                setFeatures:               (feats = []) => { editor._editing_features.clear(); editor._featuresstore.addFeatures(feats); },
+            }),
+            setters: {
+              save:                       () => layer.save(),
+              addFeature:                 f => editor._featuresstore.addFeature(f),
+              updateFeature:              f => editor._featuresstore.updateFeature(f),
+              deleteFeature:              f => editor._featuresstore.deleteFeature(f),
+              setFeatures:               (f = []) => editor._featuresstore.setFeatures(f),
+              getFeatures:               (l, o, p) => this.__getFeatures(layer.getId(), o, p),
+              featuresLockedByOtherUser: f => {},
+            },
+            addFeature:          f => editor._featuresstore.addFeature(f),
+            isStarted:           () => editor._started,
+            getLockIds:          () => editor._lockIds,
+            getEditingSource:    () => editor._featuresstore,
+            getSource:           () => layer.getSource(),
+            getLayer:            () => layer,
+            rollback:            (c = []) => this.__setChanges(layer.getId(), c, true),
+            readFeatures:        () => editor._features,
+            readEditingFeatures: () => editor._featuresstore.readFeatures(),
+            commit:              c => this.__commitToEditor(layer.getId(), c),
+            start:               o => this.__startEditor(layer.getId(), o),
+            stop:                () => this.__stopEditor(layer.getId()),
+            clear:               () => this.__clearEditor(layer.getId()),
+          });
+
+          // clone editable layer
+          if (Layer.LayerTypes.TABLE === editing_layer.getType()) {
+            editing_layer = editing_layer.clone(); 
+          }
+
+          return editing_layer;
+
+          } catch (e) {
+            console.warn(e);
+            throw e;
+          }
+        })
     )).forEach(({ status, value:layer }) => {
 
       // skip on http error
@@ -223,6 +366,7 @@ new (class extends Plugin {
         return;
       }
 
+      this.state.editors[layer.getId()]        = layer.getEditor(); 
       this.state.editableLayers[layer.getId()] = layer;
 
       //set default empty object
@@ -1504,6 +1648,423 @@ new (class extends Plugin {
    */
   getActiveTool() {
     return this.getToolBoxes().filter(t => t.getActiveTool())[0];
+  }
+
+  /**
+   * @since g3w-client-plugin-editing@v4.1.0
+   */
+  editor(layerId) {
+    return this.state.editors[layerId];
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/g3wsdk/editing/editor.j@v4.0.0
+   * 
+   * Get features from server method.
+   * Used when vector Layer's bbox is contained into an already requested bbox (so no a new request is done).
+   *
+   * @param { number[] } options.filter.bbox bounding box Array [xmin, ymin, xmax, ymax]
+   *
+   * @returns { boolean } whether can perform a server request
+   * 
+   * @since g3w-client-plugin-editing@v4.1.0
+   */
+  async __getFeatures(layerId, options = {}, params = {}) {
+    const editor = this.editor(layerId);
+
+    // skip is not onlien or all features of layers are already got
+    if (!ApplicationState.online || editor._allfeatures) {
+      return Promise.resolve();
+    }
+
+    let doRequest = true; // default --> perform request
+
+    const { bbox } = options.filter || {};
+    //check if bbox options filter (bbox of a current map) is passed and is a vector layer
+    const is_vector = bbox && Layer.LayerTypes.VECTOR === editor.getLayer().getType();
+
+    // first request --> need to perform request
+    if (is_vector && null === editor._filter.bbox) {
+      editor._filter.bbox = bbox;                                                      // store bbox
+      doRequest         = true;
+    }
+
+    // subsequent requests --> check if bbox is contained into an already requested bbox
+    else if (is_vector) {
+      //Boolean - Check if features are already got inside bbox
+      const is_cached = ol.extent.containsExtent(editor._filter.bbox, bbox);
+      if (!is_cached) {
+        editor._filter.bbox = ol.extent.extend(editor._filter.bbox, bbox);
+      }
+      doRequest = !is_cached;
+    }
+
+    if (!doRequest) {
+      return;
+    }
+
+    const url = editor.urls.editing;
+    try {
+      let response;
+      if (!options.filter) {
+        response = await XHR.post({
+          url,
+          data:        JSON.stringify(params),
+          contentType: 'application/json',
+        });
+      } else if (is_defined(options.filter.bbox)) { // bbox filter
+        response = await XHR.post({
+          url,
+          data: JSON.stringify({
+            ...params,
+            in_bbox:     options.filter.bbox.join(','),
+            filtertoken: editor.getLayer().getFilterToken(),
+          }),
+          contentType: 'application/json',
+        })
+      } else if (is_defined(options.filter.fid)) { // fid filter
+        const { fid, relation } = options.filter.fid;
+        response = await XHR.post({
+          url: `${editor.urls.editing}?relationonetomany=${relation.id}|${fid}`,
+          contentType: 'application/json',
+          data:        JSON.stringify({ formatter: 1 }),
+        });
+      } else if (options.filter.field) {
+        response = await XHR.post({
+          url,
+          data:        JSON.stringify({ 
+            ...params,
+            ...options.filter,
+          }),
+          contentType: 'application/json',
+        })
+      } else if (is_defined(options.filter.fids)) {
+        response = await XHR.post({
+          url,
+          data:   JSON.stringify({
+            ...params,
+            ...options.filter,
+          }),
+          contentType: 'application/json',
+        })
+      } else if (is_defined(options.filter.nofeatures)) {
+        response = await XHR.post({
+          url,
+          data: JSON.stringify({
+            ...params,
+            field: `${options.filter.nofeatures_field || 'id'}|eq|__G3W__NO_FEATURES__`
+          }),
+          contentType: 'application/json',
+        })
+      }
+
+      // invalid response
+      if (!response.result) {
+        return;
+      }
+
+      const { data, count }       = response.vector;
+      const { featurelocks = [] } = response;
+      const lockIds               = featurelocks.map(lk => lk.featureid);
+      const dataProjection = 'NoGeometry' === response.vector.geometrytype ? null : editor.getLayer().getCrs();
+      let features   = [];
+
+      try {
+
+        features = (new ol.format.GeoJSON({
+          geometryName:      'geometry',
+          dataProjection,
+          featureProjection: dataProjection,
+        }))
+        .readFeatures('string' === typeof data ? JSON.parse(data) : data)
+        .filter(f => lockIds.includes(`${f.getId()}`))
+        .map(feature => new Feature({ feature }));
+
+        //if no features locks mean another user locks all feature requests
+        if (0 === featurelocks.length || count > features.length) {
+          //It means that another user locks these features
+          editor.featuresLockedByOtherUser(features);
+        }
+        //get already loaded feature id locked by current user
+        const fids = lockIds.map(({ featureid }) => featureid);
+        featurelocks
+          .filter(({ featureid }) => !fids.includes(featureid)) //exclude features already locked by current user
+          .forEach(fl => editor._lockIds.push(fl)) //update lockIds based on a featurelocks array from response
+
+        //store features locked by another user
+        const lockFeatures = [];
+
+        //Store features to add to layers source
+        features = features.filter(f => {
+          //get feature id
+          const featureId = f.getId();
+          //check if feature id is locked features
+          //it means that is not locked by another user.
+          if (featurelocks.find(({ featureid }) => featureId == featureid)) {
+            //check if feature is not yet added for the current user
+            if (!editor._loadedIds.includes(featureId)) {
+              editor._loadedIds.push(featureId);
+              return true;
+            } else {
+              return false; //feature locked by the current user
+            }
+          } else {
+            lockFeatures.push(f);
+            return false; //feature locked by another user
+          }
+        });
+
+    } catch (e) {
+      console.warn(e);
+    }
+
+    editor.readFeatures().push(...features); // add features to original features 
+    
+    // add features from server to editing features store (cloned from original)
+    editor.getEditingSource().addFeatures((features || []).map(f => f.clone()));
+
+    //set all features to true if no filter is set (e.g., Table layer)
+    editor._allfeatures = !options.filter;
+
+    return features;
+    } catch(e) {
+      console.warn(e);
+      return Promise.reject({ message: _("info.server_error")});
+    }
+
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client/src/services/editing.js@v3.9.1
+   * 
+   * Apply changes to source features (undo/redo)
+   * 
+   * @param items
+   * @param { boolean } reverse whether change to opposite
+   * 
+   * @since g3w-client-plugin-editing@v4.1.0
+   */
+  __setChanges(layerId, items = [], reverse = true) {
+    const editor = this.editor(layerId);
+    /** known actions */
+    const Actions = {
+      'add':    { fnc: 'addFeature',    opposite: 'delete' },
+      'delete': { fnc: 'removeFeature', opposite: 'add'    },
+      'update': { fnc: 'updateFeature', opposite: 'update' },
+    };
+    items.forEach(item => {
+      if (reverse) {
+        item.feature[Actions[item.feature.getState()].opposite]();
+      }
+      // get method from object
+      //@since 3.9.1 need to clone it otherwise it replace
+      editor.getEditingSource()[Actions[item.feature.getState()].fnc](item.feature.clone());
+    });
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/g3wsdk/editing/editor.j@v4.0.0
+   * 
+   * Run after server has applied changes to origin resource
+   *
+   * @param commit commit items
+   *
+   * @returns jQuery promise
+   * 
+   * @since g3w-client-plugin-editing@v4.1.0
+   */
+  async __commitToEditor(layerId, commit) {
+
+    const editor = this.editor(layerId);
+    
+    let relations = [];
+
+    // check if there are commit relations binded to new feature
+    if (commit.add.length) {
+      relations = Object
+        .keys(commit.relations)
+        .map(relationId => {
+          const relation = editor.getLayer().getRelations().getRelationByFatherChildren(layerId, relationId);
+          return {
+            [relationId]: {
+              ids: [                                                  // ids of "added" or "updated" relations
+                ...commit.relations[relationId].add.map(r => r.id),   // added
+                ...commit.relations[relationId].update.map(r => r.id) // updated
+              ],
+              fatherField: relation.getFatherField(), // father Fields <Array>
+              childField:  relation.getChildField()    // child Fields <Array>
+            }
+          };
+        });
+    }
+
+    // commit items
+    let response;
+
+    try {
+      commit.lockids = editor._lockIds;
+      response = await XHR.post({
+        url:         editor.urls.commit,
+        data:        JSON.stringify(commit),
+        contentType: 'application/json',
+      });
+    } catch(e) {
+      console.warn(e);
+      response = Promise.reject();
+    }
+
+    // sync selection filter features
+    if (response?.result) {
+      try {
+        const layer = getCatalogLayerById(layerId);
+        //if layer has geometry
+        if (layer.isGeoLayer()) {
+          commit.update.forEach(({ id, geometry } = {}) => {
+            if (layer.getOlSelectionFeature(id)) {
+              const selected = layer.getOlSelectionFeature(id);
+              if (selected) {
+                selected.feature = geometry;
+                GUI.getService('map').setSelectionFeatures('update', { feature: geometry });
+              }
+            }
+          });
+        }
+        commit.delete.forEach(id => {
+          if (layer.hasSelectionFid(id)) {
+            layer.excludeSelectionFid(id);
+          }
+        })
+      } catch(e) {
+        console.warn(e);
+      }
+    }
+
+    // skip when no response and response.result is false
+    if (!(response && response.result)) {
+      return response;
+    }
+
+    //Loop on new features saved on server
+    // clientid - temporary id of new feature
+    // id - id saved on server (autogenerate, next value) to subtituite to clientid feature id
+    // properties - properties of feature returned by server
+    response.response.new.forEach(({ clientid, id, properties } = {}) => {
+      //get feature from current layer in editing
+      const feature  = editor.getEditingSource().getFeatureById(clientid);
+      // set new id
+      feature.setId(id);
+      //set properties
+      feature.setProperties(properties);
+      //Loop on eventual relation updated or created
+      relations.forEach(r => {         // handle relations (if provided)
+        Object
+          .entries(r)
+          .forEach(([ id, opts = {}]) => { // id - relation layer id, opts - Object contain relation properties
+            //get the editing source of relation layer
+            const source = ToolBox.get(id).getSession().getEditor().getEditingSource();
+            // handle value to relation field saved on server
+            (opts.ids || []).forEach(id => {
+              const rFeature = source.getFeatureById(id);
+              if (rFeature) {
+                opts.fatherField.forEach((ff, i) => {// loop relation ids
+                  rFeature.set(opts.childField[i], feature.get(ff))  // set father feature `value` and `name`
+                })
+              }
+            })
+          });
+      });
+
+    });
+
+    //@since 3.9.0 take in account update properties returned by server (Useful in case of media input changes)
+    (response.response.update || []).forEach(({ id, properties } = {}) => {
+      //get feature from current layer in editing
+      const feature  = editor.getEditingSource().getFeatureById(id);
+      //set properties
+      feature.setProperties(properties);
+      //Loop on eventual relation updated or created
+      relations.forEach(r => {         // handle relations (if provided)
+        Object
+          .entries(r)
+          .forEach(([ id, opts = {}]) => { // id - relation layer id, opts - Object contain relation properties
+            //get the editing source of relation layer
+            const source = ToolBox.get(id).getSession().getEditor().getEditingSource();
+            // handle value to relation field saved on server
+            (opts.ids || []).forEach(id => {
+              const rFeature = source.getFeatureById(id);
+              if (rFeature) {
+                opts.fatherField.forEach((ff, i) => {// loop relation ids
+                  rFeature.set(opts.childField[i], feature.get(ff))  // set father feature `value` and `name`
+                })
+              }
+            })
+          });
+      });
+
+    });
+
+    const features = editor.readEditingFeatures();
+
+    features.forEach(f => f.clearState());          // reset state of the editing features (update, new etc..)
+
+    editor.getLayer().setFeatures([...features]);         // substitute layer features with actual editing features ("cloned" to prevent layer actions duplicates, eg. addFeatures)
+
+    // add lock ids
+    editor.getLayer()._featuresstore._lockIds = [...new Set(editor.getLayer()._featuresstore._lockIds.concat(...response.response.new_lockids))]
+    editor.getLayer()._featuresstore._lockIds.forEach(({ featureid }) => editor.getLayer()._featuresstore._loadedIds.push(featureid));
+
+    return response;
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/g3wsdk/editing/editor.j@v4.0.0
+   * 
+   * start editing
+   * 
+   * @since g3w-client-plugin-editing@v4.1.0
+   */
+  async __startEditor(layerId, options = {}) {
+    const editor   = this.editor(layerId)
+    const features = await editor.getFeatures(options);     // load layer features based on filter type
+    editor._started  = true;                                 // if all ok set to started
+    return features;                                      // features are already inside featuresstore
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/g3wsdk/editing/editor.j@v4.0.0
+   * 
+   * stop editor (unlock)
+   * 
+   * @since g3w-client-plugin-editing@v4.1.0
+   */
+  async __stopEditor(layerId) {
+    const editor     = this.editor(layerId)
+    const { result } = await XHR.post({ url: editor.urls.unlock });
+    editor.clear();
+    return result;
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/g3wsdk/editing/editor.j@v4.0.0
+   * 
+   * @since g3w-client-plugin-editing@v4.1.0 
+   */
+  __clearEditor(layerId) {
+    const editor = this.editor(layerId)
+
+    editor._started     = false;
+    editor._filter.bbox = null;
+    editor._allfeatures = false;
+
+    editor._features    = []; // clear features collection
+    editor._lockIds     = [];
+    editor._loadedIds   = [];
+    editor.getEditingSource().clear();
+
+    // vector layer
+    if (Layer.LayerTypes.VECTOR === editor.getLayer().getType()) {
+      editor.getLayer().resetEditingSource(editor.getEditingSource().getFeaturesCollection());
+    }
   }
 
 });
