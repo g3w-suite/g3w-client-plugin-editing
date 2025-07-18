@@ -475,14 +475,15 @@ new (class extends Plugin {
           ][i++ % 40] : '#fff');
         }
 
+         // create toolbox
+        this.addToolBox(new ToolBox(layer, [...layer.getChildren(), ...layer.getFathers()].filter(id => this.getLayerById(id))));
+
       });
 
     // after add layers to layerstore
     ApplicationState.layers['editing'].addLayers(this.getLayers());
 
-    // create toolboxes
-    this.getLayers().forEach(l => this.addToolBox(new ToolBox(l, [...l.getChildren(), ...l.getFathers()].filter(id => this.getLayerById(id)))));
-
+  
     await GUI.isReady();
 
     this._setupGUI();
