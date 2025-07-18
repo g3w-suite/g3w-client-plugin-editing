@@ -89,8 +89,8 @@ new (class extends Plugin {
           error: () => {}        // function executed after commit changes error
         }
       },
-      layers: {},
-      editors: {},               // editable layers (vector)
+      layers: {},                // editable layers (vector)
+      editors: {},
       features: {},              // edited features (local)
       lock_ids: {},              // locked features
       loaded_ids: {},            // Ids of features loaded by current user
