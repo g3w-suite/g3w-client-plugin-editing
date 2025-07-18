@@ -2094,7 +2094,7 @@ new (class extends Plugin {
             }
 
           }),
-          #rollback(relations),
+          this.#rollback(relations),
         ];
       })
     );
