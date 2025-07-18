@@ -90,9 +90,13 @@ new (class extends Plugin {
         }
       },
       /** editable layers  */
-      layers:      {},
+      layers: {},
       /** @since g3w-client-plugin-editing@v4.1.0 */
-      editors:             {},
+      editors: {},
+      /** @since g3w-client-plugin-editing@v4.1.0 */
+      features: {},              // Edited features (local)
+      /** @since g3w-client-plugin-editing@v4.1.0 */
+      lock_ids: {},              // Locked features
       events:              {
         'start-editing':         {},
         'show-relation-editing': {},
@@ -259,6 +263,9 @@ new (class extends Plugin {
           const suffixUrl = `${ApplicationState.project.getType()}/${ApplicationState.project.getId()}/${layer.getId()}/`;
           const vectorUrl =  ApplicationState.project.state.vectorurl;
 
+          this.state.features[layer.getId()] = new Collection(Layer.LayerTypes.TABLE !== layer.getType());
+          this.state.lock_ids[layer.getId()] = [];
+
           /**
            * ORIGINAL SOURCE: g3w-client-plugin-editing/g3wsdk/editing/editor.j@v4.0.0
            * ORIGINAL SOURCE: g3w-client/src/map/layers/featuresstore.js@v4.0.0
@@ -274,12 +281,8 @@ new (class extends Plugin {
             _layer:     layer,
             /** Original features (from server) */
             _features: [],
-            /** Edited features (local) */
-            _editing_features: new Collection(Layer.LayerTypes.TABLE !== layer.getType()),
             /** Ids of features loaded by current user */
             _loadedIds: [],
-            /** Locked features */
-            _lockIds: [],
             /** @type { boolean } Whether editor is active or not */
             _started: false,
             urls: {
@@ -292,17 +295,17 @@ new (class extends Plugin {
             _featuresstore: Object.assign(new G3WObject, {
                 setters: {
                   addFeatures: (feats = []) => feats.forEach(f => editor._featuresstore.addFeature(f)),
-                  removeFeature: f => editor._editing_features.remove(f),
-                  updateFeature: f => editor._editing_features.update(f),
+                  removeFeature: f => this.state.features[layer.getId()].remove(f),
+                  updateFeature: f => this.state.features[layer.getId()].update(f),
                 },
-                clear:                     () => editor._editing_features.clear(),
-                addFeature:                f => editor._editing_features.add(f),
+                clear:                     () => this.state.features[layer.getId()].clear(),
+                addFeature:                f => this.state.features[layer.getId()].add(f),
                 clone:                     () => cloneDeep(editor._featuresstore),
-                getFeatureById:            () => editor._editing_features.getArray().find(f => id == f.getId()),
-                readFeatures:              () => editor._editing_features.getArray(),
-                getLength:                 () => editor._editing_features.getArray().length,
-                getFeaturesCollection:     () => editor._editing_features._store,
-                setFeatures:               (feats = []) => { editor._editing_features.clear(); editor._featuresstore.addFeatures(feats); },
+                getFeatureById:            () => this.state.features[layer.getId()].getArray().find(f => id == f.getId()),
+                readFeatures:              () => this.state.features[layer.getId()].getArray(),
+                getLength:                 () => this.state.features[layer.getId()].getArray().length,
+                getFeaturesCollection:     () => this.state.features[layer.getId()]._store,
+                setFeatures:               (feats = []) => { this.state.features[layer.getId()].clear(); editor._featuresstore.addFeatures(feats); },
             }),
             setters: {
               save:                       () => layer.save(),
@@ -315,7 +318,7 @@ new (class extends Plugin {
             },
             addFeature:          f => editor._featuresstore.addFeature(f),
             isStarted:           () => editor._started,
-            getLockIds:          () => editor._lockIds,
+            getLockIds:          () => this.state.lock_ids[layer.getId()],
             getEditingSource:    () => editor._featuresstore,
             getSource:           () => layer.getSource(),
             getLayer:            () => layer,
@@ -1608,7 +1611,7 @@ new (class extends Plugin {
         const fids = lockIds.map(({ featureid }) => featureid);
         featurelocks
           .filter(({ featureid }) => !fids.includes(featureid)) //exclude features already locked by current user
-          .forEach(fl => editor._lockIds.push(fl)) //update lockIds based on a featurelocks array from response
+          .forEach(fl => this.state.lock_ids[layerId].push(fl)) //update lockIds based on a featurelocks array from response
 
         //store features locked by another user
         const lockFeatures = [];
@@ -1721,7 +1724,7 @@ new (class extends Plugin {
     let response;
 
     try {
-      commit.lockids = editor._lockIds;
+      commit.lockids = this.state.lock_ids[layerId];
       response = await XHR.post({
         url:         editor.urls.commit,
         data:        JSON.stringify(commit),
@@ -1829,8 +1832,8 @@ new (class extends Plugin {
     editor.getLayer().setFeatures([...features]);         // substitute layer features with actual editing features ("cloned" to prevent layer actions duplicates, eg. addFeatures)
 
     // add lock ids
-    editor.getLayer()._featuresstore._lockIds = [...new Set(editor.getLayer()._featuresstore._lockIds.concat(...response.response.new_lockids))]
-    editor.getLayer()._featuresstore._lockIds.forEach(({ featureid }) => editor.getLayer()._featuresstore._loadedIds.push(featureid));
+    this.state.lock_ids[layerId] = [...new Set(this.state.lock_ids[layerId].concat(...response.response.new_lockids))]
+    this.state.lock_ids[layerId].forEach(({ featureid }) => editor.getLayer()._featuresstore._loadedIds.push(featureid));
 
     return response;
   }
@@ -1875,9 +1878,9 @@ new (class extends Plugin {
     editor._filter.bbox = null;
     editor._allfeatures = false;
 
-    editor._features    = []; // clear features collection
-    editor._lockIds     = [];
-    editor._loadedIds   = [];
+    editor._features             = []; // clear features collection
+    this.state.lock_ids[layerId] = [];
+    editor._loadedIds            = [];
     editor.getEditingSource().clear();
 
     // vector layer
