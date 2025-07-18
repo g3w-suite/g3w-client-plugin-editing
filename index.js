@@ -208,7 +208,8 @@ new (class extends Plugin {
     (await Promise.allSettled(
       getCatalogLayers({ EDITABLE: true }, { TOC_ORDER : true })
         /** ORIGINAL SOURCE: g3w-client/src/map/layers/tablelayer.js@v4.0.0 */
-        .map(async layer => {
+        .map(async (layer, index) => {
+          console.log(layer.getId())
           try {
             
           if (!layer.isEditable()) {
@@ -439,13 +440,15 @@ new (class extends Plugin {
               ][count++ % 40] : '#fff');
             }
 
-            // create toolbox
-            this.addToolBox(
-              new ToolBox(editing_layer, [
-                ...editing_layer.getChildren(),
-                ...editing_layer.getFathers()].filter(id => this.getLayerById(id))
-              )
+            //create toolbox
+            const toolbox = new ToolBox(editing_layer, [
+              ...editing_layer.getChildren(),
+              ...editing_layer.getFathers()].filter(id => this.getLayerById(id))
             );
+            //Use index to mantain TOC layer order
+            this.state._toolboxes[index] = toolbox;
+            this.state.sessions[toolbox.getId()] = toolbox.getSession(); // add session
+            this.state.toolboxes[index] = toolbox.state;
 
           } catch (e) {
             this.state.layers_in_error = true;
