@@ -71,8 +71,8 @@
     <div id = "toolboxes">
       <toolbox
         v-for                 = "toolbox in state.toolboxes"
-        :key                  = "toolbox.id"
-        :state                = "toolbox"
+        :key                  = "toolbox.state.id"
+        :state                = "toolbox.state"
         :resourcesurl         = "resourcesurl"
         @setselectedtoolbox   = "selectToolBox"
         @starttoolbox         = "startToolBox"

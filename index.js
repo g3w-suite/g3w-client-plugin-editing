@@ -66,7 +66,6 @@ new (class extends Plugin {
       editors:             {},
       sessions:            {},    // store all sessions
       toolboxes:           [],
-      _toolboxes:          [],    // TODO: `state._toolboxes` vs `state.toolboxes` ?
       toolboxselected:     null,
       /** @since g3w-client-plugin-editing@v3.6.2 */
       showselectlayers:    true,  // whether to show selected layers on editing panel
@@ -199,7 +198,6 @@ new (class extends Plugin {
     ApplicationState.layers['editing'] = new LayersStore({ id: 'editing', queryable: false, catalog: false });
 
     this.state.layers     = {};
-    this.state._toolboxes = [];
     this.state.toolboxes  = [];
     
     let count = 0;
@@ -446,9 +444,8 @@ new (class extends Plugin {
               ...editing_layer.getFathers()].filter(id => this.getLayerById(id))
             );
             //Use index to mantain TOC layer order
-            this.state._toolboxes[index] = toolbox;
+            this.state.toolboxes[index] = toolbox;
             this.state.sessions[toolbox.getId()] = toolbox.getSession(); // add session
-            this.state.toolboxes[index] = toolbox.state;
 
           } catch (e) {
             this.state.layers_in_error = true;
@@ -641,9 +638,8 @@ new (class extends Plugin {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   addToolBox(toolbox) {
-    this.state._toolboxes.push(toolbox);
+    this.state.toolboxes.push(toolbox);
     this.state.sessions[toolbox.getId()] = toolbox.getSession(); // add session
-    this.state.toolboxes.push(toolbox.state);
   }
 
   /**
@@ -735,7 +731,7 @@ new (class extends Plugin {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   getToolBoxById(id) {
-    return this.state._toolboxes.find(tb => id === tb.getId());
+    return this.state.toolboxes.find(tb => id === tb.getId());
   }
 
   /**
@@ -772,7 +768,7 @@ new (class extends Plugin {
     const { toolboxes, showToolboxesExcluded } = constraints;
     const toolboxIds = Object.keys(toolboxes);
     if (false === showToolboxesExcluded) {
-      this.state.toolboxes.forEach(t => t.show = toolboxIds.includes(t.id));
+      this.state.toolboxes.forEach(({ state: { show, id} }) => show = toolboxIds.includes(id));
     }
     toolboxIds.forEach(id => this.getToolBoxById(id).setEditingConstraints(toolboxes[id]))
   }
@@ -785,7 +781,7 @@ new (class extends Plugin {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   getToolBoxes() {
-    return this.state._toolboxes;
+    return this.state.toolboxes;
   }
 
   /**
@@ -809,7 +805,7 @@ new (class extends Plugin {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   async stop() {
-    const commitpromises = this.state._toolboxes
+    const commitpromises = this.state.toolboxes
       .filter(t => t.getSession().getHistory().state.commit) // check if temp changes are waiting to save on server
       .map( toolbox => this.commit({ toolbox, modal : true }))
     try {
@@ -818,7 +814,7 @@ new (class extends Plugin {
       console.warn(e);
     }
 
-    this.state._toolboxes.forEach(t => t.stop());
+    this.state.toolboxes.forEach(t => t.stop());
 
     this.state.toolboxselected     = null;
     this.state.message             =  null;
