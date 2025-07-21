@@ -1001,7 +1001,7 @@
             )
           }
 
-          options.context.session.rollbackDependecies([this._relationLayerId])
+          this.rollbackDependecies(options.context.session.getId(), [this._relationLayerId])
         }
 
         workflow.stop();
@@ -1107,7 +1107,7 @@
           });
         } catch (e) {
           console.warn(e);
-          options.context.session.rollbackDependecies([this._relationLayerId]);
+          this.rollbackDependecies(options.context.session.getId(), [this._relationLayerId]);
         }
 
         if (is_vector) {
@@ -1216,6 +1216,32 @@
             layer:    this.getLayer()
           }
         };
+      },
+
+      /**
+       * ORIGINAL SOURCE: g3w-client/src/core/editing/session.js@v3.9.1
+       * 
+       * Rollback child changes of current session
+       * 
+       * @param layerId 
+       * @param ids [array of child layer id]
+       * 
+       * @since g3w-client-plugin-editing@v4.1.0
+       */
+      rollbackDependecies(layerId, ids) {
+        const toolBox = GUI.getPlugin('editing').getToolBoxById(layerId);
+        ids.forEach(id => {
+          const changes = [];
+          toolBox.state.editing.session.changes = toolBox.state.editing.session.changes.filter(tc => {
+            if (id === tc.layerId) {
+              changes.push(tc);
+              return false
+            }
+          });
+          if (changes.length) {
+            GUI.getPlugin('editing').getToolBoxById(id).rollback(changes);
+          }
+        });
       },
 
     },
