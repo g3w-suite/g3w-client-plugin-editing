@@ -39,9 +39,10 @@ export async function getLayersDependencyFeatures(layerId, opts = {}) {
       opts.filterType  = 'ONE' === (relation.getType ? relation.getType() : relation.type) ? '1:1' :  opts.filterType; // In a case of relation 1:1
       const filterType =  opts.filterType || 'fid';
       const options    = createEditingDataOptions(filterType, opts);
-      const session    = GUI.getPlugin('editing').state.sessions[id];
-      const online     = ApplicationState.online && session;
       const toolbox    = GUI.getPlugin('editing').getToolBoxById(id);
+      const session    = toolbox.getSession();
+      const online     = ApplicationState.online && session;
+
 
       // getLayersDependencyFeaturesFromSource
 
