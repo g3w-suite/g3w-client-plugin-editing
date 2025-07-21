@@ -103,7 +103,7 @@ new (class extends Plugin {
         layoutName => this.state.currentLayout = layoutName !== this.getName() ? layoutName : this.state.currentLayout
       ),
       onMapControlToggled: ({ target }) => {
-        target.isToggled() && target.isClickMap() && this.state.toolboxselected && this.state?.toolboxselected?.getActiveTool?.() && this.state.toolboxselected.stopActiveTool();
+        target.isToggled() && target.isClickMap() && this.state?.toolboxselected?.getActiveTool?.() && this.state.toolboxselected.stopActiveTool();
       },
     };
 
