@@ -485,7 +485,8 @@ export class ToolBox extends G3WObject {
                       await new Promise((resolve, reject) => {
                         const vueInstance      = new (Vue.extend({
                           name: 'multi-relations-fetures',
-                          template: `<div>
+                          template: /* html */`
+                          <div>
                             <select v-select2 = "'relationId'">
                               <option v-for = "relation in relations" 
                                 :key   = "relation.state.id" 
@@ -554,7 +555,8 @@ export class ToolBox extends G3WObject {
                       await new Promise((resolve, reject) => {
                         const vueInstance      = new (Vue.extend({
                           name: 'multi-relations-fetures',
-                          template: `<div>
+                          template: /* html */`
+                          <div>
                             <select v-select2 = "'action'">
                               <option v-for = "a in actions" 
                                 :key   = "a" 
@@ -789,7 +791,27 @@ export class ToolBox extends G3WObject {
                         const editingLayer     = originalLayer.getEditingLayer();
                         const source           = editingLayer.getSource();
                         //set reactive
-                        const vueInstance      = new (Vue.extend(require('./components/CopyFeaturesFromOtherLayers.vue').default))({layers});
+                        const vueInstance      = new (Vue.extend({
+                          template: /* html */`
+                            <section>
+                              <div id = "g3w-select-editable-layers-content">
+                                <select
+                                  id        = "g3w-select-editable-layers-to-copy"
+                                  v-select2 = "'id'"
+                                >
+                                  <option
+                                    v-for  = "layer in $options.layers"
+                                    :key   = "layer.id"
+                                    :value = "layer.id"
+                                  >{{ layer.name }}</option>
+                                </select>
+                              </div>
+                            </section>
+                          `,
+                          name: 'Copyfeaturesfromotherlayers',
+                          data: () => ({ id: this.$options.layers.find(l => l.selected).id }),
+                          watch: { 'id': (id) => { this.$options.layers.forEach(l => l.selected = id === l.id); } },
+                        }))({layers});
                         const message          = vueInstance.$mount().$el;
                         GUI.showModalDialog({
                           title:      _('plugins.editing.relation.copy_feature_from_other_layer'),
