@@ -19,9 +19,9 @@
       </div>
 
       <div
-        v-if       = "state.isrelation"
-        class      = "editing_table_relation_messagge"
-        v-t-plugin = "'editing.relation.table.info'">
+        v-if  = "state.isrelation"
+        class = "editing_table_relation_messagge"
+        v-t   = "'plugins.editing.relation.table.info'">
       </div>
 
     </div>
@@ -126,14 +126,14 @@
     >
       <!-- SAVE CHANGES -->
       <button
-        v-t-plugin  = "state.isrelation ? 'editing.form.buttons.save_and_back' : 'editing.form.buttons.save'"
+        v-t         = "state.isrelation ? 'plugins.editing.form.buttons.save_and_back' : 'plugins.editing.form.buttons.save'"
         class       = "btn btn-success" style="margin-right: 10px"
         @click.stop = "save">
       </button>
 
       <!-- DISCARD CHANGES -->
       <button
-        v-t-plugin  = "'editing.form.buttons.cancel'"
+        v-t         = "'plugins.editing.form.buttons.cancel'"
         class       = "btn btn-danger"
         @click.stop = "cancel">
       </button>

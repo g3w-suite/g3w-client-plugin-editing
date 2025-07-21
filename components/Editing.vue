@@ -12,7 +12,7 @@
       v-if  = "!appState.online"
       id    = "onlineofflinemessage"
     >
-      <div v-t-plugin = "'editing.messages.offline'"></div>
+      <div v-t = "'plugins.editing.messages.offline'"></div>
     </div>
 
     <!-- COMMIT BAR -->

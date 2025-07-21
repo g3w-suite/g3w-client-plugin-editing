@@ -14,7 +14,7 @@
         ref   = "relation_header_title"
         class = "relation_header_title box-header with-border skin-color"
       >
-        <span v-t-plugin = "'editing.edit_relation'"></span>
+        <span v-t = "'plugins.editing.edit_relation'"></span>
         <span style = "margin-left: 2px;">: {{ relation.name.toUpperCase() }}</span>
       </div>
 
@@ -95,8 +95,8 @@
         <!-- ADD VECTOR RELATION -->
         <div>
           <div
-            class      = "g3w-editing-new-relation-vector-type"
-            v-t-plugin = "'editing.relation.draw_new_feature'">
+            class = "g3w-editing-new-relation-vector-type"
+            v-t   = "'plugins.editing.relation.draw_new_feature'">
           </div>
           <button
             class       = "btn skin-button"
@@ -113,8 +113,8 @@
           <span class = "divider"></span>
 
           <div
-            style      = "align-self: center"
-            v-t-plugin = "'editing.relation.draw_or_copy'"
+            style = "align-self: center"
+            v-t   = "'plugins.editing.relation.draw_or_copy'"
           ></div>
 
           <span class = "divider"></span>
@@ -122,8 +122,8 @@
           <div id = "g3w-select-editable-layers-content">
 
             <div
-              class      = "g3w-editing-new-relation-vector-type"
-              v-t-plugin = "'editing.relation.copy_feature_from_other_layer'"
+              class = "g3w-editing-new-relation-vector-type"
+              v-t   = "'plugins.editing.relation.copy_feature_from_other_layer'"
             ></div>
 
             <select

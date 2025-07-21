@@ -6,16 +6,16 @@
   <div>
 
     <h4
-      v-if           = "relation"
-      class          = "skin-color g3w-long-text"
-      style          = "font-weight: bold; margin: 15px 0"
-      v-t-plugin:pre = "'editing.messages.commit.header_relation'"
+      v-if    = "relation"
+      class   = "skin-color g3w-long-text"
+      style   = "font-weight: bold; margin: 15px 0"
+      v-t:pre = "'plugins.editing.messages.commit.header_relation'"
     >: {{ layer.getName() }}</h4>
 
     <template
       v-for = "c in Object.keys(commits).filter(c => commits[c].length)"
     >
-      <h4 v-t-plugin:pre = "`editing.messages.commit.${c}`"> ({{ commits[c].length }}) </h4>
+      <h4 v-t:pre = "`plugins.editing.messages.commit.${c}`"> ({{ commits[c].length }}) </h4>
       <divider />
       <ul>
         <li v-for = "item in commits[c]">
