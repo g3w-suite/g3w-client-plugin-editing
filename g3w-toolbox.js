@@ -200,7 +200,7 @@ export class ToolBox extends G3WObject {
       getEditingSource:    () => editor._featuresstore,
       getSource:           () => _layer.getSource(),
       getLayer:            () => _layer,
-      rollback:            (c = []) => this.__setChanges(_layer.getId(), c, true),
+      rollback:            (c = []) => this.__setChanges(c),
       readFeatures:        () => editor._features,
       readEditingFeatures: () => editor._featuresstore.readFeatures(),
       commit:              c => this.__commitToEditor(_layer.getId(), c),
@@ -345,19 +345,19 @@ export class ToolBox extends G3WObject {
     }}), {
       state:                        new Proxy({}, { get: (_, prop) => this.state.editing.session[prop] }),
       getId:                        () => layer.getId(),
-      getLastHistoryState:          this.__getLastHistoryState.bind(this),
-      isStarted:                    this.__isStarted.bind(this),
-      getEditor:                    this.__getEditor.bind(this),
+      getLastHistoryState:          this.getLastHistoryState.bind(this),
+      isStarted:                    this.isSessionStarted.bind(this),
+      getEditor:                    this.getEditor.bind(this),
       push:                         this.__push.bind(this),
       pushDelete:                   this.__pushDelete.bind(this),
       save:                         this.__save.bind(this),
       pushAdd:                      this.__pushAdd.bind(this),
       pushUpdate:                   this.__pushUpdate.bind(this),
-      rollback:                     this.__rollback.bind(this),
+      rollback:                     this.rollback.bind(this),
       rollbackDependecies:          this.__rollbackDependecies.bind(this),
-      undo:                         this.__undoSession.bind(this),
-      redo:                         this.__redoSession.bind(this),
-      getCommitItems:               this.__getCommitItems.bind(this),
+      undo:                         this.undo.bind(this),
+      redo:                         this.redo.bind(this),
+      getCommitItems:               this.getCommitItems.bind(this),
       commit:                       this.save.bind(this),
       clear:                        this.__clearSession.bind(this),
       clearHistory:                 this.clearHistory.bind(this),
@@ -1855,7 +1855,7 @@ export class ToolBox extends G3WObject {
   
       filter = applicationConstraint && applicationConstraint.filter || this.constraints.filter || filter;
       //register lock features to show a message
-      const unKeyLock = this.state.layer.getEditor().onceafter('featuresLockedByOtherUser', () => {
+      const unKeyLock = this.getEditor().onceafter('featuresLockedByOtherUser', () => {
         GUI.showUserMessage({
           type:     'warning',
           subtitle: this.state.layer.getName().toUpperCase(),
@@ -1865,7 +1865,7 @@ export class ToolBox extends G3WObject {
   
       //add featuresLockedByOtherUser setter
       this.state._unregisterStartSettersEventsKey.push(
-        () => this.state.layer.getEditor().un('featuresLockedByOtherUser', unKeyLock)
+        () => this.getEditor().un('featuresLockedByOtherUser', unKeyLock)
       );
 
 
@@ -1922,7 +1922,7 @@ export class ToolBox extends G3WObject {
         }
       }
 
-      const is_started = !!this.__isStarted();
+      const is_started = !!this.isSessionStarted();
 
       //@TODO need to explain better
       const GIVE_ME_A_NAME = (
@@ -2003,7 +2003,7 @@ export class ToolBox extends G3WObject {
       this._handleScaleConstraint(true);
     }
 
-    const is_started = !!this.__isStarted();
+    const is_started = !!this.isSessionStarted();
 
     if (!is_started) { return true }
 
@@ -2016,7 +2016,7 @@ export class ToolBox extends G3WObject {
       const toolbox = GUI.getPlugin('editing').getToolBoxById(id);
       if (toolbox && toolbox.inEditing() && toolbox.isDirty()) {
         //get a temporary relations object and check if layerId has some changes
-        return Object.keys(toolbox.getSession().getCommitItems() || {}).find(id => layerId === id);
+        return Object.keys(toolbox.getCommitItems() || {}).find(id => layerId === id);
       }
     });
 
@@ -2078,13 +2078,13 @@ export class ToolBox extends G3WObject {
         return resolve(commit);
       }
 
-      commit = items || this.__getCommitItems(this.__commit());
+      commit = items || this.getCommitItems(this.__commit());
 
       if (!relations) {
         commit.relations = {};
       }
       try {
-        const response = await this.state.layer.getEditor().commit(commit);
+        const response = await this.getEditor().commit(commit);
   
         // skip when response is null or undefined and response.result is false
         if (!(response && response.result)) {
@@ -2094,16 +2094,9 @@ export class ToolBox extends G3WObject {
 
         const { relations = {} } = response.response; // check if relations are saved on server
 
-        // sync server data with local data
+        // sync server data with local data (apply commit response to current editing relation layer)
         for (const id in relations) {
-          const toolbox = ToolBox.get(id)
-          toolbox
-            .getSession()
-            .getEditor()
-            .applyCommitResponse({        // apply commit response to current editing relation layer
-              response: relations[id],
-              result:   true
-            });
+          ToolBox.get(id).getEditor().applyCommitResponse({ response: relations[id], result: true });
         }
 
         this.clearHistory();
@@ -2775,9 +2768,9 @@ export class ToolBox extends G3WObject {
    * 
    * @returns {*|null}
    * 
-   * @since g3w-client-plugin-editing@v3.8.0
+   * @since g3w-client-plugin-editing@v4.1.0
    */
-  __getLastHistoryState() {
+  getLastHistoryState() {
     return this._states.at(-1) || null;
   }
 
@@ -2786,17 +2779,8 @@ export class ToolBox extends G3WObject {
    * 
    * @since g3w-client-plugin-editing@v3.8.0
    */
-  __isStarted() {
+  isSessionStarted() {
     return this.state.editing.session.started;
-  }
-
-  /**
-   * ORIGINAL SOURCE: g3w-client/src/core/editing/session.js@v3.9.1
-   * 
-   * @since g3w-client-plugin-editing@v3.8.0
-   */
-  __getEditor() {
-    return this.state.layer.getEditor();
   }
 
   /**
@@ -2874,12 +2858,10 @@ export class ToolBox extends G3WObject {
      * In case of removeNotEditableProperties true, remove not editable field
      * from feature properties
      */
-    const editor = layerId === this.state.layer.getId() ? this.state.layer.getEditor() : ToolBox.get(layerId).getSession().getEditor();
-
     // remove not editable proprierties from feature
     if (removeNotEditableProperties) {
       (
-        editor.getLayer().config.editing.fields
+        ToolBox.get(layerId).getEditor().getLayer().config.editing.fields
         .filter(f => !f.editable) // un-editable fields
         .map(f => f.name)
         || []
@@ -2924,16 +2906,43 @@ export class ToolBox extends G3WObject {
   }
 
   /**
+   * ORIGINAL SOURCE: g3w-client/src/services/editing.js@v3.9.1
+   * 
+   * Apply changes to source features (undo/redo)
+   * 
+   * @param items
+   * @param { boolean } reverse whether change to opposite
+   * 
+   * @since g3w-client-plugin-editing@v4.1.0
+   */
+  __setChanges(items = [], reverse = true) {
+    /** known actions */
+    const Actions = {
+      'add':    { fnc: 'addFeature',    opposite: 'delete' },
+      'delete': { fnc: 'removeFeature', opposite: 'add'    },
+      'update': { fnc: 'updateFeature', opposite: 'update' },
+    };
+    items.forEach(item => {
+      if (reverse) {
+        item.feature[Actions[item.feature.getState()].opposite]();
+      }
+      // get method from object
+      //@since 3.9.1 need to clone it otherwise it replace
+      this.getEditor().getEditingSource()[Actions[item.feature.getState()].fnc](item.feature.clone());
+    });
+  }
+
+  /**
    * ORIGINAL SOURCE: g3w-client/src/core/editing/session.js@v3.9.1
    *
    * @param changes
    *
    * @since g3w-client-plugin-editing@v3.8.0
    */
-  async __rollback(changes) {
+  async rollback(changes) {
     // skip when..
     if (changes) {
-      return this.state.layer.getEditor().rollback(changes);
+      return this.getEditor().rollback(changes);
     }
 
     // Handle temporary changes of layer
@@ -2947,15 +2956,14 @@ export class ToolBox extends G3WObject {
         changes.own.push(change);
       } else {
         changes.dependencies[change.layerId] = changes.dependencies[change.layerId] || [];
-        // FILO
-        changes.dependencies[change.layerId].unshift(change);
+        changes.dependencies[change.layerId].unshift(change); // FILO
       }
     });
 
     try {
-      await this.state.layer.getEditor().rollback(changes.own);
+      await this.getEditor().rollback(changes.own);
       for (const id in changes.dependencies) {
-        ToolBox.get(id).getSession().rollback(changes.dependencies[id]);
+        ToolBox.get(id).rollback(changes.dependencies[id]);
       }
       return changes.dependencies;
     } catch(e) {
@@ -2985,23 +2993,21 @@ export class ToolBox extends G3WObject {
         }
       });
       if (changes.length) {
-        ToolBox.get(id).getSession().rollback(changes);
+        ToolBox.get(id).rollback(changes);
       }
     });
   }
 
   /**
    * ORIGINAL SOURCE: g3w-client/src/core/editing/session.js@v3.9.1
-   *
-   * undo method
    * 
-   * @param items
+   * @param items session items
    *
-   * @since g3w-client-plugin-editing@v3.8.0
+   * @since g3w-client-plugin-editing@v4.1.0
    */
-  __undoSession(items) {
+  undo(items) {
     items = items || this.__undo();
-    this.state.layer.getEditor().setChanges(items.own, true);
+    this.getEditor().setChanges(items.own, true);
     this.__canCommit();
     return items.dependencies;
   }
@@ -3009,15 +3015,13 @@ export class ToolBox extends G3WObject {
   /**
    * ORIGINAL SOURCE: g3w-client/src/core/editing/session.js@v3.9.1
    * 
-   * redo method
-   * 
-   * @param items
+   * @param items session items
    *
-   * @since g3w-client-plugin-editing@v3.8.0
+   * @since g3w-client-plugin-editing@v4.1.0
    */
-  __redoSession(items) {
+  redo(items) {
     items = items || this.__redo();
-    this.state.layer.getEditor().setChanges(items.own, true);
+    this.getEditor().setChanges(items.own, true);
     this.__canCommit();
     return items.dependencies;
   }
@@ -3029,9 +3033,9 @@ export class ToolBox extends G3WObject {
    * 
    * @returns {{ add: *[], update: *[], relations: {}, delete: *[] }} JSON Object for a commit body send to server
    * 
-   * @since g3w-client-plugin-editing@v3.8.0
+   * @since g3w-client-plugin-editing@v4.1.0
    */
-  __getCommitItems() {
+  getCommitItems() {
     const itemsToCommit = this.__commit();
     const id            = this.state.layer.getId();
     let state;
@@ -3049,9 +3053,8 @@ export class ToolBox extends G3WObject {
       // case key (layer id) is not equal to id (current layer id on editing)
       if (key !== id) {
         isRelation            = true; //set true because these changes belong to features relation items
-        const sessionRelation = ToolBox.get(key).getSession();
         //check lock ids of relation layer
-        const lockids =  sessionRelation ? sessionRelation.getEditor().getLockIds(): [];
+        const lockids =  ToolBox.get(key)?.getEditor?.()?.getLockIds?.() || [];
         //create a relation object
         commitObj.relations[key] = {
           lockids,
@@ -3121,11 +3124,10 @@ export class ToolBox extends G3WObject {
     // Remove deep relations from the current layer (commitObj) that are not relative to that layer
     const relations = Object.keys(commitObj.relations || {});
     relations
-      .filter(id => undefined === this.state.layer.getEditor().getLayer().getRelations().getArray().find(r => id === r.getChild())) // child relations
+      .filter(id => undefined === this.getEditor().getLayer().getRelations().getArray().find(r => id === r.getChild())) // child relations
       .map(id => {
         commitObj.relations[ToolBox
           .get(id)
-          .getSession()
           .getEditor()
           .getLayer()
           .getRelations()
@@ -3185,7 +3187,7 @@ export class ToolBox extends G3WObject {
    */
   async __startSession(options = {}) {
     try {
-      const features = await this.state.layer.getEditor().start(options);
+      const features = await this.getEditor().start(options);
       this.state.editing.session.started = true;
       return features;
     } catch(e) {
@@ -3229,7 +3231,7 @@ export class ToolBox extends G3WObject {
   async __stopSession() {
     try {
       if (this.state.editing.session.started || this.state.editing.session.getfeatures) {
-        await this.state.layer.getEditor().stop();
+        await this.getEditor().stop();
         this.__clearSession();
       }      
     } catch(e) {
@@ -3248,7 +3250,7 @@ export class ToolBox extends G3WObject {
   async __getFeatures(options={}) {
     if (!this._allfeatures) {
       this._allfeatures = !options.filter;
-      const features    = await this.state.layer.getEditor().getFeatures(options);
+      const features    = await this.getEditor().getFeatures(options);
       this.state.editing.session.getfeatures = true;
       return features;
     }
@@ -3268,10 +3270,8 @@ export class ToolBox extends G3WObject {
    * @since g3w-client-plugin-editing@v4.1.0
    */
   async ___getFeatures(layerId, options = {}, params = {}) {
-    const editor = this.getEditor();
-
     // skip is not onlien or all features of layers are already got
-    if (!ApplicationState.online || editor._allfeatures) {
+    if (!ApplicationState.online || this.getEditor()._allfeatures) {
       return Promise.resolve();
     }
 
@@ -3279,20 +3279,20 @@ export class ToolBox extends G3WObject {
 
     const { bbox } = options.filter || {};
     //check if bbox options filter (bbox of a current map) is passed and is a vector layer
-    const is_vector = bbox && Layer.LayerTypes.VECTOR === editor.getLayer().getType();
+    const is_vector = bbox && Layer.LayerTypes.VECTOR === this.getEditor().getLayer().getType();
 
     // first request --> need to perform request
-    if (is_vector && null === editor._filter.bbox) {
-      editor._filter.bbox = bbox;                                                      // store bbox
+    if (is_vector && null === this.getEditor()._filter.bbox) {
+      this.getEditor()._filter.bbox = bbox;                                                      // store bbox
       doRequest         = true;
     }
 
     // subsequent requests --> check if bbox is contained into an already requested bbox
     else if (is_vector) {
       //Boolean - Check if features are already got inside bbox
-      const is_cached = ol.extent.containsExtent(editor._filter.bbox, bbox);
+      const is_cached = ol.extent.containsExtent(this.getEditor()._filter.bbox, bbox);
       if (!is_cached) {
-        editor._filter.bbox = ol.extent.extend(editor._filter.bbox, bbox);
+        this.getEditor()._filter.bbox = ol.extent.extend(this.getEditor()._filter.bbox, bbox);
       }
       doRequest = !is_cached;
     }
@@ -3301,7 +3301,7 @@ export class ToolBox extends G3WObject {
       return;
     }
 
-    const url = editor.urls.editing;
+    const url = this.getEditor().urls.editing;
     try {
       let response;
       if (!options.filter) {
@@ -3316,14 +3316,14 @@ export class ToolBox extends G3WObject {
           data: JSON.stringify({
             ...params,
             in_bbox:     options.filter.bbox.join(','),
-            filtertoken: editor.getLayer().getFilterToken(),
+            filtertoken: this.getEditor().getLayer().getFilterToken(),
           }),
           contentType: 'application/json',
         })
       } else if (is_defined(options.filter.fid)) { // fid filter
         const { fid, relation } = options.filter.fid;
         response = await XHR.post({
-          url: `${editor.urls.editing}?relationonetomany=${relation.id}|${fid}`,
+          url: `${this.getEditor().urls.editing}?relationonetomany=${relation.id}|${fid}`,
           contentType: 'application/json',
           data:        JSON.stringify({ formatter: 1 }),
         });
@@ -3364,7 +3364,7 @@ export class ToolBox extends G3WObject {
       const { data, count }       = response.vector;
       const { featurelocks = [] } = response;
       const lockIds               = featurelocks.map(lk => lk.featureid);
-      const dataProjection = 'NoGeometry' === response.vector.geometrytype ? null : editor.getLayer().getCrs();
+      const dataProjection = 'NoGeometry' === response.vector.geometrytype ? null : this.getEditor().getLayer().getCrs();
       let features   = [];
 
       try {
@@ -3381,7 +3381,7 @@ export class ToolBox extends G3WObject {
         //if no features locks mean another user locks all feature requests
         if (0 === featurelocks.length || count > features.length) {
           //It means that another user locks these features
-          editor.featuresLockedByOtherUser(features);
+          this.getEditor().featuresLockedByOtherUser(features);
         }
         //get already loaded feature id locked by current user
         const fids = lockIds.map(({ featureid }) => featureid);
@@ -3416,13 +3416,13 @@ export class ToolBox extends G3WObject {
       console.warn(e);
     }
 
-    editor.readFeatures().push(...features); // add features to original features 
+    this.getEditor().readFeatures().push(...features); // add features to original features 
     
     // add features from server to editing features store (cloned from original)
-    editor.getEditingSource().addFeatures((features || []).map(f => f.clone()));
+    this.getEditor().getEditingSource().addFeatures((features || []).map(f => f.clone()));
 
     //set all features to true if no filter is set (e.g., Table layer)
-    editor._allfeatures = !options.filter;
+    this.getEditor()._allfeatures = !options.filter;
 
     return features;
     } catch(e) {
@@ -3492,7 +3492,7 @@ export class ToolBox extends G3WObject {
       if (hideSidebar) {
         GUI.showSidebar();
       }
-      this._session.rollback();
+      this.rollback();
     } finally {
       //In case of runOnce stop activ tool tnat stop workflow;
       if (tool.getOperator().runOnce) {
@@ -3520,39 +3520,11 @@ export class ToolBox extends G3WObject {
       await tool.getOperator().stop(force);
     } catch(e) {
       console.warn(e);
-      this._session.rollback();
+      this.rollback();
     } finally {
       tool.active = false;
       tool.emit('stop', { session: this._session });
     }
-  }
-
-  /**
-   * ORIGINAL SOURCE: g3w-client/src/services/editing.js@v3.9.1
-   * 
-   * Apply changes to source features (undo/redo)
-   * 
-   * @param items
-   * @param { boolean } reverse whether change to opposite
-   * 
-   * @since g3w-client-plugin-editing@v4.1.0
-   */
-  __setChanges(layerId, items = [], reverse = true) {
-    const editor = this.getEditor();
-    /** known actions */
-    const Actions = {
-      'add':    { fnc: 'addFeature',    opposite: 'delete' },
-      'delete': { fnc: 'removeFeature', opposite: 'add'    },
-      'update': { fnc: 'updateFeature', opposite: 'update' },
-    };
-    items.forEach(item => {
-      if (reverse) {
-        item.feature[Actions[item.feature.getState()].opposite]();
-      }
-      // get method from object
-      //@since 3.9.1 need to clone it otherwise it replace
-      editor.getEditingSource()[Actions[item.feature.getState()].fnc](item.feature.clone());
-    });
   }
 
   /**
@@ -3567,9 +3539,6 @@ export class ToolBox extends G3WObject {
    * @since g3w-client-plugin-editing@v4.1.0
    */
   async __commitToEditor(layerId, commit) {
-
-    const editor = this.getEditor();
-    
     let relations = [];
 
     // check if there are commit relations binded to new feature
@@ -3577,7 +3546,7 @@ export class ToolBox extends G3WObject {
       relations = Object
         .keys(commit.relations)
         .map(relationId => {
-          const relation = editor.getLayer().getRelations().getRelationByFatherChildren(layerId, relationId);
+          const relation = this.getEditor().getLayer().getRelations().getRelationByFatherChildren(layerId, relationId);
           return {
             [relationId]: {
               ids: [                                                  // ids of "added" or "updated" relations
@@ -3597,7 +3566,7 @@ export class ToolBox extends G3WObject {
     try {
       commit.lockids = GUI.getPlugin('editing').state.lock_ids[layerId];
       response = await XHR.post({
-        url:         editor.urls.commit,
+        url:         this.getEditor().urls.commit,
         data:        JSON.stringify(commit),
         contentType: 'application/json',
       });
@@ -3643,7 +3612,7 @@ export class ToolBox extends G3WObject {
     // properties - properties of feature returned by server
     response.response.new.forEach(({ clientid, id, properties } = {}) => {
       //get feature from current layer in editing
-      const feature  = editor.getEditingSource().getFeatureById(clientid);
+      const feature  = this.getEditor().getEditingSource().getFeatureById(clientid);
       // set new id
       feature.setId(id);
       //set properties
@@ -3654,7 +3623,7 @@ export class ToolBox extends G3WObject {
           .entries(r)
           .forEach(([ id, opts = {}]) => { // id - relation layer id, opts - Object contain relation properties
             //get the editing source of relation layer
-            const source = ToolBox.get(id).getSession().getEditor().getEditingSource();
+            const source = ToolBox.get(id).getEditor().getEditingSource();
             // handle value to relation field saved on server
             (opts.ids || []).forEach(id => {
               const rFeature = source.getFeatureById(id);
@@ -3672,7 +3641,7 @@ export class ToolBox extends G3WObject {
     //@since 3.9.0 take in account update properties returned by server (Useful in case of media input changes)
     (response.response.update || []).forEach(({ id, properties } = {}) => {
       //get feature from current layer in editing
-      const feature  = editor.getEditingSource().getFeatureById(id);
+      const feature  = this.getEditor().getEditingSource().getFeatureById(id);
       //set properties
       feature.setProperties(properties);
       //Loop on eventual relation updated or created
@@ -3681,7 +3650,7 @@ export class ToolBox extends G3WObject {
           .entries(r)
           .forEach(([ id, opts = {}]) => { // id - relation layer id, opts - Object contain relation properties
             //get the editing source of relation layer
-            const source = ToolBox.get(id).getSession().getEditor().getEditingSource();
+            const source = ToolBox.get(id).getEditor().getEditingSource();
             // handle value to relation field saved on server
             (opts.ids || []).forEach(id => {
               const rFeature = source.getFeatureById(id);
@@ -3696,11 +3665,11 @@ export class ToolBox extends G3WObject {
 
     });
 
-    const features = editor.readEditingFeatures();
+    const features = this.getEditor().readEditingFeatures();
 
     features.forEach(f => f.clearState());          // reset state of the editing features (update, new etc..)
 
-    editor.getLayer().setFeatures([...features]);         // substitute layer features with actual editing features ("cloned" to prevent layer actions duplicates, eg. addFeatures)
+    this.getEditor().getLayer().setFeatures([...features]);         // substitute layer features with actual editing features ("cloned" to prevent layer actions duplicates, eg. addFeatures)
 
     // add lock ids
     GUI.getPlugin('editing').state.lock_ids[layerId] = [...new Set(GUI.getPlugin('editing').state.lock_ids[layerId].concat(...response.response.new_lockids))]
@@ -3717,9 +3686,8 @@ export class ToolBox extends G3WObject {
    * @since g3w-client-plugin-editing@v4.1.0
    */
   async __startEditor(layerId, options = {}) {
-    const editor   = this.getEditor();
-    const features = await editor.getFeatures(options); // load layer features based on filter type
-    editor._started  = true;                            // if all ok set to started
+    const features = await this.getEditor().getFeatures(options); // load layer features based on filter type
+    this.getEditor()._started  = true;                            // if all ok set to started
     return features;                                    // features are already inside featuresstore
   }
 
@@ -3731,9 +3699,8 @@ export class ToolBox extends G3WObject {
    * @since g3w-client-plugin-editing@v4.1.0
    */
   async __stopEditor(layerId) {
-    const editor     = this.getEditor()
-    const { result } = await XHR.post({ url: editor.urls.unlock });
-    editor.clear();
+    const { result } = await XHR.post({ url: this.getEditor().urls.unlock });
+    this.getEditor().clear();
     return result;
   }
 
@@ -3743,20 +3710,18 @@ export class ToolBox extends G3WObject {
    * @since g3w-client-plugin-editing@v4.1.0 
    */
   __clearEditor(layerId) {
-    const editor = this.getEditor()
+    this.getEditor()._started     = false;
+    this.getEditor()._filter.bbox = null;
+    this.getEditor()._allfeatures = false;
 
-    editor._started     = false;
-    editor._filter.bbox = null;
-    editor._allfeatures = false;
-
-    editor._features               = []; // clear features collection
+    this.getEditor()._features               = []; // clear features collection
     GUI.getPlugin('editing').state.lock_ids[layerId]   = [];
     GUI.getPlugin('editing').state.loaded_ids[layerId] = [];
-    editor.getEditingSource().clear();
+    this.getEditor().getEditingSource().clear();
 
     // vector layer
-    if (Layer.LayerTypes.VECTOR === editor.getLayer().getType()) {
-      editor.getLayer().resetEditingSource(editor.getEditingSource().getFeaturesCollection());
+    if (Layer.LayerTypes.VECTOR === this.getEditor().getLayer().getType()) {
+      this.getEditor().getLayer().resetEditingSource(this.getEditor().getEditingSource().getFeaturesCollection());
     }
   }
 

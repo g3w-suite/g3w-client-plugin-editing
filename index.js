@@ -324,14 +324,14 @@ new (class extends Plugin {
   undo() {
     const id           = this.state.toolboxselected.getId();
     const toolBox      = this.getToolBoxById(id);
-    const sessionItems = toolBox.getSession().getLastHistoryState().items;
+    const sessionItems = toolBox.getLastHistoryState().items;
     //update unique values fields after undo
     this.undoRedoLayerUniqueFieldValues({ layerId: id, sessionItems, action: 'undo' });
-    const relationSessionItems = toolBox.getSession().undo();
+    const relationSessionItems = toolBox.undo();
     //update unique values of relations after undo
     this.undoRedoRelationUniqueFieldValues({ relationSessionItems, action: 'undo' });
     // undo relations
-    Object.entries(undoItems).forEach(([toolboxId, items]) => { this.getToolBoxById(toolboxId).getSession().undo(items); });
+    Object.entries(undoItems).forEach(([toolboxId, items]) => { this.getToolBoxById(toolboxId).undo(items); });
   }
 
   /**
@@ -342,14 +342,14 @@ new (class extends Plugin {
   redo() {
     const id           = this.state.toolboxselected.getId();
     const toolBox      = this.getToolBoxById(id);
-    const sessionItems = toolBox.getSession().getLastHistoryState().items;
+    const sessionItems = toolBox.getLastHistoryState().items;
     // update unique values fields after redo
     this.undoRedoLayerUniqueFieldValues({ sessionItems, layerId: toolBox.getId(), action: 'redo' });
-    const relationSessionItems = toolBox.getSession().redo();
+    const relationSessionItems = toolBox.redo();
     // update unique values of relations after redo
     this.undoRedoRelationUniqueFieldValues({ relationSessionItems, action: 'redo' });
     // redo relations
-    Object.entries(redoItems).forEach(([toolboxId, items]) => { this.getToolBoxById(toolboxId).getSession().redo(items); });
+    Object.entries(redoItems).forEach(([toolboxId, items]) => { this.getToolBoxById(toolboxId).redo(items); });
   }
 
   /**
@@ -599,7 +599,7 @@ new (class extends Plugin {
     toolbox             = toolbox || this.state.toolboxselected;
     let layer           = toolbox.getLayer();
     const items         = commitItems;
-    commitItems         = commitItems || toolbox.getSession().getCommitItems();
+    commitItems         = commitItems || toolbox.getCommitItems();
     const online        = ApplicationState.online;
     const has_changes   = [
       ...(commitItems.add || []),
@@ -743,7 +743,7 @@ new (class extends Plugin {
 
       try {
         // check if the application is online
-        const { commit, response } = online ? await toolbox.getSession().commit({ items: items || commitItems }) : {};
+        const { commit, response } = online ? await toolbox.save({ items: items || commitItems }) : {};
 
         //check if is online and there are some commit items
         const online2 = online && commit;
@@ -1332,13 +1332,13 @@ new (class extends Plugin {
         context: { session: toolBox.getSession() }
       });
 
-      await toolBox.getSession().save();
+      await toolBox.save();
 
       this.saveChange();
 
     } catch (e) {
       console.warn(e);
-      toolBox.getSession().rollback();
+      toolBox.rollback();
     } finally {
       w.stop();
     }
