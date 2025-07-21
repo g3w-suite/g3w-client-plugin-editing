@@ -179,7 +179,7 @@ export class ToolBox extends G3WObject {
           clear:                     () => _plugin.state.features[_layer.getId()].clear(),
           addFeature:                f => _plugin.state.features[_layer.getId()].add(f),
           clone:                     () => cloneDeep(editor._featuresstore),
-          getFeatureById:            () => _plugin.state.features[_layer.getId()].getArray().find(f => id == f.getId()),
+          getFeatureById:            id => _plugin.state.features[_layer.getId()].getArray().find(f => id == f.getId()),
           readFeatures:              () => _plugin.state.features[_layer.getId()].getArray(),
           getLength:                 () => _plugin.state.features[_layer.getId()].getArray().length,
           getFeaturesCollection:     () => _plugin.state.features[_layer.getId()]._store,
