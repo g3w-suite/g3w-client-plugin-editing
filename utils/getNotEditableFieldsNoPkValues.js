@@ -12,7 +12,7 @@ export function getNotEditableFieldsNoPkValues({
   layer,
   feature,
 }) {
-  return layer.config.editing.fields
+  return layer.state.editing.fields
     .filter(f => !f.editable) // un-editable fields
     .map(f => f.name)
     .reduce((fields, field) => {

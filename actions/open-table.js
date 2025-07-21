@@ -68,7 +68,7 @@ export class OpenTableStep extends Step {
               : features,
             title:        `${inputs.layer.getName()}` || 'Link relation',
             isrelation:   this._isContentChild,
-            capabilities: inputs.layer.config.editing.capabilities,
+            capabilities: inputs.layer.state.editing.capabilities,
             layerId:      inputs.layer.getId(),
             workflow:     null,
           }

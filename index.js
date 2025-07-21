@@ -91,10 +91,7 @@ new (class extends Plugin {
         'start-editing':         {},
         'show-relation-editing': {},
         layer: {
-          start_editing: {
-            before: {},
-            after:  {}
-          }
+          start_editing: { before: {}, after:  {} }
         }
       },
       show_errors:    false,
@@ -191,52 +188,18 @@ new (class extends Plugin {
     // add editing layer store to mapstoreregistry
     ApplicationState.layers['editing'] = new LayersStore({ id: 'editing', queryable: false, catalog: false });
     
-    // loop over editable layers
+    // loop over editable layers (sorted by "index" to keep TOC order)
     (await Promise.allSettled(
       getCatalogLayers({ EDITABLE: true }, { TOC_ORDER : true })
+        .filter(layer => layer.isEditable())
         /** ORIGINAL SOURCE: g3w-client/src/map/layers/tablelayer.js@v4.0.0 */
         .map(async (layer, index) => {
           try {
-
-            if (!layer.isEditable()) {
-              return null;
-            }
-          
-            // get layer editing config (from server)
-            const {
-              vector,
-              constraints = {},
-              capabilities,
-            } = await layer.getProvider('data').getConfig();
-
-            layer.state.editing =  {
-              started:  false,
-              modified: false,
-              ready:    false
-            }
-
-            // add editing configurations
-            layer.config.editing = {
-              fields:                      vector.fields || [],
-              format:                      vector.format,
-              constraints,
-              capabilities:                capabilities || ['add_feature', 'change_feature', 'change_attr_feature', 'delete_feature' ], // default editing capabilities
-              form:                        { perc: null },                                        // set editing form `perc` to null at beginning
-              style:                       vector.style,                                          // get vector layer style
-              geometrytype:                vector.geometrytype,                                   // whether is a vector layer,
-              visible:                     (vector.editing || { visible: true }).visible,         // @since 3.11.0 let know if layer should be editable directly (true) or through relation layer (false)
-              layer_style:                 (vector.editing || { layer_style: null }).layer_style, // @since v4.0.0 check if has a layer style to for editing form
-            };
-
-            // set vector layer color 
-            if (vector.style) {
-              layer.setColor(vector.style.color);
-            }
-
-            layer.state.editing.ready = true;
-
-            // NB: sorted by "index" to keep TOC order
-            this.state.toolboxes[index] = new ToolBox(layer, this);
+            this.state.toolboxes[index] = new ToolBox(
+              layer,
+              await layer.getProvider('data').getConfig(), // get layer editing config (from server)
+              this
+            );
           } catch (e) {
             this.state.layers_in_error = true;
             console.warn(e);

@@ -107,8 +107,31 @@ export class ToolBox extends G3WObject {
   /** @since 3.8.1 store all unwatches */
   unwatches         = [];
 
-  constructor(_layer, _plugin) {
+  constructor(_layer, _config, _plugin) {
     super();
+
+    // add editing configurations
+    _layer.state.editing = {
+      started:      false,
+      modified:     false,
+      ready:        false,
+      fields:       _config.vector.fields || [],
+      format:       _config.vector.format,
+      constraints:  _config.constraints ?? {},
+      capabilities: _config.capabilities || ['add_feature', 'change_feature', 'change_attr_feature', 'delete_feature' ], // default editing capabilities
+      form:         { perc: null },                             // set editing form `perc` to null at beginning
+      style:        _config.vector.style,                        // get vector layer style
+      geometrytype: _config.vector.geometrytype,                 // whether is a vector layer,
+      visible:      _config.vector.editing?.visible ?? true,     // whether a layer should be editable directly (true) or through relation layer (false)
+      layer_style:  _config.vector.editing?.layer_style ?? null, // @since v4.0.0 check if has a layer style to for editing form
+    };
+
+    // set vector layer color 
+    if (_config.vector.style) {
+      _layer.setColor(_config.vector.style.color);
+    }
+
+    _layer.state.editing.ready = true;
 
     _plugin.state.features[_layer.getId()]           = new Collection(Layer.LayerTypes.TABLE !== _layer.getType());
     _plugin.state.lock_ids[_layer.getId()]           = [];
@@ -120,7 +143,7 @@ export class ToolBox extends G3WObject {
 
     // set editing layer
     let layer = Layer.LayerTypes.IMAGE === _layer.getType()
-      ? new g3wsdk.core.layer.VectorLayer(_layer.config)
+      ? new g3wsdk.core.layer.VectorLayer(_layer.state)
       : _layer;
 
     /**
@@ -363,13 +386,13 @@ export class ToolBox extends G3WObject {
     ToolBox._sessions[layer.getId()] = this;
 
     /** @type { 'create' | 'update_attributes' | 'update_geometry' | delete' | undefined } undefined means all possible tools base on type */
-    const capabilities = layer.config.editing.capabilities || [];
+    const capabilities = layer.state.editing.capabilities || [];
 
     this.state = {
       layer,
       id               : layer.getId(),
       changingtools    : false, // whether to show tools during change phase
-      show             : layer.config.editing.visible,  // whether to show the toolbox if we need to filtered
+      show             : layer.state.editing.visible,  // whether to show the toolbox if we need to filtered
       color            : layer.getColor()       || 'blue',
       title            : ` ${layer.getTitle()}` || "Edit Layer",
       customTitle      : false,
@@ -405,7 +428,7 @@ export class ToolBox extends G3WObject {
       _layerType: layer.getType() || Layer.LayerTypes.VECTOR,
       _enabledtools: undefined,
       _disabledtools: undefined,
-      _constraints: layer.config.editing.constraints || {},
+      _constraints: layer.state.editing.constraints || {},
       _tools: [
         // Add Feature
         (is_vector) && capabilities.includes('add_feature') && {
@@ -2551,7 +2574,7 @@ export class ToolBox extends G3WObject {
     }
     this.state._disabledtools = null;
     /** since 3.9.0  set show based on visibile property of config editing object setting*/
-    this.state.show           = this.state.layer.config.editing.visible;
+    this.state.show           = this.state.layer.state.editing.visible;
     //need to set selected false
     this.state.selected = false;
   }
