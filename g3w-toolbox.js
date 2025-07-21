@@ -1500,8 +1500,7 @@ export class ToolBox extends G3WObject {
    *
    */
   _stopSessionChildren(layerId) {
-    const service = GUI.getPlugin('editing');
-    const layer   = service.getLayerById(layerId);
+    const layer   = GUI.getPlugin('editing').getLayerById(layerId);
     getRelationsInEditing({
       layerId,
       relations: layer.getRelations() ? layer.getRelations().getArray() : [],
@@ -1510,8 +1509,8 @@ export class ToolBox extends G3WObject {
       .forEach(relation => {
         const relationId = getRelationId({ layerId, relation });
         // In case of no editing is started (click on pencil of relation layer) need to stop (unlock) features
-        if (!service.getToolBoxById(relationId).inEditing()) {
-          service.state.sessions[relationId].stop();
+        if (!GUI.getPlugin('editing').getToolBoxById(relationId).inEditing()) {
+          GUI.getPlugin('editing').state.sessions[relationId].stop();
         }
       })
   }
@@ -1812,27 +1811,26 @@ export class ToolBox extends G3WObject {
 
     if (!ApplicationState.online) { return; }
 
-    const service = GUI.getPlugin('editing');
     const layerId = this.state.id;
 
     // Check if father relation is editing and has commit feature
-    const fathersInEditing = service.getLayerById(layerId).getFathers().filter(id => {
-      const toolbox = service.getToolBoxById(id);
+    const fathersInEditing = GUI.getPlugin('editing').getLayerById(layerId).getFathers().filter(id => {
+      const toolbox = GUI.getPlugin('editing').getToolBoxById(id);
       if (toolbox && toolbox.inEditing() && toolbox.isDirty()) {
         //get a temporary relations object and check if layerId has some changes
         return Object.keys(toolbox.getSession().getCommitItems() || {}).find(id => layerId === id);
       }
     });
 
-      if (fathersInEditing.length > 0) {
-        this.stopActiveTool();
-        this.enableTools(false);
-        this.clearToolboxMessages();
-        this._stopSessionChildren(this.state.id);
-        // clear layer unique field values
-        GUI.getPlugin('editing').state.uniqueFieldsValues[this.getId()] = {};
-        return;
-      }
+    if (fathersInEditing.length > 0) {
+      this.stopActiveTool();
+      this.enableTools(false);
+      this.clearToolboxMessages();
+      this._stopSessionChildren(this.state.id);
+      // clear layer unique field values
+      GUI.getPlugin('editing').state.uniqueFieldsValues[this.getId()] = {};
+      return;
+    }
 
     try {
       await this._session.stop();

@@ -112,7 +112,7 @@ new (class extends Plugin {
         layoutName => this.state.currentLayout = layoutName !== this.getName() ? layoutName : this.state.currentLayout
       ),
       onMapControlToggled: ({ target }) => {
-        target.isToggled() && target.isClickMap() && this.state.toolboxselected && this.state.toolboxselected.getActiveTool() && this.state.toolboxselected.stopActiveTool();
+        target.isToggled() && target.isClickMap() && this.state.toolboxselected && this.state?.toolboxselected?.getActiveTool?.() && this.state.toolboxselected.stopActiveTool();
       },
     };
 
@@ -207,9 +207,8 @@ new (class extends Plugin {
       getCatalogLayers({ EDITABLE: true }, { TOC_ORDER : true })
         /** ORIGINAL SOURCE: g3w-client/src/map/layers/tablelayer.js@v4.0.0 */
         .map(async (layer, index) => {
-          console.log(layer.getId())
           try {
-            
+
           if (!layer.isEditable()) {
             return null;
           }
@@ -343,62 +342,58 @@ new (class extends Plugin {
             .getEditingFields()
             .filter(field => field.input && 'select_autocomplete' === field.input.type && !field.input.options.filter_expression && !field.input.options.usecompleter)
             /** @TODO need to avoid to call the same fnc to same event many times to avoid waste server request time */
-            .forEach(field => ['start-editing'].forEach(type => {
-              const id                    = layer.getId();
-              this.state.events[type][id] = this.state.events[type][id] || [];
-
-              this.state.events[type][id].push(async () => {
-                const options         = field.input.options;
-
+            .forEach(field => {
+              this.state.events['start-editing'][layer.getId()] = this.state.events['start-editing'][layer.getId()] || [];
+              this.state.events['start-editing'][layer.getId()].push(async () => {
                 // remove all values
-                options.loading.state = 'loading';
-                options.values        = [];
+                field.input.options.loading.state = 'loading';
+                field.input.options.values        = [];
 
-                const relationLayer = options.layer_id && getCatalogLayerById(options.layer_id);
-                const has_filter    = ([undefined, null].includes(options.filter_fields || []) || 0 === (options.filter_fields || []).length);
+                const relationLayer = field.input.options.layer_id && getCatalogLayerById(field.input.options.layer_id);
+                const has_filter    = ([undefined, null].includes(field.input.options.filter_fields || []) || 0 === (field.input.options.filter_fields || []).length);
 
                 try {
 
                   // relation reference widget + no filter set
-                  if (options.relation_reference && has_filter) {
+                  if (field.input.options.relation_reference && has_filter) {
                     const response = await editing_layer.getFilterData({ fformatter: field.name }); // get data with fformatter
                     if (response && response.data) {
                       // response data is an array ok key value objects
-                      options.values.push(...response.data.map(([value, key]) => ({ key, value })));
-                      options.loading.state = 'ready';
+                      field.input.options.values.push(...response.data.map(([value, key]) => ({ key, value })));
+                      field.input.options.loading.state = 'ready';
                       this.fireEvent('autocomplete', { field, data: [response.data] });
-                      return options.values;
+                      return field.input.options.values;
                     }
                   }
 
                   // value map widget
                   if (relationLayer) {
                     //ordering by value or key depend on orderbyvalue Boolean value
-                    const response = await relationLayer.getDataTable({ ordering: options.orderbyvalue ? options.value : options.key });
+                    const response = await relationLayer.getDataTable({ ordering: field.input.options.orderbyvalue ? field.input.options.value : field.input.options.key });
                     if (response && response.features) {
-                      options.values.push(...(response.features || []).map(feature => ({
-                        key:   feature.properties[options.value],
-                        value: feature.properties[options.key],
+                      field.input.options.values.push(...(response.features || []).map(feature => ({
+                        key:   feature.properties[field.input.options.value],
+                        value: feature.properties[field.input.options.key],
                       })));
-                      options.loading.state = 'ready';
+                      field.input.options.loading.state = 'ready';
                       this.fireEvent('autocomplete', { field, features: response.features })
-                      return options.values;
+                      return field.input.options.values;
                     }
                   }
 
                   /** @TODO check if deprecated */
                   const features        = [];
-                  options.loading.state = 'ready';
+                  field.input.options.loading.state = 'ready';
                   this.fireEvent('autocomplete', { field, features });
                   return features;
 
                 } catch (e) {
                   console.warn(e);
-                  options.loading.state = 'error';
+                  field.input.options.loading.state = 'error';
                   return Promise.reject(e);
                 }
               });
-            }));
+            });
 
             this.state.sessions[layer.getId()] = null;
 
@@ -411,19 +406,19 @@ new (class extends Plugin {
              *
              * @since g3w-client-plugin-editing@v3.7.0
              */
-            const fatherId = layer.getId(); // father layer
-            getCatalogLayerById(fatherId)
+            getCatalogLayerById(layer.getId())
               .getRelations()
               .getArray()
-              .filter(relation => 'ONE' === relation.getType() && fatherId === relation.getFather()) // 'ONE' == join 1:1 + father layerId is a father of relation
+              .filter(relation => 'ONE' === relation.getType() && layer.getId() === relation.getFather()) // 'ONE' == join 1:1 + father layerId is a father of relation
               .forEach(relation => {
                 const isChildEditable = undefined !== this.getLayerById(relation.getChild());        // check if child layerId is editable (in editing)
                 this
                   .getLayerById(relation.getFather())
                   .getEditingFields()
-                  .filter(f => f.vectorjoin_id && f.vectorjoin_id === relation.getId())              // father layer fields (in editing)
+                  .filter(f => f.vectorjoin_id && f.vectorjoin_id === relation.getId())  // father layer fields (in editing)
                   .forEach(f => { f.editable = (f.editable && isChildEditable); });      // current editable boolean value + child editable layer
               });
+
             // Set editing layer color and toolbox style
             if (!editing_layer.getColor()) {
               editing_layer.setColor(editing_layer.isGeoLayer() ? [
@@ -445,7 +440,7 @@ new (class extends Plugin {
             );
             //Use index to mantain TOC layer order
             this.state.toolboxes[index] = toolbox;
-            this.state.sessions[toolbox.getId()] = toolbox.getSession(); // add session
+            this.state.sessions[layer.getId()] = toolbox.getSession(); // add session
 
           } catch (e) {
             this.state.layers_in_error = true;

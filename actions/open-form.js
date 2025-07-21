@@ -555,12 +555,8 @@ function _getFormFields({
   multi, // true -> multi features (e.g edit multi features attributes form)
 } = {}) {
 
-  //editing service
-  const service         = GUI.getPlugin('editing');
-  // current form layerId// unique values by feature field
-  const layerId         = inputs.layer.getId();
-
-  const fields          = getFieldsWithValues( // editing fields with values (in case of update)
+  const layerId = inputs.layer.getId(); // current form layerId// unique values by feature field
+  const fields  = getFieldsWithValues(  // editing fields with values (in case of update)
     inputs.layer,
     feature,
     {
@@ -581,7 +577,7 @@ function _getFormFields({
   //Loop through unique fields
   unique_values.forEach(({ _value, field }) => {
     //get current stored unique values for field
-    const current_values = service.state.uniqueFieldsValues[layerId][field.name] || new Set([]);
+    const current_values = GUI.getPlugin('editing').state.uniqueFieldsValues[layerId][field.name] || new Set([]);
     //filter null value otherwise sort function gets an error
     const values = Array.from(current_values).filter(v => null !== v );
     //NEED TO ADD ALWAYS CURRENT VALUE
@@ -608,9 +604,9 @@ function _getFormFields({
       // initial value is the same that current field vale (no changed)
       if (_value === field.value) { return }
       //  layer form
-      if (service.state.uniqueFieldsValues[layerId][field.name]) {
+      if (GUI.getPlugin('editing').state.uniqueFieldsValues[layerId][field.name]) {
         // change layer unique field values
-        const values = service.state.uniqueFieldsValues[layerId][field.name];
+        const values = GUI.getPlugin('editing').state.uniqueFieldsValues[layerId][field.name];
         //If changed, delete it from _value
         values.delete(_value);
         //aff new one to value list unique field
@@ -622,11 +618,11 @@ function _getFormFields({
   };
 
   //event when insert/edit form button is pressed
-  service.subscribe(`savedfeature_${layerId}`, savedfeatureFnc);
+  GUI.getPlugin('editing').subscribe(`savedfeature_${layerId}`, savedfeatureFnc);
   //event when close form layer
-  service.subscribe(`closeform_${layerId}`, () => {
+  GUI.getPlugin('editing').subscribe(`closeform_${layerId}`, () => {
     //unsubscribe event
-    service.unsubscribe(`savedfeature_${layerId}`, savedfeatureFnc);
+    GUI.getPlugin('editing').unsubscribe(`savedfeature_${layerId}`, savedfeatureFnc);
     return { once: true };
   });
 
@@ -672,8 +668,6 @@ async function _handleRelation1_1LayerFields({
   // skip when no features
   if (features.length === 0) { return }
 
-  const service = GUI.getPlugin('editing');
-
   // Get layer relation 1:1
   const promises = getCatalogLayerById(layerId)
     .getRelations()
@@ -699,18 +693,18 @@ async function _handleRelation1_1LayerFields({
         const childLayerId = relation.getChild();
         const childField   = relation.getChildField()[0];
         //In case of not editable child layer, exit
-        if (!service.getLayerById(childLayerId)) {
+        if (!GUI.getPlugin('editing').getLayerById(childLayerId)) {
           reject();
           return;
         }
-        const source       = service.getLayerById(childLayerId).getEditor().getEditingSource();
+        const source       = GUI.getPlugin('editing').getLayerById(childLayerId).getEditor().getEditingSource();
         let childFeature; // original child feature
         let newChild; //eventually child feature cloned with changes
 
         //check if child feature is already added to
         childFeature = source.readFeatures().find(f => f.get(childField) === value)
 
-        const fieldsUpdated = undefined !== service
+        const fieldsUpdated = undefined !== GUI.getPlugin('editing')
           .getLayerById(relation.getFather())
           .getEditingFields()
           .filter(f => f.vectorjoin_id && f.vectorjoin_id === relation.getId())
@@ -747,7 +741,7 @@ async function _handleRelation1_1LayerFields({
           if (childFeature) {
             // Loop editable only field of father layerId when
             // a child relation (1:1) is bind to the current feature
-            const editiableRelatedFieldChild = service
+            const editiableRelatedFieldChild = GUI.getPlugin('editing')
               .getLayerById(relation.getFather())
               .getEditingFields()
               .filter(f => f.vectorjoin_id && f.vectorjoin_id === relation.getId() && f.editable);
@@ -759,7 +753,7 @@ async function _handleRelation1_1LayerFields({
             if (isNewChildFeature) {
 
               // check if father field is a Pk (Primary key) if feature is new
-              if (isPkField(service.getLayerById(layerId), fatherField)) {
+              if (isPkField(GUI.getPlugin('editing').getLayerById(layerId), fatherField)) {
                 childFeature.set(childField, features[0].getId()); // set temporary
               }
 
@@ -808,8 +802,6 @@ async function _listenRelation1_1FieldChange({
 } = {}) {
   const unwatches = []; // unwatches field value (event change)
 
-  const service = GUI.getPlugin('editing'); //get editing service
-
   const ONE = getCatalogLayerById(layerId)
     .getRelations()
     .getArray()
@@ -829,12 +821,12 @@ async function _listenRelation1_1FieldChange({
     // it can be changed by default expression or in another way not only with form
     const fatherFormRelationField = fields.find(f => fatherField.includes(f.name)); // get father layer field (for each relation)
     // skip when not relation field and not layer child is in editing
-    if (!(fatherFormRelationField && service.getLayerById(childLayerId))) {
+    if (!(fatherFormRelationField && GUI.getPlugin('editing').getLayerById(childLayerId))) {
       return unwatches;
     }
 
     //store original editable property of fields relation to child layer relation
-    const editableRelatedFatherChild = service
+    const editableRelatedFatherChild = GUI.getPlugin('editing')
       .getLayerById(relation.getFather())
       .getEditingFields()
       .filter(f => f.vectorjoin_id && f.vectorjoin_id === relation.getId())
@@ -934,14 +926,13 @@ async function _getRelation1_1ChildFeature({
   relation,
   fatherFormRelationField,
 }) {
-  const service       = GUI.getPlugin('editing'); //get editing service
   const fatherLayerId = relation.getFather();
-  const childLayerId  = relation.getChild();                             // get relation child layer id
+  const childLayerId  = relation.getChild();         // get relation child layer id
   const childField    = relation.getChildField()[0];
 
   // lock feature false
   let locked  = false;
-  let feature = service.getLayerById(childLayerId)
+  let feature = GUI.getPlugin('editing').getLayerById(childLayerId)
     .getEditor().getEditingSource()
     .readFeatures()
     .find(f => fatherFormRelationField.value === f.get(childField))
@@ -949,7 +940,7 @@ async function _getRelation1_1ChildFeature({
     //get feature from server and lock
   if (undefined === feature) {
 
-    const childEditor = service.getLayerById(childLayerId).getEditor();
+    const childEditor = GUI.getPlugin('editing').getLayerById(childLayerId).getEditor();
 
     const unByKey     = childEditor.oncebefore('featuresLockedByOtherUser', features => feature = features[0])
 
@@ -964,7 +955,7 @@ async function _getRelation1_1ChildFeature({
     //in case of no locked check feature on a source
     if (undefined === feature) {
 
-      feature = service.getLayerById(childLayerId)
+      feature = GUI.getPlugin('editing').getLayerById(childLayerId)
         .getEditor().getEditingSource()
         .readFeatures()
         .find(f => fatherFormRelationField.value === f.get(childField))
