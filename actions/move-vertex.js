@@ -56,7 +56,7 @@ export class ModifyGeometryVertexStep extends Step {
         closable: false,
         hooks: {
           body: {
-            template: `
+            template: /* html */`
               <div style = "display: flex; justify-content: space-between; padding: 10px;"> 
                 <button v-disabled = "false === state.modified" @click.stop = "resolve" v-t = "'save'" class = "btn btn-success"></button>
                 <button @click.stop = "reject"  v-t = "'cancel'" class = "btn btn-danger"></button>

@@ -356,7 +356,7 @@ class RotateInteraction extends ol.interaction.Pointer {
         iconClass: 'refresh',
         hooks: {
           body: {
-            template: `
+            template: /* html */`
               <div id = "rotation-feature-point-tool">
                 <input class = "form-control" type="number" min = "0" max = "360" :value = "rotation" @input = "change"/>
               </div>
