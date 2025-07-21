@@ -40,9 +40,7 @@ export async function getLayersDependencyFeatures(layerId, opts = {}) {
       const filterType =  opts.filterType || 'fid';
       const options    = createEditingDataOptions(filterType, opts);
       const toolbox    = GUI.getPlugin('editing').getToolBoxById(id);
-      const session    = toolbox.getSession();
-      const online     = ApplicationState.online && session;
-
+      const online     = ApplicationState.online && toolbox.getSession();
 
       // getLayersDependencyFeaturesFromSource
 
@@ -54,7 +52,7 @@ export async function getLayersDependencyFeatures(layerId, opts = {}) {
 
       // try to get feature from source without a server request
       const find = (
-        (!ApplicationState.online || !session || session.isStarted())
+        (!ApplicationState.online || !toolbox.getSession() || toolbox.getSession().isStarted())
         && 'eq' === opts.operator
         && ownField.every((field, i) => features.find(f => featureValues[i] == f.get(field)))
       );
@@ -62,10 +60,10 @@ export async function getLayersDependencyFeatures(layerId, opts = {}) {
       toolbox.startLoading();
 
       try {
-        if (online && !session.isStarted()) {
-          await session.start(options);       // start session and get features
+        if (online && !toolbox.getSession().isStarted()) {
+          await toolbox.getSession().start(options);       // start session and get features
         } else if (online && !find) {
-          await session.getFeatures(options); // request features from server
+          await toolbox.getSession().getFeatures(options); // request features from server
         }
       } catch(promise) {
         try { await promise } catch (e) { console.warn(e, promise); }

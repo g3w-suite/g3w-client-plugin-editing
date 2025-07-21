@@ -335,23 +335,6 @@ export class ToolBox extends G3WObject {
       });
 
     /**
-     * ORIGINAL SOURCE: g3w-client/src/core/editing/history.js@v3.9.1
-     * 
-     * @since g3w-client-plugin-editing@v3.8.0
-     */
-    this._history = {
-      id:                   layer.getId(),
-      state:                new Proxy({}, { get: (_, prop) => this._constrains[prop] }),
-      add:                  this.__add.bind(this),
-      undo:                 this.__undo.bind(this),
-      clear:                this.__clearHistory.bind(this),
-      redo:                 this.__redo.bind(this),
-      getState:             this.__getState.bind(this),
-      getLastState:         this.__getLastHistoryState.bind(this),
-      commit:               this.__commit.bind(this),
-    };
-
-    /**
      * ORIGINAL SOURCE: g3w-client/src/core/editing/session.js@v3.9.1
      */
     this._session = Object.assign(new G3WObject({ setters: {
@@ -360,12 +343,10 @@ export class ToolBox extends G3WObject {
       getFeatures:                  (options={}) => this.__getFeatures(options),
       saveChangesOnServer:          commitItems  => this.__saveChangesOnServer(commitItems),
     }}), {
-      _history:                     this._history,
       state:                        new Proxy({}, { get: (_, prop) => this.state.editing.session[prop] }),
       getId:                        () => layer.getId(),
       getLastHistoryState:          this.__getLastHistoryState.bind(this),
       isStarted:                    this.__isStarted.bind(this),
-      getHistory:                   this.__getHistory.bind(this),
       getEditor:                    this.__getEditor.bind(this),
       push:                         this.__push.bind(this),
       pushDelete:                   this.__pushDelete.bind(this),
@@ -379,7 +360,7 @@ export class ToolBox extends G3WObject {
       getCommitItems:               this.__getCommitItems.bind(this),
       commit:                       this.save.bind(this),
       clear:                        this.__clearSession.bind(this),
-      clearHistory:                 this.__clearHistory.bind(this),
+      clearHistory:                 this.clearHistory.bind(this),
     });
 
     // register this session on session registry
@@ -415,7 +396,7 @@ export class ToolBox extends G3WObject {
           /** temporary change not save on history */
           changes:     [],
         },
-        history      : this._history.state,
+        history      : new Proxy({}, { get: (_, prop) => this._constrains[prop] }),
         on           : false,
         dependencies,
         relations    : Object.values(layer.isFather() && dependencies.length ? layer.getRelations().getRelations() : {}),
@@ -2093,7 +2074,7 @@ export class ToolBox extends G3WObject {
       //@TODO Check if deprecated
       if (ids) {
         commit = this.__commit(ids);
-        this.__clearHistory(ids);
+        this.clearHistory(ids);
         return resolve(commit);
       }
 
@@ -2125,7 +2106,7 @@ export class ToolBox extends G3WObject {
             });
         }
 
-        this.__clearHistory();
+        this.clearHistory();
 
         /**
          * @since v3.9.0
@@ -2628,7 +2609,7 @@ export class ToolBox extends G3WObject {
     this._states.find((state, idx) => {
       if (state.id === this.state.editing.session.current) {
         //get item of current state
-        items = _checkSessionItems(this._history.id, this._states[idx].items, 0);
+        items = _checkSessionItems(this.state.id, this._states[idx].items, 0);
         //set current the previous one
         this.state.editing.session.current = 0 === idx ? null : this._states[idx - 1].id;
         return true;
@@ -2664,7 +2645,7 @@ export class ToolBox extends G3WObject {
         }
       })
     }
-    items = _checkSessionItems(this._history.id, items, 1);
+    items = _checkSessionItems(this.state.id, items, 1);
     // set internal state
     this.__canUndo();
     this.__canCommit();
@@ -2807,15 +2788,6 @@ export class ToolBox extends G3WObject {
    */
   __isStarted() {
     return this.state.editing.session.started;
-  }
-
-  /**
-   * ORIGINAL SOURCE: g3w-client/src/core/editing/session.js@v3.9.1
-   * 
-   * @since g3w-client-plugin-editing@v3.8.0
-   */
-  __getHistory() {
-    return this._history;
   }
 
   /**
@@ -3178,7 +3150,7 @@ export class ToolBox extends G3WObject {
     this._allfeatures                      = false;
     this.state.editing.session.started     = false;
     this.state.editing.session.getfeatures = false;
-    this.__clearHistory();
+    this.clearHistory();
   }
 
   /**
@@ -3186,9 +3158,9 @@ export class ToolBox extends G3WObject {
    * 
    * @param ids since g3w-client-plugin-editing@v3.8.0
    * 
-   * @since g3w-client-plugin-editing@v3.8.0
+   * @since g3w-client-plugin-editing@v4.1.0
    */
-  __clearHistory(ids) {
+  clearHistory(ids) {
     if (ids) {
       this._states.forEach((state, idx) => {
         if (ids.includes(state.id)) {
@@ -3786,6 +3758,15 @@ export class ToolBox extends G3WObject {
     if (Layer.LayerTypes.VECTOR === editor.getLayer().getType()) {
       editor.getLayer().resetEditingSource(editor.getEditingSource().getFeaturesCollection());
     }
+  }
+
+  /**
+   * @returns { boolean } whether temp changes are waiting to save on server
+   * 
+   * @since g3w-client-plugin-editing@v4.1.0
+   */
+  hasPendingCommits() {
+    return this._constrains.commit;
   }
 
 }

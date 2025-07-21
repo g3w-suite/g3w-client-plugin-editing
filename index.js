@@ -322,24 +322,14 @@ new (class extends Plugin {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   undo() {
-    const session      = this.state.toolboxselected.getSession();
-    const layerId      = session.getId();
-    const sessionItems = session.getLastHistoryState().items;
-
+    const id           = this.state.toolboxselected.getId();
+    const toolBox      = this.getToolBoxById(id);
+    const sessionItems = toolBox.getSession().getLastHistoryState().items;
     //update unique values fields after undo
-    this.undoRedoLayerUniqueFieldValues({
-      layerId,
-      sessionItems,
-      action: 'undo'
-    });
-
-    const undoItems = session.undo();
+    this.undoRedoLayerUniqueFieldValues({ layerId: id, sessionItems, action: 'undo' });
+    const relationSessionItems = toolBox.getSession().undo();
     //update unique values of relations after undo
-    this.undoRedoRelationUniqueFieldValues({
-      relationSessionItems: undoItems,
-      action:               'undo'
-    });
-
+    this.undoRedoRelationUniqueFieldValues({ relationSessionItems, action: 'undo' });
     // undo relations
     Object.entries(undoItems).forEach(([toolboxId, items]) => { this.getToolBoxById(toolboxId).getSession().undo(items); });
   }
@@ -350,22 +340,14 @@ new (class extends Plugin {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   redo() {
-    const session      = this.state.toolboxselected.getSession();
-    const layerId      = session.getId();
-    const sessionItems = session.getLastHistoryState().items;
-    //update unique values fields after redo
-    this.undoRedoLayerUniqueFieldValues({
-      layerId,
-      sessionItems,
-      action: 'redo'
-    });
-    const redoItems = session.redo();
-    //update unique values of relations after redo
-    this.undoRedoRelationUniqueFieldValues({
-      relationSessionItems: redoItems,
-      action:               'redo'
-    });
-
+    const id           = this.state.toolboxselected.getId();
+    const toolBox      = this.getToolBoxById(id);
+    const sessionItems = toolBox.getSession().getLastHistoryState().items;
+    // update unique values fields after redo
+    this.undoRedoLayerUniqueFieldValues({ sessionItems, layerId: toolBox.getId(), action: 'redo' });
+    const relationSessionItems = toolBox.getSession().redo();
+    // update unique values of relations after redo
+    this.undoRedoRelationUniqueFieldValues({ relationSessionItems, action: 'redo' });
     // redo relations
     Object.entries(redoItems).forEach(([toolboxId, items]) => { this.getToolBoxById(toolboxId).getSession().redo(items); });
   }
@@ -558,7 +540,7 @@ new (class extends Plugin {
    */
   async stop() {
     const commitpromises = this.state.toolboxes
-      .filter(t => t.getSession().getHistory().state.commit) // check if temp changes are waiting to save on server
+      .filter(t => t.hasPendingCommits())
       .map( toolbox => this.commit({ toolbox, modal : true }))
     try {
       await Promise.allSettled(commitpromises);    
@@ -699,7 +681,7 @@ new (class extends Plugin {
         }
       }
 
-      let data      = !online && { [toolbox.getSession().getId()]: commitItems };
+      let data      = !online && { [toolbox.getId()]: commitItems };
       //get current offline editing changes
       const changes = !online && JSON.parse(window.localStorage.getItem('EDITING_CHANGES') || null);
 
@@ -755,9 +737,8 @@ new (class extends Plugin {
           message:   "plugins.editing.messages.saved_local",
           autoclose: true
         });
-        //clear history because it saved on browser
-        toolbox.getSession().clearHistory();
-
+        // clear history because it saved on browser
+        toolbox.clearHistory();
       }
 
       try {
@@ -1234,7 +1215,6 @@ new (class extends Plugin {
     const toolBox   = this.getToolBoxById(layer.id);
     toolBox.setSelected(true);
 
-    const session   = toolBox.getSession();
     const { scale } = toolBox.getEditingConstraints(); // get scale constraint from setting layer
 
     let w;
@@ -1349,16 +1329,16 @@ new (class extends Plugin {
 
       await w.start({
         inputs:  { layer: _layer, features: [feature] },
-        context: { session }
+        context: { session: toolBox.getSession() }
       });
 
-      await session.save();
+      await toolBox.getSession().save();
 
       this.saveChange();
 
     } catch (e) {
       console.warn(e);
-      session.rollback();
+      toolBox.getSession().rollback();
     } finally {
       w.stop();
     }

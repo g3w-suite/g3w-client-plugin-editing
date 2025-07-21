@@ -310,13 +310,10 @@
               .concat(toolbox.getDependencies())
               .forEach(id => {
                 const toolbox = GUI.getPlugin('editing').getToolBoxById(id);
-                const editor  = toolbox.getEditor();
-                //set original features get from server without changes
-                editor.getEditingSource().setFeatures((editor.readFeatures() || []).map(f => f.clone()));
-                //clear history of a layer - no changes
-                toolbox.getSession().getHistory().clear();
-                //stop eventually active tool
-                toolbox.stopActiveTool();
+                // set original features get from server without changes
+                toolbox.getEditor().getEditingSource().setFeatures((toolbox.getEditor().readFeatures() || []).map(f => f.clone()));
+                toolbox.clearHistory();   // clear history of a layer (no changes)
+                toolbox.stopActiveTool(); // stop eventually active tool
               });
             console.info('[EDITING] reverted dirty');
           } catch(e) {
