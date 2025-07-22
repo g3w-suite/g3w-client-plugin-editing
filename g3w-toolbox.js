@@ -76,6 +76,15 @@ Object
  */
 export class ToolBox extends G3WObject {
 
+  /**
+   * ORIGINAL SOURCE: g3w-client/src/store/sessions.js@v3.9.1
+   *
+   * Store editing sessions
+   *
+   * @since g3w-client-plugin-editing@v4.1.0
+   */
+  static _sessions = {};
+
   _start = false;
 
   /** @type { boolean } Whether editor is active or not */
@@ -145,8 +154,6 @@ export class ToolBox extends G3WObject {
 
     _layer.state.editing.ready = true;
 
-    const _collection = _plugin.state.features[_layer.getId()] = new Collection(Layer.LayerTypes.TABLE !== _layer.getType());
-
     _plugin.state.lock_ids[_layer.getId()]           = [];
     _plugin.state.loaded_ids[_layer.getId()]         = [];
     _plugin.state.uniqueFieldsValues[_layer.getId()] = {};
@@ -161,20 +168,27 @@ export class ToolBox extends G3WObject {
      * ORIGINAL SOURCE: g3w-client/src/map/layers/featuresstore.js@v4.0.0
      * ORIGINAL SOURCE: g3w-client/src/app/core/layers/features/olfeaturesstore.js@v3.10.2
      */
+    this._collection = _plugin.state.features[_layer.getId()] = new Collection(Layer.LayerTypes.TABLE !== _layer.getType());
+
+    /**
+     * ORIGINAL SOURCE: g3w-client-plugin-editing/g3wsdk/editing/editor.j@v4.0.0
+     * ORIGINAL SOURCE: g3w-client/src/map/layers/featuresstore.js@v4.0.0
+     * ORIGINAL SOURCE: g3w-client/src/app/core/layers/features/olfeaturesstore.js@v3.10.2
+     */
     this._featuresstore = Object.assign(new G3WObject, {
       setters: {
         addFeatures: (feats = []) => feats.forEach(f => this._featuresstore.addFeature(f)),
-        removeFeature: f => _collection.remove(f),
-        updateFeature: f => _collection.update(f),
+        removeFeature: f => this._collection.remove(f),
+        updateFeature: f => this._collection.update(f),
       },
-      clear:                 () => _collection.clear(),
-      addFeature:            f => _collection.add(f),
+      clear:                 () => this._collection.clear(),
+      addFeature:            f => this._collection.add(f),
       clone:                 () => cloneDeep(this._featuresstore),
-      getFeatureById:        id => _collection.getArray().find(f => id == f.getId()),
-      readFeatures:          () => _collection.getArray(),
-      getLength:             () => _collection.getArray().length,
-      getFeaturesCollection: () => _collection._store,
-      setFeatures:           (feats = []) => { _collection.clear(); this._featuresstore.addFeatures(feats); },
+      getFeatureById:        id => this._collection.getArray().find(f => id == f.getId()),
+      readFeatures:          () => this._collection.getArray(),
+      getLength:             () => this._collection.getArray().length,
+      getFeaturesCollection: this.getFeaturesCollection.bind(this),
+      setFeatures:           (f = []) => { this._collection.clear(); this._featuresstore.addFeatures(f); },
     });
 
     /**
@@ -186,10 +200,10 @@ export class ToolBox extends G3WObject {
       _layer:     _layer,
       setters: {
         save:                       () => _layer.save(),
-        addFeature:                 f => this._featuresstore.addFeature(f),
+        addFeature:                 f => this._collection.add(f),
         updateFeature:              f => this._featuresstore.updateFeature(f),
         deleteFeature:              f => this._featuresstore.deleteFeature(f),
-        setFeatures:               (f = []) => this._featuresstore.setFeatures(f),
+        setFeatures:               (f = []) => { this._collection.clear(); this._featuresstore.addFeatures(f); },
         getFeatures:               this.___getFeatures.bind(this),
         featuresLockedByOtherUser: f => {},
       },
@@ -201,7 +215,7 @@ export class ToolBox extends G3WObject {
       getLayer:            () => _layer,
       rollback:            this.__setChanges.bind(this),
       readFeatures:        () => this._features,
-      readEditingFeatures: () => this._featuresstore.readFeatures(),
+      readEditingFeatures: () => this._collection.getArray(),
       commit:              this.__commitToEditor.bind(this),
       start:               this.__startEditor.bind(this),
       stop:                this.__stopEditor.bind(this),
@@ -340,7 +354,7 @@ export class ToolBox extends G3WObject {
       start:                        this.__startSession.bind(this),
       stop:                         this.__stopSession.bind(this),
       getFeatures:                  this.__getFeatures.bind(this),
-      saveChangesOnServer:          this.__saveChangesOnServer.bind(this),
+      saveChangesOnServer:          this.saveChangesOnServer.bind(this),
     }}), {
       state:                        new Proxy({}, { get: (_, prop) => this.state.editing.session[prop] }),
       getId:                        () => layer.getId(),
@@ -348,10 +362,10 @@ export class ToolBox extends G3WObject {
       isStarted:                    this.isSessionStarted.bind(this),
       getEditor:                    this.getEditor.bind(this),
       push:                         this.__push.bind(this),
-      pushDelete:                   this.__pushDelete.bind(this),
+      pushDelete:                   this.pushDelete.bind(this),
       save:                         this.__save.bind(this),
-      pushAdd:                      this.__pushAdd.bind(this),
-      pushUpdate:                   this.__pushUpdate.bind(this),
+      pushAdd:                      this.pushAdd.bind(this),
+      pushUpdate:                   this.pushUpdate.bind(this),
       rollback:                     this.rollback.bind(this),
       undo:                         this.undo.bind(this),
       redo:                         this.redo.bind(this),
@@ -2092,15 +2106,12 @@ export class ToolBox extends G3WObject {
 
         // sync server data with local data (apply commit response to current editing relation layer)
         for (const id in relations) {
-          ToolBox.get(id).getEditor().applyCommitResponse({ response: relations[id], result: true });
+          ToolBox._sessions[id].getEditor().applyCommitResponse({ response: relations[id], result: true });
         }
 
         this.clearHistory();
 
-        /**
-         * @since v3.9.0
-        * After commit get new unique values
-        */
+        /** @since v3.9.0 After commit get new unique values */
         this._session.saveChangesOnServer(commit);
 
         resolve({ commit, response });
@@ -2801,9 +2812,9 @@ export class ToolBox extends G3WObject {
    * @param layerId
    * @param feature
    * 
-   * @since g3w-client-plugin-editing@v3.8.0
+   * @since g3w-client-plugin-editing@v4.1.0
    */
-  __pushDelete(layerId, feature) {
+  pushDelete(layerId, feature) {
     this.__push({ layerId, feature: feature.delete() });
     return feature;
   }
@@ -2845,9 +2856,9 @@ export class ToolBox extends G3WObject {
    * @param feature 
    * @param removeNotEditableProperties
    * 
-   * @since g3w-client-plugin-editing@v3.8.0
+   * @since g3w-client-plugin-editing@v4.1.0
    */
-  __pushAdd(layerId, feature, removeNotEditableProperties=true) {
+  pushAdd(layerId, feature, removeNotEditableProperties=true) {
     /**
      * @TODO check if it need to deprecate it. All properties are need
      * Please take care of this to understand
@@ -2857,7 +2868,7 @@ export class ToolBox extends G3WObject {
     // remove not editable proprierties from feature
     if (removeNotEditableProperties) {
       (
-        ToolBox.get(layerId).getEditor().getLayer().config.editing.fields
+        ToolBox._sessions[layerId].getEditor().getLayer().config.editing.fields
         .filter(f => !f.editable) // un-editable fields
         .map(f => f.name)
         || []
@@ -2880,9 +2891,9 @@ export class ToolBox extends G3WObject {
    * @param newFeature
    * @param oldFeature
    * 
-   * @since g3w-client-plugin-editing@v3.8.0
+   * @since g3w-client-plugin-editing@v4.1.0
    */
-  __pushUpdate(layerId, newFeature, oldFeature) {
+  pushUpdate(layerId, newFeature, oldFeature) {
     // get index of temporary changes
     const is_new = newFeature.isNew();
     const i      = is_new && this.state.editing.session.changes.findIndex(c => layerId === c.layerId && c.feature.getId() === newFeature.getId());
@@ -2959,7 +2970,7 @@ export class ToolBox extends G3WObject {
     try {
       await this.__setChanges(changes.own);
       for (const id in changes.dependencies) {
-        ToolBox.get(id).rollback(changes.dependencies[id]);
+        ToolBox._sessions[id].rollback(changes.dependencies[id]);
       }
       return changes.dependencies;
     } catch(e) {
@@ -3025,7 +3036,7 @@ export class ToolBox extends G3WObject {
       if (key !== id) {
         isRelation            = true; //set true because these changes belong to features relation items
         //check lock ids of relation layer
-        const lockids =  ToolBox.get(key)?.getEditor?.()?.getLockIds?.() || [];
+        const lockids =  ToolBox._sessions[key]?.getEditor?.()?.getLockIds?.() || [];
         //create a relation object
         commitObj.relations[key] = {
           lockids,
@@ -3409,8 +3420,10 @@ export class ToolBox extends G3WObject {
   /**
    * Hook to get informed that are saved on server
    * Get unique id for each commited layer/relation
+   * 
+   * @since g3w-client-plugin-editing@v4.1.0
    */
-  async __saveChangesOnServer(commit) {
+  async saveChangesOnServer(commit) {
     const promises = [ setLayerUniqueFieldValues(this.getId()) ];
     const relationsId = [];
     const addRelationId = (relations = {}) => {
@@ -3510,7 +3523,7 @@ export class ToolBox extends G3WObject {
    * 
    * @since g3w-client-plugin-editing@v4.1.0
    */
-  async __commitToEditor(layerId, commit) {
+  async __commitToEditor(commit) {
 
     const layerId = this.getId();
     let relations = [];
@@ -3597,7 +3610,7 @@ export class ToolBox extends G3WObject {
           .entries(r)
           .forEach(([ id, opts = {}]) => { // id - relation layer id, opts - Object contain relation properties
             //get the editing source of relation layer
-            const source = ToolBox.get(id)._featuresstore;
+            const source = ToolBox._sessions[id]._featuresstore;
             // handle value to relation field saved on server
             (opts.ids || []).forEach(id => {
               const rFeature = source.getFeatureById(id);
@@ -3624,7 +3637,7 @@ export class ToolBox extends G3WObject {
           .entries(r)
           .forEach(([ id, opts = {}]) => { // id - relation layer id, opts - Object contain relation properties
             //get the editing source of relation layer
-            const source = ToolBox.get(id)._featuresstore;
+            const source = ToolBox._sessions[id]._featuresstore;
             // handle value to relation field saved on server
             (opts.ids || []).forEach(id => {
               const rFeature = source.getFeatureById(id);
@@ -3695,7 +3708,7 @@ export class ToolBox extends G3WObject {
 
     // vector layer
     if (Layer.LayerTypes.VECTOR === this._editor.getLayer().getType()) {
-      this._editor.getLayer().resetEditingSource(this._featuresstore.getFeaturesCollection());
+      this._editor.getLayer().resetEditingSource(this.getFeaturesCollection());
     }
   }
 
@@ -3708,19 +3721,14 @@ export class ToolBox extends G3WObject {
     return this._constrains.commit;
   }
 
+  /**
+   * @since g3w-client-plugin-editing@v4.1.0
+   */
+  getFeaturesCollection() {
+    return this._collection._store;
+  }
+
 }
-
-/**
- * ORIGINAL SOURCE: g3w-client/src/store/sessions.js@v3.9.1
- *
- * Store editing sessions
- *
- * @since g3w-client-plugin-editing@v3.8.0
- */
-ToolBox._sessions = {};
-ToolBox.get       = id => ToolBox._sessions[id];
-ToolBox.clear     = () => Object.keys(sessions).forEach(id => delete ToolBox._sessions[id]);
-
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/utils/checkSessionItems.js@v4.0.0

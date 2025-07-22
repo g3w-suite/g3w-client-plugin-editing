@@ -1165,7 +1165,9 @@ new (class extends Plugin {
 
     delete ApplicationState.layers['editing'];
 
-    ToolBox.clear();
+    // clear sessions
+    Object.keys(ToolBox._sessions).forEach(id => delete ToolBox._sessions[id]);
+
     // turn off events
     GUI.getService('map').off('mapcontrol:toggled', this.state.onMapControlToggled);
     // unregister query result action
