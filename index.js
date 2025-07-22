@@ -60,10 +60,9 @@ new (class extends Plugin {
      */
     this.state = {
       open:                false, // check if panel is open or not
-      toolboxes:           [],
+      toolboxes:           [],    // editable layers (vector)
       toolboxselected:     null,
       showselectlayers:    true,  // whether to show selected layers on editing panel
-      layers: {},                // editable layers (vector)
       features: {},              // edited features (local)
       lock_ids: {},              // locked features
       loaded_ids: {},            // Ids of features loaded by current user
@@ -85,13 +84,6 @@ new (class extends Plugin {
         cb: {
           done:  () => {},       // function executed after commit change done
           error: () => {}        // function executed after commit changes error
-        }
-      },
-      events:              {
-        'start-editing':         {},
-        'show-relation-editing': {},
-        layer: {
-          start_editing: { before: {}, after:  {} }
         }
       },
       show_errors:    false,
@@ -120,7 +112,6 @@ new (class extends Plugin {
       redo:                              this.redo.bind(this),
       getEditingLayer:                   this.getEditingLayer.bind(this),
       addToolBox:                        this.addToolBox.bind(this),
-      runEventHandler:                   this.runEventHandler.bind(this),
       resetDefault:                      this.resetDefault.bind(this),
       resetAPIDefault:                   this.resetAPIDefault.bind(this),
       getLayers:                         this.getLayers.bind(this),
@@ -188,24 +179,19 @@ new (class extends Plugin {
     // add editing layer store to mapstoreregistry
     ApplicationState.layers['editing'] = new LayersStore({ id: 'editing', queryable: false, catalog: false });
     
-    // loop over editable layers (sorted by "index" to keep TOC order)
+    // get editable layers config from server (sorted by "index" to keep TOC order)
     (await Promise.allSettled(
       getCatalogLayers({ EDITABLE: true }, { TOC_ORDER : true })
         .filter(layer => layer.isEditable())
-        /** ORIGINAL SOURCE: g3w-client/src/map/layers/tablelayer.js@v4.0.0 */
-        .map(async (layer, index) => {
-          try {
-            this.state.toolboxes[index] = new ToolBox(
-              layer,
-              await layer.getProvider('data').getConfig(), // get layer editing config (from server)
-              this
-            );
-          } catch (e) {
-            this.state.layers_in_error = true;
-            console.warn(e);
-          }
-        })
-    ));
+        .map(async layer => ({ layer, config: await layer.getProvider('data').getConfig() }))
+    )).forEach(({ status, value, reason }) => {
+        if ('fulfilled' === status) {
+        this.state.toolboxes.push(new ToolBox(value.layer, value.config, this));
+      } else {
+        this.state.layers_in_error = true;
+        console.warn(reason);
+      }
+    });
 
     // after add layers to layerstore
     ApplicationState.layers['editing'].addLayers(this.getLayers());
@@ -377,7 +363,7 @@ new (class extends Plugin {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   getEditingLayer(id) {
-    return this.state.layers[id].getEditingLayer();
+    return this.getToolBoxById(id).getLayer().getEditingLayer();
   }
 
   /**
@@ -389,26 +375,6 @@ new (class extends Plugin {
    */
   addToolBox(toolbox) {
     this.state.toolboxes.push(toolbox);
-  }
-
-  /**
-   * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
-   * 
-   * @param { Object } handler
-   * @param handler.type
-   * @param handler.id
-   *
-   * @returns { Promise<void> }
-   * 
-   * @since g3w-client-plugin-editing@v3.8.0
-   */
-  async runEventHandler({
-    type,
-    id,
-  } = {}) {
-    if (this.state.events[type] && this.state.events[type][id]) {
-      await Promise.allSettled(this.state.events[type][id].map(fnc => fnc()));
-    }
   }
 
   /**
@@ -454,7 +420,7 @@ new (class extends Plugin {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   getLayers() {
-    return Object.values(this.state.layers);
+    return this.state.toolboxes.map(tb => tb.getLayer());
   }
 
   /**
@@ -467,7 +433,7 @@ new (class extends Plugin {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   getLayerById(id) {
-    return this.state.layers[id];
+    return this.getToolBoxById(id).getLayer();
   }
 
   /**
@@ -526,7 +492,7 @@ new (class extends Plugin {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   getEditableLayers() {
-    return this.state.layers;
+    return this.state.toolboxes.reduce((o,tb) => Object.assign(o, { [tb.getId()]: tb.getLayer() }), {}) ;
   }
 
   /**

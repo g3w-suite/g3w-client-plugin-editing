@@ -1658,19 +1658,7 @@
 
       if (!this.loadEventuallyRelationValuesForInputs) {
         this.loading = true;
-
-        try {
-          await GUI.getPlugin('editing').runEventHandler({
-            type:      'show-relation-editing',
-            id:        getRelationId({ layerId: this.layerId, relation: this.relation }),
-            component: this,
-          });
-        } catch(e) {
-          console.warn(e)
-        }
-
         this.loading = false;
-
         this.loadEventuallyRelationValuesForInputs = true;
       }
 
@@ -1691,7 +1679,6 @@
       this.active = false;
       //need to unselect relaion when click on back control form
       this.relations.forEach(r => r.select = false);
-
     },
 
     beforeDestroy() {

@@ -226,68 +226,7 @@ export class ToolBox extends G3WObject {
       layer = layer.clone(); 
     }
 
-    _plugin.state.layers[layer.getId()] = layer;
-
-    /**
-     * attach layer widgets event: get data from api when a field of a layer
-     * is related to a wgis form widget (ex. relation reference, value map, etc..)
-     */
-    layer
-      .getEditingFields()
-      .filter(field => field.input && 'select_autocomplete' === field.input.type && !field.input.options.filter_expression && !field.input.options.usecompleter)
-      /** @TODO need to avoid to call the same fnc to same event many times to avoid waste server request time */
-      .forEach(field => {
-        _plugin.state.events['start-editing'][layer.getId()] = _plugin.state.events['start-editing'][layer.getId()] || [];
-        _plugin.state.events['start-editing'][layer.getId()].push(async () => {
-          // remove all values
-          field.input.options.loading.state = 'loading';
-          field.input.options.values        = [];
-
-          const relationLayer = field.input.options.layer_id && getCatalogLayerById(field.input.options.layer_id);
-          const has_filter    = ([undefined, null].includes(field.input.options.filter_fields || []) || 0 === (field.input.options.filter_fields || []).length);
-
-          try {
-
-            // relation reference widget + no filter set
-            if (field.input.options.relation_reference && has_filter) {
-              const response = await layer.getFilterData({ fformatter: field.name }); // get data with fformatter
-              if (response && response.data) {
-                // response data is an array ok key value objects
-                field.input.options.values.push(...response.data.map(([value, key]) => ({ key, value })));
-                field.input.options.loading.state = 'ready';
-                _plugin.fireEvent('autocomplete', { field, data: [response.data] });
-                return field.input.options.values;
-              }
-            }
-
-            // value map widget
-            if (relationLayer) {
-              //ordering by value or key depend on orderbyvalue Boolean value
-              const response = await relationLayer.getDataTable({ ordering: field.input.options.orderbyvalue ? field.input.options.value : field.input.options.key });
-              if (response && response.features) {
-                field.input.options.values.push(...(response.features || []).map(feature => ({
-                  key:   feature.properties[field.input.options.value],
-                  value: feature.properties[field.input.options.key],
-                })));
-                field.input.options.loading.state = 'ready';
-                _plugin.fireEvent('autocomplete', { field, features: response.features })
-                return field.input.options.values;
-              }
-            }
-
-            /** @TODO check if deprecated */
-            const features        = [];
-            field.input.options.loading.state = 'ready';
-            _plugin.fireEvent('autocomplete', { field, features });
-            return features;
-
-          } catch (e) {
-            console.warn(e);
-            field.input.options.loading.state = 'error';
-            return Promise.reject(e);
-          }
-        });
-      });
+    this.on('start-editing', this.#onEditingStart.bind(this));
 
     /**
      * set 1:1 relation fields editable
@@ -303,18 +242,12 @@ export class ToolBox extends G3WObject {
       .getArray()
       .filter(relation => 'ONE' === relation.getType() && layer.getId() === relation.getFather()) // 'ONE' == join 1:1 + father layerId is a father of relation
       .forEach(relation => {
-        const isChildEditable = undefined !== _plugin.getLayerById(relation.getChild());        // check if child layerId is editable (in editing)
-        _plugin
-          .getLayerById(relation.getFather())
+        const isChildEditable = undefined !== getCatalogLayerById(relation.getChild());        // check if child layerId is editable (in editing)
+        getCatalogLayerById(relation.getFather())
           .getEditingFields()
           .filter(f => f.vectorjoin_id && f.vectorjoin_id === relation.getId())  // father layer fields (in editing)
           .forEach(f => { f.editable = (f.editable && isChildEditable); });      // current editable boolean value + child editable layer
       });
-
-    const dependencies = [
-      ...layer.getChildren(),
-      ...layer.getFathers()
-    ].filter(id => _plugin.getLayerById(id))
 
     // Set editing layer color and toolbox style
     if (!layer.getColor()) {
@@ -379,6 +312,11 @@ export class ToolBox extends G3WObject {
 
     /** @type { 'create' | 'update_attributes' | 'update_geometry' | delete' | undefined } undefined means all possible tools base on type */
     const capabilities = layer.state.editing.capabilities || [];
+
+    const dependencies = [
+      ...layer.getChildren(),
+      ...layer.getFathers()
+    ].filter(id => getCatalogLayerById(id))
 
     this.state = {
       layer,
@@ -1915,17 +1853,14 @@ export class ToolBox extends G3WObject {
         this.emit('start-editing');
         //set unique fields values
         await setLayerUniqueFieldValues(this.getId());
-        await GUI.getPlugin('editing').runEventHandler({ type: 'start-editing', id });
         try {
           const features = await promise;
           this.stopLoading();
           this.setEditing(true);
-          await GUI.getPlugin('editing').runEventHandler({ type: 'get-features-editing', id, options: { features } });
           resolve({ features })
         } catch(e) {
           console.warn(e);
           GUI.notify.error(e.message);
-          await GUI.getPlugin('editing').runEventHandler({ type: 'error-editing', id, error: e });
           this.stop();
           this.stopLoading();
           reject(e);
@@ -3733,6 +3668,69 @@ export class ToolBox extends G3WObject {
    */
   readEditingFeatures() {
     return this._collection.getArray();
+  }
+
+  /**
+   * attach layer widgets event: get data from api when a field of a layer
+   * is related to a wgis form widget (ex. relation reference, value map, etc..)
+   */
+  #onEditingStart() {
+
+    const layer = this.getLayer();
+
+    layer
+      .getEditingFields()
+      .filter(field => field.input && 'select_autocomplete' === field.input.type && !field.input.options.filter_expression && !field.input.options.usecompleter)
+      /** @TODO need to avoid to call the same fnc to same event many times to avoid waste server request time */
+      .forEach(async field => {
+        // remove all values
+        field.input.options.loading.state = 'loading';
+        field.input.options.values        = [];
+
+        const relationLayer = field.input.options.layer_id && getCatalogLayerById(field.input.options.layer_id);
+        const has_filter    = ([undefined, null].includes(field.input.options.filter_fields || []) || 0 === (field.input.options.filter_fields || []).length);
+
+        try {
+
+          // relation reference widget + no filter set
+          if (field.input.options.relation_reference && has_filter) {
+            const response = await layer.getFilterData({ fformatter: field.name }); // get data with fformatter
+            if (response && response.data) {
+              // response data is an array ok key value objects
+              field.input.options.values.push(...response.data.map(([value, key]) => ({ key, value })));
+              field.input.options.loading.state = 'ready';
+              _plugin.fireEvent('autocomplete', { field, data: [response.data] });
+              return field.input.options.values;
+            }
+          }
+
+          // value map widget
+          if (relationLayer) {
+            //ordering by value or key depend on orderbyvalue Boolean value
+            const response = await relationLayer.getDataTable({ ordering: field.input.options.orderbyvalue ? field.input.options.value : field.input.options.key });
+            if (response && response.features) {
+              field.input.options.values.push(...(response.features || []).map(feature => ({
+                key:   feature.properties[field.input.options.value],
+                value: feature.properties[field.input.options.key],
+              })));
+              field.input.options.loading.state = 'ready';
+              _plugin.fireEvent('autocomplete', { field, features: response.features })
+              return field.input.options.values;
+            }
+          }
+
+          /** @TODO check if deprecated */
+          const features        = [];
+          field.input.options.loading.state = 'ready';
+          _plugin.fireEvent('autocomplete', { field, features });
+          return features;
+
+        } catch (e) {
+          console.warn(e);
+          field.input.options.loading.state = 'error';
+          return Promise.reject(e);
+        }
+      });
   }
 
 }
