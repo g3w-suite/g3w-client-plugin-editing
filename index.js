@@ -245,7 +245,22 @@ new (class extends Plugin {
   * @since g3w-client-plugin-editing@v3.8.0
   */
   getSession({ layerId } = {}) {
-    return this.getToolBoxById(layerId).getSession();
+    return this.getSessionById(layerId);
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
+   * 
+   * Get layer session by id (layer id is the same of session)
+   *
+   * @param id
+   *
+   * @returns {*}
+   *
+   * @since g3w-client-plugin-editing@v3.7.0
+   */
+  getSessionById(id) {
+    return this.getToolBoxById(id).getSession();
   }
 
   /**
@@ -466,21 +481,6 @@ new (class extends Plugin {
    */
   getToolBoxById(id) {
     return this.state.toolboxes.find(tb => id === tb.getId());
-  }
-
-  /**
-   * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
-   * 
-   * Get layer session by id (layer id is the same of session)
-   *
-   * @param id
-   *
-   * @returns {*}
-   *
-   * @since g3w-client-plugin-editing@v3.7.0
-   */
-  getSessionById(id) {
-    return this.getToolBoxById(id).getSession();
   }
 
   /**
