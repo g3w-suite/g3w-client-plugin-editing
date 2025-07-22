@@ -320,20 +320,6 @@ export class Step extends G3WObject {
   }
 
   /**
-   * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
-   *
-   * @param event
-   * @param options
-   *
-   * @returns {*}
-   *
-   * @since g3w-client-plugin-editing@v3.8.0
-   */
-  fireEvent(event, options = {}) {
-    return GUI.getPlugin('editing').fireEvent(event, options);
-  }
-
-  /**
    * Bind interrupt event on keys escape pressed
    * 
    * @param evt.key

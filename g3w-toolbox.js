@@ -1048,7 +1048,7 @@ export class ToolBox extends G3WObject {
                                   source.addFeature(feature);
                                   session.pushAdd(layerId, feature, false);
                                   inputs.features.push(feature)
-                                  this.fireEvent('addfeature', feature)
+                                  GUI.getPlugin('editing').emit('addfeature', feature)
                                   resolve(inputs);
                                 }
                                 catch(e) {
@@ -3699,7 +3699,7 @@ export class ToolBox extends G3WObject {
               // response data is an array ok key value objects
               field.input.options.values.push(...response.data.map(([value, key]) => ({ key, value })));
               field.input.options.loading.state = 'ready';
-              _plugin.fireEvent('autocomplete', { field, data: [response.data] });
+              GUI.getPlugin('editing').emit('autocomplete', { field, data: [response.data] });
               return field.input.options.values;
             }
           }
@@ -3714,7 +3714,7 @@ export class ToolBox extends G3WObject {
                 value: feature.properties[field.input.options.key],
               })));
               field.input.options.loading.state = 'ready';
-              _plugin.fireEvent('autocomplete', { field, features: response.features })
+              GUI.getPlugin('editing').emit('autocomplete', { field, features: response.features })
               return field.input.options.values;
             }
           }
@@ -3722,7 +3722,7 @@ export class ToolBox extends G3WObject {
           /** @TODO check if deprecated */
           const features        = [];
           field.input.options.loading.state = 'ready';
-          _plugin.fireEvent('autocomplete', { field, features });
+          GUI.getPlugin('editing').emit('autocomplete', { field, features });
           return features;
 
         } catch (e) {

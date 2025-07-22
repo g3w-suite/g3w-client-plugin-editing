@@ -70,7 +70,6 @@ new (class extends Plugin {
       relations:           [],
       layers_in_error:     false,
       formComponents:      {},    // plugin components
-      subscribers:         {},
       constraints:         {      // editing contraints (layer, filter, ..) to get features
         toolboxes: {},
         showToolboxesExcluded: true
@@ -97,6 +96,9 @@ new (class extends Plugin {
       onMapControlToggled: ({ target }) => {
         target.isToggled() && target.isClickMap() && this.state?.toolboxselected?.getActiveTool?.() && this.state.toolboxselected.stopActiveTool();
       },
+
+      // BACKOMP v3.x
+      subscribers: this.___events,
     };
 
     // BACKOMP v3.x
@@ -105,9 +107,9 @@ new (class extends Plugin {
       config:                            this.config,
       getSession:                        this.getSession.bind(this),
       getFeature:                        this.getFeature.bind(this),
-      subscribe:                         this.subscribe.bind(this),
-      unsubscribe:                       this.unsubscribe.bind(this),
-      fireEvent:                         this.fireEvent.bind(this),
+      subscribe:                         this.on.bind(this),
+      unsubscribe:                       this.off.bind(this),
+      fireEvent:                         this.emit.bind(this),
       undo:                              this.undo.bind(this),
       redo:                              this.redo.bind(this),
       getEditingLayer:                   this.getEditingLayer.bind(this),
@@ -155,8 +157,8 @@ new (class extends Plugin {
       api: {
         getSession:                       this.getSession.bind(this),
         getFeature:                       this.getFeature.bind(this),
-        subscribe:                        this.subscribe.bind(this),
-        unsubscribe:                      this.unsubscribe.bind(this),
+        subscribe:                        this.on.bind(this),
+        unsubscribe:                      this.off.bind(this),
         getToolBoxById:                   this.getToolBoxById.bind(this),
         getEditingLayerById:              getEditingLayerById, //@since 4.1.0
         addNewFeature:                    createFeature,
@@ -260,59 +262,6 @@ new (class extends Plugin {
    */
   getFeature({ layerId } = {}) {
     return this.getToolBoxById(layerId).getActiveTool().getLayer().features[0];
-  }
-
-  /**
-   * [API Method] ORIGINAL SOURCE: g3w-client-plugin-editing/api/index.js@v3.7.8
-   * 
-   * Subscribe handler function on event
-   *
-   * @param event
-   * @param { Function } fnc
-   *
-   * @returns { Function } function
-   * 
-   * @since g3w-client-plugin-editing@v3.8.0
-   */
-  subscribe(event, fnc) {
-    if (!this.state.subscribers[event]) { this.state.subscribers[event] = [] }
-    if (!this.state.subscribers[event].find(subscribe => fnc === subscribe)) { this.state.subscribers[event].push(fnc)}
-    return fnc;
-  }
-
-  /**
-   * [API Method] ORIGINAL SOURCE: g3w-client-plugin-editing/api/index.js@v3.7.8
-   * 
-   * Unsubscribe handler function on event
-   *
-   * @param event
-   * @param fnc
-   * 
-   * @since g3w-client-plugin-editing@v3.8.0
-   */
-  unsubscribe(event, fnc) {
-    this.state.subscribers[event] = this.state.subscribers[event].filter(sub => fnc !== sub);
-  }
-
-  /**
-   * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8
-   * 
-   * @param event
-   * @param options
-   *
-   * @returns { Promise<unknown> }
-   * 
-   * @since g3w-client-plugin-editing@v3.8.0
-   */
-  async fireEvent(event, options = {}) {
-    if (this.state.subscribers[event]) {
-      this.state.subscribers[event].forEach(fnc => {
-        const response = fnc(options);
-        if (response && response.once) {
-          this.unsubscribe(event, fnc);
-        }
-      });
-    }
   }
 
   /**
@@ -1178,7 +1127,7 @@ new (class extends Plugin {
 
     this.state.showselectlayers = false;
 
-    this.subscribe('closeeditingpanel', () => { this.state.showselectlayers = true; return { once: true } });
+    this.once('closeeditingpanel', () => this.state.showselectlayers = true);
 
     const toolBox   = this.getToolBoxById(layer.id);
     toolBox.setSelected(true);
@@ -1281,7 +1230,7 @@ new (class extends Plugin {
 
         addPartTool.setOperator(w);
 
-        this.subscribe('closeeditingpanel', () => {
+        this.on('closeeditingpanel', () => {
           addPartTool.setOperator(op);
           addPartTool.visible = Geometry.isMultiGeometry(_layer.getGeometryType());
         })

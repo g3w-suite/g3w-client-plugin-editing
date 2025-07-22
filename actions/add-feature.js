@@ -103,7 +103,7 @@ export class AddFeatureStep extends Step {
 
             inputs.features.push(feature);
             this.getContext().get_default_value = true;
-            this.fireEvent('addfeature', feature); // emit event to get from subscribers
+            GUI.getPlugin('editing').emit('addfeature', feature); // emit event to get from subscribers
             resolve(inputs);
           },
         });

@@ -104,10 +104,7 @@ export class OpenFormStep extends Step {
 
     //@since 3.9.0 promise
     const promise = new Promise((resolve) => {
-      GUI.getPlugin('editing').subscribe(`closeform_${this.layerId}`, () => {
-        resolve();
-        return { once: true }; // once close form, remove subscribing
-      })
+      GUI.getPlugin('editing').once(`closeform_${this.layerId}`, () => resolve());
     })
 
     //set selected features
@@ -266,11 +263,11 @@ export class OpenFormStep extends Step {
                       if (task._isContentChild) {
                         task.getInputs().relationFeatures = { newFeatures, originalFeatures: task._originalFeatures };
                       }
-                      await task.fireEvent('saveform', { newFeatures, originalFeatures: task._originalFeatures });
+                      await GUI.getPlugin('editing').emit('saveform', { newFeatures, originalFeatures: task._originalFeatures });
                       newFeatures.forEach((f, i) => task.getContext().session.pushUpdate(task.layerId, f, task._originalFeatures[i]));
                       await _handleRelation1_1LayerFields({ layerId: task.layerId, features: newFeatures, fields, task });
-                      task.fireEvent('savedfeature', newFeatures);                 // called after saved
-                      task.fireEvent(`savedfeature_${task.layerId}`, newFeatures); // called after saved using layerId
+                      GUI.getPlugin('editing').emit('savedfeature', newFeatures);                 // called after saved
+                      GUI.getPlugin('editing').emit(`savedfeature_${task.layerId}`, newFeatures); // called after saved using layerId
                       task.getContext().session.save();
                       return resolve();
                     }))
@@ -373,7 +370,7 @@ export class OpenFormStep extends Step {
                   };
                 }
 
-                await this.fireEvent('saveform', { newFeatures, originalFeatures: this._originalFeatures});
+                await GUI.getPlugin('editing').emit('saveform', { newFeatures, originalFeatures: this._originalFeatures});
 
                 newFeatures.forEach((f, i) => context.session.pushUpdate(this.layerId, f, this._originalFeatures[i]));
 
@@ -387,8 +384,8 @@ export class OpenFormStep extends Step {
 
                 GUI.setModal(false);
 
-                this.fireEvent('savedfeature', newFeatures);                 // called after saved
-                this.fireEvent(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
+                GUI.getPlugin('editing').emit('savedfeature', newFeatures);                 // called after saved
+                GUI.getPlugin('editing').emit(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
                 // In case of save of child, it means that child is updated so also parent
                 if (this._isContentChild) {
                   Workflow.Stack.parents.forEach(w => w?.getContext?.()?.service?.setUpdate?.(true, { force: true }));
@@ -414,7 +411,7 @@ export class OpenFormStep extends Step {
                 }
               },
               cbk: () => {
-                this.fireEvent('cancelform', inputs.features); // fire event cancel form to emit to subscribers
+                GUI.getPlugin('editing').emit('cancelform', inputs.features); // fire event cancel form to emit to subscribers
                 reject(inputs);
               }
             }
@@ -462,7 +459,7 @@ export class OpenFormStep extends Step {
       ]);
 
       // fire openform event
-      this.fireEvent('openform',
+      GUI.getPlugin('editing').emit('openform',
         {
           layerId: this.layerId,
           session: context.session,
@@ -515,8 +512,8 @@ export class OpenFormStep extends Step {
 
     GUI.getPlugin('editing').resetCurrentLayout();
 
-    this.fireEvent('closeform');
-    this.fireEvent(`closeform_${this.layerId}`);
+    GUI.getPlugin('editing').emit('closeform');
+    GUI.getPlugin('editing').emit(`closeform_${this.layerId}`);
 
     this.layerId = null;
     this._unwatchs.forEach(unwatch => unwatch());
@@ -608,18 +605,13 @@ function _getFormFields({
         values.add(field.value);
       }
     });
-
-    return { once: true };
   };
 
   //event when insert/edit form button is pressed
-  GUI.getPlugin('editing').subscribe(`savedfeature_${layerId}`, savedfeatureFnc);
-  //event when close form layer
-  GUI.getPlugin('editing').subscribe(`closeform_${layerId}`, () => {
-    //unsubscribe event
-    GUI.getPlugin('editing').unsubscribe(`savedfeature_${layerId}`, savedfeatureFnc);
-    return { once: true };
-  });
+  const editing = GUI.getPlugin('editing');
+  editing.once(`savedfeature_${layerId}`, savedfeatureFnc);
+  // unsubscribe event event when close form layer
+  editing.once(`closeform_${layerId}`, () => editing.off(`savedfeature_${layerId}`, savedfeatureFnc));
 
   return _handleMulti(fields, multi);
 }

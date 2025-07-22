@@ -408,7 +408,7 @@
           && this.editingButtonsEnabled
         );
 
-        GUI.getPlugin('editing').fireEvent('canUndo', canUndo);
+        GUI.getPlugin('editing').emit('canUndo', canUndo);
 
         return canUndo;
       },
@@ -421,7 +421,7 @@
           && this.editingButtonsEnabled
         );
 
-        GUI.getPlugin('editing').fireEvent('canRedo', canRedo);
+        GUI.getPlugin('editing').emit('canRedo', canRedo);
 
         return canRedo;
       },
@@ -518,7 +518,7 @@
     async mounted() {
       await this.$nextTick();
       //emit openeditingpanel event. Used by simplereporting plugin
-      GUI.getPlugin('editing').fireEvent('openeditingpanel');
+      GUI.getPlugin('editing').emit('openeditingpanel');
     },
 
     /**
@@ -540,7 +540,7 @@
       // unregister "online" and "offline" events
       this.unByKeys.forEach(({ owner, setter, key }) => owner.un(setter, key));
 
-      GUI.getPlugin('editing').fireEvent('closeeditingpanel');
+      GUI.getPlugin('editing').emit('closeeditingpanel');
 
       // Show feature that is updated or created with editing on result content
       const layerIdChanges = Object.keys(this.state.featuresOnClose);
