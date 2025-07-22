@@ -128,7 +128,7 @@ export class ToolBox extends G3WObject {
   /** Original features (from server) */
   _features = [];
 
-  constructor(_layer, _config, _plugin) {
+  constructor(_layer, _config) {
     super();
 
     // add editing configurations
@@ -154,10 +154,6 @@ export class ToolBox extends G3WObject {
 
     _layer.state.editing.ready = true;
 
-    _plugin.state.lock_ids[_layer.getId()]           = [];
-    _plugin.state.loaded_ids[_layer.getId()]         = [];
-    _plugin.state.uniqueFieldsValues[_layer.getId()] = {};
-
     // set editing layer
     let layer = Layer.LayerTypes.IMAGE === _layer.getType()
       ? new g3wsdk.core.layer.VectorLayer(_layer.state)
@@ -168,7 +164,7 @@ export class ToolBox extends G3WObject {
      * ORIGINAL SOURCE: g3w-client/src/map/layers/featuresstore.js@v4.0.0
      * ORIGINAL SOURCE: g3w-client/src/app/core/layers/features/olfeaturesstore.js@v3.10.2
      */
-    this._collection = _plugin.state.features[_layer.getId()] = new Collection(Layer.LayerTypes.TABLE !== _layer.getType());
+    this._collection = new Collection(Layer.LayerTypes.TABLE !== _layer.getType());
 
     /**
      * ORIGINAL SOURCE: g3w-client-plugin-editing/g3wsdk/editing/editor.j@v4.0.0
@@ -209,7 +205,7 @@ export class ToolBox extends G3WObject {
       },
       addFeature:          f => this._featuresstore.addFeature(f),
       isStarted:           () => this._started,
-      getLockIds:          () => _plugin.state.lock_ids[_layer.getId()],
+      getLockIds:          () => GUI.getPlugin('editing').state.lock_ids[_layer.getId()],
       getEditingSource:    this.getEditingSource.bind(this),
       getSource:           () => _layer.getSource(),
       getLayer:            () => _layer,

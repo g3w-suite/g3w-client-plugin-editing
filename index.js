@@ -188,7 +188,12 @@ new (class extends Plugin {
         .map(async layer => ({ layer, config: await layer.getProvider('data').getConfig() }))
     )).forEach(({ status, value, reason }) => {
         if ('fulfilled' === status) {
-        this.state.toolboxes.push(new ToolBox(value.layer, value.config, this));
+        const toolBox                                  = new ToolBox(value.layer, value.config);
+        this.state.toolboxes.push(toolBox);
+        this.state.lock_ids[toolBox.getId()]           = [];
+        this.state.loaded_ids[toolBox.getId()]         = [];
+        this.state.uniqueFieldsValues[toolBox.getId()] = {};
+        this.state.features[toolBox.getId()]           = toolBox._collection;
       } else {
         this.state.layers_in_error = true;
         console.warn(reason);
