@@ -606,7 +606,7 @@ export class ToolBox extends G3WObject {
                     buttonnext: {
                       disabled: true,
                       condition:({ features = [] }) => features.length < 2,
-                      done:     () => { Workflow.Stack.getCurrent().clearUserMessagesSteps(); },
+                      done:     () => { Workflow.Stack.current.clearUserMessagesSteps(); },
                     },
                     dynamic: 0,
                     done:    false,
@@ -640,7 +640,7 @@ export class ToolBox extends G3WObject {
                     buttonnext: {
                       disabled: true,
                       condition: ({ features = [] }) => features.length < 1,
-                      done:      () => { Workflow.Stack.getCurrent().clearUserMessagesSteps(); }
+                      done:      () => { Workflow.Stack.current.clearUserMessagesSteps(); }
                     },
                     dynamic: 0,
                     done:    false,
@@ -820,7 +820,7 @@ export class ToolBox extends G3WObject {
                     features = [];
                     //loop over father features to build a relation chiled feature
                     for (const f of inputs.features) {
-                      const feature = (await addTableFeature({ features: [], layer: rLayer }, { session: Workflow.Stack.getCurrent().getSession() })).features[0];
+                      const feature = (await addTableFeature({ features: [], layer: rLayer }, { session: Workflow.Stack.current.session })).features[0];
                       fields.relationField.forEach((field, _i) => feature.set(fields.ownField[_i], f.get(field)));
                       features.push(feature);
                     }  
@@ -840,7 +840,7 @@ export class ToolBox extends G3WObject {
                     ],
                   });
                   // get parent workflow
-                  const session = Workflow.Stack.getCurrent().getSession();
+                  const session = Workflow.Stack.current.session;
                   try {
                     //set eventually unique values
                     await setLayerUniqueFieldValues(relationLayerId);

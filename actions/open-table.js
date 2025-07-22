@@ -40,10 +40,10 @@ export class OpenTableStep extends Step {
     GUI.getPlugin('editing').setCurrentLayout();
 
     return new Promise((resolve, reject) => {
-      this._isContentChild = Workflow.Stack.getLength() > 1;
+      this._isContentChild = Workflow.Stack.length > 1;
       const features       = (inputs.layer.getEditor().readEditingFeatures() || []);
       const headers        = (inputs.layer.getEditingFields() || []).filter(h => features.length ? Object.keys(features[0].getProperties()).includes(h.name) : true);
-      this._isContentChild = Workflow.Stack.getLength() > 1;
+      this._isContentChild = Workflow.Stack.length > 1;
       const excludeFields  = this._isContentChild ? (context.excludeFields || []) : [];
       const service        = Object.assign(new G3WObject,
         {

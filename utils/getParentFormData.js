@@ -7,7 +7,7 @@ import { Workflow } from '../g3w-workflow';
  */
 export function getParentFormData() {
   // skip when ..
-  if (!(Workflow.Stack.getLength() > 1)) {
+  if (!(Workflow.Stack.length > 1)) {
     return;
   }
 
@@ -15,7 +15,7 @@ export function getParentFormData() {
     features,
     layer,
     fields = [],
-  } = Workflow.Stack.getParent().getInputs();
+  } = Workflow.Stack.parent.getInputs();
 
   // in the case of temporary fields (setted by form) set temporary value to feature (cloned) parent
   const feature = features[features.length - 1].clone();

@@ -766,7 +766,7 @@
                 res => {
                   //confirm to delete
                   if (res) {
-                    Workflow.Stack.getCurrent().getSession().pushDelete(this._relationLayerId, relationfeature);
+                    Workflow.Stack.current.session.pushDelete(this._relationLayerId, relationfeature);
                     // remove feature from relation features
                     this.relations.splice(index, 1);
                     // remove tool from relation tools
@@ -791,9 +791,7 @@
                     // In this case, we need to check if there are temporary changes not related to this current feature
                     if (
                       relationfeature.isNew()
-                      && undefined === Workflow.Stack
-                        ._workflows
-                        .find(w => w.getSession().state.changes.filter(({ feature }) => relationfeature.getUid() !== feature.getUid()).length > 0)
+                      && undefined === Workflow.Stack._workflows.find(w => w.getSession().state.changes.filter(({ feature }) => relationfeature.getUid() !== feature.getUid()).length > 0)
                     ) {
                       Workflow.Stack._workflows
                         .filter(w => w.getContextService() instanceof FormService)
@@ -885,8 +883,7 @@
             try {
               await workflow.start(options);
 
-              Workflow.Stack
-                .getParents()
+              Workflow.Stack.parents
                 .filter(w => w.getContextService().setUpdate)
                 .forEach(w => w.getContextService().setUpdate(true, { force: true }));
               d.resolve(true);
@@ -1048,7 +1045,7 @@
           GUI.setModal(false);
         }
 
-        const feature = Workflow.Stack.getCurrent().getCurrentFeature();
+        const feature = Workflow.Stack.current.getFeatures().at(-1);
 
         const getRelationFeatures = () => getLayersDependencyFeatures(this.layerId, {
           relations:  [this.relation],
@@ -1095,7 +1092,7 @@
                 .forEach(([field, value]) => {
                   relation.set(ownField[relationField.findIndex(rF => field === rF)], value);
                 })
-                Workflow.Stack.getCurrent().getSession().pushUpdate(this._relationLayerId , relation, originalRelation);
+              Workflow.Stack.current.session.pushUpdate(this._relationLayerId , relation, originalRelation);
               this.relations.push({
                 fields: getFieldsWithValues(this.getLayer(), relation, { relation: true }),
                 id:     relation.getId()
@@ -1173,7 +1170,7 @@
           // to fill the field with the relation layer feature when commit
           values: ownField.reduce((father, field) => {
             //get feature
-            const feature = this.parentWorkflow.getCurrentFeature();
+            const feature = this.parentWorkflow.getFeatures().at(-1);
             //get fields of form because contains values that have temporary changes not yet saved
             // in case of form fields
             const fields  = this.parentWorkflow.getInputs().fields;
@@ -1204,9 +1201,9 @@
         });
         const parent = Object.entries(this.getParent().values);
         return  {
-          parentFeature:   Workflow.Stack.getCurrent().getCurrentFeature(), // get parent feature
+          parentFeature:   Workflow.Stack.current.getFeatures().at(-1), // get parent feature
           context: {
-            session:       Workflow.Stack.getCurrent().getSession(),        // get parent workflow
+            session:       Workflow.Stack.current.session,        // get parent workflow
             excludeFields: fields.ownField,                                 // array of fields to be excluded
             fatherValue:   parent.map(([_, value]) => value),               // values of parent fields in relation
             fatherField:   parent.map(([field]) => fields.ownField[fields.relationField.findIndex(rField => field === rField)]), //children fields
@@ -1418,7 +1415,7 @@
        */ 
       this._layerType    = this.getLayer().getType();
 
-      this.parentWorkflow = Workflow.Stack.getCurrent();
+      this.parentWorkflow = Workflow.Stack.current;
 
       /**
        * editing a constraint type

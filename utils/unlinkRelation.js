@@ -33,7 +33,7 @@ export function unlinkRelation({
       const originalRelation = feature.clone();
       // loop on ownField (Array field child relation)
       getRelationFieldsFromRelation({ relation, layerId: id }).ownField.forEach(f => feature.set(f, null))
-      Workflow.Stack.getCurrent().getSession().pushUpdate(id, feature, originalRelation);
+      Workflow.Stack.current.session.pushUpdate(id, feature, originalRelation);
       relations.splice(index, 1);
       Workflow.Stack.update();
       resolve(true);

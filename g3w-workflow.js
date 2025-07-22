@@ -17,6 +17,27 @@ const { G3WObject }           = g3wsdk.core;
 export class Workflow extends G3WObject {
 
   /**
+   * ORIGINAL SOURCE: g3w-client/src/services/workflow.js@v3.9.1
+   * 
+   * Store all activated workflows
+   * 
+   * @since g3w-client-plugin-editing@v3.8.0
+   */
+  static Stack = {
+    /** @type { Workflow[] } */
+    _workflows:    [],
+    get length()   { return Workflow.Stack._workflows.length; },
+    get parent()   { return Workflow.Stack._workflows.slice(-2)[0]; },
+    get parents()  { return Workflow.Stack._workflows.slice(0, -1); },
+    get current()  { return Workflow.Stack._workflows.at(-1); },
+    push(workflow) { return Workflow.Stack._workflows.includes(workflow) ? Workflow._workflows.indexOf(workflow) : (Workflow._workflows.push(workflow) - 1); },
+    pop()          { return Workflow.Stack._workflows.pop(); },
+    at(index)      { return Workflow.Stack._workflows.at(index); },
+    clear()        { Workflow.Stack._workflows.splice(0); },
+    update()       { Workflow.Stack._workflows.filter(w => w.getContextService()).forEach(w => w.getContextService().setUpdate(true, { force: true })) },
+  };
+
+  /**
    * @param {Object} options
    * @param options.inputs
    * @param options.context
@@ -353,12 +374,8 @@ export class Workflow extends G3WObject {
       const isChild = this._context.isChild || false;
       
       // stop child when a workflow is running 
-      if (
-          !isChild
-          && Workflow.Stack.getLength()
-          && this !== Workflow.Stack.getCurrent()
-      ) {
-        Workflow.Stack.getCurrent().addChild(this);
+      if (!isChild && Workflow.Stack.length && this !== Workflow.Stack.current) {
+        Workflow.Stack.current.addChild(this);
       }
 
       //get stack index
@@ -503,7 +520,7 @@ export class Workflow extends G3WObject {
         reject(e);
       } finally {
         //remove workflow from stack
-        Workflow.Stack.removeAt(this.getStackIndex());
+        Workflow.Stack._workflows.splice(this.getStackIndex(), 1);
 
         //emit stop Workflow
         this.emit('stop');
@@ -597,16 +614,6 @@ export class Workflow extends G3WObject {
    * 
    * @since g3w-client-editing@v3.8.0
    */
-  getCurrentFeature() {
-    const feats = this.getFeatures();
-    return feats[feats.length - 1];
-  }
-
-  /**
-   * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/editingworkflow.js@v3.7.1
-   * 
-   * @since g3w-client-editing@v3.8.0
-   */
   getLayer() {
     return this.getInputs().layer;
   }
@@ -618,6 +625,13 @@ export class Workflow extends G3WObject {
    */
   getSession() {
     return this.getContext().session;
+  }
+
+  /**
+   * @since g3w-client-editing@v4.1.0
+   */
+  get session() {
+    this.getSession();
   }
 
   /**
@@ -663,30 +677,3 @@ export class Workflow extends G3WObject {
   }
 
 }
-
-/** @type { Workflow[] } */
-const workflows = [];
-
-/**
- * ORIGINAL SOURCE: g3w-client/src/services/workflow.js@v3.9.1
- * 
- * Store all activated workflows
- * 
- * @since g3w-client-plugin-editing@v3.8.0
- */
-Workflow.Stack = {
-  _workflows: workflows,
-  push(workflow) { return workflows.includes(workflow) ? workflows.indexOf(workflow) : (workflows.push(workflow) - 1); },
-  getParent()    { return workflows.slice(-2)[0]; },
-  getParents()   { return workflows.slice(0, -1); },
-  pop()          { return workflows.pop(); },
-  getLength()    { return workflows.length; },
-  getFirst()     { return workflows[0]; },
-  getCurrent()   { return Workflow.Stack.getLast(); },
-  getLast()      { return workflows.slice(-1)[0]; },
-  removeAt(i)    { workflows.splice(i, 1); },
-  insertAt(i, w) { workflows[i] = w; },
-  getAt(i)       { return workflows[i]; },
-  async clear()  { workflows.splice(0); },
-  update()       { workflows.filter(w => w.getContextService()).forEach(w => w.getContextService().setUpdate(true, { force: true })) },
-};
