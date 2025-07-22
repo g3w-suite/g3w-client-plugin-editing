@@ -334,31 +334,6 @@ export class Step extends G3WObject {
   }
 
   /**
-   * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
-   * 
-   * Handle single task
-   *
-   * @since g3w-client-plugin-editing@v3.8.0
-   */
-  saveSingle(input, context) {
-    context.session.save().then(() => GUI.getPlugin('editing').saveChange());
-  }
-
-  /**
-   * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/tasks/editingtask.js@v3.7.1
-   * 
-   * Cancel single task
-   *
-   * @param input
-   * @param context
-   *
-   * @since g3w-client-plugin-editing@v3.8.0
-   */
-  cancelSingle(input, context) {
-    context.session.rollback();
-  }
-
-  /**
    * Bind interrupt event on keys escape pressed
    * 
    * @param evt.key
