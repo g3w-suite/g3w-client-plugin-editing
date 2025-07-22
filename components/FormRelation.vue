@@ -794,11 +794,11 @@
                       && undefined === Workflow.Stack.items.find(w => w.getSession().state.changes.filter(({ feature }) => relationfeature.getUid() !== feature.getUid()).length > 0)
                     ) {
                       Workflow.Stack.items
-                        .filter(w => w.getContextService() instanceof FormService)
-                        .forEach(w => setTimeout(() => w.getContextService().state.update = false));
+                        .filter(w => w.getContext().service instanceof FormService)
+                        .forEach(w => setTimeout(() => w.getContext().service.state.update = false));
                     } else {
                       //set parent workflow update to enable to save all buttons
-                      Workflow.Stack.update();
+                      Workflow.Stack.items.forEach(w => w?.getContext?.()?.service?.setUpdate?.(true, { force: true }));
                     }
 
                     d.resolve(res);
@@ -883,9 +883,7 @@
             try {
               await workflow.start(options);
 
-              Workflow.Stack.parents
-                .filter(w => w.getContextService().setUpdate)
-                .forEach(w => w.getContextService().setUpdate(true, { force: true }));
+              Workflow.Stack.parents.forEach(w => w?.getContext?.()?.service?.setUpdate?.(true, { force: true }));
               d.resolve(true);
               setTimeout(() => this.startTool(relationtool, index));
             } catch(e) {
@@ -1117,7 +1115,7 @@
         }
 
         if (linked) {
-          Workflow.Stack.update();
+          Workflow.Stack.items.forEach(w => w?.getContext?.()?.service?.setUpdate?.(true, { force: true }));
         }
 
         workflow.stop();

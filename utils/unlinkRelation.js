@@ -35,7 +35,7 @@ export function unlinkRelation({
       getRelationFieldsFromRelation({ relation, layerId: id }).ownField.forEach(f => feature.set(f, null))
       Workflow.Stack.current.session.pushUpdate(id, feature, originalRelation);
       relations.splice(index, 1);
-      Workflow.Stack.update();
+      Workflow.Stack.items.forEach(w => w?.getContext?.()?.service?.setUpdate?.(true, { force: true }));
       resolve(true);
     };
     if (dialog) {

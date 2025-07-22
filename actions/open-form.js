@@ -259,7 +259,7 @@ export class OpenFormStep extends Step {
                       const task   = w.getLastStep();
                       //get features fields of form service that has value not null to set of all features
                       const fields = w.getContext().service.state.fields.filter(f => task._multi ? null !== f.value : true);
-                      await Workflow.Stack.current.getContextService().saveDefaultExpressionFieldsNotDependencies();
+                      await Workflow.Stack.current.getContext().service.saveDefaultExpressionFieldsNotDependencies();
                       task._features.forEach(f => setFieldsWithValues(task.getInputs().layer, f, fields));
                       const newFeatures = task._features.map(f => f.clone());
                       //Is a relation form
@@ -325,7 +325,7 @@ export class OpenFormStep extends Step {
                 //stop active tool and wait
                 await tool.stop();
                 //clear all workflow stacks
-                Workflow.Stack.clear();
+                Workflow.Stack.items.splice(0);
                 //check if the tool needs to run on time. If not, start again
                 if (!tool.getOperator().runOnce) {
                   tool.start();
@@ -356,7 +356,7 @@ export class OpenFormStep extends Step {
                 GUI.setLoadingContent(true);
                 GUI.disableContent(true);
 
-                await Workflow.Stack.current.getContextService().saveDefaultExpressionFieldsNotDependencies();
+                await Workflow.Stack.current.getContext().service.saveDefaultExpressionFieldsNotDependencies();
 
                 GUI.setLoadingContent(false);
                 GUI.disableContent(false);
@@ -391,10 +391,7 @@ export class OpenFormStep extends Step {
                 this.fireEvent(`savedfeature_${this.layerId}`, newFeatures); // called after saved using layerId
                 // In case of save of child, it means that child is updated so also parent
                 if (this._isContentChild) {
-                  Workflow.Stack.parents
-                    //filter only with has getContextService to be sure
-                    .filter(w =>  w.getContextService() && w.getContextService().setUpdate)
-                    .forEach(w => w.getContextService().setUpdate(true, { force: true }));
+                  Workflow.Stack.parents.forEach(w => w?.getContext?.()?.service?.setUpdate?.(true, { force: true }));
                 }
                 //@TODO add field unique new value id not set
                 resolve(inputs);
@@ -506,7 +503,7 @@ export class OpenFormStep extends Step {
       GUI.setModal(false);
     }
 
-    const contextService = is_parent_table && Workflow.Stack.current.getContextService();
+    const contextService = is_parent_table && Workflow.Stack.current.getContext().service;
 
     // force update parent form update
     if (contextService && contextService.setUpdate && false === this._isContentChild) {
@@ -756,17 +753,13 @@ async function _handleRelation1_1LayerFields({
               }
 
               //if new need to add to session
-              task.getContext()
-                .session
-                .pushAdd(childLayerId, newChild, false);
+              task.getContext().session.pushAdd(childLayerId, newChild, false);
 
             } else {
               //need to update source child feature
               source.updateFeature(newChild);
               //need to update
-              task.getContext()
-                .session
-                .pushUpdate(childLayerId, newChild, childFeature);
+              task.getContext().session.pushUpdate(childLayerId, newChild, childFeature);
 
             }
           }

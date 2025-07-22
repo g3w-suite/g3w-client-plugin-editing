@@ -30,12 +30,15 @@ export class Workflow extends G3WObject {
     get parent()   { return Workflow.Stack.items.slice(-2)[0]; },
     get parents()  { return Workflow.Stack.items.slice(0, -1); },
     get current()  { return Workflow.Stack.items.at(-1); },
-    push(workflow) { return Workflow.Stack.items.includes(workflow) ? Workflow.Stack.items.indexOf(workflow) : (Workflow.Stack.items.push(workflow) - 1); },
-    pop()          { return Workflow.Stack.items.pop(); },
     at(index)      { return Workflow.Stack.items.at(index); },
-    clear()        { Workflow.Stack.items.splice(0); },
-    update()       { Workflow.Stack.items.filter(w => w.getContextService()).forEach(w => w.getContextService().setUpdate(true, { force: true })) },
   };
+
+  /**
+   * @since g3w-client-editing@v4.1.0
+   */
+  get session() {
+    this.getSession();
+  }
 
   /**
    * @param {Object} options
@@ -173,13 +176,6 @@ export class Workflow extends G3WObject {
       return Boolean(type.find(t => t === this._type));
     }
     return type === this._type;
-  }
-
-  /**
-   * @returns { * }
-   */
-  getContextService() {
-    return this.getContext().service;
   }
 
   /**
@@ -379,7 +375,8 @@ export class Workflow extends G3WObject {
       }
 
       //get stack index
-      this._stackIndex = Workflow.Stack.push(this);
+      this._stackIndex = Workflow.Stack.items.includes(this) ? Workflow.Stack.items.indexOf(this) : (Workflow.Stack.items.push(this) - 1);
+
       //get steps
       this._steps      = options.steps || this._steps;
       //for each step assign current workflow to _workflow
@@ -625,13 +622,6 @@ export class Workflow extends G3WObject {
    */
   getSession() {
     return this.getContext().session;
-  }
-
-  /**
-   * @since g3w-client-editing@v4.1.0
-   */
-  get session() {
-    this.getSession();
   }
 
   /**
