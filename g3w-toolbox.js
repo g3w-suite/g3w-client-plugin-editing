@@ -213,9 +213,8 @@ export class ToolBox extends G3WObject {
       getEditingSource:    this.getEditingSource.bind(this),
       getSource:           () => _layer.getSource(),
       getLayer:            () => _layer,
-      rollback:            this.__setChanges.bind(this),
       readFeatures:        () => this._features,
-      readEditingFeatures: () => this._collection.getArray(),
+      readEditingFeatures: this.readEditingFeatures.bind(this),
       commit:              this.__commitToEditor.bind(this),
       start:               this.__startEditor.bind(this),
       stop:                this.__stopEditor.bind(this),
@@ -2106,7 +2105,7 @@ export class ToolBox extends G3WObject {
 
         // sync server data with local data (apply commit response to current editing relation layer)
         for (const id in relations) {
-          ToolBox._sessions[id].getEditor().applyCommitResponse({ response: relations[id], result: true });
+          ToolBox._sessions[id]._editor.applyCommitResponse({ response: relations[id], result: true });
         }
 
         this.clearHistory();
@@ -2866,7 +2865,7 @@ export class ToolBox extends G3WObject {
     // remove not editable proprierties from feature
     if (removeNotEditableProperties) {
       (
-        ToolBox._sessions[layerId].getEditor().getLayer().config.editing.fields
+        ToolBox._sessions[layerId]._editor.getLayer().config.editing.fields
         .filter(f => !f.editable) // un-editable fields
         .map(f => f.name)
         || []
@@ -2966,7 +2965,7 @@ export class ToolBox extends G3WObject {
     });
 
     try {
-      await this.__setChanges(changes.own);
+      this.__setChanges(changes.own);
       for (const id in changes.dependencies) {
         ToolBox._sessions[id].rollback(changes.dependencies[id]);
       }
@@ -3034,7 +3033,7 @@ export class ToolBox extends G3WObject {
       if (key !== id) {
         isRelation            = true; //set true because these changes belong to features relation items
         //check lock ids of relation layer
-        const lockids =  ToolBox._sessions[key]?.getEditor?.()?.getLockIds?.() || [];
+        const lockids =  ToolBox._sessions[key]?._editor?.()?.getLockIds?.() || [];
         //create a relation object
         commitObj.relations[key] = {
           lockids,
@@ -3107,7 +3106,7 @@ export class ToolBox extends G3WObject {
       .filter(id => undefined === this._editor.getLayer().getRelations().getArray().find(r => id === r.getChild())) // child relations
       .map(id => {
         commitObj.relations[
-          ToolBox._sessions[id].getEditor().getLayer().getRelations().getArray()
+          ToolBox._sessions[id]._editor.getLayer().getRelations().getArray()
           .find(r => id === r.getChild() && commitObj.relations[r.getFather()]) // parent relation layer
           .getFather()].relations[id] = commitObj.relations[id];
         return id;
@@ -3727,6 +3726,13 @@ export class ToolBox extends G3WObject {
    */
   getEditingSource() {
     return this._featuresstore;
+  }
+
+  /**
+   * @since g3w-client-plugin-editing@v4.1.0
+   */
+  readEditingFeatures() {
+    return this._collection.getArray();
   }
 
 }
