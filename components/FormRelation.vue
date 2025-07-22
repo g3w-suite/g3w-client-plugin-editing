@@ -791,9 +791,9 @@
                     // In this case, we need to check if there are temporary changes not related to this current feature
                     if (
                       relationfeature.isNew()
-                      && undefined === Workflow.Stack._workflows.find(w => w.getSession().state.changes.filter(({ feature }) => relationfeature.getUid() !== feature.getUid()).length > 0)
+                      && undefined === Workflow.Stack.items.find(w => w.getSession().state.changes.filter(({ feature }) => relationfeature.getUid() !== feature.getUid()).length > 0)
                     ) {
-                      Workflow.Stack._workflows
+                      Workflow.Stack.items
                         .filter(w => w.getContextService() instanceof FormService)
                         .forEach(w => setTimeout(() => w.getContextService().state.update = false));
                     } else {

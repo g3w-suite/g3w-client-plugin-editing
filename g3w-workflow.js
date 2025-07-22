@@ -25,16 +25,16 @@ export class Workflow extends G3WObject {
    */
   static Stack = {
     /** @type { Workflow[] } */
-    _workflows:    [],
-    get length()   { return Workflow.Stack._workflows.length; },
-    get parent()   { return Workflow.Stack._workflows.slice(-2)[0]; },
-    get parents()  { return Workflow.Stack._workflows.slice(0, -1); },
-    get current()  { return Workflow.Stack._workflows.at(-1); },
-    push(workflow) { return Workflow.Stack._workflows.includes(workflow) ? Workflow._workflows.indexOf(workflow) : (Workflow._workflows.push(workflow) - 1); },
-    pop()          { return Workflow.Stack._workflows.pop(); },
-    at(index)      { return Workflow.Stack._workflows.at(index); },
-    clear()        { Workflow.Stack._workflows.splice(0); },
-    update()       { Workflow.Stack._workflows.filter(w => w.getContextService()).forEach(w => w.getContextService().setUpdate(true, { force: true })) },
+    items:         [],
+    get length()   { return Workflow.Stack.items.length; },
+    get parent()   { return Workflow.Stack.items.slice(-2)[0]; },
+    get parents()  { return Workflow.Stack.items.slice(0, -1); },
+    get current()  { return Workflow.Stack.items.at(-1); },
+    push(workflow) { return Workflow.Stack.items.includes(workflow) ? Workflow.items.indexOf(workflow) : (Workflow.items.push(workflow) - 1); },
+    pop()          { return Workflow.Stack.items.pop(); },
+    at(index)      { return Workflow.Stack.items.at(index); },
+    clear()        { Workflow.Stack.items.splice(0); },
+    update()       { Workflow.Stack.items.filter(w => w.getContextService()).forEach(w => w.getContextService().setUpdate(true, { force: true })) },
   };
 
   /**
@@ -520,7 +520,7 @@ export class Workflow extends G3WObject {
         reject(e);
       } finally {
         //remove workflow from stack
-        Workflow.Stack._workflows.splice(this.getStackIndex(), 1);
+        Workflow.Stack.items.splice(this.getStackIndex(), 1);
 
         //emit stop Workflow
         this.emit('stop');

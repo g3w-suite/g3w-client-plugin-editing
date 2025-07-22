@@ -230,7 +230,7 @@ export class OpenFormStep extends Step {
             props: { update: { type: Boolean }, valid: { type: Boolean } },
             data() {
               return {
-                enabled: Workflow.Stack._workflows.slice(0, Workflow.Stack.length - 1)
+                enabled: Workflow.Stack.items.slice(0, Workflow.Stack.length - 1)
                   .every(w => {
                     const valid = ((w.getContext().service instanceof FormService) ? w.getContext().service.getState() : {}).valid;
                     return valid || undefined === valid;
@@ -252,7 +252,7 @@ export class OpenFormStep extends Step {
                 GUI.disableContent(true);
                 try {
                 await Promise.allSettled(
-                  [...Workflow.Stack._workflows]
+                  [...Workflow.Stack.items]
                     .reverse()
                     .filter(w => "function" === typeof w.getLastStep()._saveAll) // need to filter only workflow that
                     .map( w => new Promise(async (resolve) => {
@@ -280,7 +280,7 @@ export class OpenFormStep extends Step {
                 }
                 try {
                   await GUI.getPlugin('editing').commit({ modal: false });
-                  [...Workflow.Stack._workflows]
+                  [...Workflow.Stack.items]
                     .reverse()
                     .filter(w => "function" === typeof w.getLastStep()._saveAll)
                     .forEach(w => {
