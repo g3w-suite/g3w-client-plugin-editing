@@ -90,6 +90,9 @@ export class ToolBox extends G3WObject {
   /** @type { boolean } Whether editor is active or not */
   _started = false;
 
+  /** @type { Promise | null } store Promise resolve when start toolbox but non editing is enabled (scale constraint, etc..) */
+  _startAsync = null;
+
   /** constraint loading features to a filter set */
   constraints = { filter: null, show: null, tools: [] };
 
@@ -110,14 +113,11 @@ export class ToolBox extends G3WObject {
   /** event features */
   _getFeaturesEvent = { event: null, fnc: null };
 
-  /** @since 3.8.0 store Promise resolve when start toolbox but non editing is enabled (scale constraint, etc..) */
-  startResolve      = null;
-
   /** @since 3.8.0 store ol keys event start when we are in editing */
   _olStartKeysEvent = [];
 
-  /** @since 3.8.1 store all unwatches */
-  unwatches         = [];
+  /** store all unwatches */
+  _unwatches = [];
 
   /** Filter to getFeaturerequest */
   _filter = { bbox: null };
@@ -210,7 +210,7 @@ export class ToolBox extends G3WObject {
       addFeature:          f => this._featuresstore.addFeature(f),
       isStarted:           () => this._started,
       getLockIds:          () => _plugin.state.lock_ids[_layer.getId()],
-      getEditingSource:    () => this._featuresstore,
+      getEditingSource:    this.getEditingSource.bind(this),
       getSource:           () => _layer.getSource(),
       getLayer:            () => _layer,
       rollback:            this.__setChanges.bind(this),
@@ -1813,13 +1813,15 @@ export class ToolBox extends G3WObject {
     this.state.editing.canEdit = getScaleFromResolution(map.getView().getResolution()) <= this.state._constraints.scale;
 
     //check if start method is called
-    const in_editing = (this._start || this.startResolve);
+    const in_editing = (this._start || this._startAsync);
 
     const showZoomCursor = !stop && this.state.selected && !this.state.editing.canEdit;
 
     const control = GUI.getService('map').getCurrentToggledMapControl();
 
-    if (control && control.cursorClass && (stop || in_editing)) { control.setMouseCursor(!showZoomCursor) }
+    if (control?.cursorClass && (stop || in_editing)) {
+      control.setMouseCursor(!showZoomCursor);
+    }
 
     map.getViewport().classList.toggle('ol-zoom-in', showZoomCursor);
 
@@ -1829,8 +1831,8 @@ export class ToolBox extends G3WObject {
       return;
     }
 
-    if (this.state.editing.canEdit && this.startResolve) {
-      this.startResolve();
+    if (this.state.editing.canEdit && this._startAsync) {
+      this._startAsync();
     }
 
     // async show message because another toolbox can be unselected before
@@ -1884,7 +1886,7 @@ export class ToolBox extends G3WObject {
 
         await new Promise(resolve => {
           //set as resolve handler to resolve waiting get features from server
-          this.startResolve = resolve;
+          this._startAsync = resolve;
           //call scale constraint handler
           this._handleScaleConstraint();
 
@@ -1906,9 +1908,8 @@ export class ToolBox extends G3WObject {
 
       }
 
-      //reset start startResolve promise reolve function
-      this.startResolve = null;
-      // set filterOptions
+      this._startAsync = null;
+
       this.setFeaturesOptions({ filter });
 
       const handlerAfterSessionGetFeatures = async promise => {
@@ -2003,11 +2004,10 @@ export class ToolBox extends G3WObject {
     this._olStartKeysEvent.forEach(k => ol.Observable.unByKey(k));
     this._olStartKeysEvent.splice(0);
 
-    this.unwatches.forEach(uw => uw());
-    this.unwatches.splice(0);
+    this._unwatches.forEach(uw => uw());
+    this._unwatches.splice(0);
 
-    //eventually reset start resolve feature waiting promise
-    this.startResolve = null;
+    this._startAsync = null;
 
     if (this.state._constraints.scale) {
       this._handleScaleConstraint(true);
@@ -2537,11 +2537,9 @@ export class ToolBox extends G3WObject {
     this.state.title            = this.state.originalState.title;
     this.state.toolboxheader    = true;
     this.state.startstopediting = true;
-    this.constraints = {
-      filter: null,
-      show:   null,
-      tools:  [],
-    };
+    this.constraints.filter     = null;
+    this.constraints.show       = null;
+    this.constraints.tools      = [];
 
     if (this.state._enabledtools) {
       this.state._enabledtools = undefined;
@@ -3722,6 +3720,13 @@ export class ToolBox extends G3WObject {
    */
   getFeaturesCollection() {
     return this._collection._store;
+  }
+
+  /**
+   * @since g3w-client-plugin-editing@v4.1.0
+   */
+  getEditingSource() {
+    return this._featuresstore;
   }
 
 }
