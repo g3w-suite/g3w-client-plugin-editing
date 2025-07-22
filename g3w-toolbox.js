@@ -3108,12 +3108,8 @@ export class ToolBox extends G3WObject {
     relations
       .filter(id => undefined === this._editor.getLayer().getRelations().getArray().find(r => id === r.getChild())) // child relations
       .map(id => {
-        commitObj.relations[ToolBox
-          .get(id)
-          .getEditor()
-          .getLayer()
-          .getRelations()
-          .getArray()
+        commitObj.relations[
+          ToolBox._sessions[id].getEditor().getLayer().getRelations().getArray()
           .find(r => id === r.getChild() && commitObj.relations[r.getFather()]) // parent relation layer
           .getFather()].relations[id] = commitObj.relations[id];
         return id;
