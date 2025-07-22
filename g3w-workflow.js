@@ -30,7 +30,7 @@ export class Workflow extends G3WObject {
     get parent()   { return Workflow.Stack.items.slice(-2)[0]; },
     get parents()  { return Workflow.Stack.items.slice(0, -1); },
     get current()  { return Workflow.Stack.items.at(-1); },
-    push(workflow) { return Workflow.Stack.items.includes(workflow) ? Workflow.items.indexOf(workflow) : (Workflow.items.push(workflow) - 1); },
+    push(workflow) { return Workflow.Stack.items.includes(workflow) ? Workflow.Stack.items.indexOf(workflow) : (Workflow.Stack.items.push(workflow) - 1); },
     pop()          { return Workflow.Stack.items.pop(); },
     at(index)      { return Workflow.Stack.items.at(index); },
     clear()        { Workflow.Stack.items.splice(0); },
