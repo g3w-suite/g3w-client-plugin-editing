@@ -40,7 +40,7 @@ const { getUniqueDomId }              = g3wsdk.core.utils;
 
 export class IframeEditor extends G3WObject {
 
-  pending = undefined;
+  pending = {};
 
   subscribevents = [];
 
@@ -99,7 +99,7 @@ export class IframeEditor extends G3WObject {
       if (!message?.data.action?.startsWith('editing:')) {
         return;
       }
-      const id = undefined !== message.data.id ?  message.data.id : getUniqueDomId();
+      const id =  message.data.id ?? getUniqueDomId();
       try {
         // stop pending actions
         if (message.data.single ?? true) {
@@ -394,7 +394,7 @@ export class IframeEditor extends G3WObject {
    * 
    * @returns { Promise<unknown> }
    */
-  async update(config = {}) {
+  async 'editing:update'(config = {}) {
     return new Promise(async (resolve, reject) => {
       // skip when ..
       if (this.isRunning) {
