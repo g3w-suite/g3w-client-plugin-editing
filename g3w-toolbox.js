@@ -1871,7 +1871,6 @@ export class ToolBox extends G3WObject {
         && GUI.getService('map').isMapHidden() // map is not visible (content 100%)
         && Layer.LayerTypes.VECTOR === this.state._layerType // is  vector
       );
-
       if (!is_started && GIVE_ME_A_NAME) {
         this.setEditing(true);
         GUI
@@ -3596,7 +3595,7 @@ export class ToolBox extends G3WObject {
    * 
    * @since g3w-client-plugin-editing@v4.1.0
    */
-  async __startEditor(layerId, options = {}) {
+  async __startEditor(options = {}) {
     const features = await this._editor.getFeatures(options); // load layer features based on filter type
     this._started  = true; // if all ok set to started
     return features;       // features are already inside featuresstore
