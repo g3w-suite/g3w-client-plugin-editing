@@ -117,11 +117,7 @@ export class IframeEditor extends G3WObject {
         return reject();
       }
 
-      // extract `qgs_layer_id9` from a configuration message
-      const { qgs_layer_id: layerId, ...data } = config;
-      const { properties }                              = data;
-
-      const qgs_layer_id = layerId ? [].concat(layerId) : GUI.getPlugin('editing').getEditableLayersId();
+      const qgs_layer_id = config.qgs_layer_id ? [].concat(config.qgs_layer_id) : GUI.getPlugin('editing').getEditableLayersId();
 
       // start action
       this.#response.cb = reject;
@@ -178,7 +174,7 @@ export class IframeEditor extends G3WObject {
       }
 
       // in case of no feature add avent subscribe
-      this.#subscribe('addfeature', { properties, toolboxes });
+      this.#subscribe('addfeature', { properties: config.data.properties, toolboxes });
       this.#subscribe('closeeditingpanel', { qgs_layer_id })
     });
   }
@@ -197,9 +193,7 @@ export class IframeEditor extends G3WObject {
         return reject();
       }
 
-      const { qgs_layer_id: layerId, ...data } = config;
-      const { feature } = data;
-      const qgs_layer_id = layerId ? [].concat(layerId) : GUI.getPlugin('editing').getEditableLayersId();
+      const qgs_layer_id = config.qgs_layer_id ? [].concat(config.qgs_layer_id) : GUI.getPlugin('editing').getEditableLayersId();
 
       // find features with geometry
       const response = {
@@ -217,7 +211,7 @@ export class IframeEditor extends G3WObject {
           let data = layer && (await DataRouterService.getData('search:features', {
             inputs: {
               layer,
-              filter: [].concat(feature.value).map(v => `${feature.field}|eq|${encodeURIComponent(v)}`).join('|OR,')
+              filter: [].concat(config.data.feature.value).map(v => `${config.data.feature.field}|eq|${encodeURIComponent(v)}`).join('|OR,')
             },
             outputs: false
           }))?.data || [];
@@ -238,10 +232,6 @@ export class IframeEditor extends G3WObject {
       // in case of no response zoom to an initial extent
       if (!response.found) {
         GUI.getService('map').zoomToExtent(GUI.getService('map').project.state.initextent)
-      }
-
-      // skip when ..
-      if (!response.found) {
         return reject();
       }
 
@@ -268,30 +258,30 @@ export class IframeEditor extends G3WObject {
         }
       });
 
+      const toolboxes = [response.qgs_layer_id];
+
       // set toolboxes visible base on the value of qgs_layer_id
-      GUI.getPlugin('editing').showPanel({ toolboxes: [response.qgs_layer_id] });
+      GUI.getPlugin('editing').showPanel({ toolboxes });
 
       this.isRunning = true;
-
-      const _qgs_layer_id = [response.qgs_layer_id];
 
       const options = {
         feature:          response.features[0], //send feature
         tools:            { disabled: ['addfeature', 'copyfeatures', 'deletefeature', 'editmultiattributes', 'deletePart', 'splitfeature', 'mergefeatures'].map(id => ({ id: id })) },
         startstopediting: false,
         action :          'update',
-        selected:         1 === _qgs_layer_id.length,
+        selected:         1 === toolboxes.length,
         filter:           { fids: response.features[0].getId() },
       };
 
       //only in case of one layer id start editing otherwise client need to click on the layer
-      await Promise.allSettled((1 === _qgs_layer_id.length ? _qgs_layer_id : []).map(id => GUI.getPlugin('editing').startEditing(id, options)));
+      await Promise.allSettled((1 === toolboxes.length ? toolboxes : []).map(id => GUI.getPlugin('editing').startEditing(id, options)));
 
       if (!GUI.isSidebarVisible()) {
         GUI.showSidebar();
       }
 
-      this.#subscribe('closeeditingpanel', { qgs_layer_id: [response.qgs_layer_id] });
+      this.#subscribe('closeeditingpanel', { qgs_layer_id: toolboxes });
     });
   }
 
