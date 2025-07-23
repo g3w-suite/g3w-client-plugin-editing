@@ -425,7 +425,7 @@ export class IframeEditor extends G3WObject {
 
       // return all toolboxes
       await this['editing:startEditing']([response.qgs_layer_id], {
-        feature,
+        feature: response.features[0], //send feature
         tools:            this.config.tools.update,
         startstopediting: false,
         action:           'update',
@@ -452,8 +452,8 @@ export class IframeEditor extends G3WObject {
     const filter                      = {};
     options.filter                    = filter;
     switch (action) {
-      case 'add':    filter.nofeatures = true;                                   break;
-      case 'update': filter.field      = `${feature.field}|eq|${feature.value}`; break;
+      case 'add':    filter.nofeatures = true;            break;
+      case 'update': filter.fids       = feature.getId(); break; //get single feature id
     }
     //only in case of one layer id start editing otherwise client need to click on the layer
     return await Promise.allSettled((1 === qgs_layer_id.length ? qgs_layer_id : [])
