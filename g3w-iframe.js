@@ -96,7 +96,7 @@ export class IframeEditor extends G3WObject {
 
     // handle all messages from the window
     window.addEventListener('message', async message => {
-      if (!message?.data || !message.data.action?.startsWith('editing:') || 'function' !== typeof this[message.data.action]) {
+      if (!message?.data.action?.startsWith('editing:')) {
         return;
       }
       const id = undefined !== message.data.id ?  message.data.id : getUniqueDomId();
@@ -114,7 +114,7 @@ export class IframeEditor extends G3WObject {
           action: message.data.action,
           response: {
             result: true,
-            data:   await this[message.data.action](message.data.data)
+            data:   'function' === typeof this[message.data.action] ? await this[message.data.action](message.data.data) : undefined
           }
         }, '*');
       } catch(e) {
