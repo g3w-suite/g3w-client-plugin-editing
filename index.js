@@ -11,6 +11,7 @@ import { getCatalogLayerById }                 from './utils/getCatalogLayerById
 import { OpenFormStep }                        from './actions/open-form';
 import { AddFeatureStep }                      from './actions/add-feature';
 import { ToolBox }                             from './g3w-toolbox';
+import { IframeEditor }                        from './g3w-iframe';
 
 const { G3W_FID }                              = g3wsdk.constant;
 const { ApplicationState }                     = g3wsdk.core;
@@ -221,6 +222,8 @@ new (class extends Plugin {
         icon:    'pencil'
       }, { position: 0, title: 'EDITING' });
     }
+
+    new IframeEditor(this);
 
     this.setHookLoading({ loading: false });
     this.setReady(true);
