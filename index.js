@@ -223,7 +223,7 @@ new (class extends Plugin {
       }, { position: 0, title: 'EDITING' });
     }
 
-    new IframeEditor(this);
+    new IframeEditor();
 
     this.setHookLoading({ loading: false });
     this.setReady(true);

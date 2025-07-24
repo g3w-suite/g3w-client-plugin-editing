@@ -42,9 +42,9 @@ export class IframeEditor extends G3WObject {
 
   pending = {};
 
-  subscribers = [];
-
   isRunning = false;
+
+  #listeners = [];
 
   #response = {
     cb:           null, // resolve or reject promise method
@@ -52,8 +52,7 @@ export class IframeEditor extends G3WObject {
     error:        null,
   };
 
-  constructor(plugin) {
-
+  constructor() {
     super();
 
     // BACKOMP v3.x
@@ -65,7 +64,7 @@ export class IframeEditor extends G3WObject {
 
     // handle all messages from the window
     window.addEventListener('message', async message => {
-      if (!message?.data.action?.startsWith('editing:')) {
+      if (!message?.data?.action?.startsWith('editing:')) {
         return;
       }
       const id = message.data.id ?? getUniqueDomId();
@@ -163,7 +162,7 @@ export class IframeEditor extends G3WObject {
         .filter(p => 'fulfilled' === p.status)
         .map(p => p.value);
 
-           /** @FIXME add description */
+      /** @FIXME add description */
       if (!GUI.isSidebarVisible()) {
         GUI.showSidebar();
       }
@@ -174,8 +173,51 @@ export class IframeEditor extends G3WObject {
       }
 
       // in case of no feature add avent subscribe
-      this.#subscribe('addfeature', { properties: config.data.properties, toolboxes });
-      this.#subscribe('closeeditingpanel', { qgs_layer_id })
+      this.#onPlugin('addfeature', feature => {
+        Object.keys(config.data.properties).forEach(p => feature.set(p, config.data.properties[p]));
+
+        let activeTool;
+        const disableToolboxes = [];
+
+        toolboxes.forEach(t => {
+          const tool = t.getToolById('addfeature');
+          if (tool.isActive()) {
+            tool.setEnabled(false);
+            activeTool = tool;
+          } else {
+            t.setEditing(false);
+            disableToolboxes.push(t)
+          }
+        });
+
+        // just one time
+        if (this.#listeners.find(e => 'canUndo' !== e.event)) {
+          this.#onPlugin('canUndo', bool => {
+            //set currenttoolbocx id in editing to null
+            if (false === bool) {
+              this.#response.qgs_layer_id = null;
+              this.#response.error        = null;
+            }
+            activeTool.setEnabled(!bool);
+            disableToolboxes.forEach(toolbox => toolbox.setEditing(!bool))
+          });
+          this.#onPlugin('cancelform', () => { e1(); }); // runs callback 
+        }
+      });
+
+      this.#onPlugin('closeeditingpanel', () => {
+        // response to router service
+        this.#response.cb({
+          qgs_layer_id: this.#response.qgs_layer_id,
+          error:        this.#response.error,
+        });
+        // stop action
+        if (qgs_layer_id) {
+          const promises = [];
+          qgs_layer_id.forEach(id => { promises.push(GUI.getPlugin('editing').stopEditing(id)); });
+          Promise.allSettled(promises).then(() => this['editing:clear']());
+        }
+      });
     });
   }
 
@@ -281,7 +323,19 @@ export class IframeEditor extends G3WObject {
         GUI.showSidebar();
       }
 
-      this.#subscribe('closeeditingpanel', { qgs_layer_id: toolboxes });
+      this.#onPlugin('closeeditingpanel', () => {
+        // response to router service
+        this.#response.cb({
+          qgs_layer_id: this.#response.qgs_layer_id,
+          error:        this.#response.error,
+        });
+        // stop action
+        if (toolboxes) {
+          const promises = [];
+          toolboxes.forEach(id => { promises.push(GUI.getPlugin('editing').stopEditing(id)); });
+          Promise.allSettled(promises).then(() => this['editing:clear']());
+        }
+      });
     });
   }
 
@@ -298,77 +352,19 @@ export class IframeEditor extends G3WObject {
    */
   'editing:clear'() {
     GUI.getPlugin('editing').resetDefault();
-    this.isRunning      = false;
+    this.isRunning = false;
     this.#response = {
       cb:           null, // resolve or reject promise method
       qgs_layer_id: null,
       error:        null,
     };
-    this.subscribers.forEach(d => { GUI.getPlugin('editing').unsubscribe(d.event, d.handler); });
+    this.#listeners.forEach(d => { GUI.getPlugin('editing').off(d.event, d.listener); });
     this.emit('clear');
   }
 
-  #subscribe(event, options = {}) {
-    const handler = ({
-
-      canUndo:({ activeTool, disableToolboxes = [] }) => bool => {
-        //set currenttoolbocx id in editing to null
-        if (false === bool) {
-          this.#response.qgs_layer_id = null;
-          this.#response.error        = null;
-        }
-        activeTool.setEnabled(!bool);
-        disableToolboxes.forEach(toolbox => toolbox.setEditing(!bool))
-      },
-
-      canRedo:() => {},
-      cancelform:cb => () => { cb() }, // runs callback
-
-      addfeature: ({ properties, toolboxes } = {}) => feature => {
-
-        Object
-          .keys(properties)
-          .forEach(p => feature.set(p, properties[p]));
-
-        let activeTool;
-        const disableToolboxes = [];
-
-        toolboxes
-          .forEach(t => {
-            const tool = t.getToolById('addfeature');
-            if (tool.isActive()) {
-              tool.setEnabled(false);
-              activeTool = tool;
-            } else {
-              t.setEditing(false);
-              disableToolboxes.push(t)
-            }
-          });
-
-        // just one time
-        if (this.subscribers.find(e => 'canUndo' !== e.event)) {
-          this.#subscribe('cancelform', this.#subscribe('canUndo', { activeTool, disableToolboxes }));
-        }
-      },
-
-      closeeditingpanel: ({ qgs_layer_id }) => () => {
-        // response to router service
-        this.#response.cb({
-          qgs_layer_id: this.#response.qgs_layer_id,
-          error:        this.#response.error,
-        });
-        // stop action
-        if (qgs_layer_id) {
-          const promises = [];
-          qgs_layer_id.forEach(id => { promises.push(GUI.getPlugin('editing').stopEditing(id)); });
-          Promise.allSettled(promises).then(() => this['editing:clear']());
-        }
-      },
-
-    })[event](options);
-    GUI.getPlugin('editing').subscribe(event, handler);
-    this.subscribers.push({ event, handler });
-    return handler;
+  #onPlugin(event, listener) {
+    GUI.getPlugin('editing').on(event, listener);
+    this.#listeners.push({ event, listener });
   }
 
 }
