@@ -42,45 +42,14 @@ export class IframeEditor extends G3WObject {
 
   pending = {};
 
-  subscribevents = [];
+  subscribers = [];
 
   isRunning = false;
 
-  responseObject = {
+  #response = {
     cb:           null, // resolve or reject promise method
     qgs_layer_id: null,
     error:        null,
-  };
-
-  config =  {
-    tools: {
-      add: {
-        disabled:[
-          { id: 'deletefeature' },
-          { id: 'copyfeatures' },
-          { id: 'editmultiattributes' },
-          { id: 'deletePart' },
-          { id: 'splitfeature' },
-          { id: 'mergefeatures' },
-        ]
-      },
-      update: {
-        disabled: [
-          { id: 'addfeature' },
-          { id: 'copyfeatures' },
-          { id: 'deletefeature' },
-          { id: 'editmultiattributes' },
-          { id: 'deletePart' },
-          { id: 'splitfeature' },
-          { id: 'mergefeatures' },
-        ]
-      },
-      delete: {
-        enabled: [
-          { id:'deletefeature', options: { active: true } },
-        ]
-      }
-    }
   };
 
   constructor(plugin) {
@@ -99,7 +68,7 @@ export class IframeEditor extends G3WObject {
       if (!message?.data.action?.startsWith('editing:')) {
         return;
       }
-      const id =  message.data.id ?? getUniqueDomId();
+      const id = message.data.id ?? getUniqueDomId();
       try {
         // stop pending actions
         if (message.data.single ?? true) {
@@ -133,147 +102,220 @@ export class IframeEditor extends G3WObject {
   }
 
   /**
-   * Return a qgs_layer_id array based on passed qgis_layer_id
+   * Called whe we want to add a feature
    * 
-   * @param { Object } opts
-   * @param { string | string[] | null | undefined } opts.qgs_layer_id
-   * @param { Array } noValue
+   * @param { Object } config
+   * @param config.qgs_layer_id
+   * @param config.properties
    * 
-   * @returns { string[] } qgs_layer_id
-   * 
-   * @private
+   * @returns { Promise<void> }
    */
-  'editing:getQgsLayerId'({
-    qgs_layer_id,
-    noValue,
-  }) {
-    return qgs_layer_id ? [].concat(qgs_layer_id) : noValue;
-  };
-
-  /**
-   * getFeature from DataProvider
-   * 
-   * @private
-   */
-  async 'editing:searchFeature'({
-    layer,
-    feature,
-  }) {
-    const { data = [] } = await DataRouterService.getData('search:features', {
-      inputs: {
-        layer,
-        filter: [].concat(feature.value).map(v => `${feature.field}|eq|${encodeURIComponent(v)}`).join('|OR,')
-      },
-      outputs: false
-    });
-    return data;
-  };
-
-  /**
-   * Search feature(s) by field and value
-   * 
-   * @param { Object } opts
-   * @param opts.qgs_layer_id
-   * @param opts.feature
-   * @param opts.zoom
-   * @param opts.highlight
-   * 
-   * @returns { Promise<{ qgs_layer_id: null, features: [], found: boolean }>}
-   */
-  async 'editing:findFeaturesWithGeometry'({
-    feature,
-    qgs_layer_id = [],
-    zoom         = false,
-    highlight    = false,
-  } = {}) {
-    const response = {
-      found:        false,
-      features:     [],
-      qgs_layer_id: null
-    };
-    let layersCount = qgs_layer_id.length;
-    let i = 0;
-    while (!response.found && i < layersCount) {
-      const layer = ApplicationState.project.getLayerById(qgs_layer_id[i]);
-      try {
-        const data     = layer && await this['editing:searchFeature']({ layer, feature });
-        const features = data.length && data[0].features;
-        response.found = features && features.length > 0 && !!features.find(f => f.getGeometry());
-        if (!features || !response.found) {
-          throw 'invalid response';
-        }
-        response.features     = features;
-        response.qgs_layer_id = qgs_layer_id[i];
-        if (zoom) {
-          await GUI.getService('map').zoomToFeatures(features, { highlight });
-        }
-      } catch(e) { i++; console.warn(e);}
-    }
-    // in case of no response zoom to an initial extent
-    if (!response.found) {
-      GUI.getService('map').zoomToExtent(GUI.getService('map').project.state.initextent)
-    }
-    return response;
-  }
-
-  /**
-   * run before each action
-   */
-  async 'editing:startAction'({
-    toolboxes,
-    resolve,
-    reject,
-  }) {
-
-    this.responseObject.cb = reject;
-
-    // set same mode autosave
-    GUI.getPlugin('editing').setSaveConfig({
-      cb: {
-        // called when commit changes are done successuffly
-        done: toolbox => {
-          //set toolbox id
-          this.responseObject.cb           = resolve;
-          this.responseObject.qgs_layer_id = toolbox.getId();
-          this.responseObject.error        = null;
-          // close panel that fire closeediting panel event
-          GUI.getPlugin('editing').hidePanel();
-        },
-        // called whe commit change receive an error
-        error: (toolbox, error) => {
-          this.responseObject.cb           = reject;
-          this.responseObject.qgs_layer_id = toolbox.getId();
-          this.responseObject.error        = error;
-        },
+  'editing:add'(config = {}) {
+    return new Promise(async (resolve, reject) => {
+      // skip when ..
+      if (this.isRunning) {
+        return reject();
       }
+
+      const qgs_layer_id = config.qgs_layer_id ? [].concat(config.qgs_layer_id) : GUI.getPlugin('editing').getEditableLayersId();
+
+      // start action
+      this.#response.cb = reject;
+
+      // set same mode autosave
+      GUI.getPlugin('editing').setSaveConfig({
+        cb: {
+          // called when commit changes are done successuffly
+          done: toolbox => {
+            //set toolbox id
+            this.#response.cb           = resolve;
+            this.#response.qgs_layer_id = toolbox.getId();
+            this.#response.error        = null;
+            // close panel that fire closeediting panel event
+            GUI.getPlugin('editing').hidePanel();
+          },
+          // called whe commit change receive an error
+          error: (toolbox, error) => {
+            this.#response.cb           = reject;
+            this.#response.qgs_layer_id = toolbox.getId();
+            this.#response.error        = error;
+          },
+        }
+      });
+
+      // set toolboxes visible base on the value of qgs_layer_id
+      GUI.getPlugin('editing').showPanel({ toolboxes: qgs_layer_id });
+
+      this.isRunning = true;
+
+      const options = {
+        tools:            { disabled: ['deletefeature', 'copyfeatures', 'editmultiattributes', 'deletePart', 'splitfeature', 'mergefeatures'].map(id => ({ id: id })) },
+        startstopediting: false,
+        action :          'add',
+        selected:         1 === qgs_layer_id.length,
+        filter:           { nofeatures: true },
+      };
+
+      //only in case of one layer id start editing otherwise client need to click on the layer
+
+      // return all toolboxes
+      const toolboxes = (await Promise.allSettled((1 === qgs_layer_id.length ? qgs_layer_id : []).map(id => GUI.getPlugin('editing').startEditing(id, options))))
+        .filter(p => 'fulfilled' === p.status)
+        .map(p => p.value);
+
+           /** @FIXME add description */
+      if (!GUI.isSidebarVisible()) {
+        GUI.showSidebar();
+      }
+
+      /** @FIXME add description */
+      if (1 === toolboxes.length && toolboxes[0]) {
+        toolboxes[0].setActiveTool(toolboxes[0].getToolById('addfeature'));
+      }
+
+      // in case of no feature add avent subscribe
+      this.#subscribe('addfeature', { properties: config.data.properties, toolboxes });
+      this.#subscribe('closeeditingpanel', { qgs_layer_id })
     });
-
-    // set toolboxes visible base on the value of qgs_layer_id
-    GUI.getPlugin('editing').showPanel({ toolboxes });
-
-    this.isRunning = true;
   }
 
   /**
-   * run after each action
+   * Called when we want to update a know feature field
+   * 
+   * @param config
+   * 
+   * @returns { Promise<unknown> }
    */
-  async 'editing:stopAction'(opts = {}) {
-    if (opts.qgs_layer_id) {
-      await this['editing:stopEditing'](opts.qgs_layer_id);
-    }
+  async 'editing:update'(config = {}) {
+    return new Promise(async (resolve, reject) => {
+      // skip when ..
+      if (this.isRunning) {
+        return reject();
+      }
+
+      const qgs_layer_id = config.qgs_layer_id ? [].concat(config.qgs_layer_id) : GUI.getPlugin('editing').getEditableLayersId();
+
+      // find features with geometry
+      const response = {
+        found:        false,
+        features:     [],
+        qgs_layer_id: null
+      };
+
+      let layersCount = qgs_layer_id.length;
+      let i = 0;
+
+      while (!response.found && i < layersCount) {
+        const layer = ApplicationState.project.getLayerById(qgs_layer_id[i]);
+        try {
+          let data = layer && (await DataRouterService.getData('search:features', {
+            inputs: {
+              layer,
+              filter: [].concat(config.data.feature.value).map(v => `${config.data.feature.field}|eq|${encodeURIComponent(v)}`).join('|OR,')
+            },
+            outputs: false
+          }))?.data || [];
+          const features = data.length && data[0].features;
+          response.found = features && features.length > 0 && !!features.find(f => f.getGeometry());
+          if (!features || !response.found) {
+            throw 'invalid response';
+          }
+          response.features     = features;
+          response.qgs_layer_id = qgs_layer_id[i];
+          await GUI.getService('map').zoomToFeatures(features, { highlight: true });
+        } catch(e) {
+          i++;
+          console.warn(e);
+        }
+      }
+
+      // in case of no response zoom to an initial extent
+      if (!response.found) {
+        GUI.getService('map').zoomToExtent(GUI.getService('map').project.state.initextent)
+        return reject();
+      }
+
+      this.#response.cb = reject;
+
+      // set same mode autosave
+      GUI.getPlugin('editing').setSaveConfig({
+        cb: {
+          // called when commit changes are done successuffly
+          done: toolbox => {
+            //set toolbox id
+            this.#response.cb           = resolve;
+            this.#response.qgs_layer_id = toolbox.getId();
+            this.#response.error        = null;
+            // close panel that fire closeediting panel event
+            GUI.getPlugin('editing').hidePanel();
+          },
+          // called whe commit change receive an error
+          error: (toolbox, error) => {
+            this.#response.cb           = reject;
+            this.#response.qgs_layer_id = toolbox.getId();
+            this.#response.error        = error;
+          },
+        }
+      });
+
+      const toolboxes = [response.qgs_layer_id];
+
+      // set toolboxes visible base on the value of qgs_layer_id
+      GUI.getPlugin('editing').showPanel({ toolboxes });
+
+      this.isRunning = true;
+
+      const options = {
+        feature:          response.features[0], //send feature
+        tools:            { disabled: ['addfeature', 'copyfeatures', 'deletefeature', 'editmultiattributes', 'deletePart', 'splitfeature', 'mergefeatures'].map(id => ({ id: id })) },
+        startstopediting: false,
+        action :          'update',
+        selected:         1 === toolboxes.length,
+        filter:           { fids: response.features[0].getId() },
+      };
+
+      //only in case of one layer id start editing otherwise client need to click on the layer
+      await Promise.allSettled((1 === toolboxes.length ? toolboxes : []).map(id => GUI.getPlugin('editing').startEditing(id, options)));
+
+      if (!GUI.isSidebarVisible()) {
+        GUI.showSidebar();
+      }
+
+      this.#subscribe('closeeditingpanel', { qgs_layer_id: toolboxes });
+    });
+  }
+
+  'editing:stop'() {
+    return new Promise(resolve => {
+      GUI.getPlugin('editing').hidePanel();
+      GUI.hideSidebar();
+      this.once('clear', resolve);
+    });
   }
 
   /**
-   * add subscribe refenrence
+   * Called wen we want to reset default editing plugin behaviour
    */
-  'editing:addSubscribeEvents'(event, options = {}) {
+  'editing:clear'() {
+    GUI.getPlugin('editing').resetDefault();
+    this.isRunning      = false;
+    this.#response = {
+      cb:           null, // resolve or reject promise method
+      qgs_layer_id: null,
+      error:        null,
+    };
+    this.subscribers.forEach(d => { GUI.getPlugin('editing').unsubscribe(d.event, d.handler); });
+    this.emit('clear');
+  }
+
+  #subscribe(event, options = {}) {
     const handler = ({
 
       canUndo:({ activeTool, disableToolboxes = [] }) => bool => {
         //set currenttoolbocx id in editing to null
         if (false === bool) {
-          this.responseObject.qgs_layer_id = null;
-          this.responseObject.error        = null;
+          this.#response.qgs_layer_id = null;
+          this.#response.error        = null;
         }
         activeTool.setEnabled(!bool);
         disableToolboxes.forEach(toolbox => toolbox.setEditing(!bool))
@@ -304,198 +346,29 @@ export class IframeEditor extends G3WObject {
           });
 
         // just one time
-        if (this.subscribevents.find(e => 'canUndo' !== e.event)) {
-          this['editing:addSubscribeEvents']('cancelform', this['editing:addSubscribeEvents']('canUndo', { activeTool, disableToolboxes }));
+        if (this.subscribers.find(e => 'canUndo' !== e.event)) {
+          this.#subscribe('cancelform', this.#subscribe('canUndo', { activeTool, disableToolboxes }));
         }
       },
 
       closeeditingpanel: ({ qgs_layer_id }) => () => {
         // response to router service
-        this.responseObject.cb({
-          qgs_layer_id: this.responseObject.qgs_layer_id,
-          error:        this.responseObject.error,
+        this.#response.cb({
+          qgs_layer_id: this.#response.qgs_layer_id,
+          error:        this.#response.error,
         });
         // stop action
-        this['editing:stopAction']({ qgs_layer_id });
+        if (qgs_layer_id) {
+          const promises = [];
+          qgs_layer_id.forEach(id => { promises.push(GUI.getPlugin('editing').stopEditing(id)); });
+          Promise.allSettled(promises).then(() => this['editing:clear']());
+        }
       },
 
     })[event](options);
     GUI.getPlugin('editing').subscribe(event, handler);
-    this.subscribevents.push({ event, handler });
+    this.subscribers.push({ event, handler });
     return handler;
-  };
-
-  /**
-   * Reset subscriber editing plugin events
-   */
-  'editing:resetSubscribeEvents'() {
-    this.subscribevents.forEach(d => { GUI.getPlugin('editing').unsubscribe(d.event, d.handler); });
-  };
-
-  /**
-   * Called whe we want to add a feature
-   * 
-   * @param { Object } config
-   * @param config.qgs_layer_id
-   * @param config.properties
-   * 
-   * @returns { Promise<void> }
-   */
-  'editing:add'(config = {}) {
-    return new Promise(async (resolve, reject) => {
-      // skip when ..
-      if (this.isRunning) {
-        return reject();
-      }
-
-      // extract `qgs_layer_id9` from a configuration message
-      const { qgs_layer_id: configQglLayerId, ...data } = config;
-      const { properties }                              = data;
-
-      const qgs_layer_id = this['editing:getQgsLayerId']({
-        qgs_layer_id: configQglLayerId,
-        noValue:      GUI.getPlugin('editing').getEditableLayersId(),
-      });
-
-      // call method common
-      await this['editing:startAction']({ toolboxes: qgs_layer_id, resolve, reject });
-        // return all toolboxes
-      const toolboxes = (
-          await this['editing:startEditing'](qgs_layer_id, {
-            tools:            this.config.tools.add,
-            startstopediting: false,
-            action :          'add',
-            selected:         1 === qgs_layer_id.length,
-          })
-        )
-        .filter(p => 'fulfilled' === p.status)
-        .map(p => p.value);
-
-           /** @FIXME add description */
-      if (!GUI.isSidebarVisible()) {
-        GUI.showSidebar();
-      }
-
-      /** @FIXME add description */
-      if (1 === toolboxes.length && toolboxes[0]) {
-        toolboxes[0].setActiveTool(toolboxes[0].getToolById('addfeature'));
-      }
-
-      // in case of no feature add avent subscribe
-      this['editing:addSubscribeEvents']('addfeature', { properties, toolboxes });
-      this['editing:addSubscribeEvents']('closeeditingpanel', { qgs_layer_id })
-    });
-  }
-
-  /**
-   * Called when we want to update a know feature field
-   * 
-   * @param config
-   * 
-   * @returns { Promise<unknown> }
-   */
-  async 'editing:update'(config = {}) {
-    return new Promise(async (resolve, reject) => {
-      // skip when ..
-      if (this.isRunning) {
-        return reject();
-      }
-
-      const { qgs_layer_id: configQglLayerId, ...data } = config;
-      const { feature } = data;
-      const qgs_layer_id = this['editing:getQgsLayerId']({
-        qgs_layer_id: configQglLayerId,
-        noValue:      GUI.getPlugin('editing').getEditableLayersId(),
-      });
-
-      const response = await this['editing:findFeaturesWithGeometry']({
-        qgs_layer_id,
-        feature,
-        zoom:      true,
-        highlight: true,
-        selected:  1 === qgs_layer_id.length // set selected toolbox
-      });
-
-      // skip when ..
-      if (!response.found) {
-        return reject();
-      }
-
-      await this['editing:startAction']({ toolboxes: [response.qgs_layer_id], resolve, reject });
-
-      // return all toolboxes
-      await this['editing:startEditing']([response.qgs_layer_id], {
-        feature: response.features[0], //send feature
-        tools:            this.config.tools.update,
-        startstopediting: false,
-        action:           'update',
-      });
-
-      if (!GUI.isSidebarVisible()) {
-        GUI.showSidebar();
-      }
-
-      this['editing:addSubscribeEvents']('closeeditingpanel', { qgs_layer_id: [response.qgs_layer_id] });
-    });
-  }
-
-  /**
-   * Called when we want to start editing
-   * 
-   * @param { Array } qgs_layer_id
-   * @param { Object } options
-   * 
-   * @returns { Promise< unknown | void > }
-   */
-  async 'editing:startEditing'(qgs_layer_id = [], options = {}) {
-    const { action = 'add', feature } = options;
-    const filter                      = {};
-    options.filter                    = filter;
-    switch (action) {
-      case 'add':    filter.nofeatures = true;            break;
-      case 'update': filter.fids       = feature.getId(); break; //get single feature id
-    }
-    //only in case of one layer id start editing otherwise client need to click on the layer
-    return await Promise.allSettled((1 === qgs_layer_id.length ? qgs_layer_id : [])
-      .map(id => GUI.getPlugin('editing').startEditing(id, options) ));
-
-  }
-
-  /**
-   * Stop editing
-   * 
-   * @param qgs_layer_id
-   * 
-   * @returns { Promise<unknown> }
-   */
-  async 'editing:stopEditing'(qgs_layer_id) {
-    const promises = [];
-    qgs_layer_id.forEach(id => { promises.push(GUI.getPlugin('editing').stopEditing(id)); });
-    await Promise.allSettled(promises);
-    this['editing:clear']();
-  }
-
-  'editing:stop'() {
-    return new Promise(resolve => {
-      GUI.getPlugin('editing').hidePanel();
-      GUI.hideSidebar();
-      this.once('clear', resolve);
-    });
-  }
-
-  /**
-   * Called wen we want to reset default editing plugin behaviour
-   */
-  'editing:clear'() {
-    GUI.getPlugin('editing').resetDefault();
-    this.isRunning      = false;
-    this.responseObject = {
-      cb:           null, // resolve or reject promise method
-      qgs_layer_id: null,
-      error:        null,
-    };
-    this['editing:resetSubscribeEvents']();
-    this.emit('clear');
   }
 
 }
