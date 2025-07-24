@@ -693,6 +693,8 @@ new (class extends Plugin {
 
         if (online) {
           this.state.saveConfig.cb.done(toolbox);
+          /** @since 4.1.0 */
+          this.emit('commit:done', toolbox);
         }
 
         // add items when close editing to result to show changes
@@ -749,6 +751,8 @@ new (class extends Plugin {
         });
 
         this.state.saveConfig.cb.error(toolbox, message);
+        /** @since 4.1.0 */
+        this.emit('commit:error', toolbox, message);
       }
 
       return Promise.reject(toolbox);

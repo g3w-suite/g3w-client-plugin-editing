@@ -46,10 +46,9 @@ export class IframeEditor extends G3WObject {
 
   #listeners = [];
 
-  #response = {
-    cb:           null, // resolve or reject promise method
-    qgs_layer_id: null,
-    error:        null,
+  #promise = {
+    cb:    null, // resolve or reject
+    value: { qgs_layer_id: null, error: null },
   };
 
   constructor(plugin) {
@@ -122,28 +121,19 @@ export class IframeEditor extends G3WObject {
 
       const qgs_layer_id = config.qgs_layer_id ? [].concat(config.qgs_layer_id) : GUI.getPlugin('editing').getEditableLayersId();
 
-      // start action
-      this.#response.cb = reject;
+      this.#promise.cb = reject;
 
-      // set same mode autosave
-      GUI.getPlugin('editing').setSaveConfig({
-        cb: {
-          // called when commit changes are done successuffly
-          done: toolbox => {
-            //set toolbox id
-            this.#response.cb           = resolve;
-            this.#response.qgs_layer_id = toolbox.getId();
-            this.#response.error        = null;
-            // close panel that fire closeediting panel event
-            GUI.getPlugin('editing').hidePanel();
-          },
-          // called whe commit change receive an error
-          error: (toolbox, error) => {
-            this.#response.cb           = reject;
-            this.#response.qgs_layer_id = toolbox.getId();
-            this.#response.error        = error;
-          },
-        }
+      // resolve = commit success
+      this.#onPlugin('commit:done', toolbox => {
+        this.#promise.cb    = resolve;
+        this.#promise.value = { qgs_layer_id: toolbox.getId(), error: null };
+        GUI.getPlugin('editing').hidePanel();
+      });
+
+      // reject = commit error
+      this.#onPlugin('commit:error', (toolbox, error) => {
+        this.#promise.cb    = reject;
+        this.#promise.value = { qgs_layer_id: toolbox.getId(), error };
       });
 
       // set toolboxes visible base on the value of qgs_layer_id
@@ -159,19 +149,17 @@ export class IframeEditor extends G3WObject {
         filter:           { nofeatures: true },
       };
 
-      //only in case of one layer id start editing otherwise client need to click on the layer
-
       // return all toolboxes
       const toolboxes = (await Promise.allSettled((1 === qgs_layer_id.length ? qgs_layer_id : []).map(id => GUI.getPlugin('editing').startEditing(id, options))))
         .filter(p => 'fulfilled' === p.status)
         .map(p => p.value);
 
-      /** @FIXME add description */
+      // toggle sidebar
       if (!GUI.isSidebarVisible()) {
         GUI.showSidebar();
       }
 
-      /** @FIXME add description */
+      // autostart "addfeature" tool
       if (1 === toolboxes.length && toolboxes[0]) {
         toolboxes[0].setActiveTool(toolboxes[0].getToolById('addfeature'));
       }
@@ -195,12 +183,11 @@ export class IframeEditor extends G3WObject {
         });
 
         // just one time
-        if (this.#listeners.find(e => 'canUndo' !== e.event)) {
+        if (this.#listeners.every(e => 'canUndo' !== e.event)) {
           this.#onPlugin('canUndo', bool => {
             //set currenttoolbocx id in editing to null
             if (false === bool) {
-              this.#response.qgs_layer_id = null;
-              this.#response.error        = null;
+              this.#promise.value = { qgs_layer_id: null, error: null };
             }
             activeTool.setEnabled(!bool);
             disableToolboxes.forEach(toolbox => toolbox.setEditing(!bool))
@@ -209,17 +196,13 @@ export class IframeEditor extends G3WObject {
         }
       });
 
-      this.#onPlugin('closeeditingpanel', () => {
+      this.#onPlugin('closeeditingpanel', async () => {
         // response to router service
-        this.#response.cb({
-          qgs_layer_id: this.#response.qgs_layer_id,
-          error:        this.#response.error,
-        });
+        this.#promise.cb(this.#promise.value);
         // stop action
         if (qgs_layer_id) {
-          const promises = [];
-          qgs_layer_id.forEach(id => { promises.push(GUI.getPlugin('editing').stopEditing(id)); });
-          Promise.allSettled(promises).then(() => this['editing:clear']());
+          await Promise.allSettled(qgs_layer_id.map(id => GUI.getPlugin('editing').stopEditing(id)));
+          this.#clear();
         }
       });
     });
@@ -281,27 +264,19 @@ export class IframeEditor extends G3WObject {
         return reject();
       }
 
-      this.#response.cb = reject;
+      this.#promise.cb = reject;
 
-      // set same mode autosave
-      GUI.getPlugin('editing').setSaveConfig({
-        cb: {
-          // called when commit changes are done successuffly
-          done: toolbox => {
-            //set toolbox id
-            this.#response.cb           = resolve;
-            this.#response.qgs_layer_id = toolbox.getId();
-            this.#response.error        = null;
-            // close panel that fire closeediting panel event
-            GUI.getPlugin('editing').hidePanel();
-          },
-          // called whe commit change receive an error
-          error: (toolbox, error) => {
-            this.#response.cb           = reject;
-            this.#response.qgs_layer_id = toolbox.getId();
-            this.#response.error        = error;
-          },
-        }
+      // resolve = commit success
+      this.#onPlugin('commit:done', toolbox => {
+        this.#promise.cb    = resolve;
+        this.#promise.value = { qgs_layer_id: toolbox.getId(), error: null };
+        GUI.getPlugin('editing').hidePanel();
+      });
+
+      // reject = commit error
+      this.#onPlugin('commit:error', (toolbox, error) => {
+        this.#promise.cb    = reject;
+        this.#promise.value = { qgs_layer_id: toolbox.getId(), error };
       });
 
       const toolboxes = [response.qgs_layer_id];
@@ -323,37 +298,31 @@ export class IframeEditor extends G3WObject {
       //only in case of one layer id start editing otherwise client need to click on the layer
       await Promise.allSettled((1 === toolboxes.length ? toolboxes : []).map(id => GUI.getPlugin('editing').startEditing(id, options)));
 
+      // toggle sidebar
       if (!GUI.isSidebarVisible()) {
         GUI.showSidebar();
       }
 
-      this.#onPlugin('closeeditingpanel', () => {
+      this.#onPlugin('closeeditingpanel', async () => {
         // response to router service
-        this.#response.cb({
-          qgs_layer_id: this.#response.qgs_layer_id,
-          error:        this.#response.error,
-        });
+        this.#promise.cb(this.#promise.value);
         // stop action
         if (toolboxes) {
-          const promises = [];
-          toolboxes.forEach(id => { promises.push(GUI.getPlugin('editing').stopEditing(id)); });
-          Promise.allSettled(promises).then(() => this['editing:clear']());
+          await Promise.allSettled(toolboxes.map(id => GUI.getPlugin('editing').stopEditing(id)));
+          this.#clear();
         }
       });
     });
   }
 
   /**
-   * Called wen we want to reset default editing plugin behaviour
+   * Reset default editing plugin behaviour
    */
-  'editing:clear'() {
+  #clear() {
     GUI.getPlugin('editing').resetDefault();
-    this.isRunning = false;
-    this.#response = {
-      cb:           null, // resolve or reject promise method
-      qgs_layer_id: null,
-      error:        null,
-    };
+    this.isRunning      = false;
+    this.#promise.cb    = null;
+    this.#promise.value = { qgs_layer_id: null, error: null };
     this.#listeners.forEach(d => { GUI.getPlugin('editing').off(d.event, d.listener); });
     this.emit('clear');
   }
