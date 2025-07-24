@@ -240,7 +240,7 @@ export class IframeEditor extends G3WObject {
           let data = layer && (await DataRouterService.getData('search:features', {
             inputs: {
               layer,
-              filter: [].concat(config.data.feature.value).map(v => `${config.data.feature.field}|eq|${encodeURIComponent(v)}`).join('|OR,')
+              filter: [].concat(config.feature.value).map(v => `${config.feature.field}|eq|${encodeURIComponent(v)}`).join('|OR,')
             },
             outputs: false
           }))?.data || [];
