@@ -870,40 +870,14 @@ new (class extends Plugin {
    * @param { boolean } [options.disablemapcontrols=false]
    * @param { boolean } [options.showselectlayers=true]
    * @param { string }  [options.title]
-   * @param data
-   *
-   *
-   * @returns { Promise<unknown> }
+   * 
+   * @returns { Promise<unknown> } info about start editing has features loaded
    *
    * @since g3w-client-plugin-editing@v3.7.2
    */
-  async startEditing(layerId, options = {}, data = false) {
-    options.selected           = undefined === options.selected           ? true : options.selected;
-    options.showselectlayers   = undefined === options.showselectlayers   ? true : options.showselectlayers;
-    options.disablemapcontrols = undefined === options.disablemapcontrols ? false : options.showselectlayers;
-    // get toolbox related to layer id
+  async startEditing(layerId, options = {}) {
     const toolbox = this.getToolBoxById(layerId);
-    // set show select layers input visibility
-    this.state.showselectlayers = options.showselectlayers;
-    // skip if toolbox doesn't exist
-    if (!toolbox) {
-      return Promise.reject();
-    }
-    // set selected
-    toolbox.setSelected(options.selected);
-    // set seletcted toolbox
-    if (options.selected) { this.state.toolboxselected = toolbox }
-
-    //set toolbox title if provide
-    if (options.title) { toolbox.setTitle(options.title) }
-
-    // start editing toolbox (options contain also a filter type)
-    data = await toolbox.start(options);
-    // disablemapcontrols in conflict
-    if (options.disablemapcontrols) {
-      GUI.getService('map').disableClickMapControls(true);
-    }
-    // opts contain information about start editing has features loaded
+    const data    = await toolbox.start(options);
     return data ? { toolbox, data } : toolbox;
   }
 

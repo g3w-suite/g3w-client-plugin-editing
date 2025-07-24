@@ -1776,31 +1776,43 @@ export class ToolBox extends G3WObject {
    *
    * Start editing
    * @param options
-   * @return {*}
+   * @param { Object } options
+   * @param { boolean } [options.selected=true]
+   * @param { boolean } [options.disablemapcontrols=false]
+   * @param { boolean } [options.showselectlayers=true]
+   * @param { string }  [options.title]
+   * 
+   * @returns { Promise<unknown> } info about start editing has features loaded
    */
-  //added option object to start method to have a control by other plugin how
   start(options = {}) {
     return new Promise(async (resolve, reject) => {
-      const id                    = this.getId();
-      const applicationConstraint = GUI.getPlugin('editing').state.constraints.toolboxes[id];
-      let {
-        toolboxheader    = true,
-        startstopediting = true,
-        changingtools    = false,
-        tools,
-        filter,
-      }                           = options;
-  
-      this.state.changingtools    = changingtools;
+      const plugin = GUI.getPlugin('editing');
+      const id     = this.getId();
 
-      if (tools) {
-        this.setEnablesDisablesTools(tools);
+      plugin.state.showselectlayers = options.showselectlayers ?? true;
+      plugin.state.toolboxselected  = (options.selected ?? true) ? this : plugin.state.toolboxselected;
+
+      // set selected
+      this.setSelected(options.selected ?? true);
+
+      const constraints = plugin.state.constraints.toolboxes[id];
+
+      // set title
+      if (undefined !== options.title) {
+        this.setTitle(options.title);
       }
 
-      this.state.toolboxheader    = toolboxheader;
-      this.state.startstopediting = startstopediting;
+      this.state.changingtools = options.changingtools ?? false;
+
+      if (options.tools) {
+        this.setEnablesDisablesTools(options.tools);
+      }
+
+      this.state.toolboxheader    = options.toolboxheader ?? true;
+      this.state.startstopediting = options.startstopediting ?? true;
   
-      filter = applicationConstraint && applicationConstraint.filter || this.constraints.filter || filter;
+      options.filter = constraints?.filter || this.constraints.filter || options.filter;
+
       //register lock features to show a message
       const unKeyLock = this._editor.onceafter('featuresLockedByOtherUser', () => {
         GUI.showUserMessage({
@@ -1843,7 +1855,7 @@ export class ToolBox extends G3WObject {
 
       this._startAsync = null;
 
-      this.setFeaturesOptions({ filter });
+      this.setFeaturesOptions({ filter: options.filter });
 
       const handlerAfterSessionGetFeatures = async promise => {
         this.emit('start-editing');
@@ -1879,7 +1891,7 @@ export class ToolBox extends G3WObject {
             setTimeout(async () => {
               this._start = true;
               this.startLoading();
-              this.setFeaturesOptions({ filter });
+              this.setFeaturesOptions({ filter: options.filter });
               try {
                 await handlerAfterSessionGetFeatures(this._session.start(this.state._getFeaturesOption))
               } catch(e) {
@@ -1904,6 +1916,12 @@ export class ToolBox extends G3WObject {
       }
 
       if (is_started) { this.setEditing(true); }
+
+      // disablemapcontrols in conflict
+      if (options.disablemapcontrols ?? false) {
+        GUI.getService('map').disableClickMapControls(true);
+      }
+
     });
   };
 
