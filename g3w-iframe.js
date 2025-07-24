@@ -73,7 +73,11 @@ export class IframeEditor extends G3WObject {
         if (message.data.single ?? true) {
           await Promise.allSettled(Object.keys(this.pending).map(id => {
             delete this.pending[id];
-            return this['editing:stop']();
+            return new Promise(resolve => {
+              GUI.getPlugin('editing').hidePanel();
+              GUI.hideSidebar();
+              this.once('clear', resolve);
+            });
           }));
         }
         this.pending[id] = {};
@@ -336,14 +340,6 @@ export class IframeEditor extends G3WObject {
           Promise.allSettled(promises).then(() => this['editing:clear']());
         }
       });
-    });
-  }
-
-  'editing:stop'() {
-    return new Promise(resolve => {
-      GUI.getPlugin('editing').hidePanel();
-      GUI.hideSidebar();
-      this.once('clear', resolve);
     });
   }
 
