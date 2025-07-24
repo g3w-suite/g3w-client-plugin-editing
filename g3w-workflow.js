@@ -37,7 +37,7 @@ export class Workflow extends G3WObject {
    * @since g3w-client-editing@v4.1.0
    */
   get session() {
-    this.getSession();
+    return this.getSession();
   }
 
   /**
