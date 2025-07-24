@@ -1,3 +1,5 @@
+import { getEditingFields } from '../utils/getEditingFields';
+
 const { Feature }   = g3wsdk.core.layer.features;
 const { cloneDeep } = g3wsdk.core.utils;
 
@@ -13,7 +15,7 @@ export function getFieldsWithValues(layer, obj, opts = {}) {
     get_default_value = true
   }  = opts;
 
-  let fields = cloneDeep(layer.getEditingFields());
+  let fields = cloneDeep(getEditingFields(layer));
   let feature;
 
   if (obj instanceof Feature) {
@@ -55,7 +57,7 @@ export function getFieldsWithValues(layer, obj, opts = {}) {
     field.validate.message         = null;
 
     if (field.input) {
-      const options = layer.getEditingFields().find(f => f.name === field.name).input.options;
+      const options = getEditingFields(layer).find(f => f.name === field.name).input.options;
       field.input.options.loading = options.loading || { state: null };
       //check if value is defined otherwise set empty array (e.g., required for field.validate unique)
       field.input.options.values  = options.values || [];

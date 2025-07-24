@@ -8,6 +8,7 @@ import { addPartToMultigeometries }            from './utils/addPartToMultigeome
 import { getCatalogLayers }                    from './utils/getCatalogLayers';
 import { getCatalogLayerById }                 from './utils/getCatalogLayerById';
 import { getEditingLayer }                     from './utils/getEditingLayer';
+import { getEditingFields }                    from './utils/getEditingFields';
 
 import { OpenFormStep }                        from './actions/open-form';
 import { AddFeatureStep }                      from './actions/add-feature';
@@ -324,6 +325,13 @@ new (class extends Plugin {
    */
   getEditingLayer(id) {
     return getEditingLayer(this.getToolBoxById(id).getLayer());
+  }
+
+  /**
+   * @since 4.1.0
+   */
+  getEditingFields(layerId, editable = false) {
+    return getEditingFields(this.getEditingLayer(layerId), editable);
   }
 
   /**
@@ -906,9 +914,7 @@ new (class extends Plugin {
       // get session
       const session = this.getSessionById(layerId);
       // exclude an eventual attribute pk (primary key) not editable (mean autoincrement)
-      const attributes = layer
-        .getEditingFields()
-        .filter(attr => !(attr.pk && !attr.editable));
+      const attributes = getEditingFields(layer).filter(attr => !(attr.pk && !attr.editable));
       // start session (get no features but set layer in editing)
       session.start({
         filter: {

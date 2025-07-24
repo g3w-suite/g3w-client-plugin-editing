@@ -1,3 +1,5 @@
+import { getEditingFields } from '../utils/getEditingFields';
+
 const { GUI } = g3wsdk.gui;
 const { XHR } = g3wsdk.core.utils;
 
@@ -17,10 +19,8 @@ const { XHR } = g3wsdk.core.utils;
 export async function setLayerUniqueFieldValues(layerId) {
   await new Promise(async (resolve, reject) => {
     const layer = GUI.getPlugin('editing').getLayerById(layerId);
-    const fields = Object.values(layer
-      .getEditingFields()
-      //filter field that is unique and not yet set unique values
-      .filter(f => !(f.pk && false === f.editable) && ('unique' === f.input.type || f.validate.unique)));
+    //filter field that is unique and not yet set unique values
+    const fields = Object.values(getEditingFields(layer).filter(f => !(f.pk && false === f.editable) && ('unique' === f.input.type || f.validate.unique)));
     if (0 === fields.length) {
       resolve();
       return;
@@ -31,11 +31,8 @@ export async function setLayerUniqueFieldValues(layerId) {
       const response = await XHR.get({
         url:    layer.getProvider('data').getLayer().getUrl('widget').unique,
         params: {
-          fields: Object.values(layer
-          .getEditingFields()
           //filter field that is unique and not yet set unique values
-          .filter(f => !(f.pk && false === f.editable) && ('unique' === f.input.type || f.validate.unique)))
-          .map(f => f.name).join()
+          fields: Object.values(getEditingFields(layer).filter(f => !(f.pk && false === f.editable) && ('unique' === f.input.type || f.validate.unique))).map(f => f.name).join()
         }
       });
 

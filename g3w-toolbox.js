@@ -32,6 +32,7 @@ import { isPkField }                                    from './utils/isPkField'
 import { getCatalogLayerById }                          from './utils/getCatalogLayerById';
 import { getCatalogLayers }                             from './utils/getCatalogLayers';
 import { getEditingLayer }                              from './utils/getEditingLayer';
+import { getEditingFields }                             from './utils/getEditingFields';
 
 import { OpenFormStep }                                 from './actions/open-form';
 import { SelectElementsStep }                           from './actions/select-elements';
@@ -240,8 +241,7 @@ export class ToolBox extends G3WObject {
       .filter(relation => 'ONE' === relation.getType() && layer.getId() === relation.getFather()) // 'ONE' == join 1:1 + father layerId is a father of relation
       .forEach(relation => {
         const isChildEditable = undefined !== getCatalogLayerById(relation.getChild());        // check if child layerId is editable (in editing)
-        getCatalogLayerById(relation.getFather())
-          .getEditingFields()
+        getEditingFields(getCatalogLayerById(relation.getFather()))
           .filter(f => f.vectorjoin_id && f.vectorjoin_id === relation.getId())  // father layer fields (in editing)
           .forEach(f => { f.editable = (f.editable && isChildEditable); });      // current editable boolean value + child editable layer
       });
@@ -424,8 +424,7 @@ export class ToolBox extends G3WObject {
                     layerId,
                     relations: inputs.layer.getRelations() ? inputs.layer.getRelations().getArray() : []
                   }).filter(
-                    relation => getEditingLayerById(getRelationId({ layerId, relation }))
-                      .getEditingFields() //get editing field of relation layer
+                    relation => getEditingFields(getEditingLayerById(getRelationId({ layerId, relation }))) //get editing field of relation layer
                       .filter(f => getRelationFieldsFromRelation({ relation, layerId: getRelationId({ layerId, relation }) }).ownField.includes(f.name)) //filter only relation fields
                       .every(f => !f.validate.required) // check required
                   );
@@ -822,7 +821,7 @@ export class ToolBox extends G3WObject {
           }),
         },
          // @since v4.0.0 Rotate Feature. Check, in case of Point geometry, if layer has rotation input field
-         (is_line || is_poly || is_point && layer.getEditingFields().find(f => 'rotation' === f.name )) && capabilities.includes('change_feature') && {
+         (is_line || is_poly || is_point && getEditingFields(layer).find(f => 'rotation' === f.name )) && capabilities.includes('change_feature') && {
           id:           'rotatefeature',
           type:         ['change_feature'],
           name:         'editing.tools.rotate_feature',
@@ -919,7 +918,7 @@ export class ToolBox extends G3WObject {
                         const geometryType     = originalLayer.getGeometryType();
                         const layerId          = originalLayer.getId();
                         //get attributes/properties from current layer in editing
-                        const attributes       = originalLayer.getEditingFields().filter(a => !a.pk);
+                        const attributes       = getEditingFields(originalLayer).filter(a => !a.pk);
                         const session          = context.session;
                         const editingLayer     = getEditingLayer(originalLayer);
                         const source           = editingLayer.getSource();
@@ -1712,7 +1711,7 @@ export class ToolBox extends G3WObject {
     if (filter) {
       // in case of no features filter request check if no features_filed is present otherwise it get first field
       if (filter.nofeatures) {
-        filter.nofeatures_field = filter.nofeatures_field || this.state.layer.getEditingFields()[0].name;
+        filter.nofeatures_field = filter.nofeatures_field || getEditingFields(this.state.layer)[0].name;
       }
       this.state._getFeaturesOption = {
         filter,
@@ -3692,8 +3691,7 @@ export class ToolBox extends G3WObject {
 
     const layer = this.getLayer();
 
-    layer
-      .getEditingFields()
+    getEditingFields(layer)
       .filter(field => field.input && 'select_autocomplete' === field.input.type && !field.input.options.filter_expression && !field.input.options.usecompleter)
       /** @TODO need to avoid to call the same fnc to same event many times to avoid waste server request time */
       .forEach(async field => {

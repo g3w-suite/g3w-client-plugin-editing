@@ -1,3 +1,5 @@
+import { getEditingFields } from '../utils/getEditingFields';
+
 const { GUI } = g3wsdk.gui;
 const _       = g3wsdk.core.i18n.t;
 
@@ -68,7 +70,7 @@ export function chooseFeatureFromFeatures({
     }))({
       features:   Array.isArray(features) ? features : [],
       feature,
-      attributes: inputs.layer.getEditingFields().map(({ name, label }) => ({ name, label })),
+      attributes: getEditingFields(inputs.layer).map(({ name, label }) => ({ name, label })),
     });
 
     const dialog = g3wsdk.gui.GUI.showModalDialog({

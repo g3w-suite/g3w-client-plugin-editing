@@ -273,6 +273,7 @@
   import { getFieldsWithValues }                          from '../utils/getFieldsWithValues';
   import { isPkField }                                    from '../utils/isPkField';
   import { getEditingLayer }                              from '../utils/getEditingLayer';
+  import { getEditingFields }                             from '../utils/getEditingFields';
   import { PickFeaturesInteraction }                      from '../actions/pick-feature';
   import { OpenFormStep }                                 from '../actions/open-form';
   import { OpenTableStep }                                from '../actions/open-table';
@@ -1161,7 +1162,7 @@
          */
         return {
           // get editable fields from parent layer editing fields
-          editable: ownField.filter(f => (parentLayer.getEditingFields().find(_f => _f.name === f) || { editable: false }).editable),
+          editable: ownField.filter(f => (getEditingFields(parentLayer).find(_f => _f.name === f) || { editable: false }).editable),
           // check if father field is a pk and is not editable
           pk,
           // Check if the parent field is editable.
@@ -1266,7 +1267,7 @@
       fieldrequired() {
         return getRelationFieldsFromRelation({ layerId: this._relationLayerId, relation: this.relation })
           .ownField // own Fields is a relation Fields array of Relation Layer
-          .some(field => (getEditingLayerById(this._relationLayerId).getEditingFields().find(f => field === f.name) || { validate: { required: false } }).validate.required);
+          .some(field => (getEditingFields(getEditingLayerById(this._relationLayerId)).find(f => field === f.name) || { validate: { required: false } }).validate.required);
       },
 
       /**
@@ -1609,7 +1610,7 @@
                     if (_feature) {
                       const feature = new Feature({
                         feature: _feature,
-                        properties: inputs.layer.getEditingFields().filter(attr => !attr.pk).map(attr => attr.name)
+                        properties: getEditingFields(inputs.layer).filter(attr => !attr.pk).map(attr => attr.name)
                       });
                       feature.setTemporaryId();
                       inputs.features = [feature];

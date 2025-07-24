@@ -7,6 +7,7 @@
  */
 
 import { getFeatureTableFieldValue }                    from '../utils/getFeatureTableFieldValue';
+import { getEditingFields }                             from '../utils/getEditingFields';
 import { Workflow }                                     from '../g3w-workflow';
 import { Step }                                         from '../g3w-step';
 
@@ -42,7 +43,7 @@ export class OpenTableStep extends Step {
     return new Promise((resolve, reject) => {
       this._isContentChild = Workflow.Stack.length > 1;
       const features       = (inputs.layer.getEditor().readEditingFeatures() || []);
-      const headers        = (inputs.layer.getEditingFields() || []).filter(h => features.length ? Object.keys(features[0].getProperties()).includes(h.name) : true);
+      const headers        = (getEditingFields(inputs.layer) || []).filter(h => features.length ? Object.keys(features[0].getProperties()).includes(h.name) : true);
       this._isContentChild = Workflow.Stack.length > 1;
       const excludeFields  = this._isContentChild ? (context.excludeFields || []) : [];
       const service        = Object.assign(new G3WObject,

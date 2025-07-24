@@ -12,6 +12,7 @@ import { chooseFeatureFromFeatures }                    from '../utils/chooseFea
 import { isSameBaseGeometryType }                       from '../utils/isSameBaseGeometryType';
 import { PickFeaturesInteraction }                      from '../actions/pick-feature';
 import { getEditingLayer }                              from '../utils/getEditingLayer';
+import { getEditingFields }                             from '../utils/getEditingFields';
 import { Step }                                         from '../g3w-step';
 
 const { ApplicationState }                              = g3wsdk.core;
@@ -165,7 +166,7 @@ export class SelectElementsStep extends Step {
             reject();
             return;
           }
-          const attributes = layer.getEditingFields();
+          const attributes = getEditingFields(layer);
           const geometry   = e.features[0].getGeometry();
           if (geometryType !== geometry.getType()) {
             e.feature.setGeometry(convertSingleMultiGeometry(geometry, geometryType));

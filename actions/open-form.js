@@ -16,6 +16,7 @@ import { getFieldsWithValues }                          from '../utils/getFields
 import { setFieldsWithValues }                          from '../utils/setFieldsWithValues';
 import { isPkField }                                    from '../utils/isPkField';
 import { getCatalogLayerById }                          from '../utils/getCatalogLayerById';
+import { getEditingFields }                             from '../utils/getEditingFields';
 
 import { Workflow }                                     from '../g3w-workflow';
 import { Step }                                         from '../g3w-step';
@@ -691,9 +692,7 @@ async function _handleRelation1_1LayerFields({
         //check if child feature is already added to
         childFeature = source.readFeatures().find(f => f.get(childField) === value)
 
-        const fieldsUpdated = undefined !== GUI.getPlugin('editing')
-          .getLayerById(relation.getFather())
-          .getEditingFields()
+        const fieldsUpdated = undefined !== getEditingFields(GUI.getPlugin('editing').getLayerById(relation.getFather()))
           .filter(f => f.vectorjoin_id && f.vectorjoin_id === relation.getId())
           .find(({name}) => fields.find(f => name == f.name).update)
 
@@ -707,9 +706,7 @@ async function _handleRelation1_1LayerFields({
             childFeature = new g3wsdk.core.layer.features.Feature();
             childFeature.setTemporaryId();
             // set name attribute to `null`
-            getCatalogLayerById(childLayerId)
-              .getEditingFields()
-              .forEach(field => childFeature.set(field.name, null));
+            getEditingFields(getCatalogLayerById(childLayerId)).forEach(field => childFeature.set(field.name, null));
             //set father field value
             childFeature.set(childField, fields.find(f => fatherField === f.name).value);
             //add feature to a child source
@@ -728,9 +725,7 @@ async function _handleRelation1_1LayerFields({
           if (childFeature) {
             // Loop editable only field of father layerId when
             // a child relation (1:1) is bind to the current feature
-            const editiableRelatedFieldChild = GUI.getPlugin('editing')
-              .getLayerById(relation.getFather())
-              .getEditingFields()
+            const editiableRelatedFieldChild = getEditingFields(GUI.getPlugin('editing').getLayerById(relation.getFather()))
               .filter(f => f.vectorjoin_id && f.vectorjoin_id === relation.getId() && f.editable);
 
             editiableRelatedFieldChild
@@ -809,9 +804,7 @@ async function _listenRelation1_1FieldChange({
     }
 
     //store original editable property of fields relation to child layer relation
-    const editableRelatedFatherChild = GUI.getPlugin('editing')
-      .getLayerById(relation.getFather())
-      .getEditingFields()
+    const editableRelatedFatherChild = getEditingFields(GUI.getPlugin('editing').getLayerById(relation.getFather()))
       .filter(f => f.vectorjoin_id && f.vectorjoin_id === relation.getId())
       .reduce((accumulator, field) => {
         const formField             = fields.find(f => f.name === field.name)

@@ -1,7 +1,7 @@
 const { Layer } = g3wsdk.core.layer;
 
 /**
- * ORIGINAL SOURCE: g3w-client/src/map/layers/featuresstore.js@v4.0.0
+ * ORIGINAL SOURCE: g3w-client/src/map/layers/layer.js@v4.0.0
  *  
  * @returns {*} editing version of layer
  */

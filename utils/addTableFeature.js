@@ -1,4 +1,5 @@
-import { getEditingLayer } from '../utils/getEditingLayer';
+import { getEditingLayer }  from '../utils/getEditingLayer';
+import { getEditingFields } from '../utils/getEditingFields';
 
 const { Feature } = g3wsdk.core.layer.features;
 
@@ -16,7 +17,7 @@ export async function addTableFeature(inputs, context) {
   } else {
     feature = new Feature({
       feature: new ol.Feature(
-        inputs.layer.getEditingFields().reduce((props, f) => { props[f.name] = null; return props }, {})
+        getEditingFields(inputs.layer).reduce((props, f) => { props[f.name] = null; return props }, {})
       )
     });
     feature.setNew();
