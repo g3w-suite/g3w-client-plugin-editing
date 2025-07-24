@@ -337,6 +337,8 @@
        * @fires starttoolbox
        */
       async toggleEditing() {
+        //set select
+        this.select();
         //check if need to change style for editing and if is not equal to current layer style
         const change       = this.currentStyle !== (this.state.layer.state.editing.layer_style ?? this.currentStyle);
         this.toggled.layer = !(this.state.editing.on || this.toggled.layer);
