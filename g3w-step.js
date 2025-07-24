@@ -6,6 +6,8 @@
  * @since g3w-client-plugin-editing@v4.1.0
  */
 
+import { getEditingLayer } from './utils/getEditingLayer';
+
 const { G3WObject }           = g3wsdk.core;
 const { isPointGeometryType } = g3wsdk.core.geoutils.Geometry;
 const { Layer }               = g3wsdk.core.layer;
@@ -390,7 +392,7 @@ export class Step extends G3WObject {
           run({ layer }) {
             this.active  = true;
             this.layerId = layer.getId();
-            this.source  = layer.getEditingLayer().getSource();
+            this.source  = getEditingLayer(layer).getSource();
           },
           stop() {
             this.active = this.checked = this.checkedAll = false;

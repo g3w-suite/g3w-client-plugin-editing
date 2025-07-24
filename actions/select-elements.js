@@ -11,6 +11,7 @@ import { setFeaturesSelectedStyle }                     from '../utils/setFeatur
 import { chooseFeatureFromFeatures }                    from '../utils/chooseFeatureFromFeatures';
 import { isSameBaseGeometryType }                       from '../utils/isSameBaseGeometryType';
 import { PickFeaturesInteraction }                      from '../actions/pick-feature';
+import { getEditingLayer }                              from '../utils/getEditingLayer';
 import { Step }                                         from '../g3w-step';
 
 const { ApplicationState }                              = g3wsdk.core;
@@ -67,7 +68,7 @@ export class SelectElementsStep extends Step {
 
       // add single select interaction
       if (['single', 'multiple'].includes(type)) {
-        interactions.single = new PickFeaturesInteraction({ layer: layer.getEditingLayer() });
+        interactions.single = new PickFeaturesInteraction({ layer: getEditingLayer(layer) });
         interactions.single.on('picked', async ({ features }) => {
           let feature;
           if (features.length > 1) {
@@ -100,7 +101,7 @@ export class SelectElementsStep extends Step {
         interactions.multi = new ol.interaction.Draw({ type: 'Circle', source: this._vectorLayer.getSource(), geometryFunction: ol.interaction.Draw.createBox() });
 
         interactions.multi.on('drawend', e => {
-          const features = layer.getEditingLayer().getSource().getFeaturesInExtent(e.feature.getGeometry().getExtent());
+          const features = getEditingLayer(layer).getSource().getFeaturesInExtent(e.feature.getGeometry().getExtent());
           if (buttonnext) {
             _addRemoveToMultipleSelectFeatures(features, inputs, this.multipleselectfeatures, this);
           } else {
@@ -122,7 +123,7 @@ export class SelectElementsStep extends Step {
           const extent   = interactions.dragbox.getGeometry().getExtent();
 
           //https://openlayers.org/en/v5.3.0/apidoc/module-ol_source_Cluster-Cluster.html#forEachFeatureIntersectingExtent
-          layer.getEditingLayer().getSource().forEachFeatureIntersectingExtent(extent, f => { features.push(f) });
+          getEditingLayer(layer).getSource().forEachFeatureIntersectingExtent(extent, f => { features.push(f) });
 
           if (buttonnext) {
             _addRemoveToMultipleSelectFeatures(features, inputs, this.multipleselectfeatures, this);
@@ -145,7 +146,7 @@ export class SelectElementsStep extends Step {
       if ('external' === type) {
         const geometryType     = layer.getGeometryType();
         const layerId          = layer.getId();
-        const source           = layer.getEditingLayer().getSource();
+        const source           = getEditingLayer(layer).getSource();
         const { session }      = this.getContext();
         interactions.external  = new PickFeaturesInteraction({
           layers: GUI.getService('map').getExternalLayers()

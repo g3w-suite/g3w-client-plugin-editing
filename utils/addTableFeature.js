@@ -1,3 +1,5 @@
+import { getEditingLayer } from '../utils/getEditingLayer';
+
 const { Feature } = g3wsdk.core.layer.features;
 
 /**
@@ -22,7 +24,7 @@ export async function addTableFeature(inputs, context) {
 
   feature.setTemporaryId();
 
-  inputs.layer.getEditingLayer().getEditor().getEditingSource().addFeature(feature);
+  getEditingLayer(inputs.layer).getEditor().getEditingSource().addFeature(feature);
 
   context.session.pushAdd(inputs.layer.getId(), feature, false);
 

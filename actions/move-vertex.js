@@ -7,7 +7,8 @@
  */
 
 import { evaluateExpressionFields }                     from '../utils/evaluateExpressionFields';
-import { setVertexStyle }                               from "../utils/setVertexStyle";
+import { setVertexStyle }                               from '../utils/setVertexStyle';
+import { getEditingLayer }                              from '../utils/getEditingLayer';
 import { Step }                                         from '../g3w-step';
 
 const { GUI }                                           = g3wsdk.gui;
@@ -38,7 +39,7 @@ export class ModifyGeometryVertexStep extends Step {
       const layerId         = inputs.layer.getId();
       const feature         = this._feature = inputs.features[0];
       const originalFeature = feature.clone();
-      this._originalStyle = inputs.layer.getEditingLayer().getStyle();
+      this._originalStyle = getEditingLayer(inputs.layer).getStyle();
       //set state to enable/disable save button changes
       const state         = {
         modified: false

@@ -272,6 +272,7 @@
   import { unlinkRelation }                               from '../utils/unlinkRelation';
   import { getFieldsWithValues }                          from '../utils/getFieldsWithValues';
   import { isPkField }                                    from '../utils/isPkField';
+  import { getEditingLayer }                              from '../utils/getEditingLayer';
   import { PickFeaturesInteraction }                      from '../actions/pick-feature';
   import { OpenFormStep }                                 from '../actions/open-form';
   import { OpenTableStep }                                from '../actions/open-table';
@@ -1469,7 +1470,7 @@
                       //create a promise for setAndUnsetSelectedFeaturesStyle;
                       const promise = new Promise(r => this.resolve = r);
                       GUI.setModal(false);
-                      const editingLayer        = inputs.layer.getEditingLayer();
+                      const editingLayer        = getEditingLayer(inputs.layer);
                       try {
                         if (context.beforeRun && 'function' === typeof context.beforeRun) {
                           await context.beforeRun();
@@ -1612,7 +1613,7 @@
                       });
                       feature.setTemporaryId();
                       inputs.features = [feature];
-                      inputs.layer.getEditingLayer().getSource().addFeature(feature);
+                      getEditingLayer(inputs.layer).getSource().addFeature(feature);
                       context.session.pushAdd(inputs.layer.getId(), feature, false);
                       return inputs;
                     }

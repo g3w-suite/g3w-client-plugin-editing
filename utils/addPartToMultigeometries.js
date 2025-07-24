@@ -1,4 +1,6 @@
 import { evaluateExpressionFields } from '../utils/evaluateExpressionFields';
+import { getEditingLayer }          from '../utils/getEditingLayer';
+
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/addparttomultigeometriestask.js@v3.7.1
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/addparttomultigeometriesstep.js@v3.7.1
@@ -19,7 +21,7 @@ export async function addPartToMultigeometries(inputs, context) {
     originalFeature = feature.clone();
     geometry.setCoordinates([...geometry.getCoordinates(), ...inputs.features[1].getGeometry().getCoordinates()]);
   } else {
-    feature         = inputs.layer.getEditingLayer().getSource().getFeatures()[0];
+    feature         = getEditingLayer(inputs.layer).getSource().getFeatures()[0];
     originalFeature = feature.clone();
     feature.setGeometry(inputs.features[0].getGeometry());
   }

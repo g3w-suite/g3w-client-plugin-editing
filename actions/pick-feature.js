@@ -8,6 +8,7 @@
  */
 
 import { setAndUnsetSelectedFeaturesStyle } from '../utils/setAndUnsetSelectedFeaturesStyle';
+import { getEditingLayer }                  from '../utils/getEditingLayer';
 import { Step }                             from '../g3w-step';
 
 /**
@@ -58,7 +59,7 @@ export class PickFeatureStep extends Step {
   async run(inputs) {
     const promise = new Promise((resolve) => {
       this.addInteraction(
-        new PickFeaturesInteraction({ layer: inputs.layer.getEditingLayer() }), {
+        new PickFeaturesInteraction({ layer: getEditingLayer(inputs.layer) }), {
           'picked': e => {
             if (0 === inputs.features.length) {
               inputs.features   = e.features;

@@ -31,6 +31,7 @@ import { isSameBaseGeometryType }                       from './utils/isSameBase
 import { isPkField }                                    from './utils/isPkField';
 import { getCatalogLayerById }                          from './utils/getCatalogLayerById';
 import { getCatalogLayers }                             from './utils/getCatalogLayers';
+import { getEditingLayer }                              from './utils/getEditingLayer';
 
 import { OpenFormStep }                                 from './actions/open-form';
 import { SelectElementsStep }                           from './actions/select-elements';
@@ -451,7 +452,7 @@ export class ToolBox extends G3WObject {
               new Step({
                 async run(inputs) {
 
-                  const editingLayer = inputs.layer.getEditingLayer();
+                  const editingLayer = getEditingLayer(inputs.layer);
                   const feature      = inputs.features[0];
                   const layerId      = inputs.layer.getId();
                   const promise = new Promise((resolve, reject) => {
@@ -920,7 +921,7 @@ export class ToolBox extends G3WObject {
                         //get attributes/properties from current layer in editing
                         const attributes       = originalLayer.getEditingFields().filter(a => !a.pk);
                         const session          = context.session;
-                        const editingLayer     = originalLayer.getEditingLayer();
+                        const editingLayer     = getEditingLayer(originalLayer);
                         const source           = editingLayer.getSource();
                         //set reactive
                         const vueInstance      = new (Vue.extend({
@@ -1145,7 +1146,7 @@ export class ToolBox extends G3WObject {
                     features,
                     coordinates
                   }             = inputs;
-                  const source  = layer.getEditingLayer().getSource();
+                  const source  = getEditingLayer(layer).getSource();
                   const layerId = layer.getId();
                   const session = context.session;
                   const promise = new Promise((resolve, reject) => {
@@ -1288,7 +1289,7 @@ export class ToolBox extends G3WObject {
                 run(inputs, context) {
                   return new Promise((resolve, reject) => {
                     const originaLayer    = inputs.layer;
-                    const editingLayer    = inputs.layer.getEditingLayer();
+                    const editingLayer    = getEditingLayer(inputs.layer);
                     const layerId         = originaLayer.getId();
                     const session         = context.session;
                     const {
@@ -1408,7 +1409,7 @@ export class ToolBox extends G3WObject {
                 },
                 async run(inputs, context) {
                   /** @since g3w-client-plugin-editing@v3.8.0 */
-                  const source  = inputs.layer.getEditingLayer().getSource();
+                  const source  = getEditingLayer(inputs.layer).getSource();
                   
                   const promise = new Promise((resolve, reject) => {
                     this.reject = reject;
@@ -1507,7 +1508,7 @@ export class ToolBox extends G3WObject {
                       layer,
                       features
                     }                  = inputs;
-                    const editingLayer = layer.getEditingLayer();
+                    const editingLayer = getEditingLayer(layer);
                     const source       = editingLayer.getSource();
                     const layerId      = layer.getId();
                     const session      = context.session;
@@ -3830,7 +3831,7 @@ export async function _handleSplitFeature({
   const newFeatures              = [];
   const { layer }                = inputs;
   const session                  = context.session;
-  const source                   = layer.getEditingLayer().getSource();
+  const source                   = getEditingLayer(layer).getSource();
   const layerId                  = layer.getId();
   const oriFeature               = feature.clone();
   inputs.features                = splittedGeometries.length ? [] : inputs.features;

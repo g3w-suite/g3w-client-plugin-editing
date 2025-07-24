@@ -150,6 +150,7 @@
   import { getRelationsInEditing }             from '../utils/getRelationsInEditing';
   import { getFeatureTableFieldValue }         from '../utils/getFeatureTableFieldValue';
   import { addTableFeature }                   from '../utils/addTableFeature';
+  import { getEditingLayer }                   from '../utils/getEditingLayer';
 
   const _               = g3wsdk.core.i18n.t;
   const { GUI }         = g3wsdk.gui;
@@ -319,7 +320,7 @@
           new Promise(async (resolve, reject) => {
             const feature = cloneFeature(
               this.state.features.find(f => uid === f.getUid()),
-              this.state.inputs.layer.getEditingLayer()
+              getEditingLayer(this.state.inputs.layer)
             );
             /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/addtablefeatureworkflow.js@v3.7.1 */
             this.state.workflow = new Workflow({

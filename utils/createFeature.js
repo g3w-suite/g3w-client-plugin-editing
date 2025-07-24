@@ -1,3 +1,5 @@
+import { getEditingLayer } from '../utils/getEditingLayer';
+
 const { Feature } = g3wsdk.core.layer.features;
 
 /**
@@ -24,7 +26,7 @@ export function createFeature(layerId, options = {}) {
   feature.setTemporaryId();
 
   const toolbox      = this.getToolBoxById(layerId);
-  const editingLayer = toolbox.getLayer().getEditingLayer();
+  const editingLayer = getEditingLayer(toolbox.getLayer());
 
   editingLayer.getSource().addFeature(feature);
   toolbox.getSession().pushAdd(layerId, feature, false);

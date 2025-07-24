@@ -7,6 +7,7 @@ import { setAndUnsetSelectedFeaturesStyle }    from './utils/setAndUnsetSelected
 import { addPartToMultigeometries }            from './utils/addPartToMultigeometries';
 import { getCatalogLayers }                    from './utils/getCatalogLayers';
 import { getCatalogLayerById }                 from './utils/getCatalogLayerById';
+import { getEditingLayer }                     from './utils/getEditingLayer';
 
 import { OpenFormStep }                        from './actions/open-form';
 import { AddFeatureStep }                      from './actions/add-feature';
@@ -322,7 +323,7 @@ new (class extends Plugin {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   getEditingLayer(id) {
-    return this.getToolBoxById(id).getLayer().getEditingLayer();
+    return getEditingLayer(this.getToolBoxById(id).getLayer());
   }
 
   /**
@@ -952,7 +953,7 @@ new (class extends Plugin {
 
           // add to session and source as new feature
           session.pushAdd(layerId, feature, false);
-          layer.getEditingLayer().getSource().addFeature(feature);
+          getEditingLayer(layer).getSource().addFeature(feature);
           //start workflow
           await workflow.start({
             inputs:  { layer, features: [feature] },
@@ -1143,7 +1144,7 @@ new (class extends Plugin {
       await toolBox.start({ filter: { fids: fid } });
 
       const _layer    = toolBox.getLayer();
-      const source    = _layer.getEditingLayer().getSource();
+      const source    = getEditingLayer(_layer).getSource();
       const is_vector = Layer.LayerTypes.VECTOR === _layer.getType();
 
       // get feature from an Editing layer source (with styles)
@@ -1195,7 +1196,7 @@ new (class extends Plugin {
                     type: 'snap',
                     options: {
                       layerId: inputs.layer.getId(),
-                      source:  inputs.layer.getEditingLayer().getSource(),
+                      source:  getEditingLayer(inputs.layer).getSource(),
                       active:  true
                     }
                   },

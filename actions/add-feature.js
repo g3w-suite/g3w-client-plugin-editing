@@ -7,6 +7,7 @@
  */
 
 import { setAndUnsetSelectedFeaturesStyle }             from '../utils/setAndUnsetSelectedFeaturesStyle';
+import { getEditingLayer }                              from '../utils/getEditingLayer';
 import { Step }                                         from '../g3w-step';
 
 const { Geometry }                                      = g3wsdk.core.geoutils;
@@ -70,7 +71,7 @@ export class AddFeatureStep extends Step {
 
       this.geometryType = Geometry.getOLGeometry(originalGeometryType);
 
-      const source     = inputs.layer.getEditingLayer().getSource();
+      const source     = getEditingLayer(inputs.layer).getSource();
       const attributes = inputs.layer.getEditingFields();
 
       this.drawInteraction = this.addInteraction(
