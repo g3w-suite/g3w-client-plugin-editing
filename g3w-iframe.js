@@ -149,19 +149,17 @@ export class IframeEditor extends G3WObject {
         filter:           { nofeatures: true },
       };
 
-      //only in case of one layer id start editing otherwise client need to click on the layer
-
       // return all toolboxes
       const toolboxes = (await Promise.allSettled((1 === qgs_layer_id.length ? qgs_layer_id : []).map(id => GUI.getPlugin('editing').startEditing(id, options))))
         .filter(p => 'fulfilled' === p.status)
         .map(p => p.value);
 
-      /** @FIXME add description */
+      // toggle sidebar
       if (!GUI.isSidebarVisible()) {
         GUI.showSidebar();
       }
 
-      /** @FIXME add description */
+      // autostart "addfeature" tool
       if (1 === toolboxes.length && toolboxes[0]) {
         toolboxes[0].setActiveTool(toolboxes[0].getToolById('addfeature'));
       }
@@ -300,6 +298,7 @@ export class IframeEditor extends G3WObject {
       //only in case of one layer id start editing otherwise client need to click on the layer
       await Promise.allSettled((1 === toolboxes.length ? toolboxes : []).map(id => GUI.getPlugin('editing').startEditing(id, options)));
 
+      // toggle sidebar
       if (!GUI.isSidebarVisible()) {
         GUI.showSidebar();
       }
