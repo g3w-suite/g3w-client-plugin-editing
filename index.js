@@ -9,6 +9,7 @@ import { getCatalogLayers }                    from './utils/getCatalogLayers';
 import { getCatalogLayerById }                 from './utils/getCatalogLayerById';
 import { getEditingLayer }                     from './utils/getEditingLayer';
 import { getEditingFields }                    from './utils/getEditingFields';
+import { createRelationsUrl }                  from 'utils/createRelationsUrl';
 
 import { OpenFormStep }                        from './actions/open-form';
 import { AddFeatureStep }                      from './actions/add-feature';
@@ -1103,6 +1104,124 @@ new (class extends Plugin {
    */
   getActiveTool() {
     return this.getToolBoxes().filter(t => t.getActiveTool())[0];
+  }
+
+  /**
+   * ORIGINAL SOURCE: g3w-client/src/layers/layer.js.js@v4.0.0
+   * 
+   * Retrieve features from server (editing mode)
+   * 
+   * @since g3w-client-plugin-editing@v4.1.0
+   */
+  async fetchVectorData(layer, options = {}, params = {}) {
+    try {
+
+      let response;
+      if (!options.filter) {
+        response = await XHR.post({
+          url:         layer.getUrl('editing'),
+          data:        JSON.stringify(params),
+          contentType: 'application/json',
+        });
+      } else if (undefined !== options.filter.bbox) { // bbox filter
+        response = await XHR.post({
+          url:  layer.getUrl('editing'),
+          data: JSON.stringify({
+            ...params,
+            in_bbox:     options.filter.bbox.join(','),
+            filtertoken: layer.getFilterToken(),
+          }),
+          contentType: 'application/json',
+        })
+      } else if (undefined !== options.filter.fid) { // fid filter
+        response = await XHR.post({
+          url:         createRelationsUrl(options.filter.fid),
+          contentType: 'application/json',
+          data:        JSON.stringify({ formatter: 1 }),
+        });
+      } else if (options.filter.field) {
+        response = await XHR.post({
+          url:         layer.getUrl('editing'),
+          data:        JSON.stringify({ 
+            ...params,
+            ...options.filter,
+          }),
+          contentType: 'application/json',
+        })
+      } else if (undefined !== options.filter.fids) {
+        response = await XHR.post({
+          url:    layer.getUrl('editing'),
+          data:   JSON.stringify({
+            ...params,
+            ...options.filter,
+          }),
+          contentType: 'application/json',
+        })
+      } else if (undefined !== options.filter.nofeatures) {
+        response = await XHR.post({
+          url:  layer.getUrl('editing'),
+          data: JSON.stringify({
+            ...params,
+            field: `${options.filter.nofeatures_field || 'id'}|eq|__G3W__NO_FEATURES__`
+          }),
+          contentType: 'application/json',
+        })
+      }
+
+      // invalid response
+      if (!response.result) {
+        return;
+      }
+
+      const lockIds  = response.featurelocks.map(lk => lk.featureid);
+
+      let _parser;
+
+      if ('vector' === layer.getType()) {
+        _parser = function(data, options) {
+          try {
+            return (new ol.format.GeoJSON({
+              geometryName:      'geometry',
+              dataProjection:    options.crs,
+              featureProjection: options.mapCrs || options.crs,
+            })).readFeatures('string' === typeof data ? JSON.parse(data) : data)
+          } catch (e) {
+            console.warn(e);
+            return [];
+          }
+        };
+      }
+
+      if ('table' === layer.getType()) {
+        _parser = function(data = {}) {
+          return (data.features || [])
+            .map(f => {
+              const feature = new Feature();
+              feature.setProperties(f.properties);
+              feature.setId(f.id);
+              return feature;
+            });
+        };
+      }
+
+      // resolves with features locked and requested
+      return {
+        count:        response.vector.count, // real number of features that request will return
+        featurelocks: response.featurelocks,
+        features:     _parser(
+          response.vector.data,
+          'NoGeometry' === response.vector.geometrytype
+            ? {}
+            : { crs: layer.getCrs() }
+        )
+          .filter(f => lockIds.includes(`${f.getId()}`))
+          .map(feature => new Feature({ feature })),
+      };
+    } catch (e) {
+      console.warn(e);
+    }
+
+    return Promise.reject({ message: _("info.server_error")});
   }
 
   /**
