@@ -753,7 +753,7 @@ export class ToolBox extends G3WObject {
                     features = [];
                     //loop over father features to build a relation chiled feature
                     for (const f of inputs.features) {
-                      const feature = (await addTableFeature({ features: [], layer: rLayer }, { session: Workflow.Stack.current.session })).features[0];
+                      const feature = (await addTableFeature({ features: [], layer: rLayer }, { session: Workflow.Stack.current.session })).inputs.features[0];
                       fields.relationField.forEach((field, _i) => feature.set(fields.ownField[_i], f.get(field)));
                       features.push(feature);
                     }  
