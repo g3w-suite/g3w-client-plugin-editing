@@ -223,7 +223,9 @@ new (class extends Plugin {
       }, { position: 0, title: 'EDITING' });
     }
 
-    new IframeEditor(this);
+    if (ApplicationState.iframe) {
+      new IframeEditor(this);
+    }
 
     this.setHookLoading({ loading: false });
     this.setReady(true);

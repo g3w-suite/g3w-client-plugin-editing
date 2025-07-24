@@ -224,17 +224,17 @@ export class IframeEditor extends G3WObject {
 
       const qgs_layer_id = config.qgs_layer_id ? [].concat(config.qgs_layer_id) : GUI.getPlugin('editing').getEditableLayersId();
 
+      let found = false;
+
       // find features with geometry
       const response = {
-        found:        false,
         features:     [],
         qgs_layer_id: null
       };
 
-      let layersCount = qgs_layer_id.length;
       let i = 0;
 
-      while (!response.found && i < layersCount) {
+      while (!found && i < config.qgs_layer_id.length) {
         const layer = ApplicationState.project.getLayerById(qgs_layer_id[i]);
         try {
           let data = layer && (await DataRouterService.getData('search:features', {
@@ -244,9 +244,9 @@ export class IframeEditor extends G3WObject {
             },
             outputs: false
           }))?.data || [];
-          const features = data.length && data[0].features;
-          response.found = features && features.length > 0 && !!features.find(f => f.getGeometry());
-          if (!features || !response.found) {
+          const features = data?.[0]?.features;
+          found = !!features?.find(f => f.getGeometry());
+          if (!features || !found) {
             throw 'invalid response';
           }
           response.features     = features;
@@ -258,8 +258,8 @@ export class IframeEditor extends G3WObject {
         }
       }
 
-      // in case of no response zoom to an initial extent
-      if (!response.found) {
+      // feature not found → zoom to initial extent
+      if (!found) {
         GUI.getService('map').zoomToExtent(GUI.getService('map').project.state.initextent)
         return reject();
       }
