@@ -52,7 +52,7 @@ export class IframeEditor extends G3WObject {
     error:        null,
   };
 
-  constructor() {
+  constructor(plugin) {
     super();
 
     // BACKOMP v3.x
