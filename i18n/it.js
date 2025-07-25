@@ -25,9 +25,9 @@ export default {
     title: 'Edita'
   },
   table: {
-    edit: "Edita feature",
+    edit: "Modifica",
     copy: "Crea una copia",
-    delete: "Cancella feature"
+    delete: "Cancella"
   },
   tools: {
     copy: "Copia elementi",
