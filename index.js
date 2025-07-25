@@ -332,7 +332,7 @@ new (class extends Plugin {
    * @since 4.1.0
    */
   getEditingFields(layerId, editable = false) {
-    return getEditingFields(this.getEditingLayer(layerId), editable);
+    return getEditingFields(this.getLayerById(layerId), editable);
   }
 
   /**
