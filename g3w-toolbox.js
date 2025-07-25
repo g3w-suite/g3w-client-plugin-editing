@@ -2435,15 +2435,17 @@ export class ToolBox extends G3WObject {
    */
   async stopActiveTool(tool) {   
     const activeTool = this.getActiveTool();
+
+    // remove all event listeners
     if (tool && (!activeTool || tool === activeTool)) {
-      tool.removeAllListeners();
+      tool.off();
       return;
     }
 
     try {
-      //Need to check if is there active tool
+      // remove all event listeners and stop active tool
       if (activeTool) {
-        activeTool.removeAllListeners();
+        activeTool.off();
         await activeTool.stop(true);
       }
       //@since 3.9.1 Changed to set empty array cause reactivity of vue instead of splice(0)
