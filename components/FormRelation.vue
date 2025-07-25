@@ -258,6 +258,7 @@
 
   import { Workflow }                                     from '../g3w-workflow';
   import { Step }                                         from '../g3w-step';
+  import { Feature }                                      from '../g3w-feature';
   import { cloneFeature }                                 from '../utils/cloneFeature';
   import { setAndUnsetSelectedFeaturesStyle }             from '../utils/setAndUnsetSelectedFeaturesStyle';
   import { getRelationFieldsFromRelation }                from '../utils/getRelationFieldsFromRelation';
@@ -288,7 +289,6 @@
   const { Geometry }                    = g3wsdk.core.geoutils;
   const _                               = g3wsdk.core.i18n.t;
   const { Layer }                       = g3wsdk.core.layer;
-  const { Feature }                     = g3wsdk.core.layer.features;
   const { toRawType }                   = g3wsdk.core.utils;
   const { GUI }                         = g3wsdk.gui;
   const { FormService }                 = g3wsdk.gui.vue.services;

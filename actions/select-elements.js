@@ -14,11 +14,11 @@ import { PickFeaturesInteraction }                      from '../actions/pick-fe
 import { getEditingLayer }                              from '../utils/getEditingLayer';
 import { getEditingFields }                             from '../utils/getEditingFields';
 import { Step }                                         from '../g3w-step';
+import { Feature }                                      from '../g3w-feature';
 
 const { ApplicationState }                              = g3wsdk.core;
 const { convertSingleMultiGeometry }                    = g3wsdk.core.geoutils;
 const { removeZValueToOLFeatureGeometry }               = g3wsdk.core.geoutils.Geometry;
-const { Feature }                                       = g3wsdk.core.layer.features;
 const { GUI }                                           = g3wsdk.gui;
 const _                                                 = g3wsdk.core.i18n.t;
 

@@ -10,10 +10,10 @@ import { setAndUnsetSelectedFeaturesStyle }             from '../utils/setAndUns
 import { getEditingLayer }                              from '../utils/getEditingLayer';
 import { getEditingFields }                             from '../utils/getEditingFields';
 import { Step }                                         from '../g3w-step';
+import { Feature }                                      from '../g3w-feature';
 
 const { Geometry }                                      = g3wsdk.core.geoutils;
 const { Layer }                                         = g3wsdk.core.layer;
-const { Feature }                                       = g3wsdk.core.layer.features;
 const { GUI }                                           = g3wsdk.gui;
 const { AreaInteraction, LengthInteraction }            = g3wsdk.ol.interactions.measure;
 

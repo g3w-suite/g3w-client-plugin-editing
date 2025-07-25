@@ -1,6 +1,7 @@
 import i18n                                    from './i18n';
 import { Workflow }                            from './g3w-workflow';
 import { Step }                                from './g3w-step';
+import { Feature }                             from './g3w-feature';
 import { createFeature }                       from './utils/createFeature';
 import { getEditingLayerById }                 from './utils/getEditingLayerById';
 import { setAndUnsetSelectedFeaturesStyle }    from './utils/setAndUnsetSelectedFeaturesStyle';
@@ -20,7 +21,6 @@ const { G3W_FID }                              = g3wsdk.constant;
 const { ApplicationState }                     = g3wsdk.core;
 const _                                        = g3wsdk.core.i18n.t;
 const { Layer, LayersStore }                   = g3wsdk.core.layer;
-const { Feature }                              = g3wsdk.core.layer.features;
 const { Plugin, PluginService }                = g3wsdk.core.plugin;
 const { XHR, noop }                            = g3wsdk.core.utils;
 const { GUI }                                  = g3wsdk.gui;

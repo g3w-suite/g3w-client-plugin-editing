@@ -1,6 +1,5 @@
+import { Feature }         from '../g3w-feature';
 import { getEditingLayer } from '../utils/getEditingLayer';
-
-const { Feature } = g3wsdk.core.layer.features;
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/services/editingservice.js@v3.7.8

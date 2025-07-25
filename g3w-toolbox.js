@@ -9,6 +9,7 @@
 import { Collection }                                   from './g3w-collection';
 import { Workflow }                                     from './g3w-workflow';
 import { Step }                                         from './g3w-step';
+import { Feature }                                      from './g3w-feature';
 import { createEditingDataOptions }                     from './utils/createEditingDataOptions';
 import { setLayerUniqueFieldValues }                    from './utils/setLayerUniqueFieldValues';
 import { getRelationsInEditing }                        from './utils/getRelationsInEditing';
@@ -52,7 +53,6 @@ const { splitFeature }                                   = g3wsdk.core.geoutils;
 const { removeZValueToOLFeatureGeometry }                = g3wsdk.core.geoutils.Geometry;
 const _                                                  = g3wsdk.core.i18n.t;
 const { Layer }                                          = g3wsdk.core.layer;
-const { Feature }                                        = g3wsdk.core.layer.features;
 const { XHR, debounce, toRawType, cloneDeep }            = g3wsdk.core.utils;
 const { GUI }                                            = g3wsdk.gui;
 const { getScaleFromResolution, getResolutionFromScale } = g3wsdk.ol.utils;

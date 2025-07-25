@@ -1,6 +1,6 @@
+import { Feature }          from '../g3w-feature';
 import { getEditingFields } from '../utils/getEditingFields';
 
-const { Feature }   = g3wsdk.core.layer.features;
 const { cloneDeep } = g3wsdk.core.utils;
 
 /**
