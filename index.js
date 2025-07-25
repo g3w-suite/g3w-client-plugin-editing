@@ -9,7 +9,7 @@ import { getCatalogLayers }                    from './utils/getCatalogLayers';
 import { getCatalogLayerById }                 from './utils/getCatalogLayerById';
 import { getEditingLayer }                     from './utils/getEditingLayer';
 import { getEditingFields }                    from './utils/getEditingFields';
-import { createRelationsUrl }                  from 'utils/createRelationsUrl';
+import { createRelationsUrl }                  from './utils/createRelationsUrl';
 
 import { OpenFormStep }                        from './actions/open-form';
 import { AddFeatureStep }                      from './actions/add-feature';
