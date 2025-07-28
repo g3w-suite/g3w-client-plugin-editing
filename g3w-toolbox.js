@@ -3651,7 +3651,7 @@ export class ToolBox extends G3WObject {
 
     // vector layer
     if (Layer.LayerTypes.VECTOR === this._editor.getLayer().getType()) {
-      this._editor.getLayer().resetEditingSource(this.getFeaturesCollection());
+      this._editor.getLayer().getMapLayer().resetSource(this.getFeaturesCollection());
     }
   }
 
