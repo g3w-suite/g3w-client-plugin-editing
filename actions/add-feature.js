@@ -63,7 +63,7 @@ export class AddFeatureStep extends Step {
       const layerId = inputs.layer.getId();
 
       // Skip when a layer type is vector
-      if (Layer.LayerTypes.VECTOR !== inputs.layer.getType()) { return  }
+      if ('vector' !== inputs.layer.getType()) { return  }
 
       /** @since g3w-client-plugin-editing@v3.8.0 */
       setAndUnsetSelectedFeaturesStyle({ promise: new Promise(r => this.resolve = r), inputs, style: this.selectStyle });

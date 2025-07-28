@@ -424,7 +424,7 @@ export class Step extends G3WObject {
     if (this._tools && 0 === this._workflow._toolsoftool.length) {
       this._workflow._toolsoftool.push(...(
         this._tools
-          .filter(tool => ('measure' !== tool || (Layer.LayerTypes.VECTOR === inputs.layer.getType() && !isPointGeometryType(inputs.layer.getGeometryType()))))
+          .filter(tool => ('measure' !== tool || ('vector' === inputs.layer.getType() && !isPointGeometryType(inputs.layer.getGeometryType()))))
           .map(tool => toolsOfTools[tool])
       ));
     }

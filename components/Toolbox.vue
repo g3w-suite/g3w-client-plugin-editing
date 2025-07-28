@@ -416,7 +416,7 @@
 
         GUI.getPlugin('editing')
           .getLayers()
-          .filter(l => Layer.LayerTypes.VECTOR === l.getType()) // skip raster, alphanumerical..
+          .filter(l => 'vector' === l.getType()) // skip raster, alphanumerical..
           .filter(l => tool.options.layerId !== l.getId())
           .forEach(l => {
             // SNAP TO ALL: check if the current editing layer is not equal to `layerId`
@@ -541,7 +541,7 @@
           this.clearSnap();
           GUI.getPlugin('editing')
             .getLayers()
-            .filter(l => l.isInEditing() && Layer.LayerTypes.VECTOR === l.getType()) // skip not in editing, raster, alphanumerical..
+            .filter(l => l.isInEditing() && 'vector' === l.getType()) // skip not in editing, raster, alphanumerical..
             .filter(l => all || tool.options.layerId === l.getId())
             .forEach(l => {
               const source  = GUI.getPlugin('editing').getToolBoxById(l.getId()).getEditor().getEditingSource();

@@ -699,7 +699,7 @@ new (class extends Plugin {
         }
 
         // In the case of vector layer need to refresh map commit changes
-        if (result && Layer.LayerTypes.VECTOR === layer.getType() ) {
+        if (result && 'vector' === layer.getType() ) {
           GUI.getService('map').refreshMap({ force: true });
         }
 
@@ -1245,7 +1245,7 @@ new (class extends Plugin {
 
       const _layer    = toolBox.getLayer();
       const source    = getEditingLayer(_layer).getSource();
-      const is_vector = Layer.LayerTypes.VECTOR === _layer.getType();
+      const is_vector = 'vector' === _layer.getType();
 
       // get feature from an Editing layer source (with styles)
       const features = is_vector ? source.getFeatures() : source.readFeatures();

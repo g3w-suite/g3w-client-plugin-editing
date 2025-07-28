@@ -6,10 +6,10 @@ const { Layer } = g3wsdk.core.layer;
  * @returns {*} editing version of layer
  */
 export function getEditingLayer(layer) {
-  if (Layer.LayerTypes.TABLE === layer.getType()) {
+  if ('table' === layer.getType()) {
     return layer;
   }
-  if (Layer.LayerTypes.VECTOR === layer.getType()) {
+  if ('vector' === layer.getType()) {
     return layer.getMapLayer().getOLLayer();
   }
 }

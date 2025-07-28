@@ -427,7 +427,7 @@
       addVectorRelation() {
         this.runAddRelationWorkflow({
           workflow: this._add_link_workflow.add(),
-          isVector: Layer.LayerTypes.VECTOR === this._layerType,
+          isVector: 'vector' === this._layerType,
         });
         this.show_vector_tools = false;
       },
@@ -479,7 +479,7 @@
         } else {
           this.runAddRelationWorkflow({
             workflow: this._add_link_workflow.add(),
-            isVector: Layer.LayerTypes.VECTOR === this._layerType,
+            isVector: 'vector' === this._layerType,
           });
         }
       },
@@ -640,7 +640,7 @@
           },
 
           // @since 3.9.0 copy featureonly for table layer
-          Layer.LayerTypes.TABLE === this._layerType && this.capabilities.includes('add_feature') && {
+          'table' === this._layerType && this.capabilities.includes('add_feature') && {
             state: Vue.observable({
               icon:   'pasteFeaturesFromOtherLayers.png',
               id:     `${id}_copyfeature`,
@@ -664,7 +664,7 @@
           },
 
           // other vector tools (e.g., move feature)
-          this.capabilities.includes('change_feature') && Layer.LayerTypes.VECTOR === this._layerType && (
+          this.capabilities.includes('change_feature') && 'vector' === this._layerType && (
             GUI.getPlugin('editing')
               .getToolBoxById(this._relationLayerId)
               .getTools()
@@ -714,7 +714,7 @@
           const d = {};
           const promise = new Promise((resolve, reject) => { Object.assign(d, { resolve, reject }) })
 
-          const is_vector       = Layer.LayerTypes.VECTOR === this._layerType;
+          const is_vector       = 'vector' === this._layerType;
           const relation        = this.relations[index];
           const toolId          = relationtool.state.id.split(`${relation.id}_`)[1];
           const relationfeature = this.getLayer().getEditor().getEditingSource().getFeatureById(relation.id);
@@ -1023,7 +1023,7 @@
       async linkRelation() {
         this.disabled = true;
 
-        const is_vector = Layer.LayerTypes.VECTOR === this._layerType;
+        const is_vector = 'vector' === this._layerType;
         const workflow = this._add_link_workflow.link( is_vector ? {
           selectStyle: SELECTED_STYLES[this.getLayer().getGeometryType()]
         } : {});
@@ -1325,7 +1325,7 @@
       /** @since 3.7.2 Listen commit when is click on save all button disk icon*/
       GUI.getPlugin('editing').on('commit', this.onCommit);
 
-      this.isVectorRelation = Layer.LayerTypes.VECTOR === relationLayer.getType();
+      this.isVectorRelation = 'vector' === relationLayer.getType();
 
       // vector relation → get all layers with the same geometry
       if (this.isVectorRelation) {
@@ -1431,7 +1431,7 @@
       const self = this;
 
       this._add_link_workflow = ({
-        [Layer.LayerTypes.TABLE]: {
+        table: {
 
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/edittableworkflow.js@v3.7.1 */
           link(options = {}) {
@@ -1456,7 +1456,7 @@
           },
 
         },
-        [Layer.LayerTypes.VECTOR]: {
+        vector: {
 
           /** ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/linkrelationworkflow.js@v3.7.1 */
           link(options = {}) {

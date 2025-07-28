@@ -157,7 +157,7 @@ export class ToolBox extends G3WObject {
     _layer.state.editing.ready = true;
 
     // set editing layer
-    let layer = Layer.LayerTypes.IMAGE === _layer.getType()
+    let layer = 'image' === _layer.getType()
       ? new g3wsdk.core.layer.VectorLayer(_layer.state)
       : _layer;
 
@@ -166,7 +166,7 @@ export class ToolBox extends G3WObject {
      * ORIGINAL SOURCE: g3w-client/src/map/layers/featuresstore.js@v4.0.0
      * ORIGINAL SOURCE: g3w-client/src/app/core/layers/features/olfeaturesstore.js@v3.10.2
      */
-    this._collection = new Collection(Layer.LayerTypes.TABLE !== _layer.getType());
+    this._collection = new Collection('table' !== _layer.getType());
 
     /**
      * ORIGINAL SOURCE: g3w-client-plugin-editing/g3wsdk/editing/editor.j@v4.0.0
@@ -220,7 +220,7 @@ export class ToolBox extends G3WObject {
     });
 
     // clone editable layer
-    if (Layer.LayerTypes.TABLE === layer.getType()) {
+    if ('table' === layer.getType()) {
       layer = layer.clone(); 
     }
 
@@ -260,12 +260,12 @@ export class ToolBox extends G3WObject {
       ][Object.keys(ToolBox._sessions).length % 40] : '#fff');
     }
 
-    const is_vector          = [undefined, Layer.LayerTypes.VECTOR].includes(layer.getType());
+    const is_vector          = [undefined, 'vector'].includes(layer.getType());
     const geometryType       = is_vector && layer.getGeometryType();
     const is_point           = is_vector && Geometry.isPointGeometryType(geometryType);
     const is_line            = is_vector && Geometry.isLineGeometryType(geometryType);
     const is_poly            = is_vector && Geometry.isPolygonGeometryType(geometryType);
-    const is_table           = Layer.LayerTypes.TABLE === layer.getType();
+    const is_table           = 'table' === layer.getType();
     const isMultiGeometry    = geometryType && Geometry.isMultiGeometry(geometryType);
     const iconGeometry       = is_vector && (is_point ? 'Point' : is_line ? 'Line' : 'Polygon');
 
@@ -352,7 +352,7 @@ export class ToolBox extends G3WObject {
       /** @since g3w-client-plugin-editing@v3.7.0 store key events setters */
       _unregisterStartSettersEventsKey: [],
       _getFeaturesOption: {},
-      _layerType: layer.getType() || Layer.LayerTypes.VECTOR,
+      _layerType: layer.getType() || 'vector',
       _enabledtools: undefined,
       _disabledtools: undefined,
       _constraints: layer.state.editing.constraints || {},
@@ -670,7 +670,7 @@ export class ToolBox extends G3WObject {
                     //Relations layer
                     rLayer = getEditingLayerById(relationLayerId);
                     const actions = []
-                      .concat(![undefined, Layer.LayerTypes.VECTOR].includes(rLayer.getType()) ? ['add'] : [])
+                      .concat(![undefined, 'vector'].includes(rLayer.getType()) ? ['add'] : [])
                       .concat(relationsFeatures[relationLayerId].length > 0 ? ['update'] : [])
                     //In case of norelations featire and no vector layer
                     if (0 === actions.length) {
@@ -1723,7 +1723,7 @@ export class ToolBox extends G3WObject {
         this.constraintFeatureFilter = filter;
       }
     } else {
-      this.state._getFeaturesOption = createEditingDataOptions(Layer.LayerTypes.TABLE === this.state._layerType ? 'all': 'bbox', { layerId: this.getId() });
+      this.state._getFeaturesOption = createEditingDataOptions('table' === this.state._layerType ? 'all': 'bbox', { layerId: this.getId() });
     }
   }
 
@@ -1881,7 +1881,7 @@ export class ToolBox extends G3WObject {
       const GIVE_ME_A_NAME = (
         ApplicationState.ismobile // is mobile
         && GUI.getService('map').isMapHidden() // map is not visible (content 100%)
-        && Layer.LayerTypes.VECTOR === this.state._layerType // is  vector
+        && 'vector' === this.state._layerType // is  vector
       );
       if (!is_started && GIVE_ME_A_NAME) {
         this.setEditing(true);
@@ -3122,7 +3122,7 @@ export class ToolBox extends G3WObject {
       if (!options.registerEvents) { return }
       this.state._getFeaturesOption = options;
       // register get features event (only in case filter bbox)
-      if ((Layer.LayerTypes.VECTOR === this.state._layerType) && this.state._getFeaturesOption.filter.bbox) {
+      if (('vector' === this.state._layerType) && this.state._getFeaturesOption.filter.bbox) {
         const fnc = async () => {
           if (
             //added ApplicationState.online
@@ -3206,7 +3206,7 @@ export class ToolBox extends G3WObject {
 
     const { bbox } = options.filter || {};
     //check if bbox options filter (bbox of a current map) is passed and is a vector layer
-    const is_vector = bbox && Layer.LayerTypes.VECTOR === this._editor.getLayer().getType();
+    const is_vector = bbox && 'vector' === this._editor.getLayer().getType();
 
     // first request --> need to perform request
     if (is_vector && null === this._filter.bbox) {
@@ -3428,7 +3428,7 @@ export class ToolBox extends G3WObject {
       if (tool.getOperator().runOnce) {
         this.stopActiveTool();
       }
-      if (!tool.getOperator().runOnce && Layer.LayerTypes.VECTOR === this.getLayer().getType() ) {
+      if (!tool.getOperator().runOnce && 'vector' === this.getLayer().getType() ) {
         await this._startOp(tool, options, hideSidebar);
       }
     }
@@ -3650,7 +3650,7 @@ export class ToolBox extends G3WObject {
     this._featuresstore.clear();
 
     // vector layer
-    if (Layer.LayerTypes.VECTOR === this._editor.getLayer().getType()) {
+    if ('vector' === this._editor.getLayer().getType()) {
       this._editor.getLayer().getMapLayer().resetSource(this.getFeaturesCollection());
     }
   }
