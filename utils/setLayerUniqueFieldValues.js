@@ -29,7 +29,7 @@ export async function setLayerUniqueFieldValues(layerId) {
 
       // get widget data
       const response = await XHR.get({
-        url:    layer.getProvider('data').getLayer().getUrl('widget').unique,
+        url:    layer.getUrl('widget').unique,
         params: {
           //filter field that is unique and not yet set unique values
           fields: Object.values(getEditingFields(layer).filter(f => !(f.pk && false === f.editable) && ('unique' === f.input.type || f.validate.unique))).map(f => f.name).join()

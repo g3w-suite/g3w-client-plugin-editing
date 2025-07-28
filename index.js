@@ -189,7 +189,7 @@ new (class extends Plugin {
     (await Promise.allSettled(
       getCatalogLayers({ EDITABLE: true }, { TOC_ORDER : true })
         .filter(layer => layer.isEditable())
-        .map(async layer => ({ layer, config: await XHR.get({ url: layer.getProvider('data').getLayer().getUrl('config') }) }))
+        .map(async layer => ({ layer, config: await XHR.get({ url: layer.getUrl('config') }) }))
     )).forEach(({ status, value, reason }) => {
         if ('fulfilled' === status) {
         const toolBox                                  = new ToolBox(value.layer, value.config);
