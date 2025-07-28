@@ -270,52 +270,9 @@ export class ToolBox extends G3WObject {
               new PickFeatureStep(),
               new Step({ run: chooseFeature }),
               // delete feature
-              new Step({
-                help: "editing.steps.help.double_click_delete",
-                run(inputs, context) {
-                  return $promisify(async() => {
-                    const layerId = inputs.layer.getId();
-                    const feature = inputs.features[0];
-  
-                    // get all relations of the current editing layer that are in editing
-                    // and filter relations
-                    // get relation layer id that are in relation with layerId (current layer in editing)
-                    // get fields of relation layer that are in relation with layerId
-                    // Exclude relation child layer that has at least one
-                    // editing field required because when unlink relation feature from
-                    // delete father, when try to commit update relation, we receive an error
-                    // due missing value /null to required field.
-                    const relations = getRelationsInEditing({
-                      layerId,
-                      relations: inputs.layer.getRelations() ? inputs.layer.getRelations().getArray() : []
-                    }).filter(
-                      relation => getEditingLayerById(getRelationId({ layerId, relation }))
-                        .getEditingFields() //get editing field of relation layer
-                        .filter(f => getRelationFieldsFromRelation({ relation, layerId: getRelationId({ layerId, relation }) }).ownField.includes(f.name)) //filter only relation fields
-                        .every(f => !f.validate.required) // check required
-                    );
-
-                    // promise return features relations and add to relation layer child
-                    if (relations.length > 0) {
-                      await getLayersDependencyFeatures(layerId, { feature, relations});
-                    }
-
-                    inputs.features = [feature];
-
-                    // Unlink relation features related to layer id
-                    getRelationsInEditingByFeature({ layerId, relations, feature }).forEach(({ relation, relations }) => {
-                      relations.forEach(r => unlinkRelation({ layerId, relation, relations, index: 0, dialog: false }));
-                    });
-
-                    context.session.pushDelete(layerId, feature);
-
-                    return inputs;
-                  });
-                },
-              }),
               // confirm step
               new Step({
-                run(inputs) {
+                run(inputs, context) {
                   return $promisify(async () => {
                     const editingLayer = inputs.layer.getEditingLayer();
                     const feature      = inputs.features[0];
@@ -331,12 +288,43 @@ export class ToolBox extends G3WObject {
                             : ''
                           )
                           + `</div>`,
-                          result => {
+                          async result => {
                             if (!result) {
                               reject(inputs);
                               return;
                             }
+                          
+                            // get all relations of the current editing layer that are in editing
+                            // and filter relations
+                            // get relation layer id that are in relation with layerId (current layer in editing)
+                            // get fields of relation layer that are in relation with layerId
+                            // Exclude relation child layer that has at least one
+                            // editing field required because when unlink relation feature from
+                            // delete father, when try to commit update relation, we receive an error
+                            // due missing value /null to required field.
+
+                            const relations = getRelationsInEditing({
+                              layerId,
+                              relations: inputs.layer.getRelations() ? inputs.layer.getRelations().getArray() : []
+                            }).filter(
+                              relation => getEditingLayerById(getRelationId({ layerId, relation }))
+                                .getEditingFields() //get editing field of relation layer
+                                .filter(f => getRelationFieldsFromRelation({ relation, layerId: getRelationId({ layerId, relation }) }).ownField.includes(f.name)) //filter only relation fields
+                                .every(f => !f.validate.required) // check required
+                            );
+
+                            // promise return features relations and add to relation layer child
+                            if (relations.length > 0) {
+                              await getLayersDependencyFeatures(layerId, { feature, relations});
+                            }
+
+                            // Unlink relation features related to layer id
+                            getRelationsInEditingByFeature({ layerId, relations, feature }).forEach(({ relation, relations }) => {
+                              relations.forEach(() => unlinkRelation({ layerId, relation, relations, index: 0, dialog: false }));
+                            });
+
                             editingLayer.getSource().removeFeature(feature);
+                            context.session.pushDelete(layerId, feature);
                             // Remove unique values from unique fields of a layer (when deleting a feature)
                             const fields = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[layerId];
                             if (fields) {
@@ -345,6 +333,7 @@ export class ToolBox extends G3WObject {
                               .filter(f => undefined !== fields[f])
                               .forEach(f => fields[f].delete(feature.get(f)));
                             }
+                            
                             resolve(inputs);
                           }
                         );
@@ -2670,15 +2659,11 @@ export class ToolBox extends G3WObject {
       if (this.state.editing.session.changes.length > 0) {
         //@since 3.9.1 get array of uniqueIds
         //case of modify vertex. Multi changes in one save
-        const uniqueIds = [];
-        await Promise.allSettled(this.state.editing.session.changes.map(c => {
-          const uniqueId = options.id || Date.now();
-          uniqueIds.push(uniqueId);
-          return promisify(this.__add(uniqueId, [c]));
-        }));
+        const uniqueId = options.id || Date.now();
+        await promisify(this.__add(uniqueId, this.state.editing.session.changes ));
         // clear to temporary changes
         this.state.editing.session.changes = [];
-        return uniqueIds;
+        return [uniqueId];
       }
       return null;
     });
