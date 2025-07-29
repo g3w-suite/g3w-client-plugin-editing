@@ -3013,17 +3013,6 @@ export class ToolBox extends G3WObject {
           //convert feature to json ex. {geometry:{type: 'Point'}, properties:{}.....}
           const itemObj = GeoJSONFormat.writeFeatureObject(item);
           
-          //In the case of 3D geometry need to set the same tpe of layer (LineStringMZ...)
-
-          /**
-           * //Comment - need to pass geometry type symple withot Z for example
-           * 
-           * if (is3DGeometry) {
-           *   itemObj.geometry.type = geometryType
-           *  }
-           * 
-          */
-          
           //get properties
           const childs_properties = item.getProperties();
           for (const p in itemObj.properties) {
