@@ -20,7 +20,6 @@ import { IframeEditor }                        from './g3w-iframe';
 const { G3W_FID }                              = g3wsdk.constant;
 const { ApplicationState }                     = g3wsdk.core;
 const _                                        = g3wsdk.core.i18n.t;
-const { Layer, LayersStore }                   = g3wsdk.core.layer;
 const { Plugin, PluginService }                = g3wsdk.core.plugin;
 const { XHR, noop }                            = g3wsdk.core.utils;
 const { GUI }                                  = g3wsdk.gui;
@@ -182,9 +181,6 @@ new (class extends Plugin {
       }
     });
 
-    // add editing layer store to mapstoreregistry
-    ApplicationState.layers['editing'] = new LayersStore({ id: 'editing', queryable: false, catalog: false });
-    
     // get editable layers config from server (sorted by "index" to keep TOC order)
     (await Promise.allSettled(
       getCatalogLayers({ EDITABLE: true }, { TOC_ORDER : true })
@@ -1067,24 +1063,6 @@ new (class extends Plugin {
     }
   }
 
-  unload() {
-    this.hideEditingPanel();
-
-    if (this.config.visible) { this.removeTools() }
-
-    this.state.unwatchLayout();
-
-    delete ApplicationState.layers['editing'];
-
-    // clear sessions
-    Object.keys(ToolBox._sessions).forEach(id => delete ToolBox._sessions[id]);
-
-    // turn off events
-    GUI.getService('map').off('mapcontrol:toggled', this.state.onMapControlToggled);
-    // unregister query result action
-    GUI.getService('queryresults').un('editFeature', this.state.editFeatureKey);
-  }
-  
   /**
    * @since g3w-client-plugin-editing@v3.8.0
    */
