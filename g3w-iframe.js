@@ -33,12 +33,13 @@
  * ```
  */
 
-const { ApplicationState, G3WObject } = g3wsdk.core;
-const { GUI }                         = g3wsdk.gui;
-const { DataRouterService }           = g3wsdk.core.data;
-const { getUniqueDomId }              = g3wsdk.core.utils;
+const { Emitter }           = g3w;
+const { ApplicationState }  = g3wsdk.core;
+const { GUI }               = g3wsdk.gui;
+const { DataRouterService } = g3wsdk.core.data;
+const { getUniqueDomId }    = g3wsdk.core.utils;
 
-export class IframeEditor extends G3WObject {
+export class IframeEditor extends Emitter {
 
   pending = {};
 

@@ -951,10 +951,8 @@ async function _getRelation1_1ChildFeature({
           formatter: 0,
           filter:    g3wsdk.core.utils.createFilterFormInputs({
             layer,
-            search_endpoint: 'api',
             inputs:          [{ attribute: childField, value: fatherFormRelationField.value, }]
           }),
-          search_endpoint: 'api',
         },
         outputs: false,
       });

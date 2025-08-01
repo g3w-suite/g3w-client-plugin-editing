@@ -549,9 +549,9 @@
               this.addSnapFeatures(source.readFeatures());
               this.snapEvents.push({
                 source,
-                //OL event key
+                // OL event key
                 olKey:           source.getFeaturesCollection().on('add', evt => this.addSnapFeatures([evt.element])),
-                //G3WObject event keys
+                // G3WObject event keys
                 settersAndKeys: {
                   'addFeature':  source.onbefore('addFeature',  this.addSnapFeatures),
                   'clear':       source.onbefore('clear', () => source.readFeatures().forEach(f => snapFeatures.remove(f)))

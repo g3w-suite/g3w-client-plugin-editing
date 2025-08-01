@@ -6,15 +6,15 @@
  * @since g3w-client-plugin-editing@v4.1.0
  */
 
-import { Step }      from './g3w-step';
+import { Step } from './g3w-step';
 
-const { GUI }                 = g3wsdk.gui;
-const { G3WObject }           = g3wsdk.core;
+const { Emitter } = g3w;
+const { GUI }     = g3wsdk.gui;
 
 /**
  * Workflow Class (manage flow of steps)
  */
-export class Workflow extends G3WObject {
+export class Workflow extends Emitter {
 
   /**
    * ORIGINAL SOURCE: g3w-client/src/services/workflow.js@v3.9.1

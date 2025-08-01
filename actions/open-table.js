@@ -6,14 +6,14 @@
  * @since g3w-client-plugin-editing@v4.1.0
  */
 
-import { getFeatureTableFieldValue }                    from '../utils/getFeatureTableFieldValue';
-import { getEditingFields }                             from '../utils/getEditingFields';
-import { Workflow }                                     from '../g3w-workflow';
-import { Step }                                         from '../g3w-step';
+import { getFeatureTableFieldValue } from '../utils/getFeatureTableFieldValue';
+import { getEditingFields }          from '../utils/getEditingFields';
+import { Workflow }                  from '../g3w-workflow';
+import { Step }                      from '../g3w-step';
 
-const { G3WObject }                                     = g3wsdk.core;
-const { GUI }                                           = g3wsdk.gui;
-const { Component }                                     = g3wsdk.gui.vue;
+const { Emitter }                    = g3w;
+const { GUI }                        = g3wsdk.gui;
+const { Component }                  = g3wsdk.gui.vue;
 
 /**
  * ORIGINAL SOURCE: g3w-client-plugin-editing/workflows/steps/tasks/opentabletask.js@v3.7.1
@@ -46,7 +46,7 @@ export class OpenTableStep extends Step {
       const headers        = (getEditingFields(inputs.layer) || []).filter(h => features.length ? Object.keys(features[0].getProperties()).includes(h.name) : true);
       this._isContentChild = Workflow.Stack.length > 1;
       const excludeFields  = this._isContentChild ? (context.excludeFields || []) : [];
-      const service        = Object.assign(new G3WObject,
+      const service        = Object.assign(new Emitter,
         {
           state: {
             inputs,

@@ -44,8 +44,9 @@ import { RotateFeatureStep }                            from './actions/rotate-f
 import { ModifyGeometryVertexStep }                     from './actions/move-vertex';
 import { OpenTableStep }                                from './actions/open-table';
 
+const { Emitter }                                        = g3w;
 const { GEOMETRY_TYPES }                                 = g3wsdk.constant;
-const { ApplicationState, G3WObject }                    = g3wsdk.core;
+const { ApplicationState }                               = g3wsdk.core;
 const { ProjectsRegistry }                               = g3wsdk.core.project;
 const { DataRouterService }                              = g3wsdk.core.data;
 const { Geometry, dissolve }                             = g3wsdk.core.geoutils;
@@ -76,7 +77,7 @@ Object
 /**
  * ORIGINAL SOURCE: g3w-client-plugin/toolboxes/toolsfactory.js@v3.7.1
  */
-export class ToolBox extends G3WObject {
+export class ToolBox extends Emitter {
 
   /**
    * ORIGINAL SOURCE: g3w-client/src/store/sessions.js@v3.9.1
@@ -173,7 +174,7 @@ export class ToolBox extends G3WObject {
      * ORIGINAL SOURCE: g3w-client/src/map/layers/featuresstore.js@v4.0.0
      * ORIGINAL SOURCE: g3w-client/src/app/core/layers/features/olfeaturesstore.js@v3.10.2
      */
-    this._featuresstore = Object.assign(new G3WObject, {
+    this._featuresstore = Object.assign(new Emitter, {
       setters: {
         addFeatures: (feats = []) => feats.forEach(f => this._featuresstore.addFeature(f)),
         removeFeature: f => this._collection.remove(f),
@@ -194,7 +195,7 @@ export class ToolBox extends G3WObject {
      * ORIGINAL SOURCE: g3w-client/src/map/layers/featuresstore.js@v4.0.0
      * ORIGINAL SOURCE: g3w-client/src/app/core/layers/features/olfeaturesstore.js@v3.10.2
      */
-    this._editor = layer._editor = Object.assign(new G3WObject, {
+    this._editor = layer._editor = Object.assign(new Emitter, {
       _layer:     _layer,
       setters: {
         save:                       () => _layer.save(),
@@ -279,7 +280,7 @@ export class ToolBox extends G3WObject {
     /**
      * ORIGINAL SOURCE: g3w-client/src/core/editing/session.js@v3.9.1
      */
-    this._session = Object.assign(new G3WObject({ setters: {
+    this._session = Object.assign(new Emitter({ setters: {
       start:                        this.__startSession.bind(this),
       stop:                         this.__stopSession.bind(this),
       getFeatures:                  this.__getFeatures.bind(this),
@@ -1590,7 +1591,7 @@ export class ToolBox extends G3WObject {
             steps:            [ new OpenTableStep() ],
           }),
         },
-      ].filter(Boolean).map(tool => Object.assign(new G3WObject, tool)),
+      ].filter(Boolean).map(tool => Object.assign(new Emitter, tool)),
     };
 
     /**

@@ -8,12 +8,11 @@
 
 import { getEditingLayer } from './utils/getEditingLayer';
 
-const { G3WObject }           = g3wsdk.core;
+const { Emitter }             = g3w;
 const { isPointGeometryType } = g3wsdk.core.geoutils.Geometry;
-const { Layer }               = g3wsdk.core.layer;
 const { GUI }                 = g3wsdk.gui;
 
-export class Step extends G3WObject {
+export class Step extends Emitter {
 
   /**
    * @param {Object} options

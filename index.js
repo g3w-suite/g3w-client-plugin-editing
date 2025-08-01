@@ -17,10 +17,11 @@ import { AddFeatureStep }                      from './actions/add-feature';
 import { ToolBox }                             from './g3w-toolbox';
 import { IframeEditor }                        from './g3w-iframe';
 
+const { Plugin }                               = g3w;
 const { G3W_FID }                              = g3wsdk.constant;
 const { ApplicationState }                     = g3wsdk.core;
 const _                                        = g3wsdk.core.i18n.t;
-const { Plugin, PluginService }                = g3wsdk.core.plugin;
+const { PluginService }                        = g3wsdk.core.plugin;
 const { XHR, noop }                            = g3wsdk.core.utils;
 const { GUI }                                  = g3wsdk.gui;
 const { Panel }                                = g3wsdk.gui.vue;
