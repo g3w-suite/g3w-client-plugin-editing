@@ -13,7 +13,6 @@ import { Step }                                         from '../g3w-step';
 import { Feature }                                      from '../g3w-feature';
 
 const { Geometry }                                      = g3wsdk.core.geoutils;
-const { Layer }                                         = g3wsdk.core.layer;
 const { GUI }                                           = g3wsdk.gui;
 const { AreaInteraction, LengthInteraction }            = g3wsdk.ol.interactions.measure;
 

@@ -288,7 +288,6 @@
   const { DataRouterService }           = g3wsdk.core.data;
   const { Geometry }                    = g3wsdk.core.geoutils;
   const _                               = g3wsdk.core.i18n.t;
-  const { Layer }                       = g3wsdk.core.layer;
   const { toRawType }                   = g3wsdk.core.utils;
   const { GUI }                         = g3wsdk.gui;
   const { FormService }                 = g3wsdk.gui.vue.services;
