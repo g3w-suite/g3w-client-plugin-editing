@@ -44,7 +44,7 @@ import { RotateFeatureStep }                            from './actions/rotate-f
 import { ModifyGeometryVertexStep }                     from './actions/move-vertex';
 import { OpenTableStep }                                from './actions/open-table';
 
-const { Emitter }                                        = g3w;
+const { Emitter, Layer }                                 = g3w;
 const { GEOMETRY_TYPES }                                 = g3wsdk.constant;
 const { ApplicationState }                               = g3wsdk.core;
 const { ProjectsRegistry }                               = g3wsdk.core.project;
@@ -53,7 +53,6 @@ const { Geometry, dissolve }                             = g3wsdk.core.geoutils;
 const { splitFeature }                                   = g3wsdk.core.geoutils;
 const { removeZValueToOLFeatureGeometry }                = g3wsdk.core.geoutils.Geometry;
 const _                                                  = g3wsdk.core.i18n.t;
-const { Layer }                                          = g3wsdk.core.layer;
 const { XHR, debounce, toRawType, cloneDeep }            = g3wsdk.core.utils;
 const { GUI }                                            = g3wsdk.gui;
 const { getScaleFromResolution, getResolutionFromScale } = g3wsdk.ol.utils;
@@ -159,7 +158,7 @@ export class ToolBox extends Emitter {
 
     // set editing layer
     let layer = 'image' === _layer.getType()
-      ? new g3wsdk.core.layer.VectorLayer(_layer.state)
+      ? new Layer(_layer.state, { TYPE: 'vector' })
       : _layer;
 
     /**
