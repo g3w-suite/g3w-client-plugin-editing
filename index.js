@@ -187,7 +187,20 @@ new (class extends Plugin {
     (await Promise.allSettled(
       getCatalogLayers({ EDITABLE: true }, { TOC_ORDER : true })
         .filter(layer => layer.isEditable())
-        .map(async layer => ({ layer, config: await XHR.get({ url: layer.getUrl('config') }) }))
+        .map(async layer => {
+          const res = ({
+            layer,
+            config: await XHR.get({
+              url: layer.getUrl('config'),
+              params: layer.config.editing.layer_style ? { style: layer.config.editing.layer_style } : undefined
+            })
+          });
+          //@since 4.0.1 set fields based on layer editing style
+          if (layer.config.editing.layer_style) {
+            layer.config.editing.fields = res?.vector?.fields || [];
+          }
+          return res;
+        })
     )).forEach(({ status, value, reason }) => {
         if ('fulfilled' === status) {
         const toolBox                                  = new ToolBox(value.layer, value.config);

@@ -89,6 +89,9 @@ export class ToolBox extends Emitter {
 
   _start = false;
 
+  /** @since 4.0.1 */
+  _current_style;
+
   /** @type { boolean } Whether editor is active or not */
   _started = false;
 
@@ -1786,6 +1789,17 @@ export class ToolBox extends Emitter {
    */
   start(options = {}) {
     return new Promise(async (resolve, reject) => {
+      //get current style of layer
+      this._current_style = this.state.layer.getCurrentStyle().name;
+
+      //@since 4.0.1 change layer style
+      if (this.state.layer.config.editing.layer_style && this._current_style !== this.state.layer.config.editing.layer_style) {
+        //In case of legend in separate tab, need to set layers as active tab to avoid that user
+        //that has open tab with layer has different legend in case of change style for editing
+        GUI.getComponent('catalog').getInternalComponent().activeTab = 'layers';
+        await getCatalogLayerById(this.state.id).changeCurrentStyle(this.state.layer.config.editing.layer_style);
+      }
+
       const plugin = GUI.getPlugin('editing');
       const id     = this.getId();
 
@@ -1943,7 +1957,13 @@ export class ToolBox extends Emitter {
    * @returns {*}
    */
   async stop() {
-    if (this.disableCanEditEvent) { this.disableCanEditEvent() }
+    if (this.state.layer.config.editing.layer_style && this._current_style !== this.state.layer.config.editing.layer_style) {
+      await getCatalogLayerById(this.state.id).changeCurrentStyle(this._current_style);
+    }
+
+    if (this.disableCanEditEvent) {
+      this.disableCanEditEvent();
+    }
 
     this.state._unregisterStartSettersEventsKey.forEach(fnc => fnc());
     this.state._unregisterStartSettersEventsKey = [];
