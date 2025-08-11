@@ -3640,7 +3640,7 @@ export class ToolBox extends Emitter {
 
     // vector layer
     if ('vector' === this._editor.getLayer().getType()) {
-      this._editor.getLayer().getMapLayer().resetSource(this.getFeaturesCollection());
+      this._editor.getLayer().getMapLayer().getOLLayer().setSource(new ol.source.Vector({ features: this._collection._store }));
     }
   }
 
