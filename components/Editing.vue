@@ -375,7 +375,10 @@
               reject(e);
             } finally {
               if (unlock) {
-                layerIds.forEach(layerId => GUI.getPlugin('editing').getLayerById(layerId).unlock());
+                layerIds.forEach(layerId => {
+                  const layer = GUI.getPlugin('editing').getLayerById(layerId);
+                  XHR.post({ url: layer.getUrl('unlock') });
+                });
               }
               // always reset items to null
               try      { window.localStorage.setItem('EDITING_CHANGES', "{}"); }
