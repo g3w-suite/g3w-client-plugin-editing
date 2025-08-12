@@ -266,7 +266,6 @@
   import { getEditingLayerById }                          from '../utils/getEditingLayerById';
   import { convertToGeometry }                            from '../utils/convertToGeometry';
   import { addTableFeature }                              from '../utils/addTableFeature';
-  import { getRelationId }                                from '../utils/getRelationId';
   import { getFeatureTableFieldValue }                    from '../utils/getFeatureTableFieldValue';
   import { chooseFeatureFromFeatures }                    from '../utils/chooseFeatureFromFeatures';
   import { isSameBaseGeometryType }                       from '../utils/isSameBaseGeometryType';
