@@ -98,6 +98,8 @@ export class ToolBox extends G3WObject {
          
     this._start       = false;
 
+    this._current_style; //@since 4.0.1
+
     /** constraint loading features to a filter set */
     this.constraints  = { filter: null, show: null, tools: [] };
 
@@ -1630,6 +1632,16 @@ export class ToolBox extends G3WObject {
   //added option object to start method to have a control by other plugin how
   start(options = {}) {
     return $promisify(new Promise(async (resolve, reject) => {
+      //get current style of layer
+      this._current_style = this.state.layer.getCurrentStyle().name;
+      //@since 4.0.1 change layer style
+      if (this.state.layer.config.editing.layer_style && this._current_style !== this.state.layer.config.editing.layer_style) {
+        //In case of legend in separate tab, need to set layers as active tab to avoid that user
+        //that has open tab with layer has different legend in case of change style for editing
+        GUI.getComponent('catalog').getInternalComponent().activeTab = 'layers';
+        await CatalogLayersStoresRegistry.getLayerById(this.state.id).changeCurrentStyle(this.state.layer.config.editing.layer_style);
+      }
+
       const id                    = this.getId();
       const applicationConstraint = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.constraints.toolboxes[id];
       let {
@@ -1783,6 +1795,10 @@ export class ToolBox extends G3WObject {
    */
   stop() {
     return $promisify(async () => {
+      if (this.state.layer.config.editing.layer_style && this._current_style !== this.state.layer.config.editing.layer_style) {
+        await CatalogLayersStoresRegistry.getLayerById(this.state.id).changeCurrentStyle(this._current_style);
+      }
+
       if (this.disableCanEditEvent) { this.disableCanEditEvent() }
 
       this.state._unregisterStartSettersEventsKey.forEach(fnc => fnc());

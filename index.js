@@ -195,15 +195,16 @@ new (class extends Plugin {
     this.state._toolboxes     = [];
     this.state.toolboxes      = [];
 
+
     // loop over editable layers
-    (await Promise.allSettled(
+    for (const { status, value:layer } of (await Promise.allSettled(
       CatalogLayersStoresRegistry
         .getLayers({ EDITABLE: true }, { TOC_ORDER : true })
         .map(l => l.getLayerForEditing({
           vectorurl:    this.config.vectorurl,
           project_type: this.config.project_type
         }))
-    )).forEach(({ status, value:layer }) => {
+    ))) {
 
       // skip on http error
       if ('fulfilled' !== status) {
@@ -216,6 +217,15 @@ new (class extends Plugin {
       //set default empty object
       this.state.uniqueFieldsValues[layer.getId()] = {};
 
+      //@since 4.0.1 set fields based on layer editing style
+      if (layer.config.editing.layer_style) {
+        try {
+          const response = await (XHR.get({url:    layer.getUrl('config'),params: { style: layer.config.editing.layer_style }}));
+          layer.config.editing.fields = response?.vector?.fields || [];
+        } catch(e) {
+          console.warn(e);
+        }
+      }
       /**
        * attach layer widgets event: get data from api when a field of a layer
        * is related to a wgis form widget (ex. relation reference, value map, etc..)
@@ -282,8 +292,7 @@ new (class extends Plugin {
         }));
 
         this.state.sessions[layer.getId()] = null;
-
-      });
+      };
 
 
     let i = 0;
