@@ -188,10 +188,10 @@ new (class extends Plugin {
       getCatalogLayers({ EDITABLE: true }, { TOC_ORDER : true })
         .filter(layer => layer.isEditable())
         .map(async layer => {
-          const config = await XHR.get({ url: layer.getUrl('config') });
+          let config = await XHR.get({ url: layer.getUrl('config') });
           //@since 4.0.1 set fields based on layer editing style
           if (config?.vector?.editing?.layer_style) {
-            Object.assign(config, await XHR.get({ url: layer.getUrl('config'), params: { style: config?.vector?.editing?.layer_style } }));
+            config = await XHR.get({ url: layer.getUrl('config'), params: { style: config.vector.editing.layer_style } });
           }
           return ({ layer, config });
         })

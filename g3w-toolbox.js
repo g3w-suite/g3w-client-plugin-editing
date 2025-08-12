@@ -160,9 +160,15 @@ export class ToolBox extends Emitter {
     _layer.state.editing.ready = true;
 
     // set editing layer
-    let layer = 'image' === _layer.getType()
-      ? new Layer(_layer.state, { TYPE: 'vector' })
-      : _layer;
+    let layer = _layer;
+
+    if ('table' === _layer.getType()) {
+      layer = new Layer(_layer.state, { TYPE: 'table' });
+    }
+
+    if ('image' === _layer.getType()) {
+      layer = new Layer(_layer.state, { TYPE: 'vector' });
+    }
 
     /**
      * ORIGINAL SOURCE: g3w-client-plugin-editing/g3wsdk/editing/editor.j@v4.0.0
@@ -221,11 +227,6 @@ export class ToolBox extends Emitter {
       stop:                this.__stopEditor.bind(this),
       clear:               this.__clearEditor.bind(this),
     });
-
-    // clone editable layer
-    if ('table' === layer.getType()) {
-      layer = layer.clone(); 
-    }
 
     this.on('start-editing', this.#onEditingStart.bind(this));
 
@@ -756,7 +757,7 @@ export class ToolBox extends Emitter {
                     features = [];
                     //loop over father features to build a relation chiled feature
                     for (const f of inputs.features) {
-                      const feature = (await addTableFeature({ features: [], layer: rLayer }, { session: Workflow.Stack.current.session })).inputs.features[0];
+                      const feature = (await addTableFeature({ features: [], layer: rLayer }, { session: Workflow.Stack.current.session })).features[0];
                       fields.relationField.forEach((field, _i) => feature.set(fields.ownField[_i], f.get(field)));
                       features.push(feature);
                     }  
