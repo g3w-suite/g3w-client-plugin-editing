@@ -87,22 +87,22 @@ export class ToolBox extends Emitter {
    */
   static _sessions = {};
 
-  _start = false;
+  #start = false;
 
   /** @since 4.0.1 */
-  _current_style;
+  #current_style;
 
   /** @type { boolean } Whether editor is active or not */
-  _started = false;
+  #started = false;
 
   /** @type { Promise | null } store Promise resolve when start toolbox but non editing is enabled (scale constraint, etc..) */
-  _startAsync = null;
+  #startAsync = null;
 
   /** constraint loading features to a filter set */
   constraints = { filter: null, show: null, tools: [] };
 
   /** reactive state of history */
-  _constrains  = { commit: false, undo: false, redo: false };
+  #constrains  = { commit: false, undo: false, redo: false };
 
   /**
    * Array of states of a layer in editing
@@ -113,22 +113,22 @@ export class ToolBox extends Emitter {
    *   ]   *
    *  _current: unique key // usefult to undo redo
    */
-  _states = [];
+  #states = [];
 
   /** event features */
-  _getFeaturesEvent = { event: null, fnc: null };
+  #getFeaturesEvent = { event: null, fnc: null };
 
   /** @since 3.8.0 store ol keys event start when we are in editing */
-  _olStartKeysEvent = [];
+  #events = [];
 
   /** store all unwatches */
-  _unwatches = [];
+  #unwatches = [];
 
   /** Filter to getFeaturerequest */
-  _filter = { bbox: null };
+  #filter = { bbox: null };
 
   /** @type { Boolean } true, mean all features of layer are get (e.g. Table layer) */
-  _allfeatures = false;
+  #allfeatures = false;
 
   /** Original features (from server) */
   _features = [];
@@ -215,7 +215,7 @@ export class ToolBox extends Emitter {
         featuresLockedByOtherUser: f => {},
       },
       addFeature:          f => this._featuresstore.addFeature(f),
-      isStarted:           () => this._started,
+      isStarted:           () => this.#started,
       getLockIds:          () => GUI.getPlugin('editing').state.lock_ids[_layer.getId()],
       getEditingSource:    this.getEditingSource.bind(this),
       getSource:           () => _layer.getSource(),
@@ -346,7 +346,7 @@ export class ToolBox extends Emitter {
           /** temporary change not save on history */
           changes:     [],
         },
-        history      : new Proxy({}, { get: (_, prop) => this._constrains[prop] }),
+        history      : new Proxy({}, { get: (_, prop) => this.#constrains[prop] }),
         on           : false,
         dependencies,
         relations    : Object.values(layer.isFather() && dependencies.length ? layer.getRelations().getRelations() : {}),
@@ -1750,7 +1750,7 @@ export class ToolBox extends Emitter {
     this.state.editing.canEdit = getScaleFromResolution(map.getView().getResolution()) <= this.state._constraints.scale;
 
     //check if start method is called
-    const in_editing = (this._start || this._startAsync);
+    const in_editing = (this.#start || this.#startAsync);
 
     const showZoomCursor = !stop && this.state.selected && !this.state.editing.canEdit;
 
@@ -1768,8 +1768,8 @@ export class ToolBox extends Emitter {
       return;
     }
 
-    if (this.state.editing.canEdit && this._startAsync) {
-      this._startAsync();
+    if (this.state.editing.canEdit && this.#startAsync) {
+      this.#startAsync();
     }
 
     // async show message because another toolbox can be unselected before
@@ -1791,10 +1791,10 @@ export class ToolBox extends Emitter {
   start(options = {}) {
     return new Promise(async (resolve, reject) => {
       //get current style of layer
-      this._current_style = this.state.layer.getCurrentStyle().name;
+      this.#current_style = this.state.layer.getCurrentStyle().name;
 
       //@since 4.0.1 change layer style
-      if (this.state.layer.config.editing.layer_style && this._current_style !== this.state.layer.config.editing.layer_style) {
+      if (this.state.layer.config.editing.layer_style && this.#current_style !== this.state.layer.config.editing.layer_style) {
         //In case of legend in separate tab, need to set layers as active tab to avoid that user
         //that has open tab with layer has different legend in case of change style for editing
         GUI.getComponent('catalog').getInternalComponent().activeTab = 'layers';
@@ -1846,14 +1846,14 @@ export class ToolBox extends Emitter {
 
         await new Promise(resolve => {
           //set as resolve handler to resolve waiting get features from server
-          this._startAsync = resolve;
+          this.#startAsync = resolve;
           //call scale constraint handler
           this._handleScaleConstraint();
 
           const map = GUI.getService('map');
 
           // click to fit zoom scale constraint
-          this._olStartKeysEvent.push(
+          this.#events.push(
             map.getMap().on('click', e => {
               if (this.state.selected && !this.state.editing.canEdit) {
                 map.goToRes(e.coordinate, getResolutionFromScale(this.state._constraints.scale, GUI.getService('map').getMapUnits()));
@@ -1868,7 +1868,7 @@ export class ToolBox extends Emitter {
 
       }
 
-      this._startAsync = null;
+      this.#startAsync = null;
 
       this.setFeaturesOptions({ filter: options.filter });
 
@@ -1904,7 +1904,7 @@ export class ToolBox extends Emitter {
           .getService('map')
           .onceafter('setHidden', () => {
             setTimeout(async () => {
-              this._start = true;
+              this.#start = true;
               this.startLoading();
               this.setFeaturesOptions({ filter: options.filter });
               try {
@@ -1919,15 +1919,15 @@ export class ToolBox extends Emitter {
 
       /** @TODO merge the following condtions? */
       if (!is_started && !GIVE_ME_A_NAME) {
-        this._start = true;
+        this.#start = true;
         this.startLoading();
         await handlerAfterSessionGetFeatures(this._session.start(this.state._getFeaturesOption))
       }
 
-      if (is_started && !this._start) {
+      if (is_started && !this.#start) {
         this.startLoading();
         await handlerAfterSessionGetFeatures(this._session.getFeatures(this.state._getFeaturesOption))
-        this._start = true;
+        this.#start = true;
       }
 
       if (is_started) { this.setEditing(true); }
@@ -1958,8 +1958,8 @@ export class ToolBox extends Emitter {
    * @returns {*}
    */
   async stop() {
-    if (this.state.layer.config.editing.layer_style && this._current_style !== this.state.layer.config.editing.layer_style) {
-      await getCatalogLayerById(this.state.id).changeCurrentStyle(this._current_style);
+    if (this.state.layer.config.editing.layer_style && this.#current_style !== this.state.layer.config.editing.layer_style) {
+      await getCatalogLayerById(this.state.id).changeCurrentStyle(this.#current_style);
     }
 
     if (this.disableCanEditEvent) {
@@ -1969,13 +1969,13 @@ export class ToolBox extends Emitter {
     this.state._unregisterStartSettersEventsKey.forEach(fnc => fnc());
     this.state._unregisterStartSettersEventsKey = [];
 
-    this._olStartKeysEvent.forEach(k => ol.Observable.unByKey(k));
-    this._olStartKeysEvent.splice(0);
+    this.#events.forEach(k => ol.Observable.unByKey(k));
+    this.#events.splice(0);
 
-    this._unwatches.forEach(uw => uw());
-    this._unwatches.splice(0);
+    this.#unwatches.forEach(uw => uw());
+    this.#unwatches.splice(0);
 
-    this._startAsync = null;
+    this.#startAsync = null;
 
     if (this.state._constraints.scale) {
       this._handleScaleConstraint(true);
@@ -2011,7 +2011,7 @@ export class ToolBox extends Emitter {
     try {
       await this._session.stop();
       //set start to false
-      this._start           = false
+      this.#start           = false
       this.stopLoading();
       this.setEditing(false);
       this.state._getFeaturesOption = {};
@@ -2251,8 +2251,8 @@ export class ToolBox extends Emitter {
     }
 
     //IN CASE START EDITING AND CAN EDIT NEED TO DISPATCH EVENT MOVE END MAP
-    if (this.state.selected && this._start && (this.state._constraints.scale ? this.state.canEdit : true)) {
-      map.dispatchEvent({ type: this._getFeaturesEvent.event, target: map });
+    if (this.state.selected && this.#start && (this.state._constraints.scale ? this.state.canEdit : true)) {
+      map.dispatchEvent({ type: this.#getFeaturesEvent.event, target: map });
     }
   }
 
@@ -2545,13 +2545,13 @@ export class ToolBox extends Emitter {
       // in the history from the current "state" so if it
       // can create a new history
       if (null === this.state.editing.session.current) {
-        this._states = [{ id: uniqueId, items }];
+        this.#states = [{ id: uniqueId, items }];
       } else {
         //last state
-        if (this._states.length > 0 && this.state.editing.session.current < this._states.at(-1).id) {
-          this._states = this._states.filter(s => s.id <= this.state.editing.session.current);
+        if (this.#states.length > 0 && this.state.editing.session.current < this.#states.at(-1).id) {
+          this.#states = this.#states.filter(s => s.id <= this.state.editing.session.current);
         }
-        this._states.push({ id: uniqueId, items });
+        this.#states.push({ id: uniqueId, items });
       }
 
       this.state.editing.session.current = uniqueId;
@@ -2574,12 +2574,12 @@ export class ToolBox extends Emitter {
    */
   __undo() {
     let items;
-    this._states.find((state, idx) => {
+    this.#states.find((state, idx) => {
       if (state.id === this.state.editing.session.current) {
         //get item of current state
-        items = _checkSessionItems(this.state.id, this._states[idx].items, 0);
+        items = _checkSessionItems(this.state.id, this.#states[idx].items, 0);
         //set current the previous one
-        this.state.editing.session.current = 0 === idx ? null : this._states[idx - 1].id;
+        this.state.editing.session.current = 0 === idx ? null : this.#states[idx - 1].id;
         return true;
       }
     })
@@ -2601,14 +2601,14 @@ export class ToolBox extends Emitter {
     let items;
     // if not set get first state
     if (!this.state.editing.session.current) {
-      items = this._states[0].items;
+      items = this.#states[0].items;
       // set current to first
-      this.state.editing.session.current = this._states[0].id;
+      this.state.editing.session.current = this.#states[0].id;
     } else {
-      this._states.find((state, idx) => {
+      this.#states.find((state, idx) => {
         if (state.id === this.state.editing.session.current) {
-          this.state.editing.session.current = this._states[idx + 1].id;
-          items = this._states[idx+1].items;
+          this.state.editing.session.current = this.#states[idx + 1].id;
+          items = this.#states[idx+1].items;
           return true;
         }
       })
@@ -2631,7 +2631,7 @@ export class ToolBox extends Emitter {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   __getState(id) {
-    return this._states.find(s => id === s.id);
+    return this.#states.find(s => id === s.id);
   }
 
   /**
@@ -2648,8 +2648,8 @@ export class ToolBox extends Emitter {
       const commitItem = checkCommitItems[layerId];
       canCommit        = canCommit || commitItem.length > 0;
     }
-    this._constrains.commit = canCommit;
-    return this._constrains.commit;
+    this.#constrains.commit = canCommit;
+    return this.#constrains.commit;
   }
 
   /**
@@ -2661,17 +2661,17 @@ export class ToolBox extends Emitter {
    */
   __canUndo() {
     let currentStateIndex = null;
-    if (this.state.editing.session.current && this._states.length) {
-      this._states.forEach((state, idx) => {
+    if (this.state.editing.session.current && this.#states.length) {
+      this.#states.forEach((state, idx) => {
         if (this.state.editing.session.current === state.id) {
           currentStateIndex = idx;
           return false
         }
       });
     };
-    const steps = (this._states.length - 1) - currentStateIndex;
-    this._constrains.undo = (null !== this.state.editing.session.current) && (steps < 10); // 10 = maximum "buffer history" lenght for undo/redo
-    return this._constrains.undo;
+    const steps = (this.#states.length - 1) - currentStateIndex;
+    this.#constrains.undo = (null !== this.state.editing.session.current) && (steps < 10); // 10 = maximum "buffer history" lenght for undo/redo
+    return this.#constrains.undo;
   }
 
   /**
@@ -2682,10 +2682,10 @@ export class ToolBox extends Emitter {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   __canRedo() {
-    this._constrains.redo = (
-      (this._states.at(-1) && this._states.at(-1).id != this.state.editing.session.current))
-      || (null === this.state.editing.session.current && this._states.length > 0);
-    return this._constrains.redo;
+    this.#constrains.redo = (
+      (this.#states.at(-1) && this.#states.at(-1).id != this.state.editing.session.current))
+      || (null === this.state.editing.session.current && this.#states.length > 0);
+    return this.#constrains.redo;
   }
 
   /**
@@ -2697,7 +2697,7 @@ export class ToolBox extends Emitter {
    */
   __commit() {
     const commitItems = {};
-    const statesToCommit = this._states.filter(s => s.id <= this.state.editing.session.current);
+    const statesToCommit = this.#states.filter(s => s.id <= this.state.editing.session.current);
     statesToCommit
       .forEach(state => {
         state.items.forEach(item => {
@@ -2746,7 +2746,7 @@ export class ToolBox extends Emitter {
    * @since g3w-client-plugin-editing@v4.1.0
    */
   getLastHistoryState() {
-    return this._states.at(-1) || null;
+    return this.#states.at(-1) || null;
   }
 
   /**
@@ -3084,7 +3084,7 @@ export class ToolBox extends Emitter {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   __clearSession() {
-    this._allfeatures                      = false;
+    this.#allfeatures                      = false;
     this.state.editing.session.started     = false;
     this.state.editing.session.getfeatures = false;
     this.clearHistory();
@@ -3099,21 +3099,21 @@ export class ToolBox extends Emitter {
    */
   clearHistory(ids) {
     if (ids) {
-      this._states.forEach((state, idx) => {
+      this.#states.forEach((state, idx) => {
         if (ids.includes(state.id)) {
           if (this.state.editing.session.current && state.id === this.state.editing.session.current) {
             this.__undo();
           }
-          this._states.splice(idx, 1);
+          this.#states.splice(idx, 1);
         }
       });
     } else {
       // clear all
-      this._states                       = [];
+      this.#states                       = [];
       this.state.editing.session.current = null;
-      this._constrains.commit            = false;
-      this._constrains.redo              = false;
-      this._constrains.undo              = false;
+      this.#constrains.commit            = false;
+      this.#constrains.redo              = false;
+      this.#constrains.undo              = false;
     }
   }
 
@@ -3147,13 +3147,13 @@ export class ToolBox extends Emitter {
             this.state.loading = false;
           }
         };
-        this._getFeaturesEvent.event = 'moveend';
-        this._getFeaturesEvent.fnc   = debounce(fnc, 300);
-        this._olStartKeysEvent.push(GUI.getService('map').getMap().on('moveend', this._getFeaturesEvent.fnc));
+        this.#getFeaturesEvent.event = 'moveend';
+        this.#getFeaturesEvent.fnc   = debounce(fnc, 300);
+        this.#events.push(GUI.getService('map').getMap().on('moveend', this.#getFeaturesEvent.fnc));
         if (GUI.getContentLength()) {
           GUI.once('closecontent', () => {
             const map = GUI.getService('map').getMap();
-            setTimeout(() => map.dispatchEvent({ type: this._getFeaturesEvent.event, target: map }))
+            setTimeout(() => map.dispatchEvent({ type: this.#getFeaturesEvent.event, target: map }))
           })
         }
       }
@@ -3183,8 +3183,8 @@ export class ToolBox extends Emitter {
    * Get features from server (by editor)
    */
   async __getFeatures(options={}) {
-    if (!this._allfeatures) {
-      this._allfeatures = !options.filter;
+    if (!this.#allfeatures) {
+      this.#allfeatures = !options.filter;
       const features    = await this._editor.getFeatures(options);
       this.state.editing.session.getfeatures = true;
       return features;
@@ -3208,7 +3208,7 @@ export class ToolBox extends Emitter {
     const layerId = this.getId();
 
     // skip is not onlien or all features of layers are already got
-    if (!ApplicationState.online || this._allfeatures) {
+    if (!ApplicationState.online || this.#allfeatures) {
       return Promise.resolve();
     }
 
@@ -3219,17 +3219,17 @@ export class ToolBox extends Emitter {
     const is_vector = bbox && 'vector' === this._editor.getLayer().getType();
 
     // first request --> need to perform request
-    if (is_vector && null === this._filter.bbox) {
-      this._filter.bbox = bbox;                                                      // store bbox
+    if (is_vector && null === this.#filter.bbox) {
+      this.#filter.bbox = bbox;                                                      // store bbox
       doRequest         = true;
     }
 
     // subsequent requests --> check if bbox is contained into an already requested bbox
     else if (is_vector) {
       //Boolean - Check if features are already got inside bbox
-      const is_cached = ol.extent.containsExtent(this._filter.bbox, bbox);
+      const is_cached = ol.extent.containsExtent(this.#filter.bbox, bbox);
       if (!is_cached) {
-        this._filter.bbox = ol.extent.extend(this._filter.bbox, bbox);
+        this.#filter.bbox = ol.extent.extend(this.#filter.bbox, bbox);
       }
       doRequest = !is_cached;
     }
@@ -3360,7 +3360,7 @@ export class ToolBox extends Emitter {
     this._featuresstore.addFeatures((features || []).map(f => f.clone()));
 
     //set all features to true if no filter is set (e.g., Table layer)
-    this._allfeatures = !options.filter;
+    this.#allfeatures = !options.filter;
 
     return features;
     } catch(e) {
@@ -3627,7 +3627,7 @@ export class ToolBox extends Emitter {
    */
   async __startEditor(options = {}) {
     const features = await this._editor.getFeatures(options); // load layer features based on filter type
-    this._started  = true; // if all ok set to started
+    this.#started  = true; // if all ok set to started
     return features;       // features are already inside featuresstore
   }
 
@@ -3650,9 +3650,9 @@ export class ToolBox extends Emitter {
    * @since g3w-client-plugin-editing@v4.1.0 
    */
   __clearEditor() {
-    this._started     = false;
-    this._filter.bbox = null;
-    this._allfeatures = false;
+    this.#started     = false;
+    this.#filter.bbox = null;
+    this.#allfeatures = false;
 
     this._features                                  = []; // clear features collection
     GUI.getPlugin('editing').state.lock_ids[this.getId()]   = [];
@@ -3671,7 +3671,7 @@ export class ToolBox extends Emitter {
    * @since g3w-client-plugin-editing@v4.1.0
    */
   hasPendingCommits() {
-    return this._constrains.commit;
+    return this.#constrains.commit;
   }
 
   /**

@@ -208,7 +208,6 @@
   import { getCatalogLayerById } from '../utils/getCatalogLayerById';
 
   const { GUI }                    = g3wsdk.gui;
-  const { Layer }                  = g3wsdk.core.layer;
   const { getResolutionFromScale } = g3wsdk.ol.utils;
   const _                          = g3wsdk.core.i18n.t;
   
