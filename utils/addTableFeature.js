@@ -33,5 +33,5 @@ export async function addTableFeature(inputs, context) {
 
   context.get_default_value = true;
 
-  return { inputs, context };
+  return inputs;
 }
