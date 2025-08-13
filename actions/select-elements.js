@@ -150,7 +150,7 @@ export class SelectElementsStep extends Step {
         const source           = getEditingLayer(layer).getSource();
         const { session }      = this.getContext();
         interactions.external  = new PickFeaturesInteraction({
-          layers: GUI.getService('map').getExternalLayers()
+          layers: GUI.getExternalLayers()
             // filter external layer only vector - Exclude the
             // same base geometry
             .filter(l => {

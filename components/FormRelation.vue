@@ -395,7 +395,7 @@
       copyFeatureFromOtherLayer() {
         const copyLayer = this.copyFeatureLayers.find(l => this.copylayerid === l.id);
         let external    = copyLayer.external;
-        let layer       = external ? GUI.getService('map').getLayerById(this.copylayerid) : getCatalogLayerById(this.copylayerid);
+        let layer       = external ? GUI.getLayerById(this.copylayerid) : getCatalogLayerById(this.copylayerid);
         const is_vector =  (external || layer.isGeoLayer())
         this.runAddRelationWorkflow({
           workflow: is_vector
@@ -842,7 +842,7 @@
           // zoom to relation vector feature
           if (['movevertex', 'movefeature'].includes(toolId) && this.currentRelationFeatureId !== relationfeature.getId()) {
             this.currentRelationFeatureId = relationfeature.getId();
-            GUI.getService('map').zoomToFeatures([ relationfeature ]);
+            GUI.zoomToFeatures([ relationfeature ]);
           }
 
           // MOVE vertex or MOVE feature tool
@@ -1354,7 +1354,7 @@
             })),
 
           // external layers with same geometry of relation layer
-          ...GUI.getService('map').getExternalLayers('vector')
+          ...GUI.getExternalLayers('vector')
             .filter(l => {
               const features = l.getSource().getFeatures() || [];
               // skip when ..
@@ -1374,7 +1374,7 @@
         //Listen add external Layer
         this.addExternalLayerKey = GUI.getService('catalog').onafter('addExternalLayer', ({ layer, type }) => {
           if ('vector' === type) {
-            const externalLayer = GUI.getService('map').getExternalLayers().find(l => layer.id === l.get('id'));
+            const externalLayer = GUI.getExternalLayers().find(l => layer.id === l.get('id'));
             if (externalLayer) {
               const features = externalLayer.getSource().getFeatures() || [];
               if (!features[0] || !features[0].getGeometry()) { return }
@@ -1651,7 +1651,7 @@
       //it used to sto an extent of the map at the moment of possibible editing (and zoom)
       // to relation feature
       if (this.isVectorRelation) {
-        this.mapExtent = GUI.getService('map').getMapBBOX();
+        this.mapExtent = GUI.getMapBBOX();
       }
 
       this.show_vector_tools = false;
@@ -1688,7 +1688,7 @@
       // In the case of vector relation, restore the beginning extent of the map;
       // in the case we zoomed to relation feature
       if (this.isVectorRelation && (null !== this.currentRelationFeatureId)) {
-        GUI.getService('map').zoomToExtent(this.mapExtent);
+        GUI.zoomToExtent(this.mapExtent);
         this.mapExtent = null;
       }
       //remove event

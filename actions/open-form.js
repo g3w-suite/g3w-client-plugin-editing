@@ -115,7 +115,7 @@ export class OpenFormStep extends Step {
 
       GUI.setLoadingContent(false);
 
-      GUI.getService('map').disableClickMapControls(true);
+      GUI.disableClickMapControls(true);
 
       if (!this._multi && Array.isArray(inputs.features[inputs.features.length - 1])) {
         resolve();
@@ -497,7 +497,7 @@ export class OpenFormStep extends Step {
     // and is resolved without setting form service
     // Ex. copy multiple features from another layer
     if (is_parent_table) {
-      GUI.getService('map').disableClickMapControls(false);
+      GUI.disableClickMapControls(false);
       GUI.setModal(false);
     }
 

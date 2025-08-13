@@ -973,7 +973,7 @@ export class ToolBox extends Emitter {
                                     const features = await (new Promise(async resolve => {
                                       this.addInteraction(
                                         layer.external
-                                          ? new PickFeaturesInteraction({ layer: GUI.getService('map').getLayerById(layer.id) })
+                                          ? new PickFeaturesInteraction({ layer: GUI.getLayerById(layer.id) })
                                           : new g3wsdk.ol.interactions.PickCoordinatesInteraction(), {
                                         'picked': async e => {
                                           try {
@@ -1745,7 +1745,7 @@ export class ToolBox extends Emitter {
    */
   _handleScaleConstraint(stop = false) {
     // get features from server or wait to start
-    const map = GUI.getService('map').getMap();
+    const map = GUI.getMap();
 
     this.state.editing.canEdit = getScaleFromResolution(map.getView().getResolution()) <= this.state._constraints.scale;
 
@@ -1754,7 +1754,7 @@ export class ToolBox extends Emitter {
 
     const showZoomCursor = !stop && this.state.selected && !this.state.editing.canEdit;
 
-    const control = GUI.getService('map').getCurrentToggledMapControl();
+    const control = GUI.getCurrentToggledMapControl();
 
     if (control?.cursorClass && (stop || in_editing)) {
       control.setMouseCursor(!showZoomCursor);
@@ -1850,13 +1850,11 @@ export class ToolBox extends Emitter {
           //call scale constraint handler
           this._handleScaleConstraint();
 
-          const map = GUI.getService('map');
-
           // click to fit zoom scale constraint
           this.#events.push(
-            map.getMap().on('click', e => {
+            GUI.getMap().on('click', e => {
               if (this.state.selected && !this.state.editing.canEdit) {
-                map.goToRes(e.coordinate, getResolutionFromScale(this.state._constraints.scale, GUI.getService('map').getMapUnits()));
+                GUI.goToRes(e.coordinate, getResolutionFromScale(this.state._constraints.scale, GUI.getMapUnits()));
               }
             })
           );
@@ -1895,26 +1893,24 @@ export class ToolBox extends Emitter {
       //@TODO need to explain better
       const GIVE_ME_A_NAME = (
         ApplicationState.ismobile // is mobile
-        && GUI.getService('map').isMapHidden() // map is not visible (content 100%)
+        && GUI.isMapHidden() // map is not visible (content 100%)
         && 'vector' === this.state._layerType // is  vector
       );
       if (!is_started && GIVE_ME_A_NAME) {
         this.setEditing(true);
-        GUI
-          .getService('map')
-          .onceafter('setHidden', () => {
-            setTimeout(async () => {
-              this.#start = true;
-              this.startLoading();
-              this.setFeaturesOptions({ filter: options.filter });
-              try {
-                await handlerAfterSessionGetFeatures(this._session.start(this.state._getFeaturesOption))
-              } catch(e) {
-                console.warn(e);
-                this.setEditing(false);
-              }
-            }, 300);
-          })
+        GUI.onceafter('setHidden', () => {
+          setTimeout(async () => {
+            this.#start = true;
+            this.startLoading();
+            this.setFeaturesOptions({ filter: options.filter });
+            try {
+              await handlerAfterSessionGetFeatures(this._session.start(this.state._getFeaturesOption))
+            } catch(e) {
+              console.warn(e);
+              this.setEditing(false);
+            }
+          }, 300);
+        });
       }
 
       /** @TODO merge the following condtions? */
@@ -1934,7 +1930,7 @@ export class ToolBox extends Emitter {
 
       // disablemapcontrols in conflict
       if (options.disablemapcontrols ?? false) {
-        GUI.getService('map').disableClickMapControls(true);
+        GUI.disableClickMapControls(true);
       }
 
     });
@@ -2232,7 +2228,7 @@ export class ToolBox extends Emitter {
       this.stopActiveTool();
     }
 
-    const map = GUI.getService('map').getMap();
+    const map = GUI.getMap();
     //Check if layer has a scale constraint
     if (this.state._constraints.scale) {
       //run handle scale contraint handler function
@@ -3141,7 +3137,7 @@ export class ToolBox extends Emitter {
             && this.state.selected //need to be selected
             && 0 === GUI.getContentLength()
           ) {
-            this.state._getFeaturesOption.filter.bbox = GUI.getService('map').getMapBBOX();
+            this.state._getFeaturesOption.filter.bbox = GUI.getMapBBOX();
             this.state.loading = true;
             await this._session.getFeatures(this.state._getFeaturesOption);
             this.state.loading = false;
@@ -3149,10 +3145,10 @@ export class ToolBox extends Emitter {
         };
         this.#getFeaturesEvent.event = 'moveend';
         this.#getFeaturesEvent.fnc   = debounce(fnc, 300);
-        this.#events.push(GUI.getService('map').getMap().on('moveend', this.#getFeaturesEvent.fnc));
+        this.#events.push(GUI.getMap().on('moveend', this.#getFeaturesEvent.fnc));
         if (GUI.getContentLength()) {
           GUI.once('closecontent', () => {
-            const map = GUI.getService('map').getMap();
+            const map = GUI.getMap();
             setTimeout(() => map.dispatchEvent({ type: this.#getFeaturesEvent.event, target: map }))
           })
         }
@@ -3405,7 +3401,7 @@ export class ToolBox extends Emitter {
           inputs:  { layer: this.getLayer(), features: [] },
           context: { session: this._session }
         },
-        !!GUI.getService('map').isMapHidden())
+        !!GUI.isMapHidden())
       ); // prevent rendering change state
     }
   }
@@ -3526,7 +3522,7 @@ export class ToolBox extends Emitter {
               const selected = layer.getOlSelectionFeature(id);
               if (selected) {
                 selected.feature = geometry;
-                GUI.getService('map').setSelectionFeatures('update', { feature: geometry });
+                GUI.setSelectionFeatures('update', { feature: geometry });
               }
             }
           });

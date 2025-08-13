@@ -252,7 +252,7 @@ export class IframeEditor extends Emitter {
           }
           response.features     = features;
           response.qgs_layer_id = qgs_layer_id[i];
-          await GUI.getService('map').zoomToFeatures(features, { highlight: true });
+          await GUI.zoomToFeatures(features, { highlight: true });
         } catch(e) {
           i++;
           console.warn(e);
@@ -261,7 +261,7 @@ export class IframeEditor extends Emitter {
 
       // feature not found → zoom to initial extent
       if (!found) {
-        GUI.getService('map').zoomToExtent(GUI.getService('map').project.state.initextent)
+        GUI.zoomToExtent(GUI.project.state.initextent)
         return reject();
       }
 

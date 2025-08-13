@@ -326,8 +326,7 @@
        */
       fitZoomToScale(e) {
         if (this.state.selected && !this.canEdit) {
-          const map = GUI.getService('map')
-          map.goToRes(map.getCenter(), getResolutionFromScale(this.state._constraints.scale, map.getMapUnits()));
+          GUI.goToRes(GUI.getCenter(), getResolutionFromScale(this.state._constraints.scale, GUI.getMapUnits()));
         }
       },
 
@@ -510,10 +509,9 @@
       },
 
       clearSnap() {
-        const map = GUI.getService('map');
         this.clearSnapFeatures();
         if (snapInteraction) {
-          map.removeInteraction(snapInteraction);
+          GUI.removeInteraction(snapInteraction);
           snapInteraction = null;
         }
 
@@ -526,7 +524,6 @@
        *
        */
       handleSnapInteractionFeatures({ tool, active, all } = {}) {
-        const map  = GUI.getService('map');
         // snap = true
         if (active) {
           //clear and remove eventually previous feature and snap interaction
@@ -552,7 +549,7 @@
 
             });
           snapInteraction = new ol.interaction.Snap({ features: snapFeatures });
-          map.addInteraction(snapInteraction);
+          GUI.addInteraction(snapInteraction);
         }
         else {
           this.clearSnap();

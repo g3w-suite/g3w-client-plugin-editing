@@ -221,7 +221,7 @@
         await toolbox.stop();
 
         // re-enable query map control
-        const control = undefined === GUI.getPlugin('editing').getToolBoxes().find(t => t.state.editing.on) && GUI.getService('map').getMapControlByType({ type: 'query' });
+        const control = undefined === GUI.getPlugin('editing').getToolBoxes().find(t => t.state.editing.on) && GUI.getMapControlByType({ type: 'query' });
         if (control && !control.isToggled()) {
           control.toggle();
         }
@@ -583,7 +583,7 @@
       GUI.getPlugin('editing').getToolBoxes().forEach(t => t.resetDefault());
 
       // re-enable query map control
-      const control = GUI.getService('map').getMapControlByType({ type: 'query' });
+      const control = GUI.getMapControlByType({ type: 'query' });
       if (control && !control.isToggled()) {
         control.toggle();
       }

@@ -139,7 +139,7 @@ new (class extends Plugin {
     }));
 
     // set map control toggle event
-    GUI.getService('map').on('mapcontrol:toggled', this.state.onMapControlToggled);
+    GUI.on('mapcontrol:toggled', this.state.onMapControlToggled);
 
     // skip when no editable layer
     if (getCatalogLayers({ EDITABLE: true }).length) {
@@ -169,7 +169,7 @@ new (class extends Plugin {
         addNewFeature:                    createFeature,
         commitChanges:                    this.commit.bind(this),
         setApplicationEditingConstraints: this.setApplicationEditingConstraints.bind(this),
-        getMapService:                    () => GUI.getService('map'),
+        getMapService:                    () => GUI,
         updateLayerFeature:               noop,
         deleteLayerFeature:               noop,
         addLayerFeature:                  this.addLayerFeature.bind(this),
@@ -221,7 +221,7 @@ new (class extends Plugin {
     // 2 - configuration of plugin, visible is set to false
     // 3 - There aren't editable layers or all are not visible
     if (!(!this.registerPlugin(this.config.gid) || false === this.config.visible || 0 === this.getLayers().filter(l => l.config.editing.visible).length)) {
-      this.state.editFeatureKey = GUI.getService('queryresults').onafter('editFeature', this.#onQueryResultsEditFeature.bind(this)),
+      this.state.editFeatureKey = GUI.onafter('editFeature', this.#onQueryResultsEditFeature.bind(this)),
       this.config.name          = this.config.name || "plugins.editing.editing_data";
       this.addToolGroup({ position: 0, title: 'EDITING' });
       this.addTools({
@@ -368,7 +368,7 @@ new (class extends Plugin {
         error: () => {}, // function called affect commit error
       }
     };
-    GUI.getService('map').disableClickMapControls(false);
+    GUI.disableClickMapControls(false);
   }
 
   /**
@@ -496,7 +496,7 @@ new (class extends Plugin {
     //reset unique values
     Object.keys(this.state.uniqueFieldsValues).forEach(id => this.state.uniqueFieldsValues[id] = {});
 
-    GUI.getService('map').refreshMap();
+    GUI.refreshMap();
   }
 
  /**
@@ -705,7 +705,7 @@ new (class extends Plugin {
 
         // In the case of vector layer need to refresh map commit changes
         if (result && 'vector' === layer.getType() ) {
-          GUI.getService('map').refreshMap({ force: true });
+          GUI.refreshMap({ force: true });
         }
 
         if (online) {
@@ -1218,9 +1218,9 @@ new (class extends Plugin {
       // if currentScale is more that scale constraint set by layer editing
       // needs to go to scale setting by layer editing constraint
       if (scale) {
-        const units        = GUI.getService('map').getMapUnits();
-        const resolution   = GUI.getService('map').getMapUnits();
-        const map          = GUI.getService('map').getMap();
+        const units        = GUI.getMapUnits();
+        const resolution   = GUI.getMapUnits();
+        const map          = GUI.getMap();
         const currentScale = parseInt(getScaleFromResolution(resolution, units));
         if (currentScale > scale) {
           map.getView().setResolution(getResolutionFromScale(scale, units));
@@ -1250,7 +1250,7 @@ new (class extends Plugin {
 
       // feature has geometry → zoom to geometry
       if (geom) {
-        GUI.getService('map').zoomToGeometry(geom);
+        GUI.zoomToGeometry(geom);
       }
 
       toolBox.setSelected(true);

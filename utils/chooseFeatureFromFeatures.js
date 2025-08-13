@@ -64,7 +64,7 @@ export function chooseFeatureFromFeatures({
       methods: {
         selectFeature(feature)        { this.feature.splice(0); this.feature.push(feature); },
         getAttributesFeature(feature) { const props = feature.getProperties(); return this.$options.attributes.map(({ label, name }) => ({ attribute: label, value: props[name] })); },
-        zoomToFeature(feature)        { GUI.getService('map').zoomToFeatures([feature], { highlight: true, duration: 1000 }); },
+        zoomToFeature(feature)        { GUI.zoomToFeatures([feature], { highlight: true, duration: 1000 }); },
       },
       mounted() { GUI.closeContent(); },
     }))({

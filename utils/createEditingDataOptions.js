@@ -23,7 +23,7 @@ export function createEditingDataOptions(filterType = 'all', options = {}) {
      break;
 
    case 'bbox':
-     filter = { bbox: GUI.getService('map').getMapBBOX(), };
+     filter = { bbox: GUI.getMapBBOX(), };
      break;
 
    case 'field':

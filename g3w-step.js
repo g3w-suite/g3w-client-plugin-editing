@@ -218,7 +218,7 @@ export class Step extends Emitter {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   addInteraction(interaction, events = {}) {
-    GUI.getService('map').addInteraction(interaction);
+    GUI.addInteraction(interaction);
     Object.entries(events).forEach(([type, handler]) => interaction.on(type, handler));
     this.on('stop', () => this.removeInteraction(interaction));
     return interaction;
@@ -230,7 +230,7 @@ export class Step extends Emitter {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   removeInteraction(interaction) {
-    setTimeout(() => GUI.getService('map').removeInteraction(interaction)) // timeout needed to work around an Openlayers issue
+    setTimeout(() => GUI.removeInteraction(interaction)) // timeout needed to work around an Openlayers issue
   }
 
   /**
@@ -250,7 +250,7 @@ export class Step extends Emitter {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   registerPointerMoveCursor() {
-    GUI.getService('map').getMap().on("pointermove", this._pointerMoveCursor)
+    GUI.getMap().on("pointermove", this._pointerMoveCursor)
   }
 
   /**
@@ -259,7 +259,7 @@ export class Step extends Emitter {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   unregisterPointerMoveCursor() {
-    GUI.getService('map').getMap().un("pointermove", this._pointerMoveCursor)
+    GUI.getMap().un("pointermove", this._pointerMoveCursor)
   }
 
   /**
@@ -302,7 +302,7 @@ export class Step extends Emitter {
    * @since g3w-client-plugin-editing@v3.8.0
    */
   getMap() {
-    return GUI.getService('map').getMap();
+    return GUI.getMap();
   }
 
   /**

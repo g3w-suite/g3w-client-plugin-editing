@@ -126,7 +126,7 @@ export class AddFeatureStep extends Step {
 
     this.measureInteraction = this.addInteraction(
       new (is_line ? LengthInteraction : AreaInteraction)({
-        projection: GUI.getService('map').getProjection(),
+        projection: GUI.getProjection(),
         drawColor:  'transparent',
         feature:    this.drawingFeature
       })
