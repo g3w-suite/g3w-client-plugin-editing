@@ -1238,8 +1238,11 @@ new (class extends Plugin {
       const features = is_vector ? source.getFeatures() : source.readFeatures();
       const feature  = features.find(f => fid == f.getId());
 
-      // skip when not feature is get from server
-      if (!feature) {
+      // no feature is get from server (locked feature) 
+      if (!feature) { 
+        this.stop();
+        this.hideEditingPanel();
+        GUI.showUserMessage({ type: 'warning', message: 'plugins.editing.messages.featureslockbyotheruser' });
         return;
       }
 
@@ -1333,7 +1336,7 @@ new (class extends Plugin {
       console.warn(e);
       toolBox.rollback();
     } finally {
-      w.stop();
+      w?.stop?.(); // workflow can be undefined when feature is locked by another user 
     }
   }
 
