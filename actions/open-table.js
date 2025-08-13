@@ -82,7 +82,7 @@ export class OpenTableStep extends Step {
           push:              this._isContentChild,
           service,
           state:             service.state,
-          internalComponent: new (Vue.extend(require('../components/Table.vue').default))({ service }),
+          internalComponent: new (Vue.extend(require('../components/table.js').default))({ service }),
         }),
         push:       this._isContentChild,
         showgoback: false,

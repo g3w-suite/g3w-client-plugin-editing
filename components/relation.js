@@ -1,337 +1,337 @@
-<!-- ORIGINAL SOURCE: -->
-<!-- form/components/relation/vue/relation.html@v3.4 -->
-<!-- form/components/relation/vue/relation.js@v3.4 -->
+/**
+ * @file Relation form editor
+ * 
+ * @since g3w-client-plugin-editing@v4.1.0
+ */
 
-<template>
-  <div
-      v-disabled  = "loading"
-      style       = "margin-bottom: 5px;"
+import { Workflow }                                     from '../g3w-workflow';
+import { Step }                                         from '../g3w-step';
+import { Feature }                                      from '../g3w-feature';
+import { cloneFeature }                                 from '../utils/cloneFeature';
+import { setAndUnsetSelectedFeaturesStyle }             from '../utils/setAndUnsetSelectedFeaturesStyle';
+import { getRelationFieldsFromRelation }                from '../utils/getRelationFieldsFromRelation';
+import { getLayersDependencyFeatures }                  from '../utils/getLayersDependencyFeatures';
+import { getEditingLayerById }                          from '../utils/getEditingLayerById';
+import { convertToGeometry }                            from '../utils/convertToGeometry';
+import { addTableFeature }                              from '../utils/addTableFeature';
+import { getFeatureTableFieldValue }                    from '../utils/getFeatureTableFieldValue';
+import { chooseFeatureFromFeatures }                    from '../utils/chooseFeatureFromFeatures';
+import { isSameBaseGeometryType }                       from '../utils/isSameBaseGeometryType';
+import { unlinkRelation }                               from '../utils/unlinkRelation';
+import { getFieldsWithValues }                          from '../utils/getFieldsWithValues';
+import { isPkField }                                    from '../utils/isPkField';
+import { getEditingLayer }                              from '../utils/getEditingLayer';
+import { getEditingFields }                             from '../utils/getEditingFields';
+import { PickFeaturesInteraction }                      from '../actions/pick-feature';
+import { OpenFormStep }                                 from '../actions/open-form';
+import { OpenTableStep }                                from '../actions/open-table';
+import { AddFeatureStep }                               from '../actions/add-feature';
+import { ModifyGeometryVertexStep }                     from '../actions/move-vertex';
+import { MoveFeatureStep }                              from '../actions/move-feature';
+import { getCatalogLayerById }                          from '../utils/getCatalogLayerById';
+import { getCatalogLayers }                             from '../utils/getCatalogLayers';
+
+const { ProjectsRegistry }            = g3wsdk.core.project;
+const { DataRouterService }           = g3wsdk.core.data;
+const { Geometry }                    = g3wsdk.core.geoutils;
+const _                               = g3wsdk.core.i18n.t;
+const { toRawType }                   = g3wsdk.core.utils;
+const { GUI }                         = g3wsdk.gui;
+const { FormService }                 = g3wsdk.gui.vue.services;
+const {
+  fieldsMixin,
+  resizeMixin,
+  mediaMixin,
+}                                     = g3wsdk.gui.vue.Mixins;
+const {
+  PickFeatureInteraction,
+  PickCoordinatesInteraction
+}                                     = g3wsdk.ol.interactions;
+
+Object
+  .entries({
+    Workflow,
+    Step,
+    OpenFormStep,
+    OpenTableStep,
+    AddFeatureStep,
+    ModifyGeometryVertexStep,
+    MoveFeatureStep,
+  })
+  .forEach(([k, v]) => console.assert(undefined !== v, `${k} is undefined`));
+
+const color = 'rgb(255,89,0)';
+// Vector styles for selected relation
+const SELECTED_STYLES = {
+  'Point':           new ol.style.Style({ image:  new ol.style.Circle({ radius: 8, fill: new ol.style.Fill({ color }) }) }),
+  'MultiPoint':      new ol.style.Style({ image:  new ol.style.Circle({ radius: 8, fill: new ol.style.Fill({ color }) }) }),
+  'Linestring':      new ol.style.Style({ stroke: new ol.style.Stroke({ width: 8, color }) }),
+  'MultiLinestring': new ol.style.Style({ stroke: new ol.style.Stroke({ width: 8, color }) }),
+  'Polygon':         new ol.style.Style({ stroke: new ol.style.Stroke({ width: 8, color }), fill: new ol.style.Fill({ color }) }),
+  'MultiPolygon':    new ol.style.Style({ stroke: new ol.style.Stroke({ width: 8, color }), fill: new ol.style.Fill({ color }) }),
+};
+
+export default ({
+
+  template: /*html*/`
+<div
+    v-disabled  = "loading"
+    style       = "margin-bottom: 5px;"
+    class="g3w-editing-relation"
+  >
+    <bar-loader :loading = "loading" />
+
+    <!-- RELATION TITLE -->
+    <div
+      ref   = "relation_header_title"
+      class = "relation_header_title box-header with-border skin-color"
     >
-      <bar-loader :loading = "loading" />
+      <span v-t = "'plugins.editing.edit_relation'"></span>
+      <span style = "margin-left: 2px;">: {{ relation.name.toUpperCase() }}</span>
+    </div>
 
-      <!-- RELATION TITLE -->
-      <div
-        ref   = "relation_header_title"
-        class = "relation_header_title box-header with-border skin-color"
-      >
-        <span v-t = "'plugins.editing.edit_relation'"></span>
-        <span style = "margin-left: 2px;">: {{ relation.name.toUpperCase() }}</span>
+    <!-- RELATION TOOLS -->
+    <div
+      ref   = "relation_header_tools"
+      class = "relation_header_tools box-header with-border"
+    >
+
+      <!-- SEARCH BOX -->
+      <div id = "search-box">
+        <input
+          v-if         = "relationsLength"
+          type         = "text"
+          class        = "form-control"
+          id           = "filterRelation"
+          :placeholder = "placeholdersearch"
+        />
       </div>
+      <div class = "g3w-editing-relations-add-link-tools">
 
-      <!-- RELATION TOOLS -->
-      <div
-        ref   = "relation_header_tools"
-        class = "relation_header_tools box-header with-border"
-      >
-
-        <!-- SEARCH BOX -->
-        <div id = "search-box">
-          <input
-            v-if         = "relationsLength"
-            type         = "text"
-            class        = "form-control"
-            id           = "filterRelation"
-            :placeholder = "placeholdersearch"
-          />
-        </div>
-        <div class = "g3w-editing-relations-add-link-tools">
-
-          <!-- EDIT ATTRIBUTES @since 3.9.0 -->
-          <span
-            v-if                      = "relationsLength > 0 && capabilities.includes('change_attr_feature')"
-            v-t-tooltip:bottom.create = "'plugins.editing.tools.update_multi_features_relations'"
-            class                     = "g3w-icon"
-          >
-             <span
-
-               @click.stop               = "editAttributesRelations()"
-               v-disabled                = "relations.every(r => !r.select)"
-             >
-              <img
-                height           = "25"
-                width            = "25"
-                :src             = "`${resourcesurl}images/mActionMultiEdit.svg`"
-              />
-            </span>
-          </span>
-
-          <!-- CHANGE ATTRIBUTE -->
-          <span
-            v-if                      = "capabilities.includes('change_attr_feature')"
-            class                     = "g3w-icon add-link"
-            align                     = "center"
-            v-t-tooltip:bottom.create = "'plugins.editing.form.relations.tooltips.link_relation'"
-            @click.stop               = "show_add_link ? linkRelation() : null"
-            :class                    = "[{ 'disabled': !show_add_link }, g3wtemplate.font['link']]"
-          ></span>
-
-          <!-- ADD FEATURE -->
-          <span
-            v-if                      = "capabilities.includes('add_feature')"
-            v-t-tooltip:bottom.create = "'plugins.editing.form.relations.tooltips.add_relation'"
-            @click.stop               = "show_add_link ? addRelationAndLink() : null"
-            class                     = "g3w-icon add-link pull-right"
-            :class                    = "[{ 'disabled' : !show_add_link }, g3wtemplate.font['plus']]"
-          ></span>
-
-        </div>
-
-      </div>
-
-      <!-- VECTOR RELATION TOOLS -->
-      <section
-        v-if  = "show_vector_tools"
-        ref   = "relation_vector_tools"
-        class = "relation_vector_tools"
-      >
-
+        <!-- EDIT ATTRIBUTES @since 3.9.0 -->
         <span
-          @click.stop = "closeVectorTools"
-          class       = "close_vector_relation_tool"
+          v-if                      = "relationsLength > 0 && capabilities.includes('change_attr_feature')"
+          v-t-tooltip:bottom.create = "'plugins.editing.tools.update_multi_features_relations'"
+          class                     = "g3w-icon"
         >
-          <i class = "g3w-icon skin-color" :class = "g3wtemplate.font['close']"></i>
+            <span
+
+              @click.stop               = "editAttributesRelations()"
+              v-disabled                = "relations.every(r => !r.select)"
+            >
+            <img
+              height           = "25"
+              width            = "25"
+              :src             = "resourcesurl + 'images/mActionMultiEdit.svg'"
+            />
+          </span>
         </span>
 
-        <!-- ADD VECTOR RELATION -->
-        <div>
+        <!-- CHANGE ATTRIBUTE -->
+        <span
+          v-if                      = "capabilities.includes('change_attr_feature')"
+          class                     = "g3w-icon add-link"
+          align                     = "center"
+          v-t-tooltip:bottom.create = "'plugins.editing.form.relations.tooltips.link_relation'"
+          @click.stop               = "show_add_link ? linkRelation() : null"
+          :class                    = "[{ 'disabled': !show_add_link }, g3wtemplate.font['link']]"
+        ></span>
+
+        <!-- ADD FEATURE -->
+        <span
+          v-if                      = "capabilities.includes('add_feature')"
+          v-t-tooltip:bottom.create = "'plugins.editing.form.relations.tooltips.add_relation'"
+          @click.stop               = "show_add_link ? addRelationAndLink() : null"
+          class                     = "g3w-icon add-link pull-right"
+          :class                    = "[{ 'disabled' : !show_add_link }, g3wtemplate.font['plus']]"
+        ></span>
+
+      </div>
+
+    </div>
+
+    <!-- VECTOR RELATION TOOLS -->
+    <section
+      v-if  = "show_vector_tools"
+      ref   = "relation_vector_tools"
+      class = "relation_vector_tools"
+    >
+
+      <span
+        @click.stop = "closeVectorTools"
+        class       = "close_vector_relation_tool"
+      >
+        <i class = "g3w-icon skin-color" :class = "g3wtemplate.font['close']"></i>
+      </span>
+
+      <!-- ADD VECTOR RELATION -->
+      <div>
+        <div
+          class = "g3w-editing-new-relation-vector-type"
+          v-t   = "'plugins.editing.relation.draw_new_feature'">
+        </div>
+        <button
+          class       = "btn skin-button"
+          style       = "width: 100%"
+          @click.stop = "addVectorRelation"
+        >
+          <i :class = "g3wtemplate.font['pencil']"></i>
+        </button>
+      </div>
+
+      <!-- COPY FEATURE FROM OTHER LAYER -->
+      <section>
+
+        <span class = "divider"></span>
+
+        <div
+          style = "align-self: center"
+          v-t   = "'plugins.editing.relation.draw_or_copy'"
+        ></div>
+
+        <span class = "divider"></span>
+
+        <div id = "g3w-select-editable-layers-content">
+
           <div
             class = "g3w-editing-new-relation-vector-type"
-            v-t   = "'plugins.editing.relation.draw_new_feature'">
-          </div>
-          <button
-            class       = "btn skin-button"
-            style       = "width: 100%"
-            @click.stop = "addVectorRelation"
-          >
-            <i :class = "g3wtemplate.font['pencil']"></i>
-          </button>
-        </div>
-
-        <!-- COPY FEATURE FROM OTHER LAYER -->
-        <section>
-
-          <span class = "divider"></span>
-
-          <div
-            style = "align-self: center"
-            v-t   = "'plugins.editing.relation.draw_or_copy'"
+            v-t   = "'plugins.editing.relation.copy_feature_from_other_layer'"
           ></div>
 
-          <span class = "divider"></span>
+          <select
+            id        = "g3w-select-editable-layers-to-copy"
+            v-select2 = "'copylayerid'"
+          >
+            <option
+              v-for  = "layer in copyFeatureLayers"
+              :key   = "layer.id"
+              :value = "layer.id"
+            >{{ layer.name }}</option>
+          </select>
 
-          <div id = "g3w-select-editable-layers-content">
+          <!-- COPY FEATURE FROM OTHER LAYER -->
+          <button
+            v-disabled  = "0 === copyFeatureLayers.length"
+            class       = "btn skin-button"
+            @click.stop = "copyFeatureFromOtherLayer"
+          >
+            <i :class = "g3wtemplate.font['clipboard']"></i>
+          </button>
 
-            <div
-              class = "g3w-editing-new-relation-vector-type"
-              v-t   = "'plugins.editing.relation.copy_feature_from_other_layer'"
-            ></div>
-
-            <select
-              id        = "g3w-select-editable-layers-to-copy"
-              v-select2 = "'copylayerid'"
-            >
-              <option
-                v-for  = "layer in copyFeatureLayers"
-                :key   = "layer.id"
-                :value = "layer.id"
-              >{{ layer.name }}</option>
-            </select>
-
-            <!-- COPY FEATURE FROM OTHER LAYER -->
-            <button
-              v-disabled  = "0 === copyFeatureLayers.length"
-              class       = "btn skin-button"
-              @click.stop = "copyFeatureFromOtherLayer"
-            >
-              <i :class = "g3wtemplate.font['clipboard']"></i>
-            </button>
-
-          </div>
-
-        </section>
+        </div>
 
       </section>
 
-      <!-- RELATION CONTENT -->
-      <div
-        ref        = "relation_body"
-        class      = "relation_body box-body"
-        v-disabled = "disabled"
+    </section>
+
+    <!-- RELATION CONTENT -->
+    <div
+      ref        = "relation_body"
+      class      = "relation_body box-body"
+      v-disabled = "disabled"
+    >
+      <table
+        v-if  = "relationsLength > 0"
+        ref   = "relationTable"
+        class = "table g3wform-relation-table table-striped nowrap"
       >
-        <table
-          v-if  = "relationsLength > 0"
-          ref   = "relationTable"
-          class = "table g3wform-relation-table table-striped nowrap"
-        >
-          <thead>
-            <tr>
-              <th style="padding: 10px">
-                <input
-                  :id     = "`select_all_relations`"
-                  @change = "updateSelectRelations()"
-                  class   = "magic-checkbox"
-                  :checked = "selectall"
-                  type    = "checkbox">
-                <label :for="`select_all_relations`" style = "margin:0;">&nbsp;</label>
-              </th>
-              <th v-t = "'tools'"></th>
-              <th></th>
-              <th v-for = "attribute in relationAttributesSubset(relations[0])">{{ attribute.label }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for = "(relation, index) in relations"
-              :key  = "relation.id"
-              class = "featurebox-header"
-            >
-              <td style="padding-top: 0">
-                <input
-                  :id     = "`select_relation__${index}`"
-                  v-model = "relation.select"
-                  class   = "magic-checkbox"
-                  type    = "checkbox">
-                  <label :for="`select_relation__${index}`"></label>
-              </td>
-              <td>
-                <div style = "display: flex">
-                  <!-- RELATION TOOLS -->
-                  <div
-                    v-for                    = "tool in (tools[index] || addTools(relations[index].id))"
-                    :key                     = "tool.state.id"
-                    :class                   = "{ enabled: true, 'toggled': tool.state.active, [`editbtn ${tool.state.id}`]: true }"
-                    @click.stop              = "startTool(tool, index)"
-                    v-t-tooltip:top.create   = "`plugins.${tool.state.name}`"
-                  >
-                    <img
-                      height = "20px"
-                      width  = "20px"
-                      :src   = "`${resourcesurl}images/${tool.state.icon}`"
-                    />
-                  </div>
-                </div>
-              </td>
-              <td class = "action-cell">
+        <thead>
+          <tr>
+            <th style="padding: 10px">
+              <input
+                id     = "select_all_relations"
+                @change = "updateSelectRelations()"
+                class   = "magic-checkbox"
+                :checked = "selectall"
+                type    = "checkbox">
+              <label for="select_all_relations" style = "margin:0;">&nbsp;</label>
+            </th>
+            <th v-t = "'tools'"></th>
+            <th></th>
+            <th v-for = "attribute in relationAttributesSubset(relations[0])">{{ attribute.label }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for = "(relation, index) in relations"
+            :key  = "relation.id"
+            class = "featurebox-header"
+          >
+            <td style="padding-top: 0">
+              <input
+                :id     = "'select_relation__' + index"
+                v-model = "relation.select"
+                class   = "magic-checkbox"
+                type    = "checkbox">
+                <label :for="'select_relation__' + index"></label>
+            </td>
+            <td>
+              <div style = "display: flex">
+                <!-- RELATION TOOLS -->
                 <div
-                  v-if                     = "!fieldrequired && capabilities.includes('change_attr_feature')"
-                  class                    = "g3w-mini-relation-icon g3w-icon"
-                  :class                   = "g3wtemplate.font['unlink']"
-                  @click.stop              = "unlinkRelation(index)"
-                  v-t-tooltip:right.create = "'plugins.editing.form.relations.tooltips.unlink_relation'"
-                  aria-hidden              = "true"
-                ></div>
-              </td>
-              <td v-for = "attribute in relationAttributesSubset(relation)">
-                <!-- MEDIA ATTRIBUTE-->
-                <div
-                  v-if = "isMedia(attribute.value) && getValue(attribute.value)"
-                  class = "preview"
+                  v-for                    = "tool in (tools[index] || addTools(relations[index].id))"
+                  :key                     = "tool.state.id"
+                  :class                   = "{ enabled: true, 'toggled': tool.state.active, ['editbtn ' + tool.state.id]: true }"
+                  @click.stop              = "startTool(tool, index)"
+                  v-t-tooltip:top.create   = "'plugins.' + tool.state.name"
                 >
-                  <a :href = "getValue(attribute.value)" target = "_blank">
-                    <div
-                      class  = "previewtype"
-                      :class = "getMediaType(attribute.value.mime_type).type"
-                    >
-                      <i class = "fa-2x" :class="g3wtemplate.font[getMediaType(attribute.value.mime_type).type]"></i>
-                    </div>
-                  </a>
-                  <div class = "filename">{{ getValue(attribute.value).split('/').pop() }}</div>
+                  <img
+                    height = "20px"
+                    width  = "20px"
+                    :src   = "resourcesurl + 'images/' + tool.state.icon"
+                  />
                 </div>
-                <!-- LINK ATTRIBUTE -->
-                <a
-                  v-else-if = "['photo', 'link'].includes(getFieldType(attribute))"
-                  :href     = "getValue(attribute.value)"
-                  target    = "_blank">{{ getValue(attribute.value) }}
+              </div>
+            </td>
+            <td class = "action-cell">
+              <div
+                v-if                     = "!fieldrequired && capabilities.includes('change_attr_feature')"
+                class                    = "g3w-mini-relation-icon g3w-icon"
+                :class                   = "g3wtemplate.font['unlink']"
+                @click.stop              = "unlinkRelation(index)"
+                v-t-tooltip:right.create = "'plugins.editing.form.relations.tooltips.unlink_relation'"
+                aria-hidden              = "true"
+              ></div>
+            </td>
+            <td v-for = "attribute in relationAttributesSubset(relation)">
+              <!-- MEDIA ATTRIBUTE-->
+              <div
+                v-if = "isMedia(attribute.value) && getValue(attribute.value)"
+                class = "preview"
+              >
+                <a :href = "getValue(attribute.value)" target = "_blank">
+                  <div
+                    class  = "previewtype"
+                    :class = "getMediaType(attribute.value.mime_type).type"
+                  >
+                    <i class = "fa-2x" :class="g3wtemplate.font[getMediaType(attribute.value.mime_type).type]"></i>
+                  </div>
                 </a>
-                <!-- TEXTUAL ATTRIBUTE -->
-                <span v-else>{{ getValue(getRelationFeatureValue(relation.id, attribute.name)) }}</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+                <div class = "filename">{{ getValue(attribute.value).split('/').pop() }}</div>
+              </div>
+              <!-- LINK ATTRIBUTE -->
+              <a
+                v-else-if = "['photo', 'link'].includes(getFieldType(attribute))"
+                :href     = "getValue(attribute.value)"
+                target    = "_blank">{{ getValue(attribute.value) }}
+              </a>
+              <!-- TEXTUAL ATTRIBUTE -->
+              <span v-else>{{ getValue(getRelationFeatureValue(relation.id, attribute.name)) }}</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-  </div>
-</template>
+</div>`,
 
-<script>
-
-  import { Workflow }                                     from '../g3w-workflow';
-  import { Step }                                         from '../g3w-step';
-  import { Feature }                                      from '../g3w-feature';
-  import { cloneFeature }                                 from '../utils/cloneFeature';
-  import { setAndUnsetSelectedFeaturesStyle }             from '../utils/setAndUnsetSelectedFeaturesStyle';
-  import { getRelationFieldsFromRelation }                from '../utils/getRelationFieldsFromRelation';
-  import { getLayersDependencyFeatures }                  from '../utils/getLayersDependencyFeatures';
-  import { getEditingLayerById }                          from '../utils/getEditingLayerById';
-  import { convertToGeometry }                            from '../utils/convertToGeometry';
-  import { addTableFeature }                              from '../utils/addTableFeature';
-  import { getFeatureTableFieldValue }                    from '../utils/getFeatureTableFieldValue';
-  import { chooseFeatureFromFeatures }                    from '../utils/chooseFeatureFromFeatures';
-  import { isSameBaseGeometryType }                       from '../utils/isSameBaseGeometryType';
-  import { unlinkRelation }                               from '../utils/unlinkRelation';
-  import { getFieldsWithValues }                          from '../utils/getFieldsWithValues';
-  import { isPkField }                                    from '../utils/isPkField';
-  import { getEditingLayer }                              from '../utils/getEditingLayer';
-  import { getEditingFields }                             from '../utils/getEditingFields';
-  import { PickFeaturesInteraction }                      from '../actions/pick-feature';
-  import { OpenFormStep }                                 from '../actions/open-form';
-  import { OpenTableStep }                                from '../actions/open-table';
-  import { AddFeatureStep }                               from '../actions/add-feature';
-  import { ModifyGeometryVertexStep }                     from '../actions/move-vertex';
-  import { MoveFeatureStep }                              from '../actions/move-feature';
-  import { getCatalogLayerById }                          from '../utils/getCatalogLayerById';
-  import { getCatalogLayers }                             from '../utils/getCatalogLayers';
-
-  const { ProjectsRegistry }            = g3wsdk.core.project;
-  const { DataRouterService }           = g3wsdk.core.data;
-  const { Geometry }                    = g3wsdk.core.geoutils;
-  const _                               = g3wsdk.core.i18n.t;
-  const { toRawType }                   = g3wsdk.core.utils;
-  const { GUI }                         = g3wsdk.gui;
-  const { FormService }                 = g3wsdk.gui.vue.services;
-  const {
-    fieldsMixin,
-    resizeMixin,
-    mediaMixin,
-  }                                     = g3wsdk.gui.vue.Mixins;
-  const {
-    PickFeatureInteraction,
-    PickCoordinatesInteraction
-  }                                     = g3wsdk.ol.interactions;
-
-  Object
-    .entries({
-      Workflow,
-      Step,
-      OpenFormStep,
-      OpenTableStep,
-      AddFeatureStep,
-      ModifyGeometryVertexStep,
-      MoveFeatureStep,
-    })
-    .forEach(([k, v]) => console.assert(undefined !== v, `${k} is undefined`));
-
-  const color = 'rgb(255,89,0)';
-  // Vector styles for selected relation
-  const SELECTED_STYLES = {
-    'Point':           new ol.style.Style({ image:  new ol.style.Circle({ radius: 8, fill: new ol.style.Fill({ color }) }) }),
-    'MultiPoint':      new ol.style.Style({ image:  new ol.style.Circle({ radius: 8, fill: new ol.style.Fill({ color }) }) }),
-    'Linestring':      new ol.style.Style({ stroke: new ol.style.Stroke({ width: 8, color }) }),
-    'MultiLinestring': new ol.style.Style({ stroke: new ol.style.Stroke({ width: 8, color }) }),
-    'Polygon':         new ol.style.Style({ stroke: new ol.style.Stroke({ width: 8, color }), fill: new ol.style.Fill({ color }) }),
-    'MultiPolygon':    new ol.style.Style({ stroke: new ol.style.Stroke({ width: 8, color }), fill: new ol.style.Fill({ color }) }),
-  }
-
-  export default {
+    name: 'g3w-relation',
 
     mixins: [
       mediaMixin,
       fieldsMixin,
       resizeMixin,
     ],
-
-    name: 'g3w-relation',
 
     data() {
       return {
@@ -1698,15 +1698,17 @@
       }
     },
 
-  };
-</script>
+});
 
-<style scoped>
-  .g3w-editing-new-relation-vector-type {
+document.head.insertAdjacentHTML(
+  'beforeend',
+  /* css */`
+<style>
+  .g3w-editing-relation .g3w-editing-new-relation-vector-type {
     margin-bottom: 5px;
     font-weight: bold;
   }
-  .relation_header_title {
+  .g3w-editing-relation .relation_header_title {
     width: 100%;
     display: flex;
     font-weight: bold;
@@ -1714,44 +1716,44 @@
     align-items: center;
     background-color: #fff;
   }
-  .relation_header_tools {
+  .g3w-editing-relation .relation_header_tools {
     width: 100%;
     display: flex;
     background-color: #fff;
   }
-  .g3w-editing-relations-add-link-tools {
+  .g3w-editing-relation .g3w-editing-relations-add-link-tools {
     display: flex;
     justify-content: flex-end
   }
-  .relation_vector_tools {
+  .g3w-editing-relation .relation_vector_tools {
     display: flex;
     flex-direction: column;
     border: 2px solid #eee;
     background-color: #fff;
     padding: 10px;
   }
-  #g3w-select-editable-layers-content {
+  .g3w-editing-relation #g3w-select-editable-layers-content {
     flex-grow: 1;
     display: flex;
     flex-direction: column
   }
-  #search-box {
+  .g3w-editing-relation #search-box {
     margin-right: auto;
   }
-  .relation_body {
+  .g3w-editing-relation .relation_body {
     padding: 0;
   }
-  .g3wform-relation-table {
+  .g3w-editing-relation .g3wform-relation-table {
     width: 100%
   }
-  .close_vector_relation_tool {
+  .g3w-editing-relation .close_vector_relation_tool {
     align-self: self-end;
   }
-  .close_vector_relation_tool > .g3w-icon {
+  .g3w-editing-relation .close_vector_relation_tool > .g3w-icon {
     font-weight: bold;
     cursor: pointer;
   }
-  .divider {
+  .g3w-editing-relation .divider {
     display: block;
     position: relative;
     padding: 0;
@@ -1765,4 +1767,5 @@
     border: none;
     border-bottom: 2px solid #eee;
   }
-</style>
+</style>`
+);

@@ -450,7 +450,7 @@ export class OpenFormStep extends Step {
           id:        relation.id,
           header:    false,            // hide a header form
           component: Vue.extend({
-            mixins: [ require('../components/FormRelation.vue') ],
+            mixins: [ require('../components/relation.js') ],
             name: `relation_${Date.now()}`,
             data() {
               return { layerId, relation, relations };
