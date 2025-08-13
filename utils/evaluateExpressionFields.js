@@ -122,7 +122,7 @@ export async function evaluateExpressionFields({
                     }
 
                     // see: https://github.com/g3w-suite/g3w-client/pull/843
-                    if (field.value && !values.find(({ value }) => value === field.value)) {
+                    if (field.value && !values.find(({ value }) => value == field.value)) {
                       values.unshift({ key: `(${field.value})`, value: field.value, });
                     }
 
