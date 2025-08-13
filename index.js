@@ -418,7 +418,7 @@ new (class extends Plugin {
           //show user message
           GUI.showUserMessage({
             type:     'warning',
-            message:  'plugins.editing.messages.featureslockbyotheruser',
+            message:  'plugins.editing.messages.featurelockbyotheruser',
           });
           return;
         }
