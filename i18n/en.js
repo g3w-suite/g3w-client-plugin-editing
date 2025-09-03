@@ -101,6 +101,7 @@ export default {
   },
   messages: {
     featureslockbyotheruser: "Some geometries/records are not editable because in editing by other user",
+    featurelockbyotheruser: "The geometry/record is not editable because in editing by other user",
     splitted: "Splitted",
     nosplittedfeature: "Feature not spitted",
     press_esc: "Press ESC to back",

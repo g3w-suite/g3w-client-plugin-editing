@@ -102,6 +102,7 @@ export default {
   },
   messages: {
     featureslockbyotheruser: "Ci sono alcune geometrie/records non editabili perchè in modifica da altri utenti",
+    featurelockbyotheruser: "La geometria/record non editabile perchè in modifica da altri utenti",
     splitted: "Feature(s) splittata(e)",
     nosplittedfeature: "La(e) feature(s) non è stata splittata",
     press_esc: "Premi ESC per tornare indietro",
