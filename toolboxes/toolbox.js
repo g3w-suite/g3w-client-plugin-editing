@@ -1619,6 +1619,13 @@ export class ToolBox extends G3WObject {
       this.startResolve();
     }
 
+    //@since 4.0.1 set modal true in case of openFormStep is running
+    if (this.state.editing.canEdit && this.state.activetool?.op.getRunningStep() instanceof OpenFormStep) {
+      //Check if current interaction is pickLayer 
+      GUI.setModal('picklayer' !== map.getInteractions().item(map.getInteractions().getLength() -1).get('id') );
+      return;
+    }
+
     // async show message because another toolbox can be unselected before
     setTimeout(() => GUI.setModal(!this.state.editing.canEdit, this.messages.constraint.scale));
   }
