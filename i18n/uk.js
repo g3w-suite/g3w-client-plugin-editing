@@ -98,6 +98,7 @@ export default {
   },
   messages: {
     featureslockbyotheruser: "Частина об'єктів/записів редагується іншим користувачем і недоступна для змін",
+    featurelockbyotheruser: "Об'єкт/запис редагується іншим користувачем і недоступний для редагування",
     splitted: "Розділено",
     nosplittedfeature: "Не розділено",
     press_esc: "Натисність ESC щоб повернутися",
