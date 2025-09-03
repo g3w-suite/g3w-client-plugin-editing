@@ -96,6 +96,7 @@ export default {
   },
   messages: {
     featureslockbyotheruser: "Jotkut geometriat/tietueet eivät ole muokattavissa, koska muut käyttäjät muokkaavat niitä",
+    featurelockbyotheruser: "Geometriaa/tietuetta ei voi muokata, koska muut käyttäjät muokkaavat sitä parhaillaan",
     splitted: "Uppdelad",
     nosplittedfeature: "Egenskapen har inte delats upp",
     press_esc: "Tryck ESC för att gå tillbaka",
