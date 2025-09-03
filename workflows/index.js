@@ -970,6 +970,7 @@ export class OpenFormStep extends Step {
     this.layerId = null;
     this._unwatchs.forEach(unwatch => unwatch());
     this._unwatchs = [];
+    this._saveAllError = false;
   }
 
 }
