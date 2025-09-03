@@ -95,7 +95,8 @@ export default {
     next: "Seuraava",
   },
   messages: {
-    featureslockbyotheruser: "Some features are locked by another user",
+    featureslockbyotheruser: "Some geometries/records are not editable because in editing by other user",
+    featurelockbyotheruser: "The geometry/record is not editable because in editing by other user",
     splitted: "Jaettu",
     nosplittedfeature: "Ominaisuutta ei jaettu",
     press_esc: "Paina ESC palataksesi",

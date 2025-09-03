@@ -409,8 +409,19 @@ new (class extends Plugin {
         const features = is_vector ? source.getFeatures() : source.readFeatures();
         const feature  = features.find(f => fid == f.getId());
 
-        // skip when not feature is get from server
-        if (!feature) { return }
+        // skip when not feature (ex. locked feature) is get from server
+        if (!feature) { 
+          //stop service
+          this.stop();
+          //hide editing panel
+          this.hideEditingPanel();
+          //show user message
+          GUI.showUserMessage({
+            type:     'warning',
+            message:  'plugins.editing.messages.featurelockbyotheruser',
+          });
+          return;
+        }
 
         const geom = feature.getGeometry();
 
@@ -502,7 +513,8 @@ new (class extends Plugin {
         console.warn(e);
         session.rollback();
       } finally {
-        w.stop();
+        //In case of locked feature, w (workflow) is not defined
+        w && w.stop();
       }
     });
 
