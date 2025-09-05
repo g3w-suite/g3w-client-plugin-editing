@@ -1856,7 +1856,6 @@ export class ToolBox extends G3WObject {
       // and need to disable toolbox to avoid to click on tools
       this.state.layer.state.editing.ready = false;
       try {
-        await new Promise((res) => setTimeout(res, 5000))
         await promisify(this._session.stop());
         //set start to false
         this._start           = false
