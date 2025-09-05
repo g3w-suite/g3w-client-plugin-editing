@@ -1852,7 +1852,11 @@ export class ToolBox extends G3WObject {
         return;
       }
 
+      //@since 4.0.1 show Loading toolbox in case of stop (unlock) it takes time
+      // and need to disable toolbox to avoid to click on tools
+      this.state.layer.state.editing.ready = false;
       try {
+        await new Promise((res) => setTimeout(res, 5000))
         await promisify(this._session.stop());
         //set start to false
         this._start           = false
@@ -1868,8 +1872,9 @@ export class ToolBox extends G3WObject {
       } catch(e) {
         console.warn(e);
         return Promise.reject(e);
+      } finally {
+        this.state.layer.state.editing.ready = true;
       }
-
     });
   }
 
