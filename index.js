@@ -220,7 +220,7 @@ new (class extends Plugin {
       //@since 4.0.1 set fields based on layer editing style
       if (layer.config.editing.layer_style) {
         try {
-          const response = await (XHR.get({url:    layer.getUrl('config'),params: { style: layer.config.editing.layer_style }}));
+          const response = await (XHR.get({ url: layer.getUrl('config'), params: { style: layer.config.editing.layer_style } }));
           layer.config.editing.fields = response?.vector?.fields || [];
         } catch(e) {
           console.warn(e);

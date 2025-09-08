@@ -96,9 +96,9 @@ export class ToolBox extends G3WObject {
         return l && l.isEditable();
       });
          
-    this._start       = false;
+    this._start         = false;
 
-    this._current_style; //@since 4.0.1
+    this._current_style = null; //@since 4.0.1
 
     /** constraint loading features to a filter set */
     this.constraints  = { filter: null, show: null, tools: [] };
@@ -1619,6 +1619,13 @@ export class ToolBox extends G3WObject {
       this.startResolve();
     }
 
+    //@since 4.0.1 set modal true in case of openFormStep is running
+    if (this.state.editing.canEdit && this.state.activetool?.op.getRunningStep() instanceof OpenFormStep) {
+      //Check if current interaction is pickLayer 
+      GUI.setModal('picklayer' !== map.getInteractions().item(map.getInteractions().getLength() -1).get('id') );
+      return;
+    }
+
     // async show message because another toolbox can be unselected before
     setTimeout(() => GUI.setModal(!this.state.editing.canEdit, this.messages.constraint.scale));
   }
@@ -1795,7 +1802,8 @@ export class ToolBox extends G3WObject {
    */
   stop() {
     return $promisify(async () => {
-      if (this.state.layer.config.editing.layer_style && this._current_style !== this.state.layer.config.editing.layer_style) {
+      //@since 4.0.1 check if current style is set (set after start toolbox, otherwise is null)
+      if (this.state.layer.config.editing.layer_style && this._current_style && this._current_style !== this.state.layer.config.editing.layer_style) {
         await CatalogLayersStoresRegistry.getLayerById(this.state.id).changeCurrentStyle(this._current_style);
       }
 
@@ -1845,6 +1853,9 @@ export class ToolBox extends G3WObject {
         return;
       }
 
+      //@since 4.0.1 show Loading toolbox in case of stop (unlock) it takes time
+      // and need to disable toolbox to avoid to click on tools
+      this.state.layer.state.editing.ready = false;
       try {
         await promisify(this._session.stop());
         //set start to false
@@ -1861,8 +1872,11 @@ export class ToolBox extends G3WObject {
       } catch(e) {
         console.warn(e);
         return Promise.reject(e);
+      } finally {
+        //@since 4.0.1 need to reset to default
+        this.state.layer.state.editing.ready = true;
+        this._current_style                  = null;
       }
-
     });
   }
 

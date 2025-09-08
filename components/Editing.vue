@@ -215,13 +215,20 @@
           console.warn(e);
         }
 
-        await toolbox.stop();
+        //Take in account an error
+        try {
+          await toolbox.stop();
+        } catch(e) {
+          console.warn(e);
+        }
+        
 
         // re-enable query map control
         const control = undefined === this.service.getToolBoxes().find(t => t.state.editing.on) && GUI.getService('map').getMapControlByType({ type: 'query' });
         if (control && !control.isToggled()) {
           control.toggle();
         }
+        
       },
 
       /**

@@ -464,6 +464,13 @@ export class OpenFormStep extends Step {
     this._saveAll = false === options.saveAll ? options.saveAll : async () => {};
 
     /**
+     * In case of commit error from saveAll methods, need to set it to true to undo changes
+     * @since 4.0.1
+     * 
+     */
+    this._saveAllError = false;
+
+    /**
      * Whether it can handle multi edit features
      */
     this._multi = options.multi || false;
@@ -666,6 +673,12 @@ export class OpenFormStep extends Step {
                 },
               },
               methods: {
+                /**
+                 * Set this._saveAllError 
+                 * @param {@since 4.0.1 } bool 
+                 * @returns 
+                 */
+                setError: (bool = false) => this._saveAllError = bool,
                 async saveAll() {
                   //Set loading content
                   GUI.setLoadingContent(true);
@@ -701,6 +714,8 @@ export class OpenFormStep extends Step {
                   }
                   try {
                     await promisify(g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').service.commit({ modal: false }));
+                    //set Error to false
+                    this.setError(false);
                     [...Workflow.Stack._workflows]
                       .reverse()
                       .filter(w => "function" === typeof w.getLastStep()._saveAll)
@@ -729,6 +744,8 @@ export class OpenFormStep extends Step {
                           })
                       })
                   } catch(e) {
+                    //setError to true
+                    this.setError(true);
                     console.warn(e);
                   }
                   //set loading content false
@@ -838,6 +855,12 @@ export class OpenFormStep extends Step {
                   }
                 },
                 cbk: () => {
+                  if (this._saveAllError) {
+                    [...Workflow.Stack._workflows]
+                      .reverse()
+                      .filter(w => "function" === typeof w.getLastStep()._saveAll) // need to filter only workflow that
+                      .map( w => w.getLastStep().getContext().session.undo())
+                  }
                   this.fireEvent('cancelform', inputs.features); // fire event cancel form to emit to subscribers
                   reject(inputs);
                 }
@@ -947,6 +970,7 @@ export class OpenFormStep extends Step {
     this.layerId = null;
     this._unwatchs.forEach(unwatch => unwatch());
     this._unwatchs = [];
+    this._saveAllError = false;
   }
 
 }
