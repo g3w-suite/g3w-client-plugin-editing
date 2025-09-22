@@ -1417,7 +1417,8 @@ export class ToolBox extends G3WObject {
           }),
         },
         // Edit Table feature (alphanumerical layer - No geometry)
-        is_table && capabilities.includes('delete_feature') && capabilities.includes('change_attr_feature') && {
+        // Check capabiliti
+        is_table && (capabilities.includes('delete_feature') || capabilities.includes('change_attr_feature')) && {
           id:   'edittable',
           type: ['delete_feature', 'change_attr_feature'],
           name: "editing.tools.update_feature",
