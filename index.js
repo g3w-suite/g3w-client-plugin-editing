@@ -403,7 +403,7 @@ new (class extends Plugin {
    * @param {*} fid 
    * @returns 
    */
-  async #lockLayerFeature(layerId, fid) {
+  async #lockFeature(layerId, fid) {
     try {
       const { featurelocks: lockids, vector: { data: feature } } = await (await fetch(`${ApplicationState.project.state.vectorurl}editing/${ApplicationState.project.getType()}/${ApplicationState.project.getId()}/${layerId}/?fids=${fid}`));
       return { lockids, feature };
@@ -461,7 +461,7 @@ new (class extends Plugin {
       return;
     }
     const fid = ((new ol.format.GeoJSON()).readFeature(geojson)).getId();
-    const { lockids } = await this.#lockLayerFeature(layerId, fid);
+    const { lockids } = await this.#lockFeature(layerId, fid);
     const { result }  = await this.#commitFeature({ layerId, geojson, action: 'update', lockids });
     if (result) {
       g3wsdk.gui.GUI.getService('map').refreshMap();
@@ -480,7 +480,7 @@ new (class extends Plugin {
       return;
     }
     const fid = ((new ol.format.GeoJSON()).readFeature(geojson)).getId();
-    const { lockids } = await this.#lockLayerFeature(layerId, fid);
+    const { lockids } = await this.#lockFeature(layerId, fid);
     const { result }  = await this.#commitFeature({ layerId, action: 'delete', geojson, lockids })
     
     if (result) {
