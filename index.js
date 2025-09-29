@@ -418,7 +418,7 @@ new (class extends Plugin {
    * @param {*} param0 
    * @returns 
    */
-  async #commitChange({ layerId, action, lockids = [], geojson = {}} = {}) {
+  async #commitFeature({ layerId, action, lockids = [], geojson = {}} = {}) {
     if (!action) {
       return;
     }
@@ -444,7 +444,7 @@ new (class extends Plugin {
     if (!geojson) {
       return;
     }
-    const { result, response } = await this.#commitChange({ layerId,  action: 'add', geojson });
+    const { result, response } = await this.#commitFeature({ layerId,  action: 'add', geojson });
     if (result) {
       g3wsdk.gui.GUI.getService('map').refreshMap();
       return { fid: response?.new[0]?.id  };
@@ -462,7 +462,7 @@ new (class extends Plugin {
     }
     const fid = ((new ol.format.GeoJSON()).readFeature(geojson)).getId();
     const { lockids } = await this.#lockLayerFeature(layerId, fid);
-    const { result }  = await this.#commitChange({ layerId, geojson, action: 'update', lockids });
+    const { result }  = await this.#commitFeature({ layerId, geojson, action: 'update', lockids });
     if (result) {
       g3wsdk.gui.GUI.getService('map').refreshMap();
       await this.#unlockLayer(layerId);
@@ -481,7 +481,7 @@ new (class extends Plugin {
     }
     const fid = ((new ol.format.GeoJSON()).readFeature(geojson)).getId();
     const { lockids } = await this.#lockLayerFeature(layerId, fid);
-    const { result }  = await this.#commitChange({ layerId, action: 'delete', geojson, lockids })
+    const { result }  = await this.#commitFeature({ layerId, action: 'delete', geojson, lockids })
     
     if (result) {
       g3wsdk.gui.GUI.getService('map').refreshMap();
