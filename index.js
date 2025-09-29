@@ -150,6 +150,7 @@ new (class extends Plugin {
     GUI.getService('map').on('mapcontrol:toggled', this.state.onMapControlToggled);
 
     this._init();
+    
   }
 
   /**
@@ -348,8 +349,194 @@ new (class extends Plugin {
     this._setupGUI();
 
     this.setHookLoading({ loading: false });
+
+    //@since 4.0.3 Handle Simple editing in iframe
+
+    if (g3wsdk.core.ApplicationState.iframe) {
+      // handle all messages from the window
+      window.addEventListener('message', async function(message) {
+
+        if (!message?.data?.action?.startsWith('simpleediting:') || (!message?.data?.layerId)) {
+          return;
+        }
+        const id           = message.data.id ?? getUniqueDomId();
+        const layerId      = message.data.layerId;
+        try {
+          window.parent?.postMessage?.({
+            id,
+            action: message.data.action,
+            response: {
+              result: true,
+              data:   'function' === typeof this[message.data.action] ? await this[message.data.action](layerId, message.data.geojson) : undefined
+            }
+          }, '*');
+        } catch(e) {
+          console.warn(e);
+          window.parent?.postMessage?.({
+            id,
+            action: message.data.action,
+            response: {
+              result: false,
+              data: e
+            }
+          }, '*');
+        }
+      }, false);
+    }
+
     this.setReady(true);
   }
+
+  //@since 4.0.3 Simple Editing methods
+
+  /**
+   * 
+   * @param {*} layerId 
+   * @returns 
+   */
+  async #unlockLayer(layerId) {
+    return await fetch(`${ApplicationState.project.state.vectorurl}unlock/${ApplicationState.project.getType()}${ApplicationState.project.getId()}/${layerId}`);
+  }
+  /**
+   * 
+   * @param {*} layerId 
+   * @param {*} fid 
+   * @returns 
+   */
+  async #lockLayerFeature(layerId, fid) {
+    try {
+      const { featurelocks: lockids, vector: { data: feature } } = await (await fetch(`${ApplicationState.project.state.vectorurl}editing/${ApplicationState.project.getType()}/${ApplicationState.project.getId()}/${layerId}/?fids=${fid}`));
+      return { lockids, feature };
+    } catch(e) {
+      console.warn(e);
+      return {};
+    }
+    
+  }
+  /**
+   * 
+   * @param {*} param0 
+   * @returns 
+   */
+  async #commitChange({ layerId, action, lockids = [], geojson = {}} = {}) {
+    if (!action) {
+      return;
+    }
+    return await (await fetch(`${ApplicationState.project.state.vectorurl}commit${ApplicationState.project.getType()}/${ApplicationState.project.getId()}/${layerId}/`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        "add":    [],
+        "update": [],
+        "delete": [],
+        "relations": {},
+        lockids,
+        ...{ [action]: [ geojson ] }
+      }),
+      headers: {
+        "Content-Type": 'application/json',
+      }
+    })).json();
+  }
+
+
+  async 'simplediting:add'(layerId, geojson) {
+    if (!geojson) {
+      return;
+    }
+    const { result, response } = await this.#commitChange({ layerId,  action: 'add', geojson });
+    if (result) {
+      g3wsdk.gui.GUI.getService('map').refreshMap();
+      return { fid: response?.new[0]?.id  };
+    }
+  }
+  /**
+   * 
+   * @param {*} layerId 
+   * @param {*} geojson 
+   * @returns 
+   */
+  async 'simpleediting:update'(layerId, geojson = {}) {
+    if (!geojson) {
+      return;
+    }
+    const fid = ((new ol.format.GeoJSON()).readFeature(geojson)).getId();
+    const { lockids } = await this.#lockLayerFeature(layerId, fid);
+    const { result }  = await this.#commitChange({ layerId, geojson, action: 'update', lockids });
+    if (result) {
+      g3wsdk.gui.GUI.getService('map').refreshMap();
+      await this.#unlockLayer(layerId);
+      return { geojson };
+    }
+  }
+  /**
+   * 
+   * @param {*} layerId 
+   * @param {*} geojson 
+   * @returns 
+   */
+  async 'simpleediting:delete'(layerId, geojson = {}) {
+    if (!geojson) {
+      return;
+    }
+    const fid = ((new ol.format.GeoJSON()).readFeature(geojson)).getId();
+    const { lockids } = await this.#lockLayerFeature(layerId, fid);
+    const { result }  = await this.#commitChange({ layerId, action: 'delete', geojson, lockids })
+    
+    if (result) {
+      g3wsdk.gui.GUI.getService('map').refreshMap();
+      await this.#unlockLayer(layerId);
+      return { geojson }; 
+    }
+  }
+
+  /**
+   * 
+   */
+  async 'simpleediting:draw'(layerId, geojson) {
+    g3wsdk.gui.GUI.disableClickMapControls(true);
+    const map = g3wsdk.gui.GUI.getService('map').getMap();
+    const layer = new ol.layer.Vector({ source: new ol.source.Vector() });
+    map.addLayer(editingLayer);
+    let geom  = g3wsdk.core.catalog.CatalogLayersStoresRegistry.getLayerById(layerId).getGeometryType();
+
+    // get open layers geometry
+    if (geom.startsWith('Line'))              { geom = 'LineString'; }
+    else if (geom.startsWith('MultiLine'))    { geom = 'MultiLineString'; }
+    else if (geom.startsWith('Point'))        { geom = 'Point'; }
+    else if (geom.startsWith('MultiPoint'))   { geom = 'MultiPoint'; }
+    else if (geom.startsWith('Polygon'))      { geom = 'Polygon'; }
+    else if (geom.startsWith('MultiPolygon')) { geom = 'MultiPolygon'; }
+    else                                      { console.warn('invalid geometry type: ', geom); }
+
+    if (geojson) {
+      const f = (new ol.format.GeoJSON()).readFeature(geojson);
+      const fid = f.getId();
+      const { lockids = [], feature }  = await this.#lockLayerFeature(layerId, fid);
+      //add  stored feature or a feature to change and add
+      layer.getSource().addFeature((lockids.lenght && feature) ?? f); 
+    }
+     //draw intercation
+    const drawInteraction = new ol.interaction.Draw({ type: geom, source: layer.getSource() });
+    const snapInteraction = new ol.interaction.Snap({ source: layer.getSource() });
+    map.addInteraction(drawInteraction);
+    map.addInteraction(snapInteraction);
+    drawInteraction.on('drawend', (e) => {
+      window.parent.postMessage({
+        action: 'simpleediting:draw',
+        data: { geojson : (new ol.format.GeoJSON()).writeFeatureObject(e.feature) }
+      })
+    })
+  }
+
+  /**
+   * 
+   * @param {*} geojson 
+   */
+  async 'simpleediting:geometry'() {
+    //return (new ol.format.GeoJSON()).writeFeatureObject(this.#layer.getSource().getFeatures()[0]);
+  }
+
 
   // setup plugin interface
   async _setupGUI() {
