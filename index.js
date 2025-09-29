@@ -354,8 +354,7 @@ new (class extends Plugin {
 
     if (g3wsdk.core.ApplicationState.iframe) {
       // handle all messages from the window
-      window.addEventListener('message', async function(message) {
-
+      window.addEventListener('message', async (message) => {
         if (!message?.data?.action?.startsWith('simpleediting:') || (!message?.data?.layerId)) {
           return;
         }
@@ -422,7 +421,8 @@ new (class extends Plugin {
     if (!action) {
       return;
     }
-    return await (await fetch(`${ApplicationState.project.state.vectorurl}commit${ApplicationState.project.getType()}/${ApplicationState.project.getId()}/${layerId}/`,
+    console.log(geojson)
+    return await (await fetch(`${ApplicationState.project.state.vectorurl}commit/${ApplicationState.project.getType()}/${ApplicationState.project.getId()}/${layerId}/`,
     {
       method: 'POST',
       body: JSON.stringify({
@@ -440,7 +440,7 @@ new (class extends Plugin {
   }
 
 
-  async 'simplediting:add'(layerId, geojson) {
+  async 'simpleediting:add'(layerId, geojson) {
     if (!geojson) {
       return;
     }
@@ -512,7 +512,7 @@ new (class extends Plugin {
     if (geojson) {
       const f = (new ol.format.GeoJSON()).readFeature(geojson);
       const fid = f.getId();
-      const { lockids = [], feature }  = await this.#lockLayerFeature(layerId, fid);
+      const { lockids = [], feature }  = await this.#lockFeature(layerId, fid);
       //add  stored feature or a feature to change and add
       layer.getSource().addFeature((lockids.lenght && feature) ?? f); 
     }
