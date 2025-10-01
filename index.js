@@ -499,13 +499,13 @@ new (class extends Plugin {
    * 
    * @param {*} layerId 
    */
-  async 'simpleediting:drawstop'() {
+  async 'simpleediting:drawstop'(layerId) {
     const map = g3wsdk.gui.GUI.getService('map').getMap();
-    const layer = map.getLayers().getArray().find(l => 'simpleediting' === l.get('id'));
+    const layer = map.getLayers().getArray().find(l => layerId === l.get('id'));
     let geojson;
     if (layer) {
       geojson = (new ol.format.GeoJSON()).writeFeatureObject(layer.getSource().getFeatures()[0]);
-      map.removeLayer(layer);
+      layer.getSource().clear();
       g3wsdk.gui.GUI.getService('map').refreshMap();
     }
     
@@ -520,8 +520,8 @@ new (class extends Plugin {
     let feature = null;
     let lockids = [];
     const map = g3wsdk.gui.GUI.getService('map').getMap();
-    const layer = new ol.layer.Vector({ id: "simpleediting", source: new ol.source.Vector() });
-    map.addLayer(layer);
+    //get editing layer
+    const layer = map.getLayers().getArray().find(l =>  layerId === l.get('id'));
     GUI.getService('map').disableClickMapControls(true);
     let geom  = g3wsdk.core.catalog.CatalogLayersStoresRegistry.getLayerById(layerId).getGeometryType();
     // get open layers geometry
