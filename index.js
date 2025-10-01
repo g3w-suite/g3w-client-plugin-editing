@@ -496,13 +496,31 @@ new (class extends Plugin {
   }
 
   /**
+   * 
+   * @param {*} layerId 
+   */
+  async 'simpleediting:drawstop'() {
+    const map = g3wsdk.gui.GUI.getService('map').getMap();
+    const layer = map.getLayers().getArray().find(l => 'simpleediting' === l.get('id'));
+    let geojson;
+    if (layer) {
+      geojson = (new ol.format.GeoJSON()).writeFeatureObject(layer.getSource().getFeatures()[0]);
+      map.removeLayer(layer);
+      g3wsdk.gui.GUI.getService('map').refreshMap();
+    }
+    
+    GUI.getService('map').disableClickMapControls(false);
+    return { result: true, geojson}
+  }
+
+  /**
    * Draw/modify feature geometry
    */
   async 'simpleediting:draw'(layerId, geojson) {
     let feature = null;
     let lockids = [];
     const map = g3wsdk.gui.GUI.getService('map').getMap();
-    const layer = new ol.layer.Vector({ source: new ol.source.Vector() });
+    const layer = new ol.layer.Vector({ id: "simpleediting", source: new ol.source.Vector() });
     map.addLayer(layer);
     GUI.getService('map').disableClickMapControls(true);
     let geom  = g3wsdk.core.catalog.CatalogLayersStoresRegistry.getLayerById(layerId).getGeometryType();
@@ -538,7 +556,6 @@ new (class extends Plugin {
           action: 'simpleediting:draw',
           response : { result: true, geojson: (new ol.format.GeoJSON()).writeFeatureObject(feature) } 
         })
-        GUI.getService('map').disableClickMapControls(false);
       })
     }
     //modify interaction
@@ -553,6 +570,7 @@ new (class extends Plugin {
     //snap Interaction
     const snapInteraction = new ol.interaction.Snap({ source: layer.getSource() });
     map.addInteraction(snapInteraction);
+    return { result: true }
   }
 
   /**
