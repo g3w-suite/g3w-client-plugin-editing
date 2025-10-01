@@ -364,10 +364,7 @@ new (class extends Plugin {
           window.parent?.postMessage?.({
             id,
             action: message.data.action,
-            response: {
-              result: true,
-              data:   'function' === typeof this[message.data.action] ? await this[message.data.action](layerId, message.data.geojson) : undefined
-            }
+            response: {...('function' === typeof this[message.data.action] ? await this[message.data.action](layerId, message.data.geojson) : { result: false, data: { error: 'No method supported '} }) }
           }, '*');
         } catch(e) {
           console.warn(e);
@@ -394,7 +391,7 @@ new (class extends Plugin {
    * @returns 
    */
   async #unlockLayer(layerId) {
-    return await fetch(`${ApplicationState.project.state.vectorurl}unlock/${ApplicationState.project.getType()}${ApplicationState.project.getId()}/${layerId}`);
+    return await fetch(`${ApplicationState.project.state.vectorurl}unlock/${ApplicationState.project.getType()}${ApplicationState.project.getId()}/${layerId}/`);
   }
   /**
    * 
@@ -451,10 +448,9 @@ new (class extends Plugin {
       return;
     }
     const { result, response } = await this.#commitFeature({ layerId,  action: 'add', geojson });
-    if (result) {
-      g3wsdk.gui.GUI.getService('map').refreshMap();
-      return { fid: response?.new[0]?.id  };
-    }
+    g3wsdk.gui.GUI.getService('map').refreshMap();
+    return { result,...(result ? { fid: response?.new[0]?.id  }: { error: 'No feature add' }) };
+    
   }
   /**
    * Update Feature
@@ -467,13 +463,17 @@ new (class extends Plugin {
       return;
     }
     const fid = ((new ol.format.GeoJSON()).readFeature(geojson)).getId();
-    const { lockids }           = await this.#lockFeature(layerId, fid);
-    const { result, response }  = await this.#commitFeature({ layerId, geojson, action: 'update', lockids });
+    const { lockids }                   = await this.#lockFeature(layerId, fid);
+    if (!lockids.length) {
+      return Promise.reject({
+        result: false,
+        error: 'No feature update'
+      })
+    }
+    const { result  }  = await this.#commitFeature({ layerId, geojson, action: 'update', lockids });
     await this.#unlockLayer(layerId);
-    if (result) {
-      g3wsdk.gui.GUI.getService('map').refreshMap();
-      return { geojson };
-    } 
+    g3wsdk.gui.GUI.getService('map').refreshMap();
+    return { result, ...(result ? { geojson } : { error: 'No feature update' }) };
 
   }
   /**
@@ -488,19 +488,11 @@ new (class extends Plugin {
     }
     const fid = ((new ol.format.GeoJSON()).readFeature(geojson)).getId();
     const { lockids } = await this.#lockFeature(layerId, fid);
-
-    try {
-      const { result, response }  = await this.#commitFeature({ layerId, action: 'delete', geojson: fid, lockids })
+    const { result, response }  = await this.#commitFeature({ layerId, action: 'delete', geojson: fid, lockids })
     
-      if (result) {
-        g3wsdk.gui.GUI.getService('map').refreshMap();
-        await this.#unlockLayer(layerId);
-        return { geojson }; 
-      }
-    } catch(e) {
-      console.warn(e);
-    }
-    
+    g3wsdk.gui.GUI.getService('map').refreshMap();
+    await this.#unlockLayer(layerId);
+    return { result, ...(result ? { geojson } : { error: 'No feature delete' }) };
   }
 
   /**
