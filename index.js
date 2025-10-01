@@ -421,6 +421,7 @@ new (class extends Plugin {
     if (!action) {
       return;
     }
+
     return await (await fetch(`${ApplicationState.project.state.vectorurl}commit/${ApplicationState.project.getType()}/${ApplicationState.project.getId()}/${layerId}/`,
       {
         method: 'POST',
@@ -439,7 +440,12 @@ new (class extends Plugin {
     ).json();
   }
 
-
+  /**
+   * Add new feature
+   * @param {*} layerId 
+   * @param {*} geojson 
+   * @returns 
+   */
   async 'simpleediting:add'(layerId, geojson) {
     if (!geojson) {
       return;
@@ -451,7 +457,7 @@ new (class extends Plugin {
     }
   }
   /**
-   * 
+   * Update Feature
    * @param {*} layerId 
    * @param {*} geojson 
    * @returns 
@@ -463,14 +469,15 @@ new (class extends Plugin {
     const fid = ((new ol.format.GeoJSON()).readFeature(geojson)).getId();
     const { lockids }           = await this.#lockFeature(layerId, fid);
     const { result, response }  = await this.#commitFeature({ layerId, geojson, action: 'update', lockids });
+    await this.#unlockLayer(layerId);
     if (result) {
       g3wsdk.gui.GUI.getService('map').refreshMap();
-      await this.#unlockLayer(layerId);
       return { geojson };
-    }
+    } 
+
   }
   /**
-   * 
+   * Delete feature
    * @param {*} layerId 
    * @param {*} geojson 
    * @returns 
@@ -497,7 +504,7 @@ new (class extends Plugin {
   }
 
   /**
-   * 
+   * Draw/modify feature geometry
    */
   async 'simpleediting:draw'(layerId, geojson) {
     let feature = null;
