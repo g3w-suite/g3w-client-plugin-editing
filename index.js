@@ -391,7 +391,7 @@ new (class extends Plugin {
    * @returns 
    */
   async #unlockLayer(layerId) {
-    return await fetch(`${ApplicationState.project.state.vectorurl}unlock/${ApplicationState.project.getType()}${ApplicationState.project.getId()}/${layerId}/`);
+    return await fetch(`${ApplicationState.project.state.vectorurl}unlock/${ApplicationState.project.getType()}/${ApplicationState.project.getId()}/${layerId}/`);
   }
   /**
    * 
