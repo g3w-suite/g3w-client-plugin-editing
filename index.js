@@ -355,7 +355,7 @@ new (class extends Plugin {
     if (g3wsdk.core.ApplicationState.iframe) {
       // handle all messages from the window
       window.addEventListener('message', async (message) => {
-        if (!message?.data?.action?.startsWith('simpleediting:') || (!message?.data?.layerId)) {
+        if (!message?.data?.action?.startsWith('simpleediting:') || (!message?.data?.data?.layerId)) {
           return;
         }
         const id           = message.data.id ?? getUniqueDomId();
