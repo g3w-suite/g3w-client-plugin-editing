@@ -359,12 +359,12 @@ new (class extends Plugin {
           return;
         }
         const id           = message.data.id ?? getUniqueDomId();
-        const layerId      = message.data.layerId;
+        const layerId      = message.data?.data?.layerId;
         try {
           window.parent?.postMessage?.({
             id,
             action: message.data.action,
-            response: {...('function' === typeof this[message.data.action] ? await this[message.data.action](layerId, message.data.geojson) : { result: false, data: { error: 'No method supported '} }) }
+            response: {...('function' === typeof this[message.data.action] ? await this[message.data.action](layerId, message.data?.data?.geojson) : { result: false, data: { error: 'No method supported '} }) }
           }, '*');
         } catch(e) {
           console.warn(e);
