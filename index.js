@@ -355,11 +355,11 @@ new (class extends Plugin {
     if (g3wsdk.core.ApplicationState.iframe) {
       // handle all messages from the window
       window.addEventListener('message', async (message) => {
-        if (!message?.data?.action?.startsWith('simpleediting:') || (!message?.data?.data?.layerId)) {
+        if (!message?.data?.action?.startsWith('simpleediting:') || (!message?.data?.data?.qgs_layer_id)) {
           return;
         }
         const id           = message.data.id ?? getUniqueDomId();
-        const layerId      = message.data?.data?.layerId;
+        const layerId      = message.data?.data?.qgs_layer_id;
         try {
           window.parent?.postMessage?.({
             id,
