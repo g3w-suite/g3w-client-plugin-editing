@@ -980,7 +980,7 @@ new (class extends Plugin {
                   layer,
                   message: (new (Vue.extend(require('./components/Changes.vue').default))({
                     propsData: {
-                      commits: commitItems,
+                      commits: { ...commitItems },
                       layer
                     }})).$mount().$el,
                 }
