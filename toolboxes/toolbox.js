@@ -2925,9 +2925,15 @@ export class ToolBox extends G3WObject {
             }
             return;
           }
+          /**
+           * @since 4.0.3 in case of geometry layer with feature with geometry null,
+           * need to set geometry undefined to avoit that geometry is added to item properties
+           */
+          if (null === item.getGeometry()) {
+            item.setGeometry(undefined);
+          }
           //convert feature to json ex. {geometry:{type: 'Point'}, properties:{}.....}
           const itemObj = GeoJSONFormat.writeFeatureObject(item);
-          
           //In the case of 3D geometry need to set the same tpe of layer (LineStringMZ...)
 
           /**
