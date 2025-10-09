@@ -2927,7 +2927,7 @@ export class ToolBox extends G3WObject {
           }
           /**
            * @since 4.0.3 in case of geometry layer with feature with geometry null,
-           * need to set geometry undefined to avoit that geometry is added to item properties
+           * need to set geometry undefined to avoid that geometry is added to item properties
            */
           if (null === item.getGeometry()) {
             item.setGeometry(undefined);
