@@ -1310,8 +1310,7 @@
 
       this.isVectorRelation = Layer.LayerTypes.VECTOR === relationLayer.getType();
       /** @since 4.0.2 add relation capabilities */ 
-      this.rcapabilities    = relationLayer.state.editing?.capabilities || [];
-
+      this.rcapabilities    = relationLayer?.getEditingCapabilities() || [];
       // vector relation → get all layers with the same geometry
       if (this.isVectorRelation) {
         const geometryType = relationLayer.getGeometryType();
