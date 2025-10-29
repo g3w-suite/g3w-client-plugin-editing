@@ -1292,6 +1292,8 @@
     },
 
     created() {
+      //@since 4.0.4 get current style eventually
+      this._current_style = null;
       const relationLayer = getEditingLayerById(this.relation.child);
 
       /**
@@ -1633,6 +1635,20 @@
     },
 
     async activated() {
+      try {
+        //@since 4.0.4 need to check and set editing style if set
+        const relationLayer = getEditingLayerById(this.relation.child);
+        this._current_style = relationLayer.getCurrentStyle().name;
+        if (relationLayer.config.editing.layer_style && this._current_style !== relationLayer.config.editing.layer_style) {
+          //In case of legend in separate tab, need to set layers as active tab to avoid that user
+          //that has open tab with layer has different legend in case of change style for editing
+          GUI.getComponent('catalog').getInternalComponent().activeTab = 'layers';
+          await relationLayer.changeCurrentStyle(relationLayer.config.editing.layer_style);
+        }
+      } catch(e) {
+        console.warn(e);
+      }
+      
       //in the case of vector relation, the current extent of map whe is actived
       //it used to sto an extent of the map at the moment of possibible editing (and zoom)
       // to relation feature
@@ -1672,7 +1688,18 @@
       this.resize();
     },
 
-    deactivated() {
+    async deactivated() {
+      try {
+        //@since 4.0.4 nee to check and set editing style if set
+        const relationLayer = getEditingLayerById(this.relation.child);
+        //@since 4.0.1 check if current style is set (set after start toolbox, otherwise is null)
+        if (relationLayer.config.editing.layer_style && this._current_style && this._current_style !== relationLayer.config.editing.layer_style) {
+          await relationLayer.changeCurrentStyle(this._current_style);
+        }
+      } catch(e) {
+        console.warn(e);
+      }
+      
       this.destroyTable();
       this.active = false;
       //need to unselect relaion when click on back control form
