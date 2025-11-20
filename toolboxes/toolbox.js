@@ -464,8 +464,6 @@ export class ToolBox extends G3WObject {
                   let relationId      = relations[0].state.id;
                   //get action type (update or add relation) for ech parent features
                   let action;
-                  //relation layer  
-                  let rLayer;
                   //In case of multi relation in editing
                   if (relations.length > 1) {
                     //ser relation layer id
@@ -521,76 +519,76 @@ export class ToolBox extends G3WObject {
                       GUI.setModal(false);
                       return $promisify(Promise.reject(e));
                     }
+                  }  
+                  //Relations layer
+                  const rLayer = getEditingLayerById(relationLayerId);
+                  const actions = []
+                    .concat(![undefined, Layer.LayerTypes.VECTOR].includes(rLayer.getType()) ? ['add'] : [])
+                    .concat(relationsFeatures[relationLayerId].length > 0 ? ['update'] : [])
+                  //In case of norelations featire and no vector layer
+                  if (0 === actions.length) {
+                    GUI.setModal(false);
 
-                    //Relations layer
-                    rLayer = getEditingLayerById(relationLayerId);
-                    const actions = []
-                      .concat(![undefined, Layer.LayerTypes.VECTOR].includes(rLayer.getType()) ? ['add'] : [])
-                      .concat(relationsFeatures[relationLayerId].length > 0 ? ['update'] : [])
-                    //In case of norelations featire and no vector layer
-                    if (0 === actions.length) {
-                      GUI.setModal(false);
+                    GUI.showUserMessage({
+                      type:      'warning',
+                      message:   'plugins.editing.no_relations_found',
+                      autoclose: true,
+                    })
+                    return $promisify(Promise.reject());
+                  }
+                  try {
+                    await new Promise((resolve, reject) => {
+                      const vueInstance      = new (Vue.extend({
+                        name: 'multi-relations-fetures',
+                        template: `<div>
+                          <select v-select2 = "'action'">
+                            <option v-for = "a in actions" 
+                              :key   = "a" 
+                              :value = "a">
+                                {{ a }}
+                            </option>
+                          </select>
+                        </div>
+                      `,
+                        data() {
+                          return {
+                            actions,
+                            action: actions[0], 
+                          }
+                        },
+                        watch: { action: a => action = a }
+                      }))
 
-                      GUI.showUserMessage({
-                        type:      'warning',
-                        message:   'plugins.editing.no_relations_found',
-                        autoclose: true,
-                      })
-                      return $promisify(Promise.reject());
-                    }
-                    try {
-                      await new Promise((resolve, reject) => {
-                        const vueInstance      = new (Vue.extend({
-                          name: 'multi-relations-fetures',
-                          template: `<div>
-                            <select v-select2 = "'action'">
-                              <option v-for = "a in actions" 
-                                :key   = "a" 
-                                :value = "a">
-                                  {{ a }}
-                              </option>
-                            </select>
-                          </div>
-                        `,
-                          data() {
-                            return {
-                              actions,
-                              action: actions[0], 
-                            }
+                      GUI.showModalDialog({
+                        title:       tPlugin('editing.tools.update_multi_features_relations_from_parents'),
+                        className:   'modal-left',
+                        closeButton: false,
+                        message:     vueInstance.$mount().$el,
+                        buttons: {
+                          cancel: {
+                            label: 'Cancel',
+                            className: 'btn-danger',
+                            callback() { reject(); }
                           },
-                          watch: { action: a => action = a }
-                        }))
-
-                        GUI.showModalDialog({
-                          title:       tPlugin('editing.tools.update_multi_features_relations_from_parents'),
-                          className:   'modal-left',
-                          closeButton: false,
-                          message:     vueInstance.$mount().$el,
-                          buttons: {
-                            cancel: {
-                              label: 'Cancel',
-                              className: 'btn-danger',
-                              callback() { reject(); }
-                            },
-                            ok: {
-                              label: 'Ok',
-                              className: 'btn-success',
-                              callback: async () => {
-                                //set relation layer id to editin
-                                action = vueInstance.action;
-                                resolve();
-                              }
+                          ok: {
+                            label: 'Ok',
+                            className: 'btn-success',
+                            callback: async () => {
+                              //set relation layer id to editin
+                              action = vueInstance.action;
+                              resolve();
                             }
                           }
-                        }).on('hide.bs.modal', () => vueInstance.$destroy()); //destroy vue instance after dialog is a closed
-                        //hide user message step
-                      })
-                    } catch(e) {
-                      console.warn(e);
-                      GUI.setModal(false);
-                      return $promisify(Promise.reject(e));
-                    }
+                        }
+                      }).on('hide.bs.modal', () => vueInstance.$destroy()); //destroy vue instance after dialog is a closed
+                      //hide user message step
+                    })
+                  } catch(e) {
+                    console.warn(e);
+                    GUI.setModal(false);
+                    return $promisify(Promise.reject(e));
                   }
+                  
                   const relation = relations.find(r => relationId === r.getId());
                   //gte relation layer fields
                   const fields = getRelationFieldsFromRelation({
