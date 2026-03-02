@@ -1495,7 +1495,9 @@ export class ToolBox extends G3WObject {
    */
   _stopSessionChildren(layerId) {
     const service = g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing');
-    const layer   = service.getLayerById(layerId);
+    //add parent layerId to chain layerId stop
+    service.state.stopChain.add(layerId);
+    const layer = service.getLayerById(layerId);
     getRelationsInEditing({
       layerId,
       relations: layer.getRelations() ? layer.getRelations().getArray() : [],
@@ -1504,7 +1506,7 @@ export class ToolBox extends G3WObject {
       .forEach(relation => {
         const relationId = getRelationId({ layerId, relation });
         // In case of no editing is started (click on pencil of relation layer) need to stop (unlock) features
-        if (!service.getToolBoxById(relationId).inEditing()) {
+        if (!service.state.stopChain.has(relationId) && !service.getToolBoxById(relationId).inEditing()) {
           service.state.sessions[relationId].stop();
         }
       })

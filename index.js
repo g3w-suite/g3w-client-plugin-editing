@@ -111,6 +111,7 @@ new (class extends Plugin {
       onMapControlToggled: ({ target }) => {
         target.isToggled() && target.isClickMap() && this.state.toolboxselected && this.state.toolboxselected.getActiveTool() && this.state.toolboxselected.stopActiveTool();
       },
+      stopChain: new Set(), //@scince 4.0.7 store stop layerId chain to avoid circular relation dependencies
     };
 
     // BACKOMP v3.x
