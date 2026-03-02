@@ -1851,6 +1851,8 @@ export class ToolBox extends G3WObject {
         this._stopSessionChildren(this.state.id);
         // clear layer unique field values
         g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[this.getId()] = {};
+        //clear chain
+        service.state.stopChain.clear();
         return;
       }
 
@@ -1869,6 +1871,8 @@ export class ToolBox extends G3WObject {
         this.emit('stop-editing');
         // clear layer unique field values
         g3wsdk.core.plugin.PluginsRegistry.getPlugin('editing').state.uniqueFieldsValues[this.getId()] = {};
+        //clar chain
+        service.state.stopChain.clear();
         return true;
       } catch(e) {
         console.warn(e);
