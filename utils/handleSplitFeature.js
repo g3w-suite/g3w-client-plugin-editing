@@ -29,7 +29,6 @@ export async function handleSplitFeature({
   const source                   = layer.getEditingLayer().getSource();
   const layerId                  = layer.getId();
   const oriFeature               = feature.clone();
-  inputs.features                = splittedGeometries.length ? [] : inputs.features;
   const splittedGeometriesLength = splittedGeometries.length;
 
   for (let index = 0; index < splittedGeometriesLength; index++) {
