@@ -1,4 +1,6 @@
-# g3w-client-plugin-editing v4.1.0-alpha.0
+> ℹ️ After https://github.com/g3w-suite/g3w-admin/pull/1184 development of this module was shifted to built-in [editing](https://github.com/g3w-suite/g3w-admin/tree/eb154bd90236e14963087ff246178085a39cacda/g3w-admin/editing) module. This repo will be definitively archived in next major release (4.x).
+
+# g3w-client-plugin-editing
 
 A javascript plugin that includes map editing tools for those G3W-SUITE projects that require collaborative mapping contributions (user submitted edits).
 
