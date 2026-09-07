@@ -1,4 +1,4 @@
-> ℹ️ After https://github.com/g3w-suite/g3w-admin/pull/1184 development of this module was shifted to built-in [editing](https://github.com/g3w-suite/g3w-admin/tree/eb154bd90236e14963087ff246178085a39cacda/g3w-admin/editing) module. This repo will be definitively archived in next major release (4.x).
+> ℹ️ After https://github.com/g3w-suite/g3w-admin/pull/1184 development of this module has been moved to built-in [editing](https://github.com/g3w-suite/g3w-admin/tree/eb154bd90236e14963087ff246178085a39cacda/g3w-admin/editing) module. This repository will be permanently archived in the next major release (4.x).
 
 # g3w-client-plugin-editing
 
